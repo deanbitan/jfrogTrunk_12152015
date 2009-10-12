@@ -1,13 +1,30 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.security;
 
-import net.sf.ehcache.Ehcache;
-import net.sf.ehcache.Element;
 import org.artifactory.api.security.AceInfo;
 import org.artifactory.api.security.AclInfo;
-import org.artifactory.api.security.ArtifactoryPermisssion;
+import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.PermissionTargetInfo;
+import org.artifactory.jcr.JcrService;
 import org.easymock.classextension.EasyMock;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.testng.Assert;
 import static org.testng.Assert.*;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -16,6 +33,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JcrAclManager unit tests.
@@ -24,22 +42,32 @@ import java.util.Set;
  */
 @Test
 public class JcrAclManagerTest {
+    private DummyOcm dummyOcm;
     private JcrAclManager manager;
     private List<Acl> testAcls;
     private Acl mixedAcl;
     private Acl testRepo2Acl;
     private Acl anyTargetAcl;
+    private ConcurrentHashMap<String, Acl> cache;
 
     @BeforeMethod
     public void setUp() {
         manager = new JcrAclManager();
-        Ehcache aclsCacheMock = EasyMock.createNiceMock(Ehcache.class);
-        ReflectionTestUtils.setField(manager, "aclsCache", aclsCacheMock);
+        dummyOcm = new DummyOcm();
+        cache = new ConcurrentHashMap<String, Acl>();
+        ReflectionTestUtils.setField(manager, "acls", cache);
         testAcls = createTestAcls();
 
-        Element element = new Element(JcrAclManager.ACLS_KEY, testAcls);
-        EasyMock.expect(aclsCacheMock.get(JcrAclManager.ACLS_KEY)).andReturn(element);
-        EasyMock.replay(aclsCacheMock);
+        JcrService jcr = EasyMock.createNiceMock(JcrService.class);
+        ReflectionTestUtils.setField(manager, "jcr", jcr);
+        EasyMock.expect(jcr.getOcm()).andReturn(dummyOcm).anyTimes();
+        EasyMock.replay(jcr);
+        for (Acl acl : testAcls) {
+            manager.createAcl(acl);
+        }
+        for (Acl acl : testAcls) {
+            Assert.assertEquals(acl, cache.get(acl.getPermissionTarget().getName()));
+        }
     }
 
     public void getAllAcls() {
@@ -84,34 +112,34 @@ public class JcrAclManagerTest {
     }
 
     private List<Acl> createTestAcls() {
-        PermissionTargetInfo pti1 = new PermissionTargetInfo("target1", "testRepo1");
-        AceInfo yoavAce = new AceInfo("yoavl", false, ArtifactoryPermisssion.READ.getMask());
+        PermissionTargetInfo pti1 = new PermissionTargetInfo("target1", Arrays.asList("testRepo1"));
+        AceInfo yoavAce = new AceInfo("yoavl", false, ArtifactoryPermission.READ.getMask());
         // yossis has all the permissions (when all permissions are checked)
-        AceInfo adminAce = new AceInfo("yossis", false, ArtifactoryPermisssion.ADMIN.getMask());
+        AceInfo adminAce = new AceInfo("yossis", false, ArtifactoryPermission.ADMIN.getMask());
         adminAce.setDeploy(true);
         adminAce.setRead(true);
-        AceInfo readerAce = new AceInfo("user", false, ArtifactoryPermisssion.READ.getMask());
+        AceInfo readerAce = new AceInfo("user", false, ArtifactoryPermission.READ.getMask());
         AceInfo deployerGroupAce =
-                new AceInfo("deployGroup", true, ArtifactoryPermisssion.DEPLOY.getMask());
+                new AceInfo("deployGroup", true, ArtifactoryPermission.DEPLOY.getMask());
         Set<AceInfo> aces = new HashSet<AceInfo>(
                 Arrays.asList(yoavAce, adminAce, readerAce, deployerGroupAce));
         mixedAcl = new Acl(new AclInfo(pti1, aces, "me"));
 
         // another acl
-        PermissionTargetInfo pti2 = new PermissionTargetInfo("target2", "testRepo2");
+        PermissionTargetInfo pti2 = new PermissionTargetInfo("target2", Arrays.asList("testRepo2"));
         AceInfo deployersTestRepo2 =
-                new AceInfo("deployersTestRepo2", true, ArtifactoryPermisssion.DEPLOY.getMask());
+                new AceInfo("deployersTestRepo2", true, ArtifactoryPermission.DEPLOY.getMask());
         AceInfo adminTestRepo2 =
-                new AceInfo("adminTestRepo2", true, ArtifactoryPermisssion.ADMIN.getMask());
+                new AceInfo("adminTestRepo2", true, ArtifactoryPermission.ADMIN.getMask());
         Set<AceInfo> testRepo2Aces = new HashSet<AceInfo>(
                 Arrays.asList(deployersTestRepo2, adminTestRepo2, readerAce));
         testRepo2Acl = new Acl(new AclInfo(pti2, testRepo2Aces, "admin"));
 
         // acl for any repository with read permissions to group
         PermissionTargetInfo anyTarget = new PermissionTargetInfo("anyRepoTarget",
-                PermissionTargetInfo.ANY_REPO);
+                Arrays.asList(PermissionTargetInfo.ANY_REPO));
         AceInfo readerGroupAce =
-                new AceInfo("anyRepoReadersGroup", true, ArtifactoryPermisssion.READ.getMask());
+                new AceInfo("anyRepoReadersGroup", true, ArtifactoryPermission.READ.getMask());
         Set<AceInfo> anyTargetAces = new HashSet<AceInfo>(Arrays.asList(readerGroupAce, yoavAce));
         anyTargetAcl = new Acl(new AclInfo(anyTarget, anyTargetAces, "me"));
 

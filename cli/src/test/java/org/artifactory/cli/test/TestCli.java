@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.cli.test;
 
 
@@ -21,14 +22,10 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.cli.main.ArtifactoryCli;
+import org.artifactory.cli.main.ArtAdmin;
 import org.artifactory.cli.main.CliOption;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.version.ArtifactoryVersion;
-import org.artifactory.version.ConverterUtils;
-import org.jdom.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.artifactory.log.LoggerFactory;
 import org.testng.Assert;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.BeforeClass;
@@ -48,10 +45,8 @@ import java.util.Random;
  */
 @Test(sequential = true)
 public class TestCli {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(TestCli.class);
-
     public static final String API_ROOT = "http://localhost:8080/artifactory/api/";
+
     private List<MdToFind> mdExported;
 
     static class MdToFind {
@@ -64,13 +59,13 @@ public class TestCli {
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         //lc.getLogger(ConfigXmlConversionTest.class).setLevel(Level.DEBUG);
         lc.getLogger("org.artifactory.update").setLevel(Level.DEBUG);
-        ArtifactoryCli.DO_SYSTEM_EXIT = false;
+        ArtAdmin.DO_SYSTEM_EXIT = false;
     }
 
     @Test
     public void testInfo() throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "info",
                 "--url", API_ROOT,
                 "--username", "admin",
@@ -87,7 +82,7 @@ public class TestCli {
 
     private void importFromTemp(File importFrom) throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "import", importFrom.getAbsolutePath(),
                 "--server", "localhost:8080",
                 "--syncImport",
@@ -108,7 +103,7 @@ public class TestCli {
         File exportTo = new File(System.getProperty("java.io.tmpdir"), "test/" + random.nextInt());
         FileUtils.deleteDirectory(exportTo);
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "export", exportTo.getAbsolutePath(),
                 "--server", "localhost:8080",
                 "--username", "admin",
@@ -179,9 +174,8 @@ public class TestCli {
     @Test(enabled = false)
     public void testJfrogImport() throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "import", "cli/src/test/backups/current",
-                "--symlinks",
                 "--server", "localhost:8080",
                 "--username", "admin",
                 "--password", "password",
@@ -192,69 +186,16 @@ public class TestCli {
     @Test
     public void testSimpleSecurityImport() throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "help", "security"
         });
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "security",
                 "--update", "cli/src/test/resources/cli/simple_security.xml",
                 "--server", "localhost:8080",
                 "--username", "admin",
                 "--password", "password"
-        });
-    }
-
-    @Test
-    public void testDumpAndImport130Beta3() throws Exception {
-        cleanOptions();
-        ArtifactoryCli.main(new String[]{
-                "help", "dump",
-        });
-        dumpAndImport(ArtifactoryVersion.v130beta3, 7, 3, 3);
-    }
-
-    @Test
-    public void testDumpAndImport130Beta4() throws Exception {
-        dumpAndImport(ArtifactoryVersion.v130beta4, 2, 0, 1);
-    }
-
-    @Test
-    public void testDumpAndImport130Beta5() throws Exception {
-        dumpAndImport(ArtifactoryVersion.v130beta5, 2, 0, 1);
-    }
-
-    @Test
-    public void testDumpAndImport130Beta61() throws Exception {
-        dumpAndImport(ArtifactoryVersion.v130beta61, 6, 0, 7);
-    }
-
-    private void dumpAndImport(ArtifactoryVersion version, int nbUsers, int nbGroups, int nbAcls) throws IOException {
-        log.debug("Dumping database of version {}", version);
-        cleanOptions();
-        File exportTmpDir = new File(System.getProperty("java.io.tmpdir"), "testArtifactoryDump/" + version.name());
-        FileUtils.deleteDirectory(exportTmpDir);
-        ArtifactoryCli.main(new String[]{
-                "dump", "../test/dbs/" + version.name(),
-                "--dest", exportTmpDir.getAbsolutePath(),
-                "--caches",
-                "--version", version.getValue()
-        });
-        File secXmlFile = new File(exportTmpDir, "security.xml");
-        assertTrue(secXmlFile.exists());
-        Document doc = ConverterUtils.parse(FileUtils.readFileToString(secXmlFile));
-        Assert.assertEquals(doc.getRootElement().getChild("users").getChildren("user").size(), nbUsers);
-        Assert.assertEquals(doc.getRootElement().getChild("groups").getChildren("group").size(), nbGroups);
-        Assert.assertEquals(doc.getRootElement().getChild("acls").getChildren("acl").size(), nbAcls);
-        cleanOptions();
-
-        ArtifactoryCli.main(new String[]{
-                "import", exportTmpDir.getAbsolutePath(),
-                "--syncImport",
-                "--server", "localhost:8080",
-                "--username", "admin",
-                "--password", "password",
-                "--timeout", "3600"
         });
     }
 

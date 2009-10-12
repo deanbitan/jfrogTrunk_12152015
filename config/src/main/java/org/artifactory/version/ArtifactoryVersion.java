@@ -1,24 +1,24 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.version;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: freds Date: May 29, 2008 Time: 10:15:59 AM
@@ -53,7 +53,9 @@ public enum ArtifactoryVersion {
     v204("2.0.4", 4781),
     v205("2.0.5", 4903),
     v206("2.0.6", 5625),
-    v207("2.0.7", Integer.MAX_VALUE);
+    v207("2.0.7", 7453),
+    v208("2.0.8", 7829),
+    v210("2.1.0", Integer.MAX_VALUE);
 
     public static ArtifactoryVersion getCurrent() {
         ArtifactoryVersion[] versions = ArtifactoryVersion.values();
@@ -62,11 +64,27 @@ public enum ArtifactoryVersion {
 
     private final String value;
     private final int revision;
-    private final List<URL> resources = new ArrayList<URL>();
+    private final Map<String, SubConfigElementVersion> subConfigElementVersionsByClass =
+            new HashMap<String, SubConfigElementVersion>();
 
     ArtifactoryVersion(String value, int revision) {
         this.value = value;
         this.revision = revision;
+    }
+
+    public static <T extends SubConfigElementVersion> void addSubConfigElementVersion(T scev,
+            VersionComparator versionComparator) {
+        ArtifactoryVersion[] versions = values();
+        for (ArtifactoryVersion version : versions) {
+            if (versionComparator.supports(version)) {
+                version.subConfigElementVersionsByClass.put(scev.getClass().getName(), scev);
+            }
+        }
+    }
+
+    @SuppressWarnings({"unchecked"})
+    public <T extends SubConfigElementVersion> T getSubConfigElementVersion(Class<T> subConfigElementVersion) {
+        return (T) subConfigElementVersionsByClass.get(subConfigElementVersion.getName());
     }
 
     public String getValue() {
@@ -75,29 +93,6 @@ public enum ArtifactoryVersion {
 
     public int getRevision() {
         return revision;
-    }
-
-    public URL findResource(String resourceName) {
-        // Look into my resources
-        for (URL url : resources) {
-            if (url.toString().endsWith(resourceName)) {
-                return url;
-            }
-        }
-        // Try to load it from classpath with my version
-        URL result = getClass().getResource("/" + name() + "/" + resourceName);
-        if (result != null) {
-            resources.add(result);
-            return result;
-        }
-
-        // If last version, no luck
-        if (ordinal() == 0) {
-            return null;
-        }
-        // Look in previous versions
-        ArtifactoryVersion[] versions = ArtifactoryVersion.values();
-        return versions[ordinal() - 1].findResource(resourceName);
     }
 
     public boolean isCurrent() {
@@ -110,6 +105,14 @@ public enum ArtifactoryVersion {
      */
     public boolean before(ArtifactoryVersion otherVersion) {
         return this.compareTo(otherVersion) < 0;
+    }
+
+    /**
+     * @param otherVersion The other ArtifactoryVersion
+     * @return returns true if this version is after the other version
+     */
+    public boolean after(ArtifactoryVersion otherVersion) {
+        return this.compareTo(otherVersion) > 0;
     }
 
     /**

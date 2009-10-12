@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.api.security;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
@@ -21,50 +22,52 @@ import org.artifactory.api.common.Info;
 import org.artifactory.util.PathUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @XStreamAlias("target")
 public class PermissionTargetInfo implements Info {
     public static final String ANY_PERMISSION_TARGET_NAME = "Anything";
-    public static final String ANY_REPO = "ANY";
+    public static final String ANY_REMOTE_PERMISSION_TARGET_NAME = "Any Remote";
     public static final String ANY_PATH = "**";
+    public static final String ANY_REPO = "ANY";
+    public static final String ANY_LOCAL_REPO = "ANY LOCAL";
+    public static final String ANY_REMOTE_REPO = "ANY REMOTE";
 
     private static final String DELIMITER = ",";
 
     private String name;
-    private String repoKey;
+    private List<String> repoKeys = new ArrayList<String>();
     private List<String> includes = new ArrayList<String>();
     private List<String> excludes = new ArrayList<String>();
 
     public PermissionTargetInfo() {
-        this("", ANY_REPO);
+        this("", Arrays.asList(ANY_REPO));
     }
 
-    public PermissionTargetInfo(String name, String repoKey) {
+    public PermissionTargetInfo(String name, List<String> repoKeys) {
         this.name = name;
-        this.repoKey = repoKey;
+        this.repoKeys = new ArrayList<String>(repoKeys);
         this.includes.add(ANY_PATH);
     }
 
-    public PermissionTargetInfo(String name, String repoKey,
-            List<String> includes,
-            List<String> excludes) {
+    public PermissionTargetInfo(String name, List<String> repoKeys, List<String> includes, List<String> excludes) {
         this.name = name;
-        this.repoKey = repoKey;
+        this.repoKeys = repoKeys;
         this.includes = includes;
         this.excludes = excludes;
     }
 
     public PermissionTargetInfo(PermissionTargetInfo copy) {
-        this(
-                copy.name, copy.repoKey,
+        this(copy.name,
+                new ArrayList<String>(copy.repoKeys),
                 new ArrayList<String>(copy.includes),
                 new ArrayList<String>(copy.excludes)
         );
     }
 
-    public PermissionTargetInfo(String name, String repoKey, String includes, String excludes) {
-        this(name, repoKey);
+    public PermissionTargetInfo(String name, List<String> repoKeys, String includes, String excludes) {
+        this(name, repoKeys);
         setIncludesPattern(includes);
         setExcludesPattern(excludes);
     }
@@ -77,12 +80,12 @@ public class PermissionTargetInfo implements Info {
         this.name = name;
     }
 
-    public String getRepoKey() {
-        return repoKey;
+    public List<String> getRepoKeys() {
+        return repoKeys;
     }
 
-    public void setRepoKey(String repoKey) {
-        this.repoKey = repoKey;
+    public void setRepoKeys(List<String> repoKeys) {
+        this.repoKeys = repoKeys;
     }
 
     public List<String> getIncludes() {

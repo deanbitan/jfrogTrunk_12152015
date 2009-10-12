@@ -1,13 +1,33 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.update.md.v130beta3;
 
 import com.thoughtworks.xstream.XStream;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.fs.ChecksumInfo;
 import org.artifactory.api.fs.FileInfo;
+import org.artifactory.api.fs.FileInfoImpl;
 import org.artifactory.api.fs.FolderInfo;
+import org.artifactory.api.fs.FolderInfoImpl;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.stat.StatsInfo;
+import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.update.md.MetadataReaderBaseTest;
 import org.testng.Assert;
 import static org.testng.Assert.*;
@@ -30,8 +50,7 @@ public class MetadataReader130beta3Test extends MetadataReaderBaseTest {
 
     @BeforeClass
     public void setup() {
-        xstream = new XStream();
-        xstream.processAnnotations(new Class[]{FileInfo.class, StatsInfo.class, FolderInfo.class});
+        xstream = XStreamFactory.create(FileInfoImpl.class, StatsInfo.class, FolderInfoImpl.class);
     }
 
     public void readFolderMetadata() {

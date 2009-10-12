@@ -1,23 +1,26 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr;
 
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
+import org.slf4j.Logger;
 
 import java.io.File;
 
@@ -27,9 +30,13 @@ import java.io.File;
  */
 public class JcrPath {
 
+    private static final Logger log = LoggerFactory.getLogger(JcrPath.class);
+
+
     protected static final String REPOS_FOLDER = "repositories";
     protected static final String CONFIGURATION_FOLDER = "configuration";
     protected static final String TRASH_FOLDER = "trash";
+    protected static final String LOGS_FOLDER = "logs";
 
     /**
      * Strange stuff of a child class overidable singleton
@@ -51,7 +58,7 @@ public class JcrPath {
         return "/" + REPOS_FOLDER;
     }
 
-    public String getOcmJcrRootPath() {
+    public String getConfigJcrRootPath() {
         return "/" + CONFIGURATION_FOLDER;
     }
 
@@ -59,12 +66,20 @@ public class JcrPath {
         return "/" + TRASH_FOLDER;
     }
 
-    public String getRepoJcrPath(String repoKey) {
-        return "/" + REPOS_FOLDER + "/" + repoKey;
+    public String getLogsJcrRootPath() {
+        return "/" + LOGS_FOLDER;
     }
 
-    public String getOcmClassJcrPath(String classKey) {
-        return "/" + CONFIGURATION_FOLDER + "/" + classKey;
+    public String getLogJcrPath(String logKey) {
+        return new StringBuilder("/").append(LOGS_FOLDER).append("/").append(logKey).toString();
+    }
+
+    public String getRepoJcrPath(String repoKey) {
+        return new StringBuilder("/").append(REPOS_FOLDER).append("/").append(repoKey).toString();
+    }
+
+    public String getConfigJcrPath(String configKey) {
+        return new StringBuilder("/").append(CONFIGURATION_FOLDER).append("/").append(configKey).toString();
     }
 
     /**
@@ -90,8 +105,16 @@ public class JcrPath {
         String modifiedAbsPath = absPath.replace('\\', '/');
         String repoJcrRootPath = getRepoJcrRootPath();
         String repoKey = repoKeyFromPath(modifiedAbsPath);
-        String relPath = PathUtils.formatRelativePath(
-                modifiedAbsPath.substring(repoJcrRootPath.length() + repoKey.length() + 1));
+        if (repoKey == null) {
+            //File moved to trash or repo deleted externally
+            return null;
+        }
+        String relPath = "";
+        int repoRootPathLength = repoJcrRootPath.length() + repoKey.length() + 1;
+        if (modifiedAbsPath.length() > repoRootPathLength) {
+            relPath = PathUtils.formatRelativePath(
+                    modifiedAbsPath.substring(repoRootPathLength));
+        }
         RepoPath repoPath = new RepoPath(repoKey, relPath);
         return repoPath;
     }
@@ -100,7 +123,8 @@ public class JcrPath {
         String repoJcrRootPath = JcrPath.get().getRepoJcrRootPath();
         int idx = absPath.indexOf(repoJcrRootPath);
         if (idx == -1) {
-            throw new IllegalArgumentException("Path '" + absPath + "' is not a repository path.");
+            log.warn("Path '{}' is not a repository path.", absPath);
+            return null;
         }
         int repoKeyEnd = absPath.indexOf("/", repoJcrRootPath.length() + 1);
         int repoKeyBegin = repoJcrRootPath.length() + 1;

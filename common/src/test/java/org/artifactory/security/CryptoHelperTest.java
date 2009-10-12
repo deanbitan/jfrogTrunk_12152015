@@ -1,9 +1,26 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.security;
 
+import org.artifactory.log.LoggerFactory;
 import static org.artifactory.security.CryptoHelper.ASYM_ALGORITHM;
 import static org.artifactory.security.CryptoHelper.SYM_ALGORITHM;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
@@ -26,7 +43,7 @@ import java.util.Set;
  */
 @Test
 public class CryptoHelperTest {
-    private final static Logger log = LoggerFactory.getLogger(CryptoHelperTest.class);
+    private static final Logger log = LoggerFactory.getLogger(CryptoHelperTest.class);
 
     public void generateKeyPair() throws Exception {
         long start = System.nanoTime();
@@ -75,6 +92,12 @@ public class CryptoHelperTest {
         assertEquals(decrypted, toEncrypt);
     }
 
+    public void escapeEncryptedPassword() {
+        assertEquals(CryptoHelper.escapeEncryptedPassword("{DESede}123"), "\\{DESede\\}123");
+        assertEquals(CryptoHelper.escapeEncryptedPassword("\\{DESede\\}123"), "\\{DESede\\}123");
+        assertEquals(CryptoHelper.escapeEncryptedPassword("123"), "123");
+    }
+
     public void toBase64String() {
         KeyPair keyPair = CryptoHelper.generateKeyPair();
         String base64EncodedPrivate = CryptoHelper.toBase64(keyPair.getPrivate());
@@ -109,6 +132,9 @@ public class CryptoHelperTest {
         assertFalse(CryptoHelper.isEncrypted("{RSA}blabla"));
         assertFalse(CryptoHelper.isEncrypted("{ENC}blabla"));
         assertTrue(CryptoHelper.isEncrypted("{DESede}blabla"));
+        assertTrue(CryptoHelper.isEncrypted("\\{DESede\\}blabla"), "Escaped maven encryption prefix");
+        assertFalse(CryptoHelper.isEncrypted("\\{DESede}blabla"));
+        assertFalse(CryptoHelper.isEncrypted("{DESede\\}blabla"));
     }
 
     public void encrypt() {

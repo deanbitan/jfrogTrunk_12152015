@@ -1,9 +1,28 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.api.security;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
+
+import java.util.Arrays;
 
 /**
  * PermissionTargetInfo unit tests.
@@ -17,7 +36,7 @@ public class PermissionTargetInfoTest {
         PermissionTargetInfo pmi = new PermissionTargetInfo();
 
         assertEquals(pmi.getName(), "");
-        assertEquals(pmi.getRepoKey(), PermissionTargetInfo.ANY_REPO);
+        assertEquals(pmi.getRepoKeys(), Arrays.asList(PermissionTargetInfo.ANY_REPO));
         assertEquals(pmi.getIncludesPattern(), PermissionTargetInfo.ANY_PATH);
         assertEquals(pmi.getIncludes().size(), 1);
         assertEquals(pmi.getExcludesPattern(), "");
@@ -25,10 +44,10 @@ public class PermissionTargetInfoTest {
     }
 
     public void createWithNoIncluesExcludesPatterns() {
-        PermissionTargetInfo pmi = new PermissionTargetInfo("permissionName", "aRepo");
+        PermissionTargetInfo pmi = new PermissionTargetInfo("permissionName", Arrays.asList("aRepo"));
 
         assertEquals(pmi.getName(), "permissionName");
-        assertEquals(pmi.getRepoKey(), "aRepo");
+        assertEquals(pmi.getRepoKeys(), Arrays.asList("aRepo"));
         assertEquals(pmi.getIncludesPattern(), PermissionTargetInfo.ANY_PATH);
         assertEquals(pmi.getIncludes().size(), 1);
         assertEquals(pmi.getExcludesPattern(), "");
@@ -39,10 +58,10 @@ public class PermissionTargetInfoTest {
         String includes = "**/*-sources.*,**/*-SNAPSHOT/**";
         String excludes = "**/secretjars/**";
         PermissionTargetInfo pmi = new PermissionTargetInfo(
-                "permissionName", "aRepo", includes, excludes);
+                "permissionName", Arrays.asList("repoKey1", "repoKey2"), includes, excludes);
 
         assertEquals(pmi.getName(), "permissionName");
-        assertEquals(pmi.getRepoKey(), "aRepo");
+        assertEquals(pmi.getRepoKeys(), Arrays.asList("repoKey1", "repoKey2"));
         assertEquals(pmi.getIncludesPattern(), includes);
         assertEquals(pmi.getIncludes().size(), 2);
         assertEquals(pmi.getExcludesPattern(), excludes);
@@ -51,12 +70,12 @@ public class PermissionTargetInfoTest {
 
     public void copyConstructor() {
         PermissionTargetInfo orig = new PermissionTargetInfo(
-                "permissionName", "aRepo", "**/*-sources.*,**/*-SNAPSHOT/**",
+                "permissionName", Arrays.asList("repoKey1", "repoKey2"), "**/*-sources.*,**/*-SNAPSHOT/**",
                 "**/secretjars/**");
 
         PermissionTargetInfo copy = new PermissionTargetInfo(orig);
         assertEquals(copy.getName(), orig.getName());
-        assertEquals(copy.getRepoKey(), orig.getRepoKey());
+        assertEquals(copy.getRepoKeys(), orig.getRepoKeys());
         assertEquals(copy.getExcludes(), orig.getExcludes());
         assertEquals(copy.getExcludesPattern(), orig.getExcludesPattern());
         assertEquals(copy.getIncludes(), orig.getIncludes());
@@ -65,7 +84,7 @@ public class PermissionTargetInfoTest {
 
     public void copyConstructorReflectionEquality() {
         PermissionTargetInfo orig = new PermissionTargetInfo(
-                "permissionName", "aRepo", "**/*-sources.*,**/*-SNAPSHOT/**",
+                "permissionName", Arrays.asList("repoKey1", "repoKey2"), "**/*-sources.*,**/*-SNAPSHOT/**",
                 "**/secretjars/**");
         PermissionTargetInfo copy = new PermissionTargetInfo(orig);
 

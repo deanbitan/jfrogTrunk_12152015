@@ -1,10 +1,27 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.version.converter;
 
+import org.artifactory.log.LoggerFactory;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -19,16 +36,15 @@ import java.util.List;
  * to
  * &lt;snapshotVersionBehavior&gt;non-unique&lt;/snapshotVersionBehavior&gt;
  * </pre>
- * Rename the element "useSnapshotUniqueVersions" to "snapshotVersionBehavior" and change
- * the values "true" to "deployer" and "false" to "non-unique".
- *
- * The element might appear under the localRepo element.
- * Was valid only in version 1.0.0 of the schema.
+ * Rename the element "useSnapshotUniqueVersions" to "snapshotVersionBehavior" and change the values "true" to
+ * "deployer" and "false" to "non-unique".
+ * <p/>
+ * The element might appear under the localRepo element. Was valid only in version 1.0.0 of the schema.
  *
  * @author Yossi Shaul
  */
 public class SnapshotUniqueVersionConverter implements XmlConverter {
-    private final static Logger log = LoggerFactory.getLogger(SnapshotUniqueVersionConverter.class);
+    private static final Logger log = LoggerFactory.getLogger(SnapshotUniqueVersionConverter.class);
 
     public void convert(Document doc) {
         Element root = doc.getRootElement();

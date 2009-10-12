@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr.md;
 
 import org.artifactory.api.common.Info;
@@ -26,16 +27,16 @@ import java.lang.reflect.Constructor;
  */
 public class MetadataDefinition implements Info {
     /**
-     * The key of this definition
+     * The key of this definition.
      */
     private final String metadataName;
     /**
-     * A Java class that can be marshall/unmarshall with XStream to this metadata XML stream
+     * A Java class that can be marshall/unmarshall with XStream to this metadata XML stream.
      */
     private final Class xstreamClass;
     /**
      * If true the XML stream will be saved under the JCR metadata folder container. If false, this metadata is
-     * transient in memory
+     * transient in memory.
      */
     private final boolean persistent;
     /**
@@ -44,8 +45,8 @@ public class MetadataDefinition implements Info {
      */
     private final Constructor copyConstructor;
     /**
-     * If false, it means this metadata is transparently (store/load) managed without special business logic.
-     * The basic folder and file info are set to true here.
+     * If false, it means this metadata is transparently (store/load) managed without special business logic. The basic
+     * folder and file info are set to true here.
      */
     private final boolean internal;
 
@@ -55,7 +56,7 @@ public class MetadataDefinition implements Info {
 
     public MetadataDefinition(String metadataName, Class xstreamClass, boolean persistent, boolean internal) {
         if (metadataName == null) {
-            throw new IllegalArgumentException("Metadata definition name cannot be null");
+            throw new IllegalArgumentException("Metadata definition name cannot be null.");
         }
         this.xstreamClass = xstreamClass;
         this.metadataName = metadataName;
@@ -69,7 +70,7 @@ public class MetadataDefinition implements Info {
             }
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Cannot create a Metadata definition for " + metadataName +
-                    " since the class " + xstreamClass + " does not have a copy constructor", e);
+                    " since the class " + xstreamClass + " does not have a copy constructor.", e);
         }
     }
 

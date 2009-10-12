@@ -1,103 +1,64 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.jcr.trash;
 
 import org.artifactory.jcr.JcrPath;
-import org.artifactory.jcr.JcrSession;
-import org.artifactory.jcr.fs.JcrFile;
-import org.artifactory.jcr.fs.JcrFolder;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.LoggingUtils;
-import org.artifactory.util.PathUtils;
+import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
-import java.util.List;
 
 /**
- * Low-level jcr trash emptor
+ * Low-level jcr trash disposer
  *
  * @author yoavl
  */
+//TODO: [by yl] Turn into a simple async call
 public class EmptyTrashJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(EmptyTrashJob.class);
 
-    public static final String FOLDER_NAMES = "folderNames";
+    public static final String SESSION_FOLDER = "sessionFolder";
 
     @Override
     protected void onExecute(JobExecutionContext jobContext) throws JobExecutionException {
-        String folderNamesString = jobContext.getJobDetail().getJobDataMap().getString(FOLDER_NAMES);
+        JobDataMap jobMap = jobContext.getJobDetail().getJobDataMap();
+        String sessionFolderName = jobMap.getString(SESSION_FOLDER);
+        if (sessionFolderName == null) {
+            log.debug("Cannot empty the trash if no trash folder provided!");
+            return;
+        }
+
+        String sessionFolderPath = JcrPath.get().getTrashJcrRootPath() + "/" + sessionFolderName;
         InternalArtifactoryContext context = InternalContextHelper.get();
-        JcrSession session = context.getJcrService().getUnmanagedSession();
+
         try {
-            String trashRootPath = JcrPath.get().getTrashJcrRootPath();
-            Node trashNode = (Node) session.getItem(trashRootPath);
-            List<String> folderNames = PathUtils.delimitedListToStringList(folderNamesString, ",");
-            //If there are no folders, just scan all the nodes directly under the jcr trash node
-            if (folderNames.size() == 0) {
-                NodeIterator folderNodes = trashNode.getNodes();
-                while (folderNodes.hasNext()) {
-                    Node trashFolder = (Node) folderNodes.next();
-                    folderNames.add(trashFolder.getName());
-                }
-            }
-            for (String folderName : folderNames) {
-                Node folderNode = null;
-                try {
-                    folderNode = trashNode.getNode(folderName);
-                    int deleted = delete(folderNode);
-                    if (deleted > 0) {
-                        log.debug("Emptied " + deleted + " nodes from trash folder " + folderName + ".");
-                    }
-                } catch (RepositoryException e) {
-                    //Fail gracefully
-                    LoggingUtils.warnOrDebug(log, "Could not empty trash folder " + folderName + ".", e);
-                    if (folderNode != null) {
-                        log.warn("Attempting force removal of trash folder " + folderName + ".");
-                        try {
-                            folderNode.remove();
-                            log.warn("Force removal of trash folder " + folderName + " succeeded.");
-                        } catch (RepositoryException e1) {
-                            LoggingUtils.warnOrDebug(
-                                    log, "Cannot complete force removal of trash folder " + folderName + ".", e);
-                            //Continue with the other trash folders
-                        }
-                    }
-                    //Continue with the other trash folders
-                }
+            int deletedItems = context.getJcrService().delete(sessionFolderPath);
+            if (deletedItems > 0) {
+                log.debug("Emptied " + deletedItems + " nodes from trash folder " + sessionFolderName + ".");
             }
         } catch (Exception e) {
             //Fail gracefully
-            LoggingUtils.warnOrDebug(log, "Could not empty the trash folder.", e);
-        } finally {
-            session.logout();
+            LoggingUtils.warnOrDebug(log, "Could not empty trash folder " + sessionFolderName + ".", e);
         }
-    }
-
-    public int delete(Node node) throws RepositoryException {
-        int count = 0;
-        NodeIterator nodes = node.getNodes();
-        while (nodes.hasNext()) {
-            Node child = (Node) nodes.next();
-            count += delete(child);
-        }
-        //Only delete files and folders
-        String nodeType = node.getPrimaryNodeType().getName();
-        if (JcrFile.NT_ARTIFACTORY_FILE.equals(nodeType) || JcrFolder.NT_ARTIFACTORY_FOLDER.equals(nodeType) ||
-                "nt:unstructured".equals(nodeType)) {
-            //Remove myself
-            node.remove();
-            count++;
-        }
-        //Flush - actually stores the changes and preserves in-session memory
-        node.getSession().save();
-        //Be nice with the rest of the world
-        Thread.yield();
-        return count;
     }
 }

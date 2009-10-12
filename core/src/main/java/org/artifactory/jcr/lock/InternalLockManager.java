@@ -1,32 +1,34 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr.lock;
 
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.concurrent.LockingException;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Per thread lock manager - bound to the locking advice
+ *
  * @author freds
  * @date Nov 17, 2008
  */
@@ -39,41 +41,136 @@ public class InternalLockManager {
         locks = new HashMap<RepoPath, SessionLockEntry>();
     }
 
-    public boolean isDebugEnabled() {
+    public void unlockAllReadLocks(String repoKey) {
+        for (Map.Entry<RepoPath, SessionLockEntry> entry : getLocks().entrySet()) {
+            if (entry.getKey().getRepoKey().equals(repoKey)) {
+                entry.getValue().releaseReadLock();
+            }
+        }
+    }
+
+    /**
+     * This is called from outside the Tx scope
+     */
+    public void releaseResources() {
+        releaseAllLocks();
+    }
+
+    public boolean hasPendingResources() {
+        if (!hasLocks()) {
+            return false;
+        }
+        for (SessionLockEntry lockEntry : getLocks().values()) {
+            if (lockEntry.isLockedByMe() && lockEntry.isUnsaved()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean isDebugEnabled() {
         return log.isDebugEnabled();
     }
 
-    public void debug(String message) {
+    void debug(String message) {
         log.debug(message);
     }
 
-    public void debug(String message, Throwable t) {
+    void debug(String message, Throwable t) {
         log.debug(message, t);
     }
 
-    public void readLock(LockEntry lockEntry) {
+    void readLock(FsItemLockEntry lockEntry) {
+        // TODO: Check that the lock entry has only immutable and no locked fsItem
         SessionLockEntry sessionLockEntry = getOrCreateSessionLockEntry(lockEntry);
         sessionLockEntry.acquireReadLock();
     }
 
-    public void writeLock(LockEntry lockEntry) {
+    void writeLock(FsItemLockEntry lockEntry, boolean upgradeLockIfNecessary) {
+        // TODO: Check that the lock entry has a locked fsItem
         SessionLockEntry sessionLockEntry = getOrCreateSessionLockEntry(lockEntry);
-        sessionLockEntry.acquireWriteLock();
+        sessionLockEntry.acquireWriteLock(upgradeLockIfNecessary);
+    }
+
+    /**
+     * Release the read lock for this repo path if locked
+     *
+     * @param repoPath the repo path key
+     * @return true if read lock was actually released, false otherwise
+     */
+    boolean releaseReadLock(RepoPath repoPath) {
+        SessionLockEntry sessionLockEntry = getSessionLockEntry(repoPath);
+        return sessionLockEntry != null && sessionLockEntry.releaseReadLock();
+    }
+
+    //Update the fs item cache of the repo for the locked entries
+    void updateCaches() {
+        if (!hasLocks()) {
+            return;
+        }
+        Collection<SessionLockEntry> lockEntries = getLocks().values();
+        for (SessionLockEntry lockEntry : lockEntries) {
+            lockEntry.updateCache();
+        }
+    }
+
+    boolean removeEntry(RepoPath repoPath) {
+        if (getLocks() == null) {
+            log.warn("Removing lock entry " + repoPath + " but no locks present!");
+            return false;
+        }
+        SessionLockEntry lockEntry = getLocks().remove(repoPath);
+        if (lockEntry == null) {
+            log.debug("Removing lock entry " + repoPath + " but not locked by me!");
+            return false;
+        }
+        lockEntry.unlock();
+        return true;
+    }
+
+    boolean hasLocks() {
+        return getLocks() != null && !getLocks().isEmpty();
+    }
+
+    void save() {
+        if (hasLocks()) {
+            for (SessionLockEntry lockEntry : getLocks().values()) {
+                if (lockEntry.isLockedByMe()) {
+                    //Only save if we acquire the entry's write lock
+                    lockEntry.save();
+                }
+            }
+        }
+    }
+
+    JcrFsItem getIfLockedByMe(RepoPath repoPath) {
+        SessionLockEntry lockEntry = getSessionLockEntry(repoPath);
+        if (lockEntry != null && lockEntry.isLockedByMe()) {
+            JcrFsItem fsItem = lockEntry.getLockedFsItem();
+            if (fsItem == null) {
+                throw new IllegalStateException(
+                        "Session conatins a lock entry which is write locked but has no mutable fsitem! For " +
+                                repoPath);
+            }
+            return fsItem;
+        }
+        return null;
     }
 
     private Map<RepoPath, SessionLockEntry> getLocks() {
         return locks;
     }
 
-    private SessionLockEntry getOrCreateSessionLockEntry(LockEntry lockEntry) {
-        SessionLockEntry sessionLockEntry = getSessionLockEntry(lockEntry.getRepoPath());
+    private SessionLockEntry getOrCreateSessionLockEntry(FsItemLockEntry lockEntry) {
+        RepoPath repoPath = lockEntry.getRepoPath();
+        SessionLockEntry sessionLockEntry = getSessionLockEntry(repoPath);
         if (sessionLockEntry == null) {
             sessionLockEntry = new SessionLockEntry(lockEntry);
             log.trace("Creating new SLE for {}", lockEntry.getRepoPath());
-            getLocks().put(lockEntry.getRepoPath(), sessionLockEntry);
+            getLocks().put(repoPath, sessionLockEntry);
         } else {
             log.trace("Reusing existing SLE for {}", lockEntry.getRepoPath());
-            sessionLockEntry.setFsItem(lockEntry.getFsItem());
+            sessionLockEntry.setFsItem(lockEntry);
         }
         return sessionLockEntry;
     }
@@ -85,34 +182,9 @@ public class InternalLockManager {
         return getLocks().get(repoPath);
     }
 
-    public JcrFsItem getIfLockedByMe(RepoPath repoPath) {
-        SessionLockEntry lockEntry = getSessionLockEntry(repoPath);
-        if (lockEntry != null && lockEntry.isLockedByMe()) {
-            return lockEntry.getLockedFsItem();
-        }
-        return null;
-    }
-
-    /**
-     * This is called from outside the Tx scope
-     */
-    public void releaseResources() {
-        releaseAllLocks();
-    }
-
-    public void updateCache() {
-        if (!hasResources()) {
-            return;
-        }
-        Collection<SessionLockEntry> lockEntries = getLocks().values();
-        for (SessionLockEntry lockEntry : lockEntries) {
-            lockEntry.updateCache();
-        }
-    }
-
     private void releaseAllLocks() {
         try {
-            if (!hasResources()) {
+            if (!hasLocks()) {
                 return;
             }
             Collection<SessionLockEntry> lockEntries = getLocks().values();
@@ -121,76 +193,6 @@ public class InternalLockManager {
             }
         } finally {
             getLocks().clear();
-        }
-    }
-
-    public boolean removeEntry(RepoPath repoPath) {
-        if (getLocks() == null) {
-            log.warn("Removing lock entry " + repoPath + " but no locks present!");
-            return false;
-        }
-        SessionLockEntry lockEntry = getLocks().remove(repoPath);
-        if (lockEntry == null) {
-            log.warn("Removing lock entry " + repoPath + " but not locked by me!");
-            return false;
-        }
-        lockEntry.unlock();
-        return true;
-    }
-
-    public boolean hasResources() {
-        return getLocks() != null && !getLocks().isEmpty();
-    }
-
-    public boolean hasPendingChanges() {
-        if (!hasResources()) {
-            return false;
-        }
-        for (SessionLockEntry lockEntry : getLocks().values()) {
-            if (lockEntry.isLockedByMe()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void save() {
-        if (hasResources()) {
-            for (SessionLockEntry lockEntry : getLocks().values()) {
-                if (lockEntry.isLockedByMe()) {
-                    lockEntry.save();
-                }
-            }
-        }
-    }
-
-    /**
-     * Release the read lock for this repo path if locked
-     *
-     * @param repoPath the repo path key
-     * @return true if read lock was actually released, false otherwise
-     */
-    public boolean releaseReadLock(RepoPath repoPath) {
-        SessionLockEntry sessionLockEntry = getSessionLockEntry(repoPath);
-        return sessionLockEntry != null && sessionLockEntry.releaseReadLock();
-    }
-
-    public void reacquireReadLock(RepoPath repoPath) {
-        SessionLockEntry sessionLockEntry = getSessionLockEntry(repoPath);
-        if (sessionLockEntry != null) {
-            sessionLockEntry.acquireReadLock();
-        } else {
-            throw new LockingException(
-                    "Repo path " + repoPath + " does not have a session lock entry!\n" +
-                            "Cannot reacquire the read lock.");
-        }
-    }
-
-    public void unlockAllReadLocks(String repoKey) {
-        for (Map.Entry<RepoPath, SessionLockEntry> entry : getLocks().entrySet()) {
-            if (entry.getKey().getRepoKey().equals(repoKey)) {
-                entry.getValue().releaseReadLock();
-            }
         }
     }
 }

@@ -1,85 +1,29 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.api.fs;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.repo.RepoPath;
-
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
-@XStreamAlias(FolderInfo.ROOT)
-public class FolderInfo extends ItemInfo {
-    public static final String ROOT = "artifactory-folder";
+public interface FolderInfo extends ItemInfo {
+    String ROOT = "artifactory-folder";
 
-    private FolderAdditionaInfo additionalInfo;
+    void setAdditionalInfo(FolderAdditionalInfo additionalInfo);
 
-    public FolderInfo(RepoPath repoPath) {
-        super(repoPath);
-        additionalInfo = new FolderAdditionaInfo();
-    }
-
-    public FolderInfo(FolderInfo info) {
-        super(info);
-        additionalInfo = new FolderAdditionaInfo(info.additionalInfo);
-    }
-
-
-    /**
-     * Should not be called by clients - for internal use
-     *
-     * @return
-     */
-    public void setAdditionalInfo(FolderAdditionaInfo additionalInfo) {
-        this.additionalInfo = additionalInfo;
-    }
-
-    @Override
-    public boolean isFolder() {
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        return "FolderInfo{" + super.toString() + ", extension=" + additionalInfo + '}';
-    }
-
-    @Override
-    public boolean isIdentical(ItemInfo info) {
-        if (!(info instanceof FolderInfo)) {
-            return false;
-        }
-        FolderInfo folderInfo = (FolderInfo) info;
-        return this.additionalInfo.isIdentical(folderInfo.additionalInfo) &&
-                super.isIdentical(info);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return
-     */
-    @Override
-    @Deprecated
-    public FolderAdditionaInfo getInernalXmlInfo() {
-        return additionalInfo;
-    }
-
-    public String getCreatedBy() {
-        return additionalInfo.getCreatedBy();
-    }
-
-    public String getModifiedBy() {
-        return additionalInfo.getModifiedBy();
-    }
-
-    public long getLastUpdated() {
-        return additionalInfo.getLastUpdated();
-    }
-
-    public void setLastUpdated(long lastUpdated) {
-        additionalInfo.setLastUpdated(lastUpdated);
-    }
-
-    FolderAdditionaInfo getAdditionalInfo() {
-        return additionalInfo;
-    }
+    FolderAdditionalInfo getInternalXmlInfo();
 }

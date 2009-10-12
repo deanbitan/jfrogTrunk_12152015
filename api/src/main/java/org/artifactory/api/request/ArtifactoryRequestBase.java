@@ -1,33 +1,43 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.api.request;
 
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.SetMultimap;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
-    @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryRequestBase.class);
 
     private RepoPath repoPath;
+
+    /**
+     * A set of matrix parameters found on the request path in the form of:
+     * <p/>
+     * /pathseg1/pathseg2;param1=v1;param2=v2;param3=v3
+     */
+    private SetMultimap<String, String> matrixParams = LinkedHashMultimap.create();
 
     private long modificationTime = -1;
 
@@ -43,6 +53,14 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         return repoPath.getPath();
     }
 
+    public SetMultimap<String, String> getMatrixParams() {
+        return matrixParams;
+    }
+
+    public boolean hasMatrixParams() {
+        return matrixParams.size() > 0;
+    }
+
     public boolean isSnapshot() {
         return MavenNaming.isSnapshot(getPath());
     }
@@ -53,22 +71,6 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
 
     public boolean isChecksum() {
         return NamingUtils.isChecksum(getPath());
-    }
-
-    public String getResourcePath() {
-        String path = getPath();
-        String resourcePath;
-        /*if (isMetadata()) {
-            //For metadata get the resource containing the metadata (alwyas a version or an artifact folder
-            resourcePath = path.substring(0, path.lastIndexOf("/"));
-        } else*/
-        if (isChecksum()) {
-            //For checksums search the containing resource
-            resourcePath = path.substring(0, path.lastIndexOf("."));
-        } else {
-            resourcePath = path;
-        }
-        return resourcePath;
     }
 
     public String getName() {
@@ -124,5 +126,84 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
             return time / 1000 * 1000;
         }
         return time;
+    }
+
+    /**
+     * Calculates a repoPath based on the given servlet path (path after the context root, including the repo prefix).
+     */
+    @SuppressWarnings({"deprecation"})
+    protected RepoPath calculateRepoPath(String requestPath) {
+        String prefix = PathUtils.getPathFirstPart(requestPath);
+        //Support repository-level metadata requests
+        int startIdx;
+        if (NamingUtils.isMetadata(prefix)) {
+            prefix = NamingUtils.stripMetadataFromPath(prefix);
+            startIdx = prefix.length() + NamingUtils.METADATA_PREFIX.length();
+        } else {
+            startIdx = requestPath.startsWith("/") ? prefix.length() + 2 : prefix.length() + 1;
+        }
+
+        //REPO HANDLING
+
+        //Look for the deprecated legacy format of repo-key@repo
+        int idx = prefix.indexOf(ArtifactoryRequest.LEGACY_REPO_SEP);
+        String targetRepo = idx > 0 ? prefix.substring(0, idx) : prefix;
+        //Calcualte matrix params on the repo
+        targetRepo = calcMatrixParamsIfExist(targetRepo);
+        //Test if we need to substitue the targetRepo due to system prop existence
+        String substTargetRepo = ArtifactorySystemProperties.get().getSubstituteRepoKeys().get(targetRepo);
+        if (substTargetRepo != null) {
+            targetRepo = substTargetRepo;
+        }
+
+        //PATH HANDLING
+
+        //Strip any trailing '/'
+        int endIdx = (requestPath.endsWith("/") ? requestPath.length() - 1 : requestPath.length());
+        String path = startIdx < endIdx ? requestPath.substring(startIdx, endIdx) : "";
+        //Calcualte matrix params on the path
+        path = calcMatrixParamsIfExist(path);
+        RepoPath repoPath = new RepoPath(targetRepo, path);
+        return repoPath;
+    }
+
+    private String calcMatrixParamsIfExist(String fragment) {
+        int matrixParamStart = fragment.indexOf(MATRIX_PARAMS_SEP);
+        if (matrixParamStart > 0) {
+            calcMatrixParams(fragment.substring(matrixParamStart));
+            //Return the clean fragment
+            return fragment.substring(0, matrixParamStart);
+        } else {
+            return fragment;
+        }
+    }
+
+    private void calcMatrixParams(String matrixParams) {
+        int matrixParamStart = 0;
+        do {
+            int matrixParamEnd = matrixParams.indexOf(MATRIX_PARAMS_SEP, matrixParamStart + 1);
+            if (matrixParamEnd < 0) {
+                matrixParamEnd = matrixParams.length();
+            }
+            String param = matrixParams.substring(matrixParamStart + 1, matrixParamEnd);
+            int equals = param.indexOf('=');
+            if (equals > 0) {
+                String key = param.substring(0, equals);
+                String value = param.substring(equals + 1);
+                getMatrixParams().put(key, value);
+            } else if (equals == 0) {
+                //No key declared, ignore
+            } else if (param.length() > 0) {
+                getMatrixParams().put(param, "");
+            }
+            matrixParamStart = matrixParamEnd;
+        } while (matrixParamStart > 0 && matrixParamStart < matrixParams.length());
+    }
+
+    @Override
+    public String toString() {
+        return "source=" + getSourceDescription()
+                + ", path=" + getPath() + ", lastModified=" + getLastModified()
+                + ", ifModifiedSince=" + getIfModifiedSince();
     }
 }

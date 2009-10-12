@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.cache;
 
 import org.artifactory.api.cache.ArtifactoryCache;
@@ -21,11 +22,13 @@ import org.artifactory.api.cache.CacheType;
 import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.ReloadableBean;
+import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -51,7 +54,7 @@ public class CacheServiceImpl implements InternalCacheService {
      * ArtifactoryCache enum.
      */
     private final Map<String, Map<ArtifactoryCache, Map>> repoCaches =
-            new HashMap<String, Map<ArtifactoryCache, Map>>(8);
+            new HashMap<String, Map<ArtifactoryCache, Map>>(11);
 
     @PostConstruct
     private void register() {
@@ -59,7 +62,7 @@ public class CacheServiceImpl implements InternalCacheService {
     }
 
     public void init() {
-        log.info("Creating Artifactory caches");
+        log.debug("Creating Artifactory caches");
         log.debug("Creating global caches");
         for (ArtifactoryCache cacheDef : ArtifactoryCache.values()) {
             if (cacheDef.getCacheType() == CacheType.GLOBAL) {
@@ -70,19 +73,20 @@ public class CacheServiceImpl implements InternalCacheService {
             }
         }
         CentralConfigDescriptor descriptor = InternalContextHelper.get().getCentralConfig().getDescriptor();
+        //Local
         Set<String> localRepoKeys = descriptor.getLocalRepositoriesMap().keySet();
         for (String repoKey : localRepoKeys) {
             log.debug("Creating local repo caches for {}", repoKey);
-            Map<ArtifactoryCache, Map> localCaches = createRealRepoCaches();
+            Map<ArtifactoryCache, Map> localCaches = newStoringRepoCaches();
             repoCaches.put(repoKey, localCaches);
         }
-        Collection<RemoteRepoDescriptor> remoteRepoKeys =
-                descriptor.getRemoteRepositoriesMap().values();
+        //Remote
+        Collection<RemoteRepoDescriptor> remoteRepoKeys = descriptor.getRemoteRepositoriesMap().values();
         for (RemoteRepoDescriptor repo : remoteRepoKeys) {
-            // First the local cache repo has the same caches than a real repo
+            // First the local cache repo has the same caches as a storing (local) repo
             String repoKey = repo.getKey() + LocalCacheRepo.PATH_SUFFIX;
             log.debug("Creating local repo caches for {}", repoKey);
-            Map<ArtifactoryCache, Map> localCaches = createRealRepoCaches();
+            Map<ArtifactoryCache, Map> localCaches = newStoringRepoCaches();
             repoCaches.put(repoKey, localCaches);
 
             repoKey = repo.getKey();
@@ -90,13 +94,21 @@ public class CacheServiceImpl implements InternalCacheService {
             Map<ArtifactoryCache, Map> remoteCaches = new HashMap<ArtifactoryCache, Map>();
             for (ArtifactoryCache cacheDef : ArtifactoryCache.values()) {
                 if (cacheDef.getCacheType() == CacheType.REMOTE_REPO) {
-                    BaseCache cache = new BaseCache(cacheDef, cacheDef.getIdleTime(repo),
-                            cacheDef.getMaxSize());
+                    BaseCache cache = new BaseCache(cacheDef, cacheDef.getIdleTime(repo), cacheDef.getMaxSize());
                     remoteCaches.put(cacheDef, cache);
                 }
             }
             repoCaches.put(repoKey, remoteCaches);
         }
+        //Virtual
+        Set<String> virtualRepoKeys = descriptor.getVirtualRepositoriesMap().keySet();
+        for (String repoKey : virtualRepoKeys) {
+            log.debug("Creating virtual repo caches for {}", repoKey);
+            Map<ArtifactoryCache, Map> virtualCaches = newStoringRepoCaches();
+            repoCaches.put(repoKey, virtualCaches);
+        }
+        //Add the global repo cache
+        repoCaches.put(VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY, newStoringRepoCaches());
     }
 
     @SuppressWarnings({"unchecked"})
@@ -120,6 +132,9 @@ public class CacheServiceImpl implements InternalCacheService {
         }
     }
 
+    public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
+    }
+
     @SuppressWarnings({"unchecked"})
     public Map getCache(ArtifactoryCache cache) {
         Map result = caches.get(cache);
@@ -133,20 +148,19 @@ public class CacheServiceImpl implements InternalCacheService {
     public Map getRepositoryCache(String repoKey, ArtifactoryCache cache) {
         Map<ArtifactoryCache, Map> repoCacheMap = repoCaches.get(repoKey);
         if (repoCacheMap == null) {
-            throw new IllegalArgumentException("Repo named " + repoKey + " does not have caches");
+            throw new IllegalArgumentException("Repo named '" + repoKey + "' does not have caches.");
         }
         Map result = repoCacheMap.get(cache);
         if (result != null) {
             return result;
         }
-        throw new IllegalArgumentException(
-                "Cache named " + cache + " for repo " + repoKey + " does not exists");
+        throw new IllegalArgumentException("Cache named '" + cache + "' for repo '" + repoKey + "' does not exist.");
     }
 
-    private Map<ArtifactoryCache, Map> createRealRepoCaches() {
+    private Map<ArtifactoryCache, Map> newStoringRepoCaches() {
         Map<ArtifactoryCache, Map> result = new HashMap<ArtifactoryCache, Map>(2);
         for (ArtifactoryCache cacheDef : ArtifactoryCache.values()) {
-            if (cacheDef.getCacheType() == CacheType.REAL_REPO) {
+            if (cacheDef.getCacheType() == CacheType.STORING_REPO) {
                 result.put(cacheDef, new BaseCache(cacheDef));
             }
         }

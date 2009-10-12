@@ -14,7 +14,7 @@ set ARTIFACTORY_HOME=%~dp0..
 set LIB_DIR=%ARTIFACTORY_HOME%\lib
 set CLASSPATH=%ARTIFACTORY_HOME%\artifactory.jar
 
-for %%a in (%LIB_DIR%\*.*) do call :process %%~nxa
+for %%a in ("%LIB_DIR%\*.*") do call :process %%~nxa
 goto :next
 
 :process

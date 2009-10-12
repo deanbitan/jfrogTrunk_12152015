@@ -1,54 +1,49 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.descriptor.config;
 
 import org.apache.commons.collections15.OrderedMap;
 import org.apache.commons.collections15.map.ListOrderedMap;
+import org.artifactory.descriptor.Descriptor;
+import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
-import org.artifactory.descriptor.repo.HttpRepoDescriptor;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.descriptor.repo.RealRepoDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.mail.MailServerDescriptor;
+import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.repo.*;
 import org.artifactory.descriptor.repo.jaxb.LocalRepositoriesMapAdapter;
 import org.artifactory.descriptor.repo.jaxb.RemoteRepositoriesMapAdapter;
 import org.artifactory.descriptor.repo.jaxb.VirtualRepositoriesMapAdapter;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.util.AlreadyExistsException;
+import org.artifactory.util.DoesNotExistException;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @XmlRootElement(name = "config")
 @XmlType(name = "CentralConfigType",
-        propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "security",
-                "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
-                "virtualRepositoriesMap", "proxies"})
+        propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
+                "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
+                "virtualRepositoriesMap", "proxies", "propertySets", "urlBase"}, namespace = Descriptor.NS)
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CentralConfigDescriptorImpl implements MutableCentralConfigDescriptor {
 
@@ -93,17 +88,29 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @XmlElement
     private String serverName;
 
+
     /**
      * if this flag is set all the remote repos will work in offline mode
      */
     @XmlElement(defaultValue = "false", required = false)
     private boolean offlineMode;
 
+    private AddonSettings addons = new AddonSettings();
+
+    private MailServerDescriptor mailServer;
+
     /**
      * security might not be present in the xml but we always want to create it
      */
     @XmlElement
     private SecurityDescriptor security = new SecurityDescriptor();
+
+    @XmlElementWrapper(name = "propertySets")
+    @XmlElement(name = "propertySet", required = false)
+    private List<PropertySet> propertySets = new ArrayList<PropertySet>();
+
+    @XmlElement
+    private String urlBase;
 
     public OrderedMap<String, LocalRepoDescriptor> getLocalRepositoriesMap() {
         return localRepositoriesMap;
@@ -186,8 +193,40 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return security;
     }
 
+    public AddonSettings getAddons() {
+        return addons;
+    }
+
+    public void setAddons(AddonSettings addons) {
+        this.addons = addons;
+    }
+
+    public MailServerDescriptor getMailServer() {
+        return mailServer;
+    }
+
     public void setSecurity(SecurityDescriptor security) {
         this.security = security;
+    }
+
+    public void setMailServer(MailServerDescriptor mailServer) {
+        this.mailServer = mailServer;
+    }
+
+    public List<PropertySet> getPropertySets() {
+        return propertySets;
+    }
+
+    public void setPropertySets(List<PropertySet> propertySets) {
+        this.propertySets = propertySets;
+    }
+
+    public String getUrlBase() {
+        return urlBase;
+    }
+
+    public void setUrlBase(String urlBase) {
+        this.urlBase = urlBase;
     }
 
     public RepoDescriptor removeRepository(String repoKey) {
@@ -231,7 +270,8 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
                 isRepositoryExists(key) ||
                 isProxyExists(key) ||
                 isBackupExists(key) ||
-                isLdapExists(key));
+                isLdapExists(key) ||
+                isPropertySetExists(key));
     }
 
     public boolean isRepositoryExists(String repoKey) {
@@ -243,20 +283,20 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     public void addLocalRepository(LocalRepoDescriptor localRepoDescriptor)
             throws AlreadyExistsException {
         String repoKey = localRepoDescriptor.getKey();
-        failIfRepoKeyAlreadyExists(repoKey);
+        repoKeyExists(repoKey, false);
         localRepositoriesMap.put(repoKey, localRepoDescriptor);
     }
 
     public void addRemoteRepository(RemoteRepoDescriptor remoteRepoDescriptor) {
         String repoKey = remoteRepoDescriptor.getKey();
-        failIfRepoKeyAlreadyExists(repoKey);
+        repoKeyExists(repoKey, false);
         remoteRepositoriesMap.put(repoKey, remoteRepoDescriptor);
         updateDefaultProxy();
     }
 
     public void addVirtualRepository(VirtualRepoDescriptor virtualRepoDescriptor) {
         String repoKey = virtualRepoDescriptor.getKey();
-        failIfRepoKeyAlreadyExists(repoKey);
+        repoKeyExists(repoKey, false);
         virtualRepositoriesMap.put(repoKey, virtualRepoDescriptor);
     }
 
@@ -316,6 +356,42 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return backupDescriptor;
     }
 
+    public boolean isPropertySetExists(String propertySetName) {
+        return getPropertySet(propertySetName) != null;
+    }
+
+    public void addPropertySet(PropertySet propertySet) {
+        String propertySetName = propertySet.getName();
+        if (isPropertySetExists(propertySetName)) {
+            throw new AlreadyExistsException("Property set " + propertySetName + " already exists");
+        }
+        propertySets.add(propertySet);
+    }
+
+    public PropertySet removePropertySet(String propertySetName) {
+        PropertySet propertySet = getPropertySet(propertySetName);
+        if (propertySet == null) {
+            return null;
+        }
+
+        //Remove the property set from the property sets list
+        propertySets.remove(propertySet);
+
+        //Remove the property set from any local repo which is associated with it
+        Collection<LocalRepoDescriptor> localRepoDescriptorCollection = localRepositoriesMap.values();
+        for (LocalRepoDescriptor localRepoDescriptor : localRepoDescriptorCollection) {
+            localRepoDescriptor.removePropertySet(propertySetName);
+        }
+
+        //Remove the property set from any remote repo which is associated with it
+        Collection<RemoteRepoDescriptor> remoteRepoDescriptors = remoteRepositoriesMap.values();
+        for (RemoteRepoDescriptor remoteRepoDescriptor : remoteRepoDescriptors) {
+            remoteRepoDescriptor.removePropertySet(propertySetName);
+        }
+
+        return propertySet;
+    }
+
     public void setOfflineMode(boolean offlineMode) {
         this.offlineMode = offlineMode;
     }
@@ -342,18 +418,33 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return null;
     }
 
+    private PropertySet getPropertySet(String propertySetName) {
+        for (PropertySet propertySet : propertySets) {
+            if (propertySet.getName().equals(propertySetName)) {
+                return propertySet;
+            }
+        }
+
+        return null;
+    }
+
     private boolean isLdapExists(String key) {
         return security != null && security.isLdapExists(key);
     }
 
-    private void failIfRepoKeyAlreadyExists(String repoKey) {
-        if (isRepositoryExists(repoKey)) {
+    private void repoKeyExists(String repoKey, boolean shouldExist) {
+        boolean exists = isRepositoryExists(repoKey);
+        if (exists && !shouldExist) {
             throw new AlreadyExistsException("Repository " + repoKey + " already exists");
+        }
+
+        if (!exists && shouldExist) {
+            throw new DoesNotExistException("Repository " + repoKey + " does not exist");
         }
     }
 
     /**
-     * Sets the default proxy to be the first proxy used by a remote repo
+     * Sets the default proxy to be the first proxy used by a remote repo.
      */
     private void updateDefaultProxy() {
         for (RemoteRepoDescriptor remoteRepoDescriptor : remoteRepositoriesMap.values()) {

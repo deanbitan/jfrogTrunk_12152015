@@ -1,35 +1,52 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.standalone.main;
 
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.util.FileUtils;
 import org.mortbay.jetty.Server;
 import org.mortbay.xml.XmlConfiguration;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
+ * Manually initialize and starts Jetty Web Server. NOTE: No logger here, since it needs to be initialized after.
  * Created by IntelliJ IDEA. User: yoavl
  */
 public class Main {
+    static {
+        // Initialize logback as soon as possible without using ArtifactoryHome :(
+        String artHome = System.getProperty("artifactory.home");
+        if (artHome != null && artHome.length() > 0) {
+            System.setProperty("logback.configurationFile", artHome + "/etc/logback.xml");
+        }
+        //Initialize ipv4 pref, unless previously configured otherwise 
+        String ipv4 = System.getProperty("java.net.preferIPv4Stack");
+        if (ipv4 == null) {
+            System.setProperty("java.net.preferIPv4Stack", "true");
+        }
+    }
+
     /**
-     * Main function, starts the jetty server. The first parameter can be the jetty.xml
-     * configuration file. If not provided ${artifactory.home}/etc/jetty.xml will be used.
+     * Main function, starts the jetty server. The first parameter can be the jetty.xml configuration file. If not
+     * provided ${artifactory.home}/etc/jetty.xml will be used.
      *
      * @param args
      */
@@ -37,34 +54,19 @@ public class Main {
         Server server = null;
         try {
             URL configUrl;
+            ArtifactoryHome artifactoryHome = new ArtifactoryHome();
             if (args != null && args.length > 0) {
                 // Jetty configuration file is the only param allowed
                 if (args.length != 1) {
-                    System.err.println("Usage java " + Main.class.getName() +
-                            " [URL path to jetty xml conf]");
+                    System.err.println("Usage java " + Main.class.getName() + " [URL path to jetty xml conf]");
                     System.exit(1);
                 }
-                File jettyConfFile = new File(args[0]);
-                if (jettyConfFile.exists() && jettyConfFile.isFile()) {
-                    System.out.println("Starting jetty from configuration file " + jettyConfFile);
-                    configUrl = jettyConfFile.toURI().toURL();
-                } else {
-                    System.out.println("Starting jetty from URL configuration " + args[0]);
-                    configUrl = new URL(args[0]);
-                }
-                ArtifactoryHome.create();
+                String jettyXmlUrl = args[0];
+                configUrl = getConfigUrl(jettyXmlUrl);
             } else {
-                //Trying to find Artifactory home and then /etc/jetty.xml under it
-                ArtifactoryHome.create();
-                File jettyConfFile = new File(ArtifactoryHome.getEtcDir(), "jetty.xml");
-                if (jettyConfFile.exists() && jettyConfFile.isFile()) {
-                    System.out.println("Starting jetty from configuration file " + jettyConfFile);
-                    configUrl = jettyConfFile.toURI().toURL();
-                } else {
-                    System.err.println("No jetty configuration file found at " + jettyConfFile);
-                    System.exit(1);
-                    return;
-                }
+                // use etc/jetty.xml under artifactory home directory
+                File jettyConfFile = new File(artifactoryHome.getEtcDir(), "jetty.xml");
+                configUrl = getConfigUrl(jettyConfFile, null);
             }
             XmlConfiguration xmlConfiguration = new XmlConfiguration(configUrl);
             server = new Server();
@@ -81,5 +83,26 @@ public class Main {
                 }
             }
         }
+    }
+
+    private static URL getConfigUrl(String jettyXmlUrl) throws MalformedURLException {
+        File jettyConfFile = new File(jettyXmlUrl);
+        return getConfigUrl(jettyConfFile, jettyXmlUrl);
+    }
+
+    private static URL getConfigUrl(File jettyConfFile, String jettyXmlUrl) throws MalformedURLException {
+        URL configUrl;
+        if (jettyConfFile.exists() && jettyConfFile.isFile()) {
+            System.out.println("Starting jetty from configuration file " + jettyConfFile.getAbsolutePath());
+            configUrl = new URL(FileUtils.getDecodedFileUrl(jettyConfFile));
+        } else if (jettyXmlUrl != null) {
+            System.out.println("Starting jetty from URL configuration " + jettyXmlUrl);
+            configUrl = new URL(jettyXmlUrl);
+        } else {
+            System.err.println("No jetty configuration file found at " + jettyConfFile.getAbsolutePath());
+            System.exit(1);
+            return null;
+        }
+        return configUrl;
     }
 }

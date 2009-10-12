@@ -1,22 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.maven;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.deployer.ArtifactDeployer;
 import org.apache.maven.artifact.deployer.ArtifactDeploymentException;
@@ -35,15 +35,15 @@ import org.apache.maven.project.artifact.MavenMetadataSource;
 import org.apache.maven.wagon.Wagon;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
+import org.artifactory.util.FileUtils;
 import org.codehaus.plexus.PlexusContainer;
 import org.codehaus.plexus.component.repository.ComponentDescriptor;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.util.FieldUtils;
 import org.springframework.stereotype.Service;
 
@@ -129,8 +129,7 @@ public class Maven {
             ArtifactRepository localRepository = createRepository(artifactRepo);
             List<ArtifactRepository> remoteRepos = createRepositories(otherRepos);
             ArtifactMetadataSource source = getArtifactMetadataSource();
-            ResolutionGroup resolutionGroup =
-                    source.retrieve(artifact, localRepository, remoteRepos);
+            ResolutionGroup resolutionGroup = source.retrieve(artifact, localRepository, remoteRepos);
             ArtifactCollector collector = getArtifactCollector();
             TypeArtifactFilter filter = new TypeArtifactFilter(artifact.getType());
             artifactResolutionResult = collector.collect(
@@ -142,14 +141,14 @@ public class Maven {
         return artifactResolutionResult;
     }
 
-    public void deploy(File file, Artifact artifact, final LocalRepo repo) throws ArtifactDeploymentException {
+    public void deploy(File file, Artifact artifact, final LocalRepo repo, File tempUploadsDir)
+            throws ArtifactDeploymentException {
         File repoDir = null;
         try {
             //Deploy to a jcr repo
             ArtifactRepositoryFactory repositoryFactory = getArtifactRepositoryFactory();
-            File dir = org.artifactory.util.FileUtils.createRandomDir(
-                    ArtifactoryHome.getTmpUploadsDir(), repo.getKey() + ".");
-            String tempDirUrl = dir.toURI().toURL().toString();
+            File dir = org.artifactory.util.FileUtils.createRandomDir(tempUploadsDir, repo.getKey() + ".");
+            String tempDirUrl = FileUtils.getDecodedFileUrl(dir);
             boolean uniqueSnapshotVersions = repo.getSnapshotVersionBehavior().equals(SnapshotVersionBehavior.UNIQUE);
             ArtifactRepository localRepository = repositoryFactory.createDeploymentArtifactRepository(
                     repo.getKey(), tempDirUrl, getArtifactRepositoryLayout(), uniqueSnapshotVersions);
@@ -166,7 +165,7 @@ public class Maven {
             //Cleanup local repository
             if (repoDir != null) {
                 try {
-                    FileUtils.forceDelete(repoDir);
+                    org.apache.commons.io.FileUtils.forceDelete(repoDir);
                 } catch (IOException e) {
                     log.warn("Failed to delete temp repo directory'{}'.", repoDir.getPath());
                 }
@@ -233,7 +232,7 @@ public class Maven {
 
     @PreDestroy
     public void destroy() throws Exception {
-        FileUtils.deleteDirectory(LOCAL_REPO_DIR);
+        org.apache.commons.io.FileUtils.deleteDirectory(LOCAL_REPO_DIR);
     }
 
     private ArtifactRepository createRepository(RealRepo repo) {

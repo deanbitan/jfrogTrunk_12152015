@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.maven;
 
 import org.apache.maven.artifact.repository.metadata.Metadata;
@@ -24,13 +25,14 @@ import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RealRepo;
+import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.tx.SessionResource;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -45,24 +47,25 @@ import java.util.Set;
 public class MavenMetadataCalculator implements SessionResource {
     private static final Logger log = LoggerFactory.getLogger(MavenMetadataCalculator.class);
 
-    Set<JcrFsItem> deletedItems = new LinkedHashSet<JcrFsItem>();
+    private Set<JcrFsItem> deletedItems = new LinkedHashSet<JcrFsItem>();
 
     public void afterCompletion(boolean commit) {
+        //Reset internal state
+        deletedItems.clear();
     }
 
-    public boolean hasResources() {
+    public boolean hasPendingResources() {
         return deletedItems.size() > 0;
     }
 
-    public boolean hasPendingChanges() {
-        return hasResources();
-    }
-
+    //TODO: [by yl] Better call this in beforeCommit() to avoid unnecessary calculations, caused by manually calling
+    //save() multiple times on the session (to free memory) during the same tx
     public void onSessionSave() {
         //Update the metadata
         for (JcrFsItem deletedItem : deletedItems) {
             recalculate(deletedItem);
         }
+        deletedItems.clear();
     }
 
     /**
@@ -86,7 +89,7 @@ public class MavenMetadataCalculator implements SessionResource {
         }
 
         JcrFolder parentFolder = deletedItem.getParentFolder();
-        boolean hasMavenMetadata = parentFolder.hasXmlMetdata(MavenNaming.MAVEN_METADATA_NAME);
+        boolean hasMavenMetadata = parentFolder.hasXmlMetadata(MavenNaming.MAVEN_METADATA_NAME);
         if (hasMavenMetadata) {
             deletedItems.add(deletedItem);
         } else {
@@ -111,7 +114,7 @@ public class MavenMetadataCalculator implements SessionResource {
         }
 
         try {
-            Metadata metadata = MavenUtils.toMavenMetadata(metadataStr);
+            Metadata metadata = MavenModelUtils.toMavenMetadata(metadataStr);
             if (isVersionsMetadata(deletedItem, container, metadata)) {
                 handleVersionsMetadata(deletedItem, container, metadata);
             } else if (isSnapshotsMetadata(deletedItem, container, metadata)) {
@@ -151,8 +154,8 @@ public class MavenMetadataCalculator implements SessionResource {
                 // also set the top level version to be the last version in the list
                 metadata.setVersion(latestVersion);
             }
-            versioning.setLastUpdated(MavenUtils.dateToTimestamp(new Date()));
-            String newMetadata = MavenUtils.mavenMetadataToString(metadata);
+            versioning.updateTimestamp();
+            String newMetadata = MavenModelUtils.mavenMetadataToString(metadata);
             container.setXmlMetadata(MavenNaming.MAVEN_METADATA_NAME, newMetadata);
         } else {
             log.debug("No maven metadata upgrade required on {}.", container);
@@ -163,8 +166,7 @@ public class MavenMetadataCalculator implements SessionResource {
             throws IOException {
         List<JcrFsItem> siblingItems = container.getItems();
         if (siblingItems.isEmpty()) {
-            log.warn("No more files left under {}. Metadata is useless. Please remove the folder"
-                    , container);
+            log.warn("No more files left under {}. Metadata is useless. Please remove the folder", container);
             return;
         }
 
@@ -214,8 +216,8 @@ public class MavenMetadataCalculator implements SessionResource {
         }
 
         if (updated) {
-            versioning.setLastUpdated(MavenUtils.dateToTimestamp(new Date()));
-            String newMetadata = MavenUtils.mavenMetadataToString(metadata);
+            versioning.updateTimestamp();
+            String newMetadata = MavenModelUtils.mavenMetadataToString(metadata);
             container.setXmlMetadata(MavenNaming.MAVEN_METADATA_NAME, newMetadata);
         } else {
             log.debug("Metadata not updated for {}", container);
@@ -224,7 +226,8 @@ public class MavenMetadataCalculator implements SessionResource {
 
     private void handlePluginsMetadata(JcrFsItem deletedItem, JcrFolder container, Metadata metadata)
             throws IOException {
-        if (deletedItem.getLocalRepo().isCache()) {
+        StoringRepo repo = deletedItem.getRepo();
+        if (repo instanceof RealRepo && repo.isCache()) {
             // we don't want to remove from the plugins list if this is a cache
             // maven uses the plugin prefix taken from the metadata to resolve plugins
             // configured in the pluginsGroup.
@@ -244,7 +247,7 @@ public class MavenMetadataCalculator implements SessionResource {
         }
 
         if (updated) {
-            String newMetadata = MavenUtils.mavenMetadataToString(metadata);
+            String newMetadata = MavenModelUtils.mavenMetadataToString(metadata);
             container.setXmlMetadata(MavenNaming.MAVEN_METADATA_NAME, newMetadata);
         } else {
             log.debug("Metadata not updated for {}", container);
@@ -269,5 +272,4 @@ public class MavenMetadataCalculator implements SessionResource {
     private boolean isPluginsMetadata(Metadata metadata) {
         return metadata.getPlugins() != null && !metadata.getPlugins().isEmpty();
     }
-
 }

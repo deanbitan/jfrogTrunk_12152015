@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.io.checksum;
 
 import org.artifactory.api.mime.ChecksumType;
@@ -18,19 +35,15 @@ public class ChecksumCalculatorTest {
 
     public void calculateSha1() throws IOException {
         byte[] bytes = "this is a test".getBytes();
-        Checksum[] results = ChecksumCalculator.calculate(new ByteArrayInputStream(bytes), ChecksumType.sha1);
-        assertNotNull(results, "Results should not be null");
-        assertEquals(results.length, 1, "Expecting only one calculated value");
-        assertEquals(results[0].getChecksum(), "fa26be19de6bff93f70bc2308434e4a440bbad02",
+        Checksum result = ChecksumCalculator.calculate(new ByteArrayInputStream(bytes), ChecksumType.sha1);
+        assertEquals(result.getChecksum(), "fa26be19de6bff93f70bc2308434e4a440bbad02",
                 "Wrong SHA1 calculated");
     }
 
     public void calculateMd5() throws IOException {
         byte[] bytes = "this is a test".getBytes();
-        Checksum[] results = ChecksumCalculator.calculate(new ByteArrayInputStream(bytes), ChecksumType.md5);
-        assertNotNull(results, "Results should not be null");
-        assertEquals(results.length, 1, "Expecting only one calculated value");
-        assertEquals(results[0].getChecksum(), "54b0c58c7ce9f2a8b551351102ee0938",
+        Checksum result = ChecksumCalculator.calculate(new ByteArrayInputStream(bytes), ChecksumType.md5);
+        assertEquals(result.getChecksum(), "54b0c58c7ce9f2a8b551351102ee0938",
                 "Wrong SHA1 calculated");
     }
 

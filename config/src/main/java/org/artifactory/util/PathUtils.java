@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.util;
 
 import java.io.File;
@@ -128,6 +129,10 @@ public class PathUtils {
         return dummy.getName();
     }
 
+    /**
+     * @param path A file path
+     * @return Parent path of the input path as if it was a file. Empty string if the path has no parent.
+     */
     public static String getParent(String path) {
         if (path == null) {
             return null;
@@ -273,6 +278,9 @@ public class PathUtils {
     }
 
     public static String trimLeadingSlashes(String path) {
+        if (path == null) {
+            return null;
+        }
         //Trim leading '/' (caused by webdav requests)
         if (path.startsWith("/")) {
             String modifiedPath = path.substring(1);
@@ -281,12 +289,15 @@ public class PathUtils {
         return path;
     }
 
-    public static String trimTrailingSlashes(String absPath) {
-        if (absPath.endsWith("/")) {
-            String modifiedPath = absPath.substring(0, absPath.length() - 1);
+    public static String trimTrailingSlashes(String path) {
+        if (path == null) {
+            return null;
+        }
+        if (path.endsWith("/")) {
+            String modifiedPath = path.substring(0, path.length() - 1);
             return trimTrailingSlashes(modifiedPath);
         }
-        return absPath;
+        return path;
     }
 
     @SuppressWarnings({"StringEquality"})
@@ -298,5 +309,76 @@ public class PathUtils {
         childPath = childPath.substring(parentPath.length(), childPath.length());
         childPath = formatRelativePath(childPath);
         return childPath;
+    }
+
+    /**
+     * Inhects a string into another string at the specified location.
+     * <pre>
+     * injectString("Arttory", "ifac", 3) = "Artifactory"
+     * injectString("rtifactory", "A", 0) = "Artifactory"
+     * injectString("Artifactor", "y", 10) = "Artifactory"
+     * injectString("Artifactory", "", 15) = "Artifactory"
+     * </pre>
+     *
+     * @param str            the string to insert another string to
+     * @param toInject       string to inject
+     * @param injectionIndex where
+     * @return The resulting string
+     */
+    public static String injectString(String str, String toInject, int injectionIndex) {
+        if (!hasText(str) || !hasText(toInject)) {
+            return str;
+        }
+
+        return str.substring(0, injectionIndex) + toInject + str.substring(injectionIndex);
+    }
+
+    /**
+     * Returns the path elements of the input path.
+     * <pre>
+     * getPathElements("/a/b/c") = [a, b, c]
+     * getPathElements("a/b/c") = [a, b, c]
+     * getPathElements("a/b/c/") = [a, b, c]
+     * getPathElements("a") = [a]
+     * getPathElements("") = []
+     * </pre>
+     *
+     * @param path The path to parse (can be absolute or relative)
+     * @return The path's path elements
+     */
+    public static String[] getPathElements(String path) {
+        if (path == null) {
+            return new String[0];
+        }
+        if (path.startsWith("/")) {
+            // we don't want to return empty string as a path element so remove the leading slash
+            path = path.substring(1);
+        }
+
+        return path.split("/");
+    }
+
+    /**
+     * Returns the first path elements of the input path.
+     * <pre>
+     * getFirstPathElements("/a/b/c") = "a"
+     * getFirstPathElements("a/b/c") = "a"
+     * getFirstPathElements("a") = "a"
+     * getFirstPathElements("") = ""
+     * </pre>
+     *
+     * @param path The path to parse (can be absolute or relative)
+     * @return The path's path elements
+     */
+    public static String getFirstPathElements(String path) {
+        if (path == null) {
+            return null;
+        }
+        String[] elements = getPathElements(path);
+        if (elements.length > 0) {
+            return elements[0];
+        } else {
+            return "";
+        }
     }
 }

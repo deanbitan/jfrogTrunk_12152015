@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.security;
 
 import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
@@ -25,10 +26,12 @@ import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.ReloadableBean;
+import org.artifactory.version.CompoundVersionDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import javax.jcr.Node;
@@ -47,11 +50,11 @@ public class JcrUserGroupManager implements UserGroupManager {
     private JcrService jcr;
 
     public static String getUsersJcrPath() {
-        return JcrPath.get().getOcmClassJcrPath(USERS_KEY);
+        return JcrPath.get().getConfigJcrPath(USERS_KEY);
     }
 
     public static String getGroupsJcrPath() {
-        return JcrPath.get().getOcmClassJcrPath(GROUPS_KEY);
+        return JcrPath.get().getConfigJcrPath(GROUPS_KEY);
     }
 
     @PostConstruct
@@ -61,7 +64,7 @@ public class JcrUserGroupManager implements UserGroupManager {
 
     public void init() {
         //Create the storage folders if they do not already exist
-        Node confNode = jcr.getOrCreateUnstructuredNode(JcrPath.get().getOcmJcrRootPath());
+        Node confNode = jcr.getOrCreateUnstructuredNode(JcrPath.get().getConfigJcrRootPath());
         jcr.getOrCreateUnstructuredNode(confNode, USERS_KEY);
         jcr.getOrCreateUnstructuredNode(confNode, GROUPS_KEY);
     }
@@ -73,13 +76,16 @@ public class JcrUserGroupManager implements UserGroupManager {
     public void destroy() {
     }
 
+    public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
+    }
+
     @SuppressWarnings({"unchecked"})
     public Class<? extends ReloadableBean>[] initAfter() {
         return new Class[]{JcrService.class};
     }
 
     @SuppressWarnings({"unchecked"})
-    public Collection<User> getAllUsers(boolean includeAdmins) {
+    public Collection<User> getAllUsers() {
         ObjectContentManager ocm = getOcm();
         QueryManager queryManager = ocm.getQueryManager();
         Filter filter = queryManager.createFilter(User.class);
@@ -89,15 +95,15 @@ public class JcrUserGroupManager implements UserGroupManager {
         return users;
     }
 
-    public SimpleUser loadUserByUsername(String username)
-            throws UsernameNotFoundException, DataAccessException {
+    public SimpleUser loadUserByUsername(String username) throws UsernameNotFoundException, DataAccessException {
         ObjectContentManager ocm = getOcm();
-        User user = (User) ocm.getObject(new User(username).getJcrPath());
-        if (user != null) {
-            return new SimpleUser(user.getInfo());
-        } else {
-            throw new UsernameNotFoundException("No such user: " + username + ".");
+        if (StringUtils.hasLength(username)) {
+            User user = (User) ocm.getObject(new User(username).getJcrPath());
+            if (user != null) {
+                return new SimpleUser(user.getInfo());
+            }
         }
+        throw new UsernameNotFoundException("No such user: " + username + ".");
     }
 
     @SuppressWarnings({"unchecked"})
@@ -160,6 +166,7 @@ public class JcrUserGroupManager implements UserGroupManager {
     }
 
     public void updateUser(SimpleUser user) {
+        // remove and then create see http://issues.jfrog.org/jira/browse/RTFACT-1740
         removeUser(user);
         createUser(user);
     }

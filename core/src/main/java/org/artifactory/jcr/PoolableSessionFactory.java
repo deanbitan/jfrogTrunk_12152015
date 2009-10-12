@@ -1,40 +1,44 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr;
 
 import org.apache.commons.pool.BasePoolableObjectFactory;
-import org.apache.commons.pool.impl.StackObjectPool;
+import org.apache.commons.pool.ObjectPool;
 import org.apache.jackrabbit.api.XASession;
+import org.apache.jackrabbit.core.security.SecurityConstants;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.tx.SessionResourceManager;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author yoavl
  */
 public class PoolableSessionFactory extends BasePoolableObjectFactory {
     private static final Logger log = LoggerFactory.getLogger(PoolableSessionFactory.class);
 
     private Repository repository;
-    private StackObjectPool pool;
+    private ObjectPool pool;
 
     public PoolableSessionFactory(Repository repository) {
         this.repository = repository;
@@ -43,7 +47,7 @@ public class PoolableSessionFactory extends BasePoolableObjectFactory {
     @Override
     public Object makeObject() {
         try {
-            Session session = repository.login();
+            Session session = repository.login(new SimpleCredentials(SecurityConstants.ADMIN_ID, new char[]{}));
             JcrSession jcrSession = new JcrSession((XASession) session, pool);
             return jcrSession;
         } catch (RepositoryException e) {
@@ -54,7 +58,7 @@ public class PoolableSessionFactory extends BasePoolableObjectFactory {
     @Override
     public void destroyObject(Object obj) throws Exception {
         JcrSession session = (JcrSession) obj;
-        session.getSessionResourceManager().afterCompletion(false);
+        validateSessionCleaness(session);
         //Extremely important to call this so that all sesion-scoped node locks are cleaned!
         session.getSession().logout();
     }
@@ -73,18 +77,24 @@ public class PoolableSessionFactory extends BasePoolableObjectFactory {
     @Override
     public void passivateObject(Object obj) throws Exception {
         JcrSession session = (JcrSession) obj;
-        if (session.getSessionResourceManager().hasResources()) {
-            throw new IllegalStateException("Cannnot reuse a session that has pending resources.");
-        }
-        if (session.hasPendingChanges()) {
-            throw new IllegalStateException("Cannnot reuse a session that has pending changes.");
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Returning pooled session: " + session + ".");
-        }
+        log.debug("Returning pooled session: {}.", session);
+        super.passivateObject(obj);
     }
 
-    void setPool(StackObjectPool pool) {
+    void setPool(ObjectPool pool) {
         this.pool = pool;
+    }
+
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    private void validateSessionCleaness(JcrSession session) {
+        final SessionResourceManager resourceManager = session.getSessionResourceManager();
+        if (resourceManager.hasPendingResources()) {
+            IllegalStateException e =
+                    new IllegalStateException("Tried to return a session with unprocessed pending resources (" +
+                            resourceManager.getClass().getName() + ".");
+            log.error("Session passivation error.", e);
+            //Throw in order to cause pooled object destruction
+            throw e;
+        }
     }
 }

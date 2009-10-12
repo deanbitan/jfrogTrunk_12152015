@@ -1,26 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.security;
 
-import org.apache.jackrabbit.ocm.manager.beanconverter.impl.ParentBeanConverterImpl;
 import org.apache.jackrabbit.ocm.mapper.impl.annotation.Bean;
 import org.apache.jackrabbit.ocm.mapper.impl.annotation.Field;
 import org.apache.jackrabbit.ocm.mapper.impl.annotation.Node;
 import org.artifactory.api.security.AceInfo;
+import org.artifactory.jcr.ocm.ParentCollectionBeanConverter;
 import org.springframework.security.acls.AccessControlEntry;
 import org.springframework.security.acls.Permission;
 import org.springframework.security.acls.domain.BasePermission;
@@ -31,23 +32,17 @@ import java.io.Serializable;
 /**
  * An object identity that represents a repository and a groupId
  * <p/>
- * Created by IntelliJ IDEA. User: yoavl
+ *
+ * @author yoavl
  */
 @Node
 public class Ace implements AccessControlEntry {
 
-    static {
-        //Force eager loading of this class to initialize default permissions registration.
-        //Required to overcome a bug is ss-2.0.3
-        //noinspection UnusedDeclaration
-        Permission dummy = BasePermission.READ;
-    }
-
-    @Bean(converter = ParentBeanConverterImpl.class)
+    @Bean(converter = ParentCollectionBeanConverter.class)
     private Acl parentAcl;
     @Field
     private int mask;
-    @Field
+    @Field(id = true)
     private String principal;
     @Field
     private boolean group;
@@ -157,9 +152,6 @@ public class Ace implements AccessControlEntry {
 
     /**
      * Since we use accumulative permissions we only need to compare by owning acl and principal
-     *
-     * @param o
-     * @return
      */
     @Override
     public boolean equals(Object o) {
@@ -172,16 +164,13 @@ public class Ace implements AccessControlEntry {
         Ace ace = (Ace) o;
         return !(parentAcl != null ? !parentAcl.equals(ace.parentAcl) : ace.parentAcl != null) &&
                 !(principal != null ? !principal.equals(ace.principal) : ace.principal != null);
-
     }
 
     @Override
     public int hashCode() {
         int result;
         result = (parentAcl != null ? parentAcl.hashCode() : 0);
-        result = 31 * result + mask;
         result = 31 * result + (principal != null ? principal.hashCode() : 0);
-        result = 31 * result + (permission != null ? permission.hashCode() : 0);
         return result;
     }
 }

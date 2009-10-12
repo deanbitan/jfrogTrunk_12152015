@@ -1,6 +1,24 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.descriptor.config;
 
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
@@ -55,6 +73,14 @@ public class CentralConfigDescriptorImplTest {
         BackupDescriptor backup2 = new BackupDescriptor();
         backup2.setKey("backup2");
         cc.addBackup(backup2);
+
+        PropertySet set1 = new PropertySet();
+        set1.setName("set1");
+        cc.addPropertySet(set1);
+
+        PropertySet set2 = new PropertySet();
+        set2.setName("set2");
+        cc.addPropertySet(set2);
     }
 
     public void defaultsTest() {
@@ -64,6 +90,7 @@ public class CentralConfigDescriptorImplTest {
         assertNotNull(cc.getVirtualRepositoriesMap(), "Virtual repos map should not be null");
         assertNotNull(cc.getBackups(), "Backups list should not be null");
         assertNotNull(cc.getProxies(), "Proxies list should not be null");
+        assertNotNull(cc.getPropertySets(), "Property sets list should not be null");
         assertNull(cc.getIndexer(), "Indexer should not be null");
         assertNotNull(cc.getSecurity(), "Security should not be null");
         assertNull(cc.getServerName(), "Server name should not be null");
@@ -83,6 +110,8 @@ public class CentralConfigDescriptorImplTest {
         assertTrue(cc.isKeyAvailable("ldap1"));
 
         assertFalse(cc.isKeyAvailable("repo"));
+
+        assertTrue(cc.isPropertySetExists("set2"));
     }
 
     public void repositoriesExistence() {
@@ -162,5 +191,38 @@ public class CentralConfigDescriptorImplTest {
         assertEquals(removedBackup.getKey(), "backup2");
         assertEquals(cc.getBackups().size(), 1, "Only one backup expected");
         assertFalse(cc.isBackupExists("backup2"));
+    }
+
+    public void propertySetExistance() {
+        assertEquals(cc.getPropertySets().size(), 2, "The config should contain 2 property sets");
+        assertTrue(cc.isPropertySetExists("set1"), "The config should contain the property set: 'set1'");
+        assertTrue(cc.isPropertySetExists("set2"), "The config should contain the property set: 'set2'");
+    }
+
+    public void removePropertySet() {
+        PropertySet setToRemove = new PropertySet();
+        String setName = "toRemove";
+        setToRemove.setName(setName);
+        cc.addPropertySet(setToRemove);
+
+        LocalRepoDescriptor localDescriptor = cc.getLocalRepositoriesMap().get("local1");
+        localDescriptor.addPropertySet(setToRemove);
+
+        RemoteRepoDescriptor remoteDescriptor = cc.getRemoteRepositoriesMap().get("remote1");
+        remoteDescriptor.addPropertySet(setToRemove);
+
+        //Sanity check
+        assertNotNull(localDescriptor.getPropertySet(setName), "The descriptor should contain the added " +
+                "property set.");
+
+        assertNotNull(cc.removePropertySet(setName), "The property set should have been removed from the central " +
+                "config descriptor.");
+
+        assertNull(localDescriptor.getPropertySet(setName), "The property set should have been removed from the " +
+                "local repo descriptor.");
+
+        assertNull(remoteDescriptor.getPropertySet(setName),
+                "The property set should have been removed from the " +
+                        "remote repo descriptor.");
     }
 }

@@ -1,27 +1,26 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.schedule;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.schedule.quartz.QuartzTask;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -35,20 +34,20 @@ import java.util.concurrent.Future;
 /**
  * @author yoavl
  */
-@Test(sequential = true)
+@Test(sequential = true, enabled = false)
 public class TaskServiceTest extends TaskServiceTestBase {
     private static final Logger log = LoggerFactory.getLogger(TaskServiceTest.class);
 
     @BeforeClass
     public void startTask() throws Exception {
-        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        /*LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         lc.getLogger("org.artifactory.schedule.TaskServiceTest").setLevel(Level.INFO);
         lc.getLogger("org.artifactory.schedule").setLevel(Level.DEBUG);
         lc.getLogger("org.artifactory.schedule.TaskBase").setLevel(Level.TRACE);
-        lc.getLogger("org.artifactory.schedule.TaskCallback").setLevel(Level.TRACE);
+        lc.getLogger("org.artifactory.schedule.TaskCallback").setLevel(Level.TRACE);*/
     }
 
-    @Test(invocationCount = 5, threadPoolSize = 3)
+    @Test(enabled = false, invocationCount = 5, threadPoolSize = 3)
     public void testServiceSynchronization() throws Exception {
         QuartzTask task1 = new QuartzTask(DummyQuartzCommand.class, 100);
         taskService.startTask(task1);
@@ -77,7 +76,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         */
     }
 
-    @Test(invocationCount = 10)
+    @Test(enabled = false, invocationCount = 10)
     public void testMutliResume() throws Exception {
         final CyclicBarrier pauseBarrier1 = new CyclicBarrier(2);
         final CyclicBarrier pauseBarrier2 = new CyclicBarrier(2);
@@ -120,7 +119,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         }
     }
 
-    @Test
+    @Test(enabled = false)
     public void testCancelWhenWaitingOnStateTransition() throws Exception {
         final CyclicBarrier pauseBarrier1 = new CyclicBarrier(2);
         final CyclicBarrier pauseBarrier2 = new CyclicBarrier(2);
@@ -140,19 +139,16 @@ public class TaskServiceTest extends TaskServiceTestBase {
         executorService.submit(c1);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testMultiSingleExecution() throws Exception {
         taskService.cancelAllTasks(true);
         QuartzCommand cmd = new DummyQuartzCommand();
         final QuartzTask tsk1 = new QuartzTask(cmd.getClass(), 0, 0);
+        //Make the task run at least 500ms, so that it wont finish before the second conflicting one is scheduled
+        tsk1.addAttribute(DummyQuartzCommand.MSECS_TO_RUN, "500");
         tsk1.setSingleton(true);
         taskService.startTask(tsk1);
-        //TODO: [by yl] Find a better way...
-        //Let it start
-        Thread.sleep(500);
         log.info("........... STARTED TSK1");
-        /*TaskBase activeTask = taskService.getInternalActiveTask(tsk1.getToken());
-        Assert.assertNull(activeTask);*/
         final TaskBase tsk2 = new QuartzTask(cmd.getClass(), 0, 0);
         tsk2.setSingleton(true);
         try {
@@ -163,7 +159,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         }
     }
 
-    @Test
+    @Test(enabled = false)
     public void testSingleExecutionWithError() throws Exception {
         taskService.cancelAllTasks(true);
         QuartzCommand cmd = new DummyQuartzCommand();
@@ -183,7 +179,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         taskService.startTask(tsk2);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testConcurrentStopResumes() throws Exception {
         final CyclicBarrier barrier1 = new CyclicBarrier(2);
         final CyclicBarrier barrier2 = new CyclicBarrier(2);
@@ -213,7 +209,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         executorService.submit(c2);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testDoubleResume() throws Exception {
         QuartzTask task1 = new QuartzTask(DummyQuartzCommand.class, 100);
         taskService.startTask(task1);

@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.request;
 
 import org.apache.commons.httpclient.HttpStatus;
@@ -21,34 +22,51 @@ import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.resource.ArtifactResource;
 import org.artifactory.resource.RepoResource;
 import org.artifactory.security.AccessLogger;
+import org.artifactory.traffic.InternalTrafficService;
+import org.artifactory.traffic.entry.DownloadEntry;
+import org.joda.time.Duration;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author yoavl
  */
 public final class RequestResponseHelper {
     private static final Logger log = LoggerFactory.getLogger(RequestResponseHelper.class);
 
-    public static void sendBodyResponse(ArtifactoryResponse response, RepoResource res, ResourceStreamHandle handle)
+    private InternalTrafficService trafficService;
+
+    private static final long CACHE_YEAR_SECS = Duration.standardDays(365).getStandardSeconds();
+
+    public RequestResponseHelper(InternalTrafficService service) {
+        trafficService = service;
+    }
+
+    public void sendBodyResponse(ArtifactoryResponse response, RepoResource res, ResourceStreamHandle handle)
             throws IOException {
         try {
+            RepoPath repoPath = res.getRepoPath();
             updateResponseFromRepoResource(response, res);
-            AccessLogger.downloaded(res.getRepoPath());
+            AccessLogger.downloaded(repoPath);
             InputStream inputStream = handle.getInputStream();
+            final long start = System.currentTimeMillis();
             response.sendStream(inputStream);
+            final DownloadEntry downloadEntry =
+                    new DownloadEntry(repoPath.getId(), res.getSize(), System.currentTimeMillis() - start);
+            trafficService.handleTrafficEntry(downloadEntry);
         } finally {
             handle.close();
         }
     }
 
-    public static void sendBodyResponse(ArtifactoryResponse response, RepoPath repoPath, String content)
+    public void sendBodyResponse(ArtifactoryResponse response, RepoPath repoPath, String content)
             throws IOException {
         if (content == null) {
             RuntimeException exception = new RuntimeException("Cannot send null response");
@@ -61,16 +79,21 @@ public final class RequestResponseHelper {
             String path = repoPath.getPath();
             String mimeType = NamingUtils.getMimeTypeByPathAsString(path);
             response.setContentType(mimeType);
-            response.setContentLength(bytes.length);
+            int bodySize = bytes.length;
+            response.setContentLength(bodySize);
             response.setLastModified(System.currentTimeMillis());
             AccessLogger.downloaded(repoPath);
+            final long start = System.currentTimeMillis();
             response.sendStream(is);
+            final DownloadEntry downloadEntry =
+                    new DownloadEntry(repoPath.getId(), bodySize, System.currentTimeMillis() - start);
+            trafficService.handleTrafficEntry(downloadEntry);
         } finally {
             is.close();
         }
     }
 
-    public static void sendHeadResponse(ArtifactoryResponse response, RepoResource res) {
+    public void sendHeadResponse(ArtifactoryResponse response, RepoResource res) {
         if (log.isDebugEnabled()) {
             log.debug(res.getRepoPath() + ": Sending HEAD meta-information");
         }
@@ -78,7 +101,7 @@ public final class RequestResponseHelper {
         response.sendOk();
     }
 
-    public static void sendNotModifiedResponse(
+    public void sendNotModifiedResponse(
             ArtifactoryResponse response, RepoResource res) throws IOException {
         if (log.isDebugEnabled()) {
             log.debug(res.toString() + ": Sending NOT-MODIFIED response");
@@ -87,10 +110,23 @@ public final class RequestResponseHelper {
         response.sendError(HttpStatus.SC_NOT_MODIFIED, null, log);
     }
 
-    private static void updateResponseFromRepoResource(ArtifactoryResponse response, RepoResource res) {
+    private void updateResponseFromRepoResource(ArtifactoryResponse response, RepoResource res) {
         String mimeType = res.getMimeType();
         response.setContentType(mimeType);
-        response.setContentLength((int) res.getInfo().getSize());
-        response.setLastModified(res.getInfo().getLastModified());
+        response.setContentLength((int) res.getSize());
+        response.setLastModified(res.getLastModified());
+        response.setEtag(res.getInfo().getSha1());
+
+        //TODO: [by yl] Should be in a HttpRequestInterceptor instance #processResponse
+        if (res instanceof ArtifactResource) {
+            boolean snapshot = ((ArtifactResource) res).getMavenInfo().isSnapshot();
+            if (snapshot) {
+                //Do not cache snapshot artifacts
+                response.setHeader("Cache-Control", "no-cache");
+            } else {
+                //Set the cache in the far future for releases
+                response.setHeader("Cache-Control", "public, max-age=" + CACHE_YEAR_SECS);
+            }
+        }
     }
 }

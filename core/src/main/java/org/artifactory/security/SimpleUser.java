@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.security;
 
 import org.artifactory.api.security.UserInfo;
@@ -26,27 +27,20 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
- * Simple user - comparisson is done only by user name. This class is immutable and will return new
- * instances when getters are called.
+ * Simple user - comparisson is done only by user name. This class is immutable and will return new instances when
+ * getters are called.
  */
 public class SimpleUser implements UserDetails, Comparable {
 
-    public final static GrantedAuthority[] USER_GAS =
+    public static final GrantedAuthority[] USER_GAS =
             new GrantedAuthority[]{new GrantedAuthorityImpl(SecurityServiceImpl.ROLE_USER)};
-    public final static GrantedAuthority[] ADMIN_GAS =
-            new GrantedAuthority[]{new GrantedAuthorityImpl(SecurityServiceInternal.ROLE_ADMIN),
+    public static final GrantedAuthority[] ADMIN_GAS =
+            new GrantedAuthority[]{new GrantedAuthorityImpl(InternalSecurityService.ROLE_ADMIN),
                     new GrantedAuthorityImpl(SecurityServiceImpl.ROLE_USER)};
 
     private UserInfo userInfo;
 
     private GrantedAuthority[] authorities;
-
-    public SimpleUser(String username, String password, String email, boolean admin, boolean enabled,
-            boolean updatableProfile, boolean accountNonExpired, boolean credentialsNonExpired,
-            boolean accountNonLocked) {
-        this(new UserInfo(username, password, email, admin, enabled,
-                updatableProfile, accountNonExpired, credentialsNonExpired, accountNonLocked));
-    }
 
     public SimpleUser(UserInfo userInfo) {
         this.userInfo = userInfo;
@@ -67,7 +61,7 @@ public class SimpleUser implements UserDetails, Comparable {
         SortedSet<GrantedAuthority> sorter = new TreeSet<GrantedAuthority>();
         for (int i = 0; i < authorities.length; i++) {
             Assert.notNull(authorities[i], "Granted authority element " + i +
-                            " is null - GrantedAuthority[] cannot contain any null elements");
+                    " is null - GrantedAuthority[] cannot contain any null elements");
             sorter.add(authorities[i]);
         }
 
@@ -94,6 +88,10 @@ public class SimpleUser implements UserDetails, Comparable {
         return userInfo.isAccountNonLocked();
     }
 
+    public boolean isTransientUser() {
+        return userInfo.isTransientUser();
+    }
+
     public boolean isCredentialsNonExpired() {
         return userInfo.isCredentialsNonExpired();
     }
@@ -108,6 +106,10 @@ public class SimpleUser implements UserDetails, Comparable {
 
     public boolean isAdmin() {
         return userInfo.isAdmin();
+    }
+
+    public boolean isAnonymous() {
+        return UserInfo.ANONYMOUS.equals(userInfo.getUsername());
     }
 
     public boolean isUpdatableProfile() {

@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.security;
 
 import org.apache.jackrabbit.ocm.manager.collectionconverter.impl.MultiValueCollectionConverterImpl;
@@ -33,20 +34,20 @@ public class User implements OcmStorable {
 
     private final UserInfo info;
 
+    /**
+     * This dummy field is required to work around <a href="https://issues.apache.org/jira/browse/JCR-1928">ocm 1.5
+     * bug</a> when using the annotation on the getters
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Collection(elementClassName = String.class, collectionConverter = MultiValueCollectionConverterImpl.class)
+    private Set<String> groups;
+
     public User() {
         info = new UserInfo();
     }
 
     public User(String username) {
         info = new UserInfo(username);
-    }
-
-    public User(String username, String password, String email, boolean admin, boolean enabled,
-            boolean updatableProfile, boolean accountNonExpired, boolean credentialsNonExpired,
-            boolean accountNonLocked) {
-        info = new UserInfo(username, password, email, admin, enabled, updatableProfile,
-                accountNonExpired,
-                credentialsNonExpired, accountNonLocked);
     }
 
     public User(UserInfo user) {
@@ -111,6 +112,15 @@ public class User implements OcmStorable {
     }
 
     @Field
+    public String getGenPasswordKey() {
+        return info.getGenPasswordKey();
+    }
+
+    public void setGenPasswordKey(String genPasswordKey) {
+        info.setGenPasswordKey(genPasswordKey);
+    }
+
+    @Field
     public boolean isAdmin() {
         return info.isAdmin();
     }
@@ -155,6 +165,14 @@ public class User implements OcmStorable {
         info.setAccountNonLocked(accountNonLocked);
     }
 
+    public boolean isTransientUser() {
+        return info.isTransientUser();
+    }
+
+    public void setTransientUser(boolean transientUser) {
+        info.setTransientUser(transientUser);
+    }
+
     @Field
     public boolean isCredentialsNonExpired() {
         return info.isCredentialsNonExpired();
@@ -164,13 +182,48 @@ public class User implements OcmStorable {
         info.setCredentialsNonExpired(credentialsNonExpired);
     }
 
-    @Collection(elementClassName = String.class,
-            collectionConverter = MultiValueCollectionConverterImpl.class)
+    //@Collection(elementClassName = String.class, collectionConverter = MultiValueCollectionConverterImpl.class)
     public Set<String> getGroups() {
         return info.getGroups();
     }
 
     public void setGroups(Set<String> groups) {
         info.setGroups(groups);
+    }
+
+    @Field
+    public long getLastLoginTimeMillis() {
+        return info.getLastLoginTimeMillis();
+    }
+
+    public void setLastLoginTimeMillis(long lastLoginTimeMillis) {
+        info.setLastLoginTimeMillis(lastLoginTimeMillis);
+    }
+
+    @Field
+    public String getLastLoginClientIp() {
+        return info.getLastLoginClientIp();
+    }
+
+    public void setLastLoginClientIp(String lastLoginClientIp) {
+        info.setLastLoginClientIp(lastLoginClientIp);
+    }
+
+    @Field
+    public long getLastAccessTimeMillis() {
+        return info.getLastAccessTimeMillis();
+    }
+
+    public void setLastAccessTimeMillis(long lastAccessTimeMillis) {
+        info.setLastAccessTimeMillis(lastAccessTimeMillis);
+    }
+
+    @Field
+    public String getLastAccessClientIp() {
+        return info.getLastAccessClientIp();
+    }
+
+    public void setLastAccessClientIp(String lastAccessClientIp) {
+        info.setLastAccessClientIp(lastAccessClientIp);
     }
 }

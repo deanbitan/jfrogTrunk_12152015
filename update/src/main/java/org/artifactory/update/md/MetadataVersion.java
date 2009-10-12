@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.update.md;
 
 import org.apache.commons.io.IOUtils;
@@ -21,6 +22,7 @@ import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.md.MetadataReader;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.current.MetadataReaderImpl;
 import org.artifactory.update.md.v125rc0.MdFileConverter;
 import org.artifactory.update.md.v125rc0.MdFolderConverter;
@@ -33,12 +35,12 @@ import org.artifactory.update.md.v130beta6.ChecksumsConverter;
 import org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverter;
 import org.artifactory.update.md.v130beta6.MetadataReader130beta6;
 import org.artifactory.version.ArtifactoryVersion;
+import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
+import org.artifactory.version.XmlConverterUtils;
 import org.jdom.Document;
 import org.jdom.Element;
-import org.jdom.input.SAXBuilder;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,17 +52,17 @@ import java.util.List;
  * @author freds
  * @date Nov 11, 2008
  */
-public enum MetadataVersion implements MetadataReader {
+public enum MetadataVersion implements MetadataReader, SubConfigElementVersion {
     notSupported(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v122, null),
-    v125rc0(ArtifactoryVersion.v125rc0, ArtifactoryVersion.v130beta2, new MetadataReader125(),
+    v1(ArtifactoryVersion.v125rc0, ArtifactoryVersion.v130beta2, new MetadataReader125(),
             new MdFolderConverter(), new MdFileConverter(), new MdStatsConverter()),
-    v130beta3(ArtifactoryVersion.v130beta3, ArtifactoryVersion.v130beta5, new MetadataReader130beta3(),
+    v2(ArtifactoryVersion.v130beta3, ArtifactoryVersion.v130beta5, new MetadataReader130beta3(),
             new ArtifactoryFolderConverter(), new ArtifactoryFileConverter()),
-    v130beta6(ArtifactoryVersion.v130beta6, ArtifactoryVersion.v130beta61, new MetadataReader130beta6(),
+    v3(ArtifactoryVersion.v130beta6, ArtifactoryVersion.v130beta61, new MetadataReader130beta6(),
             new FolderAdditionalInfoNameConverter(), new ChecksumsConverter()),
-    current(ArtifactoryVersion.v130rc1, ArtifactoryVersion.getCurrent(), new MetadataReaderImpl());
+    v4(ArtifactoryVersion.v130rc1, ArtifactoryVersion.getCurrent(), new MetadataReaderImpl());
 
-    private final static Logger log = LoggerFactory.getLogger(MetadataVersion.class);
+    private static final Logger log = LoggerFactory.getLogger(MetadataVersion.class);
 
     private static final String FILE_MD_NAME_V130_BETA_3 = ArtifactoryFileConverter.ARTIFACTORY_FILE + ".xml";
     private static final String FOLDER_MD_NAME_V130_BETA_3 = ArtifactoryFolderConverter.ARTIFACTORY_FOLDER + ".xml";
@@ -79,7 +81,7 @@ public enum MetadataVersion implements MetadataReader {
      */
     MetadataVersion(ArtifactoryVersion from, ArtifactoryVersion until, MetadataReader delegate,
             MetadataConverter... converters) {
-        this.comparator = new VersionComparator(from, until);
+        this.comparator = new VersionComparator(this, from, until);
         this.delegate = delegate;
         this.converters = converters;
     }
@@ -119,7 +121,7 @@ public enum MetadataVersion implements MetadataReader {
                 String mdFileName = mdFile.getName();
                 if (mdFileName.equalsIgnoreCase(FILE_MD_NAME_V130_BETA_3) ||
                         mdFileName.equalsIgnoreCase(FOLDER_MD_NAME_V130_BETA_3)) {
-                    return v130beta3;
+                    return v2;
                 }
                 if (mdFileName.equalsIgnoreCase(FILE_MD_NAME_V130_BETA_6) ||
                         mdFileName.equalsIgnoreCase(FOLDER_MD_NAME_V130_BETA_6)) {
@@ -136,25 +138,25 @@ public enum MetadataVersion implements MetadataReader {
                     Element root = doc.getRootElement();
                     Element extension = root.getChild("extension");
                     if (extension != null) {
-                        return v130beta6;
+                        return v3;
                     } else {
-                        return current;
+                        return v4;
                     }
                 }
             }
-            throw new IllegalStateException("Metadata folder " + metadataFolder.getAbsolutePath() +
-                    " does not contain any recognizable metadata files!");
+            log.warn("Metadata folder " + metadataFolder.getAbsolutePath() +
+                    " does not contain any recognizable metadata files! Trying to use the latest metadata layout.");
+            return v4;
         } else {
             // For v125rc0 to v130beta2, the folder is actually a file
-            return v125rc0;
+            return v1;
         }
     }
 
     private static Document buildDocFromFile(File file) throws Exception {
-        SAXBuilder sb = new SAXBuilder();
-        InputStream in = null;
+        InputStream in = new FileInputStream(file);
         try {
-            return sb.build(new FileInputStream(file));
+            return XmlConverterUtils.parse(in);
         } finally {
             IOUtils.closeQuietly(in);
         }

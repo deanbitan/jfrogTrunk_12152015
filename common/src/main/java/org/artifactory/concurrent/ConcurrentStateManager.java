@@ -16,7 +16,7 @@
  */
 package org.artifactory.concurrent;
 
-import org.artifactory.common.ConstantsValue;
+import org.artifactory.common.ConstantValues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +81,7 @@ public class ConcurrentStateManager {
     }
 
     public State guardedWaitForNextStep() {
-        long timeout = ConstantsValue.lockTimeoutSecs.getLong();
+        long timeout = ConstantValues.lockTimeoutSecs.getLong();
         return guardedWaitForNextStep(timeout);
     }
 
@@ -146,7 +146,7 @@ public class ConcurrentStateManager {
     }
 
     private long getStateLockTimeOut() {
-        return ConstantsValue.lockTimeoutSecs.getLong();
+        return ConstantValues.lockTimeoutSecs.getLong();
     }
 
     private void unlockState() {

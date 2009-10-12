@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
--->
+  ~ This file is part of Artifactory.
+  ~
+  ~ Artifactory is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Lesser General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ Artifactory is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.3.6"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.3.6
-        http://www.jfrog.org/xsd/artifactory-v1_3_6.xsd">
+        xmlns="http://artifactory.jfrog.org/xsd/1.4.0"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.0
+        http://www.jfrog.org/xsd/artifactory-v1_4_0.xsd">
     <!--
     enable/disable anonymous downloads
     -->
@@ -55,18 +54,23 @@
             exclude certain repositories from being backed up
             -->
             <excludedRepositories>
-                <repositoryRef>repo1</repositoryRef>
+                <repositoryRef>codehaus</repositoryRef>
+                <repositoryRef>jboss</repositoryRef>
                 <repositoryRef>java.net.m2</repositoryRef>
                 <repositoryRef>java.net.m1</repositoryRef>
-                <repositoryRef>jboss</repositoryRef>
-                <repositoryRef>codehaus</repositoryRef>
+                <repositoryRef>repo1</repositoryRef>
+                <repositoryRef>spring-bundles-milestone</repositoryRef>
+                <repositoryRef>spring-bundles-snapshot</repositoryRef>
+                <repositoryRef>spring-bundles-release</repositoryRef>
+                <repositoryRef>spring-bundles-external</repositoryRef>
+                <repositoryRef>atlassian</repositoryRef>
             </excludedRepositories>
         </backup>
     </backups>
-    <!-- The cron definition to control the activation of the m2eclipse indexer. -->
+    <!-- The interval at which to activate the m2eclipse indexer. -->
     <indexer>
-        <!-- By Default index every 5 hours -->
-        <cronExp>0 0 /5 * * ?</cronExp>
+        <!-- By Default index every 24 hours -->
+        <indexingIntervalHours>24</indexingIntervalHours>
     </indexer>
     <localRepositories>
         <localRepository>
@@ -152,10 +156,10 @@
         <remoteRepository>
             <key>java.net.m1</key>
             <description>java.net Maven1 Format</description>
+            <type>maven1</type>
             <handleReleases>true</handleReleases>
             <handleSnapshots>true</handleSnapshots>
             <excludesPattern>org/**,com/**,net/**</excludesPattern>
-            <type>maven1</type>
             <url>http://download.java.net/maven/1</url>
         </remoteRepository>
         <remoteRepository>
@@ -163,7 +167,7 @@
             <description>jboss</description>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <includesPattern>org/jboss/**,org/richfaces/**</includesPattern>
+            <includesPattern>org/jboss/**,org/hibernate/**,org/richfaces/**,org/drools/**</includesPattern>
             <url>http://repository.jboss.com/maven2</url>
         </remoteRepository>
         <remoteRepository>
@@ -171,16 +175,56 @@
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <includesPattern>org/**,com/**,net/**</includesPattern>
-            <excludesPattern>org/apache/**,commons-*</excludesPattern>
+            <excludesPattern>org/apache/**,commons-*,org/artifactory/**,org/jfrog/**</excludesPattern>
             <url>http://repository.codehaus.org</url>
         </remoteRepository>
-        <!--
         <remoteRepository>
-            <key>codehaus</key>
+            <key>spring-bundles-milestone</key>
+            <description>Springsource bundles in milestone version</description>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
+            <includesPattern>org/springframework/**</includesPattern>
+            <url>http://repository.springsource.com/maven/bundles/milestone</url>
+        </remoteRepository>
+        <remoteRepository>
+            <key>spring-bundles-snapshot</key>
+            <description>Springsource bundles in snapshot stage</description>
+            <handleReleases>true</handleReleases>
+            <handleSnapshots>true</handleSnapshots>
+            <includesPattern>org/springframework/**</includesPattern>
+            <url>http://repository.springsource.com/maven/bundles/snapshot</url>
+        </remoteRepository>
+        <remoteRepository>
+            <key>spring-bundles-release</key>
+            <description>Springsource bundles released</description>
+            <handleReleases>true</handleReleases>
+            <handleSnapshots>false</handleSnapshots>
+            <includesPattern>org/springframework/**</includesPattern>
+            <url>http://repository.springsource.com/maven/bundles/release</url>
+        </remoteRepository>
+        <remoteRepository>
+            <key>spring-bundles-external</key>
+            <description>External artifacts needed by springsource bundles</description>
+            <handleReleases>true</handleReleases>
+            <handleSnapshots>false</handleSnapshots>
+            <includesPattern>**/com.springsource*/**</includesPattern>
+            <url>http://repository.springsource.com/maven/bundles/external</url>
+        </remoteRepository>
+        <remoteRepository>
+            <key>atlassian</key>
+            <handleReleases>true</handleReleases>
+            <handleSnapshots>false</handleSnapshots>
+            <includesPattern>atlassian*/**,seraph/**,com/atlassian/**,com/adaptavist/**</includesPattern>
+            <url>http://maven.atlassian.com/repository/public</url>
+        </remoteRepository>
+
+        <!--
+        <remoteRepository>
+            <key>codehaus-snapshots</key>
+            <handleReleases>false</handleReleases>
+            <handleSnapshots>true</handleSnapshots>
             <excludesPattern>org/artifactory/**,org/jfrog/**</excludesPattern>
-            <url>http://dist.codehaus.org</url>
+            <url>http://snapshots.repository.codehaus.org</url>
         </remoteRepository>
         <remoteRepository>
             <key>apache-m2-snapshots</key>
@@ -254,10 +298,16 @@
             <key>remote-repos</key>
             <artifactoryRequestsCanRetrieveRemoteArtifacts>true</artifactoryRequestsCanRetrieveRemoteArtifacts>
             <repositories>
+                <repositoryRef>codehaus</repositoryRef>
                 <repositoryRef>jboss</repositoryRef>
                 <repositoryRef>java.net.m2</repositoryRef>
                 <repositoryRef>java.net.m1</repositoryRef>
                 <repositoryRef>repo1</repositoryRef>
+                <repositoryRef>spring-bundles-milestone</repositoryRef>
+                <repositoryRef>spring-bundles-snapshot</repositoryRef>
+                <repositoryRef>spring-bundles-release</repositoryRef>
+                <repositoryRef>spring-bundles-external</repositoryRef>
+                <repositoryRef>atlassian</repositoryRef>
             </repositories>
         </virtualRepository>
         <virtualRepository>

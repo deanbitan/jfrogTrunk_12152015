@@ -1,8 +1,24 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.cli.main;
 
 import org.artifactory.cli.command.CompressCommand;
 import org.artifactory.cli.command.ConfigurationCommand;
-import org.artifactory.cli.command.DumpCommand;
 import org.artifactory.cli.command.ExportCommand;
 import org.artifactory.cli.command.HelpCommand;
 import org.artifactory.cli.command.ImportCommand;
@@ -27,21 +43,16 @@ public enum CommandDefinition {
             "Get system information"),
     export(
             ExportCommand.class,
-            "Export a running artifactory instance data into host destination path",
-            "host destination path"),
+            "Export the full data of a running artifactory instance to a path location on the file-system",
+            "export path"),
     imp(
             ImportCommand.class,
             "import",
-            "Import full system from host path",
-            "host path"),
-    dump(
-            DumpCommand.class,
-            "Dump the database of an older version of an offline artifactory instance to the latest export format",
-            "artifactory home folder"),
+            "Import a full artifactory from a location on the file-system",
+            "import path"),
     compress(
             CompressCommand.class,
-            "Compress the (Derby only) tables in order to free up disk space.",
-            "artifactory home folder"),
+            "Compress the (Derby only) tables in order to free up disk space."),
     security(
             SecurityCommand.class,
             "Display or update the security definitions using a security configuration file."),

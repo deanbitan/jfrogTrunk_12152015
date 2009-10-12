@@ -1,3 +1,20 @@
+<!--
+  ~ This file is part of Artifactory.
+  ~
+  ~ Artifactory is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Lesser General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ Artifactory is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
 <assembly>
     <formats>
         <format>zip</format>
@@ -72,6 +89,7 @@
             </includes>
             <excludes>
                 <exclude>*-sources.jar</exclude>
+                <exclude>*-tests.jar</exclude>
             </excludes>
         </fileSet>
 
@@ -96,24 +114,26 @@
             <outputFileNameMapping>artifactory.war</outputFileNameMapping>
             <useStrictFiltering>true</useStrictFiltering>
             <includes>
-                <include>org.artifactory:artifactory-webapp</include>
+                <include>org.artifactory:artifactory-web-war</include>
             </includes>
         </dependencySet>
         <!-- add some mandatory dependencies to jetty lib directory -->
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
             <useStrictFiltering>true</useStrictFiltering>
-            <scope>compile</scope>
             <includes>
+                <include>org.artifactory:artifactory-log</include>
                 <include>org.artifactory:artifactory-config</include>
+                <include>org.artifactory:artifactory-traffic</include>
                 <include>org.mortbay.jetty:jetty</include>
                 <include>org.mortbay.jetty:jetty-ajp</include>
                 <include>org.mortbay.jetty:jetty-util</include>
-                <include>org.mortbay.jetty:servlet-api-2.5</include>
+                <include>org.mortbay.jetty:servlet-api</include>
                 <include>org.slf4j:slf4j-api</include>
                 <include>ch.qos.logback:logback-core</include>
                 <include>ch.qos.logback:logback-classic</include>
                 <include>commons-io:commons-io</include>
+                <include>com.google.collections:google-collections</include>
             </includes>
         </dependencySet>
     </dependencySets>

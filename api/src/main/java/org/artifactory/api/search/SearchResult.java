@@ -1,75 +1,39 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.api.search;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.api.common.Info;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.maven.MavenArtifactInfo;
-
-import java.io.File;
+import org.artifactory.api.fs.ItemInfo;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
-@XStreamAlias("searchResult")
-public class SearchResult implements Info {
+public interface SearchResult extends Info {
+    ItemInfo getItemInfo();
 
-    private final FileInfo fileInfo;
-    private final MavenArtifactInfo artifact;
-    private String lastModifiedString;
+    String getName();
 
-    public SearchResult(FileInfo fileInfo, MavenArtifactInfo artifact) {
-        this.fileInfo = fileInfo;
-        this.artifact = artifact;
-    }
+    String getRelDirPath();
 
-    public FileInfo getFileInfo() {
-        return fileInfo;
-    }
+    String getRepoKey();
 
-    public String getName() {
-        return fileInfo.getName();
-    }
-
-    public String getRelDirPath() {
-        return new File(fileInfo.getRelPath()).getParent();
-    }
-
-    public String getRepoKey() {
-        return fileInfo.getRepoKey();
-    }
-
-    public String getPath() {
-        return fileInfo.getRelPath();
-    }
-
-    public void setLastModifiedString(String lastModifiedString) {
-        this.lastModifiedString = lastModifiedString;
-    }
-
-    public String getLastModifiedString() {
-        return lastModifiedString;
-    }
-
-    public long getLastModified() {
-        return fileInfo.getLastModified();
-    }
-
-    public MavenArtifactInfo getArtifact() {
-        return artifact;
-    }
-
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        SearchResult result = (SearchResult) o;
-        return artifact.equals(result.artifact);
-    }
-
-    public int hashCode() {
-        return artifact.hashCode();
-    }
+    /**
+     * @return The relative path of the search result item
+     */
+    String getRelativePath();
 }

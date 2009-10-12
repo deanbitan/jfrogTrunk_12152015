@@ -1,23 +1,24 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.api.common;
 
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -32,21 +33,18 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class MultiStatusHolder extends StatusHolder {
     private static final Logger log = LoggerFactory.getLogger(MultiStatusHolder.class);
 
-    private final BlockingQueue<StatusEntry> statusEntries = new LinkedBlockingQueue<StatusEntry>(500);
-    private final BlockingQueue<File> callbacks = new LinkedBlockingQueue<File>(100);
+    private final BlockingQueue<StatusEntry> statusEntries = new LinkedBlockingQueue<StatusEntry>();
+    private final BlockingQueue<File> callbacks = new LinkedBlockingQueue<File>();
 
     @Override
-    protected StatusEntry addStatus(String statusMsg, int statusCode, Logger logger,
-            boolean debug) {
+    protected StatusEntry addStatus(String statusMsg, int statusCode, Logger logger, boolean debug) {
         StatusEntry entry = super.addStatus(statusMsg, statusCode, logger, debug);
         addStatusEntry(entry, logger);
         return entry;
     }
 
     @Override
-    protected StatusEntry addError(String statusMsg, int statusCode, Throwable throwable,
-            Logger logger,
-            boolean warn) {
+    protected StatusEntry addError(String statusMsg, int statusCode, Throwable throwable, Logger logger, boolean warn) {
         StatusEntry entry = super.addError(statusMsg, statusCode, throwable, logger, warn);
         addStatusEntry(entry, logger);
         return entry;
@@ -70,8 +68,7 @@ public class MultiStatusHolder extends StatusHolder {
         if (callbacks.remainingCapacity() < 3) {
             // No more space, log and throw to garbage
             File file = callbacks.poll();
-            log.error("No more space in list of file callbacks\n" +
-                    "File " + file + " removed from list.\n" +
+            log.error("No more space in list of file callbacks\nFile " + file + " removed from list.\n" +
                     "Need to increase consumer speed!");
         }
         callbacks.add(callback);
@@ -84,15 +81,64 @@ public class MultiStatusHolder extends StatusHolder {
         callbacks.clear();
     }
 
-    @SuppressWarnings({"ToArrayCallWithZeroLengthArrayArgument"})
+    public boolean hasErrors() {
+        return isError();
+    }
+
+    public boolean hasWarnings() {
+        return !getWarnings().isEmpty();
+    }
+
+    public List<StatusEntry> getAllEntries() {
+        return getEntries(null);
+    }
+
+
+    public List<StatusEntry> getErrors() {
+        return getEntries(StatusEntryLevel.ERROR);
+    }
+
     public List<StatusEntry> getWarnings() {
+        return getEntries(StatusEntryLevel.WARNING);
+    }
+
+    @SuppressWarnings({"ToArrayCallWithZeroLengthArrayArgument"})
+    public List<StatusEntry> getEntries(StatusEntryLevel level) {
         StatusEntry[] entries = statusEntries.toArray(new StatusEntry[0]);
-        ArrayList<StatusEntry> result = new ArrayList<StatusEntry>();
+        List<StatusEntry> result = new ArrayList<StatusEntry>();
         for (StatusEntry entry : entries) {
-            if (entry.isWarning()) {
+            if (level == null || level.equals(entry.getLevel())) {
                 result.add(entry);
             }
         }
         return result;
+    }
+
+    /**
+     * Merge this and the input statuses. Will append all entries from the input to this one. If the status to merge has
+     * last error it will be used. This method is not thread safe, the two statuses are assumed to be inactive in the
+     * time of merging.
+     *
+     * @param toMerge The multi status to merge into this.
+     */
+    public void merge(MultiStatusHolder toMerge) {
+        statusEntries.addAll(toMerge.getAllEntries());
+        if (toMerge.isError()) {
+            setLastError(toMerge.getLastError());
+        }
+    }
+
+    /**
+     * Merge this and the input status. Will append entry from the input this one. If the status to merge has last error
+     * it will be used. This method is not thread safe, the two statuses are assumed to be inactive in the time of
+     * merging.
+     *
+     * @param toMerge The status to merge into this.
+     */
+    public void merge(StatusHolder toMerge) {
+        statusEntries.add(toMerge.getStatusEntry());
+        if (toMerge.isError()) {
+            setLastError(toMerge.getLastError());
+        }
     }
 }

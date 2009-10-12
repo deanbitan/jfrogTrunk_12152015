@@ -1,22 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.cli.main;
 
-import org.artifactory.cli.command.DumpCommand;
 import org.artifactory.cli.common.Option;
 import org.artifactory.cli.common.OptionInfo;
 
@@ -29,7 +29,7 @@ public enum CliOption implements Option {
             "The remote artifactory server IP or host name with optional port number. Default: localhost:8081",
             "host name/ip address"),
     ssl(
-            "Use https instead of http. Default is false"),
+            "Use https instead of http. Default is false (do not use with the url option - specify the url directly)."),
     timeout(
             "Set the timeout of the HTTP connection. Default: 900 seconds = 15 minutes.",
             "network timeout secs"),
@@ -44,30 +44,12 @@ public enum CliOption implements Option {
             "password"),
     noMetadata(
             "Exclude artifactory specific metadata when importing/exporting. Default: false"),
-    symlinks(
-            "Use symbolic links to the original import path file (no file copying done). Default: false"),
-    syncImport(
-            "Import directly into artifactory without using the background import process. Default: false"),
     bypassFiltering(
             "Ignore exiting repository content filtering rules during the export process. Default: false"),
     createArchive(
             "Zip the resulting folder after the export (very slow)"),
-    dest(
-            "The destination folder for the new export files. Default: dumpExport",
-            "destination folder"),
     version(
             "The version of the old artifactory if it cannot be automatically determined", "version name"),
-    repos(
-            "Export only a specified list of repositories. Default: " + DumpCommand.EXPORT_ALL_NON_CACHED_REPOS,
-            "repo names separated by ':'"),
-    noconvert(
-            "Do not auto convert local repository names of artifactory v1.2.5 and earlier to Virtual repositories. " +
-                    "Default: false"),
-    security(
-            "Only dump a security definitions file, and no repositories. Default: false"),
-    caches(
-            "Include cached repositories in the export (by default caches are not exported). " +
-                    "If the repos option is used this option will be ignored. Default: false"),
     verbose(
             "Display maximum execution details. Default: false"),
     failOnError(

@@ -1,105 +1,23 @@
 <?xml encoding='UTF-8'?>
 
+<!--
+  ~ This file is part of Artifactory.
+  ~
+  ~ Artifactory is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Lesser General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ Artifactory is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
 <!-- CHARACTERS ENTITY -->
-
-<!-- Latin A -->
-<!ENTITY nbsp     "&#160;">  <!-- U+00A0 ISOnum    - no-break space = non-breaking space                                   -->
-<!ENTITY iexcl    "&#161;">  <!-- U+00A1 ISOnum    - inverted exclamation mark                                             -->
-<!ENTITY cent     "&#162;">  <!-- U+00A2 ISOnum    - cent sign                                                             -->
-<!ENTITY pound    "&#163;">  <!-- U+00A3 ISOnum    - pound sign                                                            -->
-<!ENTITY curren   "&#164;">  <!-- U+00A4 ISOnum    - currency sign                                                         -->
-<!ENTITY yen      "&#165;">  <!-- U+00A5 ISOnum    - yen sign = yuan sign                                                  -->
-<!ENTITY brvbar   "&#166;">  <!-- U+00A6 ISOnum    - broken bar = broken vertical bar                                      -->
-<!ENTITY sect     "&#167;">  <!-- U+00A7 ISOnum    - section sign                                                          -->
-<!ENTITY uml      "&#168;">  <!-- U+00A8 ISOdia    - diaeresis = spacing diaeresis                                         -->
-<!ENTITY copy     "&#169;">  <!-- U+00A9 ISOnum    - copyright sign                                                        -->
-<!ENTITY ordf     "&#170;">  <!-- U+00AA ISOnum    - feminine ordinal indicator                                            -->
-<!ENTITY laquo    "&#171;">  <!-- U+00AB ISOnum    - left-pointing double angle quotation mark = left pointing guillemet   -->
-<!ENTITY not      "&#172;">  <!-- U+00AC ISOnum    - not sign                                                              -->
-<!ENTITY shy      "&#173;">  <!-- U+00AD ISOnum    - soft hyphen = discretionary hyphen                                    -->
-<!ENTITY reg      "&#174;">  <!-- U+00AE ISOnum    - registered sign = registered trade mark sign                          -->
-<!ENTITY macr     "&#175;">  <!-- U+00AF ISOdia    - macron = spacing macron = overline = APL overbar                      -->
-<!ENTITY deg      "&#176;">  <!-- U+00B0 ISOnum    - degree sign                                                           -->
-<!ENTITY plusmn   "&#177;">  <!-- U+00B1 ISOnum    - plus-minus sign = plus-or-minus sign                                  -->
-<!ENTITY sup2     "&#178;">  <!-- U+00B2 ISOnum    - superscript two = superscript digit two = squared                     -->
-<!ENTITY sup3     "&#179;">  <!-- U+00B3 ISOnum    - superscript three = superscript digit three = cubed                   -->
-<!ENTITY acute    "&#180;">  <!-- U+00B4 ISOdia    - acute accent = spacing acute                                          -->
-<!ENTITY micro    "&#181;">  <!-- U+00B5 ISOnum    - micro sign                                                            -->
-<!ENTITY para     "&#182;">  <!-- U+00B6 ISOnum    - pilcrow sign = paragraph sign                                         -->
-<!ENTITY middot   "&#183;">  <!-- U+00B7 ISOnum    - middle dot = Georgian comma = Greek middle dot                        -->
-<!ENTITY cedil    "&#184;">  <!-- U+00B8 ISOdia    - cedilla = spacing cedilla                                             -->
-<!ENTITY sup1     "&#185;">  <!-- U+00B9 ISOnum    - superscript one = superscript digit one                               -->
-<!ENTITY ordm     "&#186;">  <!-- U+00BA ISOnum    - masculine ordinal indicator                                           -->
-<!ENTITY raquo    "&#187;">  <!-- U+00BB ISOnum    - right-pointing double angle quotation mark = right pointing guillemet -->
-<!ENTITY frac14   "&#188;">  <!-- U+00BC ISOnum    - vulgar fraction one quarter = fraction one quarter                    -->
-<!ENTITY frac12   "&#189;">  <!-- U+00BD ISOnum    - vulgar fraction one half = fraction one half                          -->
-<!ENTITY frac34   "&#190;">  <!-- U+00BE ISOnum    - vulgar fraction three quarters = fraction three quarters              -->
-<!ENTITY iquest   "&#191;">  <!-- U+00BF ISOnum    - inverted question mark = turned question mark                         -->
-<!ENTITY Agrave   "&#192;">  <!-- U+00C0 ISOlat1   - latin capital letter A with grave = latin capital letter A grave      -->
-<!ENTITY Aacute   "&#193;">  <!-- U+00C1 ISOlat1   - latin capital letter A with acute                                     -->
-<!ENTITY Acirc    "&#194;">  <!-- U+00C2 ISOlat1   - latin capital letter A with circumflex                                -->
-<!ENTITY Atilde   "&#195;">  <!-- U+00C3 ISOlat1   - latin capital letter A with tilde                                     -->
-<!ENTITY Auml     "&#196;">  <!-- U+00C4 ISOlat1   - latin capital letter A with diaeresis                                 -->
-<!ENTITY Aring    "&#197;">  <!-- U+00C5 ISOlat1   - latin capital letter A with ring above = latin capital letter A ring  -->
-<!ENTITY AElig    "&#198;">  <!-- U+00C6 ISOlat1   - latin capital letter AE = latin capital ligature AE                   -->
-<!ENTITY Ccedil   "&#199;">  <!-- U+00C7 ISOlat1   - latin capital letter C with cedilla                                   -->
-<!ENTITY Egrave   "&#200;">  <!-- U+00C8 ISOlat1   - latin capital letter E with grave                                     -->
-<!ENTITY Eacute   "&#201;">  <!-- U+00C9 ISOlat1   - latin capital letter E with acute                                     -->
-<!ENTITY Ecirc    "&#202;">  <!-- U+00CA ISOlat1   - latin capital letter E with circumflex                                -->
-<!ENTITY Euml     "&#203;">  <!-- U+00CB ISOlat1   - latin capital letter E with diaeresis                                 -->
-<!ENTITY Igrave   "&#204;">  <!-- U+00CC ISOlat1   - latin capital letter I with grave                                     -->
-<!ENTITY Iacute   "&#205;">  <!-- U+00CD ISOlat1   - latin capital letter I with acute                                     -->
-<!ENTITY Icirc    "&#206;">  <!-- U+00CE ISOlat1   - latin capital letter I with circumflex                                -->
-<!ENTITY Iuml     "&#207;">  <!-- U+00CF ISOlat1   - latin capital letter I with diaeresis                                 -->
-<!ENTITY ETH      "&#208;">  <!-- U+00D0 ISOlat1   - latin capital letter ETH                                              -->
-<!ENTITY Ntilde   "&#209;">  <!-- U+00D1 ISOlat1   - latin capital letter N with tilde                                     -->
-<!ENTITY Ograve   "&#210;">  <!-- U+00D2 ISOlat1   - latin capital letter O with grave                                     -->
-<!ENTITY Oacute   "&#211;">  <!-- U+00D3 ISOlat1   - latin capital letter O with acute                                     -->
-<!ENTITY Ocirc    "&#212;">  <!-- U+00D4 ISOlat1   - latin capital letter O with circumflex                                -->
-<!ENTITY Otilde   "&#213;">  <!-- U+00D5 ISOlat1   - latin capital letter O with tilde                                     -->
-<!ENTITY Ouml     "&#214;">  <!-- U+00D6 ISOlat1   - latin capital letter O with diaeresis                                 -->
-<!ENTITY times    "&#215;">  <!-- U+00D7 ISOnum    - multiplication sign                                                   -->
-<!ENTITY Oslash   "&#216;">  <!-- U+00D8 ISOlat1   - latin capital letter O with stroke = latin capital letter O slash     -->
-<!ENTITY Ugrave   "&#217;">  <!-- U+00D9 ISOlat1   - latin capital letter U with grave                                     -->
-<!ENTITY Uacute   "&#218;">  <!-- U+00DA ISOlat1   - latin capital letter U with acute                                     -->
-<!ENTITY Ucirc    "&#219;">  <!-- U+00DB ISOlat1   - latin capital letter U with circumflex                                -->
-<!ENTITY Uuml     "&#220;">  <!-- U+00DC ISOlat1   - latin capital letter U with diaeresis                                 -->
-<!ENTITY Yacute   "&#221;">  <!-- U+00DD ISOlat1   - latin capital letter Y with acute                                     -->
-<!ENTITY THORN    "&#222;">  <!-- U+00DE ISOlat1   - latin capital letter THORN                                            -->
-<!ENTITY szlig    "&#223;">  <!-- U+00DF ISOlat1   - latin small letter sharp s = ess-zed                                  -->
-<!ENTITY agrave   "&#224;">  <!-- U+00E0 ISOlat1   - latin small letter a with grave = latin small letter a grave          -->
-<!ENTITY aacute   "&#225;">  <!-- U+00E1 ISOlat1   - latin small letter a with acute                                       -->
-<!ENTITY acirc    "&#226;">  <!-- U+00E2 ISOlat1   - latin small letter a with circumflex                                  -->
-<!ENTITY atilde   "&#227;">  <!-- U+00E3 ISOlat1   - latin small letter a with tilde                                       -->
-<!ENTITY auml     "&#228;">  <!-- U+00E4 ISOlat1   - latin small letter a with diaeresis                                   -->
-<!ENTITY aring    "&#229;">  <!-- U+00E5 ISOlat1   - latin small letter a with ring above = latin small letter a ring      -->
-<!ENTITY aelig    "&#230;">  <!-- U+00E6 ISOlat1   - latin small letter ae = latin small ligature ae                       -->
-<!ENTITY ccedil   "&#231;">  <!-- U+00E7 ISOlat1   - latin small letter c with cedilla                                     -->
-<!ENTITY egrave   "&#232;">  <!-- U+00E8 ISOlat1   - latin small letter e with grave                                       -->
-<!ENTITY eacute   "&#233;">  <!-- U+00E9 ISOlat1   - latin small letter e with acute                                       -->
-<!ENTITY ecirc    "&#234;">  <!-- U+00EA ISOlat1   - latin small letter e with circumflex                                  -->
-<!ENTITY euml     "&#235;">  <!-- U+00EB ISOlat1   - latin small letter e with diaeresis                                   -->
-<!ENTITY igrave   "&#236;">  <!-- U+00EC ISOlat1   - latin small letter i with grave                                       -->
-<!ENTITY iacute   "&#237;">  <!-- U+00ED ISOlat1   - latin small letter i with acute                                       -->
-<!ENTITY icirc    "&#238;">  <!-- U+00EE ISOlat1   - latin small letter i with circumflex                                  -->
-<!ENTITY iuml     "&#239;">  <!-- U+00EF ISOlat1   - latin small letter i with diaeresis                                   -->
-<!ENTITY eth      "&#240;">  <!-- U+00F0 ISOlat1   - latin small letter eth                                                -->
-<!ENTITY ntilde   "&#241;">  <!-- U+00F1 ISOlat1   - latin small letter n with tilde                                       -->
-<!ENTITY ograve   "&#242;">  <!-- U+00F2 ISOlat1   - latin small letter o with grave                                       -->
-<!ENTITY oacute   "&#243;">  <!-- U+00F3 ISOlat1   - latin small letter o with acute                                       -->
-<!ENTITY ocirc    "&#244;">  <!-- U+00F4 ISOlat1   - latin small letter o with circumflex                                  -->
-<!ENTITY otilde   "&#245;">  <!-- U+00F5 ISOlat1   - latin small letter o with tilde                                       -->
-<!ENTITY ouml     "&#246;">  <!-- U+00F6 ISOlat1   - latin small letter o with diaeresis                                   -->
-<!ENTITY divide   "&#247;">  <!-- U+00F7 ISOnum    - division sign                                                         -->
-<!ENTITY oslash   "&#248;">  <!-- U+00F8 ISOlat1   - latin small letter o with stroke = latin small letter o slash         -->
-<!ENTITY ugrave   "&#249;">  <!-- U+00F9 ISOlat1   - latin small letter u with grave                                       -->
-<!ENTITY uacute   "&#250;">  <!-- U+00FA ISOlat1   - latin small letter u with acute                                       -->
-<!ENTITY ucirc    "&#251;">  <!-- U+00FB ISOlat1   - latin small letter u with circumflex                                  -->
-<!ENTITY uuml     "&#252;">  <!-- U+00FC ISOlat1   - latin small letter u with diaeresis                                   -->
-<!ENTITY yacute   "&#253;">  <!-- U+00FD ISOlat1   - latin small letter y with acute                                       -->
-<!ENTITY thorn    "&#254;">  <!-- U+00FE ISOlat1   - latin small letter thorn                                              -->
-<!ENTITY yuml     "&#255;">  <!-- U+00FF ISOlat1   - latin small letter y with diaeresis                                   -->
-
 
 <!-- C0 Controls and Basic Latin -->
 <!ENTITY quot     "&#34;">   <!-- U+0022 ISOnum    - quotation mark = APL quote                                            -->

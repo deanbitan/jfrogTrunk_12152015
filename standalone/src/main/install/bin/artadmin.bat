@@ -19,7 +19,7 @@ goto :end
 
 :next
 
-%_JAVACMD% -Dcli.logs.dir="%LOGS_DIR%" -cp "%CLASSPATH%" org.artifactory.cli.main.ArtifactoryCli %*
+%_JAVACMD% -Dartadmin.logs.dir="%LOGS_DIR%" -cp "%CLASSPATH%" org.artifactory.cli.main.ArtAdmin %*
 echo on
 
 @endlocal

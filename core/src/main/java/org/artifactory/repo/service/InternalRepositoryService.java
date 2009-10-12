@@ -1,24 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.repo.service;
 
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.ExportSettings;
+import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
+import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoAccessException;
 import org.artifactory.common.ResourceStreamHandle;
@@ -27,36 +30,50 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
-import org.artifactory.repo.interceptor.LocalRepoInterceptor;
+import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.resource.RepoResource;
 import org.artifactory.spring.ReloadableBean;
-import org.artifactory.worker.WorkMessage;
-import org.jetlang.channels.Publisher;
 
+import javax.jcr.Repository;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 
 /**
  * User: freds Date: Jul 31, 2008 Time: 5:50:18 PM
  */
-public interface InternalRepositoryService
-        extends Publisher<WorkMessage>, RepositoryService, ReloadableBean {
+public interface InternalRepositoryService extends RepositoryService, ReloadableBean {
+
     boolean isAnonAccessEnabled();
 
-    LocalRepoInterceptor getLocalRepoInterceptor();
+    /**
+     * @param key The repository key
+     * @return Repository with the exact given key (no special meaning for remote/cache repo keys). Null if not found.
+     */
+    Repo repositoryByKey(String key);
 
     VirtualRepo virtualRepositoryByKey(String key);
 
     LocalRepo localOrCachedRepositoryByKey(String key);
 
+    /**
+     * Get a repository that can store artifacts. Will get either a local repo (regular or cache) or a virtual repo. If
+     * remote repository key is given, the cache repository is returned.
+     */
+    StoringRepo storingRepositoryByKey(String key);
+
     List<RealRepo> getLocalAndRemoteRepositories();
 
-    Collection<VirtualRepo> getDeclaredVirtualRepositories();
+    List<VirtualRepo> getVirtualRepositories();
 
     List<LocalRepo> getLocalAndCachedRepositories();
 
+    /**
+     * Returns a local non-cache repository by key
+     *
+     * @param key The repository key
+     * @return Local non-cahce repository or null if not found
+     */
     LocalRepo localRepositoryByKey(String key);
 
     RemoteRepo remoteRepositoryByKey(String key);
@@ -82,15 +99,32 @@ public interface InternalRepositoryService
     ResourceStreamHandle unexpireAndRetrieveIfExists(LocalRepo localCacheRepo, String path) throws IOException;
 
     @Lock(transactional = true)
-    ResourceStreamHandle getResourceStreamHandle(RealRepo repo, RepoResource res)
-            throws IOException, RepoAccessException;
-
-    @Lock(transactional = true)
-    String getChecksum(RealRepo repo, String path) throws IOException;
+    ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res) throws IOException, RepoAccessException;
 
     @Lock(transactional = true, readOnly = true)
-    void exportTo(ExportSettings settings, StatusHolder status);
+    void exportTo(ExportSettings settings);
 
+    List<StoringRepo> getStoringRepositories();
+
+    /**
+     * Executes the maven metadata calculator on all the folders marked with the maven metadata recalculation flag. This
+     * method is internal to the repository service and should execute during startup to make sure there are no folders
+     * that the maven metadata wasn't recalculated on them (the recalculation might execute in metadata and interrupted
+     * in the middle)
+     */
+    @Async(delayUntilAfterCommit = true, transactional = true)
+    void recalculateMavenMetadataOnMarkedFolders();
+
+    /**
+     * Removes a mark for maven metadata recalculation if such exists.
+     *
+     * @param basePath Repo path to remove the mark from.
+     */
     @Lock(transactional = true)
-    void executeMessage(WorkMessage message);
+    void removeMarkForMavenMetadataRecalculation(RepoPath basePath);
+
+    @Async(delayUntilAfterCommit = true, transactional = true)
+    void updateStats(RepoPath repoPath);
+
+    Repository getJcrHandle();
 }

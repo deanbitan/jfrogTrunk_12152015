@@ -1,18 +1,31 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.cli.common;
 
+import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.StatusEntry;
 import org.artifactory.cli.main.CliOption;
 import org.artifactory.cli.main.CommandDefinition;
-import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.version.ArtifactoryVersion;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.List;
 
 /**
  * The main base class for CLI commands
@@ -20,7 +33,7 @@ import java.util.zip.ZipFile;
  * @author Noam Tenne
  */
 public abstract class BaseCommand implements Command {
-    private final static Logger log = LoggerFactory.getLogger(BaseCommand.class);
+    private static final Logger log = LoggerFactory.getLogger(BaseCommand.class);
     /**
      * The Command definition of the command
      */
@@ -95,6 +108,26 @@ public abstract class BaseCommand implements Command {
                 sb.append("\n");
             }
         }
+    }
+
+    protected int reportMultiStatusResult(MultiStatusHolder statusHolder) {
+        List<StatusEntry> errors = statusHolder.getErrors();
+        if (errors.size() > 0) {
+            log.info("The command was NOT successfully completed. The following errors were returned: ");
+            for (StatusEntry error : errors) {
+                log.error("- " + error.getMessage());
+            }
+        } else {
+            log.info("The command was successfully completed!");
+        }
+        List<StatusEntry> warnings = statusHolder.getWarnings();
+        if (warnings.size() > 0) {
+            log.info("The command returned the following warnings: ");
+            for (StatusEntry warning : warnings) {
+                log.error("- " + warning.getMessage());
+            }
+        }
+        return statusHolder.getLastError() == null ? 0 : 1;
     }
 
     /**
@@ -214,88 +247,6 @@ public abstract class BaseCommand implements Command {
             i++;
         }
         return i;
-    }
-
-    /**
-     * Returns the version class of the specified artifactory home
-     *
-     * @return ArtifactoryVersion Version class of chosen Artifactory
-     * @throws java.io.IOException
-     */
-    @SuppressWarnings({"OverlyComplexMethod"})
-    public ArtifactoryVersion getArtifactoryVersion() throws IOException {
-        String versionName = null;
-        if (CliOption.version.isSet()) {
-            versionName = CliOption.version.getValue();
-        } else {
-            log.info("Finding version...");
-            // First look for artifactory.properties in the data folder (works since 1.3.0-rc1)
-            ArtifactoryHome.setDataAndJcrDir();
-            //File propsFile = new File(ArtifactoryHome.getDataDir(), ArtifactoryHome.ARTIFACTORY_PROPERTIES_FILE);
-            File webappsDir = ArtifactoryHome.getOrCreateSubDir("webapps");
-            File warFile = new File(webappsDir, WEBAPPS_ARTIFACTORY_WAR);
-            if (!warFile.exists()) {
-                log.error("War file {} does not exists please put it there or give a version param", warFile);
-                usage();
-            }
-            ZipFile zipFile = new ZipFile(warFile);
-            Enumeration<? extends ZipEntry> warEntries = zipFile.entries();
-            while (warEntries.hasMoreElements()) {
-                ZipEntry zipEntry = warEntries.nextElement();
-                String zipEntryName = zipEntry.getName();
-                if (zipEntryName.startsWith(LIB_ARTIFACTORY_CORE) && zipEntryName.endsWith(".jar")) {
-                    versionName = zipEntryName.substring(LIB_ARTIFACTORY_CORE.length() + 1, zipEntryName.length() - 4);
-                    break;
-                }
-            }
-            if (versionName == null) {
-                log.error("Did not find the version in {} looking for {}.", warFile, LIB_ARTIFACTORY_CORE);
-                usage();
-            }
-            log.info("Found version name " + versionName);
-        }
-
-        ArtifactoryVersion[] artifactoryVersions = ArtifactoryVersion.values();
-        ArtifactoryVersion version = null;
-        for (ArtifactoryVersion artifactoryVersion : artifactoryVersions) {
-            if (artifactoryVersion.getValue().equals(versionName)) {
-                version = artifactoryVersion;
-                break;
-            }
-        }
-        if (version == null) {
-            log.error("Version {} is wrong or is not supported by this updater", versionName);
-            log.error("If you know a good close version, please give a version param");
-            usage();
-            // Too avoid the may have NPE below
-            return null;
-        }
-        if (version.isCurrent()) {
-            log.error("Version " + versionName + " is the latest version, no update needed");
-            log.error("If you know it's an old version, please give a version param");
-            usage();
-        }
-        log.info("Found supported version " + version.getValue() + " revision " +
-                version.getRevision());
-        // If the version is before the xs:id usage print a warning message
-        return version;
-    }
-
-    /**
-     * Returns a File representation of the selected Artfiactory home
-     *
-     * @return File Location of Artifactory home
-     */
-    public void findAndSetArtifactoryHome() {
-        String artifactoryHome = getCommandArgument().getValue();
-        File artifactoryHomeDir = new File(artifactoryHome);
-        if (!artifactoryHomeDir.exists() || !artifactoryHomeDir.isDirectory()) {
-            log.error("Artifactory home " + artifactoryHomeDir.getAbsolutePath() +
-                    " does not exists or is not a directory.");
-            usage();
-        }
-        ArtifactoryHome.setHomeDir(artifactoryHomeDir);
-        log.info("Artifactory Home dir=[" + artifactoryHomeDir.getAbsolutePath() + "]");
     }
 
     /**

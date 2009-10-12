@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.descriptor.security;
 
 import org.artifactory.descriptor.security.ldap.LdapSetting;
@@ -19,7 +36,7 @@ public class SecurityDescriptorTest {
                 "Annon access should be enabled by default");
         assertNull(security.getLdapSettings(), "Ldap settings list should be null");
         assertNotNull(security.getPasswordSettings(), "Password settings list should not be null");
-        }
+    }
 
     public void addLdap() {
         SecurityDescriptor security = new SecurityDescriptor();
@@ -65,5 +82,4 @@ public class SecurityDescriptorTest {
         assertNull(security.getLdapSettings(),
                 "If no ldap configured the ldap settings list should be null (not just empty)");
     }
-
 }

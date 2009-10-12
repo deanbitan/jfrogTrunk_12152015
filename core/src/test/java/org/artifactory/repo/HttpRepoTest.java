@@ -1,16 +1,38 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.repo;
 
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.artifactory.common.ArtifactoryProperties;
-import org.artifactory.common.ConstantsValue;
+import org.artifactory.api.context.ArtifactoryContext;
+import org.artifactory.api.context.ArtifactoryContextThreadBinder;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.jcr.md.MetadataService;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.spring.InternalArtifactoryContext;
 import org.easymock.EasyMock;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -18,11 +40,25 @@ import org.testng.annotations.Test;
  * @author Yoav Landman
  */
 public class HttpRepoTest {
-    InternalRepositoryService internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
+    private InternalRepositoryService internalRepoService;
 
     @BeforeClass
     public void setup() {
-        ArtifactoryProperties.get().setProperty(ConstantsValue.artifactoryVersion.getPropertyName(), "test");
+        System.setProperty(ConstantValues.artifactoryVersion.getPropertyName(), "test");
+        internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
+        ArtifactoryContext contextMock = EasyMock.createMock(InternalArtifactoryContext.class);
+        EasyMock.expect(contextMock.beanForType(MetadataService.class))
+                .andReturn(EasyMock.createMock(MetadataService.class));
+        ArtifactoryContextThreadBinder.bind(contextMock);
+        EasyMock.replay(contextMock);
+        ArtifactorySystemProperties artifactorySystemProperties = new ArtifactorySystemProperties();
+        artifactorySystemProperties.loadArtifactorySystemProperties(null, null);
+        ArtifactorySystemProperties.bind(artifactorySystemProperties);
+    }
+
+    @AfterClass
+    public void tearDown() {
+        ArtifactoryContextThreadBinder.unbind();
     }
 
     @Test

@@ -1,22 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.repo.webdav;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
@@ -28,11 +31,12 @@ import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RealRepo;
+import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.security.AccessLogger;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -99,10 +103,10 @@ public class WebdavServiceImpl implements WebdavService {
     private AuthorizationService authService;
 
     @Autowired
-    private InternalRepositoryService repositoryService;
+    private InternalRepositoryService repoService;
 
-    public void handlePropfind(ArtifactoryRequest request,
-            ArtifactoryResponse response) throws IOException {
+    @SuppressWarnings({"OverlyComplexMethod"})
+    public void handlePropfind(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         // Retrieve the resources
         RepoPath repoPath = request.getRepoPath();
         String path = repoPath.getPath();
@@ -111,9 +115,9 @@ public class WebdavServiceImpl implements WebdavService {
         if (depthStr != null) {
             if ("0".equals(depthStr)) {
                 depth = 0;
-            } else if (depthStr.equals("1")) {
+            } else if ("1".equals(depthStr)) {
                 depth = 1;
-            } else if (depthStr.equals("infinity")) {
+            } else if ("infinity".equals(depthStr)) {
                 depth = INFINITY;
             }
         }
@@ -166,62 +170,83 @@ public class WebdavServiceImpl implements WebdavService {
         Writer writer = response.getWriter();
         XmlWriter generatedXml = new XmlWriter(writer);
         generatedXml.writeXMLHeader();
-        generatedXml.writeElement(null, "multistatus xmlns=\"" + DEFAULT_NAMESPACE + "\"",
-                XmlWriter.OPENING);
+        generatedXml.writeElement(null, "multistatus xmlns=\"" + DEFAULT_NAMESPACE + "\"", XmlWriter.OPENING);
         if (depth > 0) {
-            recursiveParseProperties(request, response, generatedXml, path,
-                    propertyFindType, properties, depth);
+            recursiveParseProperties(
+                    request, response, generatedXml, path, propertyFindType, properties, depth);
         } else {
-            parseProperties(request, response, generatedXml, path,
-                    propertyFindType, properties);
+            parseProperties(request, response, generatedXml, path, propertyFindType, properties);
         }
         generatedXml.writeElement(null, "multistatus", XmlWriter.CLOSING);
         generatedXml.sendData();
         response.flush();
     }
 
-    public void handleMkcol(ArtifactoryRequest request,
-            ArtifactoryResponse response) throws IOException {
+    public void handleMkcol(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         RepoPath repoPath = request.getRepoPath();
         final LocalRepo repo = getLocalRepo(request, response);
         //Return 405 if folder exists
-        if (repo.itemExists(repoPath.getPath())) {
+        String path = repoPath.getPath();
+        if (repo.itemExists(path)) {
             response.setStatus(HttpStatus.SC_METHOD_NOT_ALLOWED);
             return;
         }
         //Check that we are allowed to write
-        checkCanDeploy(repoPath, response);
+        StatusHolder statusHolder = repoService.assertValidDeployPath(repo, path);
+        if (statusHolder.isError()) {
+            response.sendError(statusHolder);
+            return;
+        }
         JcrFolder targetFolder = repo.getLockedJcrFolder(repoPath, true);
         targetFolder.mkdirs();
-        // Return 201 when element created
+        //Return 201 when an element is created
         response.setStatus(HttpStatus.SC_CREATED);
     }
 
-    public void handleDelete(ArtifactoryRequest request,
-            ArtifactoryResponse response) throws IOException {
+    public void handleDelete(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         RepoPath repoPath = request.getRepoPath();
-        //Check that we are allowed to write
-        checkCanDeploy(repoPath, response);
-        final LocalRepo repo = getLocalRepo(request, response);
-        repo.undeploy(repoPath);
+        StatusHolder statusHolder = repoService.undeploy(repoPath);
+        if (statusHolder.isError()) {
+            response.sendError(statusHolder);
+            return;
+        }
         response.sendOk();
     }
 
     public void handleOptions(ArtifactoryResponse response) throws IOException {
         response.setHeader("DAV", "1,2");
-        response.setHeader("Allow", "OPTIONS, MKCOL, PUT, GET, HEAD, POST, DELETE, PROPFIND");
+        response.setHeader("Allow", "OPTIONS, MKCOL, PUT, GET, HEAD, POST, DELETE, PROPFIND, MOVE");
         response.setHeader("MS-Author-Via", "DAV");
         response.sendOk();
     }
 
-    private void checkCanDeploy(RepoPath repoPath,
-            ArtifactoryResponse response) throws IOException {
-        boolean canDeploy = authService.canDeploy(repoPath);
-        if (!canDeploy) {
-            String msg = "Deploy to '" + repoPath + "' not allowed.";
-            response.sendError(HttpStatus.SC_FORBIDDEN, msg, log);
-            AccessLogger.deployDenied(repoPath);
-            throw new RuntimeException(msg);
+    public void handleMove(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
+        RepoPath repoPath = request.getRepoPath();
+        if (StringUtils.isEmpty(repoPath.getPath())) {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, "Cannot perform MOVE action on a repository. " +
+                    "Please specify a valid path", log);
+            return;
+        }
+        String targetRepoKey = request.getParameter("targetRepoKey");
+        if (StringUtils.isEmpty(targetRepoKey)) {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, "Parameter 'targetRepoKey' is required.", log);
+            return;
+        }
+        LocalRepo targetRepo = repoService.localRepositoryByKey(targetRepoKey);
+        if (targetRepo == null) {
+            response.sendError(HttpStatus.SC_NOT_FOUND, "Target local repository not found.", log);
+            return;
+        }
+        if (!authService.canDelete(repoPath) || !authService.canDeploy(new RepoPath(targetRepoKey, ""))) {
+            response.sendError(HttpStatus.SC_UNAUTHORIZED, "Insufficient permissions.", log);
+            return;
+        }
+
+        MoveMultiStatusHolder status = repoService.move(repoPath, targetRepoKey, false);
+        if (!status.hasWarnings() && !status.hasErrors()) {
+            response.sendOk();
+        } else {
+            response.sendError(status);
         }
     }
 
@@ -278,6 +303,7 @@ public class WebdavServiceImpl implements WebdavService {
      * @param propertiesList<String> If the propfind type is find properties by name, then this List<String> contains
      *                               those properties
      */
+    @SuppressWarnings({"OverlyComplexMethod"})
     private void parseProperties(ArtifactoryRequest request,
             ArtifactoryResponse response,
             XmlWriter generatedXml, final String path,
@@ -384,46 +410,46 @@ public class WebdavServiceImpl implements WebdavService {
                 generatedXml.writeElement(null, "propstat", XmlWriter.OPENING);
                 generatedXml.writeElement(null, "prop", XmlWriter.OPENING);
                 for (String property : propertiesList) {
-                    if (property.equals("creationdate")) {
+                    if ("creationdate".equals(property)) {
                         generatedXml.writeProperty(null, "creationdate", creationDate);
-                    } else if (property.equals("displayname")) {
+                    } else if ("displayname".equals(property)) {
                         generatedXml.writeElement(null, "displayname", XmlWriter.OPENING);
                         generatedXml.writeData(resourceName);
                         generatedXml.writeElement(null, "displayname", XmlWriter.CLOSING);
-                    } else if (property.equals("getcontentlanguage")) {
+                    } else if ("getcontentlanguage".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
                             generatedXml.writeElement(
                                     null, "getcontentlanguage", XmlWriter.NO_CONTENT);
                         }
-                    } else if (property.equals("getcontentlength")) {
+                    } else if ("getcontentlength".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
                             generatedXml.writeProperty(null, "getcontentlength", resourceLength);
                         }
-                    } else if (property.equals("getcontenttype")) {
+                    } else if ("getcontenttype".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
                             generatedXml.writeProperty(null, "getcontenttype",
                                     NamingUtils.getMimeTypeByPathAsString(path));
                         }
-                    } else if (property.equals("getetag")) {
+                    } else if ("getetag".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
                             generatedXml.writeProperty(null, "getetag",
                                     getEtag(resourceLength, lastModified));
                         }
-                    } else if (property.equals("getlastmodified")) {
+                    } else if ("getlastmodified".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
                             generatedXml.writeProperty(null, "getlastmodified", lastModified);
                         }
-                    } else if (property.equals("source")) {
+                    } else if ("source".equals(property)) {
                         generatedXml.writeProperty(null, "source", "");
                     } else {
                         propertiesNotFound.add(property);
@@ -475,8 +501,7 @@ public class WebdavServiceImpl implements WebdavService {
             ArtifactoryResponse response,
             XmlWriter generatedXml, String currentPath,
             int propertyFindType, List<String> properties, int depth) throws IOException {
-        parseProperties(request, response, generatedXml,
-                currentPath, propertyFindType, properties);
+        parseProperties(request, response, generatedXml, currentPath, propertyFindType, properties);
         JcrFsItem item = getJcrFsItem(request, response, currentPath);
         if (item == null) {
             log.warn("Folder '" + currentPath + "' not found.");
@@ -496,24 +521,25 @@ public class WebdavServiceImpl implements WebdavService {
 
     private JcrFsItem getJcrFsItem(ArtifactoryRequest request,
             ArtifactoryResponse response, String path) throws IOException {
-        final LocalRepo repo = getLocalRepo(request, response);
+        final StoringRepo repo = getLocalRepo(request, response);
         String repoKey = request.getRepoKey();
         RepoPath repoPath = new RepoPath(repoKey, path);
-        StatusHolder status = repo.allowsDownload(repoPath);
-        //Check that we are allowed to read
-        if (status.isError()) {
-            String msg = status.getStatusMsg();
-            response.sendError(status.getStatusCode(), msg, log);
-            throw new RuntimeException(msg);
+        if (repo.isReal()) {
+            StatusHolder status = ((RealRepo) repo).checkDownloadIsAllowed(repoPath);
+            //Check that we are allowed to read
+            if (status.isError()) {
+                String msg = status.getStatusMsg();
+                response.sendError(status.getStatusCode(), msg, log);
+                throw new RuntimeException(msg);
+            }
         }
         JcrFsItem item = repo.getJcrFsItem(repoPath);
         return item;
     }
 
-    private LocalRepo getLocalRepo(ArtifactoryRequest request,
-            ArtifactoryResponse response) throws IOException {
+    private LocalRepo getLocalRepo(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         String repoKey = request.getRepoKey();
-        final LocalRepo repo = repositoryService.localOrCachedRepositoryByKey(repoKey);
+        final LocalRepo repo = repoService.localRepositoryByKey(repoKey);
         if (repo == null) {
             String msg = "Could not find repo '" + repoKey + "'.";
             response.sendError(HttpStatus.SC_NOT_FOUND, msg, log);
@@ -534,8 +560,7 @@ public class WebdavServiceImpl implements WebdavService {
      * Get creation date in ISO format.
      */
     private static synchronized String getIsoCreationDate(long creationDate) {
-        StringBuffer creationDateValue =
-                new StringBuffer(creationDateFormat.format(new Date(creationDate)));
+        StringBuffer creationDateValue = new StringBuffer(creationDateFormat.format(new Date(creationDate)));
         return creationDateValue.toString();
     }
 

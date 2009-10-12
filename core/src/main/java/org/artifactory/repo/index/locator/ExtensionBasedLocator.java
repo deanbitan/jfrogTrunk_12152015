@@ -1,26 +1,26 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.repo.index.locator;
 
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.jcr.JcrPath;
-import org.artifactory.repo.LocalRepo;
-import org.sonatype.nexus.artifact.Gav;
+import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.util.PathUtils;
 
 import java.io.File;
 
@@ -29,27 +29,27 @@ import java.io.File;
  * @date Oct 24, 2008
  */
 public final class ExtensionBasedLocator extends ArtifactoryLocator {
-    private static final String POM_EXTENSION = "." + ContentType.mavenPom.getDefaultExtension();
     private final String expectedExtension;
 
-    public ExtensionBasedLocator(LocalRepo localRepo, String expectedExtension) {
-        super(localRepo);
+    public ExtensionBasedLocator(StoringRepo repo, String expectedExtension) {
+        super(repo);
         this.expectedExtension = expectedExtension;
     }
 
-    public File locate(File source, Gav gav) {
-        RepoPath repoPath = JcrPath.get().getRepoPath(source.getAbsolutePath());
-        String name = source.getName();
-        if (name.endsWith(expectedExtension)) {
-            return getLocalRepo().getJcrFile(repoPath);
+    public File locate(File source) {
+        String sourcePath = source.getAbsolutePath();
+        String targetPath = PathUtils.stripExtension(sourcePath) + expectedExtension;
+        RepoPath repoPath = JcrPath.get().getRepoPath(targetPath);
+        File target = getRepo().getJcrFile(repoPath);
+        if (target == null) {
+            //Cannot return null - return non existing file
+            target = new File(targetPath) {
+                @Override
+                public boolean exists() {
+                    return false;
+                }
+            };
         }
-        if (name.endsWith(POM_EXTENSION)) {
-            String relPath = repoPath.getPath();
-            relPath = relPath.substring(0, relPath.length() - POM_EXTENSION.length()) +
-                    expectedExtension;
-            repoPath = new RepoPath(repoPath.getRepoKey(), relPath);
-            return getLocalRepo().getJcrFile(repoPath);
-        }
-        return null;
+        return target;
     }
 }

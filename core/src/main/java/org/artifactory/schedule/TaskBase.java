@@ -1,26 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.schedule;
 
-import org.artifactory.common.ConstantsValue;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.concurrent.LockingException;
 import org.artifactory.concurrent.State;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.ClassUtils;
 
 import java.util.HashSet;
@@ -54,7 +55,6 @@ public abstract class TaskBase implements Task {
     private final Class<? extends TaskCallback> callbackType;
 
     private final String token;
-    private static final int TRIES_UNTIL_COMPLETION = 100;
 
     @SuppressWarnings({"unchecked"})
     protected TaskBase(Class<? extends TaskCallback> callbackType) {
@@ -251,18 +251,18 @@ public abstract class TaskBase implements Task {
         lockState();
         try {
             try {
-                //Wait forever (100 times more than timeout) until it finished the current execution
-                int tries = TRIES_UNTIL_COMPLETION;
+                //Wait forever (tries * lock timeout) until it finished the current execution
+                int tries = ConstantValues.taskCompletionLockTimeoutRetries.getInt();
                 while (!(completed = executed && (state == TaskState.STOPPED || state == TaskState.CANCELED))) {
-                    boolean success = this.completed.await(ConstantsValue.lockTimeoutSecs.getLong(), TimeUnit.SECONDS);
+                    boolean success = this.completed.await(ConstantValues.lockTimeoutSecs.getLong(), TimeUnit.SECONDS);
                     if (success) {
                         completed = true;
                         break;
                     }
                     tries--;
                     if (tries <= 0) {
-                        throw new LockingException("Waited for task " + this + " more than " + TRIES_UNTIL_COMPLETION +
-                                " times.");
+                        throw new LockingException("Waited for task " + this + " more than " +
+                                ConstantValues.taskCompletionLockTimeoutRetries.getInt() + " times.");
                     }
                 }
             } catch (InterruptedException e) {
@@ -331,7 +331,7 @@ public abstract class TaskBase implements Task {
     }
 
     private TaskState guardedWaitForNextStep() {
-        long timeout = ConstantsValue.lockTimeoutSecs.getLong();
+        long timeout = ConstantValues.lockTimeoutSecs.getLong();
         return guardedWaitForNextStep(timeout);
     }
 
@@ -397,7 +397,7 @@ public abstract class TaskBase implements Task {
     }
 
     private long getStateLockTimeOut() {
-        return ConstantsValue.lockTimeoutSecs.getLong();
+        return ConstantValues.lockTimeoutSecs.getLong();
     }
 
     private void unlockState() {

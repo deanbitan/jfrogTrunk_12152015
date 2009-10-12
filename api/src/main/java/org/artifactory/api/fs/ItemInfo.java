@@ -1,119 +1,67 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.api.fs;
 
 import org.artifactory.api.common.Info;
 import org.artifactory.api.repo.RepoPath;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
-public abstract class ItemInfo implements Info {
+public interface ItemInfo extends Info {
+    String METADATA_FOLDER = ".artifactory-metadata";
 
-    public static final String METADATA_FOLDER = ".artifactory-metadata";
+    RepoPath getRepoPath();
 
-    private final RepoPath repoPath;
-    private final String name;
-    private long created;
-    protected long lastModified;
+    boolean isFolder();
 
-    protected ItemInfo(RepoPath repoPath) {
-        if (repoPath == null) {
-            throw new IllegalArgumentException("RepoPath cannot be null");
-        }
-        this.repoPath = repoPath;
-        this.name = repoPath.getName();
-        this.created = System.currentTimeMillis();
-        this.lastModified = System.currentTimeMillis();
-    }
+    String getName();
 
-    protected ItemInfo(ItemInfo info) {
-        this(info.getRepoPath());
-        this.created = info.getCreated();
-        this.lastModified = info.getLastModified();
-    }
+    String getRepoKey();
 
-    protected ItemInfo(ItemInfo info, RepoPath repoPath) {
-        this(repoPath);
-        this.created = info.getCreated();
-        this.lastModified = info.getLastModified();
-    }
+    String getRelPath();
 
-    public RepoPath getRepoPath() {
-        return repoPath;
-    }
+    long getCreated();
 
-    public abstract boolean isFolder();
+    void setCreated(long created);
 
-    public String getName() {
-        return name;
-    }
+    long getLastModified();
 
-    public String getRepoKey() {
-        return repoPath.getRepoKey();
-    }
+    void setLastModified(long lastModified);
 
-    public String getRelPath() {
-        return repoPath.getPath();
-    }
+    String getModifiedBy();
 
-    public long getCreated() {
-        return created;
-    }
+    void setModifiedBy(String name);
 
-    public void setCreated(long created) {
-        this.created = created;
-    }
+    String getCreatedBy();
 
-    public long getLastModified() {
-        return lastModified;
-    }
+    void setCreatedBy(String name);
 
-    public void setLastModified(long lastModified) {
-        this.lastModified = lastModified;
-    }
+    long getLastUpdated();
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+    void setLastUpdated(long lastUpdated);
 
-        ItemInfo info = (ItemInfo) o;
-
-        return repoPath.equals(info.repoPath);
-    }
-
-    @Override
-    public int hashCode() {
-        return repoPath.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return "ItemInfo{" +
-                "repoPath=" + repoPath +
-                ", created=" + created +
-                ", lastModified=" + lastModified +
-                '}';
-    }
-
-    public boolean isIdentical(ItemInfo info) {
-        return this.lastModified == info.lastModified &&
-                this.name.equals(info.name) &&
-                this.repoPath.equals(info.repoPath) &&
-                this.created == info.created;
-    }
-
-    public void setModifiedBy(String name) {
-        getInernalXmlInfo().setModifiedBy(name);
-    }
+    boolean isIdentical(ItemInfo info);
 
     /**
      * Should not be called by clients - always use direct accessors
      *
      * @return
      */
-    public abstract ItemAdditionalInfo getInernalXmlInfo();
+    ItemAdditionalInfo getInternalXmlInfo();
 }

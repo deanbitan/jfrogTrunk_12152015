@@ -1,11 +1,28 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.update.md.v130beta3;
 
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverterTest;
-import org.artifactory.version.ConverterUtils;
+import org.artifactory.version.XmlConverterUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import org.testng.annotations.Test;
@@ -17,13 +34,13 @@ import org.testng.annotations.Test;
  */
 @Test
 public class ArtifactoryFolderConverterTest extends MetadataConverterTest {
-    private final static Logger log = LoggerFactory.getLogger(ArtifactoryFolderConverterTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ArtifactoryFolderConverterTest.class);
 
     public void convertValidFile() throws Exception {
         String fileMetadata = "/metadata/v130beta3/artifactory.folder.xml";
-        Document doc = convertMetadata(fileMetadata, new ArtifactoryFolderConverter());
+        Document doc = convertXml(fileMetadata, new ArtifactoryFolderConverter());
 
-        log.debug(ConverterUtils.outputString(doc));
+        log.debug(XmlConverterUtils.outputString(doc));
 
         Element root = doc.getRootElement();
         assertEquals(root.getName(), "artifactory-folder", "Root node should have been renamed");

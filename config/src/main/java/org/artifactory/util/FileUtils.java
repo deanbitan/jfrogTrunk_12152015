@@ -1,23 +1,24 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.util;
 
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -28,35 +29,36 @@ import java.util.Random;
  */
 public class FileUtils {
     private static final Logger log = LoggerFactory.getLogger(FileUtils.class);
-
-    public static final String ORIGINAL = ".original.";
-
     private static final Random intGenerator = new Random(System.currentTimeMillis());
+
+    public static String getDecodedFileUrl(File file) {
+        return "file:" + file.toURI().getPath();
+    }
 
     /**
      * Rename the oldFile to oldFileName.original.XX.extension, where XX is a rolling number for files with identical
      * names in the oldFile.getParent() directory. Then Rename the newFile to oldFile.
      *
      * @param oldFile
-     * @param newFile
+     * @param newdFile
      */
-    public static void switchFiles(File oldFile, File newFile) {
+    public static void switchFiles(File oldFile, File newdFile) {
         String exceptionMsg = "Cannot switch files '" + oldFile.getAbsolutePath() + "' to '" +
-                newFile.getAbsolutePath() + "'. '";
-        if (!newFile.exists() || !newFile.isFile()) {
-            throw new IllegalArgumentException(
-                    exceptionMsg + newFile.getAbsolutePath() + "' is not a file.");
+                newdFile.getAbsolutePath() + "'. '";
+        if (!oldFile.exists() || !oldFile.isFile()) {
+            throw new IllegalArgumentException(exceptionMsg + oldFile.getAbsolutePath() + "' is not a file.");
         }
-        if (!oldFile.exists()) {
+        if (!newdFile.exists()) {
             // Just rename the new file to the old name
-            newFile.renameTo(oldFile);
+            oldFile.renameTo(newdFile);
         }
-        if (!oldFile.isFile()) {
-            throw new IllegalArgumentException(
-                    exceptionMsg + oldFile.getAbsolutePath() + "' is not a file.");
+        if (newdFile.exists() && !newdFile.isFile()) {
+            //renameTo() of open files does not work on windows (http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6213298)
+            throw new IllegalArgumentException(exceptionMsg + newdFile.getAbsolutePath() + "' is not a file.");
         }
-        File dir = oldFile.getParentFile();
-        String fileName = oldFile.getName();
+        //Else is
+        File dir = newdFile.getParentFile();
+        String fileName = newdFile.getName();
         int lastDot = fileName.lastIndexOf('.');
         final String extension;
         final String fileNameNoExt;
@@ -68,7 +70,7 @@ public class FileUtils {
             fileNameNoExt = fileName.substring(0, lastDot);
         }
 
-        final String fileNameNoNumber = fileNameNoExt + ORIGINAL;
+        final String fileNameNoNumber = fileNameNoExt + ".";
         File backupOrigFileName = new File(dir, fileNameNoNumber + extension);
         if (backupOrigFileName.exists()) {
             // Rolling files
@@ -93,8 +95,8 @@ public class FileUtils {
             }
             backupOrigFileName = new File(dir, fileNameNoNumber + maxNb + ".xml");
         }
-        oldFile.renameTo(backupOrigFileName);
-        newFile.renameTo(new File(dir, fileName));
+        newdFile.renameTo(backupOrigFileName);
+        oldFile.renameTo(new File(dir, fileName));
     }
 
     public static File createRandomDir(File parentDir, String prefix) {
@@ -107,15 +109,6 @@ public class FileUtils {
             throw new RuntimeException("Failed to create directory '" + dir.getPath() + "'.");
         }
         return dir;
-    }
-
-    public static boolean createSymLink(File source, File dest) {
-        if (!ExecUtils.isWindows()) {
-            String cmd = "ln " + "-s " + source + " " + dest.getAbsolutePath();
-            return ExecUtils.execute(cmd);
-        } else {
-            throw new IllegalArgumentException("Cannot create SymLinks in a Windows environment");
-        }
     }
 
     /**
@@ -148,6 +141,7 @@ public class FileUtils {
         File[] files = directory.listFiles();
         if (files == null) {  // null if security restricted
             log.warn("Failed to list contents of {}", directory);
+            return;
         }
 
         for (File file : files) {

@@ -1,43 +1,46 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr.md;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import static org.apache.jackrabbit.JcrConstants.*;
+import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
+import static org.apache.jackrabbit.JcrConstants.JCR_DATA;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.fs.ChecksumInfo;
 import org.artifactory.api.fs.MetadataInfo;
+import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.md.Properties;
 import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.cache.InternalCacheService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumCalculator;
-import org.artifactory.io.checksum.ChecksumInputStream;
-import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.JcrService;
+import org.artifactory.jcr.JcrServiceImpl;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.ReloadableBean;
+import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -45,8 +48,8 @@ import javax.annotation.PostConstruct;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
-import javax.jcr.Value;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -62,7 +65,7 @@ import java.util.Set;
  * User: freds Date: Aug 10, 2008 Time: 3:27:38 PM
  */
 @Service
-public class MetadataServiceImpl implements MetadataService {
+public class MetadataServiceImpl implements InternalMetadataService {
     private static final Logger log = LoggerFactory.getLogger(MetadataServiceImpl.class);
 
     @Autowired
@@ -73,9 +76,6 @@ public class MetadataServiceImpl implements MetadataService {
 
     @Autowired
     private JcrService jcr;
-
-    @Autowired
-    private JcrRepoService jcrRepoService;
 
     @Autowired
     private AuthorizationService authorizationService;
@@ -99,10 +99,13 @@ public class MetadataServiceImpl implements MetadataService {
     public void destroy() {
     }
 
+    public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
+    }
+
     public void saveChecksums(MetadataAware metadataAware, String metadataName, Checksum[] checksums) {
         Node metadataNode = getMetadataNode(metadataAware, metadataName);
         try {
-            setChecksums(metadataNode, checksums, false);
+            JcrServiceImpl.setChecksums(metadataNode, checksums, false);
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException("Failed to save metadta checksums.", e);
         }
@@ -139,7 +142,7 @@ public class MetadataServiceImpl implements MetadataService {
         MetadataDefinition definition = definitionService.getMetadataDefinition(clazz);
         if (!definition.isPersistent()) {
             throw new IllegalArgumentException(
-                    "Metadata " + definition + " is declared non persisten so cannot be saved!");
+                    "Metadata " + definition + " is declared non persistent and cannot be saved!");
         }
         String metadataName = definition.getMetadataName();
         ByteArrayOutputStream os = null;
@@ -150,6 +153,12 @@ public class MetadataServiceImpl implements MetadataService {
         } finally {
             IOUtils.closeQuietly(os);
         }
+        //Store properties on an artifactory:properties node under the propertirs metadata node created by
+        //setXmlMetadataInternal()
+        if (Properties.ROOT.equals(metadataName)) {
+            Properties properties = (Properties) xstreamable;
+            setProperties(metadataAware, properties);
+        }
         return metadataName;
     }
 
@@ -157,9 +166,12 @@ public class MetadataServiceImpl implements MetadataService {
         setXmlMetadata(metadataAware, metadataName, is, null);
     }
 
+    //Unprotected data - called from import (among others)
     public void setXmlMetadata(MetadataAware metadataAware, String metadataName, InputStream is, StatusHolder status) {
+        //We need to verify the data requested to be saved, since we have no control over it
         MetadataDefinition definition = definitionService.getMetadataDefinition(metadataName);
         if (definition.isInternal()) {
+            //Import fs item metadata directly into the fs item state
             try {
                 metadataAware.importInternalMetadata(definition, definitionService.getXstream().fromXML(is));
             } finally {
@@ -167,22 +179,55 @@ public class MetadataServiceImpl implements MetadataService {
             }
         } else {
             if (definition.isPersistent()) {
-                setXmlMetadataInternal(metadataAware, metadataName, is);
+                try {
+                    if (Properties.ROOT.equals(metadataName)) {
+                        if (is.markSupported()) {
+                            is.mark(Integer.MAX_VALUE);
+                        }
+                        Properties properties = (Properties) definitionService.getXstream().fromXML(is);
+                        setProperties(metadataAware, properties);
+                        if (is.markSupported()) {
+                            is.reset();
+                        }
+                    }
+                    setXmlMetadataInternal(metadataAware, metadataName, is);
+                } catch (IOException e) {
+                    IOUtils.closeQuietly(is);
+                    status.setWarning("Unable to reset metadata input stream.", e, log);
+                }
             } else if (status != null) {
                 IOUtils.closeQuietly(is);
                 status.setWarning(
                         "Read metadata file " + metadataName + " for item " + metadataAware.getAbsolutePath() +
-                                " was declared non persistent.\n" + "Data will be discarded!", log);
+                                " was declared non persistent - data will be discarded!", log);
             }
         }
     }
 
-    public void writeRawXmlStream(MetadataAware obj, String metadataName, OutputStream out) {
+    /*private Properties getProperties(MetadataAware metadataAware) {
+        Properties properties = new Properties();
+        Node metadataNode = getMetadataNode(metadataAware, Properties.ROOT);
+        try {
+            PropertyIterator storedNodeProps = metadataNode.getProperties();
+            while (storedNodeProps.hasNext()) {
+                Property prop = storedNodeProps.nextProperty();
+                String key = prop.getName();
+                String value = prop.getString();
+                properties.put(key, value);
+            }
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(
+                    "Unexpected error while getting properties for '" + metadataAware + "'.", e);
+        }
+        return properties;
+    }*/
+
+    public void writeRawXmlStream(MetadataAware metadataAware, String metadataName, OutputStream out) {
         InputStream is = null;
         try {
             //Read the raw xml
-            Node metadataNode = getMetadataNode(obj, metadataName);
-            is = getRawXmlStream(metadataNode);
+            Node metadataNode = getMetadataNode(metadataAware, metadataName);
+            is = JcrServiceImpl.getRawXmlStream(metadataNode);
             BufferedInputStream bis = new BufferedInputStream(is);
             //Write it to the out stream
             IOUtils.copy(bis, out);
@@ -193,8 +238,9 @@ public class MetadataServiceImpl implements MetadataService {
         }
     }
 
-    public void removeXmlMetadata(MetadataAware obj, String metadataName) {
-        setXmlMetadataInternal(obj, metadataName, null);
+    public void removeXmlMetadata(MetadataAware metadataAware, String metadataName) {
+        //Remove xml
+        setXmlMetadataInternal(metadataAware, metadataName, null);
     }
 
     public List<String> getXmlMetadataNames(MetadataAware obj) {
@@ -216,14 +262,13 @@ public class MetadataServiceImpl implements MetadataService {
         }
     }
 
-    @SuppressWarnings({"MalformedFormatString"})
     public Set<ChecksumInfo> getOrCreateChecksums(MetadataAware metadataAware, String metadataName)
             throws RepositoryException {
         Set<ChecksumInfo> checksumInfos = new HashSet<ChecksumInfo>();
         Node metadataNode = getMetadataNode(metadataAware, metadataName);
         ChecksumType[] checksumTypes = ChecksumType.values();
         for (ChecksumType checksumType : checksumTypes) {
-            String propName = getChecksumPropertyName(checksumType);
+            String propName = JcrServiceImpl.getChecksumPropertyName(checksumType);
             if (metadataNode.hasProperty(propName)) {
                 Property property = metadataNode.getProperty(propName);
                 String checksumValue = property.getString();
@@ -232,21 +277,19 @@ public class MetadataServiceImpl implements MetadataService {
                         new Object[]{checksumType, metadataAware, metadataName});
             }
         }
-        if (checksumTypes.length == 0) {
+        if (checksumInfos.isEmpty()) {
             //No checksums found - need to create them
             Checksum[] checksums;
-            InputStream is = getRawXmlStream(metadataNode);
+            InputStream is = JcrServiceImpl.getRawXmlStream(metadataNode);
             try {
                 checksums = ChecksumCalculator.calculateAll(is);
             } catch (IOException e) {
                 throw new RepositoryRuntimeException(String.format(
-                        "Failed to compute metadata checksums for '%1$#%2$'", metadataAware, metadataName));
+                        "Failed to compute metadata checksums for '%s$#%s$'", metadataAware, metadataName));
             } finally {
                 IOUtils.closeQuietly(is);
             }
-            //Store async (we are read-only)
-            StoreChecksumsMessage message = new StoreChecksumsMessage(metadataAware, metadataName, checksums);
-            repoService.publish(message);
+            getTransactionalMe().saveChecksums(metadataAware, metadataName, checksums);
             for (Checksum checksum : checksums) {
                 log.debug("Creating non-exitent metadata checksum '{}' for '{}#{}'",
                         new Object[]{checksum.getType(), metadataAware, metadataName});
@@ -270,14 +313,14 @@ public class MetadataServiceImpl implements MetadataService {
         MetadataInfo mdi = new MetadataInfo(metadataAware.getRepoPath(), metadataName);
         try {
             Node metadataNode = getMetadataNode(metadataAware, metadataName);
-            Calendar created = metadataNode.getProperty(MetadataAware.PROP_ARTIFACTORY_CREATED).getDate();
+            Calendar created = metadataNode.getProperty(JcrService.PROP_ARTIFACTORY_CREATED).getDate();
             Node resourceNode = getResourceNode(metadataAware, metadataName);
             mdi.setCreated(created.getTimeInMillis());
             Calendar lastModified =
-                    metadataNode.getProperty(MetadataAware.PROP_ARTIFACTORY_LAST_MODIFIED).getDate();
+                    metadataNode.getProperty(JcrService.PROP_ARTIFACTORY_LAST_MODIFIED).getDate();
             mdi.setLastModified(lastModified.getTimeInMillis());
             String lastModifiedBy =
-                    metadataNode.getProperty(MetadataAware.PROP_ARTIFACTORY_LAST_MODIFIED_BY).getString();
+                    metadataNode.getProperty(JcrService.PROP_ARTIFACTORY_LAST_MODIFIED_BY).getString();
             mdi.setLastModifiedBy(lastModifiedBy);
             mdi.setLastModified(lastModified.getTimeInMillis());
             Set<ChecksumInfo> checksums = getOrCreateChecksums(metadataAware, metadataName);
@@ -285,12 +328,40 @@ public class MetadataServiceImpl implements MetadataService {
             mdi.setSize(resourceNode.getProperty(JCR_DATA).getLength());
         } catch (RepositoryException e) {
             throw new IllegalArgumentException(
-                    "Cannot get metadta info " + metadataName + " for " + metadataAware + ".", e);
+                    "Cannot get metadata info " + metadataName + " for " + metadataAware + ".", e);
         }
         return mdi;
     }
 
-    public boolean hasXmlMetdata(MetadataAware metadataAware, String metadataName) {
+    private void setProperties(MetadataAware metadataAware, Properties properties) {
+        Node propertiesNode = getPropertiesNode(metadataAware);
+        try {
+            PropertyIterator storedNodeProps = propertiesNode.getProperties();
+            while (storedNodeProps.hasNext()) {
+                Property prop = storedNodeProps.nextProperty();
+                if (!prop.getDefinition().isProtected()) {
+                    prop.remove();
+                }
+            }
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(
+                    "Unexpected error while cleaning up previous properties on '" + metadataAware + "'.", e);
+        }
+        Set<String> keys = properties.keySet();
+        for (String key : keys) {
+            Set<String> valueSet = properties.get(key);
+            String[] valuesArray = valueSet.toArray(new String[valueSet.size()]);
+            try {
+                log.debug("Setting property '{}' to '{}' on '{}'.", new Object[]{key, valuesArray, metadataAware});
+                propertiesNode.setProperty(key, valuesArray);
+            } catch (RepositoryException e) {
+                throw new RepositoryRuntimeException(
+                        "Unexpected error while setting property '" + key + "' on '" + metadataAware + "'.", e);
+            }
+        }
+    }
+
+    public boolean hasXmlMetadata(MetadataAware metadataAware, String metadataName) {
         Node metadataContainer = metadataAware.getMetadataContainer();
         try {
             return metadataContainer.hasNode(metadataName);
@@ -303,6 +374,12 @@ public class MetadataServiceImpl implements MetadataService {
         Node metadataContainer = metadataAware.getMetadataContainer();
         Node metadataNode = jcr.getOrCreateUnstructuredNode(metadataContainer, metadataName);
         return metadataNode;
+    }
+
+    private Node getPropertiesNode(MetadataAware metadataAware) {
+        Node metadataNode = getMetadataNode(metadataAware, Properties.ROOT);
+        Node propertiesNode = jcr.getOrCreateUnstructuredNode(metadataNode, JcrService.NODE_ARTIFACTORY_PROPERTIES);
+        return propertiesNode;
     }
 
     @SuppressWarnings({"OverlyComplexMethod"})
@@ -320,7 +397,7 @@ public class MetadataServiceImpl implements MetadataService {
                     //Create empty data object
                     return definition.newInstance();
                 } else {
-                    // Does not exist
+                    // Does not exists
                     return null;
                 }
             } else {
@@ -333,110 +410,33 @@ public class MetadataServiceImpl implements MetadataService {
         }
     }
 
-    @SuppressWarnings({"OverlyComplexMethod"})
     private void setXmlMetadataInternal(MetadataAware metadataAware, String metadataName, InputStream is) {
-        Node metadataContainer;
-        InputStream xmlStream = null;
-        ChecksumInputStream checksumInputStream = null;
-        try {
-            metadataContainer = metadataAware.getMetadataContainer();
-            Node metadataNode;
-            Node xmlNode;
-            //TODO: No more JCR-1554 with readWriteLock... Need Testing
-            // To avoid JCR-1554 we should create the node, unless it already exists
-            boolean exists = metadataContainer.hasNode(metadataName);
-            Calendar created;
-            if (exists) {
-                metadataNode = metadataContainer.getNode(metadataName);
-                try {
-                    //Maintain the creation date if already exists and overriden
-                    created = metadataNode.getProperty(MetadataAware.PROP_ARTIFACTORY_CREATED).getDate();
-                    metadataNode.remove();
-                } catch (RepositoryException e) {
-                    throw new RepositoryRuntimeException(
-                            "Unable to remove existing xml data '" + metadataNode + "'", e);
+        String xml = null;
+        if (is != null) {
+            try {
+                xml = IOUtils.toString(is, "utf-8");
+            } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
                 }
-            } else {
-                created = Calendar.getInstance();
-            }
-            if (is == null) {
-                //Just the remove the md and return
-                return;
-            }
-            //Add the metdata node and its xml child
-            metadataNode = metadataContainer.addNode(metadataName);
-            xmlNode = metadataNode.addNode(MetadataAware.NODE_ARTIFACTORY_XML);
-
-            //Cache the xml in memory since when reading from an http stream directly we cannot mark
-            String xml = IOUtils.toString(is, "utf-8");
-            xmlStream = IOUtils.toInputStream(xml, "utf-8");
-
-            //Import the xml: an xmlNode (with metadataName as its root element) will be created
-            //from the input stream
-            metadataNode.setProperty(MetadataAware.PROP_ARTIFACTORY_CREATED, created);
-            //Update the last modified on the specific metadata
-            Calendar lastModified = Calendar.getInstance();
-            metadataNode.setProperty(MetadataAware.PROP_ARTIFACTORY_LAST_MODIFIED, lastModified);
-            String userId = authorizationService.currentUsername();
-            metadataNode.setProperty(MetadataAware.PROP_ARTIFACTORY_LAST_MODIFIED_BY, userId);
-            jcrRepoService.importXml(xmlNode, xmlStream);
-            xmlStream.reset();
-            //Set the original raw xml
-            Node resourceNode;
-            boolean hasResourceNode = metadataNode.hasNode(JCR_CONTENT);
-            if (hasResourceNode) {
-                resourceNode = metadataNode.getNode(JCR_CONTENT);
-            } else {
-                resourceNode = metadataNode.addNode(JCR_CONTENT, NT_RESOURCE);
-            }
-            resourceNode.setProperty(JCR_MIMETYPE, ContentType.applicationXml.getMimeType());
-            resourceNode.setProperty(JCR_ENCODING, "utf-8");
-            resourceNode.setProperty(JCR_LASTMODIFIED, lastModified);
-            //Write the raw data and calculate checksums on it
-            checksumInputStream = new ChecksumInputStream(xmlStream,
-                    new Checksum(ChecksumType.md5),
-                    new Checksum(ChecksumType.sha1));
-            //Save the data and calc the checksums
-            resourceNode.setProperty(JCR_DATA, checksumInputStream);
-            setChecksums(metadataNode, checksumInputStream.getChecksums(), true);
-        } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            throw new RuntimeException("Failed to set xml data.", e);
-        } finally {
-            IOUtils.closeQuietly(checksumInputStream);
-            IOUtils.closeQuietly(xmlStream);
-            IOUtils.closeQuietly(is);
-        }
-    }
-
-    private static void setChecksums(Node metadataNode, Checksum[] checksums, boolean override)
-            throws RepositoryException {
-        for (Checksum checksum : checksums) {
-            //Save the checksum as a property
-            String metadataName = metadataNode.getName();
-            String checksumStr = checksum.getChecksum();
-            ChecksumType checksumType = checksum.getType();
-            String propName = getChecksumPropertyName(checksumType);
-            if (override || !metadataNode.hasProperty(propName)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Saving checksum for '" + metadataName + "' as '" + propName + "' (checksum=" +
-                            checksumStr + ").");
-                }
-                metadataNode.setProperty(propName, checksumStr);
+                throw new RuntimeException("Failed to read xml data from stream.", e);
+            } finally {
+                IOUtils.closeQuietly(is);
             }
         }
+        boolean importXmlDocument = shouldImportXmlDocument(metadataName);
+        jcr.setXml(metadataAware.getMetadataContainer(), metadataName, xml, importXmlDocument,
+                authorizationService.currentUsername());
     }
 
-    private static InputStream getRawXmlStream(Node metadataNode) throws RepositoryException {
-        Node xmlNode = metadataNode.getNode(JCR_CONTENT);
-        Value attachedDataValue = xmlNode.getProperty(JCR_DATA).getValue();
-        InputStream is = attachedDataValue.getStream();
-        return is;
+    /**
+     * Do not import a jcr xml document for maven metadata or properties
+     */
+    private boolean shouldImportXmlDocument(String metadataName) {
+        return !MavenNaming.MAVEN_METADATA_NAME.equals(metadataName) && !Properties.ROOT.equals(metadataName);
     }
 
-    private static String getChecksumPropertyName(ChecksumType checksumType) {
-        return MetadataAware.ARTIFACTORY_PREFIX + checksumType.alg();
+    private InternalMetadataService getTransactionalMe() {
+        return InternalContextHelper.get().beanForType(InternalMetadataService.class);
     }
 }

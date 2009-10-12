@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.repo;
 
 import org.apache.commons.httpclient.Credentials;
@@ -42,9 +43,12 @@ import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoType;
+import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.io.NullResourceStreamHandle;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.context.NullRequestContext;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.request.RemoteRequestExecption;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.MetadataResource;
 import org.artifactory.resource.RepoResource;
@@ -52,9 +56,7 @@ import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -67,8 +69,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
     private HttpClient client;
 
-    public HttpRepo(InternalRepositoryService repositoryService, HttpRepoDescriptor descriptor,
-            boolean globalOfflineMode) {
+    public HttpRepo(
+            InternalRepositoryService repositoryService, HttpRepoDescriptor descriptor, boolean globalOfflineMode) {
         super(repositoryService, descriptor, globalOfflineMode);
     }
 
@@ -116,7 +118,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         //Need to do a conditional get by hand - testing a head result last modified date against the current file
         if (isStoreArtifactsLocally()) {
             LocalCacheRepo cache = getLocalCacheRepo();
-            RepoResource cachedResource = cache.getInfo(relPath);
+            RepoResource cachedResource = cache.getInfo(new NullRequestContext(relPath));
             if (cachedResource.isFound()) {
                 if (cachedResource.isExpired()) {
                     //Send HEAD
@@ -132,12 +134,12 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             }
         }
         //Do GET
-        return retrieveResource(relPath);
+        return downloadResource(relPath);
     }
 
-    public ResourceStreamHandle retrieveResource(String relPath) throws IOException {
+    public ResourceStreamHandle downloadResource(String relPath) throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
-        RemoteRepoType repoType = getType();
+        RepoType repoType = getType();
         String fullUrl = getUrl() + "/" + pathConvert(repoType, relPath);
         if (log.isDebugEnabled()) {
             log.debug("Retrieving " + relPath + " from remote repository '" + getKey() + "' URL '" + fullUrl + "'.");
@@ -148,14 +150,14 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         //Not found
         int statusCode = method.getStatusCode();
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
-            throw new FileNotFoundException("Unable to find " + fullUrl + " status " + statusCode);
+            throw new RemoteRequestExecption("Unable to find " + fullUrl, statusCode);
         }
         if (statusCode != HttpStatus.SC_OK) {
-            String msg = "Error fetching " + fullUrl + " status " + statusCode;
+            String msg = "Error fetching " + fullUrl;
             if (log.isDebugEnabled()) {
-                log.debug(this + ": " + msg);
+                log.debug(this + ": " + msg + " status " + statusCode);
             }
-            throw new FileNotFoundException(msg);
+            throw new RemoteRequestExecption(msg, statusCode);
         }
         //Found
         if (log.isInfoEnabled()) {
@@ -179,7 +181,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     @Override
     protected RepoResource retrieveInfo(String relPath) {
         assert !isOffline() : "Should never be called in offline mode";
-        RemoteRepoType repoType = getType();
+        RepoType repoType = getType();
         RepoPath repoPath = new RepoPath(this.getKey(), relPath);
         String fullUrl = getUrl() + "/" + pathConvert(repoType, relPath);
         log.debug("{}: Checking last modified time for {}", this, fullUrl);
@@ -189,6 +191,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             client.executeMethod(method);
             if (method.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 return new UnfoundRepoResource(repoPath, method.getStatusText());
+            }
+            //If redirected to a directory - return 404
+            if (method.getPath().endsWith("/")) {
+                return new UnfoundRepoResource(repoPath, "Expected file response but received a directory response.");
             }
             if (method.getStatusCode() != HttpStatus.SC_OK) {
                 if (log.isDebugEnabled()) {
@@ -297,7 +303,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
     }
 
-    private static String pathConvert(RemoteRepoType repoType, String path) {
+    private static String pathConvert(RepoType repoType, String path) {
         switch (repoType) {
             case maven2:
                 return path;

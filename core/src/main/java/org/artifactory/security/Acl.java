@@ -1,23 +1,24 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.security;
 
-import org.apache.jackrabbit.ocm.manager.beanconverter.impl.InlineBeanConverterImpl;
-import org.apache.jackrabbit.ocm.manager.collectionconverter.impl.NTCollectionConverterImpl;
+import org.apache.jackrabbit.ocm.manager.beanconverter.impl.DefaultBeanConverterImpl;
+import org.apache.jackrabbit.ocm.manager.collectionconverter.impl.DefaultCollectionConverterImpl;
 import org.apache.jackrabbit.ocm.mapper.impl.annotation.Bean;
 import org.apache.jackrabbit.ocm.mapper.impl.annotation.Collection;
 import org.apache.jackrabbit.ocm.mapper.impl.annotation.Field;
@@ -25,13 +26,12 @@ import org.apache.jackrabbit.ocm.mapper.impl.annotation.Node;
 import org.artifactory.api.security.AceInfo;
 import org.artifactory.api.security.AclInfo;
 import org.artifactory.jcr.ocm.OcmStorable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.Authentication;
 import org.springframework.security.acls.MutableAcl;
 import org.springframework.security.acls.NotFoundException;
 import org.springframework.security.acls.Permission;
 import org.springframework.security.acls.UnloadedSidException;
+import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.acls.sid.PrincipalSid;
 import org.springframework.security.acls.sid.Sid;
 import org.springframework.security.context.SecurityContextHolder;
@@ -46,16 +46,14 @@ import java.util.Set;
  */
 @Node(extend = OcmStorable.class)
 public class Acl implements MutableAcl, OcmStorable {
-    private static final Logger log = LoggerFactory.getLogger(Acl.class);
-
-    @Collection(elementClassName = Ace.class,
-            collectionConverter = NTCollectionConverterImpl.class)
+    @Collection(collectionClassName = ArrayList.class, elementClassName = Ace.class,
+            collectionConverter = DefaultCollectionConverterImpl.class)
     private List<Ace> aces = new ArrayList<Ace>();
 
     @Field
     private String updatedBy;
 
-    @Bean(converter = InlineBeanConverterImpl.class)
+    @Bean(converter = DefaultBeanConverterImpl.class)
     private PermissionTarget permissionTarget;
 
 
@@ -79,7 +77,7 @@ public class Acl implements MutableAcl, OcmStorable {
         if (auth != null) {
             sid = new PrincipalSid(auth);
         } else {
-            sid = new PrincipalSid(SecurityServiceInternal.USER_UNKNOWN);
+            sid = new PrincipalSid(InternalSecurityService.USER_UNKNOWN);
         }
         this.updatedBy = sid.getPrincipal();
     }
@@ -116,49 +114,30 @@ public class Acl implements MutableAcl, OcmStorable {
     @SuppressWarnings({"SynchronizeOnNonFinalField"})
     public void insertAce(int atIndexLocation, Permission permission, Sid sid, boolean granting)
             throws NotFoundException {
-        synchronized (aces) {
-            Ace ace = new Ace(this, permission, (ArtifactorySid) sid);
-            addAce(ace);
-        }
+        throw new UnsupportedOperationException("insertAce from Spring security interface");
     }
 
-    public void updateOrCreateAce(Ace ace) {
-        synchronized (aces) {
-            for (int i = 0; i < aces.size(); i++) {
-                Ace oldAce = aces.get(i);
-                if (oldAce.equals(ace)) {
-                    aces.set(i, ace);
-                }
-            }
-            if (log.isDebugEnabled()) {
-                log.debug(
-                        "No existing ace for principal '" + ace.getPrincipal() +
-                                "'. Creating one.");
-            }
-            addAce(ace);
+    /**
+     * Remove prinicpal entries from aces if found.
+     *
+     * @param sid the principal id that need to be removed from permissions list
+     * @return null If this ACL does not have any ACE with this principal, the new ACL without entry for the principal
+     */
+    Acl removePrincipalAces(ArtifactorySid sid) {
+        Ace toFind = new Ace(this, BasePermission.READ, sid);
+        //There's a single ace for each principal on the acl
+        if (aces.contains(toFind)) {
+            List<Ace> newAces = new ArrayList<Ace>(aces);
+            newAces.remove(toFind);
+            Acl newAcl = new Acl(getDescriptor());
+            newAcl.setAces(newAces);
+            return newAcl;
         }
+        return null;
     }
 
-    public boolean removePrincipalAces(PrincipalSid sid) {
-        String principal = sid.getPrincipal();
-        synchronized (aces) {
-            for (int i = 0; i < aces.size(); i++) {
-                Ace ace = aces.get(i);
-                if (principal.equals(ace.getPrincipal())) {
-                    deleteAce(i);
-                    //There's a single ace for each principal on the acl
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    @SuppressWarnings({"SynchronizeOnNonFinalField"})
     public void deleteAce(int aceIndex) throws NotFoundException {
-        synchronized (aces) {
-            this.aces.remove(aceIndex);
-        }
+        throw new UnsupportedOperationException("Delete ACE from index");
     }
 
     @SuppressWarnings({"SynchronizeOnNonFinalField"})
@@ -180,6 +159,10 @@ public class Acl implements MutableAcl, OcmStorable {
             //Ocm passes null instead of an empty list
             this.aces = new ArrayList<Ace>();
         }
+    }
+
+    public void add(Ace ace) {
+        aces.add(ace);
     }
 
     public org.springframework.security.acls.Acl getParentAcl() {
@@ -255,6 +238,10 @@ public class Acl implements MutableAcl, OcmStorable {
         //noop
     }
 
+    private void addAce(Ace ace) {
+        aces.add(ace);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -276,11 +263,5 @@ public class Acl implements MutableAcl, OcmStorable {
     @Override
     public String toString() {
         return permissionTarget.toString();
-    }
-
-    private void addAce(Ace ace) {
-        synchronized (aces) {
-            aces.add(ace);
-        }
     }
 }

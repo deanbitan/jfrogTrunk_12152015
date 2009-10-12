@@ -1,27 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.api.maven;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.StringTokenizer;
@@ -29,7 +29,6 @@ import java.util.StringTokenizer;
 /**
  * User: freds Date: Aug 3, 2008 Time: 11:39:07 AM
  */
-@XStreamAlias(MavenArtifactInfo.ROOT)
 public class MavenArtifactInfo extends MavenUnitInfo {
     private static final Logger log = LoggerFactory.getLogger(MavenArtifactInfo.class);
 
@@ -164,8 +163,8 @@ public class MavenArtifactInfo extends MavenUnitInfo {
         boolean checksum = NamingUtils.isChecksum(name);
         //Sanity check, we need groupId, artifactId and version
         if (pathElements.size() < 3) {
-            log.warn("Failed to build a MavenArtifactInfo from '" + repoPath + "'. " +
-                    "The groupId, artifactId and version are unreadable.");
+            log.debug("Cannot build MavenArtifactInfo from '{}'. The groupId, artifactId and version are unreadable.",
+                    repoPath);
             return new MavenArtifactInfo();
         }
 

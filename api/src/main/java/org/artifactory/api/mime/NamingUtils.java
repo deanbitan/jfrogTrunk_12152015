@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.api.mime;
 
 import org.artifactory.api.maven.MavenNaming;
@@ -34,7 +35,7 @@ import java.util.Map;
 public class NamingUtils {
     private static Map<String, ContentType> contentTypePerExtension = new HashMap<String, ContentType>();
 
-    public static final String METADATA_PREFIX = "#";
+    public static final String METADATA_PREFIX = ":";
 
     static {
         final ContentType[] contentTypes = ContentType.values();
@@ -103,12 +104,19 @@ public class NamingUtils {
         if (fileName == null || fileName.length() == 0) {
             return false;
         }
-        //First check for the metadata pattern of x/y/z/resourceName#metadataName
+        //First check for the metadata pattern of x/y/z/resourceName:metadataName
         if (fileName.contains(METADATA_PREFIX)) {
             return true;
         }
         //Fallback to checking maven metadata
         return MavenNaming.isMavenMetadataFileName(fileName);
+    }
+
+    /**
+     * @return True if the path points to a system file (e.g., maven index)
+     */
+    public static boolean isSystem(String path) {
+        return MavenNaming.isIndex(path) || path.endsWith(".index");
     }
 
     /**
@@ -127,7 +135,7 @@ public class NamingUtils {
         //First check for the metadata pattern of x/y/z/resourceName#metadataName
         int mdPrefixIdx = path.lastIndexOf(METADATA_PREFIX);
         String name = null;
-        if (mdPrefixIdx > 0) {
+        if (mdPrefixIdx >= 0) {
             name = path.substring(mdPrefixIdx + METADATA_PREFIX.length());
         } else {
             //Fallback to checking maven metadata
@@ -139,8 +147,16 @@ public class NamingUtils {
         return name;
     }
 
+    public static String stripMetadataFromPath(String path) {
+        int metadataPrefixIdx = path.lastIndexOf(NamingUtils.METADATA_PREFIX);
+        if (metadataPrefixIdx >= 0) {
+            path = path.substring(0, metadataPrefixIdx);
+        }
+        return path;
+    }
+
     /**
-     * Get the path of the metadata container Assumes we already verified that this is a metadataPath
+     * Get the path of the metadata container. Assumes we already verified that this is a metadataPath.
      *
      * @param path
      * @return
@@ -173,7 +189,49 @@ public class NamingUtils {
         return null;
     }
 
-    public static boolean isHidden(String path) {
-        return path.startsWith(".");
+    /**
+     * Recieves a metadata container path (/a/b/c.pom) and a metadata name (maven-metadata.xml) and returns the whole
+     * path - "/a/b/c.pom:maven-metadata.xml".
+     *
+     * @param containerPath Path of metadata container
+     * @param metadataName  Name of metadata item
+     * @return String - complete path to metadata
+     */
+    public static String getMetadataPath(String containerPath, String metadataName) {
+        if ((containerPath == null) || (metadataName == null)) {
+            throw new IllegalArgumentException("Container path and metadata name cannot be null.");
+        }
+        String metadataPath = containerPath + METADATA_PREFIX + metadataName;
+        return metadataPath;
+    }
+
+    /**
+     * Recieves a jcr path of a metadata item/element (.../a/b/c.pom/artifactory:xml/metadataname/element/xml:text) and
+     * Extracts the name of the metadata item (metadataname, in this case).
+     *
+     * @param path A jcr path of a metadata element/item
+     * @return String - Name of metadata item
+     */
+    public static String getMetadataNameFromJcrPath(String path) {
+        //Build the metadata prefix to search for
+        String metadatPrefix = METADATA_PREFIX + "metadata/";
+        int prefixStart = path.indexOf(metadatPrefix);
+
+        //If the prefix isn't in the path, it is either not a jcr path or not a metadata item/element
+        if (prefixStart < 0) {
+            return "";
+        }
+
+        //Dispose of all the path before the metadata name
+        int prefixEnd = prefixStart + metadatPrefix.length();
+        String metadataPath = path.substring(prefixEnd);
+
+        //Find where the name ends (either a forward slash, or the end of the path)
+        int followingSlash = metadataPath.indexOf('/');
+        if (followingSlash < 0) {
+            followingSlash = metadataPath.length();
+        }
+        String metadataName = metadataPath.substring(0, followingSlash);
+        return metadataName;
     }
 }

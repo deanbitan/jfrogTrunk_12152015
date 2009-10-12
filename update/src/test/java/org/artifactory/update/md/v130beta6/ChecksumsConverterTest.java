@@ -1,12 +1,31 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.update.md.v130beta6;
 
 import org.artifactory.api.fs.ChecksumInfo;
 import org.artifactory.api.fs.FileInfo;
+import org.artifactory.api.fs.FileInfoImpl;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.test.TestUtils;
 import org.artifactory.update.md.MetadataConverterTest;
-import org.artifactory.version.ConverterUtils;
+import org.artifactory.version.XmlConverterUtils;
 import org.jdom.Document;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -19,13 +38,13 @@ import java.util.Set;
  */
 @Test
 public class ChecksumsConverterTest extends MetadataConverterTest {
-    private final static Logger log = LoggerFactory.getLogger(ChecksumsConverterTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ChecksumsConverterTest.class);
 
     public void convertValidFile() throws Exception {
         String fileMetadata = "/metadata/v130beta6/artifactory-file.xml";
-        Document doc = convertMetadata(fileMetadata, new ChecksumsConverter());
+        Document doc = convertXml(fileMetadata, new ChecksumsConverter());
 
-        String result = ConverterUtils.outputString(doc);
+        String result = XmlConverterUtils.outputString(doc);
         log.debug(result);
 
         // the result is intermediate so it might not be compatible with latest FileInfo
@@ -37,8 +56,8 @@ public class ChecksumsConverterTest extends MetadataConverterTest {
         Assert.assertEquals(fileInfo.getSha1(), "99129f16442844f6a4a11ae22fbbee40b14d774f");
         Assert.assertEquals(fileInfo.getMd5(), "1f40fb782a4f2cf78f161d32670f7a3a");
 
-        FileInfo expected = (FileInfo) xstream.fromXML(
-                loadResource("/metadata/v130beta6/artifactory-file-expected.xml"));
+        FileInfoImpl expected = (FileInfoImpl) xstream.fromXML(
+                TestUtils.getResource("/metadata/v130beta6/artifactory-file-expected.xml"));
         Assert.assertTrue(fileInfo.isIdentical(expected));
     }
 }

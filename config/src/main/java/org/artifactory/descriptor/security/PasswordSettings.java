@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.descriptor.security;
 
 import org.artifactory.descriptor.Descriptor;
@@ -10,7 +27,7 @@ import javax.xml.bind.annotation.XmlType;
  *
  * @author Yossi Shaul
  */
-@XmlType(name = "PasswordSettingsType")
+@XmlType(name = "PasswordSettingsType", namespace = Descriptor.NS)
 public class PasswordSettings implements Descriptor {
 
     @XmlElement(defaultValue = "supported", required = false)
@@ -35,6 +52,7 @@ public class PasswordSettings implements Descriptor {
      * @return True if encryption is supported\required. False if not.
      */
     public boolean isEncryptionEnabled() {
-        return (EncryptionPolicy.SUPPORTED.equals(encryptionPolicy) || EncryptionPolicy.REQUIRED.equals(encryptionPolicy));
+        return (EncryptionPolicy.SUPPORTED.equals(encryptionPolicy) ||
+                EncryptionPolicy.REQUIRED.equals(encryptionPolicy));
     }
 }

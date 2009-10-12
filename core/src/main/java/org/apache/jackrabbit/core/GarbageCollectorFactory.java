@@ -1,27 +1,38 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.apache.jackrabbit.core;
 
 import org.apache.jackrabbit.JcrConstants;
+import org.apache.jackrabbit.core.data.DataStore;
+import org.apache.jackrabbit.core.data.GarbageCollector;
+import org.apache.jackrabbit.core.data.db.DbDataStore;
 import org.apache.jackrabbit.core.persistence.IterablePersistenceManager;
 import org.apache.jackrabbit.core.persistence.PersistenceManager;
 import org.apache.jackrabbit.core.state.ItemStateException;
 import org.apache.jackrabbit.core.version.VersionManagerImpl;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.jcr.JcrSession;
+import org.artifactory.jcr.gc.JcrGarbageCollector;
+import org.artifactory.jcr.jackrabbit.ArtifactoryDbDataStoreImpl;
 import org.artifactory.jcr.jackrabbit.ArtifactoryGarbageCollector;
+import org.artifactory.jcr.jackrabbit.JackrabbitGarbageCollector;
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -33,17 +44,27 @@ import java.util.List;
  * @date Mar 12, 2009
  */
 public class GarbageCollectorFactory {
+    private static final Logger log = LoggerFactory.getLogger(GarbageCollectorFactory.class);
+
     /**
      * Create a data store garbage collector for this repository.
      *
+     * @return the garbage collector for the data store used in this JCR repository, or null if no need for garabage
+     *         collection or
      * @throws org.apache.jackrabbit.core.state.ItemStateException
      *
      * @throws javax.jcr.RepositoryException
      */
-    public static ArtifactoryGarbageCollector createDataStoreGarbageCollector(Session session)
+    public static JcrGarbageCollector createDataStoreGarbageCollector(JcrSession session)
             throws RepositoryException, ItemStateException {
-        List<PersistenceManager> pmList = new ArrayList<PersistenceManager>();
         RepositoryImpl rep = (RepositoryImpl) session.getRepository();
+        DataStore store = rep.getDataStore();
+        if (store == null) {
+            // GC activated before data store initialized
+            log.info("Datastore not yet initialize. Not running garbage collector...");
+            return null;
+        }
+        List<PersistenceManager> pmList = new ArrayList<PersistenceManager>();
         VersionManagerImpl vm = (VersionManagerImpl) rep.getVersionManager();
         PersistenceManager pm = vm.getPersistenceManager();
         pmList.add(pm);
@@ -65,8 +86,18 @@ public class GarbageCollectorFactory {
             }
             ipmList[i] = (IterablePersistenceManager) pm;
         }
-        ArtifactoryGarbageCollector gc = new ArtifactoryGarbageCollector(session, ipmList, sysSessions);
-        gc.addBinaryPropertyNames(new String[]{JcrConstants.JCR_DATA});
+        JcrGarbageCollector gc = null;
+        if (store instanceof ArtifactoryDbDataStoreImpl) {
+            gc = new ArtifactoryGarbageCollector(session, ipmList, sysSessions);
+            ((ArtifactoryGarbageCollector) gc).addBinaryPropertyNames(new String[]{JcrConstants.JCR_DATA});
+        } else if (!(store instanceof DbDataStore)) {
+            // DbDataStore of Jackrabbit is messing the DB concurrency
+            SessionImpl internalSession = (SessionImpl) session.getSession();
+            gc = new JackrabbitGarbageCollector(new GarbageCollector(internalSession, ipmList, sysSessions));
+            ((JackrabbitGarbageCollector) gc).setSleepBetweenNodes(ConstantValues.gcSleepBetweenNodesMillis.getInt());
+        } else {
+            log.info("Store " + store.getClass().getName() + " does not support Garbage collection");
+        }
         return gc;
     }
 }

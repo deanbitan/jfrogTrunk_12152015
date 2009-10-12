@@ -1,11 +1,26 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.security;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.artifactory.util.HttpUtils;
 import org.springframework.security.ui.WebAuthenticationDetails;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.StringTokenizer;
 
 /**
  * Support getting the client's ip address in reverse-proxied environments
@@ -13,10 +28,7 @@ import java.util.StringTokenizer;
  * @author yoavl
  */
 public class HttpAuthenticationDetails extends WebAuthenticationDetails {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private final static Logger log = LoggerFactory.getLogger(HttpAuthenticationDetails.class);
-
-    private String forwardedRemoteAddress;
+    private String remoteAddress;
 
     /**
      * Records the remote address and will also set the session Id if a session already exists (it won't create one).
@@ -25,19 +37,11 @@ public class HttpAuthenticationDetails extends WebAuthenticationDetails {
      */
     public HttpAuthenticationDetails(HttpServletRequest request) {
         super(request);
-        //Check if there is a remote address coming from a prxied request
-        //(http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypreservehost)
-        String header = request.getHeader("X-Forwarded-For");
-        if (header != null) {
-            //Might contain multiple entries - take the first
-            forwardedRemoteAddress = new StringTokenizer(header, ",").nextToken();
-        }
-
-
+        this.remoteAddress = HttpUtils.getRemoteClientAddress(request);
     }
 
     @Override
     public String getRemoteAddress() {
-        return forwardedRemoteAddress != null ? forwardedRemoteAddress : super.getRemoteAddress();
+        return remoteAddress;
     }
 }

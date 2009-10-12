@@ -1,30 +1,32 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.descriptor.repo;
+
+import org.artifactory.descriptor.Descriptor;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
-/**
- * Created by IntelliJ IDEA. User: yoavl
- */
-@XmlType(name = "RemoteRepoBaseType", propOrder = {"type", "url", "offline", "hardFail",
-        "storeArtifactsLocally", "retrievalCachePeriodSecs", "failedRetrievalCachePeriodSecs",
-        "missedRetrievalCachePeriodSecs", "checksumPolicyType"})
+@XmlType(name = "RemoteRepoBaseType", propOrder = {"url", "offline", "hardFail", "storeArtifactsLocally",
+        "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "failedRetrievalCachePeriodSecs",
+        "missedRetrievalCachePeriodSecs", "checksumPolicyType", "unusedArtifactsCleanupEnabled",
+        "unusedArtifactsCleanupPeriodHours", "shareConfiguration"},
+        namespace = Descriptor.NS)
 public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(required = true)
@@ -36,6 +38,15 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     @XmlElement(defaultValue = "false", required = false)
     private boolean offline;
 
+    @XmlElement(defaultValue = "true", required = false)
+    protected boolean storeArtifactsLocally = true;
+
+    @XmlElement(defaultValue = "false", required = false)
+    protected boolean fetchJarsEagerly = false;
+
+    @XmlElement(defaultValue = "false", required = false)
+    protected boolean fetchSourcesEagerly = false;
+
     @XmlElement(defaultValue = "43200", required = false)
     private long retrievalCachePeriodSecs = 43200;//12hrs
 
@@ -45,14 +56,17 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     @XmlElement(defaultValue = "43200", required = false)
     private long missedRetrievalCachePeriodSecs = 43200;//12hrs
 
-    @XmlElement(defaultValue = "true", required = false)
-    protected boolean storeArtifactsLocally = true;
-
-    @XmlElement(defaultValue = "maven2", required = false)
-    private RemoteRepoType type = RemoteRepoType.maven2;
-
     @XmlElement(defaultValue = "generate-if-absent", required = false)
     private ChecksumPolicyType checksumPolicyType = ChecksumPolicyType.GEN_IF_ABSENT;
+
+    @XmlElement(defaultValue = "false", required = false)
+    protected boolean unusedArtifactsCleanupEnabled = false;
+
+    @XmlElement(defaultValue = "0", required = false)
+    private int unusedArtifactsCleanupPeriodHours = 0;
+
+    @XmlElement(defaultValue = "false", required = false)
+    protected boolean shareConfiguration = false;
 
     public String getUrl() {
         return url;
@@ -110,12 +124,20 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
         this.storeArtifactsLocally = storeArtifactsLocally;
     }
 
-    public RemoteRepoType getType() {
-        return type;
+    public boolean isFetchJarsEagerly() {
+        return fetchJarsEagerly;
     }
 
-    public void setType(RemoteRepoType type) {
-        this.type = type;
+    public void setFetchJarsEagerly(boolean fetchJarsEagerly) {
+        this.fetchJarsEagerly = fetchJarsEagerly;
+    }
+
+    public boolean isFetchSourcesEagerly() {
+        return fetchSourcesEagerly;
+    }
+
+    public void setFetchSourcesEagerly(boolean fetchSourcesEagerly) {
+        this.fetchSourcesEagerly = fetchSourcesEagerly;
     }
 
     public ChecksumPolicyType getChecksumPolicyType() {
@@ -124,6 +146,30 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     public void setChecksumPolicyType(ChecksumPolicyType checksumPolicyType) {
         this.checksumPolicyType = checksumPolicyType;
+    }
+
+    public boolean isUnusedArtifactsCleanupEnabled() {
+        return unusedArtifactsCleanupEnabled;
+    }
+
+    public void setUnusedArtifactsCleanupEnabled(boolean unusedArtifactsCleanupEnabled) {
+        this.unusedArtifactsCleanupEnabled = unusedArtifactsCleanupEnabled;
+    }
+
+    public int getUnusedArtifactsCleanupPeriodHours() {
+        return unusedArtifactsCleanupPeriodHours;
+    }
+
+    public void setUnusedArtifactsCleanupPeriodHours(int unusedArtifactsCleanupPeriodHours) {
+        this.unusedArtifactsCleanupPeriodHours = unusedArtifactsCleanupPeriodHours;
+    }
+
+    public boolean isShareConfiguration() {
+        return shareConfiguration;
+    }
+
+    public void setShareConfiguration(boolean shareConfiguration) {
+        this.shareConfiguration = shareConfiguration;
     }
 
     @Override

@@ -1,26 +1,29 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.descriptor.repo;
+
+import org.artifactory.descriptor.Descriptor;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlID;
 import javax.xml.bind.annotation.XmlType;
 
-@XmlType(name = "RepoType", propOrder = {"key", "description"})
+@XmlType(name = "RepoType", propOrder = {"key", "description", "type"}, namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     @XmlID
@@ -29,6 +32,9 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     @XmlElement(defaultValue = "default description", required = false)
     private String description;
+
+    @XmlElement(defaultValue = "maven2", required = false)
+    private RepoType type = RepoType.maven2;
 
     public String getKey() {
         return key;
@@ -44,6 +50,14 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public RepoType getType() {
+        return type;
+    }
+
+    public void setType(RepoType type) {
+        this.type = type;
     }
 
     @Override
@@ -66,5 +80,13 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
     @Override
     public String toString() {
         return key;
+    }
+
+    public int compareTo(Object o) {
+        if (o instanceof RepoDescriptor) {
+            return key.compareTo(((RepoDescriptor) o).getKey());
+        } else {
+            return key.compareTo(o.toString());
+        }
     }
 }

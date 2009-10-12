@@ -1,29 +1,50 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr.lock;
 
 
+import org.artifactory.jcr.lock.aop.LockingAdvice;
 import org.artifactory.tx.SessionResource;
 
 /**
+ * A lock manager that delegates to the internal lock manager, updating it with session events: Save write locks state
+ * to jcr when the session is saved, and Update the repository fsItems cache with the commited state of write locks
+ * <p/>
+ * The manager is created once per session and attached to it for its lifetime. Cleanup of state on passivation back to
+ * pool is therefore crucial.
+ *
  * @author freds
- * @date Sep 5, 2008
+ * @author yoavl
  */
 public class SessionLockManager implements SessionResource {
+
+    public boolean hasPendingResources() {
+        InternalLockManager lockManager = LockingAdvice.getLockManager();
+        return lockManager != null && lockManager.hasPendingResources();
+    }
+
+    public void onSessionSave() {
+        InternalLockManager lockManager = LockingAdvice.getLockManager();
+        if (lockManager != null) {
+            //Save the entries having write locks
+            lockManager.save();
+        }
+    }
 
     /**
      * Called afterCompletion of the TX manager
@@ -31,26 +52,15 @@ public class SessionLockManager implements SessionResource {
      * @param commit true if committed
      */
     public void afterCompletion(boolean commit) {
-        if (LockingHelper.hasLockManager()) {
+        InternalLockManager lockManager = LockingAdvice.getLockManager();
+        if (lockManager != null) {
             if (commit) {
-                LockingAdvice.getLockManager().updateCache();
+                // JCR committed successfully - update caches
+                lockManager.updateCaches();
             } else {
-                // TODO: Release early on rollback
+                // Release early on rollback
+                lockManager.releaseResources();
             }
-        }
-    }
-
-    public boolean hasResources() {
-        return LockingHelper.hasLockManager() && LockingAdvice.getLockManager().hasResources();
-    }
-
-    public boolean hasPendingChanges() {
-        return LockingHelper.hasLockManager() && LockingAdvice.getLockManager().hasPendingChanges();
-    }
-
-    public void onSessionSave() {
-        if (LockingHelper.hasLockManager()) {
-            LockingAdvice.getLockManager().save();
         }
     }
 }

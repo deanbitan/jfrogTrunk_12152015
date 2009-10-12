@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.security;
 
 import org.artifactory.api.config.CentralConfigService;
@@ -6,8 +23,8 @@ import org.artifactory.api.security.UserInfo;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.security.PasswordSettings;
 import org.artifactory.descriptor.security.SecurityDescriptor;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.Authentication;
 import org.springframework.security.AuthenticationException;
@@ -25,7 +42,7 @@ import java.security.PrivateKey;
  * @author Yossi Shaul
  */
 public class PasswordDecryptingManager implements AuthenticationManager {
-    private final static Logger log = LoggerFactory.getLogger(PasswordDecryptingManager.class);
+    private static final Logger log = LoggerFactory.getLogger(PasswordDecryptingManager.class);
 
     private AuthenticationManager delegate;
 
@@ -38,14 +55,27 @@ public class PasswordDecryptingManager implements AuthenticationManager {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         log.trace("Received authentication request for {}", authentication);
         String password = authentication.getCredentials().toString();
+        UsernamePasswordAuthenticationToken decryptedAuthentication = null;
         if (needsDecryption(password)) {
             String username = authentication.getPrincipal().toString();
             log.trace("Decrypting user password for user '{}'", username);
             password = decryptPassword(password, username);
-            authentication = new UsernamePasswordAuthenticationToken(username, password);
+            decryptedAuthentication = new UsernamePasswordAuthenticationToken(username, password);
+            decryptedAuthentication.setDetails(authentication.getDetails());
         }
-
-        return delegate.authenticate(authentication);
+        try {
+            Authentication result;
+            if (decryptedAuthentication != null) {
+                result = delegate.authenticate(decryptedAuthentication);
+            } else {
+                result = delegate.authenticate(authentication);
+            }
+            return result;
+        } catch (AuthenticationException e) {
+            //We do not log non-ui successful logins (inflates the log), just failed logins
+            AccessLogger.loginDenied(authentication);
+            throw e;
+        }
     }
 
     private boolean needsDecryption(String password) {
@@ -62,7 +92,7 @@ public class PasswordDecryptingManager implements AuthenticationManager {
             if (passwordSettings.isEncryptionRequired()) {
                 log.debug("Cleartext passwords not allowed. Sendind unauthorized response");
                 throw new PasswordEncryptionException("Artifactory configured to accept only " +
-                        "encrypted passwords but received a clear text password");
+                        "encrypted passwords but received a clear text password.");
             } else {
                 return false;
             }
@@ -82,7 +112,7 @@ public class PasswordDecryptingManager implements AuthenticationManager {
             return CryptoHelper.decryptSymmetric(encryptedPassword, secretKey);
         } catch (Exception e) {
             log.debug("Failed to decrypt user password: " + e.getMessage());
-            throw new PasswordEncryptionException("Failed to decrypt password", e);
+            throw new PasswordEncryptionException("Failed to decrypt password.", e);
         }
     }
 
@@ -91,7 +121,7 @@ public class PasswordDecryptingManager implements AuthenticationManager {
         String privateKey = userInfo.getPrivateKey();
         String publicKey = userInfo.getPublicKey();
         if (privateKey == null || publicKey == null) {
-            String message = "User with no key pair tries to authenticate with encrypted password";
+            String message = "User with no key pair tries to authenticate with encrypted password.";
             log.trace(message);
             throw new PasswordEncryptionException(message);
         }

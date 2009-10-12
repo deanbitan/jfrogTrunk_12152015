@@ -1,41 +1,40 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr.fs;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import static org.apache.jackrabbit.JcrConstants.JCR_CREATED;
-import static org.apache.jackrabbit.JcrConstants.JCR_LASTMODIFIED;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.ImportSettings;
-import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.fs.ChecksumsInfo;
-import org.artifactory.api.fs.ItemAdditionalInfo;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.fs.MetadataInfo;
+import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.md.MetadataReader;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.common.ConstantsValue;
-import org.artifactory.concurrent.LockingException;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrRepoService;
+import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.jackrabbit.DataStoreRecordNotFoundException;
 import org.artifactory.jcr.lock.LockingHelper;
@@ -43,15 +42,18 @@ import org.artifactory.jcr.md.MetadataAware;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.jcr.md.MetadataService;
-import org.artifactory.repo.LocalRepo;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.jcr.JcrHelper;
+import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.update.md.MetadataVersion;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.PathUtils;
+import org.artifactory.util.StringInputStream;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -68,10 +70,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Metadata structure:
@@ -94,44 +93,48 @@ import java.util.Map;
  * <p/>
  * ..............................art.stats/
  */
-public abstract class JcrFsItem<T extends ItemInfo> extends File
-        implements Comparable<File>, ImportableExportable, MetadataAware {
+public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comparable<File>, MetadataAware {
     private static final Logger log = LoggerFactory.getLogger(JcrFsItem.class);
 
-    public static final String PROP_ARTIFACTORY_NAME = "artifactory:name";
-
     private final String absPath;
+    private final String uuid;
     private final T info;
-    private final boolean createdFromJcr;
     private boolean mutable;
     private boolean deleted;
-    private Map<MetadataDefinition, Object> metadata;
 
-    private transient LocalRepo repo;
+    private transient StoringRepo repo;
     private transient MetadataService mdService;
     private transient JcrRepoService jcrService;
     private transient MetadataDefinitionService mdDefService;
 
-    public JcrFsItem(JcrFsItem<T> copy, LocalRepo repo) {
+    /**
+     * Copy constructor used to create a mutable version of this fsItem out of JCR based one.
+     *
+     * @param copy A JCR based fsItem to copy
+     * @param repo The local repo that this fsItem belongs to
+     */
+    public JcrFsItem(JcrFsItem<T> copy, StoringRepo repo) {
+        // TODO: Sanity check that copy is immutable and repo is the same than in copy
         super(copy.getPath());
         this.absPath = copy.absPath;
         this.repo = repo;
-        this.createdFromJcr = copy.createdFromJcr;
+        this.uuid = copy.uuid;
         this.mutable = true;
         this.info = createInfo(copy.info);
-        if (metadata != null) {
-            this.metadata = new HashMap<MetadataDefinition, Object>(copy.metadata);
-        } else {
-            this.metadata = null;
-        }
     }
 
-    public JcrFsItem(RepoPath repoPath, LocalRepo repo) {
+    /**
+     * Constructor of a new fsItem out of a repo path
+     *
+     * @param repoPath The key of this fsItem
+     * @param repo     The local repo that this fsItem belongs to
+     */
+    public JcrFsItem(RepoPath repoPath, StoringRepo repo) {
         super(JcrPath.get().getAbsolutePath(repoPath));
         this.repo = repo;
         this.absPath = PathUtils.formatPath(super.getPath());
         this.info = createInfo(repoPath);
-        this.createdFromJcr = false;
+        this.uuid = null;
         this.mutable = true;
     }
 
@@ -140,29 +143,38 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
      * JCR but will read the JCR content of the node.
      *
      * @param node the JCR node this item represent
-     * @param repo
-     * @throws RepositoryRuntimeException if the node cannot be read
+     * @param repo The local repo that this fsItem belongs to
+     * @throws RepositoryRuntimeException if the node info cannot be read
      */
-    public JcrFsItem(Node node, LocalRepo repo) {
-        super(repo.getAbsolutePath(node));
+    public JcrFsItem(Node node, StoringRepo repo) {
+        super(JcrHelper.getAbsolutePath(node));
         this.repo = repo;
+        this.uuid = JcrHelper.getUuid(node);
         this.absPath = PathUtils.formatPath(super.getPath());
-        this.info = createInfo(JcrPath.get().getRepoPath(absPath));
-        this.createdFromJcr = true;
+        RepoPath repoPath = JcrPath.get().getRepoPath(absPath);
+        if (repoPath == null) {
+            //Item does not exist in a current repo
+            throw new ItemNotFoundRuntimeException("No valid fs item exists in path '" + absPath + "'.");
+        }
+        this.info = createInfo(repoPath);
         this.mutable = false;
-        setInfoFields(node);
+        try {
+            updateInfoFromNode(node);
+        } catch (Exception e) {
+            Throwable notFound = ExceptionUtils.getCauseOfTypes(
+                    e, DataStoreRecordNotFoundException.class, PathNotFoundException.class);
+            if (notFound != null) {
+                log.warn("Jcr item node {} does not have additional info binary content! Deleting entry.", getPath());
+                cleanupOrphanes();
+            } else {
+                throw new RepositoryRuntimeException("Saving node " + getPath() + " info failed.", e);
+            }
+        }
     }
 
     protected abstract T createInfo(RepoPath repoPath);
 
     protected abstract T createInfo(T copy);
-
-    /**
-     * Tells if created from jcr data without having to query the underlying jcr (like exists())
-     */
-    public boolean isCreatedFromJcr() {
-        return createdFromJcr;
-    }
 
     public boolean isMutable() {
         return mutable;
@@ -180,37 +192,10 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
         this.deleted = deleted;
     }
 
-    /**
-     * Create a JCR File system item under this parent node. This constructor creates the entry in JCR, and so should be
-     * called from a transactional scope.
-     *
-     * @param parentNode The folder JCR node to create this element in
-     * @param name       The name of this new element
-     * @throws RepositoryRuntimeException if the parentNode cannot be read or the JCR node elements cannot be created
-     */
-    protected Node createOrGetFileNode(Node parentNode, String name) {
-        try {
-            //Create the node, unless it already exists (ideally we'd remove the exiting node first,
-            //but we can't until JCR-1554 is resolved
-            boolean exists = parentNode.hasNode(name);
-            if (exists) {
-                return parentNode.getNode(name);
-            }
-            //Create the file node
-            Node node = parentNode.addNode(name, JcrFile.NT_ARTIFACTORY_FILE);
-            //Create the metadata container
-            createMetadataContainer();
-            return node;
-        } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException(
-                    "Failed to create node '" + absPath + "'.", e);
-        }
-    }
-
-    public final LocalRepo getLocalRepo() {
+    public final StoringRepo getRepo() {
         if (repo == null) {
             repo = InternalContextHelper.get().beanForType(InternalRepositoryService.class)
-                    .localOrCachedRepositoryByKey(getRepoKey());
+                    .storingRepositoryByKey(getRepoKey());
         }
         return repo;
     }
@@ -227,82 +212,66 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
         return getMdService().getXmlMetadata(this, metadataName);
     }
 
-    public boolean hasXmlMetdata(String metadataName) {
-        return getMdService().hasXmlMetdata(this, metadataName);
+    public boolean hasXmlMetadata(String metadataName) {
+        return getMdService().hasXmlMetadata(this, metadataName);
     }
 
-    public final void setXmlMetadata(String metadataName, Object xstreamable) {
+    public final void setXmlMetadata(Object xstreamable) {
         getMdService().setXmlMetadata(this, xstreamable);
     }
 
     public final void setXmlMetadata(String metadataName, String value) {
-        try {
-            getMdService().setXmlMetadata(this, metadataName, new ByteArrayInputStream(value.getBytes("utf-8")));
-        } catch (UnsupportedEncodingException e) {
-            throw new RepositoryRuntimeException("Cannot set xml metadata.", e);
-        }
-    }
-
-    protected void setInfoFields(Node node) {
-        try {
-            //Set the name property for indexing and speedy searches
-            if (node.hasProperty(PROP_ARTIFACTORY_NAME)) {
-                String artifactoryName = node.getProperty(PROP_ARTIFACTORY_NAME).getString();
-                if (artifactoryName.equals(getName())) {
-                    // Everyhting is OK
-                } else {
-                    log.warn("Item " + this + " does not have a valid name " + artifactoryName);
-                }
-            } else {
-                log.warn("Item " + this + " does not have a name");
-            }
-            info.setCreated(getJcrCreated(node));
-            info.setLastModified(getJcrLastModified(node));
-        } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException("Saving node " + getPath() + " failed.", e);
-        }
-        try {
-            setAdditionalInfoFields(node);
-        } catch (Exception e) {
-            Throwable notFound = ExceptionUtils.getCauseOfTypes(
-                    e, DataStoreRecordNotFoundException.class, PathNotFoundException.class);
-            if (notFound != null) {
-                log.warn("Jcr item node {} does not have additional info binary content! Deleting entry.", getPath());
-                bruteForceDelete();
-            } else {
-                throw new RepositoryRuntimeException("Saving node " + getPath() + " additional info failed.", e);
+        if (value == null) {
+            getMdService().removeXmlMetadata(this, metadataName);
+        } else {
+            try {
+                getMdService().setXmlMetadata(this, metadataName, new StringInputStream(value));
+            } catch (UnsupportedEncodingException e) {
+                throw new RepositoryRuntimeException("Cannot set xml metadata.", e);
             }
         }
     }
 
-    protected abstract void setAdditionalInfoFields(Node node) throws RepositoryException;
-
-    protected void setMandatoryInfoFields() {
-        try {
-            //Set the name property for indexing and speedy searches
-            Node node = getNode();
-            node.setProperty(PROP_ARTIFACTORY_NAME, getName());
-            if (info.getCreated() == 0) {
-                info.setCreated(getJcrCreated(node));
-            }
-        } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException("Saving node failed.", e);
-        }
+    /**
+     * Take all the parameters/properties from the JCR node and fill the ItemInfo with the correct data. ATTENTION: This
+     * method should not change the JCR node, no write access are allowed.
+     *
+     * @param node The JCR node associated with this JcrFsItem
+     */
+    protected void updateInfoFromNode(Node node) {
+        JcrHelper.checkArtifactoryName(node, getName());
+        info.setCreated(JcrHelper.getJcrCreated(node));
     }
 
-    public final void saveBasicInfo() {
-        setMandatoryInfoFields();
-        getMdService().setXmlMetadata(this, info.getInernalXmlInfo());
+    /**
+     * Take the modified ItemInfo fields and update the JCR node(s) properties.
+     */
+    protected void updateNodeFromInfo() {
+        Node node = getNode();
+        // Created managed by JCR only
+        info.setCreated(JcrHelper.getJcrCreated(node));
+        //Set the name property for indexing and speedy searches
+        JcrHelper.setArtifactoryName(node, getName());
+        JcrHelper.setLastModified(node, info.getLastModified());
+        getMdService().setXmlMetadata(this, info.getInternalXmlInfo());
     }
 
-    public final void saveModifiedInfo() {
+    /**
+     * Updating all the fields in Info when an update is done. This method will always change the modifiedBy to the
+     * current user, set the createdBy if needed, and update the timestamps with the values passed.
+     *
+     * @param modified The new last modified timestamp
+     * @param updated  The new last updated timestamp (internal value for up-to-date in cache)
+     */
+    public final void setModifiedInfoFields(long modified, long updated) {
+        checkMutable("setModifiedInfoFields");
+        info.setLastModified(modified);
+        info.setLastUpdated(updated);
         String userId = getAuthorizationService().currentUsername();
-        ItemAdditionalInfo xmlInfo = info.getInernalXmlInfo();
-        if (xmlInfo.getCreatedBy() == null) {
-            xmlInfo.setCreatedBy(userId);
+        info.setModifiedBy(userId);
+        if (info.getCreatedBy() == null) {
+            info.setCreatedBy(userId);
         }
-        xmlInfo.setModifiedBy(userId);
-        saveBasicInfo();
     }
 
     public List<String> getXmlMetadataNames() {
@@ -342,52 +311,27 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
     }
 
     public String getModifiedBy() {
-        return getInfo().getInernalXmlInfo().getModifiedBy();
+        return getInfo().getInternalXmlInfo().getModifiedBy();
     }
 
     public String getCreatedBy() {
-        return getInfo().getInernalXmlInfo().getCreatedBy();
-    }
-
-    protected long getJcrCreated(Node node) throws RepositoryException {
-        //This property is auto-populated on node creation
-        if (node.hasProperty(JCR_CREATED)) {
-            return node.getProperty(JCR_CREATED).getDate().getTimeInMillis();
-        }
-        return 0;
-    }
-
-    protected long getJcrLastModified(Node node) throws RepositoryException {
-        //This property is auto-populated on node modification
-        if (node.hasProperty(JCR_LASTMODIFIED)) {
-            return node.getProperty(JCR_LASTMODIFIED).getDate().getTimeInMillis();
-        }
-        return 0;
+        return getInfo().getInternalXmlInfo().getCreatedBy();
     }
 
     @Override
     public boolean delete() {
-        if (!isMutable()) {
-            throw new LockingException("Cannot modify an immutable item: " + this);
-        }
+        checkMutable("delete");
         setDeleted(true);
         boolean result = getJcrService().delete(this);
         return result;
     }
 
-    public void bruteForceDelete() {
-        if (ConstantsValue.jcrFixConsistency.getBoolean()) {
-            LockingHelper.removeLockEntry(getRepoPath());
-            setDeleted(true);
-            try {
-                Node node = getNode();
-                if (node != null) {
-                    node.remove();
-                }
-            } catch (Exception e) {
-                log.warn("Could not brute force delete node: {}", e.getMessage());
-                log.debug("Could not brute force delete node", e);
-            }
+    /**
+     * Deletes the item with bruteforce, only if the jcrFixConsistency flag is true
+     */
+    public void cleanupOrphanes() {
+        if (ConstantValues.jcrFixConsistency.getBoolean()) {
+            bruteForceDelete();
         } else {
             log.warn("Node '{}' is in an inconsistent state.\n" +
                     "Please restart Artifactory with artifactory.jcr.fixConsistency=true in artifactory.system.properties",
@@ -395,15 +339,40 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
         }
     }
 
+    public void bruteForceDelete() {
+        LockingHelper.removeLockEntry(getRepoPath());
+        setDeleted(true);
+        updateCache();
+        try {
+            Node node = getNode();
+            if (node != null) {
+                node.remove();
+            }
+        } catch (Exception e) {
+            log.warn("Could not brute force delete node: {}", e.getMessage());
+            log.debug("Could not brute force delete node", e);
+        }
+    }
+
+    /**
+     * @return Parent folder of this folder or null if parent doesn't exist
+     */
     public JcrFolder getParentFolder() {
         RepoPath parentRepoPath = getParentRepoPath();
-        return getLocalRepo().getJcrFolder(parentRepoPath);
+        return getRepo().getJcrFolder(parentRepoPath);
+    }
+
+    /**
+     * @return Parent folder of this folder with write lock or null if parent doesn't exist
+     */
+    public JcrFolder getLockedParentFolder() {
+        RepoPath parentRepoPath = getParentRepoPath();
+        return getRepo().getLockedJcrFolder(parentRepoPath, false);
     }
 
     public RepoPath getParentRepoPath() {
         RepoPath myRepoPath = getRepoPath();
-        RepoPath parentRepoPath = new RepoPath(myRepoPath.getRepoKey(), PathUtils.getParent(myRepoPath.getPath()));
-        return parentRepoPath;
+        return new RepoPath(myRepoPath.getRepoKey(), PathUtils.getParent(myRepoPath.getPath()));
     }
 
     /**
@@ -452,6 +421,11 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
     @Override
     public boolean exists() {
         JcrSession session = getSession();
+        return exists(session);
+    }
+
+    public final boolean exists(JcrSession session) {
+        //Cannot check by uuid since the item mey have been trashed (so it does exist in the trash)
         String absPath = getAbsolutePath();
         return session.itemExists(absPath);
     }
@@ -625,9 +599,25 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
         return getMdService().getMetadataInfo(this, metadataName);
     }
 
-    protected Node getNode() {
+    public final Node getNode() {
         JcrSession session = getSession();
-        String absPath = getAbsolutePath();
+        return getNode(session);
+    }
+
+    public final Node getNode(JcrSession session) {
+        if (uuid != null) {
+            try {
+                return session.getNodeByUUID(uuid);
+            } catch (RepositoryRuntimeException e) {
+                Throwable cause = ExceptionUtils
+                        .unwrapThrowablesOfTypes(e, RepositoryRuntimeException.class, RepositoryException.class);
+                if (cause instanceof ItemNotFoundException) {
+                    log.debug("Could not find item with uuid " + uuid + ". Item might have been trashed.");
+                } else {
+                    throw e;
+                }
+            }
+        }
         return (Node) session.getItem(absPath);
     }
 
@@ -667,12 +657,12 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
     }
 
     protected void createMetadataContainer() {
-        getJcrService().getOrCreateUnstructuredNode(getNode(), NODE_ARTIFACTORY_METADATA);
+        getJcrService().getOrCreateUnstructuredNode(getNode(), JcrService.NODE_ARTIFACTORY_METADATA);
     }
 
     public Node getMetadataContainer() {
         try {
-            return getNode().getNode(NODE_ARTIFACTORY_METADATA);
+            return getNode().getNode(JcrService.NODE_ARTIFACTORY_METADATA);
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException("Failed to get metadata container.", e);
         }
@@ -690,13 +680,13 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
             throw new RuntimeException(
                     "Failed to create metadata folder '" + metadataFolder.getPath() + "'.", e);
         }
-        // Save the info manually
-        saveInfoManually(status, metadataFolder, getInfo(), incremental);
+        // Save the info manually (as opposed to automatic export of persistent metadata)
+        saveInfo(status, metadataFolder, getInfo(), incremental);
         // Save all other metadata
         saveXml(status, metadataFolder, incremental);
     }
 
-    private void saveInfoManually(StatusHolder status, File folder, ItemInfo itemInfo, boolean incremental) {
+    private void saveInfo(StatusHolder status, File folder, ItemInfo itemInfo, boolean incremental) {
         MetadataDefinition definition = getMetadataDefinitionService().getMetadataDefinition(itemInfo.getClass());
         String metadataName = definition.getMetadataName();
         File metadataFile = new File(folder, metadataName + ".xml");
@@ -712,9 +702,6 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
         File metadataFile;
         List<String> metadataNames = getXmlMetadataNames();
         for (String metadataName : metadataNames) {
-            if (!hasXmlMetdata(metadataName)) {
-                continue;
-            }
             // add .xml prefix to all metadata files
             String fileName = metadataName + ".xml";
             metadataFile = new File(metadataFolder, fileName);
@@ -724,7 +711,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
                 // incremental export and file system is current. skip
                 return;
             }
-            writeFile(status, metadataFile, metadataName, lastModified);
+            writeMetadataFile(status, metadataFile, metadataName, lastModified);
         }
     }
 
@@ -742,7 +729,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
         return false;
     }
 
-    protected void writeFile(StatusHolder status, File metadataFile, Object xstreamObj, long modified) {
+    private void writeFile(StatusHolder status, File metadataFile, Object xstreamObj, long modified) {
         if (xstreamObj == null) {
             return;
         }
@@ -754,13 +741,16 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
                 metadataFile.setLastModified(modified);
             }
         } catch (Exception e) {
-            status.setError("Failed to export xml metadata from '" + metadataFile.getPath() + "'.", e, log);
+            status.setError("Failed to export xml metadata to '" + metadataFile.getPath() + "' from '" +
+                    xstreamObj.getClass().getSimpleName() + "'.", e, log);
+            status.setError("Removing '" + metadataFile.getPath() + "'.", log);
+            FileUtils.deleteQuietly(metadataFile);
         } finally {
             IOUtils.closeQuietly(os);
         }
     }
 
-    protected void writeFile(StatusHolder status, File metadataFile, String metadataName, long modified) {
+    protected void writeMetadataFile(StatusHolder status, File metadataFile, String metadataName, long modified) {
         OutputStream os = null;
         try {
             os = new BufferedOutputStream(new FileOutputStream(metadataFile));
@@ -769,7 +759,10 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
                 metadataFile.setLastModified(modified);
             }
         } catch (Exception e) {
-            status.setError("Failed to export xml metadata from '" + metadataFile.getPath() + "'.", e, log);
+            status.setError("Failed to export xml metadata to '" + metadataFile.getPath() + "' from '" + metadataName +
+                    "'.", e, log);
+            status.setError("Removing '" + metadataFile.getPath() + "'.", log);
+            FileUtils.deleteQuietly(metadataFile);
         } finally {
             IOUtils.closeQuietly(os);
         }
@@ -791,8 +784,15 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
     }
 
     protected void importMetadata(File sourcePath, StatusHolder status, ImportSettings settings) {
-        File metadataFolder = getMetadataContainerFolder(sourcePath);
-        if (metadataFolder.exists()) {
+        try {
+            File metadataFolder = getMetadataContainerFolder(sourcePath);
+            if (!metadataFolder.exists()) {
+                String msg = "No metadata files found for '" + sourcePath.getAbsolutePath() +
+                        "' during import into " + getRepoPath();
+                status.setWarning(msg, log);
+                return;
+            }
+
             MetadataReader metadataReader = settings.getMetadataReader();
             if (metadataReader == null) {
                 if (settings.getExportVersion() != null) {
@@ -805,17 +805,20 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
             }
             List<MetadataEntry> metadataEntries = metadataReader.getMetadataEntries(metadataFolder, settings, status);
             for (MetadataEntry entry : metadataEntries) {
+                String metadataName = entry.getMetadataName();
+                if (MavenNaming.MAVEN_METADATA_NAME.equals(metadataName)) {
+                    // maven metadata is recalculated for local repos, so only import when importing to cache repo
+                    if (!getRepo().isCache()) {
+                        continue;
+                    }
+                }
                 ByteArrayInputStream is = new ByteArrayInputStream(entry.getXmlContent().getBytes());
-                getMdService().setXmlMetadata(this, entry.getMetadataName(), is, status);
+                getMdService().setXmlMetadata(this, metadataName, is, status);
             }
-        } else {
-            String msg = "No metadata files found for '" + sourcePath.getAbsolutePath() +
-                    "' during inport into " + getRepoPath();
-            if (settings.isIncludeMetadata()) {
-                status.setWarning(msg, log);
-            } else {
-                status.setDebug(msg, log);
-            }
+        } catch (Exception e) {
+            String msg =
+                    "Failed to import metadata of " + sourcePath.getAbsolutePath() + " into '" + getRepoPath() + "'.";
+            status.setError(msg, e, log);
         }
     }
 
@@ -825,21 +828,10 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
 
     public void updateCache() {
         // TODO: Nullify all transient fields before inserting in cache
-        getLocalRepo().updateCache(this);
+        getRepo().updateCache(this);
     }
 
     public abstract JcrFsItem save();
-
-    protected boolean setLastModified(Node node, long time) {
-        Calendar lastModifiedCalendar = Calendar.getInstance();
-        lastModifiedCalendar.setTimeInMillis(time);
-        try {
-            node.setProperty(JCR_LASTMODIFIED, lastModifiedCalendar);
-        } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException("Failed to set file node's last modified time.", e);
-        }
-        return true;
-    }
 
     protected void updateTimestamps(ItemInfo importedInfo, ItemInfo info) {
         long created = importedInfo.getCreated();
@@ -850,14 +842,14 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
         if (lm <= 0) {
             lm = created;
         }
-        long lu = importedInfo.getInernalXmlInfo().getLastUpdated();
+        long lu = importedInfo.getInternalXmlInfo().getLastUpdated();
         if (lu <= 0) {
             lu = lm;
         }
 
         info.setCreated(created);
         info.setLastModified(lm);
-        info.getInernalXmlInfo().setLastUpdated(lu);
+        info.getInternalXmlInfo().setLastUpdated(lu);
     }
 
     /**
@@ -872,5 +864,12 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File
 
     public boolean isIdentical(JcrFsItem item) {
         return absPath.equals(item.absPath) && info.isIdentical(item.info);
+    }
+
+    protected void checkMutable(String action) {
+        if (!isMutable()) {
+            throw new IllegalStateException(
+                    "Cannot execute " + action + " on item " + getRepoPath() + " it is an immutable item.");
+        }
     }
 }

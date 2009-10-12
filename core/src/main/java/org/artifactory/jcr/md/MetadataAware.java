@@ -1,23 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr.md;
 
 import org.artifactory.api.repo.RepoPath;
 
+import javax.annotation.Nullable;
 import javax.jcr.Node;
 import java.util.List;
 
@@ -25,12 +27,6 @@ import java.util.List;
  * User: freds Date: Aug 10, 2008 Time: 3:39:02 PM
  */
 public interface MetadataAware {
-    String ARTIFACTORY_PREFIX = "artifactory:";
-    String PROP_ARTIFACTORY_CREATED = ARTIFACTORY_PREFIX + "created";
-    String PROP_ARTIFACTORY_LAST_MODIFIED = ARTIFACTORY_PREFIX + "lastModified";
-    String PROP_ARTIFACTORY_LAST_MODIFIED_BY = ARTIFACTORY_PREFIX + "lastModifiedBy";
-    String NODE_ARTIFACTORY_METADATA = ARTIFACTORY_PREFIX + "metadata";
-    String NODE_ARTIFACTORY_XML = ARTIFACTORY_PREFIX + "xml";
 
     /**
      * @return the JCR node that can have metadata
@@ -52,11 +48,17 @@ public interface MetadataAware {
 
     String getXmlMetdata(String metadataName);
 
-    void setXmlMetadata(String metadataName, Object xstreamable);
+    void setXmlMetadata(Object xstreamable);
 
-    void setXmlMetadata(String metadataName, String value);
+    /**
+     * Sets the specified metadata value. If the value is null, the metadata is removed.
+     *
+     * @param metadataName The metadata name.
+     * @param value        Matedata value. If null the metadata will be deleted.
+     */
+    void setXmlMetadata(String metadataName, @Nullable String value);
 
     List<String> getXmlMetadataNames();
 
-    boolean hasXmlMetdata(String metadataName);
+    boolean hasXmlMetadata(String metadataName);
 }

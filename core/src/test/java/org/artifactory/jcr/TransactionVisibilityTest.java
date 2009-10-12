@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.jcr;
 
 import org.apache.jackrabbit.core.XASessionImpl;
@@ -17,8 +34,39 @@ import javax.transaction.xa.Xid;
 @Test
 public class TransactionVisibilityTest extends RepositoryTestBase {
 
+
+    //@Test(invocationCount = 3, threadPoolSize = 1)
+    @Test(invocationCount = 3, threadPoolSize = 3, enabled = false)
+    public void testVisbilityAfterMove() throws Exception {
+        XASessionImpl session = login();
+        Xid xid1 = new DummyXid((byte) 1);
+        beginTx(xid1, session);
+        Node root = session.getRootNode();
+        String aName = "a" + Thread.currentThread().getId();
+        String bName = "b" + Thread.currentThread().getId();
+        root.addNode(aName, "nt:unstructured");
+        root.addNode(bName, "nt:unstructured");
+        session.save();
+        commitTx(xid1, session);
+
+        Xid xid2 = new DummyXid((byte) 2);
+        beginTx(xid2, session);
+        root = session.getRootNode();
+        Node a = root.getNode(aName);
+        session.move(a.getPath(), "/" + bName + "/" + aName);
+        try {
+            root.getNode(aName);
+            root.getNode(aName); //Try again for debugging
+            fail("a should not be found");
+        } catch (RepositoryException e) {
+            //Should not be found
+        }
+        commitTx(xid2, session);
+        session.logout();
+    }
+
     public void testTxCreateVisbilityFail() throws Exception {
-        XASessionImpl session = (XASessionImpl) getRepository().login();
+        XASessionImpl session = login();
         Xid xid1 = new DummyXid((byte) 1);
         beginTx(xid1, session);
         Node root = session.getRootNode();
@@ -48,7 +96,7 @@ public class TransactionVisibilityTest extends RepositoryTestBase {
     }
 
     public void testNonTxCreateVisbilityOk() throws Exception {
-        Session session = getRepository().login();
+        Session session = login();
         Node root = session.getRootNode();
         root.addNode("a", "nt:unstructured");
         session.save();
@@ -65,7 +113,7 @@ public class TransactionVisibilityTest extends RepositoryTestBase {
     }
 
     public void testTXCreateVisbilityOk() throws Exception {
-        XASessionImpl session = (XASessionImpl) getRepository().login();
+        XASessionImpl session = login();
         Xid xid2 = new DummyXid((byte) 1);
         beginTx(xid2, session);
         Node root = session.getRootNode();

@@ -24,4 +24,4 @@ do
   CLASSPATH="$CLASSPATH:$i"
 done
 
-exec "$JAVACMD" $JAVA_OPTIONS -Dcli.logs.dir="$LOGS_DIR" -classpath $CLASSPATH org.artifactory.cli.main.ArtifactoryCli "$@"
+exec "$JAVACMD" $JAVA_OPTIONS -Dartadmin.logs.dir="$LOGS_DIR" -classpath $CLASSPATH org.artifactory.cli.main.ArtAdmin "$@"

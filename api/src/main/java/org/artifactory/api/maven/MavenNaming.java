@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.api.maven;
 
 import org.artifactory.api.mime.ContentType;
@@ -16,8 +33,12 @@ public class MavenNaming {
     //Uses lazy evaluation of the version (+?)
     //see: http://www.regular-expressions.info/reference.html
     //For testing, see: http://www.cis.upenn.edu/~matuszek/General/RegexTester/regex-tester.html
-    public static final Pattern ARTIFACT_NAME_PATTERN =
-            Pattern.compile("(.+?)-(\\d.+?(-SNAPSHOT)?)(-([^-\\d]+))?\\.(\\w{3,}?)");
+    //Should be used with standard artifact names:
+    //artifactId-version.ext
+    //artifactId-version-classifier.ext
+    //groups: 1-artifactId; 2-version; 5-classifier; 6-packaging.
+    private static final Pattern ARTIFACT_NAME_PATTERN =
+            Pattern.compile("(.+?)-(\\d.+?(-SNAPSHOT)?)(-(.+?))?\\.(\\w{3,}?)");
 
     // Matcher for unique snapshot names of the form artifactId-version-date.time-buildNumber.type
     // for example: artifactory-1.0-20081214.090217-4.pom
@@ -32,18 +53,25 @@ public class MavenNaming {
     public static final String NEXUS_INDEX_PREFIX = "nexus-maven-repository-index";
     public static final String NEXUS_INDEX_ZIP = NEXUS_INDEX_PREFIX + ".zip";
     public static final String NEXUS_INDEX_PROPERTIES = NEXUS_INDEX_PREFIX + ".properties";
+    public static final String NEXUS_INDEX_ZIP_PATH = NEXUS_INDEX_DIR + "/" + NEXUS_INDEX_ZIP;
+    public static final String NEXUS_INDEX_PROPERTIES_PATH = NEXUS_INDEX_DIR + "/" + NEXUS_INDEX_PROPERTIES;
 
     /**
-     * Returns a matcher
+     * Returns a MavenArtifactInfo based on info that was managed to gather from the file name matcher
      *
-     * @param name The file name (with no preceding path) to match against
-     * @return A RE matcher. If the matcher matches, then: group(1)=artifactId; group(2)=version; group(5)=classifier;
-     *         group(6)=packaging.
+     * @param fileName The file name (with no preceding path) to match against
+     * @return MavenArtifactInfo object with gathered info
      */
-    @SuppressWarnings({"UnnecessaryLocalVariable"})
-    public static Matcher artifactMatcher(String name) {
-        Matcher matcher = ARTIFACT_NAME_PATTERN.matcher(name);
-        return matcher;
+    public static MavenArtifactInfo getInfoByMatching(String fileName) {
+        MavenArtifactInfo mavenArtifactInfo = new MavenArtifactInfo();
+        Matcher matcher = ARTIFACT_NAME_PATTERN.matcher(fileName);
+        if (matcher.matches()) {
+            mavenArtifactInfo.setArtifactId(matcher.group(1));
+            mavenArtifactInfo.setVersion(matcher.group(2));
+            mavenArtifactInfo.setClassifier(matcher.group(5));
+        }
+
+        return mavenArtifactInfo;
     }
 
     /**
@@ -117,6 +145,10 @@ public class MavenNaming {
         return path.startsWith(".");
     }
 
+    /**
+     * @param path Path to test
+     * @return True if this path points to nexus index file.
+     */
     public static boolean isIndex(String path) {
         String name = PathUtils.getName(path);
         return name.startsWith(NEXUS_INDEX_PREFIX);
@@ -141,7 +173,6 @@ public class MavenNaming {
      * @param path Path to convert
      * @return A Maven 1 repository path
      */
-    @SuppressWarnings({"UnnecessaryLocalVariable"})
     public static String toMaven1Path(String path) {
         String[] pathElements = path.split("/");
         String name = pathElements[pathElements.length - 1];

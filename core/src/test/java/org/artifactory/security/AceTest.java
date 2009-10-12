@@ -1,7 +1,24 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.security;
 
 import org.artifactory.api.security.AceInfo;
-import org.artifactory.api.security.ArtifactoryPermisssion;
+import org.artifactory.api.security.ArtifactoryPermission;
 import org.springframework.security.acls.domain.BasePermission;
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
@@ -15,7 +32,7 @@ import org.testng.annotations.Test;
 public class AceTest {
 
     public void createForUserFromAceInfo() {
-        AceInfo aceInfo = new AceInfo("momo", false, ArtifactoryPermisssion.ADMIN.getMask());
+        AceInfo aceInfo = new AceInfo("momo", false, ArtifactoryPermission.ADMIN.getMask());
         Ace ace = new Ace(new Acl(), aceInfo);
 
         // now test the getters
@@ -28,7 +45,7 @@ public class AceTest {
     }
 
     public void createForGroupFromAceInfo() {
-        AceInfo aceInfo = new AceInfo("momo", true, ArtifactoryPermisssion.DEPLOY.getMask());
+        AceInfo aceInfo = new AceInfo("momo", true, ArtifactoryPermission.DEPLOY.getMask());
         Ace ace = new Ace(new Acl(), aceInfo);
 
         // now test the getters

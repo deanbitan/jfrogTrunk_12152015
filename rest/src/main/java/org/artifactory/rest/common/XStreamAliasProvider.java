@@ -1,24 +1,29 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.rest.common;
 
-import com.sun.jersey.impl.provider.entity.AbstractMessageReaderWriterProvider;
+import com.sun.jersey.core.provider.AbstractMessageReaderWriterProvider;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import org.apache.commons.io.IOUtils;
+import org.artifactory.api.security.SecurityInfo;
+import org.artifactory.api.xstream.XStreamFactory;
+import org.artifactory.update.security.SecurityVersion;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
@@ -39,22 +44,52 @@ import java.util.Set;
 /**
  * User: freds Date: Aug 12, 2008 Time: 6:46:36 PM
  */
-@Produces({"application/xml", "text/xml", "*/*"})
-@Consumes({"application/xml", "text/xml", "*/*"})
+@Produces({MediaType.APPLICATION_XML, MediaType.TEXT_XML, MediaType.WILDCARD})
+@Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML, MediaType.WILDCARD})
 @Provider
 public class XStreamAliasProvider extends AbstractMessageReaderWriterProvider<Object> {
     private static final Set<Class> processed = new HashSet<Class>();
-    private static final XStream xstream = new XStream();
+    private static final XStream xstream = XStreamFactory.create();
     private static final String DEFAULT_ENCODING = "utf-8";
 
-    public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations,
-            MediaType mediaType) {
-        return type.getAnnotation(XStreamAlias.class) != null;
+    public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return type.getAnnotation(XStreamAlias.class) != null || isXtreamable(genericType);
     }
 
-    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations,
-            MediaType mediaType) {
-        return type.getAnnotation(XStreamAlias.class) != null;        
+    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return type.getAnnotation(XStreamAlias.class) != null || isXtreamable(genericType);
+    }
+
+    public Object readFrom(Class<Object> aClass, Type genericType, Annotation[] annotations,
+            MediaType mediaType, MultivaluedMap<String, String> map, InputStream stream)
+            throws IOException, WebApplicationException {
+        String encoding = getCharsetAsString(mediaType);
+        XStream xStream = getXStream(aClass);
+        InputStreamReader xmlIs = new InputStreamReader(stream, encoding);
+        try {
+            if (SecurityInfo.class.isAssignableFrom(aClass)) {
+                String secData = IOUtils.toString(xmlIs);
+                //Convert security on the fly
+                //TODO: [by yl] Please refactor this into a generic conversion mechanism instread of embedding security
+                //aware code in a generic framework class
+                SecurityVersion securityVersion = SecurityVersion.findVersion(secData);
+                if (!securityVersion.isCurrent()) {
+                    secData = securityVersion.convert(secData);
+                }
+                return xStream.fromXML(secData);
+            }
+            return xStream.fromXML(xmlIs);
+        } finally {
+            IOUtils.closeQuietly(xmlIs);
+        }
+    }
+
+    public void writeTo(Object o, Class<?> aClass, Type type, Annotation[] annotations,
+            MediaType mediaType, MultivaluedMap<String, Object> map, OutputStream stream)
+            throws IOException, WebApplicationException {
+        String encoding = getCharsetAsString(mediaType);
+        XStream xStream = getXStream(o.getClass());
+        xStream.toXML(o, new OutputStreamWriter(stream, encoding));
     }
 
     protected static String getCharsetAsString(MediaType m) {
@@ -75,19 +110,8 @@ public class XStreamAliasProvider extends AbstractMessageReaderWriterProvider<Ob
         return xstream;
     }
 
-    public Object readFrom(Class<Object> aClass, Type genericType, Annotation[] annotations,
-            MediaType mediaType, MultivaluedMap<String, String> map, InputStream stream)
-            throws IOException, WebApplicationException {
-        String encoding = getCharsetAsString(mediaType);
-        XStream xStream = getXStream(aClass);
-        return xStream.fromXML(new InputStreamReader(stream, encoding));
-    }
-
-    public void writeTo(Object o, Class<?> aClass, Type type, Annotation[] annotations,
-            MediaType mediaType, MultivaluedMap<String, Object> map, OutputStream stream)
-            throws IOException, WebApplicationException {
-        String encoding = getCharsetAsString(mediaType);
-        XStream xStream = getXStream(o.getClass());
-        xStream.toXML(o, new OutputStreamWriter(stream, encoding));
+    @SuppressWarnings({"unchecked"})
+    private boolean isXtreamable(Type genericType) {
+        return (genericType instanceof Class && ((Class) genericType).getAnnotation(XStreamAlias.class) != null);
     }
 }

@@ -1,36 +1,39 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr.md;
 
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.collections15.map.FastHashMap;
 import org.artifactory.api.fs.FileAdditionalInfo;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderAdditionaInfo;
-import org.artifactory.api.fs.FolderInfo;
-import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.maven.MavenUnitInfo;
+import org.artifactory.api.fs.FileInfoImpl;
+import org.artifactory.api.fs.FolderAdditionalInfo;
+import org.artifactory.api.fs.FolderInfoImpl;
+import org.artifactory.api.md.Properties;
+import org.artifactory.api.md.watch.Watchers;
 import org.artifactory.api.stat.StatsInfo;
+import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.ReloadableBean;
+import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -47,7 +50,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
 
     private final Map<Class, MetadataDefinition> mdDefsByClass = new FastHashMap<Class, MetadataDefinition>(3);
     private final Map<String, MetadataDefinition> mdDefsByName = new FastHashMap<String, MetadataDefinition>(3);
-    private final XStream xstream = new XStream();
+    private final XStream xstream = XStreamFactory.create();
 
     public XStream getXstream() {
         return xstream;
@@ -64,16 +67,16 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
     }
 
     public void init() {
-        // Metadata basics
-        createMetadataDefinition(FolderInfo.class, false, true);
-        createMetadataDefinition(FileInfo.class, false, true);
-        createMetadataDefinition(FolderAdditionaInfo.class, true, true);
+        // Internal xstreamables metadata
+        createMetadataDefinition(FolderInfoImpl.class, false, true);
+        createMetadataDefinition(FileInfoImpl.class, false, true);
+        createMetadataDefinition(FolderAdditionalInfo.class, true, true);
         createMetadataDefinition(FileAdditionalInfo.class, true, true);
+        createMetadataDefinition(Watchers.class, true, true);
 
-        // Extra Metadata
+        // Additional persistent xstreamables metadata
         createMetadataDefinition(StatsInfo.class, true, false);
-        createMetadataDefinition(MavenUnitInfo.class, true, false);
-        createMetadataDefinition(MavenArtifactInfo.class, true, false);
+        createMetadataDefinition(Properties.class, true, false);
 
         ((FastHashMap) mdDefsByClass).setFast(true);
         ((FastHashMap) mdDefsByName).setFast(true);
@@ -87,6 +90,9 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         mdDefsByName.clear();
     }
 
+    public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
+    }
+
     public MetadataDefinition getMetadataDefinition(Class clazz) {
         MetadataDefinition definition = mdDefsByClass.get(clazz);
         if (definition == null) {
@@ -96,11 +102,11 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         return definition;
     }
 
-    private MetadataDefinition createMetadataDefinition(Class clazz, boolean useMetadataContainer,
-            boolean internal) {
+    private MetadataDefinition createMetadataDefinition(
+            Class clazz, boolean persistOnMetadataContainer, boolean internal) {
         MetadataDefinition definition;
         String mdName = xmlRootNameForClass(clazz);
-        definition = new MetadataDefinition(mdName, clazz, useMetadataContainer, internal);
+        definition = new MetadataDefinition(mdName, clazz, persistOnMetadataContainer, internal);
         mdDefsByClass.put(clazz, definition);
         mdDefsByName.put(mdName, definition);
         return definition;

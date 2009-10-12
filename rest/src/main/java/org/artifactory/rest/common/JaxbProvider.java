@@ -1,7 +1,24 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.rest.common;
 
-import com.sun.jersey.impl.provider.entity.AbstractMessageReaderWriterProvider;
-import org.artifactory.config.jaxb.JaxbHelper;
+import com.sun.jersey.core.provider.AbstractMessageReaderWriterProvider;
+import org.artifactory.jaxb.JaxbHelper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
@@ -21,10 +38,11 @@ import java.lang.reflect.Type;
  *
  * @author Noam Tenne
  */
-@Produces({"application/xml"})
-@Consumes({"application/xml"})
+@Produces(MediaType.APPLICATION_XML)
+@Consumes(MediaType.APPLICATION_XML)
 @Provider
 public class JaxbProvider extends AbstractMessageReaderWriterProvider<Object> {
+    private static final JaxbHelper JAXB_HELPER = new JaxbHelper();
 
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations,
             MediaType mediaType) {
@@ -39,15 +57,13 @@ public class JaxbProvider extends AbstractMessageReaderWriterProvider<Object> {
     public Object readFrom(Class<Object> aClass, Type genericType, Annotation[] annotations,
             MediaType mediaType, MultivaluedMap<String, String> map, InputStream stream)
             throws IOException, WebApplicationException {
-        JaxbHelper jaxbHelper = new JaxbHelper();
-        return jaxbHelper.read(stream, aClass, null);
+        return JAXB_HELPER.read(stream, aClass, null);
     }
 
     @SuppressWarnings({"unchecked"})
     public void writeTo(Object o, Class<?> aClass, Type type, Annotation[] annotations,
             MediaType mediaType, MultivaluedMap<String, Object> map, OutputStream stream)
             throws IOException, WebApplicationException {
-        JaxbHelper jaxbHelper = new JaxbHelper();
-        jaxbHelper.write(stream, o);
+        JAXB_HELPER.write(stream, o);
     }
 }

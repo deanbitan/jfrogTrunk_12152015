@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.jcr;
 
 import org.apache.jackrabbit.core.XASessionImpl;
@@ -10,7 +27,7 @@ public class MixedAddingTest extends RepositoryTestBase {
 
     @Test
     public void testTxMIxedAdd() throws Exception {
-        XASessionImpl session1 = (XASessionImpl) getRepository().login();
+        XASessionImpl session1 = login();
         //Create the node
         Xid xid1 = new DummyXid((byte) 1);
         beginTx(xid1, session1);
@@ -18,7 +35,7 @@ public class MixedAddingTest extends RepositoryTestBase {
         Node a1 = root.addNode("a", "nt:unstructured");
         a1.addNode("b", "nt:unstructured");
         session1.save();
-        XASessionImpl session2 = (XASessionImpl) getRepository().login();
+        XASessionImpl session2 = login();
         //Create the node
         Xid xid2 = new DummyXid((byte) 2);
         beginTx(xid2, session2);

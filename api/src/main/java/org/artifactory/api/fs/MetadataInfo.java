@@ -1,25 +1,26 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.api.fs;
 
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
@@ -27,8 +28,7 @@ import java.util.Set;
  * @author yoavl
  */
 public class MetadataInfo implements RepoResourceInfo {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private final static Logger log = LoggerFactory.getLogger(MetadataInfo.class);
+    private static final Logger log = LoggerFactory.getLogger(MetadataInfo.class);
 
     private String name;
     private final RepoPath repoPath;
@@ -123,10 +123,11 @@ public class MetadataInfo implements RepoResourceInfo {
         String path = parentRepoPath.getPath();
         boolean alreadyMetadataPath = NamingUtils.isMetadata(path);
         if (alreadyMetadataPath) {
-            log.warn("ALREADY");
+            log.warn("Path {} is already a metadata path.", path);
         }
         //TODO: [by yl] Evaluate the impact of normalizing the path to use the standard metadata format (a.jar#mdname)
+
         return new RepoPath(parentRepoPath.getRepoKey(),
-                alreadyMetadataPath ? path : path + NamingUtils.METADATA_PREFIX + metadataName);
+                alreadyMetadataPath ? path : NamingUtils.getMetadataPath(path, metadataName));
     }
 }

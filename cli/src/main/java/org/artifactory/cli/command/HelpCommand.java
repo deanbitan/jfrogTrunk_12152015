@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.cli.command;
 
 import org.artifactory.cli.common.BaseCommand;
@@ -58,7 +75,7 @@ public class HelpCommand extends BaseCommand {
         usage.append("Artifactory Command Line Interface");
 
         try {
-            CompoundVersionDetails version = ArtifactoryHome.readRunningArtifactoryVersion();
+            CompoundVersionDetails version = new ArtifactoryHome().getRunningVersionDetails();
             usage.append(", version ").append(version.getVersionName());
             usage.append(" (rev. ").append(version.getRevision()).append(")");
         } catch (Exception e) {
@@ -74,8 +91,7 @@ public class HelpCommand extends BaseCommand {
                     .append(commandDefinition.getCommandParam().getDescription()).append("\n");
         }
         usage.append("\n");
-        usage.append("Artifactory is a Maven repository.\n");
-        usage.append("For additional information, see http://artifactory.jfrog.org\n");
+        usage.append("For additional information about Artifactory: http://artifactory.jfrog.org.\n");
         System.out.println(usage.toString());
     }
 

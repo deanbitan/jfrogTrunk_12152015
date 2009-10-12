@@ -551,6 +551,7 @@ case "$ACTION" in
         echo "STARTED Jetty `date`" >> $ARTIFACTORY_CONSOLE
 
         ulimit -n 5000
+        ulimit -s 128
 
         if [ -z "$ARTIFACTORY_USER" ]; then
             nohup sh -c "exec $RUN_CMD >>$ARTIFACTORY_CONSOLE 2>&1" >/dev/null &
@@ -598,10 +599,18 @@ case "$ACTION" in
         ;;
 
   check)
+
+   if [ -f $ARTIFACTORY_RUN/artifactory.pid ]
+        then
+            echo "Artifactory is running, on pid="`cat $ARTIFACTORY_RUN/artifactory.pid`
+            echo ""
+            exit 0
+        fi
+
         echo "Checking arguments to Artifactory on Jetty: "
         echo "ARTIFACTORY_HOME     =  $ARTIFACTORY_HOME"
         echo "JETTY_CONF           =  $JETTY_CONF"
-        echo "ARTIFACTORY_USER           =  $ARTIFACTORY_USER"
+        echo "ARTIFACTORY_USER     =  $ARTIFACTORY_USER"
         echo "ARTIFACTORY_RUN      =  $ARTIFACTORY_RUN"
         echo "ARTIFACTORY_PID      =  $ARTIFACTORY_PID"
         echo "ARTIFACTORY_CONSOLE  =  $ARTIFACTORY_CONSOLE"
@@ -614,11 +623,6 @@ case "$ACTION" in
         echo "RUN_CMD              =  $RUN_CMD"
         echo
 
-        if [ -f $ARTIFACTORY_RUN/artifactory.pid ]
-        then
-            echo "Jetty running pid="`cat $ARTIFACTORY_RUN/artifactory.pid`
-            exit 0
-        fi
         exit 1
         ;;
 

@@ -1,35 +1,39 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.jcr;
 
-import org.apache.commons.pool.impl.StackObjectPool;
+import org.apache.commons.pool.ObjectPool;
 import org.apache.jackrabbit.api.XASession;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.jcr.lock.InternalLockManager;
 import org.artifactory.jcr.lock.SessionLockManager;
+import org.artifactory.jcr.lock.aop.LockingAdvice;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.tx.SessionResource;
 import org.artifactory.tx.SessionResourceManager;
 import org.artifactory.tx.SessionResourceManagerImpl;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import javax.jcr.Credentials;
 import javax.jcr.Item;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -49,12 +53,14 @@ public class JcrSession implements XASession {
     private static final Logger log = LoggerFactory.getLogger(JcrSession.class);
 
     private final XASession session;
-    private SessionResourceManager sessionResourceManager = null;
-    private StackObjectPool pool;
+    private final SessionResourceManager sessionResourceManager;
+    private ObjectPool pool;
 
-    public JcrSession(XASession session, StackObjectPool pool) {
+    public JcrSession(XASession session, ObjectPool pool) {
         this.session = session;
         this.pool = pool;
+        sessionResourceManager = new SessionResourceManagerImpl();
+        sessionResourceManager.getOrCreateResource(SessionLockManager.class);
     }
 
     public Session getSession() {
@@ -105,6 +111,17 @@ public class JcrSession implements XASession {
         }
     }
 
+    public boolean nodeUUIDExists(String uuid) {
+        try {
+            session.getNodeByUUID(uuid);
+            return true;
+        } catch (ItemNotFoundException e) {
+            return false;
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
     public Item getItem(String absPath) {
         try {
             return session.getItem(absPath);
@@ -121,11 +138,22 @@ public class JcrSession implements XASession {
         }
     }
 
-    public void move(String srcAbsPath, String destAbsPath) {
+    public void move(String srcAbsPath, String tgtAbsPath) {
+        log.trace("Moving {} to {}", srcAbsPath, tgtAbsPath);
         try {
-            session.move(srcAbsPath, destAbsPath);
+            session.move(srcAbsPath, tgtAbsPath);
         } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException(e);
+            throw new RepositoryRuntimeException("Could not move '" + srcAbsPath + "' to '" + tgtAbsPath + "'.", e);
+        }
+    }
+
+    public void copy(String srcAbsPath, String tgtAbsPath) {
+        log.trace("Copying {} to {}", srcAbsPath, tgtAbsPath);
+        Workspace workspace = session.getWorkspace();
+        try {
+            workspace.copy(srcAbsPath, tgtAbsPath);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException("Could not copy '" + srcAbsPath + "' to '" + tgtAbsPath + "'.", e);
         }
     }
 
@@ -140,6 +168,7 @@ public class JcrSession implements XASession {
 
     public void refresh(boolean keepChanges) {
         try {
+            //Don't release any locks - they will be released at the end of lock advice
             session.refresh(keepChanges);
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException(e);
@@ -148,8 +177,9 @@ public class JcrSession implements XASession {
 
     public boolean hasPendingChanges() {
         try {
-            return getSessionResourceManager().hasPendingChanges() || session.hasPendingChanges();
-        } catch (RepositoryException e) {
+            InternalLockManager lockManager = LockingAdvice.getLockManager();
+            return (lockManager != null && lockManager.hasPendingResources()) || session.hasPendingChanges();
+        } catch (Exception e) {
             throw new RepositoryRuntimeException(e);
         }
     }
@@ -162,8 +192,7 @@ public class JcrSession implements XASession {
         }
     }
 
-    public void checkPermission(String absPath, String actions)
-            throws AccessControlException, RepositoryException {
+    public void checkPermission(String absPath, String actions) throws AccessControlException, RepositoryException {
         session.checkPermission(absPath, actions);
     }
 
@@ -239,6 +268,8 @@ public class JcrSession implements XASession {
     public void logout() {
         //Return ourseleves to the pool
         try {
+            refresh(false);
+            pool.invalidateObject(this);
             pool.returnObject(this);
         } catch (Exception e) {
             log.warn("Failed to return jcr session to pool.", e);
@@ -250,7 +281,11 @@ public class JcrSession implements XASession {
     }
 
     public void addLockToken(String lt) {
-        session.addLockToken(lt);
+        try {
+            session.addLockToken(lt);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
     }
 
     public String[] getLockTokens() {
@@ -275,15 +310,10 @@ public class JcrSession implements XASession {
     }
 
     public SessionResourceManager getSessionResourceManager() {
-        if (sessionResourceManager == null) {
-            sessionResourceManager = new SessionResourceManagerImpl();
-            sessionResourceManager.getOrCreateResource(SessionLockManager.class);
-        }
         return sessionResourceManager;
     }
 
     public <T extends SessionResource> T getOrCreateResource(Class<T> resourceClass) {
         return getSessionResourceManager().getOrCreateResource(resourceClass);
     }
-
 }

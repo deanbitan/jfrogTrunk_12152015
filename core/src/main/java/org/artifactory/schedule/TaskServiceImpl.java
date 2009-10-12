@@ -1,82 +1,98 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.schedule;
 
 import org.artifactory.cache.InternalCacheService;
-import org.artifactory.common.ConstantsValue;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.schedule.JcrGarbageCollector;
-import org.artifactory.jcr.schedule.WorkingCopyCommitter;
+import org.artifactory.jcr.schedule.JcrGarbageCollectorCommand;
 import org.artifactory.jcr.trash.EmptyTrashJob;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.WagonManagerTempArtifactsCleaner;
 import org.artifactory.schedule.quartz.QuartzTask;
+import org.artifactory.spring.ContextReadinessListener;
+import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.ReloadableBean;
 import org.artifactory.util.LoggingUtils;
+import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ClassUtils;
 
 import javax.annotation.PostConstruct;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author yoavl
  */
 @Service
-public class TaskServiceImpl implements TaskService {
-    private final static Logger log = LoggerFactory.getLogger(TaskServiceImpl.class);
+public class TaskServiceImpl implements TaskService, ContextReadinessListener {
+    private static final Logger log = LoggerFactory.getLogger(TaskServiceImpl.class);
 
     private ConcurrentMap<String, TaskBase> activeTasksByToken = new ConcurrentHashMap<String, TaskBase>();
+    private ConcurrentMap<String, TaskBase> inactiveTasksByToken = new ConcurrentHashMap<String, TaskBase>();
+
+    private AtomicBoolean openForScheduling = new AtomicBoolean();
 
     public void init() {
-        // TODO: Minutes and Hours are only in Java 6 :(
-        //Start the initial tasks
-        //Activate the Garbage collector every 1 hour after 1 minute
-        QuartzTask jcrGarbageCollectorTask =
-                new QuartzTask(JcrGarbageCollector.class,
-                        TimeUnit.SECONDS.toMillis(ConstantsValue.gcIntervalMins.getInt() * 60),
-                        TimeUnit.SECONDS.toMillis(1));
+        //Start the initial tasks:
+
+        //Run the datastore gc every 12 hours after 2 hours from startup
+        QuartzTask jcrGarbageCollectorTask = new QuartzTask(
+                JcrGarbageCollectorCommand.class,
+                TimeUnit.SECONDS.toMillis(ConstantValues.gcIntervalSecs.getLong()),
+                TimeUnit.SECONDS.toMillis(1));
         jcrGarbageCollectorTask.setSingleton(true);
         startTask(jcrGarbageCollectorTask);
-        //run the wagon leftovers cleanup every 15 minutes after 10 minutes
+
+        //run the wagon leftovers cleanup every 15 minutes after 10 minutes from startup
         QuartzTask wagonManagerTempArtifactsCleanerTask = new QuartzTask(
                 WagonManagerTempArtifactsCleaner.class, TimeUnit.SECONDS.toMillis(15 * 60),
                 TimeUnit.SECONDS.toMillis(10 * 60));
-        //WagonManagerTempArtifactsCleaner.class, TimeUnit.MINUTES.toMillis(15), TimeUnit.MINUTES.toMillis(10));
         wagonManagerTempArtifactsCleanerTask.setSingleton(true);
         startTask(wagonManagerTempArtifactsCleanerTask);
-        //run the wc committer once
-        QuartzTask workingCopyCommitterTask =
-                new QuartzTask(WorkingCopyCommitter.class, 0, TimeUnit.SECONDS.toMillis(30));
-        workingCopyCommitterTask.setSingleton(true);
-        startTask(workingCopyCommitterTask);
+
         //Empty whatever is left in the trash
-        QuartzTask emptyTrashTask =
-                new QuartzTask(EmptyTrashJob.class, "EmptyTrashOnStartup", 0, TimeUnit.SECONDS.toMillis(30));
+        QuartzTask emptyTrashTask = new QuartzTask(EmptyTrashJob.class, 0);
         startTask(emptyTrashTask);
     }
 
     public void destroy() {
         stopTasks(null, true);
+        //Shut down the executor service to terminate any async operations not managed by the task service
+        ExecutorService executorService = getExecutorService();
+        executorService.shutdown();
+    }
+
+    public ExecutorService getExecutorService() {
+        InternalArtifactoryContext context = InternalContextHelper.get();
+        CachedThreadPoolTaskExecutor executor = context.beanForType(CachedThreadPoolTaskExecutor.class);
+        ExecutorService executorService = executor.getConcurrentExecutor();
+        return executorService;
+    }
+
+    public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
     @SuppressWarnings({"unchecked"})
@@ -87,24 +103,49 @@ public class TaskServiceImpl implements TaskService {
     public void reload(CentralConfigDescriptor oldDescriptor) {
     }
 
+    public void onContextReady() {
+        openForScheduling.set(true);
+        for (String taskKey : inactiveTasksByToken.keySet()) {
+            //Check the readiness and task status again since it can change
+            if (openForScheduling.get()) {
+                TaskBase task = inactiveTasksByToken.remove(taskKey);
+                if (task != null) {
+                    activeTasksByToken.put(taskKey, task);
+                    task.schedule();
+                }
+            }
+        }
+    }
+
+    public void onContextUnready() {
+        openForScheduling.set(false);
+    }
+
     public String startTask(TaskBase task) {
         String token = task.getToken();
+        ConcurrentMap<String, TaskBase> taskMap = openForScheduling.get() ? activeTasksByToken : inactiveTasksByToken;
         if (task.isSingleton()) {
-            //Reject duplicate singleton tasks - by type + check atomically during insert that we are not rescheduling
-            //the same task instance
-            if (hasTaskOfType(task.getType()) || activeTasksByToken.putIfAbsent(token, task) != null) {
+            //Reject duplicate singleton tasks - by type + check automatically during insert that we are not
+            //rescheduling the same task instance
+            if (hasTaskOfType(task.getType(), taskMap) || taskMap.putIfAbsent(token, task) != null) {
                 throw new IllegalStateException("Cannot start a singleton task more than once (" + task + ").");
             }
-        } else if (activeTasksByToken.put(token, task) != null) {
+        } else if (taskMap.put(token, task) != null) {
             log.warn("Overriding an active task with the same token {}.", task);
         }
-        task.schedule();
+        if (openForScheduling.get()) {
+            task.schedule();
+        }
         return task.getToken();
     }
 
     public void cancelTask(String token, boolean wait) {
         TaskBase task = activeTasksByToken.get(token);
-        task.stop(wait, false, true);
+        if (task != null) {
+            task.stop(wait, false, true);
+        } else {
+            log.warn("Could not find task {} to cancel.", token);
+        }
         activeTasksByToken.remove(token);
     }
 
@@ -123,7 +164,11 @@ public class TaskServiceImpl implements TaskService {
 
     public void stopTask(String token, boolean wait) {
         TaskBase task = activeTasksByToken.get(token);
-        task.stop(wait, false, false);
+        if (task != null) {
+            task.stop(wait, false, false);
+        } else {
+            log.warn("Could not find task {} to stop.", token);
+        }
     }
 
     public void stopTasks(Class<? extends TaskCallback> callbackType, boolean wait) {
@@ -137,7 +182,11 @@ public class TaskServiceImpl implements TaskService {
 
     public void pauseTask(String token, boolean wait) {
         TaskBase task = getInternalActiveTask(token);
-        task.stop(wait, true, false);
+        if (task != null) {
+            task.stop(wait, true, false);
+        } else {
+            log.warn("Could not find task {} to pause.", token);
+        }
     }
 
     public void pauseTasks(Class<? extends TaskCallback> callbackType, boolean wait) {
@@ -151,7 +200,12 @@ public class TaskServiceImpl implements TaskService {
 
     public boolean resumeTask(String token) {
         TaskBase task = getInternalActiveTask(token);
-        return task.resume();
+        if (task != null) {
+            return task.resume();
+        } else {
+            log.warn("Could not find task {} to resume.", token);
+            return false;
+        }
     }
 
     public void resumeTasks(Class<? extends TaskCallback> callbackType) {
@@ -172,9 +226,15 @@ public class TaskServiceImpl implements TaskService {
         String token = TaskCallback.currentTaskToken();
         // If not in a task the token is null
         if (token == null) {
-            throw new IllegalStateException("No current task is found on thread.");
+            //Since this is called by external clients, it may be called directly or in tests with no surrounding task
+            log.debug("No current task is found on thread - nothing to block or pause.");
+            return false;
         }
         TaskBase task = getInternalActiveTask(token);
+        if (task == null) {
+            log.warn("Could not find task {} to check block on.", token);
+            return false;
+        }
         return task.blockIfPausedAndShouldBreak();
     }
 
@@ -196,10 +256,14 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public boolean hasTaskOfType(Class<? extends TaskCallback> callbackType) {
+        return hasTaskOfType(callbackType, activeTasksByToken);
+    }
+
+    private boolean hasTaskOfType(Class<? extends TaskCallback> callbackType, ConcurrentMap<String, TaskBase> taskMap) {
         if (callbackType == null) {
             return false;
         }
-        for (TaskBase task : activeTasksByToken.values()) {
+        for (TaskBase task : taskMap.values()) {
             if (ClassUtils.isAssignable(callbackType, task.getType())) {
                 return true;
             }

@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.jcr;
 
 import org.apache.commons.io.FileUtils;
@@ -8,6 +25,8 @@ import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.SimpleCredentials;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
@@ -50,5 +69,12 @@ public abstract class RepositoryTestBase {
         session.end(xid1, XAResource.TMSUCCESS);
         session.prepare(xid1);
         session.commit(xid1, false);
+    }
+
+    protected XASessionImpl login() throws RepositoryException {
+        //Transient repo grants everyone
+        XASessionImpl session =
+                (XASessionImpl) getRepository().login(new SimpleCredentials("user", "password".toCharArray()));
+        return session;
     }
 }

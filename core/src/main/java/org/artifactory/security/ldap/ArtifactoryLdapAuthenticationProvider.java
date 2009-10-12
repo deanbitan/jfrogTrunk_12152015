@@ -1,25 +1,35 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.security.ldap;
 
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.SimpleUser;
-import org.artifactory.security.UserGroupManager;
-import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.Authentication;
 import org.springframework.security.AuthenticationException;
 import org.springframework.security.AuthenticationServiceException;
 import org.springframework.security.providers.UsernamePasswordAuthenticationToken;
 import org.springframework.security.providers.ldap.LdapAuthenticationProvider;
-import org.springframework.security.userdetails.UsernameNotFoundException;
-
-import java.util.Set;
 
 /**
- * Custom Ldap authentication provider just for creating local users for newly ldap authenticated
- * users.
+ * Custom Ldap authentication provider just for creating local users for newly ldap authenticated users.
  *
  * @author Yossi Shaul
  */
@@ -28,10 +38,7 @@ public class ArtifactoryLdapAuthenticationProvider extends LdapAuthenticationPro
             LoggerFactory.getLogger(ArtifactoryLdapAuthenticationProvider.class);
 
     @Autowired
-    private UserGroupManager userGroupManager;
-
-    @Autowired
-    private UserGroupService userGroupservice;
+    private UserGroupService userGroupService;
 
     private InternalLdapAutenticator authenticator;
 
@@ -40,15 +47,13 @@ public class ArtifactoryLdapAuthenticationProvider extends LdapAuthenticationPro
         this.authenticator = authenticator;
     }
 
-
     @Override
     public boolean supports(Class authentication) {
-        return authenticator.isLdapActive();
+        return authenticator.isLdapActive() && super.supports(authentication);
     }
 
     @Override
-    public Authentication authenticate(Authentication authentication)
-            throws AuthenticationException {
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userName = authentication.getName();
         log.debug("Trying to authenticate user '{}' via ldap.", userName);
         try {
@@ -70,41 +75,10 @@ public class ArtifactoryLdapAuthenticationProvider extends LdapAuthenticationPro
         // user authenticated via ldap
         log.debug("'{}' authenticated successfully by ldap server.", userName);
 
-        ArtifactoryLdapAuthenticationProvider transactionalMe =
-                InternalContextHelper.get().beanForType(ArtifactoryLdapAuthenticationProvider.class);
-        SimpleUser user = transactionalMe.findOrCreateUser(userName);
-
+        SimpleUser user = new SimpleUser(userGroupService.findOrCreateExternalAuthUser(userName));
         // create new authentication response containing the user and it's authorities
         UsernamePasswordAuthenticationToken simpleUserAuthentication =
-                new UsernamePasswordAuthenticationToken(
-                        user, authentication.getCredentials(), user.getAuthorities());
+                new UsernamePasswordAuthenticationToken(user, authentication.getCredentials(), user.getAuthorities());
         return simpleUserAuthentication;
-    }
-
-    /**
-     * Find or create a default user and save to the database. This method is called when a user
-     * successfully authenticated via LDAP. If the user doesn't exist in the internal user database
-     * it will create it.
-     *
-     * @param userName The user name to find or create
-     * @return A new or found SimpleUser (never null)
-     */
-    // TODO: Should be transactional, but this bean cannot be CGLIBed!
-    private SimpleUser findOrCreateUser(String userName) {
-        SimpleUser user;
-        try {
-            user = userGroupManager.loadUserByUsername(userName);
-        } catch (UsernameNotFoundException e) {
-            log.debug(String.format("Creating new ldap user '%s' ...", userName));
-            // Creates a new user with invalid password, and user permissions.
-            // The created user cannot update its profile.
-            UserInfo userInfo = new UserInfo(userName, UserInfo.INVALID_PASSWORD, "",
-                    false, true, false, true, true, true);
-            Set<String> defaultGroups = userGroupservice.getNewUserDefaultGroupsNames();
-            userInfo.setGroups(defaultGroups);
-            user = new SimpleUser(userInfo);
-            userGroupManager.createUser(user);
-        }
-        return user;
     }
 }

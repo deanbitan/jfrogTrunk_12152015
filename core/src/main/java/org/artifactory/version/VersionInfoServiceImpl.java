@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.version;
 
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
@@ -9,11 +26,11 @@ import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.artifactory.api.cache.ArtifactoryCache;
 import org.artifactory.api.cache.CacheService;
-import org.artifactory.api.repo.exception.ItemNotFoundException;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.version.ArtifactoryVersioning;
 import org.artifactory.api.version.VersionHolder;
 import org.artifactory.api.version.VersionInfoService;
-import org.artifactory.common.ConstantsValue;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.schedule.quartz.QuartzTask;
@@ -34,7 +51,6 @@ import java.util.Map;
  */
 @Service
 public class VersionInfoServiceImpl implements VersionInfoService {
-
     /**
      * URL of remote version info
      */
@@ -52,9 +68,9 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     @Autowired
     private TaskService taskService;
 
-    private final String PARAM_VM_VERSION = "java.vm.version";
-    private final String PARAM_OS_ARCH = "os.arch";
-    private final String PARAM_OS_NAME = "os.name";
+    private static final String PARAM_VM_VERSION = "java.vm.version";
+    private static final String PARAM_OS_ARCH = "os.arch";
+    private static final String PARAM_OS_NAME = "os.name";
 
     /**
      * {@inheritDoc}
@@ -81,10 +97,21 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     /**
      * {@inheritDoc}
      */
+    public String getLatestWikiUrl(Map<String, String> headersMap, boolean release) {
+        ArtifactoryVersioning versioning = getVersioning(headersMap);
+        if (release) {
+            return versioning.getRelease().getWikiUrl();
+        }
+        return versioning.getLatest().getWikiUrl();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public String getLatestVersionFromCache(boolean release) {
-        ArtifactoryVersioning cachedversioning = getVersioningFromCache();
-        if (cachedversioning != null) {
-            return release ? cachedversioning.getRelease().getVersion() : cachedversioning.getLatest().getVersion();
+        ArtifactoryVersioning cachedVersioning = getVersioningFromCache();
+        if (cachedVersioning != null) {
+            return release ? cachedVersioning.getRelease().getVersion() : cachedVersioning.getLatest().getVersion();
         } else {
             return SERVICE_UNAVAILABLE;
         }
@@ -103,7 +130,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
                 if (getVersioningFromCache() == null && !taskService.hasTaskOfType(VersioningRetrieverJob.class)) {
                     // get the version asynchronouosly from the remote server
                     QuartzTask versioningRetriever = new QuartzTask(VersioningRetrieverJob.class, 0);
-                    versioningRetriever.addAttribute("headers", headersMap);
+                    versioningRetriever.addAttribute(VersioningRetrieverJob.ATTR_HEADERS, headersMap);
                     versioningRetriever.setSingleton(true);
                     taskService.startTask(versioningRetriever);
                 }
@@ -126,8 +153,8 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     public ArtifactoryVersioning getRemoteVersioning(Map<String, String> headersMap) {
         GetMethod getMethod = new GetMethod(URL);
         NameValuePair[] httpMethodParams = new NameValuePair[]{
-                new NameValuePair(ConstantsValue.artifactoryVersion.getPropertyName(),
-                        ConstantsValue.artifactoryVersion.getString()),
+                new NameValuePair(ConstantValues.artifactoryVersion.getPropertyName(),
+                        ConstantValues.artifactoryVersion.getString()),
                 new NameValuePair(PARAM_VM_VERSION, System.getProperty(PARAM_VM_VERSION)),
                 new NameValuePair(PARAM_OS_ARCH, System.getProperty(PARAM_OS_ARCH)),
                 new NameValuePair(PARAM_OS_NAME, System.getProperty(PARAM_OS_NAME))
@@ -161,7 +188,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
             throw new RuntimeException(e.getMessage());
         }
         if (("".equals(returnedInfo)) || (returnedInfo == null)) {
-            throw new ItemNotFoundException("Requested field was not found.");
+            throw new ItemNotFoundRuntimeException("Requested field was not found.");
         }
         return VersionParser.parse(returnedInfo);
     }

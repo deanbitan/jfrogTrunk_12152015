@@ -1,47 +1,60 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.config;
 
 import org.apache.commons.io.FileUtils;
-import org.artifactory.api.common.StatusHolder;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.SerializationUtils;
+import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddons;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.config.VersionInfo;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.ConstantsValue;
-import org.artifactory.config.jaxb.JaxbHelper;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.repo.index.IndexerService;
+import org.artifactory.jaxb.JaxbHelper;
+import org.artifactory.jcr.JcrPath;
+import org.artifactory.jcr.JcrService;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.index.InternalIndexerService;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.ReloadableBean;
+import org.artifactory.version.ArtifactoryConfigVersion;
+import org.artifactory.version.CompoundVersionDetails;
+import org.artifactory.version.converter.v136.LogbackConfigConverter;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -60,10 +73,11 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     private static final Logger log = LoggerFactory.getLogger(CentralConfigServiceImpl.class);
 
     private CentralConfigDescriptor descriptor;
-    private MutableCentralConfigDescriptor editedDescriptor;
-    private File originalConfigFile;
     private DateFormat dateFormatter;
     private String serverName;
+
+    @Autowired
+    private AddonsManager addonsManager;
 
     @Autowired
     private AuthorizationService authService;
@@ -72,31 +86,72 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     private InternalRepositoryService repositoryService;
 
     @Autowired
-    private IndexerService indexer;
+    private InternalIndexerService indexer;
+
+    @Autowired
+    private ConfigurationChangesInterceptors interceptors;
 
     public CentralConfigServiceImpl() {
     }
 
     @SuppressWarnings({"unchecked"})
     public Class<? extends ReloadableBean>[] initAfter() {
-        return new Class[0];
+        return new Class[]{JcrService.class};
     }
 
     @PostConstruct
     public void register() {
-        //Refresh ourselves from the default config file
-        File configFilePath = ArtifactoryHome.getConfigFile();
-        loadConfiguration(configFilePath);
-        //If we read the configuration from a local file, store it transiently so that we
-        //can overwrite the configuration on system import
-        setOriginalConfigFile(configFilePath);
         InternalContextHelper.get().addReloadableBean(InternalCentralConfigService.class);
     }
 
     public void init() {
+        String currentConfigXml = getCurrentConfigXml();
+        backupStartupConfigXml(currentConfigXml);
+        setDescriptor(JaxbHelper.readConfig("bootstrapConfigXml", currentConfigXml));
+    }
+
+    /**
+     * Creates a backup of the startup configuration XML in the "etc" dir
+     *
+     * @param startupConfigXml Startup configuration XML content
+     */
+    private void backupStartupConfigXml(String startupConfigXml) {
+        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
+        File startupConfigFile = new File(artifactoryHome.getEtcDir(), ArtifactoryHome.ARTIFACTORY_STARTUP_CONFIG_FILE);
+        FileUtils.deleteQuietly(startupConfigFile);
+        try {
+            FileUtils.writeStringToFile(startupConfigFile, startupConfigXml, "utf-8");
+        } catch (IOException e) {
+            log.warn("Unable to backup startup configuration file", e);
+        }
+    }
+
+    private String getCurrentConfigXml() {
+        String currentConfigXml;
+        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
+
+        //First try to see if there is an import config file to load
+        currentConfigXml = artifactoryHome.getImportConfigXml();
+
+        //If no import config file exists, or is empty, continue as normal
+        if (StringUtils.isBlank(currentConfigXml)) {
+            //Check in DB
+            JcrService jcr = InternalContextHelper.get().getJcrService();
+            String jcrConfPath = getCurrentConfigRootNodePath();
+            if (jcr.itemNodeExists(jcrConfPath)) {
+                log.info("Loading existing configuration from storage.");
+                currentConfigXml = jcr.getXml(jcrConfPath);
+            } else {
+                log.info("Loading bootstrap configuration (artifactory home dir is {}).", artifactoryHome.getHomeDir());
+                currentConfigXml = artifactoryHome.getBootstrapConfigXml();
+            }
+        }
+        log.trace("Current config xml is:\n{}", currentConfigXml);
+        return currentConfigXml;
     }
 
     public void setDescriptor(CentralConfigDescriptor descriptor) {
+        log.trace("Setting central config descriptor for config #{}.", System.identityHashCode(this));
         this.descriptor = descriptor;
         checkUniqueProxies();
         //Create the date formatter
@@ -112,14 +167,13 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
                 throw new RuntimeException("Failed to use hostname as the server instacne id.", e);
             }
         }
+        // Save result in DB
+        JcrService jcr = InternalContextHelper.get().getJcrService();
+        jcr.setXml(getConfigRootNodePath(), "current", JaxbHelper.toXml(descriptor), authService.currentUsername());
     }
 
     public CentralConfigDescriptor getDescriptor() {
         return descriptor;
-    }
-
-    public File getOriginalConfigFile() {
-        return originalConfigFile;
     }
 
     public DateFormat getDateFormatter() {
@@ -135,25 +189,31 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     }
 
     public VersionInfo getVersionInfo() {
-        return new VersionInfo(ConstantsValue.artifactoryVersion.getString(),
-                ConstantsValue.artifactoryRevision.getString());
+        return new VersionInfo(ConstantValues.artifactoryVersion.getString(),
+                ConstantValues.artifactoryRevision.getString());
     }
 
-    public MutableCentralConfigDescriptor getDescriptorForEditing() {
-        // TODO: support locking
-        if (editedDescriptor == null) {
-            // create a duplicate descriptor by reading the currrent configuration file
-            editedDescriptor = JaxbHelper.readConfig(originalConfigFile);
+    public String getConfigXml() {
+        return JaxbHelper.toXml(descriptor);
+    }
+
+    public void setConfigXml(String xmlConfig) {
+        // Check the version
+        ArtifactoryConfigVersion configVersion = ArtifactoryConfigVersion.getConfigVersion(xmlConfig);
+        if (!configVersion.getComparator().isCurrent()) {
+            // We need convert
+            xmlConfig = configVersion.convert(xmlConfig);
         }
-        return editedDescriptor;
+        CentralConfigDescriptorImpl newDescriptor = JaxbHelper.readConfig("setConfigXml", xmlConfig);
+        reloadConfiguration(newDescriptor);
     }
 
-    private void discardEditedDescriptor() {
-        editedDescriptor = null;
+    public MutableCentralConfigDescriptor getMutableDescriptor() {
+        return (MutableCentralConfigDescriptor) SerializationUtils.clone(descriptor);
     }
 
-    public void saveEditedDescriptorAndReload() {
-        if (editedDescriptor == null) {
+    public void saveEditedDescriptorAndReload(CentralConfigDescriptor descriptor) {
+        if (descriptor == null) {
             throw new IllegalStateException("Currently edited descriptor is null.");
         }
 
@@ -163,67 +223,22 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
 
         // before doing anything do a sanity check that the edited descriptor is valid
         // will fail if not valid without affecting the current configuration
-        File tmpNewConfig = new File(originalConfigFile.getAbsolutePath() + ".tmp");
-        JaxbHelper.writeConfig(editedDescriptor, tmpNewConfig);
-        JaxbHelper.readConfig(tmpNewConfig);// will fail if invalid
+        JaxbHelper.readConfig("SanityCheckReload", JaxbHelper.toXml(descriptor));// will fail if invalid
 
-        // create a backup first
-        File backupConfigFile = new File(originalConfigFile.getPath() + ".orig");
-        try {
-            FileUtils.copyFile(originalConfigFile, backupConfigFile);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create backup of the original config file", e);
-        }
-
-        // replace the config file
-        boolean deleted = originalConfigFile.delete();
-        if (!deleted) {
-            throw new RuntimeException("Failed to delete original config file");
-        }
-        try {
-            FileUtils.moveFile(tmpNewConfig, originalConfigFile);
-        } catch (IOException e) {
-            // copy from the backup
-            try {
-                FileUtils.copyFile(backupConfigFile, originalConfigFile);
-            } catch (IOException e1) {
-                throw new RuntimeException("Failed to recover original file from backup", e1);
-            }
-            throw new RuntimeException("Failed to replace current config file", e);
-        }
-
-        reload();
+        reloadConfiguration(descriptor);
     }
 
-    public void reload() {
-        reloadConfiguration(originalConfigFile);
-    }
-
-    public void importFrom(ImportSettings settings, StatusHolder status) {
+    public void importFrom(ImportSettings settings) {
+        MultiStatusHolder status = settings.getStatusHolder();
         File dirToImport = settings.getBaseDir();
         if ((dirToImport != null) && (dirToImport.isDirectory()) && (dirToImport.listFiles().length > 0)) {
             status.setStatus("Importing config...", log);
             File newConfigFile = new File(settings.getBaseDir(), ArtifactoryHome.ARTIFACTORY_CONFIG_FILE);
             if (newConfigFile.exists()) {
-                // copy the newly imported config file to the current artifactory etc directory 
-                File etcDir = ArtifactoryHome.getEtcDir();
-                File tempConfFile = new File(etcDir, "import_" + ArtifactoryHome.ARTIFACTORY_CONFIG_FILE);
-                try {
-                    FileUtils.copyFile(newConfigFile, tempConfFile);
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to backup " + ArtifactoryHome.ARTIFACTORY_CONFIG_FILE, e);
-                }
-                status.setStatus("Reloading configuration from " + tempConfFile, log);
-                reloadConfiguration(tempConfFile);
-                init();
+                status.setStatus("Reloading configuration from " + newConfigFile, log);
+                String xmlConfig = JaxbHelper.xmlAsString(newConfigFile);
+                setConfigXml(xmlConfig);
                 status.setStatus("Configuration reloaded from " + newConfigFile, log);
-
-                //Check that config files are not the same (e.g. if we reimport from the same place)
-                if (!newConfigFile.equals(originalConfigFile)) {
-                    // Switch the originial config file with the new one
-                    status.setStatus("Switching config files...", log);
-                    org.artifactory.util.FileUtils.switchFiles(originalConfigFile, tempConfFile);
-                }
             }
         } else if (settings.isFailIfEmpty()) {
             String error = "The given base directory is either empty, or non-existant";
@@ -231,40 +246,37 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         }
     }
 
-    public void exportTo(ExportSettings settings, StatusHolder status) {
+    public void exportTo(ExportSettings settings) {
+        MultiStatusHolder status = settings.getStatusHolder();
         status.setStatus("Exporting config...", log);
         File destFile = new File(settings.getBaseDir(), ArtifactoryHome.ARTIFACTORY_CONFIG_FILE);
-        try {
-            FileUtils.copyFile(originalConfigFile, destFile);
-        } catch (IOException e) {
-            throw new RuntimeException(
-                    "Failed to copy " + originalConfigFile + " to " + destFile, e);
-        }
+        JaxbHelper.writeConfig(descriptor, destFile);
         //Export the local repositories
-        repositoryService.exportTo(settings, status);
+        // TODO: Remove from here
+        if (!settings.isExcludeContent()) {
+            repositoryService.exportTo(settings);
+        }
     }
 
-    void setOriginalConfigFile(File originalConfigFile) {
-        this.originalConfigFile = originalConfigFile;
-    }
-
-    private void reloadConfiguration(File path) {
-        log.info("Reloading configuration (using '" + path + "')...");
+    private void reloadConfiguration(CentralConfigDescriptor newDescriptor) {
+        log.info("Reloading configuration...");
         try {
-            discardEditedDescriptor();
             CentralConfigDescriptor oldDescriptor = getDescriptor();
             if (oldDescriptor == null) {
                 throw new IllegalStateException("The system was not loaded, and a reload was called");
             }
+            // call the interceptors before saving the new descriptor
+            interceptors.onBeforeSave(newDescriptor);
+
             InternalArtifactoryContext ctx = InternalContextHelper.get();
-            CentralConfigDescriptorImpl descriptor = JaxbHelper.readConfig(path);
             //setDescriptor() will set the new date formatter and server name
-            setDescriptor(descriptor);
+            setDescriptor(newDescriptor);
             ctx.reload(oldDescriptor);
-            log.info("Reloaded configuration from '" + path + "'.");
+            log.info("Configuration reloaded.");
         } catch (Exception e) {
-            log.error("Failed to reload configuration from '" + path + "'.", e);
-            throw new RuntimeException(e);
+            String msg = "Failed to reload configuration: " + e.getMessage();
+            log.error(msg, e);
+            throw new RuntimeException(msg, e);
         }
     }
 
@@ -276,17 +288,71 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         // Nothing to do
     }
 
-    private void loadConfiguration(File path) {
-        log.info("Loading configuration (using '" + path + "')...");
-        try {
-            CentralConfigDescriptorImpl descriptor = JaxbHelper.readConfig(path);
-            //setDescriptor() will set the new date formatter and server name
-            setDescriptor(descriptor);
-            log.info("Loaded configuration from '" + path + "'.");
-        } catch (Exception e) {
-            log.error("Failed to load configuration from '" + path + "'.", e);
-            throw new RuntimeException(e);
+    public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
+        String configXmlString = getCurrentConfigXml();
+
+        //Auto convert and save if write permission to the etc folder
+        //Initialize the enum registration
+        ArtifactoryConfigVersion.values();
+        ArtifactoryConfigVersion originalVersion =
+                source.getVersion().getSubConfigElementVersion(ArtifactoryConfigVersion.class);
+        String newConfigXml = originalVersion.convert(configXmlString);
+        // Save result in DB
+        JcrService jcr = InternalContextHelper.get().getJcrService();
+        jcr.setXml(getConfigRootNodePath(), "current", newConfigXml, authService.currentUsername());
+
+        // Save new bootstrap config file
+        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
+        File parentFile = artifactoryHome.getEtcDir();
+        if (parentFile.canWrite()) {
+            try {
+                log.info("Automatically converting the config file, original will be saved in " +
+                        parentFile.getAbsolutePath());
+                File bootstrapConfigFile = new File(parentFile, ArtifactoryHome.ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
+                File newConfigFile;
+                if (bootstrapConfigFile.exists()) {
+                    newConfigFile = new File(parentFile, "new_" + ArtifactoryHome.ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
+                } else {
+                    newConfigFile = bootstrapConfigFile;
+                }
+                FileOutputStream fos = new FileOutputStream(newConfigFile);
+                IOUtils.write(newConfigXml, fos);
+                fos.close();
+                if (newConfigFile != bootstrapConfigFile) {
+                    org.artifactory.util.FileUtils.switchFiles(newConfigFile, bootstrapConfigFile);
+                }
+            } catch (Exception e) {
+                log.warn("The converted config xml is:\n" + newConfigXml +
+                        "\nThe new configuration is saved in DB but it failed to be saved automatically to '" +
+                        parentFile.getAbsolutePath() + "' due to :" + e.getMessage() + ".\n", e);
+            }
+        } else {
+            log.warn("The converted config xml is:\n" + newConfigXml +
+                    "\nThe new configuration is saved in DB but it failed to be saved automatically to '" +
+                    parentFile.getAbsolutePath() + "' since the folder is not writable.\n");
         }
+
+        /**
+         * Checks via the original ArtifactoryConfigVersion if we need to convert the logback configuration file.
+         * <p>
+         * The reason this is done here and not in any converter mechanism is because we need access to the context,
+         * which isn't available to the converter mechanisms.<br> See issue: RTFACT-1553 - On the fly conversion is not
+         * scalable.
+         */
+        CoreAddons coreAddons = addonsManager.addonByType(CoreAddons.class);
+        boolean logbackConversionRequired = coreAddons.isLogbackConversionRequired(originalVersion);
+        if (logbackConversionRequired) {
+            LogbackConfigConverter logbackConfigConverter = new LogbackConfigConverter();
+            logbackConfigConverter.convert(artifactoryHome);
+        }
+    }
+
+    private static String getCurrentConfigRootNodePath() {
+        return getConfigRootNodePath() + "/current";
+    }
+
+    private static String getConfigRootNodePath() {
+        return JcrPath.get().getConfigJcrPath("artifactory");
     }
 
     private void checkUniqueProxies() {

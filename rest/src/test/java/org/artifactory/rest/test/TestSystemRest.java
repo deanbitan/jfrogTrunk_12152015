@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.rest.test;
 
 import com.thoughtworks.xstream.XStream;
@@ -31,9 +32,10 @@ import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.artifactory.api.rest.SystemInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.artifactory.api.xstream.XStreamFactory;
 import org.testng.Assert;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
@@ -47,7 +49,6 @@ import java.net.URL;
  * User: freds Date: Aug 12, 2008 Time: 5:36:40 PM
  */
 public class TestSystemRest {
-    private static final Logger log = LoggerFactory.getLogger(TestSystemRest.class);
 
     /**
      * /api /system (GET, POST - import/export) /config (GET, PUT, POST, DELETE) /security (GET, PUT, POST, DELETE)
@@ -55,15 +56,13 @@ public class TestSystemRest {
      * /allpaths /config /backup /jobs /repo /local /remote /virtual /proxy
      */
 
-    private static final String API_ROOT =
-            "http://localhost:8080/artifactory/api/";
+    private static final String API_ROOT = "http://localhost:8080/artifactory/api/";
 
-    //@Test(enabled = false)
     @Test
     public void testExportTo() throws Exception {
         String systemUri = API_ROOT + "system";
         SystemInfo systemInfo = get(systemUri, SystemInfo.class);
-        Assert.assertNotNull(systemInfo);
+        assertNotNull(systemInfo);
         //SystemActionInfo action = systemInfo.actionExample;
         //Assert.assertNotNull(action);
         //log.debug("Received SystemInfo " + systemInfo);
@@ -79,7 +78,7 @@ public class TestSystemRest {
     public void testImportFrom() throws Exception {
         String systemUri = API_ROOT + "system";
         SystemInfo systemInfo = get(systemUri, SystemInfo.class);
-        Assert.assertNotNull(systemInfo);
+        assertNotNull(systemInfo);
         //SystemActionInfo action = systemInfo.actionExample;
         //Assert.assertNotNull(action);
         //log.debug("Received SystemInfo " + systemInfo);
@@ -95,14 +94,13 @@ public class TestSystemRest {
     public void unauthorizedAccess() throws Exception {
         GetMethod method = new GetMethod(API_ROOT + "system");
         int status = getHttpClient(false).executeMethod(method);
-        Assert.assertEquals(status, HttpStatus.SC_UNAUTHORIZED);
+        assertEquals(status, HttpStatus.SC_UNAUTHORIZED);
     }
 
     @SuppressWarnings({"unchecked"})
     protected static <I, O> O post(String uri, I inObj, Class<O> outObjClass)
             throws Exception {
-        XStream xStream = new XStream();
-        xStream.processAnnotations(inObj.getClass());
+        XStream xStream = XStreamFactory.create(inObj.getClass());
         if (outObjClass != null) {
             xStream.processAnnotations(outObjClass);
         }
@@ -119,11 +117,9 @@ public class TestSystemRest {
     }
 
     @SuppressWarnings({"unchecked"})
-    protected static <T> T get(String uri, Class<T> xstreamObjClass)
-            throws Exception {
+    protected static <T> T get(String uri, Class<T> xstreamObjClass) throws Exception {
         byte[] bytes = get(uri, 200, "application/xml");
-        XStream xStream = new XStream();
-        xStream.processAnnotations(xstreamObjClass);
+        XStream xStream = XStreamFactory.create(xstreamObjClass);
         return (T) xStream.fromXML(new ByteArrayInputStream(bytes));
     }
 
@@ -131,9 +127,9 @@ public class TestSystemRest {
             String expectedMediaType) throws Exception {
         GetMethod method = new GetMethod(uri);
         int status = getHttpClient(true).executeMethod(method);
-        Assert.assertEquals(status, expectedStatus);
+        assertEquals(status, expectedStatus);
         Header mediaType = method.getResponseHeader("content-type");
-        Assert.assertEquals(mediaType.getValue(), expectedMediaType);
+        assertEquals(mediaType.getValue(), expectedMediaType);
 
         InputStream is = method.getResponseBodyAsStream();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -169,7 +165,7 @@ public class TestSystemRest {
             }
         });
         int status = getHttpClient(true).executeMethod(method);
-        Assert.assertEquals(status, expectedStatus);
+        assertEquals(status, expectedStatus);
         Header mediaType = method.getResponseHeader("content-type");
         Assert.assertTrue(mediaType.getValue().contains(expectedMediaType));
 

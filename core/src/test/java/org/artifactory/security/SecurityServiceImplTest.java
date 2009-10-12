@@ -1,12 +1,27 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.security;
 
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.security.AceInfo;
-import org.artifactory.api.security.AclInfo;
-import org.artifactory.api.security.ArtifactoryPermisssion;
-import org.artifactory.api.security.GroupInfo;
-import org.artifactory.api.security.PermissionTargetInfo;
-import org.artifactory.api.security.UserInfo;
+import org.artifactory.api.security.*;
+import org.artifactory.config.InternalCentralConfigService;
+import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import static org.easymock.EasyMock.*;
@@ -40,13 +55,17 @@ public class SecurityServiceImplTest {
     private List<PermissionTarget> permissionTargets;
     private InternalRepositoryService repositoryServiceMock;
     private LocalRepo localRepoMock;
+    private LocalRepo cacheRepoMock;
+    private InternalCentralConfigService centralConfigServiceMock;
 
     @BeforeClass
     public void initArtifactoryRoles() {
         testAcls = createTestAcls();
         aclManagerMock = createMock(AclManager.class);
         repositoryServiceMock = createMock(InternalRepositoryService.class);
+        centralConfigServiceMock = createMock(InternalCentralConfigService.class);
         localRepoMock = createLocalRepoMock();
+        cacheRepoMock = createCacheRepoMock();
     }
 
     @BeforeMethod
@@ -60,9 +79,10 @@ public class SecurityServiceImplTest {
         // set the aclManager mock on the security service
         ReflectionTestUtils.setField(service, "aclManager", aclManagerMock);
         ReflectionTestUtils.setField(service, "repositoryService", repositoryServiceMock);
+        ReflectionTestUtils.setField(service, "centralConfig", centralConfigServiceMock);
 
-        // reset mock
-        reset(aclManagerMock);
+        // reset mocks
+        reset(aclManagerMock, repositoryServiceMock, centralConfigServiceMock);
     }
 
     public void isAdminOnAdminUser() {
@@ -90,15 +110,9 @@ public class SecurityServiceImplTest {
         assertTrue(service.isAdmin());// sanity
 
         RepoPath path = new RepoPath("someRepo", "blabla");
-        expect(repositoryServiceMock.localOrCachedRepositoryByKey(path.getRepoKey()))
-                .andReturn(localRepoMock);
-        replay(repositoryServiceMock);
-
         boolean canRead = service.canRead(path);
         assertTrue(canRead);
         boolean canDeploy = service.canDeploy(path);
-        verify(repositoryServiceMock);
-        reset(repositoryServiceMock);
         assertTrue(canDeploy);
     }
 
@@ -108,7 +122,7 @@ public class SecurityServiceImplTest {
 
         RepoPath securedPath = new RepoPath("securedRepo", "blabla");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(securedPath.getRepoKey()))
-                .andReturn(localRepoMock);
+                .andReturn(localRepoMock).anyTimes();
         replay(repositoryServiceMock);
 
         // cannot read the specified path
@@ -125,14 +139,12 @@ public class SecurityServiceImplTest {
 
         boolean canDeploy = service.canDeploy(securedPath);
         assertFalse(canDeploy, "User should not have permissions for this path");
-        verify(aclManagerMock);
-        reset(aclManagerMock);
-        verify(repositoryServiceMock);
-        reset(repositoryServiceMock);
+        verify(aclManagerMock, repositoryServiceMock);
+        reset(aclManagerMock, repositoryServiceMock);
 
         RepoPath allowedReadPath = new RepoPath("testRepo1", "blabla");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
-                .andReturn(localRepoMock);
+                .andReturn(localRepoMock).anyTimes();
         replay(repositoryServiceMock);
 
         // can read the specified path
@@ -148,10 +160,8 @@ public class SecurityServiceImplTest {
         replay(aclManagerMock);
         canDeploy = service.canDeploy(allowedReadPath);
         assertFalse(canDeploy, "User should not have permissions for this path");
-        verify(aclManagerMock);
+        verify(aclManagerMock, repositoryServiceMock);
         reset(aclManagerMock);
-        verify(repositoryServiceMock);
-        reset(repositoryServiceMock);
 
         // cannot admin the specified path
         expectGetAllAclsCall(authentication);
@@ -159,7 +169,6 @@ public class SecurityServiceImplTest {
         boolean canAdmin = service.canAdmin(allowedReadPath);
         assertFalse(canAdmin, "User should not have permissions for this path");
         verify(aclManagerMock);
-        reset(aclManagerMock);
     }
 
     @Test
@@ -168,9 +177,6 @@ public class SecurityServiceImplTest {
         Authentication authentication = setSimpleUserAuthentication("yossis");
 
         RepoPath allowedReadPath = new RepoPath("testRepo1", "blabla");
-        expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
-                .andReturn(localRepoMock);
-        replay(repositoryServiceMock);
 
         // can read the specified path
         expectGetAllAclsCall(authentication);
@@ -187,14 +193,12 @@ public class SecurityServiceImplTest {
         assertTrue(canDeploy, "User should have permissions for this path");
         verify(aclManagerMock);
         reset(aclManagerMock);
-        verify(repositoryServiceMock);
-        reset(repositoryServiceMock);
 
         // can admin the specified path
         expectGetAllAclsCall(authentication);
         replay(aclManagerMock);
         boolean canAdmin = service.canAdmin(allowedReadPath);
-        assertTrue(canDeploy, "User should have permissions for this path");
+        assertTrue(canAdmin, "User should have permissions for this path");
         verify(aclManagerMock);
         reset(aclManagerMock);
 
@@ -214,7 +218,7 @@ public class SecurityServiceImplTest {
 
         RepoPath allowedReadPath = new RepoPath("testRepo1", "**");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
-                .andReturn(localRepoMock).times(2);
+                .andReturn(localRepoMock).anyTimes();
         replay(repositoryServiceMock);
 
         // cannot deploy to the specified path
@@ -231,10 +235,8 @@ public class SecurityServiceImplTest {
         replay(aclManagerMock);
         canDeploy = service.canDeploy(allowedReadPath);
         assertTrue(canDeploy, "User in a group with permissions for this path");
-        verify(aclManagerMock);
-        reset(aclManagerMock);
-        verify(repositoryServiceMock);
-        reset(repositoryServiceMock);
+        verify(aclManagerMock, repositoryServiceMock);
+        reset(aclManagerMock, repositoryServiceMock);
     }
 
     @Test
@@ -267,19 +269,22 @@ public class SecurityServiceImplTest {
 
         RepoPath testRepo1Path = new RepoPath("testRepo1", "**");
         expectGetAllAclsCallWithAnyArray();
-        replay(aclManagerMock);
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo1"))
+                .andReturn(localRepoMock).anyTimes();
+        replay(aclManagerMock, repositoryServiceMock);
         boolean canRead = service.canRead(testRepo1Path);
         assertFalse(canRead, "User should not have permissions for this path");
-        verify(aclManagerMock);
-        reset(aclManagerMock);
+        verify(aclManagerMock, repositoryServiceMock);
+        reset(aclManagerMock, repositoryServiceMock);
 
         RepoPath testRepo2Path = new RepoPath("testRepo2", "**");
         expectGetAllAclsCallWithAnyArray();
-        replay(aclManagerMock);
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2"))
+                .andReturn(localRepoMock).anyTimes();
+        replay(aclManagerMock, repositoryServiceMock);
         canRead = service.canRead(testRepo2Path);
         assertTrue(canRead, "User belongs to a group with permissions to the path");
-        verify(aclManagerMock);
-        reset(aclManagerMock);
+        verify(aclManagerMock, repositoryServiceMock);
     }
 
     @Test
@@ -303,11 +308,12 @@ public class SecurityServiceImplTest {
         verify(aclManagerMock);
         reset(aclManagerMock);
 
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo1")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
-        replay(aclManagerMock);
+        replay(aclManagerMock, repositoryServiceMock);
         boolean canDelete = service.canDelete(userInfo, testRepo1Path);
         assertFalse(canDelete, "User should not have permissions for this path");
-        verify(aclManagerMock);
+        verify(aclManagerMock, repositoryServiceMock);
         reset(aclManagerMock);
 
         expectGetAllAclsCallWithAnyArray();
@@ -315,16 +321,38 @@ public class SecurityServiceImplTest {
         boolean canAdmin = service.canAdmin(userInfo, testRepo1Path);
         assertTrue(canAdmin, "User should have permissions for this path");
         verify(aclManagerMock);
-        reset(aclManagerMock);
+        reset(aclManagerMock, repositoryServiceMock);
 
         RepoPath testRepo2Path = new RepoPath("testRepo2", "**");
 
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
-        replay(aclManagerMock);
+        replay(aclManagerMock, repositoryServiceMock);
         canRead = service.canRead(userInfo, testRepo2Path);
         assertFalse(canRead, "User should not have permissions for this path");
         verify(aclManagerMock);
-        reset(aclManagerMock);
+        reset(aclManagerMock, repositoryServiceMock);
+
+        SecurityDescriptor securityDescriptor = new SecurityDescriptor();
+        securityDescriptor.setAnonAccessEnabled(false);
+
+        CentralConfigDescriptor configDescriptor = createMock(CentralConfigDescriptor.class);
+        expect(configDescriptor.getSecurity()).andReturn(securityDescriptor).anyTimes();
+        replay(configDescriptor);
+        expect(centralConfigServiceMock.getDescriptor()).andReturn(configDescriptor).anyTimes();
+        replay(centralConfigServiceMock);
+
+        SimpleUser anon = createNonAdminUser(UserInfo.ANONYMOUS);
+        UserInfo anonUserInfo = anon.getDescriptor();
+
+        RepoPath testMultiRepo = new RepoPath("multi1", "**");
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("multi1")).andReturn(cacheRepoMock).anyTimes();
+        expectGetAllAclsCallWithAnyArray();
+        replay(repositoryServiceMock);
+
+        canRead = service.canRead(anonUserInfo, testMultiRepo);
+        assertFalse(canRead, "Anonymous user should have permissions for this path");
+        verify(configDescriptor, centralConfigServiceMock);
     }
 
     @Test
@@ -332,6 +360,9 @@ public class SecurityServiceImplTest {
         GroupInfo groupInfo = new GroupInfo("deployGroup");
 
         RepoPath testRepo1Path = new RepoPath("testRepo1", "any/path");
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo1"))
+                .andReturn(localRepoMock).anyTimes();
+        replay(repositoryServiceMock);
 
         expectGetAllAclsCallWithAnyArray();
         replay(aclManagerMock);
@@ -359,24 +390,30 @@ public class SecurityServiceImplTest {
         boolean canAdmin = service.canAdmin(groupInfo, testRepo1Path);
         assertFalse(canAdmin, "Group should not have permissions for this path");
         verify(aclManagerMock);
-        reset(aclManagerMock);
+        reset(aclManagerMock, repositoryServiceMock);
 
         RepoPath testRepo2Path = new RepoPath("testRepo2", "some/path");
+
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2"))
+                .andReturn(localRepoMock).anyTimes();
+        replay(repositoryServiceMock);
         expectGetAllAclsCallWithAnyArray();
         replay(aclManagerMock);
         canRead = service.canRead(groupInfo, testRepo2Path);
         assertFalse(canRead, "Group should not have permissions for this path");
-        verify(aclManagerMock);
-        reset(aclManagerMock);
+        verify(aclManagerMock, repositoryServiceMock);
+        reset(aclManagerMock, repositoryServiceMock);
 
         GroupInfo anyRepoGroupRead = new GroupInfo("anyRepoReadersGroup");
 
         RepoPath somePath = new RepoPath("blabla", "some/path");
+
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("blabla")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
-        replay(aclManagerMock);
+        replay(aclManagerMock, repositoryServiceMock);
         canRead = service.canRead(anyRepoGroupRead, somePath);
         assertTrue(canRead, "Group should have permissions for this path");
-        verify(aclManagerMock);
+        verify(aclManagerMock, repositoryServiceMock);
         reset(aclManagerMock);
 
         expectGetAllAclsCallWithAnyArray();
@@ -384,18 +421,44 @@ public class SecurityServiceImplTest {
         canDeploy = service.canDeploy(anyRepoGroupRead, somePath);
         assertFalse(canDeploy, "Group should not have permissions for this path");
         verify(aclManagerMock);
+        reset(aclManagerMock, repositoryServiceMock);
+
+        GroupInfo multiRepoGroupRead = new GroupInfo("multiRepoReadersGroup");
+
+        RepoPath multiPath = new RepoPath("multi1", "some/path");
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("multi1")).andReturn(localRepoMock).anyTimes();
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("multi2")).andReturn(localRepoMock).anyTimes();
+        expectGetAllAclsCallWithAnyArray();
+        replay(aclManagerMock, repositoryServiceMock);
+        canRead = service.canRead(multiRepoGroupRead, multiPath);
+        assertTrue(canRead, "Group should have permissions for this path");
+        verify(aclManagerMock, repositoryServiceMock);
         reset(aclManagerMock);
+
+        RepoPath multiPath2 = new RepoPath("multi2", "some/path");
+        expectGetAllAclsCallWithAnyArray();
+        replay(aclManagerMock);
+        canRead = service.canRead(multiRepoGroupRead, multiPath2);
+        assertTrue(canRead, "Group should have permissions for this path");
+        verify(aclManagerMock, repositoryServiceMock);
+        reset(aclManagerMock);
+
+        expectGetAllAclsCallWithAnyArray();
+        replay(aclManagerMock);
+        canDeploy = service.canDeploy(multiRepoGroupRead, multiPath);
+        assertFalse(canDeploy, "Group should not have permissions for this path");
+        verify(aclManagerMock, repositoryServiceMock);
     }
 
     @Test
     public void getAllPermissionTargetsForAdminUser() {
-        Authentication authentication = setAdminAuthentication();
+        setAdminAuthentication();
 
         expect(aclManagerMock.getAllPermissionTargets()).andReturn(permissionTargets);
         //expect(aclManagerMock.getAllAcls()).andReturn(testAcls);
         //expectGetAllAclsCall(authentication);
         replay(aclManagerMock);
-        List<PermissionTargetInfo> permissionTargets = service.getAdministrativePermissionTargets();
+        List<PermissionTargetInfo> permissionTargets = service.getPermissionTargets(ArtifactoryPermission.ADMIN);
         assertEquals(permissionTargets.size(), permissionTargets.size());
         verify(aclManagerMock);
     }
@@ -406,19 +469,19 @@ public class SecurityServiceImplTest {
 
         expectAclScan();
 
-        List<PermissionTargetInfo> permissionTargets = service.getAdministrativePermissionTargets();
+        List<PermissionTargetInfo> permissionTargets = service.getPermissionTargets(ArtifactoryPermission.ADMIN);
         assertEquals(permissionTargets.size(), 0);
 
         verify(aclManagerMock);
     }
 
-    @Test
+    @Test(enabled = false)
     public void getDeployPermissionTargetsForUserWithNoPermission() {
         setSimpleUserAuthentication("user");
 
         expectAclScan();
 
-        List<PermissionTargetInfo> targets = service.getDeployablePermissionTargets();
+        List<PermissionTargetInfo> targets = service.getPermissionTargets(ArtifactoryPermission.DEPLOY);
         assertEquals(targets.size(), 0);
 
         verify(aclManagerMock);
@@ -430,7 +493,7 @@ public class SecurityServiceImplTest {
 
         expectAclScan();
 
-        List<PermissionTargetInfo> targets = service.getDeployablePermissionTargets();
+        List<PermissionTargetInfo> targets = service.getPermissionTargets(ArtifactoryPermission.DEPLOY);
         assertEquals(targets.size(), 1, "Expecting one deploy permission");
 
         verify(aclManagerMock);
@@ -446,11 +509,83 @@ public class SecurityServiceImplTest {
         assertFalse(service.userPasswordMatches("blabla"));
     }
 
+    public void userReadAndDeployPermissionsOnAnyRemote() {
+        Authentication authentication = setSimpleUserAuthentication();
+
+        // can read the specified path
+        RepoPath securedPath = new RepoPath("repo1-cache", "blabla");
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey(securedPath.getRepoKey()))
+                .andReturn(cacheRepoMock).anyTimes();
+        ArtifactorySid[] sids = {new ArtifactorySid(authentication.getName())};
+        expect(aclManagerMock.getAllAcls(aryEq(sids))).andReturn(createAnyRemotelAcl());
+
+        verifyAnyRemoteOrAnyLocal(authentication, securedPath);
+    }
+
+    public void userReadAndDeployPermissionsOnAnyLocal() {
+        Authentication authentication = setSimpleUserAuthentication();
+
+        // can read the specified path
+        RepoPath securedPath = new RepoPath("local-repo", "mama");
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey(securedPath.getRepoKey()))
+                .andReturn(localRepoMock).anyTimes();
+        ArtifactorySid[] sids = {new ArtifactorySid(authentication.getName())};
+        expect(aclManagerMock.getAllAcls(aryEq(sids))).andReturn(createAnyLocalAcl());
+
+        verifyAnyRemoteOrAnyLocal(authentication, securedPath);
+    }
+
+    private void verifyAnyRemoteOrAnyLocal(Authentication authentication, RepoPath securedPath) {
+        replay(aclManagerMock, repositoryServiceMock);
+        boolean canRead = service.canRead(securedPath);
+        assertTrue(canRead, "User should have permissions for this path");
+        verify(aclManagerMock);
+        reset(aclManagerMock);
+
+        // can deploy to the specified path
+        expectGetAllAclsCall(authentication);
+        replay(aclManagerMock);
+
+        boolean canDeploy = service.canDeploy(securedPath);
+        assertFalse(canDeploy, "User should have permissions for this path");
+        verify(aclManagerMock, repositoryServiceMock);
+        reset(aclManagerMock, repositoryServiceMock);
+
+        RepoPath allowedReadPath = new RepoPath("testRepo1", "blabla");
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
+                .andReturn(localRepoMock).anyTimes();
+        replay(repositoryServiceMock);
+
+        // can read the specified path
+        expectGetAllAclsCall(authentication);
+        replay(aclManagerMock);
+        canRead = service.canRead(allowedReadPath);
+        assertTrue(canRead, "User should have read permissions for this path");
+        verify(aclManagerMock);
+        reset(aclManagerMock);
+
+        // cannot deploy to the specified path
+        expectGetAllAclsCall(authentication);
+        replay(aclManagerMock);
+        canDeploy = service.canDeploy(allowedReadPath);
+        assertFalse(canDeploy, "User should not have permissions for this path");
+        verify(aclManagerMock, repositoryServiceMock);
+        reset(aclManagerMock);
+
+        // cannot admin the specified path
+        expectGetAllAclsCall(authentication);
+        replay(aclManagerMock);
+        boolean canAdmin = service.canAdmin(allowedReadPath);
+        assertFalse(canAdmin, "User should not have permissions for this path");
+        verify(aclManagerMock);
+    }
+
     private void expectAclScan() {
-        expect(aclManagerMock.getAllPermissionTargets()).andReturn(permissionTargets);
+        expect(aclManagerMock.getAllPermissionTargets()).andReturn(permissionTargets).anyTimes();
         expect(aclManagerMock.findAclById(permissionTargets.get(0))).andReturn(testAcls.get(0));
         expect(aclManagerMock.findAclById(permissionTargets.get(1))).andReturn(testAcls.get(1));
         expect(aclManagerMock.findAclById(permissionTargets.get(2))).andReturn(testAcls.get(2));
+        expect(aclManagerMock.findAclById(permissionTargets.get(3))).andReturn(testAcls.get(3));
         replay(aclManagerMock);
     }
 
@@ -460,45 +595,76 @@ public class SecurityServiceImplTest {
     }
 
     private void expectGetAllAclsCallWithAnyArray() {
-        expect(aclManagerMock.getAllAcls(new ArtifactorySid[]{(ArtifactorySid) anyObject()}))
-                .andReturn(testAcls);
+        expect(aclManagerMock.getAllAcls(new ArtifactorySid[]{(ArtifactorySid) anyObject()})).andReturn(testAcls);
     }
 
     private List<Acl> createTestAcls() {
         userAndGroupSharedName = "usergroup";
-        PermissionTargetInfo pmi = new PermissionTargetInfo("target1", "testRepo1");
+        PermissionTargetInfo pmi = new PermissionTargetInfo("target1", Arrays.asList("testRepo1"));
         // yossis has all the permissions (when all permissions are checked)
-        AceInfo adminAce = new AceInfo("yossis", false, ArtifactoryPermisssion.ADMIN.getMask());
+        AceInfo adminAce = new AceInfo("yossis", false, ArtifactoryPermission.ADMIN.getMask());
         adminAce.setDeploy(true);
         adminAce.setRead(true);
-        AceInfo readerAce = new AceInfo("user", false, ArtifactoryPermisssion.READ.getMask());
+        AceInfo readerAce = new AceInfo("user", false, ArtifactoryPermission.READ.getMask());
         AceInfo userGroupAce =
-                new AceInfo(userAndGroupSharedName, false, ArtifactoryPermisssion.READ.getMask());
+                new AceInfo(userAndGroupSharedName, false, ArtifactoryPermission.READ.getMask());
         AceInfo deployerGroupAce =
-                new AceInfo("deployGroup", true, ArtifactoryPermisssion.DEPLOY.getMask());
+                new AceInfo("deployGroup", true, ArtifactoryPermission.DEPLOY.getMask());
         Set<AceInfo> aces = new HashSet<AceInfo>(
                 Arrays.asList(adminAce, readerAce, userGroupAce, deployerGroupAce));
         Acl aclInfo = new Acl(new AclInfo(pmi, aces, "me"));
 
-        PermissionTargetInfo pmi2 = new PermissionTargetInfo("target2", "testRepo2");
+        PermissionTargetInfo pmi2 = new PermissionTargetInfo("target2", Arrays.asList("testRepo2"));
         AceInfo target2GroupAce = new AceInfo(userAndGroupSharedName, true,
-                ArtifactoryPermisssion.READ.getMask());
+                ArtifactoryPermission.READ.getMask());
         Set<AceInfo> target2Aces = new HashSet<AceInfo>(Arrays.asList(target2GroupAce));
         Acl aclInfo2 = new Acl(new AclInfo(pmi2, target2Aces, "me"));
 
         // acl for any repository with read permissions to group
         PermissionTargetInfo anyTarget = new PermissionTargetInfo("anyRepoTarget",
-                PermissionTargetInfo.ANY_REPO);
+                Arrays.asList(PermissionTargetInfo.ANY_REPO));
         AceInfo readerGroupAce =
-                new AceInfo("anyRepoReadersGroup", true, ArtifactoryPermisssion.READ.getMask());
+                new AceInfo("anyRepoReadersGroup", true, ArtifactoryPermission.READ.getMask());
         Set<AceInfo> anyTargetAces = new HashSet<AceInfo>(Arrays.asList(readerGroupAce));
         Acl anyTargetAcl = new Acl(new AclInfo(anyTarget, anyTargetAces, "me"));
 
-        List<Acl> acls = Arrays.asList(aclInfo, aclInfo2, anyTargetAcl);
+        // acl with multiple repo keys with read permissions to group and anonymous
+        PermissionTargetInfo multiReposTarget = new PermissionTargetInfo("anyRepoTarget",
+                Arrays.asList("multi1", "multi2"));
+        AceInfo multiReaderGroupAce =
+                new AceInfo("multiRepoReadersGroup", true, ArtifactoryPermission.READ.getMask());
+        AceInfo multiReaderAnonAce =
+                new AceInfo(UserInfo.ANONYMOUS, false, ArtifactoryPermission.READ.getMask());
+        Set<AceInfo> multiTargetAces = new HashSet<AceInfo>(Arrays.asList(multiReaderGroupAce, multiReaderAnonAce));
+        Acl multiReposAcl = new Acl(new AclInfo(multiReposTarget, multiTargetAces, "me"));
+
+        List<Acl> acls = Arrays.asList(aclInfo, aclInfo2, anyTargetAcl, multiReposAcl);
         permissionTargets = Arrays.asList(
                 aclInfo.getPermissionTarget(), aclInfo2.getPermissionTarget(),
-                anyTargetAcl.getPermissionTarget());
+                anyTargetAcl.getPermissionTarget(), multiReposAcl.getPermissionTarget());
         return acls;
+    }
+
+    private List<Acl> createAnyRemotelAcl() {
+        PermissionTargetInfo pmi = new PermissionTargetInfo(
+                "target1", Arrays.asList(PermissionTargetInfo.ANY_REMOTE_REPO));
+        AceInfo readerAndDeployer = new AceInfo("user", false,
+                ArtifactoryPermission.READ.getMask() | ArtifactoryPermission.DEPLOY.getMask());
+        Set<AceInfo> aces = new HashSet<AceInfo>(Arrays.asList(readerAndDeployer));
+        Acl aclInfo = new Acl(new AclInfo(pmi, aces, "me"));
+
+        return Arrays.asList(aclInfo);
+    }
+
+    private List<Acl> createAnyLocalAcl() {
+        PermissionTargetInfo pmi = new PermissionTargetInfo(
+                "target1", Arrays.asList(PermissionTargetInfo.ANY_LOCAL_REPO));
+        AceInfo readerAndDeployer = new AceInfo("user", false,
+                ArtifactoryPermission.READ.getMask() | ArtifactoryPermission.DEPLOY.getMask());
+        Set<AceInfo> aces = new HashSet<AceInfo>(Arrays.asList(readerAndDeployer));
+        Acl aclInfo = new Acl(new AclInfo(pmi, aces, "me"));
+
+        return Arrays.asList(aclInfo);
     }
 
     private Authentication setAdminAuthentication() {
@@ -522,19 +688,30 @@ public class SecurityServiceImplTest {
     }
 
     private static SimpleUser createNonAdminUser(String username, String... groups) {
-        UserInfo userInfo = new UserInfo(username, "", "", false, true, true, true, true, true);
-        userInfo.setGroups(new HashSet<String>(Arrays.asList(groups)));
+        UserInfo userInfo = new UserInfoBuilder(username).updatableProfile(true)
+                .groups(new HashSet<String>(Arrays.asList(groups))).build();
         return new SimpleUser(userInfo);
     }
 
     private static SimpleUser createAdminUser() {
-        return new SimpleUser("spiderman", "", "", true, true, true, true, true, true);
+        UserInfo userInfo = new UserInfoBuilder("spiderman").admin(true).updatableProfile(true).build();
+        return new SimpleUser(userInfo);
     }
 
     private static LocalRepo createLocalRepoMock() {
         LocalRepo localRepo = createMock(LocalRepo.class);
+        expect(localRepo.isLocal()).andReturn(true).anyTimes();
         expect(localRepo.isCache()).andReturn(false).anyTimes();
         expect(localRepo.isAnonAccessEnabled()).andReturn(true).anyTimes();
+        replay(localRepo);
+        return localRepo;
+    }
+
+    private static LocalRepo createCacheRepoMock() {
+        LocalRepo localRepo = createMock(LocalRepo.class);
+        expect(localRepo.isLocal()).andReturn(true).anyTimes();
+        expect(localRepo.isCache()).andReturn(true).anyTimes();
+        expect(localRepo.isAnonAccessEnabled()).andReturn(false).anyTimes();
         replay(localRepo);
         return localRepo;
     }

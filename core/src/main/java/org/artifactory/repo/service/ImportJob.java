@@ -1,31 +1,33 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.repo.service;
 
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.PermissionTargetInfo;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.quartz.QuartzCommand;
+import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.InternalContextHelper;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author freds
@@ -39,23 +41,28 @@ public class ImportJob extends QuartzCommand {
 
     @Override
     protected void onExecute(JobExecutionContext callbackContext) {
-        StatusHolder status = null;
+        MultiStatusHolder status = null;
         try {
             JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
             String repoKey = (String) jobDataMap.get(REPO_KEY);
-            RepoPath deleteRepo = (RepoPath) jobDataMap.get(DELETE_REPO);
+            boolean deleteRepo = (Boolean) jobDataMap.get(DELETE_REPO);
             ImportSettings settings = (ImportSettings) jobDataMap.get(ImportSettings.class.getName());
-            status = (StatusHolder) jobDataMap.get(StatusHolder.class.getName());
+            status = settings.getStatusHolder();
             InternalRepositoryService repositoryService =
                     InternalContextHelper.get().beanForType(InternalRepositoryService.class);
             if (repoKey != null) {
                 if (repoKey.equals(PermissionTargetInfo.ANY_REPO)) {
-                    repositoryService.importAll(settings, status);
+                    repositoryService.importAll(settings);
                 } else {
-                    if (deleteRepo != null) {
-                        status.setStatus("Fully removing repository '" + deleteRepo + "'.", log);
-                        repositoryService.undeploy(deleteRepo);
-                        status.setStatus("Repository '" + deleteRepo + "' fully deleted.", log);
+                    if (deleteRepo) {
+                        RepoPath deleteRepoPath = RepoPath.repoPathForRepo(repoKey);
+                        status.setStatus("Fully removing repository '" + deleteRepoPath + "'.", log);
+                        try {
+                            repositoryService.undeploy(deleteRepoPath);
+                        } catch (Exception e) {
+                            log.error(e.getMessage(), e);
+                        }
+                        status.setStatus("Repository '" + repoKey + "' fully deleted.", log);
                         try {
                             // Wait 2 seconds for the DB to delete the files..
                             // Bug in Jackrabbit/Derby:
@@ -65,17 +72,24 @@ public class ImportJob extends QuartzCommand {
                             status.setError(e.getMessage(), e, log);
                         }
                     }
-                    repositoryService.importRepo(repoKey, settings, status);
+                    repositoryService.importRepo(repoKey, settings);
                 }
             } else {
-                repositoryService.importFrom(settings, status);
+                repositoryService.importFrom(settings);
+            }
+
+            if (settings.isIndexMarkedArchives()) {
+                InternalSearchService internalSearchService =
+                        InternalContextHelper.get().beanForType(InternalSearchService.class);
+                internalSearchService.indexMarkedArchives();
             }
         } catch (RuntimeException e) {
             if (status != null) {
-                status.setError("Error occured during import: " + e.getMessage(), e, log);
+                status.setError("Error occurred during import: " + e.getMessage(), e, log);
             } else {
-                log.error("Error occured during import", e);
+                log.error("Error occurred during import", e);
             }
         }
     }
+
 }

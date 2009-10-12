@@ -1,3 +1,20 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.security;
 
 import org.apache.commons.codec.binary.Base64;
@@ -38,6 +55,9 @@ public class CryptoHelper {
     };
     private static final int PBE_ITERATION_COUNT = 20;
     private static final String ENCRYPTION_PREFIX = "{DESede}";
+    // since maven 2.1.0 the curly braces are treated as special characters and hence needs to be escaped
+    // but still, maven sends the password with the escape characters. go figure...
+    private static final String ENCRYPTION_PREFIX_ESCAPED = "\\{DESede\\}";
 
     public static KeyPair generateKeyPair() {
         try {
@@ -121,7 +141,7 @@ public class CryptoHelper {
             throw new IllegalArgumentException("Input cannot be null.");
         }
 
-        return in.startsWith(ENCRYPTION_PREFIX);
+        return in.startsWith(ENCRYPTION_PREFIX) || in.startsWith(ENCRYPTION_PREFIX_ESCAPED);
     }
 
     public static SecretKey generatePbeKey(String password) {
@@ -151,7 +171,7 @@ public class CryptoHelper {
 
     public static String decryptSymmetric(String encrypted, SecretKey pbeKey) {
         try {
-            String stripped = StringUtils.removeStart(encrypted, ENCRYPTION_PREFIX);
+            String stripped = StringUtils.removeStart(escapeEncryptedPassword(encrypted), ENCRYPTION_PREFIX_ESCAPED);
             byte[] decoded = fromBase64(stripped);
 
             Cipher pbeCipher = Cipher.getInstance(SYM_ALGORITHM);
@@ -178,5 +198,15 @@ public class CryptoHelper {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Unexpected exception", e);
         }
+    }
+
+    /**
+     * Escape the encrypted password for maven usage.
+     *
+     * @param encryptedPassword Encrypted password to escape
+     * @return Escaped encrypted password.
+     */
+    public static String escapeEncryptedPassword(String encryptedPassword) {
+        return encryptedPassword.replace(ENCRYPTION_PREFIX, ENCRYPTION_PREFIX_ESCAPED);
     }
 }

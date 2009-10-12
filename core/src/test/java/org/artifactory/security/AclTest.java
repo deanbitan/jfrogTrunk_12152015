@@ -1,8 +1,25 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.security;
 
 import org.artifactory.api.security.AceInfo;
 import org.artifactory.api.security.AclInfo;
-import org.artifactory.api.security.ArtifactoryPermisssion;
+import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.PermissionTargetInfo;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.Test;
@@ -21,10 +38,10 @@ public class AclTest {
 
     public void createFromAclInfo() {
         PermissionTargetInfo permissionTarget =
-                new PermissionTargetInfo("testPerm", "repoblabla", "**", "");
-        AceInfo ace1 = new AceInfo("user1", false, ArtifactoryPermisssion.DEPLOY.getMask());
-        AceInfo ace2 = new AceInfo("user2", false, ArtifactoryPermisssion.READ.getMask());
-        AceInfo ace3 = new AceInfo("group1", true, ArtifactoryPermisssion.ADMIN.getMask());
+                new PermissionTargetInfo("testPerm", Arrays.asList("repoblabla", "repo2"), "**", "");
+        AceInfo ace1 = new AceInfo("user1", false, ArtifactoryPermission.DEPLOY.getMask());
+        AceInfo ace2 = new AceInfo("user2", false, ArtifactoryPermission.READ.getMask());
+        AceInfo ace3 = new AceInfo("group1", true, ArtifactoryPermission.ADMIN.getMask());
 
         Set<AceInfo> aces = new HashSet<AceInfo>(Arrays.asList(ace1, ace2, ace3));
 

@@ -1,14 +1,36 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.repo;
 
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.MetadataResource;
+import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.test.mock.MockUtils;
 import org.easymock.EasyMock;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
@@ -16,7 +38,6 @@ import org.testng.annotations.Test;
  */
 public class JcrCacheRepoTest {
     InternalRepositoryService internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
-
 
     @SuppressWarnings({"unchecked"})
     @Test
@@ -40,6 +61,10 @@ public class JcrCacheRepoTest {
         indexRes.getInfo().setLastModified(0);
 
         RemoteRepo remoteRepo = createRemoreRepoMock(0L);
+
+        InternalArtifactoryContext context = MockUtils.getThreadBoundedMockContext();
+        EasyMock.replay(context);
+
         JcrCacheRepo cacheRepo = new JcrCacheRepo(remoteRepo);
 
         Assert.assertFalse(cacheRepo.isExpired(releaseRes));
@@ -48,6 +73,7 @@ public class JcrCacheRepoTest {
         Assert.assertFalse(cacheRepo.isExpired(nonSnapRes));
         Assert.assertFalse(cacheRepo.isExpired(relMdRes));
         Assert.assertTrue(cacheRepo.isExpired(snapMdRes));
+        Assert.assertFalse(cacheRepo.isExpired(nonsnapMdRes));
         Assert.assertTrue(cacheRepo.isExpired(indexRes));
 
         remoteRepo = createRemoreRepoMock(10L);
@@ -68,5 +94,17 @@ public class JcrCacheRepoTest {
         EasyMock.expect(remoteRepo.getUrl()).andReturn("http://jfrog").anyTimes();
         EasyMock.replay(remoteRepo);
         return remoteRepo;
+    }
+
+    @BeforeMethod
+    void bind() {
+        ArtifactorySystemProperties artifactorySystemProperties = new ArtifactorySystemProperties();
+        artifactorySystemProperties.loadArtifactorySystemProperties(null, null);
+        ArtifactorySystemProperties.bind(artifactorySystemProperties);
+    }
+
+    @AfterMethod
+    void unbind() {
+        ArtifactorySystemProperties.unbind();
     }
 }

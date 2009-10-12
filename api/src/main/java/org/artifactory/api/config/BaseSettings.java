@@ -1,22 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * This file is part of Artifactory.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.artifactory.api.config;
 
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.Serializable;
@@ -33,7 +36,8 @@ public class BaseSettings implements Serializable {
     private boolean verbose = false;
     private boolean failFast = false;
     private boolean failIfEmpty = false;
-
+    protected boolean excludeContent;
+    private MultiStatusHolder statusHolder = new MultiStatusHolder();
     /**
      * List of repositories to do export or import on. When empty - export or import all
      */
@@ -43,6 +47,11 @@ public class BaseSettings implements Serializable {
         this.baseDir = baseDir;
     }
 
+    public BaseSettings(File baseDir, MultiStatusHolder statusHolder) {
+        this.baseDir = baseDir;
+        this.statusHolder = statusHolder;
+    }
+
     public BaseSettings(File baseDir, BaseSettings settings) {
         this(baseDir);
         this.includeMetadata = settings.includeMetadata;
@@ -50,6 +59,13 @@ public class BaseSettings implements Serializable {
         this.verbose = settings.verbose;
         this.failFast = settings.failFast;
         this.failIfEmpty = settings.failIfEmpty;
+        this.excludeContent = settings.excludeContent;
+        this.statusHolder = settings.statusHolder;
+    }
+
+    public BaseSettings(File baseDir, BaseSettings settings, MultiStatusHolder statusHolder) {
+        this(baseDir, settings);
+        this.statusHolder = statusHolder;
     }
 
     /**
@@ -84,6 +100,7 @@ public class BaseSettings implements Serializable {
 
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
+        statusHolder.setVerbose(verbose);
     }
 
     public boolean isFailFast() {
@@ -92,6 +109,7 @@ public class BaseSettings implements Serializable {
 
     public void setFailFast(boolean failFast) {
         this.failFast = failFast;
+        statusHolder.setFailFast(failFast);
     }
 
     public boolean isFailIfEmpty() {
@@ -100,5 +118,25 @@ public class BaseSettings implements Serializable {
 
     public void setFailIfEmpty(boolean failIfEmpty) {
         this.failIfEmpty = failIfEmpty;
+    }
+
+    public MultiStatusHolder getStatusHolder() {
+        return statusHolder;
+    }
+
+    public boolean isExcludeContent() {
+        return excludeContent;
+    }
+
+    public void setExcludeContent(boolean excludeContent) {
+        this.excludeContent = excludeContent;
+    }
+
+    public void alertFailIfEmpty(String message, Logger log) {
+        if (isFailIfEmpty()) {
+            statusHolder.setError(message, log);
+        } else {
+            statusHolder.setWarning(message, log);
+        }
     }
 }

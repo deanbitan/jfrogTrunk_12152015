@@ -1,21 +1,39 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.cli.test;
 
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.api.security.SecurityInfo;
 import org.artifactory.api.security.UserInfo;
-import org.artifactory.cli.main.ArtifactoryCli;
+import org.artifactory.api.xstream.XStreamFactory;
+import org.artifactory.cli.main.ArtAdmin;
 import org.artifactory.cli.main.CliOption;
-import org.artifactory.config.jaxb.JaxbHelper;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.jaxb.JaxbHelper;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
@@ -28,22 +46,19 @@ public class TestNewCli {
 
     @BeforeClass
     public void dontExit() {
-        ArtifactoryCli.DO_SYSTEM_EXIT = false;
+        ArtAdmin.DO_SYSTEM_EXIT = false;
     }
 
     @Test
     public void test() throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{"help"});
+        ArtAdmin.main(new String[]{"help"});
         System.out.println("-----------------------------------------------------");
         cleanOptions();
-        ArtifactoryCli.main(new String[]{"help", "import"});
+        ArtAdmin.main(new String[]{"help", "import"});
         System.out.println("-----------------------------------------------------");
         cleanOptions();
-        ArtifactoryCli.main(new String[]{"import"});
-        System.out.println("-----------------------------------------------------");
-        cleanOptions();
-        ArtifactoryCli.main(new String[]{"help", "dump"});
+        ArtAdmin.main(new String[]{"import"});
         System.out.println("-----------------------------------------------------");
     }
 
@@ -51,7 +66,7 @@ public class TestNewCli {
     @Test
     public void testError() throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "info",
                 "--url", TestCli.API_ROOT,
                 "--username",
@@ -62,7 +77,7 @@ public class TestNewCli {
     @Test
     public void testUnknownOption() throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "info",
                 "--url", TestCli.API_ROOT,
                 "--ssss"
@@ -78,7 +93,7 @@ public class TestNewCli {
     @Test
     public void testSecurityBothFlags() throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "security",
                 "--url", TestCli.API_ROOT,
                 "--username", "admin",
@@ -96,7 +111,7 @@ public class TestNewCli {
     @Test
     public void testSecurityDump() throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "security",
                 "--url", TestCli.API_ROOT,
                 "--username", "admin",
@@ -128,7 +143,7 @@ public class TestNewCli {
     @Test
     public void testConfigurationDump() throws Exception {
         cleanOptions();
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 "configuration",
                 "--url", TestCli.API_ROOT,
                 "--username", "admin",
@@ -152,7 +167,7 @@ public class TestNewCli {
         File file = saveNewFile(command);
         long fileLastModified = file.lastModified();
 
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 command,
                 "--url", TestCli.API_ROOT,
                 "--username", "admin",
@@ -163,7 +178,7 @@ public class TestNewCli {
         Assert.assertEquals(fileLastModified, file.lastModified(),
                 "File should have not been modified without the --overwrite flag.");
 
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 command,
                 "--url", TestCli.API_ROOT,
                 "--username", "admin",
@@ -177,7 +192,7 @@ public class TestNewCli {
     }
 
     private void testConfUpdate(String command, String replacementFileName, String originalFileName)
-            throws FileNotFoundException {
+            throws IOException {
         cleanOptions();
         uploadFile(command, replacementFileName);
         File tempFile = saveNewFile(command);
@@ -193,7 +208,7 @@ public class TestNewCli {
         File file = new File(System.getProperty("java.io.tmpdir"), System.currentTimeMillis() + ".xml");
         FileUtils.deleteQuietly(file);
         Assert.assertFalse(file.exists(), "New temp configuration file must not exist before the test has begun");
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 command,
                 "--url", TestCli.API_ROOT,
                 "--username", "admin",
@@ -213,7 +228,7 @@ public class TestNewCli {
         Assert.assertNotNull(templateFile);
         Assert.assertTrue(templateFile.exists());
         Assert.assertTrue(templateFile.length() > 0);
-        ArtifactoryCli.main(new String[]{
+        ArtAdmin.main(new String[]{
                 command,
                 "--url", TestCli.API_ROOT,
                 "--username", "admin",
@@ -223,11 +238,11 @@ public class TestNewCli {
         cleanOptions();
     }
 
-    private void testSecurityFile(File tempFile) throws FileNotFoundException {
-        XStream xStream = new XStream();
-        xStream.processAnnotations(SecurityInfo.class);
+    private void testSecurityFile(File tempFile) throws IOException {
+        XStream xStream = XStreamFactory.create(SecurityInfo.class);
         FileInputStream inputStream = new FileInputStream(tempFile);
         SecurityInfo securityInfo = (SecurityInfo) xStream.fromXML(inputStream);
+        inputStream.close();
         List<UserInfo> users = securityInfo.getUsers();
         boolean foundCLIUser = false;
         for (UserInfo user : users) {

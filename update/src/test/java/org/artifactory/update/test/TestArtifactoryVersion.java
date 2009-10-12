@@ -1,43 +1,38 @@
+/*
+ * This file is part of Artifactory.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.update.test;
 
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.ConstantsValue;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.ArtifactoryVersion;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotSame;
 import org.testng.annotations.Test;
 
 import java.io.InputStream;
-import java.net.URL;
 import java.util.Properties;
 
 /**
  * User: freds Date: May 30, 2008 Time: 10:22:23 AM
  */
 public class TestArtifactoryVersion {
-    private static final Logger log =
-            LoggerFactory.getLogger(TestArtifactoryVersion.class);
-
-    private static final String REPO_XML = "repo.xml";
-    private static final String ARTIFACTORY_NODETYPES_XML = "artifactory_nodetypes.xml";
-
-    @Test
-    public void testResourceFind() throws Exception {
-        URL repoXml = ArtifactoryVersion.v122.findResource(REPO_XML);
-        URL otherRepoXml = ArtifactoryVersion.v122rc1.findResource(REPO_XML);
-        assertEquals(repoXml, otherRepoXml);
-        otherRepoXml = ArtifactoryVersion.v125rc0.findResource(REPO_XML);
-        assertNotSame(repoXml, otherRepoXml);
-        URL nodeTypesXml = ArtifactoryVersion.v122.findResource(ARTIFACTORY_NODETYPES_XML);
-        URL otherTypesXml = ArtifactoryVersion.v125rc0.findResource(ARTIFACTORY_NODETYPES_XML);
-        assertEquals(nodeTypesXml, otherTypesXml);
-        nodeTypesXml = ArtifactoryVersion.v125.findResource(ARTIFACTORY_NODETYPES_XML);
-        assertNotSame(nodeTypesXml, otherTypesXml);
-        otherTypesXml = ArtifactoryVersion.v125rc3.findResource(ARTIFACTORY_NODETYPES_XML);
-        assertEquals(nodeTypesXml, otherTypesXml);
-    }
+    private static final Logger log = LoggerFactory.getLogger(TestArtifactoryVersion.class);
 
     @Test
     public void testBackupPropertyFile() throws Exception {
@@ -56,12 +51,12 @@ public class TestArtifactoryVersion {
                 properties.load(artifactoryPropertyInputStream);
                 artifactoryPropertyInputStream.close();
                 String artifactoryVersion =
-                        properties.getProperty(ConstantsValue.artifactoryVersion.getPropertyName());
+                        properties.getProperty(ConstantValues.artifactoryVersion.getPropertyName());
                 assertEquals(artifactoryVersion, version.getValue(),
                         "Error in version value for " + version);
                 int artifactoryRevision =
                         Integer.parseInt(properties.getProperty(
-                                ConstantsValue.artifactoryRevision.getPropertyName()));
+                                ConstantValues.artifactoryRevision.getPropertyName()));
                 assertEquals(artifactoryRevision, version.getRevision(),
                         "Error in revision value for " + version);
             } else {
