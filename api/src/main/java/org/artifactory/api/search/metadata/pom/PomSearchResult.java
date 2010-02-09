@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,8 +28,6 @@ import org.artifactory.api.search.metadata.MetadataSearchResult;
  */
 public class PomSearchResult extends MetadataSearchResult {
 
-    private ItemInfo itemInfo;
-
     /**
      * Default constructor
      *
@@ -37,11 +36,10 @@ public class PomSearchResult extends MetadataSearchResult {
      */
     public PomSearchResult(ItemInfo itemInfo, String metadataName) {
         super(itemInfo, metadataName, null);
-        this.itemInfo = itemInfo;
     }
 
     @Override
     public String getName() {
-        return itemInfo.getName();
+        return getItemInfo().getName();
     }
 }

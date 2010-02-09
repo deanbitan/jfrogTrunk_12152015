@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,12 +37,10 @@ public interface StorageService {
     long getStorageSize();
 
     /**
-     * @return The size, in bytes, of the index files
-     */
-    long getLuceneIndexSize();
-
-    /**
      * Induce the garbage collector manually.
+     *
+     * @param statusHolder StatusHolder
+     * @return GC task token. Might be null in case of exception
      */
-    GarbageCollectorInfo manualGarbageCollect(MultiStatusHolder statusHolder);
+    String manualGarbageCollect(MultiStatusHolder statusHolder);
 }

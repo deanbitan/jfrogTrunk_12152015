@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,7 +40,8 @@ public class MavenArtifactInfo extends MavenUnitInfo {
     private String type;
 
     private String path;
-    private boolean autoCalculate = true;
+    private boolean autoCalculatePath = true;
+    private boolean builtFromPomInfo;
 
     /**
      * String representation of the pom.xml The maven Model class is not used because it isn't Serializable.
@@ -97,7 +99,7 @@ public class MavenArtifactInfo extends MavenUnitInfo {
 
     @Override
     public boolean isValid() {
-        if (!isAutoCalculate()) {
+        if (!isAutoCalculatePath()) {
             return !StringUtils.isEmpty(path);
         }
         return super.isValid() && hasVersion();
@@ -105,7 +107,7 @@ public class MavenArtifactInfo extends MavenUnitInfo {
 
     @Override
     public String getPath() {
-        if (autoCalculate) {
+        if (autoCalculatePath) {
             return getMavenPath();
         } else {
             if (path == null) {
@@ -116,7 +118,7 @@ public class MavenArtifactInfo extends MavenUnitInfo {
     }
 
     public void setPath(String path) {
-        if (!autoCalculate) {
+        if (!autoCalculatePath) {
             this.path = path;
         }
     }
@@ -259,17 +261,25 @@ public class MavenArtifactInfo extends MavenUnitInfo {
     }
 
 
-    public boolean isAutoCalculate() {
-        return autoCalculate;
+    public boolean isAutoCalculatePath() {
+        return autoCalculatePath;
     }
 
-    public void setAutoCalculate(boolean autoCalculate) {
-        this.autoCalculate = autoCalculate;
-        if (!autoCalculate) {
+    public void setAutoCalculatePath(boolean autoCalculatePath) {
+        this.autoCalculatePath = autoCalculatePath;
+        if (!autoCalculatePath) {
             //Initialize path with the latest version.
             // Set dummy path to be valid
             path = "unknown";
             path = getMavenPath();
         }
+    }
+
+    public boolean isBuiltFromPomInfo() {
+        return builtFromPomInfo;
+    }
+
+    public void setBuiltFromPomInfo(boolean builtFromPomInfo) {
+        this.builtFromPomInfo = builtFromPomInfo;
     }
 }

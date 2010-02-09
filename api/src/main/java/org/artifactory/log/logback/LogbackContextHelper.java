@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,20 +23,48 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.logging.version.LoggingVersion;
+import org.artifactory.version.CompoundVersionDetails;
 
 /**
  * @author Yoav Landman
  */
 public abstract class LogbackContextHelper {
 
-    public static LoggerContext configure(LoggerContext lc, ArtifactoryHome home) {
+    public static LoggerContext configure(LoggerContext lc, ArtifactoryHome artifactoryHome) {
         try {
+            /**
+             * Perform the logback conversion here because if we do it after configuration is loaded, we must wait 'till
+             * the changes are detected by the watchdog (possibly missing out on important log messages)
+             */
+            boolean startedFromDifferentVersion = artifactoryHome.startedFromDifferentVersion();
+            if (startedFromDifferentVersion) {
+
+                ArtifactorySystemProperties properties = artifactoryHome.getArtifactoryProperties();
+                boolean conversionPerformed =
+                        Boolean.valueOf(properties.getProperty(LoggingVersion.LOGGING_CONVERSION_PERFORMED, "false"));
+
+                if (!conversionPerformed) {
+                    CompoundVersionDetails source = artifactoryHome.getOriginalVersionDetails();
+
+                    //Might be first run, protect
+                    if (source != null) {
+                        LoggingVersion.values();
+                        LoggingVersion originalVersion =
+                                source.getVersion().getSubConfigElementVersion(LoggingVersion.class);
+                        originalVersion.convert(artifactoryHome);
+                        properties.setProperty(LoggingVersion.LOGGING_CONVERSION_PERFORMED, "true");
+                    }
+                }
+            }
+
             JoranConfigurator configurator = new JoranConfigurator();
             lc.stop();
             configurator.setContext(lc);
             //Set the artifactory.home so that tokens in the logback config file are extracted
-            lc.putProperty(ArtifactoryHome.SYS_PROP, home.getHomeDir().getAbsolutePath());
-            configurator.doConfigure(home.getLogbackConfig());
+            lc.putProperty(ArtifactoryHome.SYS_PROP, artifactoryHome.getHomeDir().getAbsolutePath());
+            configurator.doConfigure(artifactoryHome.getLogbackConfig());
             StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
         } catch (JoranException je) {
             StatusPrinter.print(lc);

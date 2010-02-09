@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,16 +23,28 @@ import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.search.SearchResultBase;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
 /**
  * @author Yoav Landman
  */
 public class ArtifactSearchResult extends SearchResultBase {
+    private static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
 
     protected final MavenArtifactInfo artifact;
 
     public ArtifactSearchResult(ItemInfo itemInfo, MavenArtifactInfo artifact) {
         super(itemInfo);
         this.artifact = artifact;
+    }
+
+    public MavenArtifactInfo getArtifact() {
+        return artifact;
+    }
+
+    public String getLastModifiedDay() {
+        return DAY_FORMAT.format(getLastModified());
     }
 
     public String getLastModifiedString() {
@@ -41,9 +54,5 @@ public class ArtifactSearchResult extends SearchResultBase {
 
     public long getLastModified() {
         return getItemInfo().getLastModified();
-    }
-
-    public MavenArtifactInfo getArtifact() {
-        return artifact;
     }
 }

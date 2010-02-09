@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,6 +18,7 @@
 
 package org.artifactory.api.repo;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.Info;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.security.PermissionTargetInfo;
@@ -85,6 +87,24 @@ public final class RepoPath implements Info {
         return NamingUtils.stripMetadataFromPath(PathUtils.getName(getPath()));
     }
 
+    /**
+     * @return Parent of this repo path. Null if has no parent
+     */
+    public RepoPath getParent() {
+        if (isRoot()) {
+            return null;
+        } else {
+            return new RepoPath(repoKey, PathUtils.getParent(path));
+        }
+    }
+
+    /**
+     * @return True if this path is the root (ie, getPath() is empty string)
+     */
+    public boolean isRoot() {
+        return StringUtils.isBlank(getPath());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -114,24 +134,30 @@ public final class RepoPath implements Info {
         return new RepoPath(repoKey, PermissionTargetInfo.ANY_PATH);
     }
 
-    public static RepoPath getMetadataContainerRepoPath(RepoPath metadataRepoPath) {
-        String path = metadataRepoPath.getPath();
+    public static RepoPath getLockingTargetRepoPath(RepoPath repoPath) {
+        String path = repoPath.getPath();
         if (NamingUtils.isMetadata(path)) {
             String fsItemPath = NamingUtils.getMetadataParentPath(path);
-            return new RepoPath(metadataRepoPath.getRepoKey(), fsItemPath);
+            return new RepoPath(repoPath.getRepoKey(), fsItemPath);
         } else {
-            return metadataRepoPath;
+            return repoPath;
         }
     }
 
-    /**
-     * @return Parent of this repo path. Null if has no parent
-     */
-    public RepoPath getParent() {
-        if (!PathUtils.hasText(path)) {
-            return null;
-        } else {
-            return new RepoPath(repoKey, PathUtils.getParent(path));
+    public static RepoPath childRepoPath(RepoPath repoPath, String childRelPath) {
+        if (!childRelPath.startsWith("/")) {
+            childRelPath = "/" + childRelPath;
         }
+        return new RepoPath(repoPath.getRepoKey(), repoPath.getPath() + childRelPath);
+    }
+
+    /**
+     * Static factory method to create repo path for the root repository path
+     *
+     * @param repoKey The repository key
+     * @return RepoPath of the root
+     */
+    public static RepoPath repoRootPath(String repoKey) {
+        return new RepoPath(repoKey, StringUtils.EMPTY);
     }
 }

@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -72,7 +73,7 @@ public class FileAdditionalInfoTest {
 
     public void copyConstructor() {
         FileAdditionalInfo orig = new FileAdditionalInfo();
-        FileAdditionalInfo copy = new FileAdditionalInfo();
+        FileAdditionalInfo copy = new FileAdditionalInfo(orig);
         Assert.assertTrue(EqualsBuilder.reflectionEquals(orig, copy), "Orig and copy differ");
         Assert.assertTrue(orig.isIdentical(copy), "Orig and copy differ");
     }

@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,7 +42,7 @@ public enum ContentType {
     javaPack200(new MimeEntry("application/x-java-pack200", "jar.pack.gz")),
     javaArchiveDiff(new MimeEntry("application/x-java-archive-diff", "jardiff")),
     javaJnlp(new MimeEntry("application/x-java-jnlp-file", "jnlp")),
-    cheksum(new MimeEntry("application/x-checksum", "sha1", "asc", "md5"), textPlain),
+    cheksum(new MimeEntry("application/x-checksum", "sha1", "md5"), textPlain),
     ivyXml(new MimeEntry("application/x-ivy+xml", "ivy"));
 
     private final MimeEntry mimeEntry;

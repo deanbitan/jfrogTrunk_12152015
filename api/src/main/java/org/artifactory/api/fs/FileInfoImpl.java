@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,7 +49,7 @@ public class FileInfoImpl extends ItemInfoImpl implements FileInfo {
         super(info);
         this.size = info.getSize();
         setMimeType(info.getMimeType());
-        this.additionalInfo = new FileAdditionalInfo(info.getInternalXmlInfo());
+        this.additionalInfo = new FileAdditionalInfo(info.getAdditionalInfo());
     }
 
     /**
@@ -123,7 +124,7 @@ public class FileInfoImpl extends ItemInfoImpl implements FileInfo {
      * {@inheritDoc}
      */
     @Deprecated
-    public FileAdditionalInfo getInternalXmlInfo() {
+    public FileAdditionalInfo getAdditionalInfo() {
         return additionalInfo;
     }
 
@@ -150,5 +151,23 @@ public class FileInfoImpl extends ItemInfoImpl implements FileInfo {
 
     public void addChecksumInfo(ChecksumInfo info) {
         additionalInfo.addChecksumInfo(info);
+    }
+
+    @Override
+    public boolean merge(ItemInfo itemInfo) {
+        boolean modified = super.merge(itemInfo);
+        if (itemInfo instanceof FileInfo) {
+            FileInfo fileInfo = (FileInfo) itemInfo;
+            if (fileInfo.getSize() > 0 && this.size != fileInfo.getSize()) {
+                this.size = fileInfo.getSize();
+                modified = true;
+            }
+            String mt = fileInfo.getMimeType();
+            if (PathUtils.hasText(mt) && !PathUtils.safeStringEquals(mt, mimeType)) {
+                this.mimeType = mt;
+                modified = true;
+            }
+        }
+        return modified;
     }
 }

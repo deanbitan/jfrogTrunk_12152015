@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -93,29 +94,32 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
 
     public boolean isNewerThanResource(long resourceLastModified) {
         long modificationTime = getModificationTime();
-        //Check that the res has a modification time and that it is older than the request's one
-        return resourceLastModified >= 0 && resourceLastModified <= modificationTime;
+        //Check that the resource has a modification time and that it is older than the request's one.
+        //Since HTTP dates do not carry millisecond-level data compare with the value rounded-down to the nearest sec.
+        return resourceLastModified >= 0 && roundMillis(resourceLastModified) <= modificationTime;
     }
 
     public long getModificationTime() {
         //If not calculated yet
         if (modificationTime < 0) {
             //These headers are not filled by mvn lw-http wagon (doesn't call "getIfNewer")
-            if (getLastModified() < 0 && getIfModifiedSince() < 0) {
+            long lastModified = getLastModified();
+            long ifModifiedSince = getIfModifiedSince();
+            if (lastModified < 0 && ifModifiedSince < 0) {
                 if (log.isDebugEnabled()) {
                     log.debug("Neither If-Modified-Since nor Last-Modified are set");
                 }
                 return -1;
             }
-            if (getLastModified() >= 0 && getIfModifiedSince() >= 0 && getLastModified() != getIfModifiedSince()) {
+            if (lastModified >= 0 && ifModifiedSince >= 0 && lastModified != ifModifiedSince) {
                 if (log.isDebugEnabled()) {
                     log.warn(
-                            "If-Modified-Since (" + getIfModifiedSince() + ") AND Last-Modified (" + getLastModified() +
+                            "If-Modified-Since (" + ifModifiedSince + ") AND Last-Modified (" + lastModified +
                                     ") both set and unequal");
                 }
 
             }
-            modificationTime = Math.max(getLastModified(), getIfModifiedSince());
+            modificationTime = Math.max(lastModified, ifModifiedSince);
         }
         return modificationTime;
     }
@@ -124,7 +128,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         this.repoPath = repoPath;
     }
 
-    public static long round(long time) {
+    public static long roundMillis(long time) {
         if (time != -1) {
             return time / 1000 * 1000;
         }

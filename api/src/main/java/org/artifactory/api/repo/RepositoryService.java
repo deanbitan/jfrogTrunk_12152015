@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -44,8 +45,21 @@ import java.util.Set;
  * User: freds Date: Jul 21, 2008 Time: 8:07:50 PM
  */
 public interface RepositoryService extends ImportableExportable {
+    /**
+     * @param repoPath Path to a virtual repo item.
+     * @return Virtual repo item with all real repo keys the real item exists and accessible to the current user. Null
+     *         if not found or user has no permissions.
+     */
     @Lock(transactional = true)
-    public List<VirtualRepoItem> getVirtualRepoItems(RepoPath repoPath);
+    public VirtualRepoItem getVirtualRepoItem(RepoPath repoPath);
+
+    /**
+     * @param virtualFolderPath Path to a virtual repo folder.
+     * @return List of virtual items (files and folders) under the virtual folders. Will return empty list if item
+     *         doesn't exist, not a file of no permissions.
+     */
+    @Lock(transactional = true)
+    public List<VirtualRepoItem> getVirtualRepoItems(RepoPath virtualFolderPath);
 
     /**
      * @return null if repoPath invalid (equivalent to 404)
@@ -118,17 +132,17 @@ public interface RepositoryService extends ImportableExportable {
      * @return Metadata object
      */
     @Lock(transactional = true)
-    <MD> MD getXmlMetdataObject(RepoPath repoPath, Class<MD> metadataClass);
+    <MD> MD getMetadata(RepoPath repoPath, Class<MD> metadataClass);
 
     /**
      * Sets the given metadata on the supplied repo path
      *
-     * @param repoPath    Path to targeted item
-     * @param xstreamable Xstreamable object to convert to xml metadata
-     * @param <MD>        Class type
+     * @param repoPath      Path to targeted item
+     * @param metadataClass
+     * @param metadata
      */
     @Lock(transactional = true)
-    <MD> void setXmlMetadataObject(RepoPath repoPath, MD xstreamable);
+    <MD> void setMetadata(RepoPath repoPath, Class<MD> metadataClass, MD metadata);
 
 
     /**
@@ -153,13 +167,13 @@ public interface RepositoryService extends ImportableExportable {
     void setXmlMetadata(RepoPath repoPath, String metadataName, @Nullable String metadataContent);
 
     /**
-     * Returns the avialable metadata names
+     * Returns the available metadata names which are not internal metadata
      *
-     * @param repoPath
-     * @return
+     * @param repoPath The full path of the object having metadata
+     * @return A list of metadata names that exists on this element
      */
     @Lock(transactional = true)
-    List<String> getXmlMetadataNames(RepoPath repoPath, boolean excludeSystemMetadata);
+    List<String> getMetadataNames(RepoPath repoPath);
 
     /**
      * Checks if the repo path has the specified metadata node under it.
@@ -170,11 +184,15 @@ public interface RepositoryService extends ImportableExportable {
      *         doesn't exist for this item.
      */
     @Lock(transactional = true)
-    boolean hasXmlMetadata(RepoPath repoPath, String metadataName);
+    boolean hasMetadata(RepoPath repoPath, String metadataName);
 
     @Request
     @Lock(transactional = true)
     StatusHolder undeploy(RepoPath repoPath);
+
+    @Request
+    @Lock(transactional = true)
+    StatusHolder undeploy(RepoPath repoPath, boolean calcMavenMetadata);
 
     @Request
     StatusHolder undeployPaths(List<RepoPath> repoPath);
@@ -280,6 +298,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param repoPath The repository path (might be repository root with no sub-path)
      * @return deployable units under a certain path
      */
+    @Lock(transactional = true)
     List<DeployableUnit> getDeployableUnitsUnder(RepoPath repoPath);
 
     /**
@@ -309,17 +328,29 @@ public interface RepositoryService extends ImportableExportable {
     boolean isRepoPathAccepted(RepoPath repoPath);
 
     /**
-     * Calculate the maven metadata asynchronously after the current transaction is committed. The reason is the
+     * Note: you should call the markBaseForMavenMetadataRecalculation() before calling this method to recover in case
+     * this task is interrupted in the middle.
+     *
+     * @param baseFolderPath A path to a folder to start calculating metadata from. Must be a local non-cache repository
+     *                       path.
+     */
+    @Async(delayUntilAfterCommit = true, transactional = true)
+    public void calculateMavenMetadataAsync(RepoPath baseFolderPath);
+
+    /**
+     * Calculate the maven plugins metadata asynchronously after the current transaction is committed. The reason is the
      * metadata calculator uses xpath queries for its job and since the move is not committed yet, the xpath query
      * result might not be accurate (for example when moving plugins from one repo to another the query on the source
      * repository will return the moved plugins while the target repo will not return them). <p/> Note: you should call
      * the markBaseForMavenMetadataRecalculation() before calling this method to recover in case this task is
      * interrupted in the middle.
      *
-     * @param baseFolderPath A path to a folder to start calculating metadata from. Must be a local non-cache repository
-     *                       path.
+     * @param localRepoKey Key of the local non-cache repository to calculate maven plugins metadata on.
      */
     @Async(delayUntilAfterCommit = true, transactional = true)
+    public void calculateMavenPluginsMetadataAsync(String localRepoKey);
+
+    @Lock(transactional = true)
     public void calculateMavenMetadata(RepoPath baseFolderPath);
 
     /**

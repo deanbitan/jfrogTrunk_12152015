@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +19,7 @@
 package org.artifactory.api.fs;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import org.artifactory.api.mime.ChecksumType;
 
 import java.util.Set;
 
@@ -51,9 +53,41 @@ public class FileAdditionalInfo extends ItemAdditionalInfo {
             return false;
         }
         FileAdditionalInfo fileExtraInfo = (FileAdditionalInfo) other;
-        return !(checksumsInfo != null ? !checksumsInfo.equals(fileExtraInfo.checksumsInfo) :
+        return !(checksumsInfo != null ? !checksumsInfo.isIdentical(fileExtraInfo.checksumsInfo) :
                 fileExtraInfo.checksumsInfo != null) && super.isIdentical(other);
 
+    }
+
+    @Override
+    public boolean merge(ItemAdditionalInfo additionalInfo) {
+        boolean modified = super.merge(additionalInfo);
+        if (additionalInfo instanceof FileAdditionalInfo) {
+            FileAdditionalInfo fileAdditionalInfo = (FileAdditionalInfo) additionalInfo;
+            if (!fileAdditionalInfo.isIdentical(this)) {
+                ChecksumsInfo otherChecksumInfo = fileAdditionalInfo.getChecksumsInfo();
+                if (otherChecksumInfo != null) {
+                    if (checksumsInfo == null || checksumsInfo.getChecksums() == null ||
+                            checksumsInfo.getChecksums().isEmpty()) {
+                        checksumsInfo = new ChecksumsInfo();
+                        checksumsInfo.setChecksums(otherChecksumInfo.getChecksums());
+                        modified = true;
+                    } else {
+                        ChecksumType[] types = ChecksumType.values();
+                        for (ChecksumType type : types) {
+                            ChecksumInfo other = otherChecksumInfo.getChecksumInfo(type);
+                            ChecksumInfo mine = this.checksumsInfo.getChecksumInfo(type);
+                            if (mine == null) {
+                                addChecksumInfo(other);
+                                modified = true;
+                            } else {
+                                modified |= mine.merge(other);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return modified;
     }
 
     public String getSha1() {

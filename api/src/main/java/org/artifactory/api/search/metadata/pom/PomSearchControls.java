@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -31,15 +32,12 @@ public class PomSearchControls<T> extends MetadataSearchControls<T> {
 
     public PomSearchControls(RepoPath repoPath) {
         this.repoPath = repoPath;
+        addRepoToSearch(repoPath.getRepoKey());
         setMetadataName("*.pom");
     }
 
     public RepoPath getRepoPath() {
         return repoPath;
-    }
-
-    public void setRepoPath(RepoPath repoPath) {
-        this.repoPath = repoPath;
     }
 
     @Override

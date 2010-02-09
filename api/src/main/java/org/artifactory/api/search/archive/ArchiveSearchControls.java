@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,8 +28,6 @@ import org.artifactory.api.search.SearchControlsBase;
  */
 public class ArchiveSearchControls extends SearchControlsBase {
     private String query;
-    private boolean exactMatch;
-    private boolean searchAllTypes;
     private boolean shouldCalcEntries;
 
     /**
@@ -36,37 +35,18 @@ public class ArchiveSearchControls extends SearchControlsBase {
      */
     public ArchiveSearchControls() {
         shouldCalcEntries = true;
-        exactMatch = true;
     }
 
     /**
-     * Copy contsructor
+     * Copy constructor
      *
      * @param archiveSearchControls Controls to copy
      */
     public ArchiveSearchControls(ArchiveSearchControls archiveSearchControls) {
         this.query = archiveSearchControls.query;
-        this.exactMatch = archiveSearchControls.exactMatch;
-        this.searchAllTypes = archiveSearchControls.searchAllTypes;
         this.selectedRepoForSearch = archiveSearchControls.selectedRepoForSearch;
         setLimitSearchResults(archiveSearchControls.isLimitSearchResults());
         this.shouldCalcEntries = archiveSearchControls.shouldCalcEntries;
-    }
-
-    public boolean isExactMatch() {
-        return exactMatch;
-    }
-
-    public void setExactMatch(boolean exactMatch) {
-        this.exactMatch = exactMatch;
-    }
-
-    public void setSearchAllTypes(boolean searchAllTypes) {
-        this.searchAllTypes = searchAllTypes;
-    }
-
-    public boolean isSearchAllTypes() {
-        return searchAllTypes;
     }
 
     public String getQuery() {

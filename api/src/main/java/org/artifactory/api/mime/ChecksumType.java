@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,20 +18,27 @@
 
 package org.artifactory.api.mime;
 
+import org.artifactory.jcr.JcrTypes;
+
 /**
  * Created by IntelliJ IDEA. User: yoavl
  */
 public enum ChecksumType {
-    sha1("SHA-1", ".sha1", 40), md5("MD5", ".md5", 32);
+    sha1("SHA-1", ".sha1", 40, JcrTypes.PROP_ARTIFACTORY_SHA1_ORIGINAL, JcrTypes.PROP_ARTIFACTORY_SHA1_ACTUAL),
+    md5("MD5", ".md5", 32, JcrTypes.PROP_ARTIFACTORY_MD5_ORIGINAL, JcrTypes.PROP_ARTIFACTORY_MD5_ACTUAL);
 
     private final String alg;
     private final String ext;
     private final int length;    // length of the hexadecimal string representation of the checksum
+    private final String actualPropName;
+    private final String originalPropName;
 
-    ChecksumType(String alg, String ext, int length) {
+    ChecksumType(String alg, String ext, int length, String actualPropName, String originalPropName) {
         this.alg = alg;
         this.ext = ext;
         this.length = length;
+        this.originalPropName = originalPropName;
+        this.actualPropName = actualPropName;
     }
 
     public String alg() {
@@ -41,10 +49,19 @@ public enum ChecksumType {
         return ext;
     }
 
+    public String getActualPropName() {
+        return actualPropName;
+    }
+
+    public String getOriginalPropName() {
+        return originalPropName;
+    }
+
     /**
      * @param candidate Checksum candidate
      * @return True if this string is a checksum value for this type
      */
+    @SuppressWarnings({"SimplifiableIfStatement"})
     public boolean isValid(String candidate) {
         if (candidate == null || candidate.length() != length) {
             return false;

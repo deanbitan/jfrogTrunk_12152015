@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,11 +29,8 @@ import org.artifactory.api.search.SearchControlsBase;
 public class GavcSearchControls extends SearchControlsBase {
 
     private String groupId;
-    private boolean groupExactMatch = true;
     private String artifactId;
-    private boolean artifactExactMatch = true;
     private String version;
-    private boolean versionExactMatch = true;
     private String classifier;
 
     /**
@@ -48,11 +46,8 @@ public class GavcSearchControls extends SearchControlsBase {
      */
     public GavcSearchControls(GavcSearchControls gavcSearchControls) {
         this.groupId = gavcSearchControls.groupId;
-        this.groupExactMatch = gavcSearchControls.groupExactMatch;
         this.artifactId = gavcSearchControls.artifactId;
-        this.artifactExactMatch = gavcSearchControls.artifactExactMatch;
         this.version = gavcSearchControls.version;
-        this.versionExactMatch = gavcSearchControls.versionExactMatch;
         this.classifier = gavcSearchControls.classifier;
         this.selectedRepoForSearch = gavcSearchControls.selectedRepoForSearch;
         setLimitSearchResults(gavcSearchControls.isLimitSearchResults());
@@ -66,14 +61,6 @@ public class GavcSearchControls extends SearchControlsBase {
         this.groupId = groupId;
     }
 
-    public boolean isGroupExactMatch() {
-        return groupExactMatch;
-    }
-
-    public void setGroupExactMatch(boolean groupExactMatch) {
-        this.groupExactMatch = groupExactMatch;
-    }
-
     public String getArtifactId() {
         return artifactId;
     }
@@ -82,28 +69,12 @@ public class GavcSearchControls extends SearchControlsBase {
         this.artifactId = artifactId;
     }
 
-    public boolean isArtifactExactMatch() {
-        return artifactExactMatch;
-    }
-
-    public void setArtifactExactMatch(boolean artifactExactMatch) {
-        this.artifactExactMatch = artifactExactMatch;
-    }
-
     public String getVersion() {
         return version;
     }
 
     public void setVersion(String version) {
         this.version = version;
-    }
-
-    public boolean isVersionExactMatch() {
-        return versionExactMatch;
-    }
-
-    public void setVersionExactMatch(boolean versionExactMatch) {
-        this.versionExactMatch = versionExactMatch;
     }
 
     public String getClassifier() {

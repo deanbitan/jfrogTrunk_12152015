@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,6 +44,9 @@ public interface SecurityService extends ImportableExportable {
     SecurityInfo getSecurityData();
 
     @Lock(transactional = true)
+    void importSecurityData(String securityXml);
+
+    @Lock(transactional = true)
     void importSecurityData(SecurityInfo descriptor);
 
     /**
@@ -67,8 +71,7 @@ public interface SecurityService extends ImportableExportable {
      * @param clientIp     The IP of the client that sent the request
      * @param resetPageUrl The URL of the reset page we refer to
      */
-    @Async
-    @Lock(transactional = true)
+    @Async(transactional = true)
     void generatePasswordResetKey(String username, String clientIp, String resetPageUrl) throws Exception;
 
     /**
@@ -115,8 +118,7 @@ public interface SecurityService extends ImportableExportable {
      * @param accessTimeMillis             The time of access
      * @param acessUpdatesResolutionMillis The ferquency in which to update access times
      */
-    @Async
-    @Lock(transactional = true)
+    @Async(transactional = true)
     void updateUserLastAccess(String username, String clientIp, long accessTimeMillis,
             long acessUpdatesResolutionMillis);
 

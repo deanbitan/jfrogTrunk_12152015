@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author yoavl
  */
 public class MavenNaming {
     //Uses lazy evaluation of the version (+?)
@@ -53,8 +54,10 @@ public class MavenNaming {
     public static final String NEXUS_INDEX_DIR = ".index";
     public static final String NEXUS_INDEX_PREFIX = "nexus-maven-repository-index";
     public static final String NEXUS_INDEX_ZIP = NEXUS_INDEX_PREFIX + ".zip";
+    public static final String NEXUS_INDEX_GZ = NEXUS_INDEX_PREFIX + ".gz";
     public static final String NEXUS_INDEX_PROPERTIES = NEXUS_INDEX_PREFIX + ".properties";
     public static final String NEXUS_INDEX_ZIP_PATH = NEXUS_INDEX_DIR + "/" + NEXUS_INDEX_ZIP;
+    public static final String NEXUS_INDEX_GZ_PATH = NEXUS_INDEX_DIR + "/" + NEXUS_INDEX_GZ;
     public static final String NEXUS_INDEX_PROPERTIES_PATH = NEXUS_INDEX_DIR + "/" + NEXUS_INDEX_PROPERTIES;
 
     /**

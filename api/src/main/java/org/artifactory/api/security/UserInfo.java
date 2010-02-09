@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +19,10 @@
 package org.artifactory.api.security;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
 import org.artifactory.api.common.Info;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,9 +46,9 @@ public class UserInfo implements Info {
     private boolean accountNonExpired;
     private boolean credentialsNonExpired;
     private boolean accountNonLocked;
-    private boolean transientUser = false;
+    private boolean transientUser;
 
-    private Set<String> groups = new HashSet<String>();
+    private Set<UserGroupInfo> groups = new HashSet<UserGroupInfo>();
 
     private long lastLoginTimeMillis;
     private String lastLoginClientIp;
@@ -72,11 +75,11 @@ public class UserInfo implements Info {
         this.accountNonLocked = user.isAccountNonLocked();
         this.transientUser = user.isTransientUser();
 
-        Set<String> groups = user.getGroups();
+        Set<UserGroupInfo> groups = user.getGroups();
         if (groups != null) {
-            setGroups(new HashSet<String>(groups));
+            this.groups = new HashSet<UserGroupInfo>(groups);
         } else {
-            setGroups(new HashSet<String>(1));
+            this.groups = new HashSet<UserGroupInfo>(1);
         }
 
         setPrivateKey(user.getPrivateKey());
@@ -197,29 +200,56 @@ public class UserInfo implements Info {
     }
 
     public boolean isInGroup(String groupName) {
-        return getGroups().contains(groupName);
+        //Use the equals() behavior with a dummy userGroupInfo
+        UserGroupInfo userGroupInfo = getDummyGroup(groupName);
+        return getGroups().contains(userGroupInfo);
     }
 
     public void addGroup(String groupName) {
-        getGroups().add(groupName);
+        addGroup(groupName, SecurityService.DEFAULT_REALM);
+    }
+
+    public void addGroup(String groupName, String realm) {
+        UserGroupInfo userGroupInfo = new UserGroupInfo(groupName, realm);
+        // group equality is currently using group name only, so make sure to remove existing group with the same name
+        groups.remove(userGroupInfo);
+        groups.add(userGroupInfo);
     }
 
     public void removeGroup(String groupName) {
-        getGroups().remove(groupName);
+        //Use the equals() behavior with a dummy userGroupInfo
+        UserGroupInfo userGroupInfo = getDummyGroup(groupName);
+        groups.remove(userGroupInfo);
     }
 
     /**
      * @return The groups names this user belongs to. Empty list if none.
      */
-    public Set<String> getGroups() {
+    public Set<UserGroupInfo> getGroups() {
         return groups;
     }
 
-    public void setGroups(Set<String> groups) {
+    public void setGroups(Set<UserGroupInfo> groups) {
+        this.groups = groups;
+    }
+
+    public void setInternalGroups(Set<String> groups) {
         if (groups == null) {
             groups = new HashSet<String>();
         }
-        this.groups = groups;
+        //Add groups with the default internal realm
+        this.groups.clear();
+        for (String group : groups) {
+            addGroup(group);
+        }
+    }
+
+    public void checkInternalGroups(Set<String> defaultGroups) {
+        for (String defaultGroupName : defaultGroups) {
+            if (!isInGroup(defaultGroupName)) {
+                addGroup(defaultGroupName);
+            }
+        }
     }
 
     public long getLastLoginTimeMillis() {
@@ -271,5 +301,82 @@ public class UserInfo implements Info {
     @Override
     public int hashCode() {
         return (username != null ? username.hashCode() : 0);
+    }
+
+    private static UserGroupInfo getDummyGroup(String groupName) {
+        UserGroupInfo userGroupInfo = new UserGroupInfo(groupName, "whatever");
+        return userGroupInfo;
+    }
+
+    public boolean hasInvalidPassword() {
+        return INVALID_PASSWORD.equals(getPassword());
+    }
+
+    /**
+     * An object representing the resolved groups of a user, including the external realm the group may belong to
+     */
+    @XStreamAlias("userGroup")
+    public static class UserGroupInfo implements Serializable {
+
+        final String groupName;
+
+        @XStreamOmitField
+        String realm = SecurityService.DEFAULT_REALM;
+
+        public UserGroupInfo(String groupName) {
+            this(groupName, SecurityService.DEFAULT_REALM);
+        }
+
+        public UserGroupInfo(String groupName, String realm) {
+            this.groupName = groupName;
+            this.realm = realm;
+        }
+
+        public String getGroupName() {
+            return groupName;
+        }
+
+        public String getRealm() {
+            return realm;
+        }
+
+        public boolean isExternal() {
+            return !SecurityService.DEFAULT_REALM.equals(realm);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            UserGroupInfo info = (UserGroupInfo) o;
+            return groupName.equals(info.groupName);
+        }
+
+        @Override
+        public int hashCode() {
+            return groupName.hashCode();
+        }
+
+        public static Set<UserGroupInfo> getInternalGroups(Set<String> names) {
+            if (names == null) {
+                return null;
+            }
+            //Create a list of default groups
+            Set<UserGroupInfo> userGroupInfos = new HashSet<UserGroupInfo>(names.size());
+            for (String name : names) {
+                UserInfo.UserGroupInfo userGroupInfo = new UserInfo.UserGroupInfo(name);
+                userGroupInfos.add(userGroupInfo);
+            }
+            return userGroupInfos;
+        }
+
+        @Override
+        public String toString() {
+            return groupName;
+        }
     }
 }

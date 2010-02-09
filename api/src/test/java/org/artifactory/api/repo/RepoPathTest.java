@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,8 +18,9 @@
 
 package org.artifactory.api.repo;
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
 
 /**
  * Tests the RepoPath class.
@@ -31,25 +33,38 @@ public class RepoPathTest {
     public void getParentRepoPathWithParent() {
         RepoPath child = new RepoPath("repo", "a/b/c");
         RepoPath parent = child.getParent();
-        Assert.assertEquals(parent, new RepoPath("repo", "/a/b"));
+        assertEquals(parent, new RepoPath("repo", "/a/b"));
     }
 
     public void getParentRepoPathLastParent() {
         RepoPath child = new RepoPath("repo", "a/");
         RepoPath parent = child.getParent();
-        Assert.assertEquals(parent, new RepoPath("repo", ""));
+        assertEquals(parent, new RepoPath("repo", ""));
     }
 
     public void getParentRepoPathForRoot() {
         RepoPath child = new RepoPath("repo", "/");
         RepoPath parent = child.getParent();
-        Assert.assertNull(parent);
+        assertNull(parent);
     }
 
     public void getParentRepoPathWithNoParent() {
         RepoPath child = new RepoPath("repo", "");
         RepoPath parent = child.getParent();
-        Assert.assertNull(parent);
+        assertNull(parent);
     }
 
+    public void repoRootPath() {
+        RepoPath repoPath = RepoPath.repoRootPath("repokey");
+        assertEquals(repoPath.getRepoKey(), "repokey");
+        assertEquals("", repoPath.getPath(), "Repository root path should be an empty string");
+        assertTrue(repoPath.isRoot());
+    }
+
+    public void rootPath() {
+        assertFalse(new RepoPath("1", "2").isRoot());
+        assertTrue(new RepoPath("1", "").isRoot());
+        assertTrue(new RepoPath("1", "     ").isRoot());
+        assertTrue(new RepoPath("1", null).isRoot());
+    }
 }

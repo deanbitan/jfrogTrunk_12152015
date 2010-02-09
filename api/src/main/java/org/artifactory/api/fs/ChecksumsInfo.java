@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,7 +31,7 @@ import java.util.Set;
  */
 public class ChecksumsInfo implements Info {
 
-    private Set<ChecksumInfo> checksums = new HashSet<ChecksumInfo>(2);
+    private final Set<ChecksumInfo> checksums = new HashSet<ChecksumInfo>(2);
 
     public String getSha1() {
         ChecksumInfo sha1 = getChecksumInfo(ChecksumType.sha1);
@@ -46,7 +47,10 @@ public class ChecksumsInfo implements Info {
         if (checksums == null) {
             throw new IllegalArgumentException("Checksums cannot be null.");
         }
-        this.checksums = checksums;
+        this.checksums.clear();
+        for (ChecksumInfo checksum : checksums) {
+            addChecksumInfo(checksum);
+        }
     }
 
     public Set<ChecksumInfo> getChecksums() {
@@ -68,7 +72,7 @@ public class ChecksumsInfo implements Info {
         if (checksumInfo == null) {
             throw new IllegalArgumentException("Nulls are not allowed");
         }
-        checksums.add(checksumInfo);
+        checksums.add(new ChecksumInfo(checksumInfo));
     }
 
     /**
@@ -86,26 +90,22 @@ public class ChecksumsInfo implements Info {
         setChecksums(checksumInfos);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean isIdentical(ChecksumsInfo info) {
+        if (this.checksums == info.checksums) {
             return true;
         }
-        if (!(o instanceof ChecksumsInfo)) {
+        if (this.checksums == null || info.checksums == null) {
             return false;
         }
-
-        ChecksumsInfo info = (ChecksumsInfo) o;
-
-        if (!checksums.equals(info.checksums)) {
+        if (this.checksums.size() != info.checksums.size()) {
             return false;
         }
-
+        for (ChecksumInfo other : checksums) {
+            ChecksumInfo mine = info.getChecksumInfo(other.getType());
+            if (!other.isIdentical(mine)) {
+                return false;
+            }
+        }
         return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return checksums.hashCode();
     }
 }

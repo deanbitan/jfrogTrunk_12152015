@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,4 +41,10 @@ public @interface Async {
     boolean failIfNotScheduledFromTransaction() default false;
 
     boolean transactional() default false;
+
+    /**
+     * Share the thread with other aysnc callbacks registered on the current thread - only applicable if
+     * 'delayUntilAfterCommit' is true.
+     */
+    boolean shared() default true;
 }

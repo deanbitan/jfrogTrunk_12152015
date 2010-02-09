@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -79,5 +80,26 @@ public class ItemAdditionalInfo implements Info {
         return this.lastUpdated == additionalInfo.lastUpdated &&
                 PathUtils.safeStringEquals(this.modifiedBy, additionalInfo.modifiedBy) &&
                 PathUtils.safeStringEquals(this.createdBy, additionalInfo.createdBy);
+    }
+
+    public boolean merge(ItemAdditionalInfo additionalInfo) {
+        if (this == additionalInfo || this.isIdentical(additionalInfo)) {
+            // already the same
+            return false;
+        }
+        boolean modified = false;
+        if (additionalInfo.lastUpdated > 0) {
+            this.lastUpdated = additionalInfo.lastUpdated;
+            modified = true;
+        }
+        if (PathUtils.hasText(additionalInfo.modifiedBy)) {
+            this.modifiedBy = additionalInfo.modifiedBy;
+            modified = true;
+        }
+        if (PathUtils.hasText(additionalInfo.createdBy)) {
+            this.createdBy = additionalInfo.createdBy;
+            modified = true;
+        }
+        return modified;
     }
 }

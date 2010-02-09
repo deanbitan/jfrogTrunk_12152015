@@ -1,13 +1,32 @@
+/*
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.api.mime;
 
 import org.artifactory.common.property.ArtifactorySystemProperties;
-import org.artifactory.test.TestUtils;
-import static org.testng.Assert.*;
+import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
+
+import static org.testng.Assert.*;
 
 /**
  * @author Eli Givoni
@@ -26,7 +45,7 @@ public class XmlAdditionalMimeTypePatternTest {
 
     @Test
     public void getXmlAdditionalMimeTypeContentType() {
-        File file = TestUtils.getResourceAsFile("/system/artifactory.system.2.properties");
+        File file = ResourceUtils.getResourceAsFile("/system/artifactory.system.2.properties");
         ArtifactorySystemProperties.get().loadArtifactorySystemProperties(file, null);
         NamingUtils.initializeContentTypesMap();
 

@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +19,7 @@
 package org.artifactory.api.security;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
 import org.artifactory.api.common.Info;
 
 /**
@@ -35,6 +37,16 @@ public class GroupInfo implements Info {
      */
     private boolean newUserDefault;
 
+    /**
+     * indicates if this group is external (e.g LDAP)
+     */
+    @XStreamOmitField
+    private boolean external;
+
+    private String realm;
+
+    private String realmAttributes;
+
     public GroupInfo() {
     }
 
@@ -48,13 +60,23 @@ public class GroupInfo implements Info {
         this.newUserDefault = newUserDefault;
     }
 
+    public GroupInfo(String groupName, String description, boolean newUserDefault, String realm,
+            String realmAttributes) {
+        this.groupName = groupName;
+        this.description = description;
+        this.newUserDefault = newUserDefault;
+        this.realm = realm;
+        this.realmAttributes = realmAttributes;
+    }
+
     /**
      * A copy constructor.
      *
      * @param groupInfo Original group info.
      */
     public GroupInfo(GroupInfo groupInfo) {
-        this(groupInfo.getGroupName(), groupInfo.getDescription(), groupInfo.isNewUserDefault());
+        this(groupInfo.getGroupName(), groupInfo.getDescription(), groupInfo.isNewUserDefault(), groupInfo.getRealm(),
+                groupInfo.getRealmAttributes());
     }
 
     public String getGroupName() {
@@ -82,6 +104,30 @@ public class GroupInfo implements Info {
 
     public void setNewUserDefault(boolean newUserDefault) {
         this.newUserDefault = newUserDefault;
+    }
+
+    public boolean isExternal() {
+        return realm != null && !SecurityService.DEFAULT_REALM.equals(realm);
+    }
+
+    public void setExternal(boolean external) {
+        this.external = external;
+    }
+
+    public String getRealm() {
+        return realm;
+    }
+
+    public void setRealm(String realm) {
+        this.realm = realm;
+    }
+
+    public String getRealmAttributes() {
+        return realmAttributes;
+    }
+
+    public void setRealmAttributes(String realmAttributes) {
+        this.realmAttributes = realmAttributes;
     }
 
     @Override

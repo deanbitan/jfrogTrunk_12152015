@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * Represents a virtual file/folder inside a virtual repository. Holds the item info of one concrete item (usually the
+ * first one) and a list of local repository keys that accessible from the virtual repo and contain this item.
+ *
+ * @author yoavl
  */
 public class VirtualRepoItem {
     private final ItemInfo item;
@@ -49,6 +53,14 @@ public class VirtualRepoItem {
         return repoKeys;
     }
 
+    public ItemInfo getItem() {
+        return item;
+    }
+
+    public void addRepoKey(String repoKey) {
+        getRepoKeys().add(repoKey);
+    }
+
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -63,5 +75,13 @@ public class VirtualRepoItem {
 
     public int hashCode() {
         return item.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "VirtualRepoItem{" +
+                "item=" + item +
+                ", repoKeys=" + repoKeys +
+                '}';
     }
 }

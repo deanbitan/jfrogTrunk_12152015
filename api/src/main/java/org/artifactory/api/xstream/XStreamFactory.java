@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +22,7 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 import javanet.staxutils.StaxUtilsXMLOutputFactory;
 import org.artifactory.api.md.xstream.PropertiesConverter;
+import org.artifactory.api.security.xstream.UserGroupInfoConverter;
 
 import javax.xml.stream.XMLOutputFactory;
 
@@ -70,6 +72,7 @@ public abstract class XStreamFactory {
     private static XStream createXStream(StaxDriver driver, Class... annotatedClassesToProcess) {
         XStream xstream = new XStream(driver);
         xstream.registerConverter(new PropertiesConverter());
+        xstream.registerConverter(new UserGroupInfoConverter());
         for (Class annotatedClass : annotatedClassesToProcess) {
             xstream.processAnnotations(annotatedClass);
         }

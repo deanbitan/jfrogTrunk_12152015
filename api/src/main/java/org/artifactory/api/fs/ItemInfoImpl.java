@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -84,27 +85,27 @@ public abstract class ItemInfoImpl implements ItemInfo {
     }
 
     public String getModifiedBy() {
-        return getInternalXmlInfo().getModifiedBy();
+        return getAdditionalInfo().getModifiedBy();
     }
 
     public void setModifiedBy(String name) {
-        getInternalXmlInfo().setModifiedBy(name);
+        getAdditionalInfo().setModifiedBy(name);
     }
 
     public String getCreatedBy() {
-        return getInternalXmlInfo().getCreatedBy();
+        return getAdditionalInfo().getCreatedBy();
     }
 
     public void setCreatedBy(String name) {
-        getInternalXmlInfo().setCreatedBy(name);
+        getAdditionalInfo().setCreatedBy(name);
     }
 
     public long getLastUpdated() {
-        return getInternalXmlInfo().getLastUpdated();
+        return getAdditionalInfo().getLastUpdated();
     }
 
     public void setLastUpdated(long lastUpdated) {
-        getInternalXmlInfo().setLastUpdated(lastUpdated);
+        getAdditionalInfo().setLastUpdated(lastUpdated);
     }
 
     public boolean isIdentical(ItemInfo info) {
@@ -113,7 +114,25 @@ public abstract class ItemInfoImpl implements ItemInfo {
                 this.created == info.getCreated() &&
                 this.repoPath.equals(info.getRepoPath()) &&
                 this.name.equals(info.getName()) &&
-                this.getInternalXmlInfo().isIdentical(info.getInternalXmlInfo());
+                this.getAdditionalInfo().isIdentical(info.getAdditionalInfo());
+    }
+
+    public boolean merge(ItemInfo itemInfo) {
+        if (this == itemInfo || this.isIdentical(itemInfo)) {
+            // They are equal nothing to do
+            return false;
+        }
+        boolean modified = false;
+        if (itemInfo.getLastModified() > 0) {
+            this.lastModified = itemInfo.getLastModified();
+            modified = true;
+        }
+        if (itemInfo.getCreated() > 0 && itemInfo.getCreated() < getCreated()) {
+            this.created = itemInfo.getCreated();
+            modified = true;
+        }
+        modified |= this.getAdditionalInfo().merge(itemInfo.getAdditionalInfo());
+        return modified;
     }
 
     @Override

@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,10 +34,10 @@ public enum ArtifactoryCache {
             null, null, 30),
     fsItemCache(
             CacheType.STORING_REPO, ElementReferenceType.SOFT, false, false,
-            ConstantValues.fsItemCacheIdleTimeSecs, null, 500),
+            ConstantValues.fsItemCacheIdleTimeSecs, null, 5000),
     locks(
             CacheType.STORING_REPO, ElementReferenceType.SOFT, true, true,
-            ConstantValues.fsItemCacheIdleTimeSecs, null, 200),
+            ConstantValues.fsItemCacheIdleTimeSecs, null, 2000),
     missed(
             CacheType.REMOTE_REPO, ElementReferenceType.HARD, false, false, null, null, 100) {
         @Override
@@ -49,12 +50,18 @@ public enum ArtifactoryCache {
         public long getIdleTime(RemoteRepoDescriptor descriptor) {
             return descriptor.getFailedRetrievalCachePeriodSecs() * 1000L;
         }},
-    /*mergedMetadataChecksums(
-            CacheType.GLOBAL, ElementReferenceType.SOFT, false, false,
-            ConstantValues.metadataIdleTimeSecs, null, 100),*/
     versioning(
             CacheType.GLOBAL, ElementReferenceType.HARD, false, false,
-            ConstantValues.versioningQueryIntervalSecs, null, 3);
+            ConstantValues.versioningQueryIntervalSecs, null, 3),
+    buildItemMissingMd5(
+            CacheType.GLOBAL, ElementReferenceType.SOFT, true, true,
+            ConstantValues.missingBuildChecksumCacheIdeTimeSecs, null, 100),
+    buildItemMissingSha1(
+            CacheType.GLOBAL, ElementReferenceType.SOFT, true, true,
+            ConstantValues.missingBuildChecksumCacheIdeTimeSecs, null, 100),
+    artifactoryUpdates(
+            CacheType.GLOBAL, ElementReferenceType.HARD, false, false,
+            ConstantValues.artifactoryUpdatesRefreshIntervalSecs, null, 1);
 
     /**
      * The type of cache: Global, or per repo (indexed by repoKey)

@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,5 +26,5 @@ public interface FolderInfo extends ItemInfo {
 
     void setAdditionalInfo(FolderAdditionalInfo additionalInfo);
 
-    FolderAdditionalInfo getInternalXmlInfo();
+    FolderAdditionalInfo getAdditionalInfo();
 }

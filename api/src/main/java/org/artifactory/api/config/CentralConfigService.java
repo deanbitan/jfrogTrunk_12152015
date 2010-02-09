@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +22,7 @@ import org.artifactory.descriptor.DescriptorAware;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 
@@ -47,14 +49,7 @@ public interface CentralConfigService extends DescriptorAware<CentralConfigDescr
 
     void setConfigXml(String xmlConfig);
 
-    /**
-     * Update the logo branding path.
-     *
-     * @param logoPath The logo path, can be a file path or a url.
-     * @return The logo path
-     * @throws IOException
-     */
-    String updateLogo(String logoPath, boolean delete) throws IOException;
+    void setLogo(File logo) throws IOException;
 
     boolean defaultProxyDefined();
 }

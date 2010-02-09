@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,7 +29,6 @@ public class MetadataSearchControls<T> extends SearchControlsBase {
     private String metadataName;
     private String path;
     private String value;
-    private boolean exactMatch;
     private Class<? extends T> metadataObjectClass;
 
     /**
@@ -46,7 +46,6 @@ public class MetadataSearchControls<T> extends SearchControlsBase {
         this.metadataName = metadataSearchControls.metadataName;
         this.path = metadataSearchControls.path;
         this.value = metadataSearchControls.value;
-        this.exactMatch = metadataSearchControls.exactMatch;
         this.selectedRepoForSearch = metadataSearchControls.selectedRepoForSearch;
         //noinspection unchecked
         this.metadataObjectClass = metadataSearchControls.metadataObjectClass;
@@ -75,14 +74,6 @@ public class MetadataSearchControls<T> extends SearchControlsBase {
 
     public void setValue(String value) {
         this.value = value;
-    }
-
-    public boolean isExactMatch() {
-        return exactMatch;
-    }
-
-    public void setExactMatch(boolean exactMatch) {
-        this.exactMatch = exactMatch;
     }
 
     public Class<? extends T> getMetadataObjectClass() {

@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,7 +36,7 @@ public class FolderInfoImpl extends ItemInfoImpl implements FolderInfo {
 
     public FolderInfoImpl(FolderInfo info) {
         super(info);
-        additionalInfo = new FolderAdditionalInfo(info.getInternalXmlInfo());
+        additionalInfo = new FolderAdditionalInfo(info.getAdditionalInfo());
     }
 
     /**
@@ -76,7 +77,7 @@ public class FolderInfoImpl extends ItemInfoImpl implements FolderInfo {
      * @return
      */
     @Deprecated
-    public FolderAdditionalInfo getInternalXmlInfo() {
+    public FolderAdditionalInfo getAdditionalInfo() {
         return additionalInfo;
     }
 }

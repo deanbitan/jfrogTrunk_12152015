@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +22,9 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Tests the UserInfo.
  *
@@ -40,5 +44,18 @@ public class UserInfoTest {
         copy = new UserInfo(orig);
         Assert.assertTrue(EqualsBuilder.reflectionEquals(orig, copy),
                 "Orig and copy differ after setting public/private keys");
+    }
+
+    public void addRemoveGroup() {
+        UserInfo userInfo = new UserInfo("momo");
+        userInfo.addGroup("mygroup");
+        Assert.assertTrue(userInfo.getGroups().contains(new UserInfo.UserGroupInfo("mygroup")));
+        userInfo.removeGroup("mygroup");
+        Assert.assertTrue(userInfo.getGroups().isEmpty(), "groups should now be empty");
+
+        Set<String> strings = new HashSet<String>();
+        strings.add("mygroup2");
+        userInfo.setInternalGroups(strings);
+        Assert.assertTrue(userInfo.getGroups().contains(new UserInfo.UserGroupInfo("mygroup2")));
     }
 }

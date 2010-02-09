@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +20,7 @@ package org.artifactory.api.fs;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.util.PathUtils;
 
 import java.io.Serializable;
 
@@ -46,6 +48,12 @@ public class ChecksumInfo implements Serializable {
         this.type = type;
         this.original = original;
         this.actual = actual;
+    }
+
+    public ChecksumInfo(ChecksumInfo copy) {
+        this.type = copy.type;
+        this.original = copy.original;
+        this.actual = copy.actual;
     }
 
     public ChecksumType getType() {
@@ -80,6 +88,27 @@ public class ChecksumInfo implements Serializable {
         return TRUSTED_FILE_MARKER.equals(original);
     }
 
+    public boolean isIdentical(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ChecksumInfo info = (ChecksumInfo) o;
+        if (type != info.type) {
+            return false;
+        }
+        if (actual != null ? !actual.equals(info.actual) : info.actual != null) {
+            return false;
+        }
+        if (original != null ? !original.equals(info.original) : info.original != null) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -90,26 +119,12 @@ public class ChecksumInfo implements Serializable {
         }
 
         ChecksumInfo info = (ChecksumInfo) o;
-
-        if (actual != null ? !actual.equals(info.actual) : info.actual != null) {
-            return false;
-        }
-        if (original != null ? !original.equals(info.original) : info.original != null) {
-            return false;
-        }
-        if (type != info.type) {
-            return false;
-        }
-
-        return true;
+        return type == info.type;
     }
 
     @Override
     public int hashCode() {
-        int result = type.hashCode();
-        result = 31 * result + (original != null ? original.hashCode() : 0);
-        result = 31 * result + (actual != null ? actual.hashCode() : 0);
-        return result;
+        return type.hashCode();
     }
 
     @Override
@@ -121,4 +136,19 @@ public class ChecksumInfo implements Serializable {
                 '}';
     }
 
+    public boolean merge(ChecksumInfo other) {
+        if (other == null || other == this || other.isIdentical(this)) {
+            return false;
+        }
+        boolean modified = false;
+        if (PathUtils.hasText(other.actual) && !PathUtils.safeStringEquals(other.actual, this.actual)) {
+            this.actual = other.actual;
+            modified = true;
+        }
+        if (PathUtils.hasText(other.original) && !PathUtils.safeStringEquals(other.original, this.original)) {
+            this.original = other.original;
+            modified = true;
+        }
+        return modified;
+    }
 }

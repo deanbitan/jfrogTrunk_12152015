@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,7 +42,7 @@ public class UserInfoBuilder {
     private boolean credentialsNonExpired = true;
     private boolean accountNonLocked = true;
     private boolean transientUser = false;
-    private Set<String> groups = new HashSet<String>();
+    private Set<UserInfo.UserGroupInfo> groups = new HashSet<UserInfo.UserGroupInfo>();
 
     public UserInfoBuilder(String username) {
         this.username = username;
@@ -94,14 +95,23 @@ public class UserInfoBuilder {
         return this;
     }
 
-    public UserInfoBuilder transientUser(boolean transientUser) {
-        this.transientUser = transientUser;
+    public UserInfoBuilder transientUser() {
+        this.transientUser = true;
         return this;
     }
 
-    public UserInfoBuilder groups(Set<String> groups) {
+    public UserInfoBuilder internalGroups(Set<String> groupNames) {
+        if (groupNames != null) {
+            groups(UserInfo.UserGroupInfo.getInternalGroups(groupNames));
+        } else {
+            groups(null);
+        }
+        return this;
+    }
+
+    public UserInfoBuilder groups(Set<UserInfo.UserGroupInfo> groups) {
         if (groups != null) {
-            this.groups = new HashSet<String>(groups);
+            this.groups = groups;
         } else {
             this.groups = Collections.emptySet();
         }

@@ -1,5 +1,6 @@
 /*
- * This file is part of Artifactory.
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2010 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +28,8 @@ import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
+import org.artifactory.api.search.metadata.GenericMetadataSearchControls;
+import org.artifactory.api.search.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.search.metadata.MetadataSearchControls;
 import org.artifactory.api.search.metadata.MetadataSearchResult;
 import org.artifactory.api.search.metadata.pom.PomSearchResult;
@@ -38,6 +41,7 @@ import org.artifactory.build.api.Build;
 import javax.annotation.Nullable;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Noam Tenne
@@ -55,10 +59,10 @@ public interface SearchService {
      *
      * @param sha1 SHA1 checksum to search for. Can be blank.
      * @param md5  MD5 checksum to search for. Can be blank.
-     * @return List of repo paths that comply with the given checksums
+     * @return Set of repo paths that comply with the given checksums
      */
     @Lock(transactional = true)
-    List<RepoPath> searchArtifactsByChecksum(String sha1, String md5);
+    Set<RepoPath> searchArtifactsByChecksum(String sha1, String md5);
 
     /**
      * @param from The time to start the search exclusive (eg, >). If empty will start from 1st Jan 1970
@@ -77,6 +81,9 @@ public interface SearchService {
     SearchResults<MetadataSearchResult> searchMetadata(MetadataSearchControls controls);
 
     @Lock(transactional = true)
+    <T> SearchResults<GenericMetadataSearchResult<T>> searchGenericMetadata(GenericMetadataSearchControls<T> controls);
+
+    @Lock(transactional = true)
     SearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls);
 
     @Lock(transactional = true)
@@ -88,7 +95,7 @@ public interface SearchService {
     @Async(delayUntilAfterCommit = true)
     void indexMarkedArchives();
 
-    //TODO: [by yl] Move all these methods to the BuildService!
+    //TODO: [by yl] Move all these methods to the InternalBuildService!
 
     @Lock(transactional = true)
     List<Build> getLatestBuildsByName() throws RepositoryRuntimeException;
@@ -98,10 +105,4 @@ public interface SearchService {
 
     @Lock(transactional = true)
     List<Build> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryRuntimeException;
-
-    @Lock(transactional = true)
-    List<Build> searchBuildsByName(String buildName) throws RepositoryRuntimeException;
-
-    @Lock(transactional = true)
-    Build getLatestBuildByNameAndNumber(String buildName, long buildNumber) throws RepositoryRuntimeException;
 }
