@@ -20,7 +20,6 @@ package org.artifactory.api.search.artifact;
 
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.search.SearchResultBase;
 
 import java.text.SimpleDateFormat;
@@ -32,15 +31,8 @@ import java.util.Locale;
 public class ArtifactSearchResult extends SearchResultBase {
     private static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
 
-    protected final MavenArtifactInfo artifact;
-
-    public ArtifactSearchResult(ItemInfo itemInfo, MavenArtifactInfo artifact) {
+    public ArtifactSearchResult(ItemInfo itemInfo) {
         super(itemInfo);
-        this.artifact = artifact;
-    }
-
-    public MavenArtifactInfo getArtifact() {
-        return artifact;
     }
 
     public String getLastModifiedDay() {

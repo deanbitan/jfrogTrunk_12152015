@@ -23,6 +23,7 @@ import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.logging.version.v1.LogbackConfigSwapper;
 import org.artifactory.logging.version.v2.JackrabbitLoggerConverter;
+import org.artifactory.logging.version.v3.LineNumberLayoutLoggerConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
@@ -43,7 +44,8 @@ import java.util.List;
 public enum LoggingVersion implements SubConfigElementVersion {
     v1(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v208, new LogbackConfigSwapper()),
     v2(ArtifactoryVersion.v210, ArtifactoryVersion.v213, new JackrabbitLoggerConverter()),
-    v3(ArtifactoryVersion.v220, ArtifactoryVersion.getCurrent(), null);
+    v3(ArtifactoryVersion.v220, ArtifactoryVersion.v221, new LineNumberLayoutLoggerConverter()),
+    v4(ArtifactoryVersion.v221, ArtifactoryVersion.getCurrent(), null);
 
     public static final String LOGGING_CONVERSION_PERFORMED = "loggingConversionPerformed";
 
@@ -84,7 +86,8 @@ public enum LoggingVersion implements SubConfigElementVersion {
         if (!converters.isEmpty()) {
             File logbackConfigFile = new File(artifactoryHome.getEtcDir(), ArtifactoryHome.LOGBACK_CONFIG_FILE_NAME);
             try {
-                String result = XmlConverterUtils.convert(converters, FileUtils.readFileToString(logbackConfigFile));
+                String result =
+                        XmlConverterUtils.convert(converters, FileUtils.readFileToString(logbackConfigFile, "utf-8"));
                 backupAndSaveLogback(result, artifactoryHome);
             } catch (IOException e) {
                 log.error("Error occurred while converting logback config for conversion: {}.", e.getMessage());

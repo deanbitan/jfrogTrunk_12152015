@@ -28,9 +28,9 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.jcr.md.MetadataService;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.easymock.EasyMock;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
 /**
  * @author Yoav Landman
  */
-public class HttpRepoTest {
+public class HttpRepoTest extends SystemPropertiesBoundTest {
     private InternalRepositoryService internalRepoService;
 
     @BeforeClass
@@ -48,8 +48,6 @@ public class HttpRepoTest {
         System.setProperty(ConstantValues.artifactoryVersion.getPropertyName(), "test");
         internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
         ArtifactoryContext contextMock = EasyMock.createMock(InternalArtifactoryContext.class);
-        EasyMock.expect(contextMock.beanForType(MetadataService.class))
-                .andReturn(EasyMock.createMock(MetadataService.class));
         ArtifactoryContextThreadBinder.bind(contextMock);
         EasyMock.replay(contextMock);
         ArtifactorySystemProperties artifactorySystemProperties = new ArtifactorySystemProperties();
@@ -60,6 +58,7 @@ public class HttpRepoTest {
     @AfterClass
     public void tearDown() {
         ArtifactoryContextThreadBinder.unbind();
+        ArtifactorySystemProperties.unbind();
     }
 
     @Test

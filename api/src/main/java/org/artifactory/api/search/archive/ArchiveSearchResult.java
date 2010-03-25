@@ -19,7 +19,6 @@
 package org.artifactory.api.search.archive;
 
 import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 
 /**
@@ -33,25 +32,14 @@ public class ArchiveSearchResult extends ArtifactSearchResult {
     private String entryPath;
 
     /**
-     * Default constructor
-     *
-     * @param itemInfo Item info
-     * @param artifact Artifact info
-     */
-    public ArchiveSearchResult(ItemInfo itemInfo, MavenArtifactInfo artifact) {
-        super(itemInfo, artifact);
-    }
-
-    /**
      * Extended constructor
      *
      * @param itemInfo  Item info
-     * @param artifact  Artifact info
      * @param entry     Entry name
      * @param entryPath Entry path
      */
-    public ArchiveSearchResult(ItemInfo itemInfo, MavenArtifactInfo artifact, String entry, String entryPath) {
-        super(itemInfo, artifact);
+    public ArchiveSearchResult(ItemInfo itemInfo, String entry, String entryPath) {
+        super(itemInfo);
         this.entry = entry;
         this.entryPath = entryPath;
     }
@@ -63,6 +51,16 @@ public class ArchiveSearchResult extends ArtifactSearchResult {
      */
     public String getEntry() {
         return entry;
+    }
+
+    /**
+     * Returns the entry name in all-lower-case.<p> Currently used by the grouping methods of the groupable table, so
+     * that names which are identical in all but character cases will be grouped together.
+     *
+     * @return Lower-cased entry name
+     */
+    public String getLowerCaseEntry() {
+        return entry.toLowerCase();
     }
 
     /**

@@ -19,7 +19,6 @@
 package org.artifactory.webapp.wicket.page.build;
 
 import com.google.common.collect.Lists;
-import org.artifactory.api.rest.constant.BuildRestConstants;
 
 import java.util.List;
 
@@ -28,8 +27,11 @@ import java.util.List;
  *
  * @author Noam Y. Tenne
  */
-public interface BuildBrowserConstants extends BuildRestConstants {
+public interface BuildBrowserConstants {
     String BUILDS = "builds";
+    String BUILD_NAME = "buildName";
+    String BUILD_NUMBER = "buildNumber";
+    String BUILD_STARTED = "buildStarted";
     String MODULE_ID = "moduleName";
-    List<String> PATH_CONSTANTS = Lists.newArrayList(BUILD_NAME, BUILD_NUMBER, MODULE_ID);
+    List<String> PATH_CONSTANTS = Lists.newArrayList(BUILD_NAME, BUILD_NUMBER, BUILD_STARTED, MODULE_ID);
 }

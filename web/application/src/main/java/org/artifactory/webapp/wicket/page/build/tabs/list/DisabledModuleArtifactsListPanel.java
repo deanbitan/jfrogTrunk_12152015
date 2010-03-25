@@ -20,9 +20,9 @@ package org.artifactory.webapp.wicket.page.build.tabs.list;
 
 import com.google.common.collect.Lists;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
-import org.artifactory.build.api.Artifact;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
+import org.jfrog.build.api.Artifact;
 import org.slf4j.Logger;
 
 import java.util.List;

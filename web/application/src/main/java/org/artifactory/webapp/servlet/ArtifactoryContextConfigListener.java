@@ -18,11 +18,9 @@
 
 package org.artifactory.webapp.servlet;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.ConstantValues;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.log.logback.LogbackContextSelector;
@@ -42,7 +40,6 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -98,6 +95,14 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         initThread.setDaemon(true);
         servletContext.setAttribute(DelayedInit.APPLICATION_CONTEXT_LOCK_KEY, new LinkedBlockingQueue<DelayedInit>());
         initThread.start();
+        if (Boolean.getBoolean("artifactory.init.useServletContext")) {
+            try {
+                getLogger().info("Waiting for servlet context initialization ...");
+                initThread.join();
+            } catch (InterruptedException e) {
+                getLogger().error("Artifactory initialization thread got interrupted", e);
+            }
+        }
     }
 
     private Logger getLogger() {
@@ -144,10 +149,10 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         try {
             ArtifactorySystemProperties.bind(artifactoryHome.getArtifactoryProperties());
 
-            String contextClass = getApplicationContextClass(log);
-
-            Constructor<?> constructor = ClassUtils.forName(contextClass)
-                    .getConstructor(String.class, SpringConfigPaths.class, ArtifactoryHome.class);
+            Class<?> contextClass = ClassUtils.forName(
+                    "org.artifactory.spring.ArtifactoryApplicationContext", ClassUtils.getDefaultClassLoader());
+            Constructor<?> constructor = contextClass.
+                    getConstructor(String.class, SpringConfigPaths.class, ArtifactoryHome.class);
             //Construct the context name based on the context path
             //(will not work with multiple servlet containers on the same vm!)
             String contextUniqueName = HttpUtils.getContextId(servletContext);
@@ -198,7 +203,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         boolean supported = true;
         if (JdkVersion.getMajorJavaVersion() == JdkVersion.JAVA_16) {
             String javaVersion = JdkVersion.getJavaVersion();
-            int underscoreIndex = javaVersion.indexOf("_");
+            int underscoreIndex = javaVersion.indexOf('_');
             if (underscoreIndex == -1) {
                 supported = false;
             } else {
@@ -213,36 +218,5 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             }
         }
         return supported;
-    }
-
-    private String getApplicationContextClass(Logger log) {
-        String contextClass = ConstantValues.applicationContextClass.getString();
-        if (StringUtils.isBlank(contextClass)) {
-            contextClass = runningUnderJBoss5(log) ?
-                    "org.artifactory.spring.ArtifactoryJBoss5ApplicationContext" :
-                    "org.artifactory.spring.ArtifactoryApplicationContext";
-        }
-        return contextClass;
-    }
-
-    private boolean runningUnderJBoss5(Logger log) {
-        boolean underJBoss5 = false;
-        try {
-            try {
-                Class versionClass = ClassUtils.forName("org.jboss.Version");
-                Method getInstanceMethod = versionClass.getDeclaredMethod("getInstance");
-                Object versionInstance = getInstanceMethod.invoke(null);
-                int majorVersion = (Integer) versionClass.getMethod("getMajor").invoke(versionInstance);
-                log.debug("Detected jboss major version: {}", majorVersion);
-                if (majorVersion == 5) {
-                    underJBoss5 = true;
-                }
-            } catch (ClassNotFoundException e) {
-                // version class not found ==> not under jboss
-            }
-        } catch (Throwable t) {
-            log.debug("Failed detecting jboss version: " + t.getMessage());
-        }
-        return underJBoss5;
     }
 }

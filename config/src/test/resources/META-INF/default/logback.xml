@@ -17,6 +17,7 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
+<!-- This file is used by LogbackConfigSwapperTest -->
 <configuration debug="false">
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
@@ -140,7 +141,7 @@
     <logger name="org.apache.jackrabbit.extractor.XMLTextExtractor">
         <level value="ERROR"/>
     </logger>
-    <logger name="org.mortbay">
+    <logger name="org.eclipse.jetty">
         <level value="INFO"/>
     </logger>
     <logger name="org.apache.commons.httpclient">

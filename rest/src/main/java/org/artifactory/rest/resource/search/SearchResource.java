@@ -57,6 +57,9 @@ public class SearchResource {
     private HttpServletRequest request;
 
     @Autowired
+    AuthorizationService authorizationService;
+
+    @Autowired
     SearchService searchService;
 
     /**
@@ -66,7 +69,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_ARTIFACT)
     public ArtifactSearchResource artifactQuery() {
-        return new ArtifactSearchResource(searchService, request, response);
+        return new ArtifactSearchResource(authorizationService, searchService, request, response);
     }
 
     /**
@@ -76,7 +79,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_ARCHIVE)
     public ArchiveSearchResource archiveQuery() {
-        return new ArchiveSearchResource(searchService, request, response);
+        return new ArchiveSearchResource(authorizationService, searchService, request, response);
     }
 
     /**
@@ -86,7 +89,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_GAVC)
     public GavcSearchResource gavcQuery() {
-        return new GavcSearchResource(searchService, request, response);
+        return new GavcSearchResource(authorizationService, searchService, request, response);
     }
 
     /**
@@ -96,7 +99,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_PROPERTY)
     public PropertySearchResource propertyQuery() {
-        return new PropertySearchResource(searchService, request, response);
+        return new PropertySearchResource(authorizationService, searchService, request, response);
     }
 
     /**
@@ -104,9 +107,9 @@ public class SearchResource {
      *
      * @return Metadata search resource
      */
-    @Path(SearchRestConstants.PATH_METADATA)
+    @Path(SearchRestConstants.PATH_XPATH)
     public XpathSearchResource metadataQuery() {
-        return new XpathSearchResource(searchService, request, response);
+        return new XpathSearchResource(authorizationService, searchService, request, response);
     }
 
     /**
@@ -116,7 +119,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_USAGE_SINCE)
     public UsageSinceResource notDownloadedSinceQuery() {
-        return new UsageSinceResource(searchService, request, response);
+        return new UsageSinceResource(authorizationService, searchService, request, response);
     }
 
     /**
@@ -126,7 +129,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_CREATED_IN_RANGE)
     public CreatedInRangeResource createdInDateRangeQuery() {
-        return new CreatedInRangeResource(searchService, request, response);
+        return new CreatedInRangeResource(authorizationService, searchService, request, response);
     }
 
     /**

@@ -82,5 +82,4 @@ public class ActionLink extends TitledAjaxLink {
 
         return new ItemEvent(actionableItem, action);
     }
-
 }

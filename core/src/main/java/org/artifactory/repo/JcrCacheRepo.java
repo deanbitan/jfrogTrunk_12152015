@@ -85,7 +85,6 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         return remoteRepo;
     }
 
-    @Override
     public ChecksumPolicy getChecksumPolicy() {
         return checksumPolicy;
     }
@@ -101,18 +100,20 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         log.debug("Unexpired '{}' from local cache '{}'.", path, getKey());
     }
 
-    public void zap(RepoPath repoPath) {
+    public int zap(RepoPath repoPath) {
+        int itemsZapped = 0;
         //Zap all nodes recursively from all retrieval caches
         JcrFsItem fsItem = getLockedJcrFsItem(repoPath);
         if (fsItem != null && !fsItem.isDeleted()) {
             // Exists and not deleted... Let's roll
-            long retrievalCahePeriodMillis = remoteRepo.getRetrievalCachePeriodSecs() * 1000L;
-            long expiredLastUpdated = System.currentTimeMillis() - retrievalCahePeriodMillis;
-            int itemsZapped = fsItem.zap(expiredLastUpdated);
+            long retrievalCachePeriodMillis = remoteRepo.getRetrievalCachePeriodSecs() * 1000L;
+            long expiredLastUpdated = System.currentTimeMillis() - retrievalCachePeriodMillis;
+            itemsZapped = fsItem.zap(expiredLastUpdated);
             // now remove all the caches related to this path and any sub paths
             remoteRepo.removeFromCaches(fsItem.getRelativePath(), true);
             log.info("Zapped '{}' from local cache: {} items zapped.", repoPath, itemsZapped);
         }
+        return itemsZapped;
     }
 
     @Override

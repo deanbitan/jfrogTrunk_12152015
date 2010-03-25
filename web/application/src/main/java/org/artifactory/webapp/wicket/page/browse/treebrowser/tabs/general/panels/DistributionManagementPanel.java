@@ -22,7 +22,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.common.wicket.component.TextContentPanel;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -42,10 +43,10 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class DistributionManagementPanel extends FieldSetPanel {
     private static final Logger log = LoggerFactory.getLogger(DistributionManagementPanel.class);
+
     private String firstIndention = "";
     private String secondIndention = "    ";
     private boolean isCache = false;
-    private StringBuilder sb = new StringBuilder();
 
     public DistributionManagementPanel(String id, RepoAwareActionableItem repoItem) {
         super(id);
@@ -61,6 +62,7 @@ public class DistributionManagementPanel extends FieldSetPanel {
     }
 
     private void addDistributionManagement(RepoAwareActionableItem repoItem) {
+        final StringBuilder sb = new StringBuilder();
         sb.delete(0, sb.length());
         LocalRepoDescriptor repo = repoItem.getRepo();
         CentralConfigService cc = ContextHelper.get().getCentralConfig();
@@ -69,68 +71,51 @@ public class DistributionManagementPanel extends FieldSetPanel {
         isCache = repo.isCache();
         setIndentions(isCache);
         if (!isCache) {
-            appendEsc("<distributionManagement>\n");
+            sb.append("<distributionManagement>\n");
         }
         if (repo.isHandleReleases()) {
-            appendEsc(firstIndention);
-            appendEsc("<repository>\n");
-            appendEsc(secondIndention);
-            appendEsc("<id>");
-            appendEsc(id);
-            appendEsc("</id>\n");
-            appendEsc(secondIndention);
-            appendEsc("<name>");
-            appendEsc(id);
-            appendEsc("-releases</name>\n");
-            appendEsc(secondIndention);
-            appendEsc("<url>");
-            append("<a href=\"");
-            append(repoUrl);
-            append("\">");
-            append(repoUrl);
-            append("</a>");
-            appendEsc("</url>\n");
-            appendEsc(firstIndention);
-            appendEsc("</repository>\n");
+            sb.append(firstIndention);
+            sb.append("<repository>\n");
+            sb.append(secondIndention);
+            sb.append("<id>");
+            sb.append(id);
+            sb.append("</id>\n");
+            sb.append(secondIndention);
+            sb.append("<name>");
+            sb.append(id);
+            sb.append("-releases</name>\n");
+            sb.append(secondIndention);
+            sb.append("<url>");
+            sb.append(repoUrl);
+            sb.append("</url>\n");
+            sb.append(firstIndention);
+            sb.append("</repository>\n");
         }
 
         if (repo.isHandleSnapshots()) {
-            appendEsc(firstIndention);
-            appendEsc("<snapshotRepository>\n");
-            appendEsc(secondIndention);
-            appendEsc("<id>");
-            appendEsc(id);
-            appendEsc("</id>\n");
-            appendEsc(secondIndention);
-            appendEsc("<name>");
-            appendEsc(id);
-            appendEsc("-snapshots</name>\n");
-            appendEsc(secondIndention);
-            appendEsc("<url>");
-            append("<a href=\"");
-            append(repoUrl);
-            append("\">");
-            append(repoUrl);
-            append("</a>");
-            appendEsc("</url>\n");
-            appendEsc(firstIndention);
-            appendEsc("</snapshotRepository>\n");
+            sb.append(firstIndention);
+            sb.append("<snapshotRepository>\n");
+            sb.append(secondIndention);
+            sb.append("<id>");
+            sb.append(id);
+            sb.append("</id>\n");
+            sb.append(secondIndention);
+            sb.append("<name>");
+            sb.append(id);
+            sb.append("-snapshots</name>\n");
+            sb.append(secondIndention);
+            sb.append("<url>");
+            sb.append(repoUrl);
+            sb.append("</url>\n");
+            sb.append(firstIndention);
+            sb.append("</snapshotRepository>\n");
         }
         if (!isCache) {
-            appendEsc("</distributionManagement>");
+            sb.append("</distributionManagement>");
         }
-        add(new TextContentPanel("ditributionManagamentContainer", false).setContent(sb.toString()));
+        add(new SyntaxHighlighter("ditributionManagamentContainer", sb.toString(), Syntax.XML));
 
         log.debug("Pom definition: {}", sb);
-    }
-
-    private void append(String toAppend) {
-        sb.append(toAppend);
-    }
-
-    private void appendEsc(String toAppend) {
-        toAppend = toAppend.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-        sb.append(toAppend);
     }
 
     private String buildRepoUrl(LocalRepoDescriptor repo) {

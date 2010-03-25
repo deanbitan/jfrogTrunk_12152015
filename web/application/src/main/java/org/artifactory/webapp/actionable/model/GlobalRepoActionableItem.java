@@ -24,11 +24,13 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.ActionableItemBase;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -62,6 +64,7 @@ public class GlobalRepoActionableItem extends ActionableItemBase implements Hier
         //Add a tree node for each file repository and local cache repository
         RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
         List<LocalRepoDescriptor> repos = repositoryService.getLocalAndCachedRepoDescriptors();
+        removeNonPermissionRepositories(repos);
         List<ActionableItem> items = new ArrayList<ActionableItem>(repos.size());
         for (LocalRepoDescriptor repo : repos) {
             LocalRepoActionableItem repoActionableItem = new LocalRepoActionableItem(repo);
@@ -76,5 +79,16 @@ public class GlobalRepoActionableItem extends ActionableItemBase implements Hier
     }
 
     public void filterActions(AuthorizationService authService) {
+    }
+
+    private void removeNonPermissionRepositories(List<? extends RepoDescriptor> repositories) {
+        AuthorizationService authorizationService = ContextHelper.get().getAuthorizationService();
+        Iterator<? extends RepoDescriptor> repoDescriptors = repositories.iterator();
+        while (repoDescriptors.hasNext()) {
+            RepoDescriptor repoDescriptor = repoDescriptors.next();
+            if (!authorizationService.userHasPermissionsOnRepositoryRoot(repoDescriptor.getKey())) {
+                repoDescriptors.remove();
+            }
+        }
     }
 }

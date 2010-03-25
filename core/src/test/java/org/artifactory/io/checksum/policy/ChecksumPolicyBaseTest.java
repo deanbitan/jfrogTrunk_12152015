@@ -22,7 +22,6 @@ import org.artifactory.api.fs.ChecksumInfo;
 import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -38,9 +37,6 @@ public abstract class ChecksumPolicyBaseTest {
     ChecksumInfo matchedChecksums;
     ChecksumInfo notMatchedChecksums;
     ChecksumInfo noOriginalChecksum;
-    private ChecksumInfo matchedChecksumsCopy;
-    private ChecksumInfo notMatchedChecksumsCopy;
-    private ChecksumInfo noOriginalChecksumCopy;
 
     abstract ChecksumPolicy getPolicy();
 
@@ -56,20 +52,9 @@ public abstract class ChecksumPolicyBaseTest {
     void generateTestData() {
         // Match checksum should be the only sha1
         matchedChecksums = new ChecksumInfo(ChecksumType.sha1, "1234567890", "1234567890");
-        matchedChecksumsCopy = new ChecksumInfo(matchedChecksums);
         notMatchedChecksums = new ChecksumInfo(ChecksumType.md5, "thiswontmatch", "1234567890");
-        notMatchedChecksumsCopy = new ChecksumInfo(notMatchedChecksums);
         noOriginalChecksum = new ChecksumInfo(ChecksumType.md5, null, "calculatedchecksum123");
-        noOriginalChecksumCopy = new ChecksumInfo(noOriginalChecksum);
 
-    }
-
-    @AfterMethod
-    void validateTestData() {
-        String message = "Policy should never update the original checksum";
-        Assert.assertEquals(matchedChecksumsCopy, matchedChecksums, message);
-        Assert.assertEquals(notMatchedChecksums, notMatchedChecksumsCopy, message);
-        Assert.assertEquals(noOriginalChecksum, noOriginalChecksumCopy, message);
     }
 
     @Test

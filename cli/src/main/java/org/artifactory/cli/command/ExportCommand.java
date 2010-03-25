@@ -49,7 +49,8 @@ public class ExportCommand extends UrlBasedCommand implements Command {
                 CliOption.failOnError,
                 CliOption.failIfEmpty,
                 CliOption.bypassFiltering,
-                CliOption.createArchive
+                CliOption.createArchive,
+                CliOption.incremental
         );
     }
 
@@ -85,6 +86,9 @@ public class ExportCommand extends UrlBasedCommand implements Command {
         }
         if (CliOption.m2.isSet()) {
             settings.setM2Compatible(true);
+        }
+        if (CliOption.incremental.isSet()) {
+            settings.setIncremental(true);
         }
 
         log.info("Sending export request to server path: {}", exportTo.getPath());

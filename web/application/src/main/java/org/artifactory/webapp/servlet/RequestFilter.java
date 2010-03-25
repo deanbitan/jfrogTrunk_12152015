@@ -19,7 +19,6 @@
 package org.artifactory.webapp.servlet;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.security.AuthenticationHelper;
 import org.artifactory.security.HttpAuthenticationDetails;
 import org.artifactory.traffic.RequestLogger;
 import org.springframework.security.core.Authentication;
@@ -53,10 +52,6 @@ public class RequestFilter extends DelayedFilterBase {
         HttpServletResponse response = (HttpServletResponse) resp;
         CapturingHttpServletResponseWrapper responseWrapper = new CapturingHttpServletResponseWrapper(response);
         chain.doFilter(req, responseWrapper);
-
-        Authentication authentication = AuthenticationHelper.getAuthentication();
-        String remoteAddress = new HttpAuthenticationDetails(request).getRemoteAddress();
-        String username = authentication == null ? "non_authenticated_user" : authentication.getName();
         String servletPath = RequestUtils.getServletPathFromRequest(request);
         String method = request.getMethod();
         int contentLength = 0;
@@ -66,6 +61,17 @@ public class RequestFilter extends DelayedFilterBase {
         if (("put".equalsIgnoreCase(method)) || ("post".equalsIgnoreCase(method))) {
             contentLength = request.getContentLength();
         }
+        String username = "non_authenticated_user";
+        // First try to get the authentication from the session.
+        Authentication authentication = RequestUtils.getAuthentication((HttpServletRequest) req);
+        if (authentication != null) {
+            username = authentication.getPrincipal().toString();
+        } else if (RequestUtils.isAuthHeaderPresent(request)) {
+            // since we do not have an authentication here, and a session was not opened since this
+            // is a non UI request, we are forced to extract it out of the authentication header.
+            username = RequestUtils.extractUsernameFromRequest(request);
+        }
+        String remoteAddress = new HttpAuthenticationDetails(request).getRemoteAddress();
         RequestLogger.request(remoteAddress, username, method, servletPath, request.getProtocol(),
                 responseWrapper.getStatus(), contentLength, System.currentTimeMillis() - start);
     }

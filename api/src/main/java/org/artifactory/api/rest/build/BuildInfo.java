@@ -18,7 +18,7 @@
 
 package org.artifactory.api.rest.build;
 
-import org.artifactory.build.api.Build;
+import org.jfrog.build.api.Build;
 
 import javax.xml.bind.annotation.XmlElement;
 import java.io.Serializable;

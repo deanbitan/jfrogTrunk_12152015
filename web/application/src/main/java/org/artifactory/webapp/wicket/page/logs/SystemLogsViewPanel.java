@@ -93,7 +93,8 @@ public class SystemLogsViewPanel extends Panel {
     /**
      * List containing log file names
      */
-    private static final List<String> LOGS = asList("artifactory.log", "access.log", "import.export.log");
+    private static final List<String> LOGS =
+            asList("artifactory.log", "access.log", "import.export.log", "request.log");
 
     /**
      * Main constructor

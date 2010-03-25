@@ -36,9 +36,6 @@ import org.artifactory.api.jackson.JacksonFactory;
 import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.xstream.XStreamFactory;
-import org.artifactory.build.api.Build;
-import org.artifactory.build.api.BuildFileBean;
-import org.artifactory.build.api.Module;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumInputStream;
 import org.artifactory.jcr.JcrPath;
@@ -48,13 +45,16 @@ import org.artifactory.jcr.md.MetadataAwareAdapter;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.jcr.md.XStreamMetadataProvider;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.version.FatalConversionException;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.jfrog.build.api.Build;
+import org.jfrog.build.api.BuildFileBean;
+import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -78,8 +78,8 @@ import static org.artifactory.repo.jcr.JcrHelper.*;
  * @author freds
  */
 public class JcrMetadataConverterExecutor {
-    @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(JcrMetadataConverterExecutor.class);
+
     private static final NodeIterator EMPTY_NODE_ITERATOR = new NodeIterator() {
         public Node nextNode() {
             return null;
@@ -144,25 +144,26 @@ public class JcrMetadataConverterExecutor {
         }
 
         log.info("Converting JCR storage for repositories data...");
+        NodeIterator children;
         try {
             Node repositoriesNode = rootNode.getNode("repositories");
-            NodeIterator children = repositoriesNode.getNodes();
-            while (children.hasNext()) {
-                Node repositoryNode = children.nextNode();
-                convertFolderNode(repositoryNode);
-            }
+            children = repositoriesNode.getNodes();
         } catch (RepositoryException e) {
             throw new FatalConversionException("Could not save JCR session", e);
+        }
+
+        while (children.hasNext()) {
+            Node repositoryNode = children.nextNode();
+            convertFolderNode(repositoryNode);
         }
 
         try {
             // Making sure all is saved
             jcrSession.save();
         } catch (RepositoryException e) {
-            throw new FatalConversionException("Could not save JCR session", e);
+            log.error("Could not save JCR session", e);
         }
-        log.info("Converted builds and " + nbNodesConverted + " JCR nodes in " + (System.currentTimeMillis() - start) +
-                "ms");
+        log.info("Converted builds and {} JCR nodes in {} ms", nbNodesConverted, (System.currentTimeMillis() - start));
     }
 
     private void convertFolderNode(Node folderNode) {
@@ -173,33 +174,28 @@ public class JcrMetadataConverterExecutor {
         }
         convertNode(folderNode);
 
-        NodeIterator children;
         try {
-            children = folderNode.getNodes();
-        } catch (RepositoryException e) {
-            throw new FatalConversionException("Could get the children nodes of "+display(folderNode), e);
-        }
-        while (children.hasNext()) {
-            Node node = children.nextNode();
-            String name = getNodeName(node);
-            if (name.equals(NODE_ARTIFACTORY_METADATA)) {
-                // Ignore metadata node, done in folder convert
-            } else if (JcrHelper.isFile(node)) {
-                convertNode(node);
-            } else if (JcrHelper.isFolder(node)) {
-                convertFolderNode(node);
-            } else {
-                log.error("Node element from repo " + display(node) + " should be a file or folder");
+            NodeIterator children = folderNode.getNodes();
+            while (children.hasNext()) {
+                Node node = children.nextNode();
+                String name = getNodeName(node);
+                if (name.equals(NODE_ARTIFACTORY_METADATA)) {
+                    // Ignore metadata node, done in folder convert
+                } else if (JcrHelper.isFile(node)) {
+                    convertNode(node);
+                } else if (JcrHelper.isFolder(node)) {
+                    convertFolderNode(node);
+                } else {
+                    log.error("Node element from repo " + display(node) + " should be a file or folder");
+                }
             }
+        } catch (RepositoryException e) {
+            log.error("Could not migrate JCR children nodes " + display(folderNode), e);
         }
     }
 
-    private String getNodeName(Node node) {
-        try {
-            return node.getName();
-        } catch (RepositoryException e) {
-            throw new FatalConversionException("Could not get node name of " + node, e);
-        }
+    private String getNodeName(Node node) throws RepositoryException {
+        return node.getName();
     }
 
     private void convertNode(Node node) {
@@ -220,7 +216,7 @@ public class JcrMetadataConverterExecutor {
                 }
             }
         } catch (RepositoryException e) {
-            throw new FatalConversionException("Could not migrate JCR node " + display(node), e);
+            log.error("Could not migrate JCR node " + display(node), e);
         }
     }
 
@@ -350,7 +346,7 @@ public class JcrMetadataConverterExecutor {
             is = node.getProperty(JcrConstants.JCR_DATA).getStream();
             xmlData = IOUtils.toString(is, "utf-8");
         } catch (IOException e) {
-            throw new FatalConversionException("Could not read content of " + display(node), e);
+            log.warn("Could not read content of " + display(node), e);
         } finally {
             IOUtils.closeQuietly(is);
         }
@@ -382,7 +378,6 @@ public class JcrMetadataConverterExecutor {
     }
 
     public void convertBuildNode(Node buildNode) {
-
         try {
             String xmlData = getXmlData(safeGetNode(buildNode, JCR_CONTENT));
 
@@ -396,10 +391,8 @@ public class JcrMetadataConverterExecutor {
                 log.debug("Build node " + buildNode.getPath() + " already converted.");
             }
             jcrSession.save();
-        } catch (FatalConversionException e) {
-            throw e;
         } catch (Exception e) {
-            throw new FatalConversionException("Could not update build info " + buildNode, e);
+            log.error("Could not update build info " + buildNode, e);
         }
     }
 
@@ -438,9 +431,12 @@ public class JcrMetadataConverterExecutor {
             Set<String> artifactChecksums = Sets.newHashSet();
             Set<String> dependencyChecksums = Sets.newHashSet();
 
-            for (Module module : build.getModules()) {
-                addBuildFileChecksums(module.getArtifacts(), artifactChecksums);
-                addBuildFileChecksums(module.getDependencies(), dependencyChecksums);
+            List<Module> modules = build.getModules();
+            if (modules != null) {
+                for (Module module : modules) {
+                    addBuildFileChecksums(module.getArtifacts(), artifactChecksums);
+                    addBuildFileChecksums(module.getDependencies(), dependencyChecksums);
+                }
             }
 
             Node buildParent = buildNode.getParent();
@@ -484,15 +480,17 @@ public class JcrMetadataConverterExecutor {
     }
 
     private void addBuildFileChecksums(List<? extends BuildFileBean> buildFiles, Set<String> buildFileChecksums) {
-        for (BuildFileBean buildFile : buildFiles) {
-            String md5 = buildFile.getMd5();
-            String sha1 = buildFile.getSha1();
+        if (buildFiles != null) {
+            for (BuildFileBean buildFile : buildFiles) {
+                String md5 = buildFile.getMd5();
+                String sha1 = buildFile.getSha1();
 
-            if (StringUtils.isNotBlank(md5)) {
-                buildFileChecksums.add(BuildService.BUILD_CHECKSUM_PREFIX_MD5 + md5);
-            }
-            if (StringUtils.isNotBlank(sha1)) {
-                buildFileChecksums.add(BuildService.BUILD_CHECKSUM_PREFIX_SHA1 + sha1);
+                if (StringUtils.isNotBlank(md5)) {
+                    buildFileChecksums.add(BuildService.BUILD_CHECKSUM_PREFIX_MD5 + md5);
+                }
+                if (StringUtils.isNotBlank(sha1)) {
+                    buildFileChecksums.add(BuildService.BUILD_CHECKSUM_PREFIX_SHA1 + sha1);
+                }
             }
         }
     }
@@ -530,9 +528,8 @@ public class JcrMetadataConverterExecutor {
                 property.remove();
             }
         } catch (RepositoryException e) {
-            throw new FatalConversionException(
-                    "Could not switch JCR property " + origPropName + " to " + actualPropName + " on node " +
-                            display(node), e);
+            log.error("Could not switch JCR property " + origPropName + " to " + actualPropName +
+                    " on node " + display(node), e);
         }
     }
 

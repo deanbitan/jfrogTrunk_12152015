@@ -20,8 +20,8 @@ package org.artifactory.jcr.md;
 
 import com.thoughtworks.xstream.XStream;
 import org.artifactory.api.xstream.XStreamFactory;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author freds

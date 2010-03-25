@@ -34,9 +34,9 @@ import java.util.List;
 public class BaseSettings implements Serializable {
     private final File baseDir;
     private boolean includeMetadata = true;
-    private boolean verbose = false;
-    private boolean failFast = false;
-    private boolean failIfEmpty = false;
+    private boolean verbose;
+    private boolean failFast;
+    private boolean failIfEmpty;
     protected boolean excludeContent;
     private MultiStatusHolder statusHolder = new MultiStatusHolder();
     /**

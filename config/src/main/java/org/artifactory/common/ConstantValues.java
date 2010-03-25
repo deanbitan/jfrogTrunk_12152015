@@ -73,7 +73,8 @@ public enum ConstantValues {
     buildMaxFoldersToScanForDeletionWarnings("build.maxFoldersToScanForDeletionWarnings", 2),
     missingBuildChecksumCacheIdeTimeSecs("build.checksum.cache.idleTimeSecs", Seconds.MINUTE * 5),
     artifactoryUpdatesRefreshIntervalSecs("updates.refreshIntervalSecs", Seconds.HOUR * 4),
-    artifactoryUpdatesUrl("updates.url", "http://service.jfrog.org/artifactory/updates");
+    artifactoryUpdatesUrl("updates.url", "http://service.jfrog.org/artifactory/updates"),
+    uiSyntaxColoringMaxTextSizeBytes("ui.syntaxColoringMaxTextSizeBytes", 512000);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

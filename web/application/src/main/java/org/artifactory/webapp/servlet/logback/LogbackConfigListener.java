@@ -57,12 +57,6 @@ public class LogbackConfigListener implements ServletContextListener {
         //SLF4JBridgeHandler.install();
 
         boolean selectorUsed = System.getProperty("logback.ContextSelector") != null;
-        if (!selectorUsed) {
-            BootstrapLogger.info("Multi-webapp log separation is off. It can be enabled with:");
-            BootstrapLogger.info(
-                    " -Dlogback.ContextSelector=org.artifactory.webapp.servlet.logback.LogbackConfigListener");
-        }
-
         LoggerContext context;
         if (selectorUsed) {
             String contextId = HttpUtils.getContextId(servletContext);

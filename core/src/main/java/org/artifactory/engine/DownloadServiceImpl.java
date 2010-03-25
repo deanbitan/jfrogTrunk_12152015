@@ -25,6 +25,7 @@ import org.artifactory.api.repo.exception.RepoAccessException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.cache.InternalCacheService;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -36,18 +37,20 @@ import org.artifactory.repo.context.RequestContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.request.RequestResponseHelper;
+import org.artifactory.resource.ChecksumResource;
+import org.artifactory.resource.FileResource;
 import org.artifactory.resource.RepoResource;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.spring.ReloadableBean;
 import org.artifactory.traffic.InternalTrafficService;
-import org.artifactory.util.PathUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 
@@ -57,6 +60,9 @@ import java.io.InterruptedIOException;
 public class DownloadServiceImpl implements InternalDownloadService {
 
     private static final Logger log = LoggerFactory.getLogger(DownloadServiceImpl.class);
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @Autowired
     private InternalRepositoryService repositoryService;
@@ -151,86 +157,97 @@ public class DownloadServiceImpl implements InternalDownloadService {
         return repo.getInfo(context);
     }
 
-    //Send the response back to the client
-
     private void respond(ArtifactoryRequest request, ArtifactoryResponse response, RepoResource resource)
             throws IOException {
         try {
             if (!resource.isFound()) {
-                String reason;
-                if (resource instanceof UnfoundRepoResource) {
-                    reason = ((UnfoundRepoResource) resource).getReason();
-                } else {
-                    reason = "Resource not found";
-                }
-                response.sendError(HttpStatus.SC_NOT_FOUND, reason, log);
-            } else if (request.isHeadOnly()) {
+                respondResourceNotFound(response, resource);
+            } else if (request.isHeadOnly() && !request.isChecksum()) {
                 //Send head response if that's what were asked for
                 requestResponseHelper.sendHeadResponse(response, resource);
             } else if (request.isNewerThanResource(resource.getLastModified())) {
                 requestResponseHelper.sendNotModifiedResponse(response, resource);
+            } else if (request.isChecksum()) {
+                respondForChecksumRequest(request, response, resource);
             } else {
-                //Get the actual repository the resource is in
-                String repoKey = resource.getResponseRepoPath().getRepoKey();
-                Repo repository = repositoryService.repositoryByKey(repoKey);
-                if (request.isChecksum()) {
-                    respondForChecksumRequest(request, response, repository, resource);
-                } else {
-                    //Send the resource file back (will update the cache for remote repositories)
-                    ResourceStreamHandle handle;
-                    try {
-                        handle = repositoryService.getResourceStreamHandle(repository, resource);
-                        //Streaming the file is done outside a tx, so there is a chance that the content will change!
-                        requestResponseHelper.sendBodyResponse(response, resource, handle);
-                    } catch (RepoAccessException rae) {
-                        String msg = "Rejected artifact download request: " + rae.getMessage();
-                        response.sendError(HttpStatus.SC_FORBIDDEN, msg, log);
-                    } catch (ChecksumPolicyException cpe) {
-                        response.sendError(HttpStatus.SC_CONFLICT, cpe.getMessage(), log);
-                    } catch (RemoteRequestException rre) {
-                        response.sendError(rre.getRemoteReturnCode(), rre.getMessage(), log);
-                    } catch (BadPomException bpe) {
-                        response.sendError(HttpStatus.SC_BAD_REQUEST, bpe.getMessage(), log);
-                    }
-                }
+                respondFoundResource(response, resource);
             }
         } catch (IOException e) {
             handleGenericIoException(response, resource, e);
         }
     }
 
-    /**
-     * This method handles the response to checksum requests. Eventhough this method is called only for files that
-     * exist, some checksum policies might return null values, or even fail if the checksum algorithm is not found. If
-     * for any reason we don't have the checksum we return http 404 to the client and let the client decide how to
-     * proceed.
-     */
-    private void respondForChecksumRequest(ArtifactoryRequest request, ArtifactoryResponse response, Repo repo,
-            RepoResource res) throws IOException {
-
-        String checksumFilePath = request.getPath();
-        String extension = '.' + PathUtils.getExtension(checksumFilePath);
-        ChecksumType checksumType = ChecksumType.forExtension(extension);
-        if (checksumType == null) {
-            respondUnfoundChecksum(response, "Checksum not found: " + checksumFilePath);
-            return;
-        }
-
+    private void respondFoundResource(ArtifactoryResponse response, RepoResource resource) throws IOException {
+        //Get the actual repository the resource is in
+        String repoKey = resource.getResponseRepoPath().getRepoKey();
+        Repo repository = repositoryService.repositoryByKey(repoKey);
+        //Send the resource file back (will update the cache for remote repositories)
+        ResourceStreamHandle handle = null;
         try {
-            String checksum = repo.getChecksum(checksumFilePath, res);
-            if (checksum != null) {
-                // send the checksum as the response body, use the original repo path from the request
-                requestResponseHelper.sendBodyResponse(response, request.getRepoPath(), checksum);
-            } else {
-                throw new IllegalArgumentException("Checksum not found");
+            handle = repositoryService.getResourceStreamHandle(repository, resource);
+            //Streaming the file is done outside a tx, so there is a chance that the content will change!
+            requestResponseHelper.sendBodyResponse(response, resource, handle);
+        } catch (RepoAccessException rae) {
+            String msg = "Rejected artifact download request: " + rae.getMessage();
+            response.sendError(HttpStatus.SC_FORBIDDEN, msg, log);
+        } catch (ChecksumPolicyException cpe) {
+            response.sendError(HttpStatus.SC_CONFLICT, cpe.getMessage(), log);
+        } catch (RemoteRequestException rre) {
+            response.sendError(rre.getRemoteReturnCode(), rre.getMessage(), log);
+        } catch (BadPomException bpe) {
+            response.sendError(HttpStatus.SC_CONFLICT, bpe.getMessage(), log);
+        } catch (RepositoryException re) {
+            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, re.getMessage(), log);
+        } finally {
+            if (handle != null) {
+                handle.close();
             }
-        } catch (IllegalArgumentException e) {
-            respondUnfoundChecksum(response, e.getMessage());
         }
     }
 
-    private void respondUnfoundChecksum(ArtifactoryResponse response, String message) throws IOException {
-        response.sendError(HttpStatus.SC_NOT_FOUND, message, log);
+    private void respondResourceNotFound(ArtifactoryResponse response, RepoResource resource) throws IOException {
+        String reason;
+        if (resource instanceof UnfoundRepoResource) {
+            reason = ((UnfoundRepoResource) resource).getReason();
+        } else {
+            reason = "Resource not found";
+        }
+        response.sendError(HttpStatus.SC_NOT_FOUND, reason, log);
+    }
+
+    /**
+     * This method handles the response to checksum requests (HEAD and GET). Even though this method is called only for
+     * files that exist, some checksum policies might return null values, or even fail if the checksum algorithm is not
+     * found. If for any reason we don't have the checksum we return http 404 to the client and let the client decide
+     * how to proceed.
+     */
+    private void respondForChecksumRequest(ArtifactoryRequest request, ArtifactoryResponse response,
+            RepoResource resource) throws IOException {
+
+        String checksumFilePath = request.getPath();
+        ChecksumType checksumType = ChecksumType.forFilePath(checksumFilePath);
+        if (checksumType == null) {
+            response.sendError(HttpStatus.SC_NOT_FOUND, "Checksum not found: " + checksumFilePath, log);
+            return;
+        }
+
+        String repoKey = resource.getResponseRepoPath().getRepoKey();
+        Repo repository = repositoryService.repositoryByKey(repoKey);
+        String checksum = repository.getChecksum(checksumFilePath, resource);
+        if (checksum == null) {
+            response.sendError(HttpStatus.SC_NOT_FOUND, "Checksum not found for " + checksumFilePath, log);
+            return;
+        }
+
+        if (request.isHeadOnly()) {
+            // send head response using the checksum data
+            ChecksumResource checksumResource = new ChecksumResource((FileResource) resource, checksumType, checksum);
+            requestResponseHelper.sendHeadResponse(response, checksumResource);
+        } else {
+            // send the checksum as the response body, use the original repo path (the checksum path,
+            // not the file) from the request
+            requestResponseHelper.sendBodyResponse(response, request.getRepoPath(), checksum);
+        }
     }
 
     private RepoResource callGetInfoInTransaction(Repo repo, RequestContext context) {

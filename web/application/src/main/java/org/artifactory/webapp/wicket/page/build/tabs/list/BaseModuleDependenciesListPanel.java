@@ -18,19 +18,21 @@
 
 package org.artifactory.webapp.wicket.page.build.tabs.list;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
+import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.artifactory.build.api.Dependency;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
-import org.artifactory.common.wicket.component.table.SortableTable;
+import org.artifactory.common.wicket.component.table.groupable.GroupableTable;
+import org.artifactory.common.wicket.component.table.groupable.column.GroupableColumn;
+import org.artifactory.common.wicket.component.table.groupable.provider.GroupableDataProvider;
+import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
-import org.artifactory.webapp.wicket.page.build.tabs.list.compare.DependencyItemListSorter;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -56,71 +58,69 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
     }
 
     /**
-     * Returns a list of dependencies to display
+     * Returns a list of unpopulated dependency actionable items
      *
-     * @return Dependency list to display
+     * @return Unpopulated actionable items
      */
-    protected abstract List<Dependency> getDependencies();
+    protected abstract List<ModuleDependencyActionableItem> getDependencies();
 
     /**
-     * Returns a list of dependency actionable items
+     * Populates dependency actionable items with their corresponding repo paths (if exist)
      *
-     * @param dependencies Dependencies to create actionable items from
+     * @param dependencies Unpopulated actionable items
      * @return Dependency actionable item list
      */
-    protected abstract List<ModuleDependencyActionableItem> getModuleDependencyActionableItem(
-            List<Dependency> dependencies);
+    protected abstract List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(
+            List<ModuleDependencyActionableItem> dependencies);
 
     /**
      * Adds the dependencies table
      */
     protected void addTable() {
-        List<IColumn> columns = new ArrayList<IColumn>();
+        List<IColumn> columns = Lists.newArrayList();
         columns.add(new ActionsColumn(""));
-        columns.add(new PropertyColumn(new Model("ID"), "id", "dependency.id"));
-        columns.add(new PropertyColumn(new Model("Scopes"), "scopes", "dependencyScopes"));
-        columns.add(new PropertyColumn(new Model("Type"), "type", "dependency.type"));
+        columns.add(new PropertyColumn(new Model("ID"), "dependency.id", "dependency.id"));
+        columns.add(new GroupableColumn(new Model("Scopes"), "dependencyScope", "dependencyScope"));
+        columns.add(new PropertyColumn(new Model("Type"), "dependency.type", "dependency.type"));
         columns.add(new PropertyColumn(new Model("Repo Path"), "repoPathOrMissingMessage"));
-        //columns.add(new PropertyColumn(new Model("Required By"), "requiredBy", "dependencyRequiredBy"));
 
-        add(new SortableTable("dependencies", columns, new ModuleDependenciesDataProvider(), 10));
+        add(new GroupableTable("dependencies", columns, new ModuleDependenciesDataProvider(), 10));
     }
 
     /**
      * The published module's dependencies table data provider
      */
-    private class ModuleDependenciesDataProvider extends SortableDataProvider {
+    private class ModuleDependenciesDataProvider extends GroupableDataProvider {
 
-        private List<Dependency> dependenciesList;
+        private List<ModuleDependencyActionableItem> dependenciesList;
 
         /**
          * Default constructor
          */
         public ModuleDependenciesDataProvider() {
-            setSort("dependencyId", true);
+            setSort("dependencyScope", true);
+            setGroupParam(new SortParam("dependencyScope", true));
+            setGroupReneder("dependencyScope", new ChoiceRenderer("dependencyScope", "dependencyScope"));
             this.dependenciesList = getDependencies();
         }
 
+        @Override
         public Iterator iterator(int first, int count) {
-            /**
-             * We use a custom sorter here since we need to sort the scopes and required-by lists that aren't directly
-             * comparable
-             */
-            DependencyItemListSorter.sort(dependenciesList, getSort());
+            ListPropertySorter.sort(dependenciesList, getGroupParam(), getSort());
             List<ModuleDependencyActionableItem> listToReturn =
-                    getModuleDependencyActionableItem(dependenciesList.subList(first, first + count));
+                    populateModuleDependencyActionableItem(dependenciesList.subList(first, first + count));
             return listToReturn.iterator();
         }
 
+        @Override
         public int size() {
             return dependenciesList.size();
         }
 
+        @Override
         public IModel model(Object object) {
             ModuleDependencyActionableItem item = (ModuleDependencyActionableItem) object;
             item = new ModuleDependencyActionableItem(item.getRepoPath(), item.getDependency()) {
-                ;
-
                 public Object getRepoPathOrMissingMessage() {
                     if (super.getRepoPath() == null) {
                         return "Not Found: Artifact may have been deleted or overwritten.";

@@ -18,15 +18,10 @@
 
 package org.artifactory.jcr.md;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * @author freds
  */
 public class GenericXmlProvider implements XmlMetadataProvider<String> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(GenericXmlProvider.class);
 
     private final String metadataName;
 

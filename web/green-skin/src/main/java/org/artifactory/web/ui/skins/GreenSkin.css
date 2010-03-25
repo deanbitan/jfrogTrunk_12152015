@@ -1520,12 +1520,8 @@ button.button, button.styled-checkbox {
     overflow: visible;
 }
 
-.Moz button.button, .Chrome button.button {
+.Moz button.button, .Win32.Chrome button.button {
     margin: 0 -1px;
-}
-
-.MacIntel.Chrome button.button {
-    margin: 0 2px;
 }
 
 .Moz .wicket-modal .buttons button.button,
@@ -2638,7 +2634,7 @@ div.w_content_scroll {
 }
 
 .ldap-dn-fields .user-auto-create-checkbox {
-    margin-top: -41px;
+    padding-top: 10px;
 }
 
 .ldap-test-fields .field, .ldap-test-fields input.text {
@@ -3073,7 +3069,8 @@ table.data-table tr.headers th {
     white-space: nowrap;
 }
 
-table.data-table tr.headers a {
+table.data-table tr.headers a,
+table.data-table tr.headers em {
     display: block;
 }
 
@@ -3245,7 +3242,8 @@ table.grouped tr th.wicket_orderDown span.label {
     color: #777777;
 }
 
-table.data-table tr.headers a {
+table.data-table tr.headers a,
+table.data-table tr.headers em {
     position: relative;
 }
 
@@ -3876,12 +3874,18 @@ div.login-panel {
 
 /*-- BooleanColumn --*/
 
-td.BooleanColumn, td.BooleanColumn span {
+th.BooleanColumn {
     width: 20px;
-    height: 16px;
+}
+
+/* RTFACT-3014 */
+.IE-7 th.BooleanColumn span.label {
+    position: relative;
 }
 
 td.BooleanColumn span {
+    width: 20px;
+    height: 16px;
     display: block;
     margin: 0 auto;
 }
@@ -4456,6 +4460,10 @@ div.field.checkbox-field {
     margin-left: 6px;
 }
 
+.Safari .mail-config .mail-button {
+    margin-top: -5px;
+}
+
 .mail-config .mail-text {
     display: block;
     float: left;
@@ -4762,6 +4770,10 @@ table.data-table td.add-value-row {
 
 .addon-build {
     background: url(images/addons/16build.png) no-repeat left top;
+}
+
+.addon-rest {
+    background: url(images/addons/16rest.png) no-repeat left top;
 }
 
 .addon-ldap, .addon-ldapgroup {
@@ -5151,6 +5163,10 @@ div.list-panel-buttons button.cancel-link .button-right {
     filter: alpha(opacity = 50);
 }
 
+.disabled-panel * {
+    cursor: default !important;
+}
+
 /*-- BuildGeneralInfoTabPanel --*/
 
 .build-save-results {
@@ -5319,15 +5335,51 @@ td.warn span {
     padding: 5px;
 }
 
+/* RTFACT-3012 */
+.IE-7 .repo-config {
+    zoom: 1;
+}
+
 /*--RepoConfigCreateUpdatePanel--*/
+
 .local-repo-addvanced-settings .line-sep {
     height: 20px;
 }
 
 .http-repo-panell-advanced-settings .line-sep {
-    height: 68px;
+    height: 88px;
 }
 
 .virtual-repo-panel-advanced-settings .line-sep {
     margin-bottom: 2px;
+}
+
+/*-- HighlightedCodeLabel --*/
+
+div.syntaxhighlighter {
+    margin: 0.1em 0 !important;
+}
+
+div.syntaxhighlighter .toolbar a.about {
+    display: none !important;
+}
+
+/*-- ForgotPasswordLink --*/
+
+.forgot-password {
+    float: left;
+    margin-top: 10px;
+    margin-left: 5px;
+    color: darkblue;
+}
+
+/*-- MaintenancePage --*/
+
+.IE-7 .storage .help-link {
+    position: relative;
+    top: -10px;
+}
+
+.IE-7 .checkbox-row .help-link {
+    margin-top: -5px;
 }

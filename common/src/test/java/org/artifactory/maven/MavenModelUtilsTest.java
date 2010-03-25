@@ -20,12 +20,12 @@ package org.artifactory.maven;
 
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Versioning;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.artifactory.util.ResourceUtils;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -40,17 +40,7 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class MavenModelUtilsTest {
-
-    @BeforeMethod
-    public void bindProperties() {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
-    }
-
-    @AfterMethod
-    public void unbindProperties() {
-        ArtifactorySystemProperties.unbind();
-    }
+public class MavenModelUtilsTest extends SystemPropertiesBoundTest {
 
     public void testToMaven1Path() {
         String maven1Url = MavenNaming.toMaven1Path(
@@ -152,5 +142,33 @@ public class MavenModelUtilsTest {
         assertEquals(artifactInfo.getArtifactId(), "testng");
         assertEquals(artifactInfo.getVersion(), "5.11");
         assertEquals(artifactInfo.getClassifier(), "jdk15");
+    }
+
+    public void mavenModelToArtifactInfo() {
+        Model model = new Model();
+        model.setGroupId("myGroupId");
+        model.setArtifactId("myArtifactId");
+        model.setVersion("1.0.0");
+        MavenArtifactInfo artifactInfo = MavenModelUtils.mavenModelToArtifactInfo(model);
+        assertEquals(artifactInfo.getGroupId(), "myGroupId");
+        assertEquals(artifactInfo.getArtifactId(), "myArtifactId");
+        assertEquals(artifactInfo.getVersion(), "1.0.0");
+    }
+
+    public void mavenModelToArtifactInfoGroupIdInParent() {
+        Model model = new Model();
+        model.setArtifactId("myArtifactId");
+        model.setVersion("1.0.0");
+        Parent parent = new Parent();
+        parent.setGroupId("parentGroupId");
+        parent.setArtifactId("parentArifactId");
+        parent.setVersion("1.2.0");
+        model.setParent(parent);
+
+        MavenArtifactInfo artifactInfo = MavenModelUtils.mavenModelToArtifactInfo(model);
+
+        assertEquals(artifactInfo.getGroupId(), "parentGroupId");
+        assertEquals(artifactInfo.getArtifactId(), "myArtifactId");
+        assertEquals(artifactInfo.getVersion(), "1.0.0");
     }
 }

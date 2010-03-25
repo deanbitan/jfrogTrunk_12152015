@@ -19,8 +19,8 @@
 package org.artifactory.jcr.md;
 
 import org.artifactory.api.md.Properties;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author freds

@@ -35,7 +35,7 @@ import java.util.Iterator;
 public class GroupedItemsStrategy implements IItemReuseStrategy {
     private GroupableTable table;
 
-    public GroupedItemsStrategy(GroupableTable table) {
+    GroupedItemsStrategy(GroupableTable table) {
         this.table = table;
     }
 

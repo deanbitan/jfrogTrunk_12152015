@@ -23,33 +23,32 @@ import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 
 /**
- * Redirects to the build's CI server URL
+ * Provides the URL to the builds CI server
  *
  * @author Noam Y. Tenne
  */
 public class ShowInCiServerAction extends ItemAction {
 
     private static String ACTION_NAME = "Show in CI Server";
-    private String buildUrl;
+    private String url;
 
     /**
      * Main constructor
      *
-     * @param buildUrl CI server build URL
+     * @param url URL to build in CI server
      */
-    public ShowInCiServerAction(String buildUrl) {
+    public ShowInCiServerAction(String url) {
         super(ACTION_NAME);
-        this.buildUrl = buildUrl;
+        this.url = url;
     }
 
     @Override
     public String getActionLinkURL(ActionableItem actionableItem) {
-        return buildUrl;
+        return url;
     }
 
     @Override
     public void onAction(ItemEvent e) {
         // this method should not be called for this action
     }
-
 }

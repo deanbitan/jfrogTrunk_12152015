@@ -20,11 +20,11 @@ package org.artifactory.common;
 
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.artifactory.util.ResourceUtils;
 import org.slf4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -37,19 +37,11 @@ import static org.testng.Assert.assertEquals;
  * @author freds
  * @date Oct 12, 2008
  */
-public class ArtifactoryPropertiesTest {
+public class ArtifactoryPropertiesTest extends SystemPropertiesBoundTest {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryPropertiesTest.class);
-
-    @BeforeMethod
-    public void bindProperties() {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
-    }
 
     @AfterMethod
     public void clearArtifactoryProperties() {
-        // unbind the artifactory properties
-        ArtifactorySystemProperties.unbind();
-
         // clear any property that might have been set in a test
         for (ConstantValues constantsValue : ConstantValues.values()) {
             System.clearProperty(constantsValue.getPropertyName());

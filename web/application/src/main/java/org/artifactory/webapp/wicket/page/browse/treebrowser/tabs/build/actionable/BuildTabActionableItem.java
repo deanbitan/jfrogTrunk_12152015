@@ -18,21 +18,22 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.build.api.Build;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.ActionableItemBase;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.GoToBuildAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.ShowInCiServerAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.ViewBuildJsonAction;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
+import org.slf4j.Logger;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.io.IOException;
 
 /**
  * Artifact associated build actionable item
@@ -41,27 +42,40 @@ import java.util.Date;
  */
 public class BuildTabActionableItem extends ActionableItemBase {
 
-    private Build build;
+    private static final Logger log = LoggerFactory.getLogger(BuildTabActionableItem.class);
+
+    private BasicBuildInfo basicBuildInfo;
     private String moduleId;
 
     /**
      * Main constructor
      *
      * @param textContentViewer Modal handler for displaying the build XML
-     * @param build             Build object to handle
-     * @param moduleId          ID of module association to specifiy
+     * @param basicBuildInfo    Basic build info object to handle
+     * @param moduleId          ID of module association to specify
      */
-    public BuildTabActionableItem(ModalHandler textContentViewer, Build build, String moduleId) {
-        this.build = build;
+    public BuildTabActionableItem(ModalHandler textContentViewer, BasicBuildInfo basicBuildInfo, String moduleId) {
+        this.basicBuildInfo = basicBuildInfo;
         this.moduleId = moduleId;
 
-        getActions().add(new GoToBuildAction(build.getName(), build.getNumber()));
+        getActions().add(new GoToBuildAction(basicBuildInfo));
+        getActions().add(new ViewBuildJsonAction(textContentViewer, basicBuildInfo));
 
-        BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
-        String buildJson = buildService.getBuildAsJson(build);
-        getActions().add(new ViewBuildJsonAction(textContentViewer, buildJson));
-
-        getActions().add(new ShowInCiServerAction(build.getUrl()));
+        try {
+            BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
+            String ciServerUrl = buildService.getBuildCiServerUrl(basicBuildInfo);
+            if (StringUtils.isNotBlank(ciServerUrl)) {
+                getActions().add(new ShowInCiServerAction(ciServerUrl));
+            }
+        } catch (IOException e) {
+            String buildName = basicBuildInfo.getName();
+            long buildNumber = basicBuildInfo.getNumber();
+            String buildStarted = basicBuildInfo.getStarted();
+            String message = String.format("Unable to extract CI server URL if build '%s' #%s that started at %s",
+                    buildName, buildNumber, buildStarted);
+            log.error(message + ": {}", e.getMessage());
+            log.debug(message + ".", e);
+        }
     }
 
     public Panel newItemDetailsPanel(String id) {
@@ -69,7 +83,7 @@ public class BuildTabActionableItem extends ActionableItemBase {
     }
 
     public String getDisplayName() {
-        return build.getName();
+        return basicBuildInfo.getName();
     }
 
     public String getCssClass() {
@@ -80,31 +94,11 @@ public class BuildTabActionableItem extends ActionableItemBase {
     }
 
     /**
-     * Returns the build
-     *
-     * @return Build
-     */
-    public Build getBuild() {
-        return build;
-    }
-
-    /**
      * Returns the ID of the module to specify association with
      *
      * @return Module ID association to specify
      */
     public String getModuleId() {
         return moduleId;
-    }
-
-    /**
-     * Returns the date that the build has started at
-     *
-     * @return Build started date
-     * @throws ParseException Any exceptions that might occur while parsing the date
-     */
-    public Date getBuildStartedDate() throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(Build.STARTED_FORMAT);
-        return dateFormat.parse(build.getStarted());
     }
 }

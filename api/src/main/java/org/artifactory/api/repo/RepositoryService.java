@@ -29,14 +29,16 @@ import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.tree.fs.ZipEntriesTree;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,9 +68,6 @@ public interface RepositoryService extends ImportableExportable {
      */
     @Lock(transactional = true)
     List<DirectoryItem> getDirectoryItems(RepoPath repoPath, boolean withPseudoUpDirItem);
-
-    @Lock(transactional = true)
-    boolean pomExists(RepoDescriptor targetRepo, MavenArtifactInfo artifactInfo);
 
     List<LocalRepoDescriptor> getLocalRepoDescriptors();
 
@@ -102,6 +101,15 @@ public interface RepositoryService extends ImportableExportable {
     String getTextFileContent(FileInfo fileInfo);
 
     /**
+     * @param archivePath     Repository path of the archive file
+     * @param sourceEntryPath File path inside the archive
+     * @return The source entry details (including content if found)
+     * @throws IOException On failure reading to archive or the sources file (will not fail if not found)
+     */
+    @Lock(transactional = true)
+    public ArchiveFileContent getArchiveFileContent(RepoPath archivePath, String sourceEntryPath) throws IOException;
+
+    /**
      * Import all the repositories under the passed folder which matches local or cached repository declared in the
      * configuration. Having empty directory for each repository is allowed and not an error. Nothing will be imported
      * for those.
@@ -124,50 +132,7 @@ public interface RepositoryService extends ImportableExportable {
     ItemInfo getItemInfo(RepoPath repoPath);
 
     /**
-     * Gets Metadata
-     *
-     * @param repoPath      A repo path (usually pointing to an JcrFsItem)
-     * @param metadataClass Metadata object class type
-     * @param <MD>          Class type
-     * @return Metadata object
-     */
-    @Lock(transactional = true)
-    <MD> MD getMetadata(RepoPath repoPath, Class<MD> metadataClass);
-
-    /**
-     * Sets the given metadata on the supplied repo path
-     *
-     * @param repoPath      Path to targeted item
-     * @param metadataClass
-     * @param metadata
-     */
-    @Lock(transactional = true)
-    <MD> void setMetadata(RepoPath repoPath, Class<MD> metadataClass, MD metadata);
-
-
-    /**
-     * Gets the metadata content.
-     *
-     * @param repoPath     A repo path (usually pointing to an JcrFsItem)
-     * @param metadataName The metadata name to look for
-     * @return String with the metadata content. Null if path not found or metadata name doesn't exist for this path.
-     */
-    @Lock(transactional = true)
-    String getXmlMetadata(RepoPath repoPath, String metadataName);
-
-    /**
-     * Sets the given metadata on the supplied repo path. If metadata content is null, the metadata will be removed from
-     * the repo path.
-     *
-     * @param repoPath        Path to targeted item
-     * @param metadataName    The metadata name to set under
-     * @param metadataContent The metadata content to add. If null, the metadata will be removed from the repo path.
-     */
-    @Lock(transactional = true)
-    void setXmlMetadata(RepoPath repoPath, String metadataName, @Nullable String metadataContent);
-
-    /**
-     * Returns the available metadata names which are not internal metadata
+     * Returns the available metadata names which are not internal
      *
      * @param repoPath The full path of the object having metadata
      * @return A list of metadata names that exists on this element
@@ -176,15 +141,73 @@ public interface RepositoryService extends ImportableExportable {
     List<String> getMetadataNames(RepoPath repoPath);
 
     /**
-     * Checks if the repo path has the specified metadata node under it.
+     * Returns the metadata of the given type class.<br>
+     * To be used only with non-generic metadata classes.<br>
+     * Generic (String class) will be ignored.<br>
+     *
+     * @param repoPath      A repo path (usually pointing to an JcrFsItem)
+     * @param metadataClass Class of metadata type. Cannot be generic or null
+     * @param <MD>          Metadata type
+     * @return Requested metadata if found. Null if not
+     * @throws IllegalArgumentException If given a null metadata class
+     */
+    @Lock(transactional = true)
+    <MD> MD getMetadata(RepoPath repoPath, Class<MD> metadataClass);
+
+    /**
+     * Returns the metadata of the given name.
      *
      * @param repoPath     A repo path (usually pointing to an JcrFsItem)
-     * @param metadataName The metadata name to look for
-     * @return True if the fsitem for this repo path has the specified metadata. False if item not found of metadata
-     *         doesn't exist for this item.
+     * @param metadataName Name of metadata to return. Cannot be null
+     * @return Requested metadata if found. Null if not
+     * @throws IllegalArgumentException If given a blank metadata name
+     */
+    @Lock(transactional = true)
+    String getXmlMetadata(RepoPath repoPath, String metadataName);
+
+    /**
+     * Indicates whether this item adorns the given metadata
+     *
+     * @param repoPath     A repo path (usually pointing to an JcrFsItem)
+     * @param metadataName Name of metadata to locate
+     * @return True if annotated by the given metadata. False if not
+     * @throws IllegalArgumentException If given a blank metadata name
      */
     @Lock(transactional = true)
     boolean hasMetadata(RepoPath repoPath, String metadataName);
+
+    /**
+     * Sets the given metadata on the supplied repo path.<br>
+     * To be used only with non-generic metadata classes.<br>
+     * Generic (String class) will be ignored.<br>
+     *
+     * @param repoPath      Path to targeted item
+     * @param metadataClass Type class of metadata to set
+     * @param metadata      Value of metadata to set. Cannot be null
+     * @throws IllegalArgumentException When given a null metadata value
+     */
+    @Lock(transactional = true)
+    <MD> void setMetadata(RepoPath repoPath, Class<MD> metadataClass, MD metadata);
+
+    /**
+     * Sets the given metadata on the supplied repo path.
+     *
+     * @param repoPath        Path to targeted item
+     * @param metadataName    The metadata name to set under
+     * @param metadataContent The metadata content to add. Cannot be null
+     * @throws IllegalArgumentException When given a null metadata value
+     */
+    @Lock(transactional = true)
+    void setXmlMetadata(RepoPath repoPath, String metadataName, @Nonnull String metadataContent);
+
+    /**
+     * Removes the metadata of the given name
+     *
+     * @param repoPath     Path to targeted item
+     * @param metadataName Name of metadata to remove
+     */
+    @Lock(transactional = true)
+    void removeMetadata(RepoPath repoPath, String metadataName);
 
     @Request
     @Lock(transactional = true)
@@ -209,6 +232,19 @@ public interface RepositoryService extends ImportableExportable {
      */
     @Lock(transactional = true)
     MoveMultiStatusHolder move(RepoPath repoPath, String targetLocalRepoKey, boolean dryRun);
+
+    /**
+     * Moves repository path (pointing to a folder) to another absolute target. The move will only move paths the user
+     * has permissions to move and paths that are accepted by the target repository. Maven metadata will be recalculated
+     * for both the source and target folders.
+     *
+     * @param repoPath   Repository path to move. This path must represent a folder in a local repository.
+     * @param targetPath The target local non-cached repository to move the path to.
+     * @param dryRun     If true the method will just report the expected result but will not move any file
+     * @return MoveMultiStatusHolder holding the errors and warnings
+     */
+    @Lock(transactional = true)
+    MoveMultiStatusHolder move(RepoPath fromRepoPath, RepoPath targetPath, boolean dryRun);
 
 
     /**
@@ -242,6 +278,19 @@ public interface RepositoryService extends ImportableExportable {
     MoveMultiStatusHolder copy(RepoPath fromRepoPath, String targetLocalRepoKey, boolean dryRun);
 
     /**
+     * Copies repository path (pointing to a folder) to another absolute path. The copy will only move paths the user
+     * has permissions to move and paths that are accepted by the target repository. Maven metadata will be recalculated
+     * for both the source and target folders.
+     *
+     * @param fromRepoPath   Repository path to copy. This path must represent a folder in a local repository.
+     * @param targetRepoPath Path of the target local non-cached repository to copy the path to.
+     * @param dryRun         If true the method will just report the expected result but will not copy any file
+     * @return MoveMultiStatusHolder holding the errors and warnings
+     */
+    @Lock(transactional = true)
+    MoveMultiStatusHolder copy(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun);
+
+    /**
      * Copies a set of paths to another local repository.
      * <p/>
      * This method will only copy paths the user has permissions to move and paths that are accepted by the target
@@ -258,8 +307,15 @@ public interface RepositoryService extends ImportableExportable {
     @Lock(transactional = true)
     MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey, boolean dryRun);
 
+    /**
+     * Expire expirable resources (folders, snapshot artifacts, maven metadata, etc.)
+     *
+     * @param repoPath Cache repository path of a folder of file to zap. If it is a folder the zap is recursively
+     *                 applied.
+     * @return A count of the items affected by the zap
+     */
     @Lock(transactional = true)
-    void zap(RepoPath repoPath);
+    int zap(RepoPath repoPath);
 
     @Lock(transactional = true)
     MavenArtifactInfo getMavenArtifactInfo(ItemInfo itemInfo);
@@ -389,4 +445,12 @@ public interface RepositoryService extends ImportableExportable {
      * @return List of shared remote repositories
      */
     List<RemoteRepoDescriptor> getSharedRemoteRepoConfigs(String remoteUrl, Map<String, String> headersMap);
+
+    /**
+     * @param zipPath Path to a zip like file
+     * @return Tree representation of the entries in the zip.
+     * @throws IOException On error retrieving or parsing the zip file
+     */
+    @Lock(transactional = true)
+    ZipEntriesTree zipEntriesToTree(RepoPath zipPath) throws IOException;
 }

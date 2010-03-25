@@ -60,7 +60,7 @@ public class RepoPathBrowsingWebRequest extends ServletWebRequest {
         if (path.startsWith("/")) {
             begin = 1;
         }
-        int end = path.indexOf("/", begin);
+        int end = path.indexOf('/', begin);
         if (end > 0) {
             prefix += path.substring(begin, end);
         } else {
@@ -94,18 +94,17 @@ public class RepoPathBrowsingWebRequest extends ServletWebRequest {
         RepoPath repoPath = RequestUtils.getRepoPath(this);
         if (repoPath != null) {
             String path = repoPath.getPath();
-            String prefix;
+            StringBuilder prefix = new StringBuilder();
             if (StringUtils.hasLength(path)) {
-                prefix = "";
                 int nesting = new StringTokenizer(path, "/").countTokens() + 1;
                 while (nesting > 0) {
-                    prefix += "../";
+                    prefix.append("../");
                     nesting--;
                 }
             } else {
-                prefix = "../";
+                prefix.append("../");
             }
-            return prefix;
+            return prefix.toString();
         } else {
             log.warn("Expected to find a repoPath on the request but none was found. " +
                     "Perhaps login redirection was required.");

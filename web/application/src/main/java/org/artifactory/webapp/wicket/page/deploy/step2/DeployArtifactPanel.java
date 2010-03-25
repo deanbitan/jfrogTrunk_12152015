@@ -39,9 +39,13 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.artifact.ArtifactInfo;
+import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.repo.DeployService;
+import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoAccessException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
@@ -56,20 +60,28 @@ import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.panel.editor.TextEditorPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.CookieUtils;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.FileUtils;
+import org.artifactory.util.PathUtils;
 import org.artifactory.util.StringInputStream;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.artifactory.webapp.wicket.page.deploy.DeployArtifactPage;
 import org.artifactory.webapp.wicket.page.deploy.step1.UploadArtifactPanel;
+import org.artifactory.webapp.wicket.util.validation.DeployTargetPathValidator;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 
 /**
@@ -84,17 +96,9 @@ public class DeployArtifactPanel extends TitledActionPanel {
         add(new DeployArtifactForm(file));
     }
 
-    private static class DeployModel implements Serializable {
-        private List<LocalRepoDescriptor> repos;
-        private File file;
-        private LocalRepoDescriptor targetRepo;
-        private boolean deployPom;
-        private boolean pomChanged;
-        private String pomXml;
-        private MavenArtifactInfo artifactInfo;
-    }
-
     private class DeployArtifactForm extends Form {
+        private static final String TARGET_REPO = "targetRepo";
+
         @SpringBean
         private RepositoryService repoService;
 
@@ -102,18 +106,16 @@ public class DeployArtifactPanel extends TitledActionPanel {
         private DeployService deployService;
 
         private DeployModel model;
-        private static final String TARGET_REPO = "targetRepo";
 
         private DeployArtifactForm(File file) {
             super("form");
             model = new DeployModel();
             model.file = file;
-            model.artifactInfo = guessArtifactInfo();
+            model.mavenArtifactInfo = guessArtifactInfo();
+            model.pomXml = deployService.getPomModelString(file);
+            model.deployPom = isPomArtifact() || !isPomExists(getPersistentTargetRepo());
             model.repos = getRepos();
             model.targetRepo = getPersistentTargetRepo();
-            model.deployPom = isPomArtifact() || !isPomExists();
-            model.pomChanged = false;
-            model.pomXml = deployService.getModelString(model.artifactInfo);
 
             setModel(new CompoundPropertyModel(model));
 
@@ -122,10 +124,10 @@ public class DeployArtifactPanel extends TitledActionPanel {
             addTargetRepoDropDown();
             addDeployMavenCheckbox();
 
-            WebMarkupContainer artifactInfo = newMavenArtifactContainer();
-            add(artifactInfo);
+            WebMarkupContainer artifactInfoContainer = newMavenArtifactContainer();
+            add(artifactInfoContainer);
 
-            artifactInfo.add(newPomEditContainer());
+            artifactInfoContainer.add(newPomEditContainer());
 
             addDefaultButton(new DeployLink("deploy"));
             addButton(new CancelLink("cancel"));
@@ -141,10 +143,11 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 try {
                     value = Integer.parseInt(cookie);
                 } catch (NumberFormatException e) {
-                    log.debug("no cookie found for upload target repo, will use default repo");
+                    log.debug("Failed to parse cookie for upload target repo, will use default repo");
                 }
             }
-            return getRepos().get(value);
+            List<LocalRepoDescriptor> repos = getRepos();
+            return value < repos.size() ? repos.get(value) : repos.get(0);
         }
 
         private String buildCookieName() {
@@ -192,6 +195,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
         private Component newGeneratePomCheckBox() {
             FormComponent checkbox = new StyledCheckbox("deployPom");
+            checkbox.setOutputMarkupId(true);
             checkbox.setVisible(!isPomArtifact());
             checkbox.setLabel(new Model("Also Deploy Jar's Internal POM/Generate Default POM"));
             checkbox.add(new OnGeneratePomChangeBehavior());
@@ -199,19 +203,19 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
 
         private WebMarkupContainer newMavenArtifactContainer() {
-            WebMarkupContainer artifactInfo = new WebMarkupContainer("artifactInfo") {
+            WebMarkupContainer artifactInfoContainer = new WebMarkupContainer("artifactInfo") {
                 @Override
                 public boolean isVisible() {
-                    return model.artifactInfo.isAutoCalculatePath();
+                    return model.isMavenArtifact;
                 }
             };
-            artifactInfo.setOutputMarkupPlaceholderTag(true);
-            artifactInfo.add(newGavcField("artifactInfo.groupId", true, new OnGavcChangeBehavior()));
-            artifactInfo.add(newGavcField("artifactInfo.artifactId", true, new OnGavcChangeBehavior()));
-            artifactInfo.add(newGavcField("artifactInfo.version", true, new OnGavcChangeBehavior()));
-            artifactInfo.add(newGavcField("artifactInfo.classifier", false, new OnGavcChangeBehavior()));
-            artifactInfo.add(newGavcField("artifactInfo.type", true, new OnPackTypeChangeBehavior()));
-            return artifactInfo;
+            artifactInfoContainer.setOutputMarkupPlaceholderTag(true);
+            artifactInfoContainer.add(newGavcField("artifactInfo.groupId", true, new OnGavcChangeBehavior()));
+            artifactInfoContainer.add(newGavcField("artifactInfo.artifactId", true, new OnGavcChangeBehavior()));
+            artifactInfoContainer.add(newGavcField("artifactInfo.version", true, new OnGavcChangeBehavior()));
+            artifactInfoContainer.add(newGavcField("artifactInfo.classifier", false, new OnGavcChangeBehavior()));
+            artifactInfoContainer.add(newGavcField("artifactInfo.type", true, new OnPackTypeChangeBehavior()));
+            return artifactInfoContainer;
         }
 
         private Component newGavcField(String id, boolean required, IBehavior behavior) {
@@ -223,31 +227,31 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
 
         private void addPathField() {
-            FormComponent path = new TextField("artifactInfo.path") {
+            FormComponent path = new TextField("targetPath") {
                 @Override
                 public boolean isEnabled() {
-                    return !model.artifactInfo.isAutoCalculatePath();
+                    return !model.isMavenArtifact;
                 }
             };
             path.setRequired(true);
             path.setOutputMarkupId(true);
+            path.add(new DeployTargetPathValidator());
             add(path);
 
-            add(new HelpBubble("path.help", new ResourceModel("path.help")));
+            add(new HelpBubble("targetPath.help", new ResourceModel("targetPath.help")));
         }
 
         private void addDeployMavenCheckbox() {
-            Component autoCalculatePath = new StyledCheckbox("artifactInfo.autoCalculatePath").setPersistent(true);
+            Component autoCalculatePath = new StyledCheckbox("isMavenArtifact").setPersistent(true);
             autoCalculatePath.add(new OnDeployTypeChangeBehavior());
             add(autoCalculatePath);
-            add(new HelpBubble("autoCalculatePath.help", new ResourceModel("autoCalculatePath.help")));
+            add(new HelpBubble("isMavenArtifact.help", new ResourceModel("isMavenArtifact.help")));
         }
 
         private void addTargetRepoDropDown() {
             FormComponent targetRepo = new DropDownChoice(TARGET_REPO, model.repos);
             targetRepo.setPersistent(true);
             targetRepo.setRequired(true);
-            targetRepo.add(new OnGavcChangeBehavior());
             add(targetRepo);
 
             add(new HelpBubble("targetRepo.help", new ResourceModel("targetRepo.help")));
@@ -264,6 +268,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
          */
         private MavenArtifactInfo guessArtifactInfo() {
             try {
+                // if (pom or jar) get pom xml as string
                 return deployService.getArtifactInfo(model.file);
             } catch (Exception e) {
                 String msg = "Unable to analyze uploaded file content. Cause: " + e.getMessage();
@@ -274,14 +279,23 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
 
         private boolean isPomArtifact() {
-            String packagingType = model.artifactInfo.getType();
+            UnitInfo artifactInfo = model.getArtifactInfo();
+            if (!artifactInfo.isMavenArtifact()) {
+                return false;
+            }
+            MavenArtifactInfo mavenArtifactInfo = (MavenArtifactInfo) artifactInfo;
+            String packagingType = mavenArtifactInfo.getType();
             return ContentType.mavenPom.getDefaultExtension().equalsIgnoreCase(packagingType);
         }
 
-        private boolean isPomExists() {
+        private boolean isPomExists(LocalRepoDescriptor repo) {
             try {
-                return repoService.pomExists(model.targetRepo, model.artifactInfo);
-            } catch (RuntimeException e) {
+                String path =
+                        MavenModelUtils.mavenModelToArtifactInfo(MavenModelUtils.toMavenModel(model.mavenArtifactInfo))
+                                .getPath();
+                String pomPath = PathUtils.stripExtension(path) + ".pom";
+                return repoService.exists(new RepoPath(repo.getKey(), pomPath));
+            } catch (RepositoryRuntimeException e) {
                 cleanupResources();
                 throw e;
             }
@@ -289,8 +303,8 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
         private void cleanupResources() {
             log.debug("Cleaning up deployment resources.");
-            if (model.artifactInfo != null) {
-                model.artifactInfo.invalidate();
+            if (model.mavenArtifactInfo != null) {
+                model.mavenArtifactInfo = new MavenArtifactInfo();
             }
             FileUtils.removeFile(model.file);
             model.pomXml = "";
@@ -309,20 +323,33 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                boolean isPomExists = isPomExists();
-                model.artifactInfo.setBuiltFromPomInfo(isPomExists);
-                getPomEditorContainer().get("deployPom").setModel(new Model(!isPomExists));
-                if (model.deployPom) {
+                UnitInfo artifactInfo = model.getArtifactInfo();
+                model.deployPom = isPomArtifact() || !isPomExists(getPersistentTargetRepo());
+                if (model.deployPom && model.isMavenArtifact) {
                     model.pomChanged = false;
-                    model.pomXml = deployService.getModelString(model.artifactInfo);
+                    MavenArtifactInfo mavenArtifactInfo = (MavenArtifactInfo) artifactInfo;
+                    org.apache.maven.model.Model mavenModel;
+                    if (model.pomXml != null) {
+                        mavenModel = MavenModelUtils.stringToMavenModel(model.pomXml);
+                        // update the model built from the xml with the values from the maven artifact info
+                        mavenModel.setGroupId(mavenArtifactInfo.getGroupId());
+                        mavenModel.setArtifactId(mavenArtifactInfo.getArtifactId());
+                        mavenModel.setVersion(mavenArtifactInfo.getVersion());
+                        mavenModel.setPackaging(mavenArtifactInfo.getType());
+                    } else {
+                        // generate a model from the maven artifact info
+                        mavenModel = MavenModelUtils.toMavenModel(mavenArtifactInfo);
+                    }
+                    model.pomXml = MavenModelUtils.mavenModelToString(mavenModel);
                 }
+                target.addComponent(getPomEditorContainer().get("deployPom"));
                 target.addComponent(getPomEditorContainer());
+                target.addComponent(get("targetPath"));
+                AjaxUtils.refreshFeedback();
             }
-
         }
 
         private class OnDeployTypeChangeBehavior extends AjaxFormComponentUpdatingBehavior {
-
             private OnDeployTypeChangeBehavior() {
                 super("onclick");
             }
@@ -334,14 +361,17 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
+                boolean isMavenArtifact = Boolean.parseBoolean(get("isMavenArtifact").getModelObjectAsString());
+                if (!isMavenArtifact) {
+                    model.deployPom = false;
+                }
                 target.addComponent(get("artifactInfo"));
-                target.addComponent(get("artifactInfo.path"));
+                target.addComponent(get("targetPath"));
             }
-
         }
 
-        private class OnPomXmlChangeBehavior extends AjaxFormComponentUpdatingBehavior {
 
+        private class OnPomXmlChangeBehavior extends AjaxFormComponentUpdatingBehavior {
             private OnPomXmlChangeBehavior() {
                 super("onchange");
             }
@@ -351,28 +381,28 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 return new NoAjaxIndicatorDecorator();
             }
 
-            @SuppressWarnings({"EmptyCatchBlock"})
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 model.pomChanged = true;
-                if (StringUtils.isNotEmpty(model.pomXml)) {
-                    try {
-                        org.apache.maven.model.Model mavenModel = MavenModelUtils.stringToMavenModel(model.pomXml);
-                        if (mavenModel != null) {
-                            model.artifactInfo.setGroupId(mavenModel.getGroupId());
-                            model.artifactInfo.setArtifactId(mavenModel.getArtifactId());
-                            model.artifactInfo.setVersion(mavenModel.getVersion());
-
-                            target.addComponent(get("artifactInfo:artifactInfo.groupId"));
-                            target.addComponent(get("artifactInfo:artifactInfo.artifactId"));
-                            target.addComponent(get("artifactInfo:artifactInfo.version"));
-                        }
-                    } catch (RepositoryRuntimeException e) {
-                        // NOP
-                    }
+                if (StringUtils.isEmpty(model.pomXml)) {
+                    return;
                 }
+                try {
+                    InputStream pomInputStream = IOUtils.toInputStream(model.pomXml);
+                    model.mavenArtifactInfo = MavenModelUtils.mavenModelToArtifactInfo(pomInputStream);
+                }
+                catch (Exception e) {
+                    error("Failed to parse input pom");
+                    AjaxUtils.refreshFeedback();
+                }
+                model.deployPom = isPomArtifact() || !isPomExists(getPersistentTargetRepo());
+                target.addComponent(get("artifactInfo:artifactInfo.groupId"));
+                target.addComponent(get("artifactInfo:artifactInfo.artifactId"));
+                target.addComponent(get("artifactInfo:artifactInfo.version"));
+                target.addComponent(get("targetPath"));
+                target.addComponent(getPomEditorContainer());
+                AjaxUtils.refreshFeedback();
             }
-
         }
 
         private class OnGeneratePomChangeBehavior extends AjaxFormComponentUpdatingBehavior {
@@ -384,9 +414,10 @@ public class DeployArtifactPanel extends TitledActionPanel {
             protected void onUpdate(AjaxRequestTarget target) {
                 if (model.deployPom) {
                     model.pomChanged = false;
-                    model.pomXml = deployService.getModelString(model.artifactInfo);
+                    if (StringUtils.isBlank(model.pomXml)) {
+                        model.pomXml = deployService.getPomModelString(model.file);
+                    }
                 }
-
                 target.addComponent(getPomEditorContainer());
             }
         }
@@ -417,13 +448,20 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 setOutputMarkupId(true);
             }
 
-            @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 try {
+                    String targetPath = model.getTargetPath();
+                    ChecksumType[] checksumTypes = ChecksumType.values();
+                    for (ChecksumType checksumType : checksumTypes) {
+                        if (targetPath.endsWith(checksumType.ext())) {
+                            error("Unable to deploy, cannot deploy checksum types");
+                            AjaxUtils.refreshFeedback();
+                            return;
+                        }
+                    }
                     //Make sure not to override a good pom.
-                    boolean deployPom = !isPomExists() && model.deployPom && model.artifactInfo.isAutoCalculatePath();
-
+                    boolean deployPom = model.deployPom && model.isMavenArtifact && !isPomExists(model.targetRepo);
                     if (deployPom) {
                         if (isPomArtifact()) {
                             deployPom();
@@ -433,12 +471,20 @@ public class DeployArtifactPanel extends TitledActionPanel {
                     } else {
                         deployFile();
                     }
-
-                    info(String.format("Successfully deployed: %s into %s.", model.artifactInfo.getPath(),
-                            model.targetRepo.getKey()));
+                    String repoKey = model.targetRepo.getKey();
+                    String artifactPath = model.getTargetPath();
+                    StringBuilder successMessagesBuilder = new StringBuilder();
+                    successMessagesBuilder.append("Successfully deployed ");
+                    String repoPathUrl = getRepoPathUrl(repoKey, artifactPath);
+                    if (StringUtils.isNotBlank(repoPathUrl)) {
+                        successMessagesBuilder.append("<a href=\"").append(repoPathUrl).append("\">").
+                                append(artifactPath).append(" into ").append(repoKey).append("</a>.");
+                    } else {
+                        successMessagesBuilder.append(artifactPath).append(" into ").append(repoKey).append(".");
+                    }
+                    info(successMessagesBuilder.toString());
                     AjaxUtils.refreshFeedback(target);
                     finish(target);
-
                 } catch (Exception e) {
                     Throwable cause = ExceptionUtils.getRootCause(e);
                     if (cause instanceof BadPomException) {
@@ -472,13 +518,58 @@ public class DeployArtifactPanel extends TitledActionPanel {
             }
 
             private void deployFileAndPom() throws IOException, RepoAccessException {
-                deployService.validatePom(model.pomXml, model.artifactInfo.getPath(),
+                deployService.validatePom(model.pomXml, model.getTargetPath(),
                         model.targetRepo.isSuppressPomConsistencyChecks());
-                deployService.deploy(model.targetRepo, model.artifactInfo, model.file, model.pomXml, true, false);
+                deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, model.pomXml, true, false);
             }
 
             private void deployFile() throws RepoAccessException {
-                deployService.deploy(model.targetRepo, model.artifactInfo, model.file, false, false);
+                deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file);
+            }
+
+            /**
+             * Returns an HTTP link that points to the deployed item within the browser tree
+             *
+             * @param repoKey      Repo key of item to point to
+             * @param artifactPath Relative path of item to point to
+             * @return HTTP link if permitted and valid, null if not
+             */
+            private String getRepoPathUrl(String repoKey, String artifactPath) {
+                if (!shouldProvideTreeLink()) {
+                    return null;
+                }
+                StringBuilder urlBuilder = new StringBuilder();
+                String repoPathId = new RepoPath(repoKey, artifactPath).getId();
+
+                String encodedPathId;
+                try {
+                    encodedPathId = URLEncoder.encode(repoPathId, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    log.error("Unable to encode deployed artifact ID '{}': {}.", repoPathId, e.getMessage());
+                    log.debug("Unable to encode deployed artifact ID '" + repoPathId + "'.", e);
+                    return null;
+                }
+
+                //Using request parameters instead of wicket's page parameters. See RTFACT-2843
+                urlBuilder.append(WicketUtils.mountPathForPage(BrowseRepoPage.class)).append("?pathId=").
+                        append(encodedPathId);
+                return urlBuilder.toString();
+            }
+
+            /**
+             * Indicates whether a link to the tree item of the deployed artifact should be provided. Links should be
+             * provided as long as the artifact is not a snapshot being deployed to a snapshot-enabled repository with a
+             * unique-snapshot policy
+             *
+             * @return True if should provide the link
+             */
+            private boolean shouldProvideTreeLink() {
+                boolean repoHandlesReleases = model.targetRepo.isHandleReleases();
+                boolean repoHandlesSnapshots = model.targetRepo.isHandleSnapshots();
+                SnapshotVersionBehavior repoSnapshotBehavior = model.targetRepo.getSnapshotVersionBehavior();
+                boolean uniqueSnapshotBehavior = SnapshotVersionBehavior.UNIQUE.equals(repoSnapshotBehavior);
+
+                return repoHandlesReleases || (repoHandlesSnapshots && !uniqueSnapshotBehavior);
             }
         }
 
@@ -489,6 +580,33 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
             public void onClick(AjaxRequestTarget target) {
                 finish(target);
+            }
+        }
+    }
+
+    private static class DeployModel implements Serializable {
+        private List<LocalRepoDescriptor> repos;
+        private File file;
+        private LocalRepoDescriptor targetRepo;
+        private String targetPath;
+        private boolean pomChanged = false;
+        private String pomXml;
+        private boolean isMavenArtifact = true;
+        private boolean deployPom;
+        private MavenArtifactInfo mavenArtifactInfo;
+
+        public String getTargetPath() {
+            if (isMavenArtifact || targetPath == null) {
+                targetPath = mavenArtifactInfo.getPath();
+            }
+            return targetPath;
+        }
+
+        public UnitInfo getArtifactInfo() {
+            if (isMavenArtifact) {
+                return mavenArtifactInfo;
+            } else {
+                return new ArtifactInfo(targetPath);
             }
         }
     }

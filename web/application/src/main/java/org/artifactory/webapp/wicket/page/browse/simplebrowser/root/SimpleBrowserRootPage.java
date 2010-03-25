@@ -20,26 +20,43 @@ package org.artifactory.webapp.wicket.page.browse.simplebrowser.root;
 
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
+import java.util.Iterator;
 import java.util.List;
 
 public class SimpleBrowserRootPage extends AuthenticatedPage {
     @SpringBean
     private RepositoryService repositoryService;
 
+    @SpringBean
+    private AuthorizationService authorizationService;
+
     public SimpleBrowserRootPage() {
         List<VirtualRepoDescriptor> virtualRepos = repositoryService.getVirtualRepoDescriptors();
+        removeNonPermissionRepositories(virtualRepos);
         add(new RepoListPanel("virtualRepositoriesPanel", virtualRepos));
-
         List<LocalRepoDescriptor> localRepos = repositoryService.getLocalAndCachedRepoDescriptors();
+        removeNonPermissionRepositories(localRepos);
         add(new RepoListPanel("localRepositoriesPanel", localRepos));
     }
 
     @Override
     public String getPageName() {
         return "Repository Browser";
+    }
+
+    private void removeNonPermissionRepositories(List<? extends RepoDescriptor> repositories) {
+        Iterator<? extends RepoDescriptor> repoDescriptors = repositories.iterator();
+        while (repoDescriptors.hasNext()) {
+            RepoDescriptor repoDescriptor = repoDescriptors.next();
+            if (!authorizationService.userHasPermissionsOnRepositoryRoot(repoDescriptor.getKey())) {
+                repoDescriptors.remove();
+            }
+        }
     }
 }

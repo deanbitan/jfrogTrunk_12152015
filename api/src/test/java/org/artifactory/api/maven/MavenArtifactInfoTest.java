@@ -19,9 +19,7 @@
 package org.artifactory.api.maven;
 
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.common.property.ArtifactorySystemProperties;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -32,17 +30,7 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class MavenArtifactInfoTest {
-
-    @BeforeMethod
-    public void bindProps() {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
-    }
-
-    @AfterMethod
-    public void unbindProps() {
-        ArtifactorySystemProperties.unbind();
-    }
+public class MavenArtifactInfoTest extends SystemPropertiesBoundTest {
 
     public void fromSimplePath() {
         RepoPath path = new RepoPath("repo", "/org/jfrog/artifactory-core/2.0/artifactory-core-2.0.pom");
@@ -68,7 +56,7 @@ public class MavenArtifactInfoTest {
         assertFalse(artifactInfo.isSnapshot(), "This is a release version");
     }
 
-    public void fromPathUniqueSnapshotVersion() {
+    public void fromPathNonUniqueSnapshotVersion() {
         // unique snapshot version is a version that includes the timestamp-buildnumber string in the version
         RepoPath path = new RepoPath("repo", "com/core/5.4-SNAPSHOT/artifactory-core-5.4-SNAPSHOT-sources.jar");
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
@@ -81,8 +69,8 @@ public class MavenArtifactInfoTest {
         assertTrue(artifactInfo.isSnapshot(), "This is a snapshot version");
     }
 
-    public void fromPathNonUniqueSnapshotVersion() {
-        // non-unique snapshot version is a version that includes the SNAPSHOT string in the version and not the
+    public void fromPathUniqueSnapshotVersion() {
+        // unique snapshot version is a version that includes the SNAPSHOT string in the version and not the
         // timestamp-buildnumber
         RepoPath path = new RepoPath("repo",
                 "com/core/5.4-SNAPSHOT/artifactory-core-5.4-20081214.090217-4-sources.jar");
@@ -93,6 +81,20 @@ public class MavenArtifactInfoTest {
         assertEquals(artifactInfo.getVersion(), "5.4-SNAPSHOT");
         assertEquals(artifactInfo.getClassifier(), "sources");
         assertEquals(artifactInfo.getType(), "jar");
+        assertTrue(artifactInfo.isSnapshot(), "This is a snapshot version");
+    }
+
+    public void fromPathUniqueMd5SnapshotVersion() {
+        // non-unique snapshot version is a version that includes the SNAPSHOT string in the version and not the
+        // timestamp-buildnumber
+        RepoPath path = new RepoPath("repo", "com/core/5.4-SNAPSHOT/core-5.4-20081214.090217-4-sources.jar.md5");
+        MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
+        assertTrue(artifactInfo.isValid());
+        assertEquals(artifactInfo.getGroupId(), "com");
+        assertEquals(artifactInfo.getArtifactId(), "core");
+        assertEquals(artifactInfo.getVersion(), "5.4-SNAPSHOT");
+        assertEquals(artifactInfo.getClassifier(), "sources");
+        assertEquals(artifactInfo.getType(), "jar.md5");
         assertTrue(artifactInfo.isSnapshot(), "This is a snapshot version");
     }
 

@@ -21,6 +21,7 @@ package org.artifactory.api.md;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
+import com.google.common.collect.SetMultimap;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.api.common.Info;
 
@@ -39,7 +40,18 @@ public class Properties implements Info {
 
     public static final String ROOT = "properties";
 
-    private final LinkedHashMultimap<String, String> props;
+    /**
+     * A mandatory property is stored as key+=val
+     */
+    public static final String MANDATORY_SUFFIX = "+";
+
+    public enum MatchResult {
+        MATCH,
+        NO_MATCH,
+        CONFLICT
+    }
+
+    private final SetMultimap<String, String> props;
 
     public Properties() {
         props = LinkedHashMultimap.create();
@@ -99,6 +111,32 @@ public class Properties implements Info {
 
     public boolean containsKey(String key) {
         return props.containsKey(key);
+    }
+
+    public MatchResult matchQuery(Properties queryProperties) {
+        if (queryProperties == null) {
+            return MatchResult.NO_MATCH;
+        }
+        for (String qPropKey : queryProperties.keySet()) {
+            //Hack - need to model query properties together with their control flags
+            boolean mandatory = false;
+            String propKey = qPropKey;
+            if (qPropKey != null && qPropKey.endsWith(MANDATORY_SUFFIX)) {
+                mandatory = true;
+                propKey = qPropKey.substring(0, qPropKey.length() - MANDATORY_SUFFIX.length());
+            }
+            Set<String> val = get(propKey);
+            if (val == null || val.size() == 0) {
+                if (mandatory) {
+                    return MatchResult.CONFLICT;
+                } else {
+                    return MatchResult.NO_MATCH;
+                }
+            } else if (!val.equals(queryProperties.get(qPropKey))) {
+                return MatchResult.CONFLICT;
+            }
+        }
+        return MatchResult.MATCH;
     }
 
     @Override

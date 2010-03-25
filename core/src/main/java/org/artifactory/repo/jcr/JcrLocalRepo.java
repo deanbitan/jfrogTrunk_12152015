@@ -19,17 +19,27 @@
 package org.artifactory.repo.jcr;
 
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.io.checksum.policy.ChecksumPolicy;
+import org.artifactory.io.checksum.policy.LocalRepoChecksumPolicy;
 import org.artifactory.jcr.fs.JcrFsItem;
-import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 
 public class JcrLocalRepo extends JcrRepoBase<LocalRepoDescriptor> {
 
+    // For local non-cache repositories use the special local repo checksum policy
+    private LocalRepoChecksumPolicy checksumPolicy = new LocalRepoChecksumPolicy();
+
     public JcrLocalRepo(InternalRepositoryService repositoryService, LocalRepoDescriptor descriptor, JcrLocalRepo oldRepo) {
         super(repositoryService, oldRepo != null ? oldRepo.getStorageMixin() : null);
         setDescriptor(descriptor);
+        checksumPolicy.setPolicyType(descriptor.getChecksumPolicyType());
+    }
+
+    public ChecksumPolicy getChecksumPolicy() {
+        return checksumPolicy;
     }
 
     public void onCreate(JcrFsItem fsItem) {
+        // nothing special
     }
 }

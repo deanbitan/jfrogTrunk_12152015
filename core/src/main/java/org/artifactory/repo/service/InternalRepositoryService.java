@@ -32,6 +32,7 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
+import org.artifactory.repo.RepoRepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.resource.RepoResource;
@@ -39,6 +40,7 @@ import org.artifactory.spring.ReloadableBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.util.List;
 
@@ -58,6 +60,15 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     VirtualRepo virtualRepositoryByKey(String key);
 
     LocalRepo localOrCachedRepositoryByKey(String key);
+
+    /**
+     * Get the holder object that holds the actual repository as well as the path.
+     *
+     * @param repoPath The repo path
+     * @param <R>      The type of repository.
+     * @return The holder object that holds the actual repository as well as the path.
+     */
+    <R extends Repo> RepoRepoPath<R> getRepoRepoPath(RepoPath repoPath);
 
     /**
      * Get a repository that can store artifacts. Will get either a local repo (regular or cache) or a virtual repo. If
@@ -97,17 +108,19 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     StatusHolder assertValidDeployPath(LocalRepo repo, String path);
 
     @Lock(transactional = true)
-    <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(
-            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException;
+    <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(RemoteRepo<T> remoteRepo, RepoResource res)
+            throws IOException, RepositoryException;
 
     @Lock(transactional = true)
     RepoResource unexpireIfExists(LocalRepo localCacheRepo, String path);
 
     @Lock(transactional = true)
-    ResourceStreamHandle unexpireAndRetrieveIfExists(LocalRepo localCacheRepo, String path) throws IOException;
+    ResourceStreamHandle unexpireAndRetrieveIfExists(LocalRepo localCacheRepo, String path) throws IOException,
+            RepositoryException;
 
     @Lock(transactional = true)
-    ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res) throws IOException, RepoAccessException;
+    ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res) throws IOException, RepoAccessException,
+            RepositoryException;
 
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);

@@ -43,7 +43,7 @@ public abstract class AuthenticationHelper {
     public static String getRemoteAddress(Authentication authentication) {
         Object details = authentication.getDetails();
         String address = null;
-        if (details != null && details instanceof WebAuthenticationDetails) {
+        if (details instanceof WebAuthenticationDetails) {
             address = ((WebAuthenticationDetails) details).getRemoteAddress();
         }
         return address;

@@ -22,8 +22,8 @@ import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.FolderInfoImpl;
 import org.artifactory.api.fs.MetadataInfo;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Node;
 

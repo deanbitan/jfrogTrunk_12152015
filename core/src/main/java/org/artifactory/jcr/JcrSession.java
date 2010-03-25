@@ -156,7 +156,8 @@ public class JcrSession implements XASession {
         try {
             workspace.copy(srcAbsPath, tgtAbsPath);
         } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException("Could not copy '" + srcAbsPath + "' to '" + tgtAbsPath + "'.", e);
+            throw new RepositoryRuntimeException(
+                    "Could not copy '" + srcAbsPath + "' to '" + tgtAbsPath + "': " + e.getMessage(), e);
         }
     }
 

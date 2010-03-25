@@ -80,7 +80,7 @@ public class UniqueSnapshotsCleanerInterceptor implements RepoInterceptor {
                 String name = child.getName();
                 if (MavenNaming.isUniqueSnapshotFileName(name)) {
                     String childTimeStamp = MavenNaming.getUniqueSnapshotVersionTimestamp(name);
-                    Date childLastUpdated = MavenModelUtils.timestampToDate(childTimeStamp);
+                    Date childLastUpdated = MavenModelUtils.uniqueSnapshotToUtc(childTimeStamp);
                     //Add it to the sorted set - newer items closer to the head
                     ItemDescription newDescription = new ItemDescription(child, childLastUpdated);
                     itemsByDate.add(newDescription);

@@ -19,15 +19,11 @@
 package org.artifactory.jcr.md;
 
 import org.artifactory.api.stat.StatsInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author freds
  */
 public class StatsInfoXmlProvider extends XStreamMetadataProvider<StatsInfo> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(StatsInfoXmlProvider.class);
 
     public StatsInfoXmlProvider() {
         super(StatsInfo.class);

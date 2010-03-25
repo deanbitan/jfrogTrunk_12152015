@@ -46,167 +46,172 @@ import static org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortS
  * @author Yoav Aharoni
  */
 public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
-    public AjaxGroupableHeadersToolbar(final DataTable table, final ISortStateLocator stateLocator) {
-        super(table);
+	public AjaxGroupableHeadersToolbar(final DataTable table, final ISortStateLocator stateLocator) {
+		super(table);
 
-        // alas, copied from HeadersToolbar
-        RepeatingView headers = new RepeatingView("headers");
-        add(headers);
+		// alas, copied from HeadersToolbar
+		RepeatingView headers = new RepeatingView("headers");
+		add(headers);
 
-        final IColumn[] columns = table.getColumns();
-        for (int i = 0; i < columns.length; i++) {
-            final IColumn column = columns[i];
+		final IColumn[] columns = table.getColumns();
+		for (int i = 0; i < columns.length; i++) {
+			final IColumn column = columns[i];
 
-            WebMarkupContainer item = new WebMarkupContainer(headers.newChildId());
-            item.setRenderBodyOnly(true);
-            headers.add(item);
+			WebMarkupContainer item = new WebMarkupContainer(headers.newChildId());
+			item.setRenderBodyOnly(true);
+			headers.add(item);
 
-            WebMarkupContainer header;
-            if (column.isSortable()) {
-                header = newSortableHeader("header", column.getSortProperty(), stateLocator);
-            } else {
-                header = new WebMarkupContainer("header");
-            }
+			WebMarkupContainer header;
+			if (column.isSortable()) {
+				if (column instanceof IGroupableColumn) {
+					final IGroupableColumn groupableColumn = (IGroupableColumn) column;
+					header = newSortableHeader("header", groupableColumn.getSortProperty(), groupableColumn.getGroupProperty(), stateLocator);
+				} else {
+					header = newSortableHeader("header", column.getSortProperty(), column.getSortProperty(), stateLocator);
+				}
+			} else {
+				header = new WebMarkupContainer("header");
+			}
 
-            // add IStyledColumn style
-            if (column instanceof IStyledColumn) {
-                header.add(new CssClass(new AbstractReadOnlyModel() {
-                    public Object getObject() {
-                        return ((IStyledColumn) column).getCssClass();
-                    }
-                }));
-            }
+			// add IStyledColumn style
+			if (column instanceof IStyledColumn) {
+				header.add(new CssClass(new AbstractReadOnlyModel() {
+					public Object getObject() {
+						return ((IStyledColumn) column).getCssClass();
+					}
+				}));
+			}
 
-            // add first/last style
-            if (i == 0) {
-                header.add(new CssClass("first-cell"));
-            } else if (i == columns.length - 1) {
-                header.add(new CssClass("last-cell"));
-            }
-            item.add(header);
+			// add first/last style
+			if (i == 0) {
+				header.add(new CssClass("first-cell"));
+			} else if (i == columns.length - 1) {
+				header.add(new CssClass("last-cell"));
+			}
+			item.add(header);
 
-            // add label
-            header.add(column.getHeader("label"));
+			// add label
+			header.add(column.getHeader("label"));
 
-            // add groupByLink
-            Component groupByLink;
-            WebMarkupContainer groupByText = new WebMarkupContainer("groupByText");
-            if (column instanceof IGroupableColumn) {
-                IGroupableColumn groupableColumn = (IGroupableColumn) column;
-                String property = groupableColumn.getGroupProperty();
-                groupByLink = newGroupByLink("groupByLink", stateLocator, property);
+			// add groupByLink
+			Component groupByLink;
+			WebMarkupContainer groupByText = new WebMarkupContainer("groupByText");
+			if (column instanceof IGroupableColumn) {
+				IGroupableColumn groupableColumn = (IGroupableColumn) column;
+				String property = groupableColumn.getGroupProperty();
+				groupByLink = newGroupByLink("groupByLink", stateLocator, property);
 
-                header.add(new CssClass(new HeaderCssModel(stateLocator, property)));
-            } else {
-                groupByLink = new WebMarkupContainer("groupByLink").setVisible(false);
-                groupByText.setVisible(false);
-            }
+				header.add(new CssClass(new HeaderCssModel(stateLocator, property)));
+			} else {
+				groupByLink = new WebMarkupContainer("groupByLink").setVisible(false);
+				groupByText.setVisible(false);
+			}
 
-            header.add(groupByLink);
-            header.add(groupByText);
-        }
-    }
+			header.add(groupByLink);
+			header.add(groupByText);
+		}
+	}
 
-    protected WebMarkupContainer newSortableHeader(String borderId, final String property,
-            final ISortStateLocator stateLocator) {
-        return new AjaxFallbackOrderByBorder(borderId, property, stateLocator, getAjaxCallDecorator()) {
-            protected void onAjaxClick(AjaxRequestTarget target) {
-                target.addComponent(getTable());
-            }
+	protected WebMarkupContainer newSortableHeader(String borderId, final String sortBy,
+	                                               final String groupBy,
+	                                               final ISortStateLocator stateLocator) {
+		return new AjaxFallbackOrderByBorder(borderId, sortBy, stateLocator, getAjaxCallDecorator()) {
+			protected void onAjaxClick(AjaxRequestTarget target) {
+				target.addComponent(getTable());
+			}
 
-            protected void onSortChanged() {
-                super.onSortChanged();
-                getTable().setCurrentPage(0);
+			protected void onSortChanged() {
+				super.onSortChanged();
+				getTable().setCurrentPage(0);
 
-                // reset group
-                if (stateLocator instanceof IGroupStateLocator) {
-                    IGroupStateLocator locator = (IGroupStateLocator) stateLocator;
-                    if (isGroupedBy(locator.getGroupParam(), property)) {
-                        boolean ascending = locator.getGroupParam().isAscending();
-                        locator.setGroupParam(new SortParam(property, !ascending));
-                        locator.setSortState(new SingleSortState());
-                    }
-                }
+				// reset group
+				if (stateLocator instanceof IGroupStateLocator) {
+					IGroupStateLocator locator = (IGroupStateLocator) stateLocator;
+					if (isGroupedBy(locator.getGroupParam(), groupBy)) {
+						boolean ascending = locator.getGroupParam().isAscending();
+						locator.setGroupParam(new SortParam(groupBy, !ascending));
+						locator.setSortState(new SingleSortState());
+					}
+				}
+			}
+		};
+	}
 
-            }
-        };
-    }
-
-    protected IAjaxCallDecorator getAjaxCallDecorator() {
-        return null;
-    }
+	protected IAjaxCallDecorator getAjaxCallDecorator() {
+		return null;
+	}
 
 
-    private Component newGroupByLink(String id, final ISortStateLocator stateLocator, final String groupProperty) {
-        return new AjaxLink(id) {
-            public void onClick(AjaxRequestTarget target) {
-                if (stateLocator instanceof IGroupStateLocator) {
-                    IGroupStateLocator groupStateLocator = (IGroupStateLocator) stateLocator;
-                    switchGroupState(groupStateLocator, groupProperty);
-                    target.addComponent(getTable());
-                }
-            }
+	private Component newGroupByLink(String id, final ISortStateLocator stateLocator, final String groupProperty) {
+		return new AjaxLink(id) {
+			public void onClick(AjaxRequestTarget target) {
+				if (stateLocator instanceof IGroupStateLocator) {
+					IGroupStateLocator groupStateLocator = (IGroupStateLocator) stateLocator;
+					switchGroupState(groupStateLocator, groupProperty);
+					target.addComponent(getTable());
+				}
+			}
 
-            @Override
-            protected void onComponentTag(ComponentTag tag) {
-                super.onComponentTag(tag);
-                tag.put("title", "Group By");
-            }
+			@Override
+			protected void onComponentTag(ComponentTag tag) {
+				super.onComponentTag(tag);
+				tag.put("title", "Group By");
+			}
 
-            @Override
-            protected IAjaxCallDecorator getAjaxCallDecorator() {
-                return new CancelDefaultDecorator();
-            }
-        };
-    }
+			@Override
+			protected IAjaxCallDecorator getAjaxCallDecorator() {
+				return new CancelDefaultDecorator();
+			}
+		};
+	}
 
-    private static boolean isGroupedBy(SortParam groupParam, String property) {
-        return property != null
-                && groupParam != null
-                && groupParam.getProperty() != null
-                && property.equals(groupParam.getProperty());
-    }
+	private static boolean isGroupedBy(SortParam groupParam, String property) {
+		return property != null
+				&& groupParam != null
+				&& groupParam.getProperty() != null
+				&& property.equals(groupParam.getProperty());
+	}
 
-    private void switchGroupState(IGroupStateLocator groupStateLocator, String groupProperty) {
-        SortParam groupParam = groupStateLocator.getGroupParam();
-        if (groupParam == null || !groupProperty.equals(groupParam.getProperty())) {
-            groupParam = new SortParam(groupProperty, true);
-        } else {
-            groupParam = null;
-        }
-        groupStateLocator.setGroupParam(groupParam);
+	private void switchGroupState(IGroupStateLocator groupStateLocator, String groupProperty) {
+		SortParam groupParam = groupStateLocator.getGroupParam();
+		if (groupParam == null || !groupProperty.equals(groupParam.getProperty())) {
+			groupParam = new SortParam(groupProperty, true);
+		} else {
+			groupParam = null;
+		}
+		groupStateLocator.setGroupParam(groupParam);
 
-        // reset sort state
-        ISortState sortState = groupStateLocator.getSortState();
-        if (NONE != sortState.getPropertySortOrder(groupProperty)) {
-            if (sortState instanceof SingleSortState) {
-                ((SingleSortState) sortState).setSort(null);
-            }
-        }
-    }
+		// reset sort state
+		ISortState sortState = groupStateLocator.getSortState();
+		if (NONE != sortState.getPropertySortOrder(groupProperty)) {
+			if (sortState instanceof SingleSortState) {
+				((SingleSortState) sortState).setSort(null);
+			}
+		}
+	}
 
-    private static class HeaderCssModel extends AbstractReadOnlyModel {
-        private final ISortStateLocator stateLocator;
-        private final String property;
+	private static class HeaderCssModel extends AbstractReadOnlyModel {
+		private final ISortStateLocator stateLocator;
+		private final String property;
 
-        public HeaderCssModel(ISortStateLocator stateLocator, String property) {
-            this.stateLocator = stateLocator;
-            this.property = property;
-        }
+		public HeaderCssModel(ISortStateLocator stateLocator, String property) {
+			this.stateLocator = stateLocator;
+			this.property = property;
+		}
 
-        public Object getObject() {
-            if (stateLocator instanceof IGroupStateLocator) {
-                SortParam groupParam = ((IGroupStateLocator) stateLocator).getGroupParam();
-                if (!isGroupedBy(groupParam, property)) {
-                    return "group-by group-by-none";
-                }
-                if (groupParam.isAscending()) {
-                    return "group-by group-by-asc";
-                }
-                return "group-by group-by-desc";
-            }
+		public Object getObject() {
+			if (stateLocator instanceof IGroupStateLocator) {
+				SortParam groupParam = ((IGroupStateLocator) stateLocator).getGroupParam();
+				if (!isGroupedBy(groupParam, property)) {
+					return "group-by group-by-none";
+				}
+				if (groupParam.isAscending()) {
+					return "group-by group-by-asc";
+				}
+				return "group-by group-by-desc";
+			}
 
-            return "";
-        }
-    }
+			return "";
+		}
+	}
 }

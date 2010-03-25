@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.util;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.util.lang.PropertyResolver;
 import org.artifactory.descriptor.Descriptor;
@@ -147,7 +148,11 @@ public class DescriptionExtractor {
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
         InputStream schemaIn = this.getClass().getResourceAsStream("/artifactory.xsd");
-        return builder.parse(schemaIn);
+        try {
+            return builder.parse(schemaIn);
+        } finally {
+            IOUtils.closeQuietly(schemaIn);
+        }
     }
 
     private String executeQuery(String query) {
@@ -163,10 +168,10 @@ public class DescriptionExtractor {
         }
     }
 
-    public class SchemaNamespaceContext implements NamespaceContext {
+    public static class SchemaNamespaceContext implements NamespaceContext {
         public String getNamespaceURI(String prefix) {
             if (prefix == null) {
-                throw new NullPointerException("Null prefix");
+                throw new IllegalArgumentException("Null prefix");
             } else if ("xs".equals(prefix)) {
                 return XMLConstants.W3C_XML_SCHEMA_NS_URI;
             } else if ("xml".equals(prefix)) {

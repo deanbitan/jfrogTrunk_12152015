@@ -18,8 +18,9 @@
 
 package org.artifactory.security.ldap;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.LdapGroupCoreAddon;
+import org.artifactory.addon.LdapGroupAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
@@ -89,9 +90,9 @@ public class ArtifactoryLdapAuthenticationProvider extends LdapAuthenticationPro
                     userName, !enabledLdapSettings.isAutoCreateUser());
 
             AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
-            LdapGroupCoreAddon ldapGroupCoreAddon = addonsManager.addonByType(LdapGroupCoreAddon.class);
+            LdapGroupAddon ldapGroupAddon = addonsManager.addonByType(LdapGroupAddon.class);
             log.debug("Loading LDAP groups");
-            ldapGroupCoreAddon.populateGroups(dirContextOperations, userInfo);
+            ldapGroupAddon.populateGroups(dirContextOperations, userInfo);
             log.debug("Finished Loading LDAP groups");
 
             SimpleUser user = new SimpleUser(userInfo);
@@ -103,6 +104,7 @@ public class ArtifactoryLdapAuthenticationProvider extends LdapAuthenticationPro
         } catch (AuthenticationException e) {
             String message = String.format("Failed to authenticate user '%s' via LDAP: %s", userName, e.getMessage());
             log.debug(message);
+            checkIfBindAndSearchActive(userName);
             throw new AuthenticationServiceException(message, e);
         } catch (CommunicationException ce) {
             String message = String.format("Failed to authenticate user '%s' via LDAP: communication error", userName);
@@ -112,6 +114,7 @@ public class ArtifactoryLdapAuthenticationProvider extends LdapAuthenticationPro
         } catch (org.springframework.security.core.AuthenticationException e) {
             String message = String.format("Failed to authenticate user '%s' via LDAP: %s", userName, e.getMessage());
             log.debug(message);
+            checkIfBindAndSearchActive(userName);
             throw e;
         } catch (Exception e) {
             String message = "Unexpected exception in LDAP authentication:";
@@ -119,6 +122,16 @@ public class ArtifactoryLdapAuthenticationProvider extends LdapAuthenticationPro
             throw new AuthenticationServiceException(message, e);
         } finally {
             LdapUtils.closeContext(dirContextOperations);
+        }
+    }
+
+    private void checkIfBindAndSearchActive(String userName) {
+        LdapSetting enabledLdapSettings = centralConfig.getDescriptor().getSecurity().getEnabledLdapSettings();
+        if (StringUtils.isNotBlank(enabledLdapSettings.getUserDnPattern()) &&
+                enabledLdapSettings.getSearch() != null) {
+            log.warn("LDAP authentication failed for '{}'. Note: you have configured direct user binding and " +
+                    "manager-based search, which are usually mutually exclusive. For AD leave the User DN Pattern " +
+                    "field empty.", userName);
         }
     }
 }

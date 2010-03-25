@@ -55,7 +55,7 @@ public class SecurityInfoReader {
     public SecurityInfo read(InputStream is) {
         String xmlContent;
         try {
-            xmlContent = IOUtils.toString(is);
+            xmlContent = IOUtils.toString(is, "utf-8");
         } catch (IOException e) {
             throw new RuntimeException("Failed to read file content: " + e.getMessage(), e);
         }

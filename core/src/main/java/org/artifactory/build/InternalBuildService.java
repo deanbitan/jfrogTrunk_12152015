@@ -18,6 +18,7 @@
 
 package org.artifactory.build;
 
+import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.build.ImportableExportableBuild;
 import org.artifactory.api.config.ImportSettings;
@@ -25,11 +26,10 @@ import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.md.Properties;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.build.api.Build;
 import org.artifactory.spring.ReloadableBean;
+import org.jfrog.build.api.Build;
 
 import javax.jcr.Node;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -64,10 +64,10 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * Locates builds that are named as the given name within a transaction
      *
      * @param buildName Name of builds to locate
-     * @return List of builds with the given name
+     * @return Set of builds with the given name
      */
     @Lock(transactional = true)
-    List<Build> transactionalSearchBuildsByName(String buildName);
+    Set<BasicBuildInfo> transactionalSearchBuildsByName(String buildName);
 
     /**
      * Imports an exportable build info into the database. This is an internal method and should be used to import a

@@ -18,6 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.security.login.forgot;
 
+import org.apache.wicket.markup.ComponentTag;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.links.TitledLink;
 
 /**
@@ -27,11 +29,19 @@ import org.artifactory.common.wicket.component.links.TitledLink;
  */
 public class ForgotPasswordLink extends TitledLink {
     public ForgotPasswordLink(String id) {
-        super(id, "Forgot Password");
+        super(id, "Forgot your password?");
+        add(new CssClass("forgot-password"));
     }
 
     @Override
     public void onClick() {
         setResponsePage(ForgotPasswordPage.class);
+    }
+
+    @Override
+    protected void onComponentTag(ComponentTag tag) {
+        super.onComponentTag(tag);
+        tag.setName("a");
+        tag.put("href", urlFor(ForgotPasswordPage.class, null));
     }
 }

@@ -91,11 +91,6 @@ public class LoginPanel extends TitledActionPanel {
         checkbox.setInputName(AbstractRememberMeServices.DEFAULT_PARAMETER);
         add(checkbox);
 
-        // add forgot password link
-        if (isMailServerConfigured()) {
-            addButton(new ForgotPasswordLink("forgotPassword"));
-        }
-
         // add login link
         IFormSubmittingComponent loginLink =
                 addons.addonByType(WebApplicationAddon.class).getLoginLink("loginLink", form);
@@ -103,6 +98,11 @@ public class LoginPanel extends TitledActionPanel {
 
         // add cancel link
         addButton(new TitledPageLink("cancel", "Cancel", ArtifactoryApplication.get().getHomePage()));
+
+        // add forgot password link
+        if (isMailServerConfigured()) {
+            addButton(new ForgotPasswordLink("forgotPassword"));
+        }
     }
 
 

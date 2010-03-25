@@ -25,19 +25,18 @@ import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.build.api.Artifact;
-import org.artifactory.build.api.Build;
-import org.artifactory.build.api.Dependency;
-import org.artifactory.build.api.Module;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
+import org.jfrog.build.api.Artifact;
+import org.jfrog.build.api.Build;
+import org.jfrog.build.api.Module;
 
 import java.util.List;
 import java.util.Set;
 
 /**
- * Addon for continous intergration info handeling
+ * Addon for continuous integration info handling
  *
  * @author Noam Y. Tenne
  */
@@ -109,15 +108,15 @@ public interface BuildAddon extends AddonFactory {
             List<Artifact> artifacts);
 
     /**
-     * Returns a list of build-dependency actionable items
+     * Populates dependency actionable items with their corresponding repo paths (if exist)
      *
      * @param buildName    The name of the searched build
      * @param buildNumber  The number of the searched build
-     * @param dependencies Dependencies to create actionable items from
+     * @param dependencies Unpopulated actionable items
      * @return Dependency actionable item list
      */
-    List<ModuleDependencyActionableItem> getModuleDependencyActionableItem(String buildName, long buildNumber,
-            List<Dependency> dependencies);
+    List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(String buildName, long buildNumber,
+            List<ModuleDependencyActionableItem> dependencies);
 
     /**
      * Returns the build save search results panel

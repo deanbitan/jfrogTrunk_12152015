@@ -165,7 +165,7 @@ public class LdapGroupSettingLowerCaseOcmConverter implements ConfigurationConve
 
     private String createNewPath(String originalPath) {
         String newPath;
-        int indexOfName = originalPath.lastIndexOf("/");
+        int indexOfName = originalPath.lastIndexOf('/');
         String name = originalPath.substring(indexOfName, originalPath.length());
         String originalPathWithoutEnd = StringUtils.removeEnd(originalPath, name);
         newPath = originalPathWithoutEnd + name.toLowerCase();
@@ -173,7 +173,7 @@ public class LdapGroupSettingLowerCaseOcmConverter implements ConfigurationConve
     }
 
     private void userNodeAlreadyFound(Map<String, Node> foundUsers, Node userNode, String email,
-            String lowerCaseUserName, boolean admin)
+                                      String lowerCaseUserName, boolean admin)
             throws RepositoryException {
         Node otherUserNode = foundUsers.get(lowerCaseUserName);
         if (otherUserNode == null) {
@@ -197,7 +197,7 @@ public class LdapGroupSettingLowerCaseOcmConverter implements ConfigurationConve
     }
 
     private void groupNodeAlreadyFound(Map<String, Node> foundGroups, Node groupNode, String desc,
-            String lowercaseGroupName) throws RepositoryException {
+                                       String lowercaseGroupName) throws RepositoryException {
         if (StringUtils.isNotBlank(desc)) {
             Node otherGroupNode = foundGroups.get(lowercaseGroupName);
             if (otherGroupNode.hasProperty("description")) {

@@ -33,6 +33,7 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.slf4j.Logger;
 
+import javax.jcr.RepositoryException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -79,7 +80,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         if (MavenNaming.isSnapshot(folder.getPath())) {
             // if this folder contains snapshots create snapshots maven.metadata
             log.trace("Detected snapshots container: {}", folder);
-            createSnapshotsMetadata(folder);
+            createSnapshotsMetadata(folder, status);
             containsMetadataInfo = true;
         } else {
             // if this folder contains "version folders" create versions maven metadata
@@ -92,14 +93,22 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         }
 
         if (!containsMetadataInfo) {
-            removeMetadataIfExist(folder);
+            try {
+                removeMetadataIfExist(folder);
+            } catch (RepositoryException e) {
+                status.setError("Error while removing metadata of folder " + folder.getAbsolutePath() + ".", e, log);
+            }
         }
     }
 
-    private void createSnapshotsMetadata(JcrFolder folder) {
+    private void createSnapshotsMetadata(JcrFolder folder, StatusHolder status) {
         List<JcrFile> poms = getPomItems(folder);
         if (poms.isEmpty()) {
-            removeMetadataIfExist(folder);
+            try {
+                removeMetadataIfExist(folder);
+            } catch (RepositoryException e) {
+                status.setError("Error while removing metadata of folder " + folder.getAbsolutePath() + ".", e, log);
+            }
             return;
         }
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(poms.get(0).getRepoPath());
@@ -190,9 +199,9 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         return result;
     }
 
-    protected void removeMetadataIfExist(JcrFolder folder) {
+    protected void removeMetadataIfExist(JcrFolder folder) throws RepositoryException {
         if (folder.hasMetadata(MavenNaming.MAVEN_METADATA_NAME)) {
-            folder.setMetadata(MavenNaming.MAVEN_METADATA_NAME, null);
+            folder.removeMetadata(MavenNaming.MAVEN_METADATA_NAME);
         }
     }
 }

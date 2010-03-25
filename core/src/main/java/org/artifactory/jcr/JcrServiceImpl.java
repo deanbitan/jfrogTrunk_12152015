@@ -22,6 +22,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang.StringUtils;
+import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.jackrabbit.core.GarbageCollectorFactory;
 import org.apache.jackrabbit.core.nodetype.InvalidNodeTypeDefException;
@@ -108,6 +109,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.apache.jackrabbit.JcrConstants.*;
+import static org.artifactory.jcr.JcrTypes.*;
 
 /**
  * Spring based session factory for tx jcr sessions
@@ -231,6 +233,32 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     public void init() {
         //Initialize the created jcr repository
         JcrRepoInitHelper.init(this);
+        ArtifactoryHome artifactoryHome = InternalContextHelper.get().getArtifactoryHome();
+        if (artifactoryHome.startedFromDifferentVersion()) {
+            CompoundVersionDetails source = artifactoryHome.getOriginalVersionDetails();
+            JcrVersion.values();
+            JcrVersion originalVersion = source.getVersion().getSubConfigElementVersion(JcrVersion.class);
+
+            /**
+             * Keep track if we opened the session or not (might be opened by JCR metadata converter before us), and if
+             * not, don't close it and remote from the thread local, as it is expected in other places
+             */
+            JcrSession unManagedSession = UNMANAGED_SESSION_HOLDER.get();
+            boolean sessionOpenedByMe = false;
+            if (unManagedSession == null) {
+                sessionOpenedByMe = true;
+                unManagedSession = getUnmanagedSession();
+                UNMANAGED_SESSION_HOLDER.set(unManagedSession);
+            }
+            try {
+                originalVersion.postInitConvert(unManagedSession);
+            } finally {
+                if (sessionOpenedByMe) {
+                    UNMANAGED_SESSION_HOLDER.remove();
+                    unManagedSession.logout();
+                }
+            }
+        }
     }
 
     @SuppressWarnings({"unchecked"})
@@ -430,7 +458,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
             while (nodes.hasNext()) {
                 Node childNode = nodes.nextNode();
                 String name = childNode.getName();
-                if (!JcrTypes.NODE_ARTIFACTORY_METADATA.equals(name)) {
+                if (!NODE_ARTIFACTORY_METADATA.equals(name)) {
                     names.add(name);
                 }
             }
@@ -521,10 +549,20 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
         return items;
     }
 
+    public Node getNode(String absPath) {
+        JcrSession session = getManagedSession();
+        Node root = session.getRootNode();
+        return JcrHelper.getNode(root, absPath);
+    }
+
     public Node getOrCreateUnstructuredNode(String absPath) {
         JcrSession session = getManagedSession();
         Node root = session.getRootNode();
         return getOrCreateUnstructuredNode(root, absPath);
+    }
+
+    public Node getNode(Node parent, String relPath) {
+        return JcrHelper.getNode(parent, relPath);
     }
 
     public Node getOrCreateUnstructuredNode(Node parent, String relPath) {
@@ -551,14 +589,6 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
         }
     }
 
-    /**
-     * Get an input stream of the binary stored on the specified node.
-     * <p/>
-     * NOTE: Caller is expected to close the returned stream.
-     *
-     * @param nodePath
-     * @return
-     */
     public InputStream getStream(String nodePath) {
         JcrSession session = getManagedSession();
         Node node = (Node) session.getItem(nodePath);
@@ -615,13 +645,14 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
                 //Add the metadata node and mark the create time
                 Calendar created = Calendar.getInstance();
                 metadataNode = parent.addNode(nodeName);
-                metadataNode.setProperty(JcrTypes.PROP_ARTIFACTORY_CREATED, created);
-                metadataNode.setProperty(JcrTypes.PROP_ARTIFACTORY_CREATED_BY, userId);
+                metadataNode.setProperty(PROP_ARTIFACTORY_METADATA_NAME, nodeName);
+                metadataNode.setProperty(PROP_ARTIFACTORY_CREATED, created);
+                metadataNode.setProperty(PROP_ARTIFACTORY_CREATED_BY, userId);
             }
             //Update the last modified on the specific metadata
             Calendar lastModified = Calendar.getInstance();
-            metadataNode.setProperty(JcrTypes.PROP_ARTIFACTORY_LAST_MODIFIED, lastModified);
-            metadataNode.setProperty(JcrTypes.PROP_ARTIFACTORY_LAST_MODIFIED_BY, userId);
+            metadataNode.setProperty(PROP_ARTIFACTORY_LAST_MODIFIED, lastModified);
+            metadataNode.setProperty(PROP_ARTIFACTORY_LAST_MODIFIED_BY, userId);
 
             //Set the original raw xml
             Node resourceNode;
@@ -649,10 +680,10 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
                 Property property = resourceNode.getProperty(JCR_DATA);
                 InputStream rawStream = property.getStream();
                 try {
-                    if (metadataNode.hasNode(JcrTypes.NODE_ARTIFACTORY_XML)) {
-                        stringNode = metadataNode.getNode(JcrTypes.NODE_ARTIFACTORY_XML);
+                    if (metadataNode.hasNode(NODE_ARTIFACTORY_XML)) {
+                        stringNode = metadataNode.getNode(NODE_ARTIFACTORY_XML);
                     } else {
-                        stringNode = metadataNode.addNode(JcrTypes.NODE_ARTIFACTORY_XML);
+                        stringNode = metadataNode.addNode(NODE_ARTIFACTORY_XML);
                     }
                     saveXmlHierarchy(stringNode, rawStream);
                 } finally {
@@ -664,7 +695,15 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
         }
     }
 
-    public static void setChecksums(Node metadataNode, Checksum[] checksums, boolean override) {
+    public void saveChecksums(JcrFsItem fsItem, String metadataName, Checksum[] checksums) {
+        // TODO: Maybe write lock the fsItem?
+        Node metadataNode = JcrHelper.safeGetNode(fsItem.getNode(), NODE_ARTIFACTORY_METADATA, metadataName);
+        if (metadataNode != null) {
+            setChecksums(metadataNode, checksums, false);
+        }
+    }
+
+    private void setChecksums(Node metadataNode, Checksum[] checksums, boolean override) {
         try {
             for (Checksum checksum : checksums) {
                 //Save the checksum as a property
@@ -714,7 +753,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
             //Check for wrapped repository exception
             if (e instanceof SAXException) {
                 Exception e1 = ((SAXException) e).getException();
-                if (e1 != null && e1 instanceof RepositoryException) {
+                if (e1 instanceof RepositoryException) {
                     if (ncis != null) {
                         ncis.forceClose();
                     }
@@ -792,9 +831,9 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
 
     public JcrFsItem getFsItem(Node node, StoringRepo repo) {
         String typeName = JcrHelper.getPrimaryTypeName(node);
-        if (typeName.equals(JcrTypes.NT_ARTIFACTORY_FOLDER)) {
+        if (typeName.equals(NT_ARTIFACTORY_FOLDER)) {
             return new JcrFolder(node, repo);
-        } else if (typeName.equals(JcrTypes.NT_ARTIFACTORY_FILE)) {
+        } else if (typeName.equals(NT_ARTIFACTORY_FILE)) {
             return new JcrFile(node, repo, null);
         } else {
             throw new RepositoryRuntimeException(
@@ -836,7 +875,8 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
             sb.append("/jcr:root").append(JcrPath.get().getRepoJcrRootPath()).append("/").append(repoKey);
         }
 
-        sb.append("//element(*, nt:file) [@artifactory:name]");
+        sb.append("//element(*, ").append(NT_FILE).append(") [@").append(PROP_ARTIFACTORY_NAME).
+                append("]");
 
         QueryResult result = executeQuery(JcrQuerySpec.xpath(sb.toString()).noLimit());
         long count = 0;
@@ -850,7 +890,8 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     }
 
     public List<JcrFile> getPluginPomNodes(StoringRepo repo) {
-        StringBuilder qb = new StringBuilder("//. [@jcr:xmlcharacters = 'maven-plugin']");
+        StringBuilder qb = new StringBuilder("//element(*, ").append(JcrConstants.NT_UNSTRUCTURED).
+                append(") [@jcr:xmlcharacters = 'maven-plugin']");
         QueryResult result;
         try {
             result = executeQuery(JcrQuerySpec.xpath(qb.toString()).noLimit());
@@ -873,7 +914,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
                 Node node = nodeIterator.nextNode();
                 String path = node.getPath();
                 if (path.startsWith(repoPrefix) && path.endsWith("artifactory:xml/project/packaging/jcr:xmltext")) {
-                    String artifactPath = path.substring(0, path.lastIndexOf("/" + JcrTypes.NODE_ARTIFACTORY_XML));
+                    String artifactPath = path.substring(0, path.lastIndexOf("/" + NODE_ARTIFACTORY_XML));
                     RepoPath repoPath = JcrPath.get().getRepoPath(artifactPath);
                     JcrFile jcrFile = repo.getJcrFile(repoPath);
                     pluginPomFiles.add(jcrFile);
@@ -932,7 +973,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
         }
         //Only delete known or unstructured node types (may be containers of nodes of other types)
         String nodeType = node.getPrimaryNodeType().getName();
-        if (JcrTypes.NT_ARTIFACTORY_FILE.equals(nodeType) || JcrTypes.NT_ARTIFACTORY_FOLDER.equals(nodeType) ||
+        if (NT_ARTIFACTORY_FILE.equals(nodeType) || NT_ARTIFACTORY_FOLDER.equals(nodeType) ||
                 "nt:unstructured".equals(nodeType)) {
             //Remove myself
             log.debug("Deleting node: {}", node.getPath());

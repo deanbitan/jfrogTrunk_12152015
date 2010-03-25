@@ -18,10 +18,8 @@
 
 package org.artifactory.api.request;
 
-import com.google.common.collect.SetMultimap;
-import org.artifactory.common.property.ArtifactorySystemProperties;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import org.artifactory.api.md.Properties;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -34,38 +32,38 @@ import static org.testng.Assert.assertFalse;
  * @author Yoav Landman
  */
 @Test
-public class ArtifactoryRequestTest {
+public class ArtifactoryRequestTest extends SystemPropertiesBoundTest {
 
     public void matrixParams() {
         ArtifactoryRequestBase request = newRequest();
         request.setRepoPath(request.calculateRepoPath("libs-releases/path1/path2:metadata1;a=1;a=11;b=2;c;d=4;e"));
-        SetMultimap<String, String> params = request.getMatrixParams();
+        Properties params = request.getProperties();
         assertMatrixParams(params);
         request = newRequest();
         request.setRepoPath(request.calculateRepoPath("libs-releases;a=1;a=11;b=2;c;d=4;e/path1/path2:metadata1"));
-        params = request.getMatrixParams();
+        params = request.getProperties();
         assertMatrixParams(params);
         request = newRequest();
         request.setRepoPath(request.calculateRepoPath("libs-releases;a=1;b=2/path1/path2:metadata1;a=11;c;d=4;e"));
-        params = request.getMatrixParams();
+        params = request.getProperties();
         assertMatrixParams(params);
         request = newRequest();
         request.setRepoPath(request.calculateRepoPath("libs-releases;a=1;a=11;b=2;c;d=4;e"));
-        params = request.getMatrixParams();
+        params = request.getProperties();
         assertMatrixParams(params);
     }
 
     public void matrixParamsWithEncodedValues() {
         ArtifactoryRequestBase request = newRequest();
         request.setRepoPath(request.calculateRepoPath("libs-releases;a=1+2;b=1%232;c="));
-        SetMultimap<String, String> params = request.getMatrixParams();
+        Properties params = request.getProperties();
         assertEquals(params.size(), 3, "Expecting 3 parameters");
         assertEquals(params.get("a").iterator().next(), "1 2", "Character '+' should have been decoded to space");
         assertEquals(params.get("b").iterator().next(), "1#2", "String '%23' should have been decoded to '#'");
         assertEquals(params.get("c").iterator().next(), "", "Expecting empty string");
     }
 
-    private void assertMatrixParams(SetMultimap<String, String> params) {
+    private void assertMatrixParams(Properties params) {
         assertEquals(params.size(), 6);
         assertEquals(params.get("a").toArray(), new String[]{"1", "11"});
         assertEquals(params.get("b").iterator().next(), "2");
@@ -129,16 +127,6 @@ public class ArtifactoryRequestTest {
                 return null;
             }
         };
-    }
-
-    @BeforeMethod
-    public void setup() {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
-    }
-
-    @AfterMethod
-    public void tearDown() {
-        ArtifactorySystemProperties.unbind();
     }
 
 }

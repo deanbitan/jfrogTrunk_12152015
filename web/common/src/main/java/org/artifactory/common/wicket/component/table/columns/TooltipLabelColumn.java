@@ -21,7 +21,7 @@ package org.artifactory.common.wicket.component.table.columns;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
-import org.artifactory.common.wicket.component.label.TooltipLabel;
+import org.artifactory.common.wicket.component.label.tooltip.TooltipLabel;
 
 /**
  * @author Yoav Aharoni

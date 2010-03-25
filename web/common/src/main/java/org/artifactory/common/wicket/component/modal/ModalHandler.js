@@ -74,7 +74,7 @@ var ModalHandler = {
         }
 
         var content = modal.content;
-        var height = node.clientHeight + content.offsetHeight - content.childNodes[0].offsetHeight - 5;
+        var height = node.clientHeight + content.offsetHeight - content.firstChild.offsetHeight - 5;
 
         if (height > 0)
             node.style.height = height + 'px';
@@ -101,11 +101,11 @@ var ModalHandler = {
             width = modal.content.firstChild.scrollWidth + 5;
         }
         if (height == 0) {
-            height = modal.content.firstChild.scrollHeight + 5;
+            height = modal.content.firstChild.scrollHeight + 6;
         }
 
         var maxWidth = Wicket.Window.getViewportWidth();
-        var maxHeight = Wicket.Window.getViewportHeight() - 90;
+        var maxHeight = Wicket.Window.getViewportHeight() - 70;
 
         if (width > maxWidth) width = maxWidth;
         if (height > maxHeight) height = maxHeight;

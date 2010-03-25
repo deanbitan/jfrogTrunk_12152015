@@ -32,7 +32,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
 import org.artifactory.api.fs.DeployableUnit;
-import org.artifactory.api.maven.MavenUnitInfo;
+import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.confirm.AjaxConfirm;
@@ -98,14 +98,14 @@ public class DeleteVersionsPanel extends Panel {
     private MultiMap<String, DeployableUnit> aggregateByGroupAndVersion(List<DeployableUnit> units) {
         MultiMap<String, DeployableUnit> multiMap = new MultiHashMap<String, DeployableUnit>();
         for (DeployableUnit unit : units) {
-            MavenUnitInfo info = unit.getMavenInfo();
+            MavenArtifactInfo info = unit.getMavenInfo();
             String unitKey = toGroupVersionKey(info);
             multiMap.put(unitKey, unit);
         }
         return multiMap;
     }
 
-    private String toGroupVersionKey(MavenUnitInfo info) {
+    private String toGroupVersionKey(MavenArtifactInfo info) {
         return info.getGroupId() + ":" + info.getVersion();
     }
 
@@ -169,7 +169,7 @@ public class DeleteVersionsPanel extends Panel {
 
     private class DeployableUnitsDataProvider extends SortableDataProvider {
         private MultiMap<String, DeployableUnit> duGroupAndVersion;
-        protected ArrayList<DeployableUnitModel> duModels;
+        protected List<DeployableUnitModel> duModels;
 
         private DeployableUnitsDataProvider(MultiMap<String, DeployableUnit> duGroupAndVersion) {
             this.duGroupAndVersion = duGroupAndVersion;

@@ -18,19 +18,19 @@
 
 package org.artifactory.webapp.wicket.page.build.tabs.list;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.artifactory.build.api.Artifact;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
+import org.jfrog.build.api.Artifact;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -74,7 +74,7 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
      * Adds the artifacts table
      */
     protected void addTable() {
-        List<IColumn> columns = new ArrayList<IColumn>();
+        List<IColumn> columns = Lists.newArrayList();
         columns.add(new ActionsColumn(""));
         columns.add(new PropertyColumn(new Model("Name"), "name", "artifact.name"));
         columns.add(new PropertyColumn(new Model("Type"), "type", "artifact.type"));

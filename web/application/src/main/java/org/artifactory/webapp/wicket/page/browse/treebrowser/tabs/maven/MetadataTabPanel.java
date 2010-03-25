@@ -26,19 +26,24 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.component.LabeledValue;
-import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.actionable.tree.ActionableItemsTree;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
+import org.slf4j.Logger;
 
 import java.util.List;
 
@@ -47,15 +52,17 @@ import java.util.List;
  */
 public class MetadataTabPanel extends Panel {
 
+    private static final Logger log = LoggerFactory.getLogger(MetadataTabPanel.class);
+
     @SpringBean
     private RepositoryService repoService;
 
     @SpringBean
     private AuthorizationService authorizationService;
 
-    private TextContentPanel contentPanel = new TextContentPanel("metadataContent");
+    private SyntaxHighlighter contentPanel = new SyntaxHighlighter("metadataContent").setSyntax(Syntax.XML);
 
-    RepoPath repoPath;
+    private RepoPath repoPath;
 
     @WicketProperty
     private String metadataType;
@@ -115,8 +122,15 @@ public class MetadataTabPanel extends Panel {
 
     private void setContent() {
         if (metadataType != null) {
-            String xmlContent = repoService.getXmlMetadata(repoPath, metadataType);
-            contentPanel.setContent(xmlContent);
+            try {
+                String xmlContent = repoService.getXmlMetadata(repoPath, metadataType);
+                contentPanel.setModel(new Model(xmlContent));
+            } catch (RepositoryRuntimeException rre) {
+                contentPanel.setModel(new Model("Error while retrieving selected metadata. Please review the log " +
+                        "for further details."));
+                log.error("Error while retrieving selected metadata '{}': {}", metadataType, rre.getMessage());
+                log.debug("Error while retrieving selected metadata '" + metadataType + "'.", rre);
+            }
         }
     }
 }

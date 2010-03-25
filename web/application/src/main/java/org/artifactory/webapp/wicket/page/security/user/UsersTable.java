@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.security.user;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
@@ -33,7 +34,7 @@ import org.artifactory.api.security.LdapUser;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
-import org.artifactory.common.wicket.component.label.TooltipLabel;
+import org.artifactory.common.wicket.component.label.tooltip.TooltipLabel;
 import org.artifactory.common.wicket.component.modal.links.ModalShowLink;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
@@ -115,6 +116,13 @@ public class UsersTable extends ModalListPanel<UserModel> {
                 UserModel user = (UserModel) model.getObject();
                 if (user.getStatus().equals(UserModel.Status.NOT_LDAP_USER)) {
                     log.debug("User {} is not an LDAP user", user.getUsername());
+                    return;
+                }
+                if (enabledLdapSettings != null && (enabledLdapSettings.getSearch() == null ||
+                        StringUtils.isBlank(enabledLdapSettings.getSearch().getSearchFilter()))) {
+                    item.add(new CssClass("WarnColumn"));
+                    item.add(new CssClass("warn"));
+                    user.setStatus(UserModel.Status.NO_SEARCH_FILTER);
                     return;
                 }
                 if (user.isDisableInternalPassword() && enabledLdapSettings != null) {

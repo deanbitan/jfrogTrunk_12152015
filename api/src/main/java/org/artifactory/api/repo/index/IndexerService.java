@@ -23,5 +23,8 @@ package org.artifactory.api.repo.index;
  */
 public interface IndexerService {
 
+    /**
+     * Schedule the indexer to run immediately even if it is disabled.
+     */
     void scheduleImmediateIndexing();
 }

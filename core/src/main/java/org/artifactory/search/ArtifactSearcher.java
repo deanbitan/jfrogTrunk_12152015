@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
@@ -34,7 +33,6 @@ import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
 import org.artifactory.repo.LocalRepo;
-import org.artifactory.resource.ArtifactResource;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -56,13 +54,8 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
         StringBuilder queryBuilder = getPathQueryBuilder(controls);
         queryBuilder.append("/element(*, ").append(JcrTypes.NT_ARTIFACTORY_FILE).append(") [jcr:contains(@");
         queryBuilder.append(JcrTypes.PROP_ARTIFACTORY_NAME).append(", '").append(exp).append("')]");
-        String queryStr = queryBuilder.toString();
 
-        JcrQuerySpec spec = JcrQuerySpec.xpath(queryStr);
-        if (!controls.isLimitSearchResults()) {
-            spec.noLimit();
-        }
-        QueryResult queryResult = getJcrService().executeQuery(spec);
+        QueryResult queryResult = performQuery(controls.isLimitSearchResults(), queryBuilder.toString());
         List<ArtifactSearchResult> results = Lists.newArrayList();
         NodeIterator nodes = queryResult.getNodes();
 
@@ -76,11 +69,9 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
                 }
 
                 FileInfoProxy fileInfo = new FileInfoProxy(repoPath);
-                ArtifactResource artifact = new ArtifactResource(fileInfo.getRepoPath());
                 boolean canRead = getAuthService().canRead(fileInfo.getRepoPath());
-                MavenArtifactInfo mavenInfo = artifact.getMavenInfo();
-                if (canRead && mavenInfo.isValid()) {
-                    ArtifactSearchResult result = new ArtifactSearchResult(fileInfo, mavenInfo);
+                if (canRead) {
+                    ArtifactSearchResult result = new ArtifactSearchResult(fileInfo);
                     results.add(result);
                 }
             } catch (RepositoryException re) {
@@ -120,8 +111,9 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
     private void findArtifactsByChecksum(ChecksumType type, String checksumValue, Set<RepoPath> repoPathSet)
             throws RepositoryException {
         //Make a general search which might include results from the trash or the builds, but should save a lot of time
-        String queryStr = new StringBuilder().append("//. [@").append(type.getActualPropName()).append(" = '").
-                append(checksumValue).append("']").toString();
+        String queryStr = new StringBuilder().append("//element(*, ").append(JcrTypes.NT_ARTIFACTORY_FILE).
+                append(") [@").append(type.getActualPropName()).append(" = '").append(checksumValue).append("']").
+                toString();
 
         QueryResult queryResult = getJcrService().executeQuery(JcrQuerySpec.xpath(queryStr).noLimit());
 

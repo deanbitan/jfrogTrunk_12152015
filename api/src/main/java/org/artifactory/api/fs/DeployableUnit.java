@@ -18,7 +18,7 @@
 
 package org.artifactory.api.fs;
 
-import org.artifactory.api.maven.MavenUnitInfo;
+import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.RepoPath;
 
 import java.io.Serializable;
@@ -31,9 +31,9 @@ import java.io.Serializable;
 public class DeployableUnit implements Serializable {
 
     private final RepoPath repoPath;
-    private final MavenUnitInfo mavenInfo;
+    private final MavenArtifactInfo mavenInfo;
 
-    public DeployableUnit(RepoPath repoPath, MavenUnitInfo mavenInfo) {
+    public DeployableUnit(RepoPath repoPath, MavenArtifactInfo mavenInfo) {
         this.repoPath = repoPath;
         this.mavenInfo = mavenInfo;
     }
@@ -62,14 +62,14 @@ public class DeployableUnit implements Serializable {
             }
         }
         String groupId = groupIdBuff.toString();
-        mavenInfo = new MavenUnitInfo(groupId, artifactId, version);
+        mavenInfo = new MavenArtifactInfo(groupId, artifactId, version);
     }
 
     public RepoPath getRepoPath() {
         return repoPath;
     }
 
-    public MavenUnitInfo getMavenInfo() {
+    public MavenArtifactInfo getMavenInfo() {
         return mavenInfo;
     }
 }

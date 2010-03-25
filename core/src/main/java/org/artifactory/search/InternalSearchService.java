@@ -21,12 +21,14 @@ package org.artifactory.search;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.SearchService;
+import org.artifactory.api.search.deployable.DeployableUnitSearchControls;
+import org.artifactory.api.search.deployable.DeployableUnitSearchResult;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.spring.ReloadableBean;
 
 import javax.jcr.RepositoryException;
-import javax.jcr.query.QueryResult;
 import java.util.List;
 
 /**
@@ -49,12 +51,12 @@ public interface InternalSearchService extends SearchService, ReloadableBean {
     boolean markArchiveForIndexing(JcrFile newJcrFile, boolean force);
 
     /**
-     * Searches for POM's within a certain path
+     * Searches for deployable units within the given path
      *
-     * @param repoPath To path to search the POM in
-     * @return QueryResult - Search results
-     * @throws javax.jcr.RepositoryException
+     * @param controls Search controls
+     * @return Search results
      */
     @Lock(transactional = true)
-    QueryResult searchPomInPath(RepoPath repoPath) throws RepositoryException;
+    SearchResults<DeployableUnitSearchResult> searchDeployableUnits(DeployableUnitSearchControls controls)
+            throws RepositoryException;
 }

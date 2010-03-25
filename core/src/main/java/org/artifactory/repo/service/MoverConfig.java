@@ -32,6 +32,7 @@ import org.artifactory.api.repo.RepoPath;
  */
 public class MoverConfig {
     private final RepoPath fromRepoPath;
+    private final RepoPath targetLocalRepoPath;
     private final String targetLocalRepoKey;
     private final boolean copy;
     private final boolean dryRun;
@@ -49,9 +50,11 @@ public class MoverConfig {
      *                           Should immediatly execute metadata calculation, or schedule
      * @param searchResult       Is moving search results
      */
-    public MoverConfig(RepoPath fromRepoPath, String targetLocalRepoKey, boolean copy, boolean dryRun,
+    public MoverConfig(RepoPath fromRepoPath, RepoPath targetLocalRepoPath, String targetLocalRepoKey, boolean copy,
+            boolean dryRun,
             boolean executeMavenMetadataCalculation, boolean searchResult) {
         this.fromRepoPath = fromRepoPath;
+        this.targetLocalRepoPath = targetLocalRepoPath;
         this.targetLocalRepoKey = targetLocalRepoKey;
         this.copy = copy;
         this.dryRun = dryRun;
@@ -69,9 +72,14 @@ public class MoverConfig {
     }
 
     /**
-     * Returns the repo key of the target
-     *
-     * @return Target repo key
+     * @return Returns the target repo path (if null, the target path should be in targetLocalRepoKey)
+     */
+    public RepoPath getTargetLocalRepoPath() {
+        return targetLocalRepoPath;
+    }
+
+    /**
+     * @return Returns the repo key of the target (if null, the target path should be in targetLocalRepoPath)
      */
     public String getTargetLocalRepoKey() {
         return targetLocalRepoKey;

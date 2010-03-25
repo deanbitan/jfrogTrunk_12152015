@@ -18,33 +18,52 @@
 
 package org.artifactory.webapp.actionable.action.metadata;
 
-import org.artifactory.api.search.metadata.MetadataSearchResult;
+import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.action.ViewAction;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
+import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableMetadataSearchResult;
+import org.slf4j.Logger;
 
 /**
  * @author Noam Tenne
  */
 public class MetadataViewAction extends ViewAction {
 
+    private static final Logger log = LoggerFactory.getLogger(MetadataViewAction.class);
+
     @Override
     public void onAction(RepoAwareItemEvent e) {
         RepoAwareActionableItem source = e.getSource();
-        displayModalWindow(e, getContent(source), getTitle(source));
-    }
-
-    private String getContent(RepoAwareActionableItem source) {
         isSourceCorrect(source);
         MetadataSearchResult searchResult = getSearchResult(source);
-        return getRepoService().getXmlMetadata(source.getRepoPath(), searchResult.getMetadataName());
+        String metadataName = searchResult.getMetadataName();
+        try {
+            showHighlightedSourceModal(e, getContent(source.getRepoPath(), searchResult), metadataName, Syntax.XML);
+        } catch (RepositoryRuntimeException rre) {
+            String logs;
+            if (ContextHelper.get().getAuthorizationService().isAdmin()) {
+                CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                logs = "<a href=\"" + systemLogsPage + "\">log</a>";
+            } else {
+                logs = "log";
+            }
+            e.getTarget().getPage().error("Error while retrieving selected metadata. Please review the " + logs +
+                    " for further information.");
+            log.error("Error while retrieving selected metadata '{}': {}", metadataName, rre.getMessage());
+            log.debug("Error while retrieving selected metadata '" + metadataName + "'.", rre);
+        }
     }
 
-    private String getTitle(RepoAwareActionableItem source) {
-        isSourceCorrect(source);
-        MetadataSearchResult searchResult = getSearchResult(source);
-        return searchResult.getName();
+    private String getContent(RepoPath sourceRepoPath, MetadataSearchResult searchResult) {
+        return getRepoService().getXmlMetadata(sourceRepoPath, searchResult.getMetadataName());
     }
 
     /**

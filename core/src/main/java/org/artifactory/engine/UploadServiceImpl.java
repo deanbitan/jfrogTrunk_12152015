@@ -18,19 +18,22 @@
 
 package org.artifactory.engine;
 
-import com.google.common.collect.SetMultimap;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.fs.ChecksumInfo;
+import org.artifactory.api.fs.ChecksumsInfo;
 import org.artifactory.api.fs.FileInfoImpl;
 import org.artifactory.api.fs.MetadataInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.md.Properties;
+import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
@@ -38,10 +41,11 @@ import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
+import org.artifactory.jcr.fs.JcrFile;
+import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.resource.ArtifactResource;
 import org.artifactory.resource.FileResource;
@@ -62,6 +66,8 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
+import static org.apache.commons.httpclient.HttpStatus.SC_CONFLICT;
+import static org.apache.commons.httpclient.HttpStatus.SC_NOT_FOUND;
 import static org.artifactory.descriptor.repo.SnapshotVersionBehavior.*;
 
 @Service
@@ -98,8 +104,7 @@ public class UploadServiceImpl implements InternalUploadService {
             return;
         }
 
-        String path = request.getPath();
-        StatusHolder statusHolder = repoService.assertValidDeployPath(localRepo, path);
+        StatusHolder statusHolder = repoService.assertValidDeployPath(localRepo, request.getPath());
         if (statusHolder.isError()) {
             //Test if we need to require http authorization
             int returnCode = statusHolder.getStatusCode();
@@ -115,22 +120,22 @@ public class UploadServiceImpl implements InternalUploadService {
         }
 
         //Get the internal implementation since the method is annotated with org.artifactory.api.repo.Request
-        getInternalMe().doProcess(request, response, localRepo, path);
+        getInternalMe().doProcess(request, response, localRepo);
     }
 
-    public void doProcess(ArtifactoryRequest request, ArtifactoryResponse response, StoringRepo repo, String path)
+    public void doProcess(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException {
+        String path = request.getPath();
+
         if (NamingUtils.isChecksum(path)) {
-            log.trace("Skipping deployment of checksum file {}", path);
-            response.sendOk();
+            processChecksumUploadRequest(request, response, repo);
             return;
         }
 
-        InputStream is = null;
+        InputStream is = request.getInputStream();
         MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(new RepoPath(repo.getKey(), path));
-        if (repo.isReal() && repo.isLocal() && mavenInfo.isValid() && mavenInfo.isSnapshot()) {
-            LocalRepo localRepo = (LocalRepo) repo;
-            SnapshotVersionBehavior snapshotBehavior = localRepo.getSnapshotVersionBehavior();
+        if (mavenInfo.isValid() && mavenInfo.isSnapshot()) {
+            SnapshotVersionBehavior snapshotBehavior = repo.getSnapshotVersionBehavior();
             if (MavenNaming.isMavenMetadata(path) && !snapshotBehavior.equals(DEPLOYER)) {
                 // if the snapshot behavior is not DEPLOYER just skip the metadata deployment
                 // it was probably recalculated after the pom deploy and we want to use the calculated one
@@ -139,50 +144,52 @@ public class UploadServiceImpl implements InternalUploadService {
                 return;
             }
             //Adjust snapshot path if needed
-            path = adjustSnapshotPath(localRepo, path, mavenInfo, snapshotBehavior);
-            //Adjust snapshot md if needed
+            path = adjustSnapshotPath(repo, path, mavenInfo, snapshotBehavior);
+            //Adjust snapshot metadata if needed
             if (MavenNaming.isSnapshotMavenMetadata(path)) {
-                Metadata metadata = adjustSnapshotMetadata(request, localRepo, path, snapshotBehavior);
+                Metadata metadata = adjustSnapshotMetadata(request, repo, path, snapshotBehavior);
                 String metadataStr = MavenModelUtils.mavenMetadataToString(metadata);
                 is = new ByteArrayInputStream(metadataStr.getBytes("utf-8"));
             }
         }
-        if (is == null) {
-            is = request.getInputStream();
-        }
+
         RepoResource res;
         RepoPath repoPath = new RepoPath(repo.getKey(), path);
-        Properties properties = new Properties();
+        Properties properties = null;
         if (NamingUtils.isMetadata(path)) {
             res = new MetadataResource(new MetadataInfo(repoPath));
         } else {
             FileInfoImpl fileInfo = new FileInfoImpl(repoPath);
-            fileInfo.createTrustedChecksums();
-            if (authService.canAnnotate(repoPath)) {
-                properties = getPropertiesFromRequest(request);
-            } else {
-                log.warn("User: {} cannot annotate artifacts in the following path {}", authService.currentUsername(),
-                        repoPath);
-            }
+            //fileInfo.createTrustedChecksums();
             res = new FileResource(fileInfo);
+            if (authService.canAnnotate(repoPath)) {
+                properties = request.getProperties();
+            }
         }
+
         //Update the last modified
-        long lastModified = request.getLastModified();
-        if (lastModified > 0) {
-            res.getInfo().setLastModified(lastModified);
-        } else {
-            res.getInfo().setLastModified(System.currentTimeMillis());
-        }
+        long lastModified = request.getLastModified() > 0 ? request.getLastModified() : System.currentTimeMillis();
+        res.getInfo().setLastModified(lastModified);
+
         try {
             RepoResource resource = repo.saveResource(res, is, properties);
             if (!resource.isFound()) {
-                response.sendError(HttpStatus.SC_NOT_FOUND, ((UnfoundRepoResource) resource).getReason(), log);
+                response.sendError(SC_NOT_FOUND, ((UnfoundRepoResource) resource).getReason(), log);
                 return;
             }
             //Async index the uploaded file if needed
             ContentType contentType = NamingUtils.getContentType(repoPath.getPath());
             if (contentType.isJarVariant()) {
-                searchService.asyncIndex(repoPath);
+                boolean index;
+                try {
+                    index = !Boolean.parseBoolean(request.getParameter(ArtifactoryRequest.SKIP_JAR_INDEXING));
+                } catch (IllegalStateException ise) {
+                    log.debug("Unable to retrieve parameter '" + ArtifactoryRequest.SKIP_JAR_INDEXING + "'.", ise);
+                    index = true;
+                }
+                if (index) {
+                    searchService.asyncIndex(repoPath);
+                }
             }
         } finally {
             IOUtils.closeQuietly(is);
@@ -191,39 +198,99 @@ public class UploadServiceImpl implements InternalUploadService {
         response.sendOk();
     }
 
-    private Properties getPropertiesFromRequest(ArtifactoryRequest request) {
-        Properties properties = new Properties();
-        if (request.hasMatrixParams()) {
-            SetMultimap<String, String> matrixParams = request.getMatrixParams();
-            properties.putAll(matrixParams);
+    /**
+     * This method processes a checksum upload. Since checksums are stored as files' metadata (part of the file info),
+     * we have to locate the file and update it's 'original' checksum with the value read from the request body.
+     */
+    private void processChecksumUploadRequest(ArtifactoryRequest request,
+            ArtifactoryResponse response, LocalRepo repo) throws IOException {
+
+        String checksumPath = request.getPath();
+        MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(new RepoPath(repo.getKey(), checksumPath));
+        if (mavenInfo.isValid() && mavenInfo.isSnapshot()) {
+            checksumPath = adjustSnapshotPath(repo, checksumPath, mavenInfo, repo.getSnapshotVersionBehavior());
         }
-        return properties;
+
+        String checksumTargetFile = MavenNaming.getChecksumTargetFile(checksumPath);
+        if (NamingUtils.isMetadata(checksumTargetFile)) {
+            // (for now) we always return calculated checksums of metadata
+            response.sendOk();
+            return;
+        }
+
+        RepoPath filePath = new RepoPath(repo.getKey(), checksumTargetFile);
+        JcrFsItem fsItem = repo.getLockedJcrFsItem(filePath);
+
+        if (fsItem == null) {
+            response.sendError(SC_NOT_FOUND, "Target file to set checksum on doesn't exist: " + filePath, log);
+            return;
+        }
+
+        if (!fsItem.isFile()) {
+            response.sendError(SC_CONFLICT, "Checksum only supported for files (but found folder): " + filePath, log);
+            return;
+        }
+
+        if (request.getContentLength() > 1024) {
+            // something is fishy, checksum file should not be so big...
+            response.sendError(SC_CONFLICT, "Suspicious checksum file, content length of " + request.getContentLength()
+                    + " bytes is bigger than allowed.", log);
+            return;
+        }
+
+        String checksum;
+        try {
+            checksum = IOUtils.toString(request.getInputStream(), "UTF-8");
+        } catch (IOException e) {
+            response.sendError(SC_CONFLICT, "Failed to read checksum from file: " + e.getMessage(), log);
+            return;
+        }
+
+        // ok everything looks good, lets set the checksum original value
+        JcrFile jcrFile = (JcrFile) fsItem;
+        ChecksumsInfo checksums = jcrFile.getInfo().getChecksumsInfo();
+        ChecksumType checksumType = ChecksumType.forFilePath(checksumPath);
+        if (!checksumType.isValid(checksum)) {
+            log.warn("Uploading non valid original checksum for {}", filePath);
+        }
+        ChecksumInfo checksumInfo = checksums.getChecksumInfo(checksumType);
+        if (checksumInfo == null) {
+            checksumInfo = new ChecksumInfo(checksumType, checksum, null);
+        } else {
+            checksumInfo = new ChecksumInfo(checksumType, checksum, checksumInfo.getActual());
+        }
+        checksums.addChecksumInfo(checksumInfo);
+
+        if (checksum.equalsIgnoreCase(checksumInfo.getActual())) {
+            response.sendOk();
+        } else {
+            response.sendError(SC_CONFLICT, "Checksum error: received '" + checksum +
+                    "' but actual is '" + checksumInfo.getActual() + "'", log);
+        }
     }
 
     private String adjustSnapshotPath(LocalRepo repo, String path, MavenArtifactInfo mavenInfo,
             SnapshotVersionBehavior snapshotVersionBehavior) {
-        if (snapshotVersionBehavior.equals(DEPLOYER)) {
-            return path;
-        }
-        boolean realArtifact = !NamingUtils.isMetadata(path) && !NamingUtils.isChecksum(path);
         String adjustedPath = path;
-        if (realArtifact) {
+        boolean notMetadataArtifact = !NamingUtils.isMetadata(path) && !NamingUtils.isMetadataChecksum(path);
+        if (notMetadataArtifact) {
             if (snapshotVersionBehavior.equals(NONUNIQUE)) {
                 //Replace version timestamp with SNAPSHOT for non-unique snapshot repo
                 String classifier = mavenInfo.getClassifier();
+                String fileExtension = getFileExtensionForModifiedPath(path, mavenInfo);
                 adjustedPath = path.substring(0, getLastPathSeparatorIndex(path) + 1) +
                         mavenInfo.getArtifactId() + "-" + mavenInfo.getVersion() +
-                        (StringUtils.isEmpty(classifier) ? "" : "-" + classifier) + "." + mavenInfo.getType();
+                        (StringUtils.isEmpty(classifier) ? "" : "-" + classifier) + "." + fileExtension;
             } else if (snapshotVersionBehavior.equals(UNIQUE)) {
                 //Replace SNAPSHOT with version timestamp for unique snapshot repo
                 String fileName = PathUtils.getName(path);
                 if (!MavenNaming.isUniqueSnapshotFileName(fileName)) {
                     adjustedPath = adjustNonUniqueSnapshotToUnique(repo, path, mavenInfo);
                 }
-            }
+            } // else it is deployer - don't change the path
         }
         if (!adjustedPath.equals(path)) {
-            log.debug("File path {} adjusted to: {}", path, adjustedPath);
+            log.debug("Snapshot file path '{}' adjusted to: '{}'", path, adjustedPath);
         }
 
         return adjustedPath;
@@ -243,9 +310,9 @@ public class UploadServiceImpl implements InternalUploadService {
 
         // determine if the next build number should be the one read from the metadata
         String classifier = mavenInfo.getClassifier();
-        if (metadataBuildNumber > 0 && !StringUtils.isEmpty(classifier)) {
-            // artifacts with classifier are always deployed after the maven-metadata.xml
-            // so use the metadata build number
+        if (metadataBuildNumber > 0 && (StringUtils.isNotBlank(classifier) || MavenNaming.isChecksum(filePath))) {
+            // checksums and artifacts with classifier are always deployed after the pom (which triggers the
+            // maven-metadata.xml calculation) so use the metadata build number
             nextBuildNumber = metadataBuildNumber;
         }
         if (metadataBuildNumber > 0 && MavenNaming.isPom(filePath)) {
@@ -265,17 +332,35 @@ public class UploadServiceImpl implements InternalUploadService {
         String timestamp = getSnapshotTimestamp(parentPath, nextBuildNumber);
         if (timestamp == null) {
             // probably the first deployed file for this build, use now for the timestamp
-            timestamp = MavenModelUtils.dateToTimestamp(new Date());
+            timestamp = MavenModelUtils.dateToUniqueSnapshotTimestamp(new Date());
         }
 
         // replace the SNAPSHOT string with timestamp-buildNumber
         String version = mavenInfo.getVersion();
         String uniqueVersion = version.substring(0, version.lastIndexOf("SNAPSHOT")) +
                 timestamp + "-" + nextBuildNumber;
-        String adjustedPath = filePath.substring(0, getLastPathSeparatorIndex(filePath) + 1) +
+
+        // compose the path extension (special case when it's a checksum path - name.jar.sha1)
+        String fileExtension = getFileExtensionForModifiedPath(filePath, mavenInfo);
+
+        String adjustedPath = FilenameUtils.getPath(filePath) +
                 mavenInfo.getArtifactId() + "-" + uniqueVersion +
-                (StringUtils.isEmpty(classifier) ? "" : "-" + classifier) + "." + mavenInfo.getType();
+                (StringUtils.isEmpty(classifier) ? "" : "-" + classifier) + "." + fileExtension;
         return adjustedPath;
+    }
+
+    private String getFileExtensionForModifiedPath(String filePath, MavenArtifactInfo mavenInfo) {
+        String fileExtension;
+        if (MavenNaming.isChecksum(filePath)) {
+            String[] extensions = filePath.split("\\.");
+            fileExtension = extensions[extensions.length - 1];
+            if (extensions.length >= 2) {
+                fileExtension = extensions[extensions.length - 2] + "." + fileExtension;
+            }
+        } else {
+            fileExtension = mavenInfo.getType();
+        }
+        return fileExtension;
     }
 
     private Metadata adjustSnapshotMetadata(ArtifactoryRequest request, LocalRepo repo, String snapshotMetadataPath,
@@ -323,7 +408,7 @@ public class UploadServiceImpl implements InternalUploadService {
      * @param versionMetadataPath Path to a snapshot maven metadata (ie ends with '-SNAPSHOT/maven-metadata.xml')
      * @return The last build number for snapshot version. 0 if maven-metadata not found for the path.
      */
-    private int getLastBuildNumber(final LocalRepo repo, final String versionMetadataPath) {
+    private int getLastBuildNumber(LocalRepo repo, String versionMetadataPath) {
         int buildNumber = 0;
         try {
             // get the parent path (remove the maven-metadata.xml)

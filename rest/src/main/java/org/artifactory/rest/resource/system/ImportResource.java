@@ -31,6 +31,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
 import java.io.File;
 
 /**
@@ -58,7 +59,7 @@ public class ImportResource {
 
     @POST
     @Consumes("application/xml")
-    public void activateImport(ImportSettings settings) {
+    public Response activateImport(ImportSettings settings) {
         log.debug("Activating import {}", settings);
         StreamStatusHolder holder = new StreamStatusHolder(httpResponse);
         settings = new ImportSettings(settings.getBaseDir(), settings, holder);
@@ -70,5 +71,6 @@ public class ImportResource {
             SearchService searchService = ContextHelper.get().beanForType(SearchService.class);
             searchService.indexMarkedArchives();
         }
+        return Response.ok().build();
     }
 }

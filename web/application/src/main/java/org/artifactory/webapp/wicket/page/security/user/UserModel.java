@@ -172,6 +172,7 @@ public class UserModel extends ProfileModel {
         ACTIVE_USER("User exists in Artifactory and LDAP"),
         INACTIVE_USER("Artifactory user does not exist in LDAP or has no password."),
         NOT_LDAP_USER(""),
+        NO_SEARCH_FILTER("No search filter defined, cannot synchronize users."),
         UNKNOWN("");
 
         private String description;

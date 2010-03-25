@@ -39,6 +39,7 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
@@ -71,6 +72,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
 
     @Override
     public void addAndSaveDescriptor(HttpRepoDescriptor repoDescriptor) {
+        repoDescriptor.setStoreArtifactsLocally(!repoDescriptor.isStoreArtifactsLocally());
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
         mccd.addRemoteRepository(repoDescriptor);
@@ -79,6 +81,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
 
     @Override
     public void saveEditDescriptor(HttpRepoDescriptor repoDescriptor) {
+        // flip back the logic again from the checkbox.
+        repoDescriptor.setStoreArtifactsLocally(!repoDescriptor.isStoreArtifactsLocally());
         getCachingDescriptorHelper().syncAndSaveRemoteRepositories();
     }
 
@@ -120,7 +124,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         DropDownChoice checksumPoliciesDC = new DropDownChoice("checksumPolicyType", Arrays.asList(checksumPolicies));
         checksumPoliciesDC.setChoiceRenderer(new ChecksumPolicyChoiceRenderer());
         basicSettings.add(checksumPoliciesDC);
-        basicSettings.add(new SchemaHelpBubble("checksumPolicyType.help"));
+        basicSettings.add(new SchemaHelpBubble("remoteRepoChecksumPolicyType.help", "checksumPolicyType"));
 
         // checkboxes
         basicSettings.add(new StyledCheckbox("handleReleases"));
@@ -181,7 +185,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
 
         advancedSettings.add(new StyledCheckbox("hardFail"));
         advancedSettings.add(new SchemaHelpBubble("hardFail.help"));
-
+        flipLogic();
         advancedSettings.add(new StyledCheckbox("storeArtifactsLocally"));
         advancedSettings.add(new SchemaHelpBubble("storeArtifactsLocally.help"));
 
@@ -217,8 +221,21 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         advancedSettings.add(new TextField("missedRetrievalCachePeriodSecs", Long.class));
         advancedSettings.add(new SchemaHelpBubble("missedRetrievalCachePeriodSecs.help"));
 
+        advancedSettings.add(new StyledCheckbox("synchronizeProperties"));
+        advancedSettings.add(new SchemaHelpBubble("synchronizeProperties.help"));
+
         advancedSettings.add(new TextArea("notes"));
         advancedSettings.add(new SchemaHelpBubble("notes.help"));
+    }
+
+    private void flipLogic() {
+        if (isCreate()) {
+            getRepoDescriptor().setStoreArtifactsLocally(false);
+        } else {
+            RemoteRepoDescriptor repoDescriptor = centralConfigService.getMutableDescriptor().getRemoteRepositoriesMap()
+                    .get(getRepoDescriptor().getKey());
+            getRepoDescriptor().setStoreArtifactsLocally(!repoDescriptor.isStoreArtifactsLocally());
+        }
     }
 
     private List<RepoType> getRemoteRepoTypeList() {
@@ -232,7 +249,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         return repoTypeList;
     }
 
-    private class LocalAddressValidator extends StringValidator {
+    private static class LocalAddressValidator extends StringValidator {
         @Override
         protected void onValidate(IValidatable validatable) {
             String localAddress = (String) validatable.getValue();

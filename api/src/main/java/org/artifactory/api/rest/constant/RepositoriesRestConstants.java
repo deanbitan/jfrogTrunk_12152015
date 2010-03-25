@@ -31,4 +31,10 @@ public interface RepositoriesRestConstants {
     String MT_REPOSITORY_DETAILS_LIST = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".RepositoryDetailsList+json";
     String MT_REMOTE_REPOSITORY_CONFIGURATION =
             RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".RepositoryConfiguration+json";
+
+    String PATH = "path";
+    String TARGET_REPO = "repo";
+    String EXCLUDE_CONTENT = "content";
+    String INCLUDE_METADATA = "metadata";
+    String VERBOSE = "verbose";
 }

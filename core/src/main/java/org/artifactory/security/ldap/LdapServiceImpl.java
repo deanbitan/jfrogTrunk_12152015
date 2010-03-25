@@ -18,6 +18,7 @@
 
 package org.artifactory.security.ldap;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.security.LdapService;
 import org.artifactory.api.security.LdapUser;
@@ -31,15 +32,10 @@ import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.BaseLdapPathContextSource;
 import org.springframework.ldap.core.support.LdapContextSource;
-import org.springframework.ldap.filter.AbstractFilter;
-import org.springframework.ldap.filter.EqualsFilter;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
-import static javax.naming.directory.SearchControls.SUBTREE_SCOPE;
 import static org.apache.commons.lang.StringUtils.EMPTY;
 import static org.apache.commons.lang.StringUtils.isBlank;
 
@@ -65,7 +61,13 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
             authenticator.authenticate(authentication);
             status.setStatus("Successfully connected and authenticated the test user", log);
         } catch (Exception e) {
-            handleException(e, status, username);
+            SearchPattern pattern = ldapSetting.getSearch();
+            if ((pattern != null && StringUtils.isNotBlank(pattern.getSearchFilter())) &&
+                    StringUtils.isNotBlank(ldapSetting.getUserDnPattern())) {
+                handleException(e, status, username, true);
+            } else {
+                handleException(e, status, username, false);
+            }
         }
         return status;
     }
@@ -74,26 +76,15 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
     @SuppressWarnings({"unchecked"})
     public LdapUser getDnFromUserName(LdapSetting ldapSetting, String userName) {
         if (ldapSetting == null) {
+            log.warn("Cannot find user in LDAP: No LDAP settings defined.");
             return null;
         }
-        SearchPattern searchPattern = ldapSetting.getSearch();
-        String searchBase = searchPattern.getSearchBase();
-        if (isBlank(searchBase)) {
-            searchBase = EMPTY;
+        if (ldapSetting.getSearch() == null || isBlank(ldapSetting.getSearch().getSearchFilter())) {
+            log.warn("Cannot find user in LDAP: No search filter defined.");
+            return null;
         }
-        AbstractFilter filter;
         LdapTemplate ldapTemplate = createLdapTemplate(ldapSetting);
-        if (!isBlank(searchPattern.getSearchFilter())) {
-            return getUserFromLdapSearch(ldapTemplate, userName, ldapSetting);
-        } else {
-            filter = new EqualsFilter("uid", userName);
-            List<LdapUser> user = ldapTemplate.search(
-                    searchBase, filter.encode(), SUBTREE_SCOPE, new UserContextMapper());
-            if (!user.isEmpty()) {
-                return user.get(0);
-            }
-        }
-        return null;
+        return getUserFromLdapSearch(ldapTemplate, userName, ldapSetting);
     }
 
     public DirContextOperations searchUserInLdap(LdapTemplate ldapTemplate, String userName, LdapSetting settings) {
@@ -104,7 +95,7 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
             contextOperations = ldapUserSearch.searchForUser(userName);
             // Only DirContextAdapter can be used since the LDAP connection need to be released and we still need
             // read access to this LDAP context.
-            if (contextOperations != null && !(contextOperations instanceof DirContextAdapter)) {
+            if (!(contextOperations instanceof DirContextAdapter)) {
                 throw new ClassCastException(
                         "Cannot use LDAP DirContext class " + contextOperations.getClass().getName() +
                                 " it should be " + DirContextAdapter.class.getName());
@@ -130,13 +121,13 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
         if (contextOperations == null) {
             return null;
         }
-        LdapUser user = new LdapUser(userName, contextOperations.getNameInNamespace());
-        return user;
+        return new LdapUser(userName, contextOperations.getNameInNamespace());
     }
 
     private FilterBasedLdapUserSearch getFilterBasedLdapUserSearch(LdapTemplate ldapTemplate, LdapSetting settings) {
         SearchPattern pattern = settings.getSearch();
         if (isBlank(pattern.getSearchBase())) {
+            log.debug("LDAP settings have no search base defined, using defaults.");
             pattern.setSearchBase(EMPTY);
         }
         FilterBasedLdapUserSearch ldapUserSearch =

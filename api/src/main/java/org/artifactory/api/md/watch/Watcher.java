@@ -132,8 +132,8 @@ public class Watcher implements Info, Comparable {
 
     public int compareTo(Object o) {
         if (o instanceof Watcher) {
-            Watcher watcher = (Watcher) o;
-            return new Long(watchingSinceTime).compareTo(watcher.watchingSinceTime);
+            Watcher other = (Watcher) o;
+            return (watchingSinceTime < other.watchingSinceTime ? -1 : (watchingSinceTime == other.watchingSinceTime ? 0 : 1));
         }
         return 0;
     }

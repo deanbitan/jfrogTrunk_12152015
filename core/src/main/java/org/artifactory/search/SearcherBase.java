@@ -28,6 +28,7 @@ import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchControls;
 import org.artifactory.api.search.SearchControlsBase;
 import org.artifactory.api.search.SearchResult;
@@ -56,6 +57,7 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.InvalidQueryException;
+import javax.jcr.query.QueryResult;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
@@ -166,28 +168,26 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
      * Extract the Fragment JDom elements from the highlighting excerpt
      *
      * @param excerpt Highlighting excerpt
-     * @return Element[] - fragemets
+     * @return Element[] - fragments
      */
     @SuppressWarnings({"unchecked"})
     protected Element[] getFragmentElements(String excerpt) {
         SAXBuilder builder = new SAXBuilder();
         builder.setValidation(false);
-        Document document = null;
+        Document document;
         try {
             document = builder.build(new StringReader(excerpt));
         } catch (Exception e) {
-            log.error("An error has occured while parsing the search result excerpt", e);
+            log.error("An error has occurred while parsing the search result excerpt", e);
+            return new Element[]{};
         }
-        Element element = null;
-        if (document != null) {
-            element = document.getRootElement();
-        }
+        Element element = document.getRootElement();
         List<Element> fragments = element.getChildren("fragment");
         return fragments.toArray(new Element[fragments.size()]);
     }
 
     /**
-     * Returns the begining of the path (if any) before a highlighted element in a list of Element contents.
+     * Returns the beginning of the path (if any) before a highlighted element in a list of Element contents.
      *
      * @param children   List of Element contents
      * @param path       The path StringBuilder
@@ -200,14 +200,14 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
 
                 //Get element
                 Content element = children.get(i);
-                String elmentValue = element.getValue();
+                String elementValue = element.getValue();
 
-                //Paths are seperated by spaces, so we should stop at the last space occurance
-                int lastSpace = elmentValue.lastIndexOf(" ");
+                //Paths are separated by spaces, so we should stop at the last space occurrence
+                int lastSpace = elementValue.lastIndexOf(' ');
                 if (lastSpace < 0) {
-                    path.insert(0, elmentValue);
+                    path.insert(0, elementValue);
                 } else {
-                    String pathPiece = elmentValue.substring(lastSpace + 1);
+                    String pathPiece = elementValue.substring(lastSpace + 1);
                     path.insert(0, pathPiece);
                     break;
                 }
@@ -229,14 +229,14 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
 
                 //Get element
                 Content element = children.get(i);
-                String elmentValue = element.getValue();
+                String elementValue = element.getValue();
 
-                //Paths are seperated by spaces, so we should stop at the next space occurance
-                int firstSpace = elmentValue.indexOf(" ");
+                //Paths are separated by spaces, so we should stop at the next space occurrence
+                int firstSpace = elementValue.indexOf(' ');
                 if (firstSpace < 0) {
-                    path.append(elmentValue);
+                    path.append(elementValue);
                 } else {
-                    String pathPiece = elmentValue.substring(0, firstSpace);
+                    String pathPiece = elementValue.substring(0, firstSpace);
                     path.append(pathPiece);
                     break;
                 }
@@ -323,5 +323,21 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
         } else {
             throw re;
         }
+    }
+
+    /**
+     * Performs the given JCR XPath query
+     *
+     * @param limitSearchResults True if search results should be limited
+     * @param queryStr           Query
+     * @return Query result
+     */
+    protected QueryResult performQuery(boolean limitSearchResults, String queryStr) {
+        JcrQuerySpec spec = JcrQuerySpec.xpath(queryStr);
+        if (!limitSearchResults) {
+            spec.noLimit();
+        }
+        QueryResult queryResult = getJcrService().executeQuery(spec);
+        return queryResult;
     }
 }

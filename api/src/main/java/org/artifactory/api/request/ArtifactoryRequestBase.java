@@ -18,9 +18,8 @@
 
 package org.artifactory.api.request;
 
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.SetMultimap;
 import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.md.Properties;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.common.property.ArtifactorySystemProperties;
@@ -41,7 +40,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
      * <p/>
      * /pathseg1/pathseg2;param1=v1;param2=v2;param3=v3
      */
-    private SetMultimap<String, String> matrixParams = LinkedHashMultimap.create();
+    private Properties properties = new Properties();
 
     private long modificationTime = -1;
 
@@ -57,12 +56,12 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         return repoPath.getPath();
     }
 
-    public SetMultimap<String, String> getMatrixParams() {
-        return matrixParams;
+    public Properties getProperties() {
+        return properties;
     }
 
-    public boolean hasMatrixParams() {
-        return matrixParams.size() > 0;
+    public boolean hasMatrixProperties() {
+        return properties.size() > 0;
     }
 
     public boolean isSnapshot() {
@@ -155,9 +154,9 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         //Look for the deprecated legacy format of repo-key@repo
         int idx = prefix.indexOf(ArtifactoryRequest.LEGACY_REPO_SEP);
         String targetRepo = idx > 0 ? prefix.substring(0, idx) : prefix;
-        //Calcualte matrix params on the repo
-        targetRepo = calcMatrixParamsIfExist(targetRepo);
-        //Test if we need to substitue the targetRepo due to system prop existence
+        //Calculate matrix params on the repo
+        targetRepo = processMatrixParamsIfExist(targetRepo);
+        //Test if we need to substitute the targetRepo due to system prop existence
         String substTargetRepo = ArtifactorySystemProperties.get().getSubstituteRepoKeys().get(targetRepo);
         if (substTargetRepo != null) {
             targetRepo = substTargetRepo;
@@ -168,16 +167,16 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         //Strip any trailing '/'
         int endIdx = (requestPath.endsWith("/") ? requestPath.length() - 1 : requestPath.length());
         String path = startIdx < endIdx ? requestPath.substring(startIdx, endIdx) : "";
-        //Calcualte matrix params on the path
-        path = calcMatrixParamsIfExist(path);
+        //Calculate matrix params on the path
+        path = processMatrixParamsIfExist(path);
         RepoPath repoPath = new RepoPath(targetRepo, path);
         return repoPath;
     }
 
-    private String calcMatrixParamsIfExist(String fragment) {
+    private String processMatrixParamsIfExist(String fragment) {
         int matrixParamStart = fragment.indexOf(MATRIX_PARAMS_SEP);
         if (matrixParamStart > 0) {
-            calcMatrixParams(fragment.substring(matrixParamStart));
+            processMatrixParams(fragment.substring(matrixParamStart));
             //Return the clean fragment
             return fragment.substring(0, matrixParamStart);
         } else {
@@ -185,7 +184,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         }
     }
 
-    private void calcMatrixParams(String matrixParams) {
+    private void processMatrixParams(String matrixParams) {
         int matrixParamStart = 0;
         do {
             int matrixParamEnd = matrixParams.indexOf(MATRIX_PARAMS_SEP, matrixParamStart + 1);
@@ -203,11 +202,11 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
                 } catch (UnsupportedEncodingException e) {
                     log.warn("Encoding not supported: {}. Using original value", e.getMessage());
                 }
-                getMatrixParams().put(key, value);
+                this.properties.put(key, value);
             } else if (equals == 0) {
                 //No key declared, ignore
             } else if (param.length() > 0) {
-                getMatrixParams().put(param, "");
+                this.properties.put(param, "");
             }
             matrixParamStart = matrixParamEnd;
         } while (matrixParamStart > 0 && matrixParamStart < matrixParams.length());

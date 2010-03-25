@@ -20,10 +20,10 @@ package org.artifactory.webapp.main;
 
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.bio.SocketConnector;
+import org.eclipse.jetty.webapp.WebAppContext;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -77,7 +77,7 @@ public class StartDevMode {
         appContext.setContextPath("/artifactory");
         appContext.setWar(new File(openDir, "web/war/src/main/webapp/").getAbsolutePath());
 
-        server.addHandler(appContext);
+        //server.addHandler(appContext);
         try {
             server.start();
             while (System.in.available() == 0) {

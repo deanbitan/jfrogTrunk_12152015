@@ -18,17 +18,53 @@
 
 package org.artifactory.api.mime;
 
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertTrue;
+import static org.artifactory.api.mime.NamingUtils.*;
+import static org.testng.Assert.*;
 
 /**
  * @author yoavl
  */
 @Test
-public class NamingUtilsTest {
-    public void isMetadata() {
-        assertTrue(NamingUtils.isMetadata("path/1.0-SNAPSHOT/maven-metadata.xml"));
-        assertTrue(NamingUtils.isMetadata("path/1.0/resource:md"));
+public class NamingUtilsTest extends SystemPropertiesBoundTest {
+
+    public void testIsMetadata() {
+        assertTrue(isMetadata("path/1.0-SNAPSHOT/maven-metadata.xml"));
+        assertTrue(isMetadata("path/1.0/resource:md"));
+    }
+
+    public void testIsMetadataChecksum() {
+        assertFalse(isMetadataChecksum("path/1.0-SNAPSHOT/maven-metadata.xml"));
+        assertFalse(isMetadataChecksum("1.0-SNAPSHOT/maven-metadata.xml.bla1"));
+        assertTrue(isMetadataChecksum("1.0-SNAPSHOT/maven-metadata.xml.sha1"));
+        assertTrue(isMetadataChecksum("maven-metadata.xml.md5"));
+        assertFalse(isMetadataChecksum("path/1.0/resource:md"));
+        assertTrue(isMetadataChecksum("path/1.0/resource:md.md5"));
+        assertTrue(isMetadataChecksum("path/1.0/resource:md.sha1"));
+    }
+
+    public void testJavaSourceNameFromClassName() {
+        assertEquals(javaSourceNameFromClassName("/a/b/c.class"), "/a/b/c.java");
+        assertEquals(javaSourceNameFromClassName("c.bla"), "c.bla");
+        assertEquals(javaSourceNameFromClassName("a$1.class"), "a.java");
+        assertEquals(javaSourceNameFromClassName("a$b$c.class"), "a.java");
+        assertEquals(javaSourceNameFromClassName("z/y/x/a$b$c.class"), "z/y/x/a.java");
+    }
+
+    public void testIsViewable() {
+        assertFalse(isViewable("a.class"));
+        assertFalse(isViewable("a/b/c.class"));
+        assertFalse(isViewable("/c.class"));
+
+        assertTrue(isViewable("a.java"));
+        assertTrue(isViewable("a.b.c.groovy"));
+        assertTrue(isViewable("a.b.c.gradle"));
+        assertTrue(isViewable("ivy-4.3.xml"));
+        assertTrue(isViewable("a.ivy"));
+        assertTrue(isViewable("a.xml"));
+        assertTrue(isViewable("a.css"));
+        assertTrue(isViewable("a.html"));
     }
 }

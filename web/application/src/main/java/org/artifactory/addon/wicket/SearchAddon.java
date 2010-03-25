@@ -21,10 +21,10 @@ package org.artifactory.addon.wicket;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.artifactory.addon.AddonFactory;
-import org.artifactory.build.api.Build;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.webapp.wicket.page.search.LimitlessCapableSearcher;
 import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
+import org.jfrog.build.api.Build;
 
 /**
  * Search features addon.
@@ -40,7 +40,7 @@ public interface SearchAddon extends AddonFactory {
 
     MenuNode getBrowserSearchMenuNode();
 
-    String getSearchResultsPageMountPath();
+    String getSearchResultsPageMountPath(String resultToSelect);
 
     /**
      * Returns the build save search results panel

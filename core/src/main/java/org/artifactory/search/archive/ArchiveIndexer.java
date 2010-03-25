@@ -18,6 +18,7 @@
 
 package org.artifactory.search.archive;
 
+import com.google.common.collect.Lists;
 import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
@@ -41,7 +42,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 
@@ -59,6 +59,10 @@ public abstract class ArchiveIndexer {
      * @param file JcrFile to index
      */
     public static void index(JcrFile file) {
+        if (file == null) {
+            return;
+        }
+
         //Index classes if necessary
         ContentType contentType = NamingUtils.getContentType(file.getPath());
         if (!contentType.isJarVariant()) {
@@ -67,6 +71,7 @@ public abstract class ArchiveIndexer {
 
         //Read all classes and store their names on a
         JcrZipFile jar = null;
+        String archiveIndex = null;
         try {
             jar = new JcrZipFile(file);
 
@@ -78,13 +83,7 @@ public abstract class ArchiveIndexer {
                     sb.append(zipEntry.getName()).append(" ");
                 }
             }
-            Node node = file.getNode();
-            node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_ENTRY, sb.toString(), PropertyType.STRING);
-            //Mark the files as indexed
-            node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, true);
-            node.save();
-            log.info("The content of the archive: '{}' was indexed successfully", file.getName());
-            log.debug("Indexed the classes: {}", sb.toString());
+            archiveIndex = sb.toString();
         } catch (Exception e) {
             LoggingUtils.warnOrDebug(log, "Could not index '" + file.getRepoPath() + "'", e);
         } finally {
@@ -95,6 +94,30 @@ public abstract class ArchiveIndexer {
                 catch (Exception e) {
                     log.warn("Could not close jar file '" + file.getRepoPath() + "' properly.", e);
                 }
+            }
+        }
+
+        Node node = file.getNode();
+        if (archiveIndex != null) {
+            try {
+                node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_ENTRY, archiveIndex, PropertyType.STRING);
+                //Mark the files as indexed
+                node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, true);
+                node.save();
+                log.info("The content of the archive: '{}' was indexed successfully", file.getName());
+                log.debug("Indexed the classes: {}", archiveIndex);
+            } catch (RepositoryException e) {
+                log.error("Unable to set archive index property on '{}': {}", node.toString(), e.getMessage());
+                log.debug("Unable to set archive index property on '{}'", e);
+            }
+        } else {
+            try {
+                node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, "failed");
+                node.save();
+                log.info("Marking the indexed property of '{}' as 'failed'", node.toString());
+            } catch (RepositoryException e) {
+                log.error("Unable to set archive indexed property on '{}': {}", node.toString(), e.getMessage());
+                log.debug("Unable to set archive indexed property on '{}'", e);
             }
         }
     }
@@ -108,16 +131,17 @@ public abstract class ArchiveIndexer {
      * @throws javax.jcr.RepositoryException Any exception that might occur while dealing with the repository
      */
     public static void markArchivesForIndexing(Node parentNode, boolean force) throws RepositoryException {
-        NodeIterator childrenNodes = parentNode.getNodes();
-        while (childrenNodes.hasNext()) {
-            Node archiveNode = childrenNodes.nextNode();
-            ContentType contentType = NamingUtils.getContentType(archiveNode.getName());
-            if (contentType.isJarVariant()) {
-                markArchiveForIndexing(archiveNode, force);
-            }
-            if (archiveNode.hasNodes()) {
-                markArchivesForIndexing(archiveNode, force);
-                archiveNode.save();
+        if (parentNode != null) {
+            NodeIterator childrenNodes = parentNode.getNodes();
+            while (childrenNodes.hasNext()) {
+                Node archiveNode = childrenNodes.nextNode();
+                String nodeType = archiveNode.getPrimaryNodeType().getName();
+                if (nodeType.equals(JcrTypes.NT_ARTIFACTORY_FILE)) {
+                    markArchiveForIndexing(archiveNode, force);
+                } else {
+                    markArchivesForIndexing(archiveNode, force);
+                    archiveNode.save();
+                }
             }
         }
     }
@@ -131,12 +155,17 @@ public abstract class ArchiveIndexer {
      * @throws RepositoryException Any exception that might occur during node editing
      */
     public static boolean markArchiveForIndexing(Node archiveNode, boolean force) throws RepositoryException {
-        String nodeType = archiveNode.getPrimaryNodeType().getName();
-        if (nodeType.equals(JcrTypes.NT_ARTIFACTORY_FILE)) {
-            if (force || !archiveNode.hasProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED)) {
-                archiveNode.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, false);
-                log.debug("The archive: '{}' was successfully marked for indexing", archiveNode.getName());
-                return true;
+        if (archiveNode != null) {
+            String nodeType = archiveNode.getPrimaryNodeType().getName();
+            if (nodeType.equals(JcrTypes.NT_ARTIFACTORY_FILE)) {
+                ContentType contentType = NamingUtils.getContentType(archiveNode.getName());
+                if (contentType.isJarVariant()) {
+                    if (force || !archiveNode.hasProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED)) {
+                        archiveNode.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, false);
+                        log.debug("The archive: '{}' was successfully marked for indexing", archiveNode.getName());
+                        return true;
+                    }
+                }
             }
         }
         return false;
@@ -149,7 +178,7 @@ public abstract class ArchiveIndexer {
         //Find all files marked for indexing
         InternalArtifactoryContext context = InternalContextHelper.get();
         JcrSession usession = context.getJcrService().getUnmanagedSession();
-        List<RepoPath> archiveRepoPaths = new ArrayList<RepoPath>();
+        List<RepoPath> archiveRepoPaths = Lists.newArrayList();
         try {
             /*RowIterator rowIterator = GQL.execute(
                     "type:" + JcrFile.NT_ARTIFACTORY_FILE + " \"" + PROP_ARTIFACTORY_ARCHIVE_INDEXED + "\":false",

@@ -64,8 +64,8 @@ public class SecurityCommand extends UrlBasedCommand implements Command {
             if ((!saveDestination.exists()) ||
                     (CliOption.overwrite.isSet())) {
                 saveDestination.createNewFile();
-                FileOutputStream fos = new FileOutputStream(saveDestination.getPath());
                 byte[] content = get(securityUri, 200, null, false);
+                FileOutputStream fos = new FileOutputStream(saveDestination.getPath());
                 try {
                     fos.write(content);
                 }

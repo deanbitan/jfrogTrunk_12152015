@@ -25,8 +25,6 @@ import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.repo.jcr.JcrHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -39,14 +37,12 @@ import java.util.Calendar;
  * @author freds
  */
 public abstract class AbstractXmlContentPersistenceHandler<T> extends AbstractMetadataPersistenceHandler<T> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(AbstractXmlContentPersistenceHandler.class);
 
     protected AbstractXmlContentPersistenceHandler(XmlMetadataProvider<T> xmlProvider) {
         super(xmlProvider);
     }
 
-    protected abstract boolean saveXmlHierarchy();
+    protected abstract boolean shouldSaveXmlHierarchy();
 
     @Override
     protected String getXml(MetadataAware metadataAware) {
@@ -81,7 +77,7 @@ public abstract class AbstractXmlContentPersistenceHandler<T> extends AbstractMe
                 xmlData,
                 ContentType.applicationXml.getMimeType(),
                 getAuthorizationService().currentUsername(),
-                saveXmlHierarchy());
+                shouldSaveXmlHierarchy());
     }
 
     public MetadataInfo getMetadataInfo(MetadataAware metadataAware) {

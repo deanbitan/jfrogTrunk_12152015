@@ -21,9 +21,9 @@ package org.artifactory.jcr.md;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrPath;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;

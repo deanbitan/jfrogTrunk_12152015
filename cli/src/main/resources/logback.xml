@@ -19,19 +19,19 @@
 
 <configuration debug="false">
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <layout class="ch.qos.logback.classic.PatternLayout">
+        <layout class="org.artifactory.logging.layout.BackTracePatternLayout">
             <pattern>%m%n</pattern>
         </layout>
     </appender>
     <appender name="CONSOLENONEWLINE" class="ch.qos.logback.core.ConsoleAppender">
-        <layout class="ch.qos.logback.classic.PatternLayout">
+        <layout class="org.artifactory.logging.layout.BackTracePatternLayout">
             <pattern>%m</pattern>
         </layout>
     </appender>
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <File>${artadmin.logs.dir}/artadmin.log</File>
         <Append>true</Append>
-        <layout class="ch.qos.logback.classic.PatternLayout">
+        <layout class="org.artifactory.logging.layout.BackTracePatternLayout">
             <pattern>%d [%-5p] \(%-13F:%L{10}\) - %m%n</pattern>
         </layout>
     </appender>

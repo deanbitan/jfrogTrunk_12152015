@@ -116,11 +116,8 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         if (definition == null && createIfEmpty) {
             log.debug("Creating new Metadata definition on demand for '{}'.", metadataName);
             GenericXmlProvider xmlProvider = new GenericXmlProvider(metadataName);
-            definition = new MetadataDefinition<String>(
-                    xmlProvider,
-                    new GenericPersistenceHandler(xmlProvider, true),
+            definition = new MetadataDefinition<String>(xmlProvider, new GenericPersistenceHandler(xmlProvider, true),
                     false);
-
             mdDefsByName.put(metadataName, definition);
         }
         return definition;

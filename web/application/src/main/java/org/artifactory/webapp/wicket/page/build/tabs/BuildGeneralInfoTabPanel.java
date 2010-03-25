@@ -34,11 +34,13 @@ import org.artifactory.addon.wicket.Addon;
 import org.artifactory.addon.wicket.SearchAddon;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.util.Pair;
-import org.artifactory.build.api.Build;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.util.ListPropertySorter;
+import org.jfrog.build.api.Agent;
+import org.jfrog.build.api.Build;
+import org.jfrog.build.api.BuildType;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -84,8 +86,20 @@ public class BuildGeneralInfoTabPanel extends Panel {
         addLabeledValue(infoBorder, "version", "Version", build.getVersion());
         addLabeledValue(infoBorder, "name", "Name", build.getName());
         addLabeledValue(infoBorder, "number", "Number", Long.toString(build.getNumber()));
-        addLabeledValue(infoBorder, "type", "Type", build.getType().getName());
-        addLabeledValue(infoBorder, "agent", "Agent", build.getAgent().toString());
+
+        BuildType buildType = build.getType();
+        String buildTypeName = null;
+        if (buildType != null) {
+            buildTypeName = buildType.getName();
+        }
+        addLabeledValue(infoBorder, "type", "Type", buildTypeName);
+
+        Agent agent = build.getAgent();
+        String agentName = null;
+        if (agent != null) {
+            agentName = agent.toString();
+        }
+        addLabeledValue(infoBorder, "agent", "Agent", agentName);
         addLabeledValue(infoBorder, "started", "Started", build.getStarted());
 
         Duration duration = Duration.milliseconds(build.getDurationMillis());
@@ -95,12 +109,15 @@ public class BuildGeneralInfoTabPanel extends Panel {
         infoBorder.add(new Label("urlLabel", "URL:"));
 
         String url = build.getUrl();
+        if (url == null) {
+            url = "";
+        }
         infoBorder.add(new ExternalLink("url", url, url));
         addLabeledValue(infoBorder, "parentBuildId", "Parent Build ID", build.getParentBuildId());
     }
 
     /**
-     * Adds a labled value of the given details
+     * Adds a labeled value of the given details
      *
      * @param infoBorder Border to add the label to
      * @param id         ID to assign to the labeled value
@@ -108,7 +125,7 @@ public class BuildGeneralInfoTabPanel extends Panel {
      * @param labelValue Textual value
      */
     private void addLabeledValue(FieldSetBorder infoBorder, String id, String label, String labelValue) {
-        infoBorder.add(new LabeledValue(id, label + ": ", labelValue));
+        infoBorder.add(new LabeledValue(id, label + ": ", (labelValue != null) ? labelValue : ""));
     }
 
     /**
@@ -153,9 +170,11 @@ public class BuildGeneralInfoTabPanel extends Panel {
 
         Properties properties = build.getProperties();
 
-        for (Object key : properties.keySet()) {
-            String keyString = String.valueOf(key);
-            list.add(new Pair<String, String>(keyString, properties.getProperty(keyString)));
+        if (properties != null) {
+            for (Object key : properties.keySet()) {
+                String keyString = String.valueOf(key);
+                list.add(new Pair<String, String>(keyString, properties.getProperty(keyString)));
+            }
         }
 
         return list;

@@ -48,8 +48,11 @@ import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.sso.HttpSsoSettings;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.Repo;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.security.interceptor.SecurityConfigurationChangesInterceptors;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
@@ -292,8 +295,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     public UserInfo findUser(String username) {
-        UserInfo userInfo = userGroupManager.loadUserByUsername(username).getDescriptor();
-        return userInfo;
+        return userGroupManager.loadUserByUsername(username).getDescriptor();
     }
 
     public AclInfo getAcl(PermissionTargetInfo permissionTarget) {
@@ -826,6 +828,52 @@ public class SecurityServiceImpl implements InternalSecurityService {
         SimpleUser user = new SimpleUser(findUser(username.toLowerCase()));
         for (ArtifactoryPermission permission : ArtifactoryPermission.values()) {
             if (hasPermission(permission, user)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean userHasPermissionsOnRepositoryRoot(String repoKey) {
+        Repo repo = repositoryService.repositoryByKey(repoKey);
+        // If it is a real (i.e local or cached simply check permission on root.
+        if (repo.isReal()) {
+            // If repository is real, check if the user has any permission on the root.
+            return hasPermissionOnRoot(repoKey);
+        } else {
+            // If repository is virtual go over all repository associated with it and check if user has permissions
+            // on it root.
+            VirtualRepo virtualRepo = repositoryService.virtualRepositoryByKey(repoKey);
+            // Go over all resolved cached repos, i.e. if we have virtual repository aggregation,
+            // This will give the resolved cached repos.
+            List<LocalCacheRepo> localCacheRepoList = virtualRepo.getResolvedLocalCachedRepos();
+            for (LocalCacheRepo localCacheRepo : localCacheRepoList) {
+                LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(localCacheRepo.getKey());
+                if (localRepo != null) {
+                    if (hasPermissionOnRoot(localRepo.getKey())) {
+                        return true;
+                    }
+                }
+            }
+            // Go over all resolved local repositories, will bring me the resolved local repos from aggregation.
+            List<LocalRepo> repoList = virtualRepo.getResolvedLocalRepos();
+            for (LocalRepo localCacheRepo : repoList) {
+                LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(localCacheRepo.getKey());
+                if (localRepo != null) {
+                    if (hasPermissionOnRoot(localRepo.getKey())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean hasPermissionOnRoot(String repoKey) {
+        RepoPath path = RepoPath.repoRootPath(repoKey);
+        for (ArtifactoryPermission permission : ArtifactoryPermission.values()) {
+            Permission artifactoryPermission = permissionFor(permission);
+            if (hasPermission(path, artifactoryPermission, false)) {
                 return true;
             }
         }

@@ -46,7 +46,7 @@ public class PomTransformerTest {
     private void setup() throws IOException {
         InputStream resource = ResourceUtils.getResource(
                 "/org/artifactory/repo/virtual/interceptor/activeByDefault-test.pom");
-        pomAsString = IOUtils.toString(resource);
+        pomAsString = IOUtils.toString(resource, "utf-8");
         IOUtils.closeQuietly(resource);
     }
 
@@ -111,7 +111,7 @@ public class PomTransformerTest {
     public void transformBadPom() throws IOException {
         InputStream badPomResource = ResourceUtils.getResource(
                 "/org/artifactory/repo/virtual/interceptor/bad.pom");
-        String badPom = IOUtils.toString(badPomResource);
+        String badPom = IOUtils.toString(badPomResource, "utf-8");
         IOUtils.closeQuietly(badPomResource);
         PomTransformer transformer = new PomTransformer(badPom, PomCleanupPolicy.discard_active_reference);
         String nonTransformedPom = transformer.transform();

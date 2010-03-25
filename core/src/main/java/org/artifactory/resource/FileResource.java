@@ -31,13 +31,19 @@ public class FileResource implements RepoResource {
 
     private final FileInfo info;
     private RepoPath responseRepoPath;
+    private boolean exactQueryMatch;
 
     public FileResource(FileInfo fileInfo) {
+        this(fileInfo, true);
+    }
+
+    public FileResource(FileInfo fileInfo, boolean exactQueryMatch) {
         this.info = new FileInfoImpl(fileInfo);
+        this.exactQueryMatch = exactQueryMatch;
     }
 
     public FileResource(RepoPath repoPath) {
-        this.info = new FileInfoImpl(repoPath);
+        this(new FileInfoImpl(repoPath));
     }
 
     public RepoPath getRepoPath() {
@@ -58,6 +64,10 @@ public class FileResource implements RepoResource {
 
     public boolean isFound() {
         return true;
+    }
+
+    public boolean isExactQueryMatch() {
+        return exactQueryMatch;
     }
 
     public boolean isExpired() {

@@ -19,12 +19,12 @@
 package org.artifactory.repo.virtual.interceptor.transformer;
 
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.XmlConverterUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 

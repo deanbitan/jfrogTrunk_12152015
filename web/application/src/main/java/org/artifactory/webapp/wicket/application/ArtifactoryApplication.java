@@ -36,6 +36,7 @@ import org.apache.wicket.extensions.ajax.markup.html.form.upload.UploadWebReques
 import org.apache.wicket.injection.web.InjectorHolder;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.protocol.http.WebResponse;
 import org.apache.wicket.request.IRequestCycleProcessor;
 import org.apache.wicket.settings.IApplicationSettings;
 import org.apache.wicket.settings.IMarkupSettings;
@@ -81,6 +82,7 @@ import org.slf4j.Logger;
 import org.wicketstuff.annotation.scan.AnnotatedMountScanner;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -240,6 +242,12 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     }
 
     @Override
+    protected WebResponse newWebResponse(HttpServletResponse servletResponse) {
+        return (getRequestCycleSettings().getBufferResponse() ? new EofAwareBufferedWebResponse(servletResponse) :
+                new WebResponse(servletResponse));
+    }
+
+    @Override
     protected void init() {
         setupSpring();
 
@@ -327,7 +335,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     }
 
     private void mountPages() {
-        new AnnotatedMountScanner().scanPackage("org.artifactory.webapp.wicket.page.build")
+        new AnnotatedMountScanner().scanPackage("org.artifactory.webapp.wicket.page.build.page")
                 .mount(ArtifactoryApplication.get());
 
         mountBookmarkablePage(SimpleRepoBrowserPage.PATH, SimpleRepoBrowserPage.class);

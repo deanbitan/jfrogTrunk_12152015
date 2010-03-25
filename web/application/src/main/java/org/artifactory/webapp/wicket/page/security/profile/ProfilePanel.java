@@ -43,9 +43,9 @@ import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordStrengthComponentPanel;
@@ -59,6 +59,8 @@ import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
 import java.security.KeyPair;
+
+import static org.artifactory.common.wicket.component.label.highlighter.Syntax.XML;
 
 /**
  * Created by IntelliJ IDEA. User: yoavl
@@ -311,7 +313,7 @@ public class ProfilePanel extends TitledActionPanel {
         FieldSetBorder border = new FieldSetBorder("settingsBorder");
         add(border);
 
-        border.add(new TextContentPanel("settingsDeclaration").setContent(sb.toString()));
+        border.add(new SyntaxHighlighter("settingsDeclaration", sb.toString(), XML));
         return border;
     }
 

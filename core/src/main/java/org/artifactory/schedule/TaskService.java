@@ -122,7 +122,7 @@ public interface TaskService extends ReloadableBean {
     /**
      * Returns the actual task object.
      * <p/>
-     * THIS SHOULD BE CALLED BY PROVATE API ONLY!
+     * THIS SHOULD BE CALLED BY PRIVATE API ONLY!
      * <p/>
      * Only exists since spring jdk-proxies with which the internal api works are interfaces.
      *

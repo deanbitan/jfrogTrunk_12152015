@@ -63,27 +63,8 @@ public class ActionableArtifactSearchResult<T extends SearchResult> extends Acti
     @Override
     public void filterActions(AuthorizationService authService) {
         //If the result is not a pom file or xml file
-        if (!isPomFile() && !isXmlFile()) {
-            //Disable the view action
+        if (!NamingUtils.isViewable((getItemInfo().getName()))) {
             viewAction.setEnabled(false);
         }
-    }
-
-    /**
-     * Check if the current search result is a POM file
-     *
-     * @return boolean - Is result a POM file
-     */
-    private boolean isPomFile() {
-        return searchResult.getItemInfo().getName().endsWith(".pom");
-    }
-
-    /**
-     * Check if the current search result is an xml file
-     *
-     * @return boolean - Is result an xml file
-     */
-    private boolean isXmlFile() {
-        return NamingUtils.getContentType(searchResult.getItemInfo().getName()).isXml();
     }
 }

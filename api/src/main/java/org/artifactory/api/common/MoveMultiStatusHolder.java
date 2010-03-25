@@ -52,7 +52,7 @@ public class MoveMultiStatusHolder extends MultiStatusHolder {
      *
      * @return True if not items have been moved. False if at least one item has been moved
      */
-    public boolean noItemsMoved() {
+    public boolean noItemsMovedOrCopied() {
         return movedCounter == 0;
     }
 

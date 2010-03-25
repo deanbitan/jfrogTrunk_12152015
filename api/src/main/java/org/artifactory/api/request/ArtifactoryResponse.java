@@ -21,7 +21,6 @@ package org.artifactory.api.request;
 import org.artifactory.api.common.StatusHolder;
 import org.slf4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,7 +30,7 @@ public interface ArtifactoryResponse {
 
     void setException(Exception exception);
 
-    enum Status {
+    enum State {
         UNSET, SUCCESS, FAILURE
     }
 
@@ -59,11 +58,11 @@ public interface ArtifactoryResponse {
 
     void sendStream(InputStream is) throws IOException;
 
-    void sendFile(File targetFile) throws IOException;
-
     void sendOk();
 
-    void setStatus(int status);
+    int getStatus();
+
+    void setStatus(int statusCode);
 
     void setHeader(String header, String value);
 

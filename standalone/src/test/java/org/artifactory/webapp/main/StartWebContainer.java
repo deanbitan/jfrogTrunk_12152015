@@ -20,8 +20,8 @@ package org.artifactory.webapp.main;
 
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
-import org.mortbay.jetty.Server;
-import org.mortbay.xml.XmlConfiguration;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.xml.XmlConfiguration;
 
 import java.io.File;
 import java.net.URL;
@@ -46,7 +46,6 @@ public class StartWebContainer {
         System.setProperty(ConstantValues.dev.getPropertyName(), "true");
 
         //Manually set the selector (needed explicitly here before any logger kicks in)
-        System.setProperty("logback.ContextSelector", "org.artifactory.log.logback.LogbackContextSelector");
         // create the logger only after artifactory.home is set
         Server server = null;
         try {

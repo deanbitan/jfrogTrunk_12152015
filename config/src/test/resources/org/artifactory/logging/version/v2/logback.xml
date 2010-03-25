@@ -131,7 +131,7 @@
     <logger name="org.apache.jackrabbit">
         <level value="WARN"/>
     </logger>
-    <logger name="org.mortbay">
+    <logger name="org.eclipse.jetty">
         <level value="INFO"/>
     </logger>
     <logger name="org.apache.commons.httpclient">

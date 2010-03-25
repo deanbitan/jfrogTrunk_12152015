@@ -55,7 +55,7 @@ public class BreadCrumbsPanel extends Panel {
         }
     }
 
-    private class BreadCrumbItem extends WebMarkupContainer {
+    private static class BreadCrumbItem extends WebMarkupContainer {
         private BreadCrumbItem(String id, String label, StringBuilder href, String sep) {
             super(id);
             add(new ExternalLink("link", href.toString(), label));

@@ -66,7 +66,8 @@ public enum CliOption implements Option {
     overwrite(
             "When set, if the destination file exists, the command will overwrite it."),
     m2(
-            "Create .m2 compatible metadata (sha1, md5 and maven-metadata.xml files) when exporting");
+            "Create .m2 compatible metadata (sha1, md5 and maven-metadata.xml files) when exporting"),
+    incremental("When exporting, this flag will determine if the export should be incremental or not");
 
     private final Option option;
 

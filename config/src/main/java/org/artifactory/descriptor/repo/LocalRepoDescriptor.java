@@ -23,12 +23,15 @@ import org.artifactory.descriptor.Descriptor;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
-@XmlType(name = "LocalRepoType", namespace = Descriptor.NS)
+@XmlType(name = "LocalRepoType", propOrder = {"snapshotVersionBehavior", "checksumPolicyType"},
+        namespace = Descriptor.NS)
 public class LocalRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(defaultValue = "non-unique", required = false)
     private SnapshotVersionBehavior snapshotVersionBehavior = SnapshotVersionBehavior.NONUNIQUE;
 
+    @XmlElement(name = "localRepoChecksumPolicyType", defaultValue = "client-checksums", required = false)
+    private LocalRepoChecksumPolicyType checksumPolicyType = LocalRepoChecksumPolicyType.CLIENT;
 
     public SnapshotVersionBehavior getSnapshotVersionBehavior() {
         return snapshotVersionBehavior;
@@ -46,5 +49,13 @@ public class LocalRepoDescriptor extends RealRepoDescriptor {
     @Override
     public boolean isCache() {
         return false;
+    }
+
+    public LocalRepoChecksumPolicyType getChecksumPolicyType() {
+        return checksumPolicyType;
+    }
+
+    public void setChecksumPolicyType(LocalRepoChecksumPolicyType checksumPolicyType) {
+        this.checksumPolicyType = checksumPolicyType;
     }
 }

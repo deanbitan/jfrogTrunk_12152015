@@ -25,6 +25,7 @@ import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.common.StatusEntryLevel;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.SecurityService;
@@ -71,7 +72,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
 
     public LdapCreateUpdatePanel(CreateUpdateAction action, LdapSetting ldapDescriptor, LdapsListPanel ldapsListPanel) {
         super(action, ldapDescriptor);
-        setWidth(494);
+        setWidth(500);
 
         add(form);
 
@@ -99,6 +100,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         form.add(borderDn);
         borderDn.add(new TextField("userDnPattern"));
         borderDn.add(new StyledCheckbox("autoCreateUser"));
+        borderDn.add(new SchemaHelpBubble("autoCreateUser.help"));
         borderDn.add(new SchemaHelpBubble("userDnPattern.help"));
 
         addSearchFields(ldapDescriptor, borderDn);
@@ -210,6 +212,8 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
 
                 if (status.isError()) {
                     error(status.getStatusMsg());
+                } else if (status.getStatusEntry().getLevel().equals(StatusEntryLevel.WARNING)) {
+                    warn(status.getStatusEntry().getMessage());
                 } else {
                     info(status.getStatusMsg());
                 }

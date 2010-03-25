@@ -25,6 +25,7 @@ import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.jaxb.JaxbHelper;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.artifactory.util.ResourceUtils;
 import org.artifactory.version.ArtifactoryConfigVersion;
 import org.testng.Assert;
@@ -43,14 +44,11 @@ import static org.testng.Assert.assertTrue;
  * @author Tomer Cohen
  */
 @Test
-public class CentralConfigReaderTest {
+public class CentralConfigReaderTest extends SystemPropertiesBoundTest {
 
 
     @AfterMethod
     public void clearArtifactoryProperties() {
-        // unbind the artifactory properties
-        ArtifactorySystemProperties.unbind();
-
         // clear any property that might have been set in a test
         for (ConstantValues constantsValue : ConstantValues.values()) {
             System.clearProperty(constantsValue.getPropertyName());
@@ -68,7 +66,6 @@ public class CentralConfigReaderTest {
 
     @SuppressWarnings("unchecked")
     public void readAllConfigFiles() throws Exception {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
         System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +
                 "3rdp-releases", "third-party-releases");
         System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +

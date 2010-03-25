@@ -84,6 +84,13 @@ public class ImportSettings extends BaseSettings {
         this.info.metadataReader = metadataReader;
     }
 
+    /**
+     * This method activates the archive indexer immediately on all artifacts that are marked for indexing. This is
+     * usually used when importing a repository (usually a single one) and indexing will take place right after the
+     * import process and not in async manner like after importing many repositories.
+     *
+     * @return Whether immediate indexing for marked artifacts is active or not.
+     */
     public boolean isIndexMarkedArchives() {
         return info.indexMarkedArchives;
     }

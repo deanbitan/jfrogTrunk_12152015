@@ -33,8 +33,8 @@ import org.slf4j.Logger;
 public class AnonAccessNameConverter implements XmlConverter {
     private static final Logger log = LoggerFactory.getLogger(AnonAccessNameConverter.class);
 
-    private final String OLD_ANNON = "anonDownloadsAllowed";
-    private final String NEW_ANNON = "anonAccessEnabled";
+    private static final String OLD_ANNON = "anonDownloadsAllowed";
+    private static final String NEW_ANNON = "anonAccessEnabled";
 
     public void convert(Document doc) {
         Element root = doc.getRootElement();

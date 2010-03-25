@@ -24,8 +24,9 @@ import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.LastDownloadRestResult;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.SearchService;
-import org.artifactory.api.search.metadata.GenericMetadataSearchControls;
-import org.artifactory.api.search.metadata.GenericMetadataSearchResult;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
@@ -37,7 +38,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
@@ -48,21 +48,29 @@ import static org.artifactory.api.rest.constant.SearchRestConstants.NOT_FOUND;
  * @author Eli Givoni
  */
 public class UsageSinceResource {
+    private AuthorizationService authorizationService;
     private SearchService searchService;
     private HttpServletRequest request;
     private HttpServletResponse response;
 
-    public UsageSinceResource(SearchService searchService, HttpServletRequest request, HttpServletResponse response) {
+    public UsageSinceResource(AuthorizationService authorizationService, SearchService searchService,
+            HttpServletRequest request, HttpServletResponse response) {
+        this.authorizationService = authorizationService;
         this.searchService = searchService;
         this.request = request;
         this.response = response;
     }
 
     @GET
-    @Produces({SearchRestConstants.MT_USAGE_SINCE_SEARCH_RESULT, MediaType.APPLICATION_JSON})
+    @Produces({SearchRestConstants.MT_USAGE_SINCE_SEARCH_RESULT})
     public LastDownloadRestResult get(
-            @QueryParam(SearchRestConstants.PARAM_SEARCH_SINCE) Long lastDownloaded,
+            @QueryParam(SearchRestConstants.PARAM_SEARCH_NOT_USED_SINCE) Long lastDownloaded,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
+        if (authorizationService.isAnonymous()) {
+            RestUtils.sendUnauthorizedResponse(response,
+                    "This search resource is available to authenticated users only.");
+            return null;
+        }
         return search(lastDownloaded, reposToSearch);
     }
 

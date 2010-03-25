@@ -219,7 +219,7 @@ public class ArtifactoryHome {
                 FileUtils.copyURLToFile(configUrl, logbackFile);
             } catch (IOException e) {
                 // we don't have the logger configuration - use System.err
-                System.err.printf("Could not create default %s into %s", LOGBACK_CONFIG_FILE_NAME, logbackFile);
+                System.err.printf("Could not create default %s into %s\n", LOGBACK_CONFIG_FILE_NAME, logbackFile);
                 e.printStackTrace();
             }
         }
@@ -235,7 +235,7 @@ public class ArtifactoryHome {
         File importConfigFile = new File(etcDir, ARTIFACTORY_CONFIG_IMPORT_FILE);
         if (importConfigFile.exists()) {
             try {
-                String configContent = FileUtils.readFileToString(importConfigFile);
+                String configContent = FileUtils.readFileToString(importConfigFile, "utf-8");
                 if (StringUtils.isNotBlank(configContent)) {
                     File bootstrapConfigFile = new File(etcDir, ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
                     org.artifactory.util.FileUtils.switchFiles(importConfigFile, bootstrapConfigFile);
@@ -255,14 +255,14 @@ public class ArtifactoryHome {
         String result;
         if (newBootstrapConfig.exists()) {
             try {
-                result = FileUtils.readFileToString(newBootstrapConfig);
+                result = FileUtils.readFileToString(newBootstrapConfig, "utf-8");
             } catch (IOException e) {
                 throw new RuntimeException("Could not read data from '" + newBootstrapConfig.getAbsolutePath() +
                         "' file due to: " + e.getMessage(), e);
             }
         } else if (oldLocalConfig.exists()) {
             try {
-                result = FileUtils.readFileToString(oldLocalConfig);
+                result = FileUtils.readFileToString(oldLocalConfig, "utf-8");
             } catch (IOException e) {
                 throw new RuntimeException("Could not read data from '" + newBootstrapConfig.getAbsolutePath() +
                         "' file due to: " + e.getMessage(), e);
@@ -330,16 +330,21 @@ public class ArtifactoryHome {
      */
     public void initAndLoadSystemPropertyFile() {
         // Expose the properties inside artfactory.properties and artfactory.system.properties
-        // as system properties, availale to ArtifactoryConstants
+        // as system properties, available to ArtifactoryConstants
         File systemPropertiesFile = new File(etcDir, ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
         if (!systemPropertiesFile.exists()) {
             try {
                 //Copy from default
                 URL url = ArtifactoryHome.class.getResource("/META-INF/default/" + ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
+                if (url == null) {
+                    throw new RuntimeException("Could not read classpath resource '/META-INF/default/" +
+                            ARTIFACTORY_SYSTEM_PROPERTIES_FILE +
+                            "'. Make sure Artifactory home is readable by the current user.");
+                }
                 FileUtils.copyURLToFile(url, systemPropertiesFile);
             } catch (IOException e) {
-                throw new RuntimeException("Could not create a default " +
-                        ARTIFACTORY_SYSTEM_PROPERTIES_FILE + " at " + systemPropertiesFile.getAbsolutePath(), e);
+                throw new RuntimeException("Could not create the default '" + ARTIFACTORY_SYSTEM_PROPERTIES_FILE +
+                        "' at '" + systemPropertiesFile.getAbsolutePath() + "'.", e);
             }
         }
 

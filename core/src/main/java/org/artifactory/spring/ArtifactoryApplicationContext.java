@@ -302,8 +302,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 }
             }
         } finally {
-            super.destroy();
             ArtifactoryContextThreadBinder.unbind();
+            super.destroy();
         }
     }
 

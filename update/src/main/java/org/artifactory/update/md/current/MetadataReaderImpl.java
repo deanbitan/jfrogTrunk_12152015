@@ -67,7 +67,7 @@ public class MetadataReaderImpl implements MetadataReader {
             try {
                 // metadata name is the name of the file without the extension
                 String metadataName = PathUtils.stripExtension(metadataFileName);
-                String xmlContent = FileUtils.readFileToString(metadataFile);
+                String xmlContent = FileUtils.readFileToString(metadataFile, "utf-8");
                 MetadataEntry metadataEntry = createMetadataEntry(metadataName, xmlContent);
                 result.add(metadataEntry);
             } catch (Exception e) {
@@ -90,7 +90,7 @@ public class MetadataReaderImpl implements MetadataReader {
             type = NamingUtils.getContentTypeByExtension(extension);
         }
         if (type == null || !type.isXml()) {
-            //Sanity chek
+            //Sanity check
             status.setWarning("Skipping xml metadata import from '" + metadataFile.getAbsolutePath() +
                     "'. Expected an XML file but encountered the extension " + extension +
                     " which is not an XML type.", log);

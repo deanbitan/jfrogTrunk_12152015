@@ -18,7 +18,7 @@
 
 package org.artifactory.api.maven;
 
-import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -30,7 +30,7 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class MavenNamingTest {
+public class MavenNamingTest extends SystemPropertiesBoundTest {
 
     public void testIsVersionSnapshot() {
         assertTrue(MavenNaming.isVersionSnapshot("1.2-SNAPSHOT"));
@@ -55,10 +55,6 @@ public class MavenNamingTest {
     }
 
     public void testIsClientOrServerPom() {
-        //dummy props so that the isPom method will work
-        ArtifactorySystemProperties props = new ArtifactorySystemProperties();
-        ArtifactorySystemProperties.bind(props);
-
         assertTrue(MavenNaming.isClientOrServerPom("a/path/1.0-SNAPSHOT/1.0-SNAPSHOT.pom"));
         assertTrue(MavenNaming.isClientOrServerPom("a/path/1.0-SNAPSHOT/pom.xml"));
         assertTrue(MavenNaming.isClientOrServerPom("a/path/1.0-SNAPSHOT/1.0.pom"));
@@ -131,23 +127,34 @@ public class MavenNamingTest {
 
     public void artifactWithPath() {
         MavenArtifactInfo info = MavenNaming.getInfoByMatching("groupId/artifactId/1.0/artifactId-1.0.jar");
-        assertEquals(info.getArtifactId(), "groupId/artifactId/1.0/artifactId", "Matcher should not seperate path");
+        assertEquals(info.getArtifactId(), "groupId/artifactId/1.0/artifactId", "Matcher should not separate path");
         assertEquals(info.getVersion(), "1.0", "Version should be 1.0");
         assertEquals(info.getClassifier(), null, "No classifier expected");
+        assertEquals(info.getType(), "jar", "Unexpected type");
+    }
+
+    public void pathWithCompositeFileExtension() {
+        MavenArtifactInfo info = MavenNaming.getInfoByMatching("artifactId-1.0.another.jar");
+        assertEquals(info.getArtifactId(), "artifactId", "Unexpected artifact id");
+        assertEquals(info.getVersion(), "1.0.another", "Unexpected version");
+        assertEquals(info.getClassifier(), null, "No classifier expected");
+        assertEquals(info.getType(), "jar", "Unexpected type");
     }
 
     public void artifactWithNoClassifier() {
-        MavenArtifactInfo info = MavenNaming.getInfoByMatching("artifactId-1.0.jar");
+        MavenArtifactInfo info = MavenNaming.getInfoByMatching("artifactId-1.0.war");
         assertEquals(info.getArtifactId(), "artifactId", "Artifact id should be 'artifactId'");
         assertEquals(info.getVersion(), "1.0", "Version should be 1.0");
         assertEquals(info.getClassifier(), null, "No classifier expected");
+        assertEquals(info.getType(), "war", "Unexpected type");
     }
 
     public void artifactWithNumericArtifactId() {
-        MavenArtifactInfo info = MavenNaming.getInfoByMatching("12354-1.0.jar");
+        MavenArtifactInfo info = MavenNaming.getInfoByMatching("12354-1.0.zara");
         assertEquals(info.getArtifactId(), "12354", "Artifact id should be '12354'");
         assertEquals(info.getVersion(), "1.0", "Version should be 1.0");
         assertEquals(info.getClassifier(), null, "No classifier expected");
+        assertEquals(info.getType(), "zara", "Unexpected type");
     }
 
     @DataProvider(name = "artifactWithAlphaNumberArtifactId")
@@ -166,6 +173,7 @@ public class MavenNamingTest {
                 "Artifact id should be '" + artifactName + "'");
         assertEquals(info.getVersion(), "1.0", "Version should be 1.0");
         assertEquals(info.getClassifier(), null, "No classifier expected");
+        assertEquals(info.getType(), "jar", "Unexpected type");
     }
 
     @DataProvider(name = "artifactWithMultipleArtifactIds")
@@ -189,15 +197,17 @@ public class MavenNamingTest {
                 "Artifact id should be '" + artifactName + "'");
         assertEquals(info.getVersion(), "1.0", "Version should be 1.0");
         assertEquals(info.getClassifier(), null, "No classifier expected");
+        assertEquals(info.getType(), "jar", "Unexpected type");
     }
 
     @Test(enabled = false)
     //Difficult to guess
     public void artifactWithAlphaVersion() {
-        MavenArtifactInfo info = MavenNaming.getInfoByMatching("artifactId-alpha.jar");
+        MavenArtifactInfo info = MavenNaming.getInfoByMatching("artifactId-alpha.pom");
         assertEquals(info.getArtifactId(), "artifact", "Artifact id should be 'artifactId'");
         assertEquals(info.getVersion(), "alpha", "Version should be 'alpha'");
         assertEquals(info.getClassifier(), null, "No classifier expected");
+        assertEquals(info.getType(), "pom", "Unexpected type");
     }
 
     @DataProvider(name = "artifactWithAlphaNumericVersion")
@@ -216,7 +226,7 @@ public class MavenNamingTest {
                 "Artifact id should be 'artifactId'");
         assertEquals(info.getVersion(), version, "Version should be '" + version + "'");
         assertEquals(info.getClassifier(), null, "No classifier expected");
-
+        assertEquals(info.getType(), "jar", "Unexpected type");
     }
 
     public void artifactWithClassifier() {
@@ -224,6 +234,7 @@ public class MavenNamingTest {
         assertEquals(info.getArtifactId(), "artifactId", "Artifact id should be 'artifactId'");
         assertEquals(info.getVersion(), "1.0", "Version should be '1.0'");
         assertEquals(info.getClassifier(), "classifier", "Classifier should be 'classifier'");
+        assertEquals(info.getType(), "jar", "Unexpected type");
     }
 
     public void artifactWithNumericClassifier() {
@@ -231,6 +242,7 @@ public class MavenNamingTest {
         assertEquals(info.getArtifactId(), "artifactId", "Artifact id should be 'artifactId'");
         assertEquals(info.getVersion(), "1.0", "Version should be '1.0'");
         assertEquals(info.getClassifier(), "1234", "Classifier should be '1234'");
+        assertEquals(info.getType(), "jar", "Unexpected type");
     }
 
     @DataProvider(name = "artifactWithAlphaNumericClassifier")
@@ -248,5 +260,29 @@ public class MavenNamingTest {
                 "Artifact id should be 'artifactId'");
         assertEquals(info.getVersion(), "1.0", "Version should be '1.0'");
         assertEquals(info.getClassifier(), classifier, "Classifier should be '" + classifier + "'");
+        assertEquals(info.getType(), "jar", "Unexpected type");
+    }
+
+    public void artifactWithShortExtension() {
+        MavenArtifactInfo info = MavenNaming.getInfoByMatching("artifactId-1.0.ba");
+        assertEquals(info.getArtifactId(), "artifactId", "Artifact id should be 'artifactId'");
+        assertEquals(info.getVersion(), "1.0", "Version should be '1.0'");
+        assertNull(info.getClassifier(), "Classifier should be null");
+        assertEquals(info.getType(), "ba", "Unexpected type");
+    }
+
+    public void artifactWithLongExtension() {
+        MavenArtifactInfo info = MavenNaming.getInfoByMatching("artifactId-1.0.bababababa");
+        assertEquals(info.getArtifactId(), "artifactId", "Artifact id should be 'artifactId'");
+        assertEquals(info.getVersion(), "1.0", "Version should be '1.0'");
+        assertNull(info.getClassifier(), "Classifier should be null");
+        assertEquals(info.getType(), "bababababa", "Unexpected type");
+    }
+
+    public void checksumTargetFile() {
+        assertEquals(MavenNaming.getChecksumTargetFile("/a/b/c.jar.sha1"), "/a/b/c.jar");
+        assertEquals(MavenNaming.getChecksumTargetFile("a.pom.md5"), "a.pom");
+        assertEquals(MavenNaming.getChecksumTargetFile("/a/b/c.jar"), "/a/b/c");
+        assertEquals(MavenNaming.getChecksumTargetFile("/a/b/c"), "/a/b/c");
     }
 }

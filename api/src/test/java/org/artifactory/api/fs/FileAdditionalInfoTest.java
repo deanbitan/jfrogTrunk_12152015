@@ -20,12 +20,13 @@ package org.artifactory.api.fs;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.artifactory.api.mime.ChecksumType;
-import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
+
+import static org.testng.Assert.*;
 
 /**
  * Tests FileAdditionalInfo class.
@@ -41,40 +42,47 @@ public class FileAdditionalInfoTest {
     @BeforeMethod
     public void setup() {
         info = new FileAdditionalInfo();
-        sha1 = new ChecksumInfo(ChecksumType.sha1);
-        sha1.setOriginal("121232434534");
-        sha1.setActual("34387534754");
-        md5 = new ChecksumInfo(ChecksumType.md5);
-        this.md5.setOriginal("efhiehfeih");
-        md5.setActual("efhiehfeih");
+        sha1 = new ChecksumInfo(ChecksumType.sha1, "121232434534", "34387534754");
+        md5 = new ChecksumInfo(ChecksumType.md5, "efhiehfeih", "efhiehfeih");
         HashSet<ChecksumInfo> checksums = new HashSet<ChecksumInfo>(Arrays.asList(sha1, md5));
         info.setChecksums(checksums);
     }
 
     public void defaultConstructor() {
         FileAdditionalInfo info = new FileAdditionalInfo();
-        Assert.assertNotNull(info.getChecksums(), "Checksums should not be null by default");
-        Assert.assertNull(info.getSha1(), "Sha1 should be null by default");
-        Assert.assertNull(info.getMd5(), "md5 should be null by default");
+        assertNotNull(info.getChecksums(), "Checksums should not be null by default");
+        assertNull(info.getSha1(), "Sha1 should be null by default");
+        assertNull(info.getMd5(), "md5 should be null by default");
     }
 
     public void settingChecksums() {
         //Assert.assertEquals(info.getChecksums(), new HashSet<ChecksumInfo>(Arrays.asList(md5, sha1)));
-        Assert.assertEquals(info.getSha1(), sha1.getActual());
-        Assert.assertEquals(info.getMd5(), md5.getActual());
+        assertEquals(info.getSha1(), sha1.getActual());
+        assertEquals(info.getMd5(), md5.getActual());
 
     }
 
     public void testIsIdentical() {
         FileAdditionalInfo copy = new FileAdditionalInfo(info);
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(info, copy), "Orig and copy differ");
-        Assert.assertTrue(info.isIdentical(copy), "Orig and copy differ");
+        assertTrue(EqualsBuilder.reflectionEquals(info, copy), "Orig and copy differ");
+        assertTrue(info.isIdentical(copy), "Orig and copy differ");
+    }
+
+    public void testNotIdentical() {
+        FileAdditionalInfo copy = new FileAdditionalInfo(info);
+        copy.getChecksumsInfo().addChecksumInfo(new ChecksumInfo(ChecksumType.md5, md5.getOriginal(), "not good"));
+        assertFalse(info.isIdentical(copy), "Orig and copy should differ");
     }
 
     public void copyConstructor() {
+        ChecksumInfo checksum = new ChecksumInfo(ChecksumType.sha1, "1", "2");
         FileAdditionalInfo orig = new FileAdditionalInfo();
+        orig.addChecksumInfo(checksum);
         FileAdditionalInfo copy = new FileAdditionalInfo(orig);
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(orig, copy), "Orig and copy differ");
-        Assert.assertTrue(orig.isIdentical(copy), "Orig and copy differ");
+
+        assertTrue(EqualsBuilder.reflectionEquals(orig, copy), "Orig and copy differ");
+        assertTrue(orig.isIdentical(copy), "Orig and copy differ");
+        assertNotSame(orig.getChecksumsInfo(), copy.getChecksumsInfo(),
+                "Should have made a copy, not use the same object");
     }
 }

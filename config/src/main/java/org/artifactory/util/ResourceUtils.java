@@ -99,7 +99,7 @@ public class ResourceUtils {
         InputStream is = null;
         try {
             is = getResource(path);
-            return IOUtils.toString(is);
+            return IOUtils.toString(is, "utf-8");
         } catch (IOException e) {
             throw new RuntimeException("Failed to transform resource at '" + path + "'to string", e);
         } finally {

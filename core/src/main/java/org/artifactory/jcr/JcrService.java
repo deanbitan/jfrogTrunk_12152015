@@ -26,7 +26,9 @@ import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.storage.GarbageCollectorInfo;
+import org.artifactory.io.checksum.Checksum;
 import org.artifactory.jcr.fs.JcrFile;
+import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.spring.ReloadableBean;
 import org.artifactory.tx.SessionResource;
@@ -68,12 +70,29 @@ public interface JcrService extends ReloadableBean {
     void deleteFromTrash(String sessionFolderName);
 
     /**
+     * Returns the node at the given path
+     *
+     * @param absPath Absolute JCR path to node
+     * @return Node if found. Null if not
+     */
+    Node getNode(String absPath);
+
+    /**
      * Create an unstructure node under the root node of the jcr repository
      *
      * @param absPath the new or existing node path
      * @return the new or current node for the folder
      */
     Node getOrCreateUnstructuredNode(String absPath);
+
+    /**
+     * Returns the node at the given location
+     *
+     * @param parent  Parent node at given path
+     * @param relPath Relative path to node from parent
+     * @return Node if found. Null if not
+     */
+    Node getNode(Node parent, String relPath);
 
     /**
      * Create an unstructure node under the parent node paased
@@ -177,5 +196,17 @@ public interface JcrService extends ReloadableBean {
     void setStream(Node parent, String nodeName, InputStream value, String mimeType, String userId,
             boolean saveXmlHierarchy);
 
+    /**
+     * Get an input stream of the binary stored on the specified node.
+     * <p/>
+     * NOTE: Caller is expected to close the returned stream.
+     *
+     * @param nodePath
+     * @return
+     */
+    @Transactional
     InputStream getStream(String nodePath);
+
+    @Async(delayUntilAfterCommit = true, transactional = true)
+    void saveChecksums(JcrFsItem fsItem, String metadataName, Checksum[] checksums);
 }

@@ -26,10 +26,8 @@ import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.io.StringResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -73,7 +71,7 @@ public class JcrConfResourceLoader implements ResourceStreamHandle {
             try {
                 is = new StringResourceStreamHandle(alternateRepoXml).getInputStream();
             } catch (IOException e) {
-                log.error("Cannot convert string to stream",e);
+                log.error("Cannot convert string to stream", e);
             }
         }
         if (is == null) {
@@ -85,7 +83,10 @@ public class JcrConfResourceLoader implements ResourceStreamHandle {
                 //If it is a relative url, relate it to $ARTIFACTORY_HOME/etc
                 boolean startWithSlash = jcrConfigDir.startsWith(FORWARD_SLASH);
                 boolean startWithFile = jcrConfigDir.startsWith(FILE_PREFIX);
-                if ((!startWithSlash) && (!startWithFile)) {
+                File file = new File(jcrConfigDir);
+                if (file.exists()) {
+                    jcrConfigDir = file.getAbsolutePath();
+                } else if ((!startWithSlash) && (!startWithFile)) {
                     ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
                     jcrConfigDir = artifactoryHome.getEtcDir().getAbsoluteFile() + FORWARD_SLASH + jcrConfigDir;
                 } else if (startWithFile) {
@@ -95,9 +96,7 @@ public class JcrConfResourceLoader implements ResourceStreamHandle {
                         throw new RuntimeException("Error while resolving configuration file: " + e.getMessage());
                     }
                 }
-
                 File requestedResource = new File(jcrConfigDir, resourceName);
-
                 if (requestedResource.exists()) {
                     FileOutputStream fileOutputStream = null;
                     try {

@@ -28,14 +28,13 @@ import org.artifactory.api.repo.RepoPath;
 public class MoverConfigBuilder {
     private RepoPath fromRepoPath;
     private String targetLocalRepoKey;
+    private RepoPath targetLocalRepoPath;
     private boolean copy = false;
     private boolean dryRun = false;
     private boolean executeMavenMetadataCalculation = false;
     private boolean searchResult = false;
 
     /**
-     * Main constructor
-     *
      * @param fromRepoPath       Source repo path
      * @param targetLocalRepoKey Target repo key
      */
@@ -44,13 +43,18 @@ public class MoverConfigBuilder {
         this.targetLocalRepoKey = targetLocalRepoKey;
     }
 
+    public MoverConfigBuilder(RepoPath fromRepoPath, RepoPath targetLocalRepoPath) {
+        this.fromRepoPath = fromRepoPath;
+        this.targetLocalRepoPath = targetLocalRepoPath;
+    }
+
     /**
      * Indicate if a copy is being performed
      *
      * @param copy True if performing a copy, false if not
      * @return MoverConfigBuilder
      */
-    public MoverConfigBuilder setCopy(boolean copy) {
+    public MoverConfigBuilder copy(boolean copy) {
         this.copy = copy;
         return this;
     }
@@ -61,7 +65,7 @@ public class MoverConfigBuilder {
      * @param run True if run is dry, false if not
      * @return MoverConfigBuilder
      */
-    public MoverConfigBuilder setDryRun(boolean run) {
+    public MoverConfigBuilder dryRun(boolean run) {
         this.dryRun = run;
         return this;
     }
@@ -72,7 +76,7 @@ public class MoverConfigBuilder {
      * @param calculation True if metadata should be calculated immediatly, false if not
      * @return MoverConfigBuilder
      */
-    public MoverConfigBuilder setExecuteMavenMetadataCalculation(boolean calculation) {
+    public MoverConfigBuilder executeMavenMetadataCalculation(boolean calculation) {
         this.executeMavenMetadataCalculation = calculation;
         return this;
     }
@@ -83,7 +87,7 @@ public class MoverConfigBuilder {
      * @param searchResult True if searct results are being moved, false if not
      * @return MoverConfigBuilder
      */
-    public MoverConfigBuilder setSearchResult(boolean searchResult) {
+    public MoverConfigBuilder searchResult(boolean searchResult) {
         this.searchResult = searchResult;
         return this;
     }
@@ -94,7 +98,7 @@ public class MoverConfigBuilder {
      * @return MoverConfig
      */
     public MoverConfig build() {
-        return new MoverConfig(fromRepoPath, targetLocalRepoKey, copy, dryRun, executeMavenMetadataCalculation,
-                searchResult);
+        return new MoverConfig(fromRepoPath, targetLocalRepoPath, targetLocalRepoKey,
+                copy, dryRun, executeMavenMetadataCalculation, searchResult);
     }
 }

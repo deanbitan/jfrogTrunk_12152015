@@ -19,6 +19,7 @@
 package org.artifactory.api.maven;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.util.Pair;
@@ -38,9 +39,11 @@ public class MavenNaming {
     //Should be used with standard artifact names:
     //artifactId-version.ext
     //artifactId-version-classifier.ext
-    //groups: 1-artifactId; 2-version; 5-classifier; 6-packaging.
+    //groups: 1-artifactId; 2-version; 5 or 7-classifier; 8-packaging (file extension).
+    //note that you may have a multi-part version value, e.g. 1.0-rc3, in this case check that there
+    //is a '-' with a value and that the classifier is not empty and simply append it.
     private static final Pattern ARTIFACT_NAME_PATTERN =
-            Pattern.compile("(.+?)-(\\d.+?(-SNAPSHOT)?)(-(.+?))?\\.(\\w{3,}?)");
+            Pattern.compile("(.+?)-(\\d.+?(-SNAPSHOT)?)(-(.+?))?(-(.+?))?\\.(\\w{1,}?)");
 
     // Matcher for unique snapshot names of the form artifactId-version-date.time-buildNumber.type
     // for example: artifactory-1.0-20081214.090217-4.pom
@@ -71,10 +74,20 @@ public class MavenNaming {
         Matcher matcher = ARTIFACT_NAME_PATTERN.matcher(fileName);
         if (matcher.matches()) {
             mavenArtifactInfo.setArtifactId(matcher.group(1));
-            mavenArtifactInfo.setVersion(matcher.group(2));
-            mavenArtifactInfo.setClassifier(matcher.group(5));
+            String version = matcher.group(2);
+            if (StringUtils.isNotBlank(matcher.group(5)) && StringUtils.isNotBlank((matcher.group(7)))) {
+                version += "-" + matcher.group(5);
+            }
+            mavenArtifactInfo.setVersion(version);
+            String classifier;
+            if (StringUtils.isNotBlank(matcher.group(5)) && StringUtils.isBlank(matcher.group(7))) {
+                classifier = matcher.group(5);
+            } else {
+                classifier = matcher.group(7);
+            }
+            mavenArtifactInfo.setClassifier(classifier);
+            mavenArtifactInfo.setType(matcher.group(8));
         }
-
         return mavenArtifactInfo;
     }
 
@@ -145,6 +158,14 @@ public class MavenNaming {
         return isChecksum(path.getName());
     }
 
+    /**
+     * @param path Checksum path (ie ends with checksum file extension, for example file.jar.sha1)
+     * @return The file name without the checksum extension
+     */
+    public static String getChecksumTargetFile(String filePath) {
+        return PathUtils.stripExtension(filePath);
+    }
+
     public static boolean isHidden(String path) {
         return path.startsWith(".");
     }
@@ -164,7 +185,7 @@ public class MavenNaming {
     }
 
     public static boolean isSnapshotMavenMetadata(String path) {
-        final Pair<String, String> nameAndParent = NamingUtils.getMetadtaNameAndParent(path);
+        final Pair<String, String> nameAndParent = NamingUtils.getMetadataNameAndParent(path);
         String name = nameAndParent.getFirst();
         String parent = nameAndParent.getSecond();
         return parent != null && parent.endsWith("-SNAPSHOT") && isMavenMetadataFileName(name);
@@ -190,12 +211,11 @@ public class MavenNaming {
         }
 
         // Get the group path (the path up until the artifact id)
-        String groupPath = pathElements[0];
+        StringBuilder groupPath = new StringBuilder(pathElements[0]);
         for (int i = 1; i < pathElements.length - 3; i++) {
-            groupPath += "." + pathElements[i];
+            groupPath.append(".").append(pathElements[i]);
         }
-        String maven1Path = groupPath.replace('/', '.') + "/" + fileExt + "s/" + name;
-        return maven1Path;
+        return groupPath.toString().replace('/', '.') + "/" + fileExt + "s/" + name;
     }
 
     public static boolean isMavenMetadataFileName(String fileName) {

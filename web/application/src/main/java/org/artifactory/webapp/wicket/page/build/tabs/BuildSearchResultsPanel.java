@@ -28,7 +28,6 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.Addon;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.build.api.Build;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.tooltip.TooltipBehavior;
@@ -39,6 +38,7 @@ import org.artifactory.common.wicket.component.links.BaseTitledLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.panel.defaultsubmit.DefaultSubmit;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
+import org.jfrog.build.api.Build;
 
 import java.util.Collections;
 import java.util.List;
@@ -136,8 +136,9 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
 
         form.add(getSubtractResultsLink("subtractResultsLink", "Subtract"));
 
-        addCheckBox(form, "artifacts", "If checked, published module artifacts will be saved as search results.");
-        addCheckBox(form, "dependencies", "If checked, published module dependencies will be saved as search results.");
+        addCheckBox(form, "artifacts", "If checked, published module artifacts will be saved as search results.", true);
+        addCheckBox(form, "dependencies", "If checked, published module dependencies will be saved as search results.",
+                false);
 
         form.add(new DefaultSubmit("defaultSubmit", saveResultsLink, addResultsLink));
 
@@ -151,7 +152,7 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
      * @return Result name combo box
      */
     protected ComboBox getResultComboBox(String id) {
-        return new ComboBox(id, new Model(""), Collections.EMPTY_LIST);
+        return new ComboBox(id, new Model(""), Lists.<String>newArrayList());
     }
 
     /**
@@ -221,12 +222,14 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
     /**
      * Adds a checkbox to the given form
      *
-     * @param form        Form to add the checkbox to
-     * @param id          ID to assign to the checkbox
-     * @param helpMessage Help message to display for the checkbox
+     * @param form           Form to add the checkbox to
+     * @param id             ID to assign to the checkbox
+     * @param helpMessage    Help message to display for the checkbox
+     * @param checkByDefault Should the checkbox be checked by default
      */
-    private void addCheckBox(Form form, String id, String helpMessage) {
+    private void addCheckBox(Form form, String id, String helpMessage, boolean checkByDefault) {
         StyledCheckbox checkbox = new StyledCheckbox(id, new PropertyModel(this, id));
+        checkbox.setModelObject(checkByDefault);
         checkbox.setOutputMarkupId(true);
         form.add(checkbox);
         form.add(new HelpBubble(id + ".help", helpMessage));

@@ -18,6 +18,7 @@
 
 package org.artifactory.api.repo;
 
+import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.exception.RepoAccessException;
@@ -36,13 +37,13 @@ public interface DeployService {
 
     @Request
     @Lock(transactional = true)
-    void deploy(RepoDescriptor targetRepo, MavenArtifactInfo artifactInfo, File uploadedFile, boolean forceDeployPom,
-            boolean partOfBundleDeploy) throws RepoAccessException;
+    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy) throws RepoAccessException;
 
     @Request
     @Lock(transactional = true)
-    void deploy(RepoDescriptor targetRepo, MavenArtifactInfo artifactInfo,
-            File file, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy) throws RepoAccessException;
+    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo,
+            File fileToDeploy, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy)
+            throws RepoAccessException;
 
     @Request
     void deployBundle(File bundle, RealRepoDescriptor targetRepo, StatusHolder status);
@@ -56,7 +57,7 @@ public interface DeployService {
      *                                     doesn't match target relative path)
      * @throws IOException If pom is invalid
      */
-    public void validatePom(String pomContent, String relPath, boolean suppressPomConsistencyChecks)
+    void validatePom(String pomContent, String relPath, boolean suppressPomConsistencyChecks)
             throws IOException;
 
 
@@ -69,6 +70,14 @@ public interface DeployService {
      */
     MavenArtifactInfo getArtifactInfo(File uploadedFile);
 
-    public String getModelString(MavenArtifactInfo artifactInfo);
+    /**
+     * Get the POM model that represents a file. If the file is a POM file then we simply return it. If it is a jar with
+     * a POM then we check that we return its contents. Otherwise we generate a default POM according to the file's
+     * GAVC.
+     *
+     * @param file The file to analyze.
+     * @return The file's POM in string representation.
+     */
+    String getPomModelString(File file);
 
 }

@@ -20,8 +20,10 @@ package org.artifactory.io.checksum.policy;
 
 import org.artifactory.api.fs.ChecksumInfo;
 import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.api.repo.RepoPath;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 
+import java.io.Serializable;
 import java.util.Set;
 
 /**
@@ -29,7 +31,7 @@ import java.util.Set;
  *
  * @author Yossi Shaul
  */
-public abstract class ChecksumPolicyBase implements ChecksumPolicy {
+public abstract class ChecksumPolicyBase implements ChecksumPolicy, Serializable {
     abstract boolean verifyChecksum(ChecksumInfo checksumInfo);
 
     abstract String getChecksum(ChecksumInfo checksumInfo);
@@ -47,7 +49,16 @@ public abstract class ChecksumPolicyBase implements ChecksumPolicy {
 
     public String getChecksum(ChecksumType checksumType, Set<ChecksumInfo> checksumInfos) {
         ChecksumInfo info = getChecksumInfo(checksumType, checksumInfos);
-        return getChecksum(info);
+        if (info != null) {
+            return getChecksum(info);
+
+        }
+        return null;
+    }
+
+    public String getChecksum(ChecksumType checksumType, Set<ChecksumInfo> checksumInfos, RepoPath repoPath) {
+        // remote checksum policies don't care about the repo path
+        return getChecksum(checksumType, checksumInfos);
     }
 
     private ChecksumInfo getChecksumInfo(ChecksumType type, Set<ChecksumInfo> infos) {
@@ -56,7 +67,7 @@ public abstract class ChecksumPolicyBase implements ChecksumPolicy {
                 return info;
             }
         }
-        throw new IllegalArgumentException("Checksum not found for type " + type);
+        return null;
     }
 
     public static ChecksumPolicy getByType(ChecksumPolicyType type) {

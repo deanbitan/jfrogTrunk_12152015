@@ -50,6 +50,7 @@ import org.artifactory.resource.StringResource;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.slf4j.Logger;
 
+import javax.jcr.RepositoryException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -104,8 +105,29 @@ public class VirtualRepoDownloadStrategy {
             virtualRepo.undeploy(localCacheRepoPath, false);
             return searchableResource;
         } else if (cachedResource.isFound() && searchableResource.isFound()) {
-            if (cachedResource.getLastModified() >= searchableResource.getLastModified()) {
-                // locally stored resource is latest, just return it
+            String sourceRepoKey = searchableResource.getResponseRepoPath().getRepoKey();
+            // if the searchable resource is a remote repo - it is not downloaded yet, so we shouldn't
+            // return the cached artifact
+            if (repositoryService.remoteRepositoryByKey(sourceRepoKey) == null &&
+                    cachedResource.getLastModified() >= searchableResource.getLastModified()) {
+                // locally stored resource is latest, update the stats of the original resource and return our cached file
+                ResourceStreamHandle searchableHandle = null;
+                try {
+                    // strangely enough, to update the stats we must get the resource stream handle which will also
+                    // call update stats (see RTFACT-2958)
+                    LocalRepo repo = repositoryService.localOrCachedRepositoryByKey(sourceRepoKey);
+                    searchableHandle = repositoryService.getResourceStreamHandle(repo, searchableResource);
+                } catch (IOException e) {
+                    log.error("Could not update download stats", e);
+                } catch (RepoAccessException e) {
+                    log.error("Could not update download stats", e);
+                } catch (RepositoryException e) {
+                    log.error("Could not update download stats", e);
+                } finally {
+                    if (searchableHandle != null) {
+                        searchableHandle.close();
+                    }
+                }
                 return cachedResource;
             }
         }
@@ -155,6 +177,7 @@ public class VirtualRepoDownloadStrategy {
         //For metadata checksums, first check the merged metadata cache
         String path = repoPath.getPath();
         //Locate the resource matching the request
+        RepoResource closetMatch = null;
         for (RealRepo repo : repositories) {
             // Since we are in process standard, repositories that does not process releases should be skipped.
             // Now, checksums are always considered standard, even if executed against a snapshot repository.
@@ -162,13 +185,23 @@ public class VirtualRepoDownloadStrategy {
             if (!repo.isHandleReleases() && !NamingUtils.isChecksum(path)) {
                 continue;
             }
-            RepoResource resource = repo.getInfo(new NullRequestContext(path));
+            RepoResource res = repo.getInfo(new NullRequestContext(path));
             // release all read locks acquired by the repo during the getInfo
             LockingHelper.getSessionLockManager().unlockAllReadLocks(repo.getKey());
-            if (resource.isFound()) {
-                updateResponseRepoPath(repo, resource);
-                return resource;
+            if (res.isFound()) {
+                updateResponseRepoPath(repo, res);
+                if (res.isExactQueryMatch()) {
+                    //return the exact match
+                    return res;
+                } else {
+                    closetMatch = res;
+                }
             }
+        }
+
+        //If we didn't find an exact match return the first found resource (closest match)
+        if (closetMatch != null) {
+            return closetMatch;
         }
 
         // not found in any repo
@@ -197,7 +230,6 @@ public class VirtualRepoDownloadStrategy {
 
             final RepoResource res = repo.getInfo(new NullRequestContext(resourcePath));
             if (res.isFound()) {
-                updateResponseRepoPath(repo, res);
                 if (repo.isLocal()) {
                     if (foundInLocalRepo) {
                         //Issue a warning for a resource found multiple times in local repos
@@ -212,9 +244,15 @@ public class VirtualRepoDownloadStrategy {
                     log.debug("{} last modified {}", res.getRepoPath(), centralConfig.format(res.getLastModified()));
                 }
 
-                //If we haven't found one yet, or this one is newer than the one found, take it
-                if (latestRes == null || res.getLastModified() > latestRes.getLastModified()) {
+                //If we haven't found one yet
+                if (latestRes == null ||
+                        //or this one is a better match
+                        (!latestRes.isExactQueryMatch() && res.isExactQueryMatch())
+                        //or newer than the one found
+                        || res.getLastModified() > latestRes.getLastModified()) {
                     log.debug("{}: found newer res: {}", repo, resourcePath);
+                    //take it
+                    updateResponseRepoPath(repo, res);
                     latestRes = res;
                 }
             }
@@ -294,6 +332,8 @@ public class VirtualRepoDownloadStrategy {
             log.warn("Metadata retrieval failed on repo '{}': {}", repo, e.getMessage());
         } catch (IOException ioe) {
             log.error("IO exception retrieving maven metadata content from repo '{}'", repo, ioe);
+        } catch (RepositoryException e) {
+            log.error("Metadata retrieval failed on repo '{}': {}", repo, e);
         } finally {
             if (handle != null) {
                 handle.close();

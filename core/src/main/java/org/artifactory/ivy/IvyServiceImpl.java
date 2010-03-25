@@ -54,25 +54,29 @@ public class IvyServiceImpl implements IvyService {
     private final ParserSettings settings = new IvySettings();
 
     public ModuleDescriptor parseIvyFile(File file) {
-        FileInputStream input;
+        FileInputStream input = null;
         try {
             input = new FileInputStream(file);
+            return parseIvy(input, file.length());
         } catch (FileNotFoundException e) {
             throw new IllegalArgumentException("Could not parse Ivy file.", e);
+        } finally {
+            IOUtils.closeQuietly(input);
         }
-        return parseIvy(input, file.length());
     }
 
     public ModuleDescriptor parseIvyFile(RepoPath repoPath) {
         LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
         String content = localRepo.getTextFileContent(repoPath);
-        StringInputStream input;
+        StringInputStream input = null;
         try {
             input = new StringInputStream(content);
+            return parseIvy(input, content.length());
         } catch (UnsupportedEncodingException e) {
             throw new IllegalArgumentException("Could not parse Ivy file.", e);
+        } finally {
+            IOUtils.closeQuietly(input);
         }
-        return parseIvy(input, content.length());
     }
 
     private ModuleDescriptor parseIvy(InputStream input, long contentLength) {
@@ -83,8 +87,6 @@ public class IvyServiceImpl implements IvyService {
         } catch (Exception e) {
             log.warn("Could not parse the item at {} as a valid Ivy file.", e);
             return null;
-        } finally {
-            IOUtils.closeQuietly(input);
         }
     }
 

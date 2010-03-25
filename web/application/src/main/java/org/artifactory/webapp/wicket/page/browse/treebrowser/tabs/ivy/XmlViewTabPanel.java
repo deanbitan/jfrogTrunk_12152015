@@ -28,9 +28,10 @@ import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.ivy.IvyService;
 import org.artifactory.webapp.actionable.FileActionable;
 
@@ -58,9 +59,7 @@ public class XmlViewTabPanel extends Panel {
         }
         TitledBorder xmlBorder = xmlType.getTabBorder();
         add(xmlBorder);
-        TextContentPanel content = new TextContentPanel("content", true);
-        content.setContent(getContent(repoItem));
-        xmlBorder.add(content);
+        xmlBorder.add(new SyntaxHighlighter("content", getContent(repoItem), Syntax.XML));
     }
 
     private void addDependencySection(FileActionable item) {
@@ -75,9 +74,7 @@ public class XmlViewTabPanel extends Panel {
             buildModuleContent(sb, descriptor);
         }
         String content = sb.toString();
-        TextContentPanel moduleContent = new TextContentPanel("moduleContent", true);
-        moduleContent.setContent(content);
-        moduleBorder.add(moduleContent);
+        moduleBorder.add(new SyntaxHighlighter("moduleContent", content, Syntax.XML));
         add(moduleBorder);
     }
 

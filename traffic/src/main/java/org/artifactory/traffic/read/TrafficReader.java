@@ -49,8 +49,8 @@ import static org.artifactory.traffic.TrafficUtils.dateEqualsBefore;
  * @author Noam Tenne
  */
 public class TrafficReader {
-    public final String LOG_PREFIX = "traffic.";
-    public final String LOG_SUFFIX = ".log";
+    public static final String LOG_PREFIX = "traffic.";
+    public static final String LOG_SUFFIX = ".log";
     File logDir;
 
     /**

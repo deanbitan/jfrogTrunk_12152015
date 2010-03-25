@@ -18,10 +18,8 @@
 
 package org.artifactory.standalone.main;
 
-import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.util.FileUtils;
-import org.mortbay.jetty.Server;
-import org.mortbay.xml.XmlConfiguration;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.xml.XmlConfiguration;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -34,11 +32,12 @@ import java.net.URL;
 public class Main {
     static {
         // Initialize logback as soon as possible without using ArtifactoryHome :(
-        String artHome = System.getProperty("artifactory.home");
-        if (artHome != null && artHome.length() > 0) {
-            System.setProperty("logback.configurationFile", artHome + "/etc/logback.xml");
+        String artHome = findArtifactoryHome();
+        File logbackFile = new File(artHome, "etc/logback.xml");
+        if (logbackFile.exists()) {
+            System.setProperty("logback.configurationFile", logbackFile.getAbsolutePath());
         }
-        //Initialize ipv4 pref, unless previously configured otherwise 
+        //Initialize ipv4 pref, unless previously configured otherwise
         String ipv4 = System.getProperty("java.net.preferIPv4Stack");
         if (ipv4 == null) {
             System.setProperty("java.net.preferIPv4Stack", "true");
@@ -49,13 +48,12 @@ public class Main {
      * Main function, starts the jetty server. The first parameter can be the jetty.xml configuration file. If not
      * provided ${artifactory.home}/etc/jetty.xml will be used.
      *
-     * @param args
+     * @param args Alternative location of jetty configuration file
      */
     public static void main(String[] args) {
         Server server = null;
         try {
             URL configUrl;
-            ArtifactoryHome artifactoryHome = new ArtifactoryHome();
             if (args != null && args.length > 0) {
                 // Jetty configuration file is the only param allowed
                 if (args.length != 1) {
@@ -66,7 +64,8 @@ public class Main {
                 configUrl = getConfigUrl(jettyXmlUrl);
             } else {
                 // use etc/jetty.xml under artifactory home directory
-                File jettyConfFile = new File(artifactoryHome.getEtcDir(), "jetty.xml");
+                String artHome = findArtifactoryHome();
+                File jettyConfFile = new File(artHome, "etc/jetty.xml");
                 configUrl = getConfigUrl(jettyConfFile, null);
             }
             XmlConfiguration xmlConfiguration = new XmlConfiguration(configUrl);
@@ -95,7 +94,7 @@ public class Main {
         URL configUrl;
         if (jettyConfFile.exists() && jettyConfFile.isFile()) {
             System.out.println("Starting jetty from configuration file " + jettyConfFile.getAbsolutePath());
-            configUrl = new URL(FileUtils.getDecodedFileUrl(jettyConfFile));
+            configUrl = new URL("file:" + jettyConfFile.toURI().getPath());
         } else if (jettyXmlUrl != null) {
             System.out.println("Starting jetty from URL configuration " + jettyXmlUrl);
             configUrl = new URL(jettyXmlUrl);
@@ -106,4 +105,17 @@ public class Main {
         }
         return configUrl;
     }
+
+    private static String findArtifactoryHome() {
+        String home = System.getProperty("artifactory.home");
+        if (home == null) {
+            home = System.getenv("ARTIFACTORY_HOME");
+            if (home == null) {
+                home = new File(System.getProperty("user.home", "."), ".artifactory").getAbsolutePath();
+            }
+        }
+        home = home.replace('\\', '/');
+        return home;
+    }
+
 }

@@ -19,9 +19,10 @@
 package org.artifactory.api.mime;
 
 import org.artifactory.jcr.JcrTypes;
+import org.artifactory.util.PathUtils;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public enum ChecksumType {
     sha1("SHA-1", ".sha1", 40, JcrTypes.PROP_ARTIFACTORY_SHA1_ORIGINAL, JcrTypes.PROP_ARTIFACTORY_SHA1_ACTUAL),
@@ -45,8 +46,18 @@ public enum ChecksumType {
         return alg;
     }
 
+    /**
+     * @return The filename extension of the checksum, including the dot prefix.
+     */
     public String ext() {
         return ext;
+    }
+
+    /**
+     * @return The length of a valid checksum for this checksum type.
+     */
+    public int length() {
+        return length;
     }
 
     public String getActualPropName() {
@@ -81,6 +92,15 @@ public enum ChecksumType {
         } else {
             return null;
         }
+    }
+
+    /**
+     * @param filePath The checksum file path (assumed to end with the checksum extension).
+     * @return Checksum type for the given file path. Null if not found.
+     */
+    public static ChecksumType forFilePath(String filePath) {
+        String extension = '.' + PathUtils.getExtension(filePath);
+        return forExtension(extension);
     }
 
     @Override

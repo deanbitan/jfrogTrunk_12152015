@@ -22,6 +22,16 @@
     </formats>
     <includeBaseDirectory>true</includeBaseDirectory>
     <fileSets>
+        <!-- add the root install directory excluding directories with special treatment below -->
+        <fileSet>
+            <directory>${project.basedir}/src/main/install</directory>
+            <outputDirectory/>
+            <excludes>
+                <exclude>bin/**</exclude>
+                <exclude>misc/**</exclude>
+            </excludes>
+        </fileSet>
+
         <fileSet>
             <directory>${project.basedir}/src/main/install/bin</directory>
             <outputDirectory>bin</outputDirectory>
@@ -51,16 +61,12 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/src/main/install/etc</directory>
-            <outputDirectory>etc</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/src/main/install/misc</directory>
             <outputDirectory>misc</outputDirectory>
             <filtered>true</filtered>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../core/src/main/resources/META-INF/default</directory>
+            <directory>${project.basedir}/../config/src/main/resources/META-INF/default</directory>
             <outputDirectory>etc</outputDirectory>
         </fileSet>
         <fileSet>
@@ -69,22 +75,6 @@
             <includes>
                 <include>repo.xml</include>
             </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/src/main/install/lib</directory>
-            <outputDirectory>lib</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/src/main/install</directory>
-            <outputDirectory/>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/src/main/install/logs</directory>
-            <outputDirectory>logs</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/src/main/install/work</directory>
-            <outputDirectory>work</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/target</directory>
@@ -127,18 +117,15 @@
             <outputDirectory>lib</outputDirectory>
             <useStrictFiltering>true</useStrictFiltering>
             <includes>
-                <include>org.artifactory:artifactory-log</include>
-                <include>org.artifactory:artifactory-config</include>
-                <include>org.artifactory:artifactory-traffic</include>
-                <include>org.mortbay.jetty:jetty</include>
-                <include>org.mortbay.jetty:jetty-ajp</include>
-                <include>org.mortbay.jetty:jetty-util</include>
-                <include>org.mortbay.jetty:servlet-api</include>
-                <include>org.slf4j:slf4j-api</include>
-                <include>ch.qos.logback:logback-core</include>
-                <include>ch.qos.logback:logback-classic</include>
-                <include>commons-io:commons-io</include>
-                <include>com.google.collections:google-collections</include>
+                <include>org.eclipse.jetty:*</include>
+            </includes>
+        </dependencySet>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <useStrictFiltering>true</useStrictFiltering>
+            <scope>provided</scope>
+            <includes>
+                <include>javax.servlet:servlet-api</include>
             </includes>
         </dependencySet>
     </dependencySets>

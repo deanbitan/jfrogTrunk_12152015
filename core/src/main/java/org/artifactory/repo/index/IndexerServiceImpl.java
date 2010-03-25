@@ -97,7 +97,12 @@ public class IndexerServiceImpl implements InternalIndexerService {
             set.addAll(getAllVirtualReposExceptGlobal());
             descriptor.setExcludedRepositories(set);
         }
-        scheduleIndexing(false);
+
+        if (descriptor.isEnabled()) {
+            scheduleIndexing(false);
+        } else {
+            taskService.cancelTasks(IndexerJob.class, false);
+        }
     }
 
     public void reload(CentralConfigDescriptor oldDescriptor) {
@@ -289,19 +294,21 @@ public class IndexerServiceImpl implements InternalIndexerService {
         return virtualRepositoriesCopy;
     }
 
-    private void scheduleIndexing(boolean now) {
+    private void scheduleIndexing(boolean runNow) {
         //If scheduled fo immediate run, wait for the previous task to stop
-        taskService.stopTasks(IndexerJob.class, now);
+        taskService.stopTasks(IndexerJob.class, runNow);
         //Schedule the indexing
-        int indexingIntervalHours = descriptor.getIndexingIntervalHours();
-        long interval = indexingIntervalHours * 60L * 60L * 1000L;
-        QuartzTask task = new QuartzTask(IndexerJob.class, interval, now ? 0 : interval);
-        task.addAttribute(IndexerJob.MANUAL_RUN, true);
         try {
+            long interval = descriptor.getIndexingIntervalHours() * 60L * 60L * 1000L;
+            QuartzTask task = new QuartzTask(IndexerJob.class, interval, runNow ? 0 : interval);
+            task.addAttribute(IndexerJob.MANUAL_RUN, runNow);
             taskService.startTask(task);
-            log.info("Scheduled indexer to run every {} hours.", indexingIntervalHours);
         } catch (Exception e) {
-            throw new RuntimeException("Error in scheduling the indexer.", e);
+            log.error("Error scheduling the indexer.", e);
+        }
+        // don't print out log message if the indexer is not enabled (invoked manually) or enabled and was executed manually
+        if (descriptor.isEnabled() && !runNow) {
+            log.info("Scheduled indexer to run every {} hours.", descriptor.getIndexingIntervalHours());
         }
     }
 

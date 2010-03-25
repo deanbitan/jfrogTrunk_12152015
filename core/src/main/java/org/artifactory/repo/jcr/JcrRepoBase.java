@@ -18,6 +18,7 @@
 
 package org.artifactory.repo.jcr;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.common.MultiStatusHolder;
@@ -27,6 +28,9 @@ import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.md.Properties;
+import org.artifactory.api.mime.ContentType;
+import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
@@ -35,8 +39,6 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
-import org.artifactory.io.checksum.policy.ChecksumPolicy;
-import org.artifactory.io.checksum.policy.ChecksumPolicyIgnoreAndGenerate;
 import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
@@ -46,7 +48,6 @@ import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepoBase;
-import org.artifactory.repo.context.NullRequestContext;
 import org.artifactory.repo.context.RequestContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.resource.RepoResource;
@@ -55,16 +56,21 @@ import org.artifactory.schedule.TaskService;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.ExceptionUtils;
+import org.artifactory.util.PathUtils;
+import org.artifactory.util.ZipUtils;
 import org.slf4j.Logger;
 
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.RepositoryException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRepoBase<T>
         implements LocalRepo<T>, StoringRepo<T> {
@@ -72,8 +78,6 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
 
     private boolean anonAccessEnabled;
     private JcrRepoService jcrRepoService;
-    //Use a final policy that always generates checksums
-    private final ChecksumPolicy defaultChecksumPolicy = new ChecksumPolicyIgnoreAndGenerate();
 
     private final StoringRepo<T> storageMixin;
 
@@ -108,10 +112,6 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
 
     public boolean isAnonAccessEnabled() {
         return anonAccessEnabled;
-    }
-
-    public ChecksumPolicy getChecksumPolicy() {
-        return defaultChecksumPolicy;
     }
 
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
@@ -224,6 +224,69 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         return "";
     }
 
+    public ArchiveFileContent getArchiveFileContent(RepoPath archivePath, String archiveEntryPath) throws IOException {
+        String content = null;
+        String failureReason = null;
+        ZipInputStream jis = null;
+        String sourcesJarPath = null;
+        String sourceEntryPath = null;
+        try {
+            if (archiveEntryPath.endsWith(".class")) {
+                sourceEntryPath = NamingUtils.javaSourceNameFromClassName(archiveEntryPath);
+                // locate the sources jar and find the source file in it
+                String sourceJarName = PathUtils.stripExtension(archivePath.getName()) + "-sources." +
+                        PathUtils.getExtension(archivePath.getName());
+                sourcesJarPath = archivePath.getParent().getPath() + "/" + sourceJarName;
+            } else if (isTextFile(archiveEntryPath)) {
+                // read directly from this archive
+                sourcesJarPath = archivePath.getPath();
+                sourceEntryPath = archiveEntryPath;
+            } else {
+                failureReason = "View source for " + archiveEntryPath + " is not supported";
+            }
+
+            if (sourcesJarPath != null) {
+                JcrFile jcrFile = getLocalJcrFile(sourcesJarPath);
+                if (jcrFile == null) {
+                    failureReason = "Sources jar not found";
+                } else if (!getAuthorizationService().canRead(new RepoPath(getKey(), sourcesJarPath))) {
+                    failureReason = "No read permissions for the sources jar";
+                } else {
+                    List<String> alternativeExtensions = null;
+                    if (NamingUtils.getContentType(sourceEntryPath).equals(ContentType.javaSource)) {
+                        alternativeExtensions = Lists.newArrayList("groovy");
+                    }
+
+                    jis = new ZipInputStream(jcrFile.getStream());
+                    ZipEntry zipEntry = ZipUtils.locateEntry(jis, sourceEntryPath, alternativeExtensions);
+                    int maxAllowedSize = 1024 * 1024;
+                    if (zipEntry == null) {
+                        failureReason = "Source file not found in: " + sourcesJarPath;
+                    } else if (zipEntry.getSize() > maxAllowedSize) {
+                        failureReason = String.format("Source file is too big to display: File size: %s, Max size: %s",
+                                zipEntry.getSize(), maxAllowedSize);
+                    } else {
+                        // read the current entry (the source entry path)
+                        content = IOUtils.toString(jis, "UTF-8");
+                        sourceEntryPath = zipEntry.getName();
+                    }
+                }
+            }
+        } finally {
+            IOUtils.closeQuietly(jis);
+        }
+
+        if (content != null) {
+            return new ArchiveFileContent(content, new RepoPath(getKey(), sourcesJarPath), sourceEntryPath);
+        } else {
+            return ArchiveFileContent.contentNotFound(failureReason);
+        }
+    }
+
+    private boolean isTextFile(String fileName) {
+        return NamingUtils.isViewable(fileName);
+    }
+
     //STORING REPO MIXIN
 
     @Override
@@ -321,10 +384,11 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         if (statusHolder.isError()) {
             return new UnfoundRepoResource(repoPath, statusHolder.getStatusMsg());
         }
-        return storageMixin.getInfo(new NullRequestContext(path));
+        return storageMixin.getInfo(context);
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(final RepoResource res) throws IOException {
+    public ResourceStreamHandle getResourceStreamHandle(final RepoResource res)
+            throws IOException, RepositoryException {
         return storageMixin.getResourceStreamHandle(res);
     }
 

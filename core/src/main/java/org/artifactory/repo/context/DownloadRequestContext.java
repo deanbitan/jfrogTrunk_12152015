@@ -18,6 +18,7 @@
 
 package org.artifactory.repo.context;
 
+import org.artifactory.api.md.Properties;
 import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.util.PathUtils;
 
@@ -44,5 +45,9 @@ public class DownloadRequestContext implements RequestContext {
 
     public String getServletContextUrl() {
         return artifactoryRequest.getServletContextUrl();
+    }
+
+    public Properties getProperties() {
+        return artifactoryRequest.getProperties();
     }
 }

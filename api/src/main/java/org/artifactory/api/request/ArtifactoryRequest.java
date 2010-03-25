@@ -18,7 +18,7 @@
 
 package org.artifactory.api.request;
 
-import com.google.common.collect.SetMultimap;
+import org.artifactory.api.md.Properties;
 import org.artifactory.api.repo.RepoPath;
 
 import java.io.IOException;
@@ -36,6 +36,7 @@ public interface ArtifactoryRequest {
 
     String MATRIX_PARAMS_SEP = ";";
 
+    String SKIP_JAR_INDEXING = "skipJarIndexing";
 
     String getRepoKey();
 
@@ -90,6 +91,9 @@ public interface ArtifactoryRequest {
 
     RepoPath getRepoPath();
 
+    /**
+     * @return an integer containing the length in bytes of the request body or -1 if the length is not known
+     */
     int getContentLength();
 
     String getHeader(String headerName);
@@ -102,9 +106,9 @@ public interface ArtifactoryRequest {
 
     boolean isChecksum();
 
-    SetMultimap<String, String> getMatrixParams();
+    Properties getProperties();
 
-    boolean hasMatrixParams();
+    boolean hasMatrixProperties();
 
     String getServletContextUrl();
 

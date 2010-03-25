@@ -112,12 +112,17 @@ public class FileInfoImpl extends ItemInfoImpl implements FileInfo {
 
     @Override
     public boolean isIdentical(ItemInfo info) {
-        if (super.isIdentical(info)) {
-            FileInfoImpl fileInfo = (FileInfoImpl) info;
-            return this.size == fileInfo.size &&
-                    PathUtils.safeStringEquals(this.mimeType, fileInfo.mimeType);
+        if (!super.isIdentical(info)) {
+            return false;
         }
-        return false;
+
+        FileInfoImpl fileInfo = (FileInfoImpl) info;
+
+        if (this.size != fileInfo.size || !PathUtils.safeStringEquals(this.mimeType, fileInfo.mimeType)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

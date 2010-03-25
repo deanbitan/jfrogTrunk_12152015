@@ -20,15 +20,15 @@ package org.artifactory.jcr.md;
 
 import org.artifactory.api.fs.MetadataInfo;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
-import org.artifactory.api.search.metadata.GenericMetadataSearchControls;
-import org.artifactory.api.search.metadata.GenericMetadataSearchResult;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.jcr.JcrTypes;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.search.SearcherBase;
-import org.artifactory.search.metadata.StatsInfoSearcher;
+import org.artifactory.search.xml.metadata.StatsInfoSearcher;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;

@@ -19,7 +19,6 @@
 package org.artifactory.test.mock;
 
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
-import org.artifactory.jcr.md.MetadataService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.easymock.EasyMock;
 
@@ -36,8 +35,6 @@ public class MockUtils {
         EasyMock.expect(context.isReady()).andReturn(true).anyTimes();
         EasyMock.expect(context.getClassLoader()).andReturn(
                 Thread.currentThread().getContextClassLoader()).anyTimes();
-        MetadataService metadataService = EasyMock.createMock(MetadataService.class);
-        EasyMock.expect(context.beanForType(MetadataService.class)).andReturn(metadataService).anyTimes();
         ArtifactoryContextThreadBinder.bind(context);
         return context;
     }

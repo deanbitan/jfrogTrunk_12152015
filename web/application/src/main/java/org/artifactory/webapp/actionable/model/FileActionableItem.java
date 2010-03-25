@@ -164,7 +164,8 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
         } else if (!getRepo().isCache()) {
             zapAction.setEnabled(false);
         }
-        if (!isPomFile() && !isXmlFile()) {
+
+        if (!NamingUtils.isViewable((getFileInfo().getName()))) {
             viewAction.setEnabled(false);
         }
 

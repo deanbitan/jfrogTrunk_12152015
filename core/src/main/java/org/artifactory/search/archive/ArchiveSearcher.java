@@ -22,9 +22,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
@@ -32,7 +30,6 @@ import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.resource.ArtifactResource;
 import org.artifactory.search.SearcherBase;
 import org.jdom.Element;
 import org.slf4j.Logger;
@@ -65,16 +62,12 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
 
         ////*[jcr:contains(@artifactory:archiveEntry,'bufferrow*') and jcr:contains(.,'*/bufferrow*')]
         StringBuilder queryBuilder = getPathQueryBuilder(controls);
-        queryBuilder.append("/*[jcr:contains(@").append(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_ENTRY).append(", '").
-                append(escapedExp).append("')]");
+        queryBuilder.append("/element(*, ").append(JcrTypes.NT_ARTIFACTORY_FILE).append(") [jcr:contains(@").
+                append(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_ENTRY).append(", '").append(escapedExp).append("')]");
         String queryStr = queryBuilder.toString();
         log.debug("Executing archive search query: {}", queryStr);
 
-        JcrQuerySpec spec = JcrQuerySpec.xpath(queryStr);
-        if (!controls.isLimitSearchResults()) {
-            spec.noLimit();
-        }
-        QueryResult queryResult = getJcrService().executeQuery(spec);
+        QueryResult queryResult = performQuery(controls.isLimitSearchResults(), queryStr);
         List<ArchiveSearchResult> resultList = Lists.newArrayList();
         RowIterator rows = queryResult.getRows();
         long fullResults = 0;
@@ -99,8 +92,7 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
 
                     FileInfoProxy fileInfo = new FileInfoProxy(repoPath);
                     boolean canRead = getAuthService().canRead(fileInfo.getRepoPath());
-                    MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(fileInfo.getRepoPath());
-                    if (canRead && mavenInfo.isValid()) {
+                    if (canRead) {
 
                         boolean shouldCalc = controls.shouldCalcEntries();
                         boolean entriesNotEmpty = (entriesSize != 0);
@@ -114,8 +106,7 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
                                         entryName = escapedExp;
                                     }
                                     ArchiveSearchResult result =
-                                            new ArchiveSearchResult(fileInfo, mavenInfo, entryName,
-                                                    entry.getEntryPath());
+                                            new ArchiveSearchResult(fileInfo, entryName, entry.getEntryPath());
                                     resultList.add(result);
                                 }
                             }
@@ -127,8 +118,7 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
                             } else if (!entriesNotEmpty) {
                                 noPathReason = "Not available - too many results in archive.";
                             }
-                            ArchiveSearchResult result = new ArchiveSearchResult(fileInfo, mavenInfo, escapedExp,
-                                    noPathReason);
+                            ArchiveSearchResult result = new ArchiveSearchResult(fileInfo, escapedExp, noPathReason);
                             resultList.add(result);
                         }
                     }

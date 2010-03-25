@@ -326,6 +326,8 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
             @Override
             protected BaseModalPanel newUpdateItemPanel(VirtualRepoDescriptor itemObject) {
+                // Update the model being updated with the latest state.
+                itemObject = refreshDescriptor().getVirtualRepositoriesMap().get(itemObject.getKey());
                 return new VirtualRepoPanel(UPDATE, itemObject, cachingDescriptorHelper);
             }
 
@@ -460,6 +462,11 @@ public class RepositoryConfigPage extends AuthenticatedPage {
         protected void onOrderChanged(AjaxRequestTarget target) {
             super.onOrderChanged(target);
             ((RepositoryConfigPage) getPage()).refresh(target);
+        }
+
+        @Override
+        public String getTitle() {
+            return getString(getId() + ".title", getModel());
         }
     }
 

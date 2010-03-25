@@ -34,12 +34,16 @@ import org.slf4j.Logger;
 import org.springframework.security.core.Authentication;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+
+import static org.apache.commons.lang.StringUtils.EMPTY;
 
 /**
  * User: freds Date: Aug 13, 2008 Time: 10:56:25 AM
@@ -52,6 +56,7 @@ public class RequestUtils {
     public static final String LAST_USER_KEY = "artifactory:lastUserId";
     public static final String WEBAPP_URL_PATH_PREFIX = "webapp";
     private static boolean USE_PATH_INFO = false;
+    private static final String DEFAULT_ENCODING = "utf-8";
     private static final Set<String> WEBDAV_METHODS = new HashSet<String>() {{
         add("propfind");
         add("mkcol");
@@ -238,6 +243,37 @@ public class RequestUtils {
                     .setAttribute(org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REMOVED_REPOSITORY_PATH,
                             removedRepoPath);
         }
+    }
+
+    /**
+     * Extract the username out of the request, by checking the the header for the {@code Authorization} and then
+     * if it starts with {@code Basic} get it as a base 64 token and decode it.
+     *
+     * @param request The request to examine
+     * @return The extracted username
+     * @throws UnsupportedEncodingException If UTF-8 is not supported.
+     */
+    public static String extractUsernameFromRequest(ServletRequest request)
+            throws UnsupportedEncodingException {
+        String header = ((HttpServletRequest) request).getHeader("Authorization");
+        if ((header != null) && header.startsWith("Basic ")) {
+            String token;
+            byte[] base64Token;
+            try {
+                base64Token = header.substring(6).getBytes(DEFAULT_ENCODING);
+                token = new String(org.apache.commons.codec.binary.Base64.decodeBase64(base64Token), DEFAULT_ENCODING);
+            } catch (UnsupportedEncodingException e) {
+                log.info("the encoding is not supported");
+                return EMPTY;
+            }
+            String username = EMPTY;
+            int delim = token.indexOf(':');
+            if (delim != -1) {
+                username = token.substring(0, delim);
+            }
+            return username;
+        }
+        return EMPTY;
     }
 
     public static boolean isAuthPresent(WebRequest request) {

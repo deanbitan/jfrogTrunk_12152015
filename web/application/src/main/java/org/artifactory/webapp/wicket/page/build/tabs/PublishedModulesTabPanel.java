@@ -18,7 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.build.tabs;
 
-import org.apache.wicket.RequestCycle;
+import com.google.common.collect.Lists;
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
@@ -31,17 +32,18 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.request.target.basic.RedirectRequestTarget;
-import org.artifactory.build.api.Build;
-import org.artifactory.build.api.Module;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.table.SortableTable;
-import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
+import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 import org.artifactory.webapp.wicket.page.build.tabs.compare.ModuleItemListSorter;
+import org.jfrog.build.api.Build;
+import org.jfrog.build.api.Module;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static org.artifactory.webapp.wicket.page.build.BuildBrowserConstants.*;
 
 /**
  * Displays the build's published modules
@@ -102,10 +104,12 @@ public class PublishedModulesTabPanel extends Panel {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                String url = new StringBuilder().append(BuildBrowserConstants.BUILDS).append("/").
-                        append(build.getName()).append("/").append(build.getNumber()).append("/").append(moduleId).
-                        toString();
-                RequestCycle.get().setRequestTarget(new RedirectRequestTarget(url));
+                PageParameters pageParameters = new PageParameters();
+                pageParameters.put(BUILD_NAME, build.getName());
+                pageParameters.put(BUILD_NUMBER, Long.toString(build.getNumber()));
+                pageParameters.put(BUILD_STARTED, build.getStarted());
+                pageParameters.put(MODULE_ID, moduleId);
+                setResponsePage(BuildBrowserRootPage.class, pageParameters);
             }
         };
         link.add(new CssClass("item-link"));
@@ -126,7 +130,7 @@ public class PublishedModulesTabPanel extends Panel {
          */
         public ModulesDataProvider(List<Module> publishedModules) {
             setSort("id", true);
-            moduleList = publishedModules;
+            moduleList = (publishedModules != null) ? publishedModules : Lists.<Module>newArrayList();
         }
 
         public Iterator iterator(int first, int count) {

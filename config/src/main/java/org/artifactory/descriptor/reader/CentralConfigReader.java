@@ -21,10 +21,10 @@ package org.artifactory.descriptor.reader;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jaxb.JaxbHelper;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.FileUtils;
 import org.artifactory.version.ArtifactoryConfigVersion;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 

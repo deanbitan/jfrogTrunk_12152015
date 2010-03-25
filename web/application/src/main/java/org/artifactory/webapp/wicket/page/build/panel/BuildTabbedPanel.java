@@ -27,8 +27,6 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.build.api.Build;
-import org.artifactory.build.api.Module;
 import org.artifactory.common.wicket.behavior.RenderJavaScript;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildGeneralInfoTabPanel;
@@ -37,6 +35,8 @@ import org.artifactory.webapp.wicket.page.build.tabs.PublishedModulesTabPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledBaseTab;
+import org.jfrog.build.api.Build;
+import org.jfrog.build.api.Module;
 
 import java.util.List;
 

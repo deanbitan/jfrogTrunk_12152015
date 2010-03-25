@@ -52,25 +52,21 @@ public final class RequestResponseHelper {
 
     public void sendBodyResponse(ArtifactoryResponse response, RepoResource res, ResourceStreamHandle handle)
             throws IOException {
-        try {
-            RepoPath repoPath = res.getRepoPath();
-            //First, update the real length
-            updateResponseActualLength(response, handle);
-            updateResponseFromRepoResource(response, res);
-            AccessLogger.downloaded(repoPath);
-            InputStream inputStream = handle.getInputStream();
-            final long start = System.currentTimeMillis();
-            if (log.isDebugEnabled()) {
-                log.debug("Sending back body response for '{}'. Original resource size: {}, actual size: {}.",
-                        new Object[]{repoPath, res.getSize(), handle.getSize()});
-            }
-            response.sendStream(inputStream);
-            final DownloadEntry downloadEntry =
-                    new DownloadEntry(repoPath.getId(), res.getSize(), System.currentTimeMillis() - start);
-            trafficService.handleTrafficEntry(downloadEntry);
-        } finally {
-            handle.close();
+        RepoPath repoPath = res.getRepoPath();
+        //First, update the real length
+        updateResponseActualLength(response, handle);
+        updateResponseFromRepoResource(response, res);
+        AccessLogger.downloaded(repoPath);
+        InputStream inputStream = handle.getInputStream();
+        final long start = System.currentTimeMillis();
+        if (log.isDebugEnabled()) {
+            log.debug("Sending back body response for '{}'. Original resource size: {}, actual size: {}.",
+                    new Object[]{repoPath, res.getSize(), handle.getSize()});
         }
+        response.sendStream(inputStream);
+        final DownloadEntry downloadEntry =
+                new DownloadEntry(repoPath.getId(), res.getSize(), System.currentTimeMillis() - start);
+        trafficService.handleTrafficEntry(downloadEntry);
     }
 
     public void sendBodyResponse(ArtifactoryResponse response, RepoPath repoPath, String content)
@@ -101,18 +97,13 @@ public final class RequestResponseHelper {
     }
 
     public void sendHeadResponse(ArtifactoryResponse response, RepoResource res) {
-        if (log.isDebugEnabled()) {
-            log.debug(res.getRepoPath() + ": Sending HEAD meta-information");
-        }
+        log.debug("{}: Sending HEAD meta-information", res.getRepoPath());
         updateResponseFromRepoResource(response, res);
         response.sendOk();
     }
 
-    public void sendNotModifiedResponse(
-            ArtifactoryResponse response, RepoResource res) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug(res.toString() + ": Sending NOT-MODIFIED response");
-        }
+    public void sendNotModifiedResponse(ArtifactoryResponse response, RepoResource res) throws IOException {
+        log.debug("{}: Sending NOT-MODIFIED response", res.toString());
         updateResponseFromRepoResource(response, res);
         response.sendError(HttpStatus.SC_NOT_MODIFIED, null, log);
     }

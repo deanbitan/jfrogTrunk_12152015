@@ -18,9 +18,10 @@
 
 package org.artifactory.webapp.wicket.page.build.tabs.compare;
 
-import org.artifactory.build.api.Dependency;
-import org.artifactory.build.api.Module;
+import org.jfrog.build.api.Dependency;
+import org.jfrog.build.api.Module;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
 
@@ -29,7 +30,7 @@ import java.util.List;
  *
  * @author Noam Y. Tenne
  */
-public class ModuleDependencyComparator implements Comparator<Module> {
+public class ModuleDependencyComparator implements Comparator<Module>, Serializable {
 
     public int compare(Module module1, Module module2) {
         if ((module1 == null) || (module2 == null)) {

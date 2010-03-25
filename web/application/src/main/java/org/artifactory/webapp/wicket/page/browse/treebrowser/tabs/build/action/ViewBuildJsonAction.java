@@ -18,9 +18,16 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action;
 
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.artifactory.api.build.BasicBuildInfo;
+import org.artifactory.api.build.BuildService;
+import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.TextContentPanel;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
@@ -37,24 +44,33 @@ public class ViewBuildJsonAction extends ItemAction {
 
     public static final String ACTION_NAME = "View Build JSON";
     private ModalHandler textContentViewer;
-    private String buildJson;
+    private BasicBuildInfo basicBuildInfo;
 
     /**
      * Main constructor
      *
      * @param textContentViewer Modal handler for displaying the build JSON
-     * @param buildJson         Build JSON to display
+     * @param basicBuildInfo    Basic build info
      */
-    public ViewBuildJsonAction(ModalHandler textContentViewer, String buildJson) {
+    public ViewBuildJsonAction(ModalHandler textContentViewer, BasicBuildInfo basicBuildInfo) {
         super(ACTION_NAME);
         this.textContentViewer = textContentViewer;
-        this.buildJson = buildJson;
+        this.basicBuildInfo = basicBuildInfo;
     }
 
     @Override
     public void onAction(ItemEvent e) {
-        TextContentPanel contentPanel = new TextContentPanel(textContentViewer.getContentId());
-        contentPanel.setContent(buildJson);
+        BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
+        String json = buildService.getBuildAsJson(basicBuildInfo.getName(), basicBuildInfo.getNumber(),
+                basicBuildInfo.getStarted());
+
+        Component contentPanel;
+        if (ConstantValues.uiSyntaxColoringMaxTextSizeBytes.getLong() >= json.getBytes().length) {
+            contentPanel = new SyntaxHighlighter(textContentViewer.getContentId(), json, Syntax.JavaScript);
+        } else {
+            TextContentPanel textPanel = new TextContentPanel(textContentViewer.getContentId());
+            contentPanel = textPanel.setContent(json);
+        }
         BaseModalPanel modelPanel = new BorderedModalPanel(contentPanel);
         modelPanel.setTitle("Build Info JSON");
         contentPanel.add(new CssClass("modal-code"));

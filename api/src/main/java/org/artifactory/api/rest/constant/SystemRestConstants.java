@@ -29,4 +29,7 @@ public interface SystemRestConstants {
     String PATH_SECURITY = "security";
     String PATH_STORAGE = "storage";
     String PATH_STORAGE_COMPRESS = "compress";
+    String PATH_REPOSITORIES = "repositories";
+    String PATH_VERSION = "version";
+    String MT_VERSION_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".Version+json";
 }

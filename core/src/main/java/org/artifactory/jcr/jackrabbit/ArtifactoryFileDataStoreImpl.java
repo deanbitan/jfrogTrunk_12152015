@@ -31,6 +31,10 @@ public class ArtifactoryFileDataStoreImpl extends ArtifactoryBaseDataStore {
 
     private File binariesFolder;
 
+    /**
+     * @return Get file only if it exists
+     * @throws DataStoreException If the file doesn't exist
+     */
     @Override
     public File getOrCreateFile(DataIdentifier identifier, long expectedLength) throws DataStoreException {
         File result = getFile(identifier);

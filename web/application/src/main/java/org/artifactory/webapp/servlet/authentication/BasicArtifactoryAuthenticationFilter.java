@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.servlet.authentication;
 
-import org.apache.commons.codec.binary.Base64;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.servlet.RequestUtils;
@@ -47,7 +46,6 @@ public class BasicArtifactoryAuthenticationFilter implements ArtifactoryAuthenti
     private ArtifactoryContext context;
     private BasicAuthenticationFilter authFilter;
     private BasicAuthenticationEntryPoint authenticationEntryPoint;
-    private static final String DEFAULT_ENCODING = "utf-8";
 
     private static final Logger log = LoggerFactory.getLogger(BasicArtifactoryAuthenticationFilter.class);
 
@@ -65,22 +63,12 @@ public class BasicArtifactoryAuthenticationFilter implements ArtifactoryAuthenti
         }
         if (acceptFilter(request)) {
             String authUsername = authentication.getPrincipal().toString();
-            String header = ((HttpServletRequest) request).getHeader("Authorization");
-            String token = null;
-            if ((header != null) && header.startsWith("Basic ")) {
-                byte[] base64Token;
-                try {
-                    base64Token = header.substring(6).getBytes(DEFAULT_ENCODING);
-                    token = new String(Base64.decodeBase64(base64Token), DEFAULT_ENCODING);
-                } catch (UnsupportedEncodingException e) {
-                    log.info("the encoding is not supported");
-                }
-                String username = "";
-                int delim = token.indexOf(":");
-                if (delim != -1) {
-                    username = token.substring(0, delim);
-                }
+            try {
+                String username = RequestUtils.extractUsernameFromRequest(request);
                 return username.equals(authUsername);
+            } catch (UnsupportedEncodingException e) {
+                log.info("Encoding not supported");
+                return false;
             }
         }
         return true;

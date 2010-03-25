@@ -327,8 +327,6 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         //Initialize the enum registration
         ArtifactoryConfigVersion.values();
-        ArtifactoryConfigVersion originalVersion =
-                source.getVersion().getSubConfigElementVersion(ArtifactoryConfigVersion.class);
 
         // getCurrentConfig() will always return the latest version (ie will do the conversion)
         CentralConfigDescriptor artifactoryConfig = getCurrentConfig().getFirst();

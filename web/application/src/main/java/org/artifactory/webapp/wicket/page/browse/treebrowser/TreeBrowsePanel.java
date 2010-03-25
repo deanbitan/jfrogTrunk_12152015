@@ -29,20 +29,19 @@ import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.persister.EscapeCookieValuePersister;
 import org.artifactory.webapp.actionable.ActionableItem;
-import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.action.ItemActionListener;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 import org.artifactory.webapp.actionable.event.ItemEventTargetComponents;
 import org.artifactory.webapp.actionable.model.HierarchicActionableItem;
 import org.artifactory.webapp.wicket.actionable.tree.ActionableItemsProvider;
 import org.artifactory.webapp.wicket.actionable.tree.ActionableItemsTree;
+import org.artifactory.webapp.wicket.actionable.tree.DefaultTreeSelection;
 import org.artifactory.webapp.wicket.actionable.tree.TreeKeyEventHandler;
 
 import java.util.List;
@@ -81,7 +80,7 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
         this(id, null);
     }
 
-    public TreeBrowsePanel(String id, ActionableItem initialItem) {
+    public TreeBrowsePanel(String id, DefaultTreeSelection defaultSelection) {
         super(id);
 
         Component menuPlaceHolder = new WebMarkupContainer("contextMenu");
@@ -99,15 +98,10 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
         textContentViewer = new ModalHandler("contentDialog");
         add(textContentViewer);
 
-        RepoPath repoPath = null;
-        if (initialItem instanceof RepoAwareActionableItem) {
-            repoPath = ((RepoAwareActionableItem) initialItem).getRepoPath();
-        }
-
         final CompactFoldersCheckbox compactCheckbox = new CompactFoldersCheckbox("compactCheckbox");
         add(compactCheckbox);
 
-        tree = new ActionableItemsTree("tree", this, repoPath, compactCheckbox.isCompactAllowed());
+        tree = new ActionableItemsTree("tree", this, defaultSelection, compactCheckbox.isCompactAllowed());
         add(tree);
         add(new TreeKeyEventHandler("keyEventHandler", tree));
     }

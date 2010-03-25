@@ -23,7 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
@@ -98,13 +97,7 @@ public class GavcSearcher extends SearcherBase<GavcSearchControls, GavcSearchRes
                     .append("*-").append(classifier).append(".*").append("')] ");
         }
 
-        String queryStr = queryBuilder.toString();
-
-        JcrQuerySpec spec = JcrQuerySpec.xpath(queryStr);
-        if (!controls.isLimitSearchResults()) {
-            spec.noLimit();
-        }
-        QueryResult queryResult = getJcrService().executeQuery(spec);
+        QueryResult queryResult = performQuery(controls.isLimitSearchResults(), queryBuilder.toString());
         List<GavcSearchResult> results = Lists.newArrayList();
         NodeIterator nodes = queryResult.getNodes();
 

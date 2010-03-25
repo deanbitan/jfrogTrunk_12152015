@@ -20,7 +20,6 @@ package org.artifactory.api.fs;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.util.PathUtils;
 
 import java.io.Serializable;
 
@@ -36,24 +35,14 @@ public class ChecksumInfo implements Serializable {
     // checksum but we have the actual file
     public static final String TRUSTED_FILE_MARKER = "NO_ORIG";
 
-    private ChecksumType type;
-    private String original;
-    private String actual;
-
-    public ChecksumInfo(ChecksumType type) {
-        this.type = type;
-    }
+    private final ChecksumType type;
+    private final String original;
+    private final String actual;
 
     public ChecksumInfo(ChecksumType type, String original, String actual) {
         this.type = type;
         this.original = original;
         this.actual = actual;
-    }
-
-    public ChecksumInfo(ChecksumInfo copy) {
-        this.type = copy.type;
-        this.original = copy.original;
-        this.actual = copy.actual;
     }
 
     public ChecksumType getType() {
@@ -70,14 +59,6 @@ public class ChecksumInfo implements Serializable {
 
     public String getActual() {
         return actual;
-    }
-
-    public void setOriginal(String original) {
-        this.original = original;
-    }
-
-    public void setActual(String actual) {
-        this.actual = actual;
     }
 
     public boolean checksumsMatch() {
@@ -134,21 +115,5 @@ public class ChecksumInfo implements Serializable {
                 ", original='" + original + '\'' +
                 ", actual='" + actual + '\'' +
                 '}';
-    }
-
-    public boolean merge(ChecksumInfo other) {
-        if (other == null || other == this || other.isIdentical(this)) {
-            return false;
-        }
-        boolean modified = false;
-        if (PathUtils.hasText(other.actual) && !PathUtils.safeStringEquals(other.actual, this.actual)) {
-            this.actual = other.actual;
-            modified = true;
-        }
-        if (PathUtils.hasText(other.original) && !PathUtils.safeStringEquals(other.original, this.original)) {
-            this.original = other.original;
-            modified = true;
-        }
-        return modified;
     }
 }

@@ -26,6 +26,7 @@ import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
@@ -35,6 +36,7 @@ import org.artifactory.descriptor.security.PasswordSettings;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.artifactory.version.converter.XmlConverter;
 import org.slf4j.Logger;
 import org.testng.annotations.Test;
@@ -58,12 +60,11 @@ import static org.testng.Assert.*;
  * @author freds
  * @author Yossi Shaul
  */
-public class ConfigXmlConversionTest {
+public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
     private static final Logger log = LoggerFactory.getLogger(ConfigXmlConversionTest.class);
 
     @Test
     public void convert100() throws Exception {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
         System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +
                 "3rdp-releases", "third-party-releases");
         System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +
@@ -96,17 +97,14 @@ public class ConfigXmlConversionTest {
         assertEquals(pluginsReleases.getSnapshotVersionBehavior(),
                 SnapshotVersionBehavior.NONUNIQUE,
                 "Should have kept the default");
-        ArtifactorySystemProperties.unbind();
     }
 
     @Test
     public void convert100NoBackupCron() throws Exception {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
         CentralConfigDescriptor cc =
                 transform("/config/test/config.1.0.0_no-backup-cron.xml", ArtifactoryConfigVersion.v100);
         assertNotNull(cc.getBackups());
         assertTrue(cc.getBackups().isEmpty());
-        ArtifactorySystemProperties.unbind();
     }
 
     @Test
@@ -282,8 +280,14 @@ public class ConfigXmlConversionTest {
     }
 
     @Test
-    public void configVersionSanityCheck() {
+    public void convert142Custom() throws Exception {
+        CentralConfigDescriptor cc = transform("/config/test/config.1.4.2_with_checksum_policy.xml",
+                ArtifactoryConfigVersion.v142);
+        assertEquals(cc.getRemoteRepositoriesMap().get("repo1").getChecksumPolicyType(), ChecksumPolicyType.GEN_IF_ABSENT);
+    }
 
+    @Test
+    public void configVersionSanityCheck() {
         ArtifactoryConfigVersion[] versions = ArtifactoryConfigVersion.values();
         Set<XmlConverter> allConversions = new HashSet<XmlConverter>();
         ArtifactoryConfigVersion configVersionTest = null;
@@ -308,12 +312,16 @@ public class ConfigXmlConversionTest {
                 " should have any conversions declared");
     }
 
+    /**
+     * @param textXml The configuration as string
+     * @param version Version of the passed configuration
+     * @return Result central config
+     */
     private CentralConfigDescriptor transform(String textXml, ArtifactoryConfigVersion version)
             throws Exception {
         InputStream is = getClass().getResourceAsStream(textXml);
         String originalXmlString = IOUtils.toString(is, "utf-8");
-        ArtifactoryConfigVersion foundConfigVersion =
-                ArtifactoryConfigVersion.getConfigVersion(originalXmlString);
+        ArtifactoryConfigVersion foundConfigVersion = ArtifactoryConfigVersion.getConfigVersion(originalXmlString);
         assertEquals(version, foundConfigVersion);
         String finalConfigXml = version.convert(originalXmlString);
         log.debug("Converted:\n{}\nto:\n{}", originalXmlString, finalConfigXml);

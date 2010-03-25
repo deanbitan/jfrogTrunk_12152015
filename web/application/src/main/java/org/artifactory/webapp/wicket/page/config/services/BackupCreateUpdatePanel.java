@@ -78,10 +78,10 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
     private PathAutoCompleteTextField backupDir;
 
     public BackupCreateUpdatePanel(CreateUpdateAction action, BackupDescriptor backupDescriptor,
-            BackupsListPanel backupsListPanel) {
+                                   BackupsListPanel backupsListPanel) {
         super(action, backupDescriptor);
         createIncrementalBackup = backupDescriptor.isIncremental();
-        setWidth(550);
+        setWidth(560);
 
         add(form);
 

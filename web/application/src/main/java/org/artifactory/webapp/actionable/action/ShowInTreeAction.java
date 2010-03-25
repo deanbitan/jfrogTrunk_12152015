@@ -27,7 +27,7 @@ import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
  * @author Yossi Shaul
  */
 public class ShowInTreeAction extends RepoAwareItemAction {
-    public static final String ACTION_NAME = "Show In Tree";
+    public static final String ACTION_NAME = "Show in Tree";
 
     public ShowInTreeAction() {
         super(ACTION_NAME);
@@ -36,6 +36,6 @@ public class ShowInTreeAction extends RepoAwareItemAction {
     @Override
     public void onAction(RepoAwareItemEvent e) {
         RepoAwareActionableItem source = e.getSource();
-        RequestCycle.get().setResponsePage(new BrowseRepoPage(source));
+        RequestCycle.get().setResponsePage(new BrowseRepoPage(source.getRepoPath()));
     }
 }

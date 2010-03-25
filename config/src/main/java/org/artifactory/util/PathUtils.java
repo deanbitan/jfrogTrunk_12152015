@@ -258,8 +258,9 @@ public class PathUtils {
 
     public static String formatRelativePath(String path) {
         path = formatPath(path);
-        //Trim leading '/' (caused by webdav requests)
-        return trimLeadingSlashes(path);
+        //Trim leading (caused by webdav requests) and trailing '/''s
+        CharSequence trimmed = trimSlashes(path);
+        return trimmed != null ? trimmed.toString() : null;
     }
 
     /**
@@ -280,25 +281,44 @@ public class PathUtils {
         }
     }
 
-    public static String trimLeadingSlashes(String path) {
+    public static CharSequence trimSlashes(CharSequence path) {
+        if (path == null) {
+            return null;
+        }
+        path = trimLeadingSlashesChars(path);
+        path = trimTrailingSlashesChars(path);
+        return path;
+    }
+
+    public static String trimLeadingSlashes(CharSequence path) {
+        CharSequence res = trimLeadingSlashesChars(path);
+        return res != null ? res.toString() : null;
+    }
+
+    public static CharSequence trimLeadingSlashesChars(CharSequence path) {
         if (path == null) {
             return null;
         }
         //Trim leading '/' (caused by webdav requests)
-        if (path.startsWith("/")) {
-            String modifiedPath = path.substring(1);
-            return trimLeadingSlashes(modifiedPath);
+        if (path.length() > 0 && path.charAt(0) == '/') {
+            path = path.subSequence(1, path.length());
+            return trimLeadingSlashesChars(path);
         }
         return path;
     }
 
-    public static String trimTrailingSlashes(String path) {
+    public static String trimTrailingSlashes(CharSequence path) {
+        CharSequence res = trimTrailingSlashesChars(path);
+        return res != null ? res.toString() : null;
+    }
+
+    public static CharSequence trimTrailingSlashesChars(CharSequence path) {
         if (path == null) {
             return null;
         }
-        if (path.endsWith("/")) {
-            String modifiedPath = path.substring(0, path.length() - 1);
-            return trimTrailingSlashes(modifiedPath);
+        if (path.length() > 0 && path.charAt(path.length() - 1) == '/') {
+            path = path.subSequence(0, path.length() - 1);
+            return trimTrailingSlashes(path);
         }
         return path;
     }

@@ -19,8 +19,8 @@
 package org.artifactory.concurrent;
 
 import org.artifactory.common.ConstantValues;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;

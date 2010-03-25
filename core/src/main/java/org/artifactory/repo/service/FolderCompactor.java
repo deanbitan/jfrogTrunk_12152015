@@ -18,16 +18,19 @@
 
 package org.artifactory.repo.service;
 
+import com.google.common.collect.Lists;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import javax.jcr.RepositoryException;
 import java.util.List;
 import java.util.Set;
 
@@ -39,6 +42,8 @@ import java.util.Set;
 @Component
 public class FolderCompactor {
 
+    private static final Logger log = LoggerFactory.getLogger(FolderCompactor.class);
+
     @Autowired
     private InternalRepositoryService repositoryService;
 
@@ -49,7 +54,7 @@ public class FolderCompactor {
      * @return List of the of folders that can be compacted
      */
     public List<JcrFolder> getFolderWithCompactedChildren(JcrFolder folder) {
-        List<JcrFolder> result = new ArrayList<JcrFolder>();
+        List<JcrFolder> result = Lists.newArrayList();
         JcrFolder current = folder;
         result.add(current);
         while (true) {
@@ -74,9 +79,18 @@ public class FolderCompactor {
             return null;
         }
 
-        Set<MetadataDefinition<?>> metadataDefs = folder.getExistingMetadata(false);
-        int namesListSize = metadataDefs.size();
-        boolean containsMavenMetadata = folder.hasMetadata(MavenNaming.MAVEN_METADATA_NAME);
+        int namesListSize = 0;
+        boolean containsMavenMetadata = false;
+        try {
+            Set<MetadataDefinition<?>> metadataDefs = folder.getExistingMetadata(false);
+            namesListSize = metadataDefs.size();
+            containsMavenMetadata = folder.hasMetadata(MavenNaming.MAVEN_METADATA_NAME);
+        } catch (RepositoryException re) {
+            String folderPath = folder.getAbsolutePath();
+            log.error("Could not determine existing metadata existence for '{}': {}", folderPath, re.getMessage());
+            log.debug("Could not determine existing metadata existence for '" + folderPath + "'.", re);
+            return null;
+        }
 
         /**
          * A node should not be compacted if it has any metadata attached to it, except for maven metadata.

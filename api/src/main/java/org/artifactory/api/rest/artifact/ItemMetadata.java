@@ -31,5 +31,4 @@ public class ItemMetadata implements Serializable {
     @XmlElement(name = "uri")
     public String slf;
     public Map<String, String> metadata = Maps.newTreeMap();
-    public Map<String, String[]> properties = Maps.newTreeMap();
 }

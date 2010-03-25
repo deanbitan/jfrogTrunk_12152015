@@ -40,7 +40,12 @@ public class FileAdditionalInfo extends ItemAdditionalInfo {
 
     public FileAdditionalInfo(FileAdditionalInfo additionalInfo) {
         super(additionalInfo);
-        this.checksumsInfo = additionalInfo.getChecksumsInfo();
+        if (additionalInfo.getChecksumsInfo() != null) {
+            this.checksumsInfo = new ChecksumsInfo(additionalInfo.getChecksumsInfo());
+        } else {
+            this.checksumsInfo = new ChecksumsInfo();
+        }
+
     }
 
     public ChecksumsInfo getChecksumsInfo() {
@@ -52,10 +57,16 @@ public class FileAdditionalInfo extends ItemAdditionalInfo {
         if (!(other instanceof FileAdditionalInfo)) {
             return false;
         }
-        FileAdditionalInfo fileExtraInfo = (FileAdditionalInfo) other;
-        return !(checksumsInfo != null ? !checksumsInfo.isIdentical(fileExtraInfo.checksumsInfo) :
-                fileExtraInfo.checksumsInfo != null) && super.isIdentical(other);
+        if (!super.isIdentical(other)) {
+            return false;
+        }
 
+        FileAdditionalInfo fileExtraInfo = (FileAdditionalInfo) other;
+        if (this.checksumsInfo != null ? !this.checksumsInfo.isIdentical(fileExtraInfo.checksumsInfo)
+                : fileExtraInfo.checksumsInfo != null) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -79,8 +90,9 @@ public class FileAdditionalInfo extends ItemAdditionalInfo {
                             if (mine == null) {
                                 addChecksumInfo(other);
                                 modified = true;
-                            } else {
-                                modified |= mine.merge(other);
+                            } else if (!other.isIdentical(mine)) {
+                                modified = true;
+                                this.checksumsInfo.addChecksumInfo(other);
                             }
                         }
                     }

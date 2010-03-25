@@ -24,6 +24,7 @@ import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -88,6 +89,10 @@ public class JcrRepoBaseTest {
     private JcrRepoBase<LocalRepoDescriptor> createJcrRepoBase() {
         LocalRepoDescriptor descriptor = new LocalRepoDescriptor();
         JcrRepoBase<LocalRepoDescriptor> repo = new JcrRepoBase<LocalRepoDescriptor>(null, null) {
+            public ChecksumPolicy getChecksumPolicy() {
+                return null;
+            }
+
             public void onCreate(JcrFsItem fsItem) {
             }
         };

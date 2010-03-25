@@ -18,9 +18,7 @@
 
 package org.artifactory.api.mime;
 
-import org.artifactory.common.property.ArtifactorySystemProperties;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -31,17 +29,7 @@ import static org.testng.Assert.*;
  * @author freds
  * @date Sep 28, 2008
  */
-public class MimeTableTest {
-
-    @BeforeMethod
-    public void bindProperties() {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
-    }
-
-    @AfterMethod
-    public void unbindProperties() {
-        ArtifactorySystemProperties.unbind();
-    }
+public class MimeTableTest extends SystemPropertiesBoundTest {
 
     @Test
     public void xmlAppTest() {

@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.build.panel;
 
+import org.apache.jackrabbit.util.Text;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.link.ExternalLink;
@@ -58,7 +59,7 @@ public class BuildBreadCrumbsPanel extends Panel {
         for (String constant : PATH_CONSTANTS) {
             if (pageParameters.containsKey(constant)) {
                 String constantValue = pageParameters.getString(constant);
-                pathBuilder.append("/").append(constantValue);
+                pathBuilder.append("/").append(Text.escapeIllegalJcrChars(constantValue));
 
                 final String format = getString(constant + ".format");
                 final String value = String.format(format, constantValue);
@@ -70,7 +71,7 @@ public class BuildBreadCrumbsPanel extends Panel {
     /**
      * Breadcrumb item object
      */
-    private class BreadCrumbItem extends WebMarkupContainer {
+    private static class BreadCrumbItem extends WebMarkupContainer {
 
         private BreadCrumbItem(String id, final String crumbTitle, final String crumbPath, boolean first) {
             super(id);

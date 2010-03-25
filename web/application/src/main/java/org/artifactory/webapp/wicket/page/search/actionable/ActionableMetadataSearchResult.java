@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.search.actionable;
 
-import org.artifactory.api.search.metadata.MetadataSearchResult;
+import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.action.ShowInTreeAction;

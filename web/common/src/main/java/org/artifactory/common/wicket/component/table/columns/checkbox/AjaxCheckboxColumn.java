@@ -37,6 +37,7 @@ public class AjaxCheckboxColumn<T> extends StyledCheckboxColumn<T> {
         final FormComponent checkbox = super.newCheckBox(id, model, rowObject);
 
         checkbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
+            @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 Boolean checked = (Boolean) checkbox.getModelObject();
                 AjaxCheckboxColumn.this.onUpdate(checkbox, rowObject, checked, target);

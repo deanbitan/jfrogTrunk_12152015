@@ -39,15 +39,15 @@ public class ViewTextFileAction extends ViewAction {
             return;
         }
 
-        String content = getContent((FileInfo) itemInfo);
+        final FileInfo fileInfo = (FileInfo) itemInfo;
+        String content = getContent(fileInfo);
         String title = itemInfo.getName();
 
-        displayModalWindow(e, content, title);
+        showHighlightedSourceModal(e, content, title);
     }
 
     private String getContent(FileInfo fileInfo) {
-        String content = getRepoService().getTextFileContent(fileInfo);
-        return content;
+        return getRepoService().getTextFileContent(fileInfo);
     }
 
     @Override

@@ -134,7 +134,7 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
                 item.add(new AttributeModifier("class", true, new AbstractReadOnlyModel() {
                     @Override
                     public Object getObject() {
-                        return (item.getIndex() % 2 == 1) ? "even" : "odd";
+                        return (item.getIndex() % 2 == 0) ? "even" : "odd";
                     }
                 }));
             }

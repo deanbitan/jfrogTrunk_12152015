@@ -18,34 +18,37 @@
 
 package org.artifactory.webapp.wicket.page.build.panel;
 
-import org.apache.wicket.RequestCycle;
+import com.google.common.collect.Lists;
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.build.BasicBuildInfo;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.SearchService;
-import org.artifactory.build.api.Build;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
+import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn;
+import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
-import org.artifactory.webapp.wicket.page.build.compare.BuildItemListSorter;
+import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
+import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Locates and displays all the builds in the system
@@ -59,6 +62,9 @@ public class AllBuildsPanel extends TitledPanel {
     @SpringBean
     private SearchService searchService;
 
+    @SpringBean
+    private CentralConfigService centralConfigService;
+
     /**
      * Main constructor
      *
@@ -69,8 +75,8 @@ public class AllBuildsPanel extends TitledPanel {
         setOutputMarkupId(true);
 
         try {
-            List<Build> latestBuilds = searchService.getLatestBuildsByName();
-            addTable(latestBuilds);
+            Set<BasicBuildInfo> latestBuildsByName = searchService.getLatestBuildsByName();
+            addTable(latestBuildsByName);
         } catch (RepositoryRuntimeException e) {
             String errorMessage = "An error occurred while loading all existing builds";
             log.error(errorMessage, e);
@@ -86,20 +92,19 @@ public class AllBuildsPanel extends TitledPanel {
     /**
      * Adds the build table to the panel
      *
-     * @param buildsToAdd Builds to display
+     * @param latestBuildsByName Latest builds by name to display
      */
-    private void addTable(List<Build> buildsToAdd) {
-        List<IColumn> columns = new ArrayList<IColumn>();
+    private void addTable(Set<BasicBuildInfo> latestBuildsByName) {
+        List<IColumn> columns = Lists.newArrayList();
         columns.add(new AbstractColumn(new Model("Build Name"), "name") {
             public void populateItem(Item cellItem, String componentId, IModel rowModel) {
-                Build build = (Build) cellItem.getParent().getParent().getModelObject();
-                cellItem.add(getBuildNameLink(componentId, build.getName()));
+                BasicBuildInfo info = (BasicBuildInfo) cellItem.getParent().getParent().getModelObject();
+                cellItem.add(getBuildNameLink(componentId, info.getName()));
             }
         });
-        columns.add(new PropertyColumn(new Model("Last Built"), "startedDate", "started"));
-
-        BuildsDataProvider dataProvider = new BuildsDataProvider(buildsToAdd);
-
+        columns.add(new FormattedDateColumn(new Model("Last Built"), "startedDate", "started", centralConfigService,
+                Build.STARTED_FORMAT));
+        BuildsDataProvider dataProvider = new BuildsDataProvider(latestBuildsByName);
         add(new SortableTable("builds", columns, dataProvider, 200));
     }
 
@@ -120,9 +125,9 @@ public class AllBuildsPanel extends TitledPanel {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                String url = new StringBuilder().append(BuildBrowserConstants.BUILDS).append("/").append(buildName).
-                        toString();
-                RequestCycle.get().setRequestTarget(new RedirectRequestTarget(url));
+                PageParameters pageParameters = new PageParameters();
+                pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildName);
+                setResponsePage(BuildBrowserRootPage.class, pageParameters);
             }
         };
         link.add(new CssClass("item-link"));
@@ -134,25 +139,21 @@ public class AllBuildsPanel extends TitledPanel {
      */
     private static class BuildsDataProvider extends SortableDataProvider {
 
-        List<Build> buildList;
+        List<BasicBuildInfo> buildList;
 
         /**
          * Main constructor
          *
-         * @param buildList Builds to display
+         * @param latestBuildsByName Latest build by name to display
          */
-        public BuildsDataProvider(List<Build> buildList) {
+        public BuildsDataProvider(Set<BasicBuildInfo> latestBuildsByName) {
             setSort("name", true);
-            this.buildList = buildList;
+            this.buildList = Lists.newArrayList(latestBuildsByName);
         }
 
         public Iterator iterator(int first, int count) {
-            /**
-             * We use a custom sorter here since we need to sort the date objects that aren't directly accessible
-             * through the build bean
-             */
-            BuildItemListSorter.sort(buildList, getSort());
-            List<Build> listToReturn = buildList.subList(first, first + count);
+            ListPropertySorter.sort(buildList, getSort());
+            List<BasicBuildInfo> listToReturn = buildList.subList(first, first + count);
             return listToReturn.iterator();
         }
 
@@ -161,7 +162,7 @@ public class AllBuildsPanel extends TitledPanel {
         }
 
         public IModel model(Object object) {
-            return new Model((Build) object);
+            return new Model((BasicBuildInfo) object);
         }
     }
 }

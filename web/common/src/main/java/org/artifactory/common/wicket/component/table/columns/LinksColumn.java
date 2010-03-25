@@ -47,17 +47,21 @@ public abstract class LinksColumn<T> extends AbstractColumn implements AttachCol
         super(titleModel);
     }
 
-    @SuppressWarnings({"unchecked"})
     public void populateItem(Item cellItem, String componentId, IModel rowModel) {
         cellItem.add(new CssClass("actions"));
 
         LinksColumnPanel panel = new LinksColumnPanel(componentId);
         cellItem.add(panel);
 
-        Collection<? extends AbstractLink> links = getLinks((T) rowModel.getObject(), LINK_ID);
+        Collection<? extends AbstractLink> links = getLinks(getRowObject(rowModel), LINK_ID);
         for (AbstractLink link : links) {
             panel.addLink(link);
         }
+    }
+
+    @SuppressWarnings({"unchecked"})
+    protected T getRowObject(IModel rowModel) {
+        return (T) rowModel.getObject();
     }
 
     @SuppressWarnings({"RefusedBequest"})

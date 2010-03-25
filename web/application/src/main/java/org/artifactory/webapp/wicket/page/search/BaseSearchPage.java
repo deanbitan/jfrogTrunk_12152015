@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.search;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
@@ -35,11 +36,10 @@ import org.artifactory.webapp.wicket.page.search.gavc.GavcSearchPanel;
 import org.artifactory.webapp.wicket.page.search.metadata.MetadataSearchPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Displayes a tabbed panel with the different types of searches
+ * Displays a tabbed panel with the different types of searches
  *
  * @author Noam Tenne
  */
@@ -66,11 +66,18 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
     }
 
     private void addTabs() {
-        List<ITab> tabs = new ArrayList<ITab>();
+        List<ITab> tabs = Lists.newArrayList();
         tabs.add(new AbstractTab(new Model("Quick Search")) {
             @Override
             public Panel getPanel(String panelId) {
-                return new ArtifactSearchPanel(BaseSearchPage.this, panelId, searchQuery);
+                /**
+                 * Make a copy of the query and don't pass the original, so that the state won't be preserved.
+                 * See http://issues.jfrog.org/jira/browse/RTFACT-2790
+                 */
+                String query = searchQuery;
+                ArtifactSearchPanel searchPanel = new ArtifactSearchPanel(BaseSearchPage.this, panelId, query);
+                searchQuery = null;
+                return searchPanel;
             }
         });
 

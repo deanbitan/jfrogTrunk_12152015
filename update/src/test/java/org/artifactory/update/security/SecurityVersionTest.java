@@ -57,7 +57,7 @@ public class SecurityVersionTest extends VersionTest {
         log.debug(xstream.toXML(new PermissionTargetInfo("blbla", Arrays.asList("repo"))));
 
         File toConvert = ResourceUtils.getResourceAsFile("/security/v1/security.xml");
-        String secXmlData = FileUtils.readFileToString(toConvert);
+        String secXmlData = FileUtils.readFileToString(toConvert, "utf-8");
         String result = SecurityVersion.v1.convert(secXmlData);
 
         log.debug("convertFromv125 result:\n{}", result);
@@ -100,7 +100,7 @@ public class SecurityVersionTest extends VersionTest {
 
     public void convertFromVersion1Big() throws IOException {
         File toConvert = ResourceUtils.getResourceAsFile("/security/v1/security-big.xml");
-        String secXmlData = FileUtils.readFileToString(toConvert);
+        String secXmlData = FileUtils.readFileToString(toConvert, "utf-8");
         String result = SecurityVersion.v1.convert(secXmlData);
 
         log.debug("convertFromv125Big result:\n{}", result);
@@ -134,7 +134,7 @@ public class SecurityVersionTest extends VersionTest {
 
     public void convertFromVersion2() throws IOException {
         File toConvert = ResourceUtils.getResourceAsFile("/security/v2/security.xml");
-        String secXmlData = FileUtils.readFileToString(toConvert);
+        String secXmlData = FileUtils.readFileToString(toConvert, "utf-8");
         String result = SecurityVersion.v2.convert(secXmlData);
 
         log.debug("convertFromv130beta1 result:\n{}", result);
@@ -171,7 +171,7 @@ public class SecurityVersionTest extends VersionTest {
 
     public void convertFromVersion3() throws IOException {
         File toConvert = ResourceUtils.getResourceAsFile("/security/v3/security.xml");
-        String secXmlData = FileUtils.readFileToString(toConvert);
+        String secXmlData = FileUtils.readFileToString(toConvert, "utf-8");
         String result = SecurityVersion.v3.convert(secXmlData);
 
         log.debug("convertFromv130beta1 result:\n{}", result);

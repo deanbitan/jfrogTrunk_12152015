@@ -18,25 +18,33 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.artifactory.webapp.actionable.ActionableItem;
+import org.artifactory.api.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
 import java.io.Serializable;
 
 public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
+
     private String lastTabName;
 
     public BrowseRepoPage() {
-        this(null);
+        //Using request parameters instead of wicket's page parameters. See RTFACT-2843
+        RepoPath repoPath = null;
+        String pathId = getRequest().getParameter("pathId");
+        if (StringUtils.isNotBlank(pathId)) {
+            try {
+                repoPath = new RepoPath(pathId);
+            } catch (Exception e) {
+                error("Unable to find path " + pathId);
+            }
+        }
+        displayBrowser(repoPath);
     }
 
-    public BrowseRepoPage(ActionableItem initialItem) {
-        add(new BrowseRepoPanel("browseRepoPanel", initialItem));
-
-        WebMarkupContainer scrollScript = new WebMarkupContainer("scrollScript");
-        scrollScript.setVisible(initialItem != null);
-        add(scrollScript);
+    public BrowseRepoPage(RepoPath repoPath) {
+        displayBrowser(repoPath);
     }
 
     @Override
@@ -50,5 +58,13 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
 
     public void setLastTabName(String lastTabName) {
         this.lastTabName = lastTabName;
+    }
+
+    private void displayBrowser(RepoPath repoPath) {
+        add(new BrowseRepoPanel("browseRepoPanel", new DefaultRepoTreeSelection(repoPath)));
+
+        WebMarkupContainer scrollScript = new WebMarkupContainer("scrollScript");
+        scrollScript.setVisible(repoPath != null);
+        add(scrollScript);
     }
 }

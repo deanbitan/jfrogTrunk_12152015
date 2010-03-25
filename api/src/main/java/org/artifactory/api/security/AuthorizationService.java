@@ -155,4 +155,14 @@ public interface AuthorizationService {
      * @return True if user has any permissions, false if not
      */
     boolean userHasPermissions(String username);
+
+    /**
+     * Indicates if the given user has any permissions at all, on the root repository. If it is a virtual repository
+     * then if the user has a permission in any one of the real repositories associated with it will return {@code
+     * true}
+     *
+     * @param repoKey The repository key of the repository to check the user's permissions.
+     * @return Whether the user has any permissions on a repository root
+     */
+    boolean userHasPermissionsOnRepositoryRoot(String repoKey);
 }

@@ -29,8 +29,11 @@ import org.artifactory.api.search.artifact.ArtifactSearchResult;
  */
 public class GavcSearchResult extends ArtifactSearchResult {
 
+    private MavenArtifactInfo artifact;
+
     public GavcSearchResult(ItemInfo itemInfo, MavenArtifactInfo artifact) {
-        super(itemInfo, artifact);
+        super(itemInfo);
+        this.artifact = artifact;
     }
 
     public String getGroupId() {

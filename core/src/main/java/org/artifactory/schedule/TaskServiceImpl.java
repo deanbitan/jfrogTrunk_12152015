@@ -24,7 +24,6 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.maven.WagonManagerTempArtifactsCleaner;
 import org.artifactory.schedule.quartz.QuartzTask;
 import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.Reloadable;
@@ -66,13 +65,6 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
                 TimeUnit.SECONDS.toMillis(10));
         jcrGarbageCollectorTask.setSingleton(true);
         startTask(jcrGarbageCollectorTask);
-
-        //run the wagon leftovers cleanup every 15 minutes after 10 minutes from startup
-        QuartzTask wagonManagerTempArtifactsCleanerTask = new QuartzTask(
-                WagonManagerTempArtifactsCleaner.class, TimeUnit.SECONDS.toMillis(15 * 60),
-                TimeUnit.SECONDS.toMillis(10 * 60));
-        wagonManagerTempArtifactsCleanerTask.setSingleton(true);
-        startTask(wagonManagerTempArtifactsCleanerTask);
     }
 
     public void destroy() {

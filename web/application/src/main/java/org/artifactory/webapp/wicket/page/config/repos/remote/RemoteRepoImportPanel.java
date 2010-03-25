@@ -59,15 +59,19 @@ import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepositoryConfigPage;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import static org.artifactory.common.wicket.component.modal.ModalHandler.resizeAndCenterCurrent;
 
@@ -356,7 +360,8 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
 
         columns.add(new SelectAllCheckboxColumn<ImportableRemoteRepo>("", "selected", null) {
             @Override
-            protected void onUpdate(FormComponent checkbox, ImportableRemoteRepo rowObject, boolean value, AjaxRequestTarget target) {
+            protected void onUpdate(FormComponent checkbox, ImportableRemoteRepo rowObject, boolean value,
+                                    AjaxRequestTarget target) {
                 super.onUpdate(checkbox, rowObject, value, target);
                 //On each update, refresh import button to customize the warning messages of the call decorator
                 target.addComponent(importButton);
@@ -415,7 +420,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
     /**
      * The importable repository data provider
      */
-    private class RepoDataProvider extends SortableDataProvider {
+    private static class RepoDataProvider extends SortableDataProvider {
 
         /**
          * Main content list

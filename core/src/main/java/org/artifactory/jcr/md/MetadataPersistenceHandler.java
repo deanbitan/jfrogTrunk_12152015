@@ -19,8 +19,8 @@
 package org.artifactory.jcr.md;
 
 import org.artifactory.api.fs.MetadataInfo;
-import org.artifactory.api.search.metadata.GenericMetadataSearchControls;
-import org.artifactory.api.search.metadata.GenericMetadataSearchResult;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.search.SearcherBase;
 
 /**

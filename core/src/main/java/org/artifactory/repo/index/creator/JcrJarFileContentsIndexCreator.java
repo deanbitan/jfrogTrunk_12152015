@@ -55,7 +55,7 @@ public class JcrJarFileContentsIndexCreator extends JarFileContentsIndexCreator 
                     // TODO verify if class is public or protected
                     // TODO skip all inner classes for now
 
-                    int i = name.indexOf("$");
+                    int i = name.indexOf('$');
 
                     if (i == -1) {
                         if (name.charAt(0) != '/') {

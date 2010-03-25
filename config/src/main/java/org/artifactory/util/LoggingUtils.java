@@ -32,7 +32,7 @@ public abstract class LoggingUtils {
     public static void warnOrDebug(Logger logger, String msg, Throwable e) {
         if (logger.isDebugEnabled()) {
             if (e == null) {
-                e = new RuntimeException();
+                e = new Throwable();
             }
             logger.warn(msg + ".", e);
         } else {

@@ -22,6 +22,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 /**
  * Tests the PathUtils.
@@ -171,4 +172,25 @@ public class PathUtilsTest {
         Assert.assertNull(result);
     }
 
+    public void trimLeadingSlashes() {
+        String result = PathUtils.trimLeadingSlashes("////a/b/c");
+        assertEquals(result, "a/b/c");
+    }
+
+    public void trimTrailingSlashes() {
+        String result = PathUtils.trimTrailingSlashes("a/b/c///");
+        assertEquals(result, "a/b/c");
+    }
+
+    public void trimTrailingSlashesChars() {
+        CharSequence sequence = PathUtils.trimTrailingSlashesChars("a/b/c///");
+        assertNotNull(sequence);
+        assertEquals(sequence.toString(), "a/b/c");
+    }
+
+    public void trimLeadingSlashesChars() {
+        CharSequence sequence = PathUtils.trimLeadingSlashesChars("////a/b/c");
+        assertNotNull(sequence);
+        assertEquals(sequence.toString(), "a/b/c");
+    }
 }

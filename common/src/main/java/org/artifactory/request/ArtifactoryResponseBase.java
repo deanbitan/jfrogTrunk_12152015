@@ -27,8 +27,6 @@ import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.LoggingUtils;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,13 +34,15 @@ import java.io.OutputStream;
 public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryResponseBase.class);
 
-    private Status status = Status.UNSET;
+    private State state = State.UNSET;
+    private int status = HttpStatus.SC_OK;
     private Exception exception;
+    private int contentLength = -1;
 
     public void sendStream(InputStream is) throws IOException {
         OutputStream os = getOutputStream();
-        if (status == Status.UNSET) {
-            status = Status.SUCCESS;
+        if (state == State.UNSET) {
+            state = State.SUCCESS;
         }
         try {
             int bytesCopied = IOUtils.copy(is, os);
@@ -67,26 +67,28 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         }
     }
 
-    public void sendFile(File file) throws IOException {
-        InputStream is = new FileInputStream(file);
-        sendStream(is);
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public int getStatus() {
+        return status;
     }
 
     public void sendInternalError(Exception exception, Logger logger) throws IOException {
         Throwable ioException = ExceptionUtils.getCauseOfTypes(exception, IOException.class);
-        int statusCode;
         String reason;
         if (ioException != null) {
-            statusCode = HttpStatus.SC_NOT_FOUND;
+            status = HttpStatus.SC_NOT_FOUND;
             reason = ioException.getMessage();
-            logger.debug(makeDebugMessage(statusCode, reason));
+            logger.debug(makeDebugMessage(status, reason));
         } else {
-            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+            status = HttpStatus.SC_INTERNAL_SERVER_ERROR;
             reason = exception.getMessage();
-            logger.error(makeDebugMessage(statusCode, reason), exception);
+            logger.error(makeDebugMessage(status, reason), exception);
         }
-        status = Status.FAILURE;
-        sendErrorInternal(statusCode, reason);
+        state = State.FAILURE;
+        sendErrorInternal(status, reason);
     }
 
     public void sendError(int statusCode, String reason, Logger logger) throws IOException {
@@ -98,7 +100,8 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         } else {
             LoggingUtils.warnOrDebug(logger, msg);
         }
-        status = Status.FAILURE;
+        state = State.FAILURE;
+        this.status = statusCode;
         sendErrorInternal(statusCode, reason);
     }
 
@@ -107,7 +110,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     }
 
     public boolean isSuccessful() {
-        return status == Status.SUCCESS;
+        return state == State.SUCCESS;
     }
 
     public Exception getException() {
@@ -115,8 +118,21 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     }
 
     public void setException(Exception exception) {
-        this.status = Status.FAILURE;
+        this.state = State.FAILURE;
         this.exception = exception;
+    }
+
+    public int getContentLength() {
+        return contentLength;
+    }
+
+    public boolean isContentLengthSet() {
+        return contentLength != -1;
+    }
+
+    public void setContentLength(int length) {
+        //Cache the content length locally
+        this.contentLength = length;
     }
 
     protected abstract void sendErrorInternal(int code, String reason) throws IOException;

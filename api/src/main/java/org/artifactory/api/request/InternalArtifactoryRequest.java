@@ -29,6 +29,8 @@ import java.io.InputStream;
  */
 public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
+    private boolean skipJarIndexing;
+
     public InternalArtifactoryRequest(RepoPath repoPath) {
         setRepoPath(repoPath);
     }
@@ -90,7 +92,14 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         return "";
     }
 
+    public void setSkipJarIndexing(boolean skipJarIndexing) {
+        this.skipJarIndexing = skipJarIndexing;
+    }
+
     public String getParameter(String name) {
+        if (SKIP_JAR_INDEXING.equals(name)) {
+            return String.valueOf(skipJarIndexing);
+        }
         return null;
     }
 }

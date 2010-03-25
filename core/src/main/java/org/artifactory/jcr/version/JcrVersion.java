@@ -21,8 +21,10 @@ package org.artifactory.jcr.version;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.version.v150.JcrMetadataConverter;
 import org.artifactory.jcr.version.v150.RepoConfigConverter;
+import org.artifactory.jcr.version.v160.MetadataNamePropertyConverter;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.CompoundVersionDetails;
@@ -38,36 +40,48 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Mostly just for tracking of the jcr verion used and removing the workspaces and index folders on version change
+ * Mostly just for tracking of the jcr version used and removing the workspaces and index folders on version change
  *
  * @author yoavl
  * @author noamt
  */
 public enum JcrVersion implements SubConfigElementVersion {
 
-    v146(ArtifactoryVersion.v130beta5, ArtifactoryVersion.v208, null, null),
-    v150(ArtifactoryVersion.v210, ArtifactoryVersion.v213, new RepoConfigConverter(), new JcrMetadataConverter()),
-    v160(ArtifactoryVersion.v220, ArtifactoryVersion.getCurrent(), null, null);
+    /**
+     * IMPORTANT: before adding a new post-init converter, note that when converting from a version earlier than 1.6,
+     * All post init converters are called -twice-. This occurs since the JCR metadata converter inits the JCR service
+     * (invokes the post init), converts the data, destroys the service and re-inits it (invokes the post init once
+     * more)
+     */
+
+    v146(ArtifactoryVersion.v130beta5, ArtifactoryVersion.v208, null, null, null),
+    v150(ArtifactoryVersion.v210, ArtifactoryVersion.v213, new RepoConfigConverter(), new JcrMetadataConverter(), null),
+    v160(ArtifactoryVersion.v220, ArtifactoryVersion.v221, null, null, new MetadataNamePropertyConverter()),
+    v161(ArtifactoryVersion.v222, ArtifactoryVersion.getCurrent(), null, null, null);
 
     private static final Logger log = LoggerFactory.getLogger(JcrVersion.class);
 
     private final VersionComparator comparator;
     private final ConfigurationConverter<ArtifactoryHome> preInitConverter;
     private final ConfigurationConverter<Session> jcrConverter;
+    private final ConfigurationConverter<JcrSession> postInitConverter;
 
     /**
      * Main constructor
      *
-     * @param from             Start version
-     * @param until            End version
-     * @param preInitConverter Configuration converter required for the specified range
+     * @param from              Start version
+     * @param until             End version
+     * @param preInitConverter  Configuration converter required for the specified range
      * @param jcrConverter
+     * @param postInitConverter Configuration converters that should be called after the JCR service is initialized
      */
     JcrVersion(ArtifactoryVersion from, ArtifactoryVersion until,
             ConfigurationConverter<ArtifactoryHome> preInitConverter,
-            ConfigurationConverter<Session> jcrConverter) {
+            ConfigurationConverter<Session> jcrConverter,
+            ConfigurationConverter<JcrSession> postInitConverter) {
         this.preInitConverter = preInitConverter;
         this.jcrConverter = jcrConverter;
+        this.postInitConverter = postInitConverter;
         this.comparator = new VersionComparator(this, from, until);
     }
 
@@ -114,6 +128,27 @@ public enum JcrVersion implements SubConfigElementVersion {
         }
     }
 
+    /**
+     * Performs the conversions that should be done only after the initialization of the JCR service
+     *
+     * @param unManaged Unmanaged JCR session
+     */
+    public void postInitConvert(JcrSession unManaged) {
+        // First create the list of converters to apply
+        List<ConfigurationConverter<JcrSession>> converters = Lists.newArrayList();
+
+        // All converters of versions above me needs to be executed in sequence
+        JcrVersion[] versions = JcrVersion.values();
+        for (JcrVersion version : versions) {
+            if (version.ordinal() >= ordinal() && version.postInitConverter != null) {
+                converters.add(version.postInitConverter);
+            }
+        }
+
+        for (ConfigurationConverter<JcrSession> converter : converters) {
+            converter.convert(unManaged);
+        }
+    }
 
     public VersionComparator getComparator() {
         return comparator;

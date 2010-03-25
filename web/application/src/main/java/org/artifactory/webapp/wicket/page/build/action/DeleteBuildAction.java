@@ -22,9 +22,9 @@ import org.apache.wicket.RequestCycle;
 import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.request.target.basic.RedirectRequestTarget;
+import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.build.api.Build;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.action.DeleteAction;
@@ -32,7 +32,7 @@ import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 import org.slf4j.Logger;
 
-import java.util.List;
+import java.util.Set;
 
 import static org.artifactory.webapp.wicket.page.build.BuildBrowserConstants.BUILDS;
 
@@ -46,27 +46,27 @@ public class DeleteBuildAction extends ItemAction {
     private static final Logger log = LoggerFactory.getLogger(DeleteBuildAction.class);
 
     private static String ACTION_NAME = "Delete";
-    private Build build;
+    private BasicBuildInfo basicBuildInfo;
 
     /**
      * Main constructor
      *
-     * @param build Build to delete
+     * @param basicBuildInfo Basic build info of build to delete
      */
-    public DeleteBuildAction(Build build) {
+    public DeleteBuildAction(BasicBuildInfo basicBuildInfo) {
         super(ACTION_NAME);
-        this.build = build;
+        this.basicBuildInfo = basicBuildInfo;
     }
 
     @Override
     public void onAction(ItemEvent e) {
         AjaxRequestTarget target = e.getTarget();
         BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
-        String buildName = build.getName();
-        long buildNumber = build.getNumber();
+        String buildName = basicBuildInfo.getName();
+        long buildNumber = basicBuildInfo.getNumber();
 
         try {
-            buildService.deleteBuild(build);
+            buildService.deleteBuild(buildName, buildNumber, basicBuildInfo.getStarted());
             String info = String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber);
             Session.get().info(info);
             AjaxUtils.refreshFeedback(target);
@@ -78,7 +78,7 @@ public class DeleteBuildAction extends ItemAction {
             return;
         }
 
-        List<Build> remainingBuilds = buildService.searchBuildsByName(buildName);
+        Set<BasicBuildInfo> remainingBuilds = buildService.searchBuildsByName(buildName);
 
         if (remainingBuilds.isEmpty()) {
             RequestCycle.get().setRequestTarget(new RedirectRequestTarget(BUILDS));

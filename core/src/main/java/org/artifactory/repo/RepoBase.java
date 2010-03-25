@@ -23,7 +23,6 @@ import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.jcr.md.MetadataService;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.PathMatcher;
@@ -35,15 +34,12 @@ import java.util.List;
 public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
     private T descriptor;
     private InternalRepositoryService repositoryService;
-    private MetadataService metadataService;
 
     protected List<String> includes;
     protected List<String> excludes;
 
     protected RepoBase(InternalRepositoryService repositoryService) {
         this.repositoryService = repositoryService;
-        //The metadata service was initialized before so we can locate it at this stage
-        this.metadataService = InternalContextHelper.get().beanForType(MetadataService.class);
         this.excludes = PathMatcher.getDefaultExcludes();
     }
 
@@ -65,10 +61,6 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
 
     public InternalRepositoryService getRepositoryService() {
         return repositoryService;
-    }
-
-    public final MetadataService getMetadataService() {
-        return metadataService;
     }
 
     public String getKey() {

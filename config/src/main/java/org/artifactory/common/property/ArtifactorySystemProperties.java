@@ -81,7 +81,7 @@ public class ArtifactorySystemProperties {
     public static ArtifactorySystemProperties get() {
         ArtifactorySystemProperties props = current.get();
         if (props == null) {
-            throw new NullPointerException("Artifactory system properties are not bound to the current thread");
+            throw new IllegalStateException("Artifactory system properties are not bound to the current thread");
         }
         return props;
     }

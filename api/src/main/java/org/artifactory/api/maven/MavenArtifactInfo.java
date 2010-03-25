@@ -18,7 +18,8 @@
 
 package org.artifactory.api.maven;
 
-import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.artifact.UnitInfo;
+import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.log.LoggerFactory;
@@ -29,33 +30,48 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 
 /**
- * User: freds Date: Aug 3, 2008 Time: 11:39:07 AM
+ * Artifact info for Maven artifacts. Holds the groupId, artifactId, version, classifier and type of the Maven artifact
+ * to be deployed, if a certain attribute cannot be found it will be marked as NA. You must have at least groupId,
+ * artifactId and version for a valid Maven artifact.
+ *
+ * @author Tomer Cohen
  */
-public class MavenArtifactInfo extends MavenUnitInfo {
+public class MavenArtifactInfo implements UnitInfo {
     private static final Logger log = LoggerFactory.getLogger(MavenArtifactInfo.class);
-
     public static final String ROOT = "artifactory-maven-artifact";
+    public static final String POM = ContentType.mavenPom.getDefaultExtension();
+    public static final String JAR = ContentType.javaArchive.getDefaultExtension();
+    public static final String XML = ContentType.applicationXml.getDefaultExtension();
 
+    private String artifactId;
+    private String groupId;
+    private String version;
     private String classifier;
     private String type;
 
-    private String path;
-    private boolean autoCalculatePath = true;
-    private boolean builtFromPomInfo;
+    public MavenArtifactInfo(String groupId, String artifactId, String version) {
+        this(groupId, artifactId, version, NA, NA);
+    }
 
-    /**
-     * String representation of the pom.xml The maven Model class is not used because it isn't Serializable.
-     */
-    private String modelAsString;
+    public MavenArtifactInfo(MavenArtifactInfo copy) {
+        this(copy.groupId, copy.artifactId, copy.version, copy.classifier, copy.type);
+    }
 
     public MavenArtifactInfo() {
-        super(NA, NA, NA);
-        this.classifier = NA;
-        this.type = JAR;
+        this(NA, NA, NA, NA, JAR);
     }
 
     public MavenArtifactInfo(String groupId, String artifactId, String version, String classifier, String type) {
-        super(groupId, artifactId, version);
+        if (groupId == null || artifactId == null) {
+            throw new IllegalArgumentException("Cannot create a maven unit with null groupId or ArtifactId");
+        }
+        this.groupId = groupId;
+        this.artifactId = artifactId;
+        if (PathUtils.hasText(version)) {
+            this.version = version;
+        } else {
+            this.version = NA;
+        }
         if (PathUtils.hasText(classifier)) {
             this.classifier = classifier;
         } else {
@@ -68,10 +84,48 @@ public class MavenArtifactInfo extends MavenUnitInfo {
         }
     }
 
-    public MavenArtifactInfo(MavenArtifactInfo copy) {
-        super(copy);
-        this.classifier = copy.classifier;
-        this.type = copy.type;
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public String getArtifactId() {
+        return artifactId;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public void setArtifactId(String artifactId) {
+        this.artifactId = artifactId;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public boolean hasGroupId() {
+        return groupId != null && !NA.equals(groupId);
+    }
+
+    public boolean hasArtifactId() {
+        return artifactId != null && !NA.equals(artifactId);
+    }
+
+    public boolean hasVersion() {
+        return version != null && !NA.equals(version);
+    }
+
+    public boolean isMavenArtifact() {
+        return true;
+    }
+
+    public boolean isSnapshot() {
+        return MavenNaming.isVersionSnapshot(version);
     }
 
     public String getClassifier() {
@@ -97,50 +151,12 @@ public class MavenArtifactInfo extends MavenUnitInfo {
         this.type = type;
     }
 
-    @Override
     public boolean isValid() {
-        if (!isAutoCalculatePath()) {
-            return !StringUtils.isEmpty(path);
-        }
-        return super.isValid() && hasVersion();
+        return groupId != null && !NA.equals(groupId) && artifactId != null && !NA.equals(artifactId) && hasVersion();
     }
 
-    @Override
     public String getPath() {
-        if (autoCalculatePath) {
-            return getMavenPath();
-        } else {
-            if (path == null) {
-                path = getMavenPath();
-            }
-            return path;
-        }
-    }
-
-    public void setPath(String path) {
-        if (!autoCalculatePath) {
-            this.path = path;
-        }
-    }
-
-    private String getMavenPath() {
-        String mavenPath = addPath(new StringBuilder()).toString();
-        return mavenPath;
-    }
-
-    @Override
-    public String getXml() {
-        if (!isValid()) {
-            return "<error>Invalid Maven Artifact</error>";
-        }
-        XmlBuilder builder = addBaseTags(new XmlBuilder());
-        if (hasClassifier()) {
-            builder.wrapInTag(classifier, "classifier");
-        }
-        if (!JAR.equals(type)) {
-            builder.wrapInTag(type, "type");
-        }
-        return builder.toString();
+        return buildMavenPath();
     }
 
     @Override
@@ -154,27 +170,33 @@ public class MavenArtifactInfo extends MavenUnitInfo {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MavenArtifactInfo)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
-        MavenArtifactInfo info = (MavenArtifactInfo) o;
-        return !(classifier != null ? !classifier.equals(info.classifier) : info.classifier != null) &&
-                type.equals(info.type);
+
+        MavenArtifactInfo that = (MavenArtifactInfo) o;
+
+        return artifactId.equals(that.artifactId) && classifier.equals(that.classifier) &&
+                groupId.equals(that.groupId) && type.equals(that.type) &&
+                version.equals(that.version);
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (classifier != null ? classifier.hashCode() : 0);
+        result = 31 * result + groupId.hashCode();
+        result = 31 * result + artifactId.hashCode();
+        result = 31 * result + version.hashCode();
+        result = 31 * result + classifier.hashCode();
         result = 31 * result + type.hashCode();
         return result;
     }
 
     public static MavenArtifactInfo fromRepoPath(RepoPath repoPath) {
-        String groupId, artifactId, version, type = MavenUnitInfo.NA, classifier = MavenUnitInfo.NA;
+        String groupId, artifactId, version, type = MavenArtifactInfo.NA, classifier = MavenArtifactInfo.NA;
 
         String path = repoPath.getPath();
         String name = repoPath.getName();
@@ -187,7 +209,6 @@ public class MavenArtifactInfo extends MavenUnitInfo {
             pathElements.add(tokenizer.nextToken());
         }
         boolean metaData = NamingUtils.isMetadata(name);
-        boolean checksum = NamingUtils.isChecksum(name);
         //Sanity check, we need groupId, artifactId and version
         if (pathElements.size() < 3) {
             log.debug("Cannot build MavenArtifactInfo from '{}'. The groupId, artifactId and version are unreadable.",
@@ -199,7 +220,7 @@ public class MavenArtifactInfo extends MavenUnitInfo {
         int pos = pathElements.size() - 2;  // one before the last path element
         version = pathElements.get(pos--);
         artifactId = pathElements.get(pos--);
-        StringBuffer groupIdBuff = new StringBuffer();
+        StringBuilder groupIdBuff = new StringBuilder();
         for (; pos >= 0; pos--) {
             if (groupIdBuff.length() != 0) {
                 groupIdBuff.insert(0, '.');
@@ -207,8 +228,8 @@ public class MavenArtifactInfo extends MavenUnitInfo {
             groupIdBuff.insert(0, pathElements.get(pos));
         }
         groupId = groupIdBuff.toString();
-        //Extract the type and classifier except for hashes and metadata files
-        if (!metaData && !checksum) {
+        //Extract the type and classifier except for metadata files
+        if (!metaData) {
             boolean snapshot = MavenNaming.isVersionSnapshot(version);
             //Extract the type
             String versionInName = version;
@@ -231,24 +252,12 @@ public class MavenArtifactInfo extends MavenUnitInfo {
     }
 
     /**
-     * @return The artifact's pom as a String. Might be null.
+     * Builds a maven path according to the artifact's GAVC.
+     *
+     * @return The maven path according the artifact's GAVC.
      */
-    public String getModelAsString() {
-        return modelAsString;
-    }
-
-    public void setModelAsString(String modelAsString) {
-        this.modelAsString = modelAsString;
-    }
-
-    @Override
-    public void invalidate() {
-        super.invalidate();
-        setClassifier(null);
-        setType(JAR);
-    }
-
-    protected StringBuilder addPath(StringBuilder path) {
+    private String buildMavenPath() {
+        StringBuilder path = new StringBuilder();
         if (isValid()) {
             addBasePath(path);
             path.append("/").append(getArtifactId()).append("-").append(getVersion());
@@ -257,29 +266,15 @@ public class MavenArtifactInfo extends MavenUnitInfo {
             }
             path.append(".").append(type);
         }
-        return path;
+        return path.toString();
     }
 
-
-    public boolean isAutoCalculatePath() {
-        return autoCalculatePath;
-    }
-
-    public void setAutoCalculatePath(boolean autoCalculatePath) {
-        this.autoCalculatePath = autoCalculatePath;
-        if (!autoCalculatePath) {
-            //Initialize path with the latest version.
-            // Set dummy path to be valid
-            path = "unknown";
-            path = getMavenPath();
+    private void addBasePath(StringBuilder path) {
+        if (isValid()) {
+            path.append(groupId.replace('.', '/')).append("/").append(artifactId);
+            if (hasVersion()) {
+                path.append("/").append(version);
+            }
         }
-    }
-
-    public boolean isBuiltFromPomInfo() {
-        return builtFromPomInfo;
-    }
-
-    public void setBuiltFromPomInfo(boolean builtFromPomInfo) {
-        this.builtFromPomInfo = builtFromPomInfo;
     }
 }

@@ -18,12 +18,12 @@
 
 package org.artifactory.convert;
 
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ResourceUtils;
 import org.artifactory.version.XmlConverterUtils;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 

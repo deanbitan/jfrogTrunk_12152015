@@ -28,12 +28,12 @@ import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.jcr.JcrConfResourceLoader;
 import org.artifactory.jcr.version.v150.xml.RepoXmlConverter;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
 import org.artifactory.version.XmlConverterUtils;
 import org.artifactory.version.converter.ConfigurationConverter;
 import org.jdom.Document;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -66,7 +66,7 @@ public class RepoConfigConverter implements ConfigurationConverter<ArtifactoryHo
         JcrConfResourceLoader currentJcrConf = null;
         try {
             currentJcrConf = new JcrConfResourceLoader("repo.xml");
-            String currentConf = IOUtils.toString(currentJcrConf.getInputStream());
+            String currentConf = IOUtils.toString(currentJcrConf.getInputStream(), "utf-8");
             int begin = currentConf.indexOf("<SearchIndex ");
             String endTag = "SearchIndex>";
             int end = currentConf.lastIndexOf(endTag);

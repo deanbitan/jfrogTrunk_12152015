@@ -128,6 +128,38 @@ public class ZipUtils {
     }
 
     /**
+     * Searches for an entry inside the zip stream by entry path. If there are alternative extensions, will also look
+     * for entry with alternative extension. The search stops reading the stream when the entry is found, so calling
+     * read on the stream will read the returned entry.
+     *
+     * @param jis                   The zip input stream
+     * @param entryPath             The entry path to search for
+     * @param alternativeExtensions List of alternative file extensions to try if the main entry path is not found.
+     * @return The entry if found, null otherwise
+     * @throws IOException On failure to read the stream
+     */
+    public static ZipEntry locateEntry(ZipInputStream jis, String entryPath, List<String> alternativeExtensions)
+            throws IOException {
+        ZipEntry zipEntry;
+        while ((zipEntry = jis.getNextEntry()) != null) {
+            String zipEntryName = zipEntry.getName();
+            if (zipEntryName.equals(entryPath)) {
+                return zipEntry;
+            } else if (alternativeExtensions != null) {
+                String basePath = PathUtils.stripExtension(entryPath);
+                for (String alternativeExtension : alternativeExtensions) {
+                    String alternativeSourcePath = basePath + "." + alternativeExtension;
+                    if (zipEntryName.equals(alternativeSourcePath)) {
+                        return zipEntry;
+                    }
+                }
+            }
+
+        }
+        return null;
+    }
+
+    /**
      * Extracts the given archive file into the given directory
      *
      * @param sourceArchive        Archive to extract

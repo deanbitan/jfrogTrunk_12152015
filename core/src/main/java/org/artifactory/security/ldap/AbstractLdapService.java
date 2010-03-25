@@ -21,8 +21,8 @@ package org.artifactory.security.ldap;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ldap.AuthenticationException;
 import org.springframework.ldap.BadLdapGrammarException;
 import org.springframework.ldap.CommunicationException;
@@ -41,11 +41,10 @@ import static org.apache.commons.lang.StringUtils.isBlank;
  * @author Tomer Cohen
  */
 public class AbstractLdapService {
-    @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(AbstractLdapService.class);
 
 
-    protected void handleException(Exception e, StatusHolder status, String username) {
+    protected void handleException(Exception e, StatusHolder status, String username, boolean isSearchAndBindActive) {
         log.debug("LDAP connection test failed with exception", e);
         if (e instanceof CommunicationException) {
             status.setError("Failed connecting to the server (probably wrong url or port)", e, log);
@@ -56,8 +55,15 @@ public class AbstractLdapService {
             status.setError("Server failed to parse the request: " +
                     ((InvalidNameException) e).getMostSpecificCause().getMessage(), e, log);
         } else if (e instanceof AuthenticationException) {
-            status.setError("Authentication failed. Probably a wrong manager dn or manager password", e,
-                    log);
+            if (isSearchAndBindActive) {
+                status.setWarning("LDAP authentication failed for " + username +
+                        ". Note: you have configured direct user binding " +
+                        "and manager-based search, which are usually mutually exclusive. For AD leave the User DN " +
+                        "Pattern field empty.", e, log);
+            } else {
+                status.setError("Authentication failed. Probably a wrong manager dn or manager password", e,
+                        log);
+            }
         } else if (e instanceof BadCredentialsException) {
             status.setError("Failed to authenticate user " + username, e, log);
         } else if (e instanceof BadLdapGrammarException) {

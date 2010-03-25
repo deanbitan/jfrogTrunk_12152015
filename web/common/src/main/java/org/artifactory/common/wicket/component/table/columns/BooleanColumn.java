@@ -44,9 +44,13 @@ public class BooleanColumn extends PropertyColumn {
         label.setEscapeModelStrings(false);
         item.add(label);
 
-        item.add(new CssClass("BooleanColumn"));
         if (value != null) {
             item.add(new CssClass(value.toString().toLowerCase()));
         }
+    }
+
+    @Override
+    public String getCssClass() {
+        return "BooleanColumn";
     }
 }

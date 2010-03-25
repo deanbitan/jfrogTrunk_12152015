@@ -19,8 +19,8 @@
 package org.artifactory.webapp.wicket.page.build.tabs.compare;
 
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
-import org.artifactory.build.api.Module;
 import org.artifactory.common.wicket.util.ListPropertySorter;
+import org.jfrog.build.api.Module;
 
 import java.util.Collections;
 import java.util.Comparator;

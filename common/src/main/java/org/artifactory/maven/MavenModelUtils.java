@@ -20,19 +20,16 @@ package org.artifactory.maven;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor;
 import org.apache.ivy.core.module.id.ModuleRevisionId;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.metadata.ArtifactMetadata;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.io.xpp3.MetadataXpp3Reader;
 import org.apache.maven.artifact.repository.metadata.io.xpp3.MetadataXpp3Writer;
-import org.apache.maven.artifact.transform.SnapshotTransformation;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
-import org.apache.maven.project.artifact.ProjectArtifactMetadata;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
@@ -46,11 +43,20 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.slf4j.Logger;
-import org.springframework.util.StringUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
@@ -59,18 +65,22 @@ import java.util.jar.JarInputStream;
  */
 public class MavenModelUtils {
     private static final Logger log = LoggerFactory.getLogger(MavenModelUtils.class);
+    private static final String UTF8 = "utf-8";
+    private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
+    private static final String UTC_TIMESTAMP_PATTERN = "yyyyMMdd.HHmmss";
+
 
     public static void validatePomTargetPath(InputStream in, String relPath, boolean suppressPomConsistencyChecks)
             throws IOException {
         MavenXpp3Reader reader = new MavenXpp3Reader();
         try {
-            Model model = reader.read(new InputStreamReader(in, "utf-8"));
+            Model model = reader.read(new InputStreamReader(in, UTF8));
             String groupId = model.getGroupId();
-            if (StringUtils.hasLength(groupId)) {
+            if (StringUtils.isNotBlank(groupId)) {
                 //Do not verify if the pom's groupid does not exist (inherited)
                 String modelVersion = model.getVersion();
                 //Version may come from the parent
-                if (!StringUtils.hasLength(modelVersion)) {
+                if (StringUtils.isBlank(modelVersion)) {
                     Parent parent = model.getParent();
                     if (parent != null) {
                         modelVersion = parent.getVersion();
@@ -82,7 +92,7 @@ public class MavenModelUtils {
                 String pathPrefix = null;
                 if (snapshot && !versionSnapshot) {
                     pathPrefix = groupId.replace('.', '/') + "/" + model.getArtifactId() + "/";
-                } else if (StringUtils.hasLength(modelVersion)) {
+                } else if (StringUtils.isNotBlank(modelVersion)) {
                     pathPrefix = groupId.replace('.', '/') + "/" + model.getArtifactId() + "/" +
                             modelVersion;
                 }
@@ -106,7 +116,7 @@ public class MavenModelUtils {
             if (log.isDebugEnabled()) {
                 try {
                     in.reset();
-                    InputStreamReader isr = new InputStreamReader(in, "utf-8");
+                    InputStreamReader isr = new InputStreamReader(in, UTF8);
                     String s = readString(isr);
                     log.debug("Could not parse bad POM for '{}'. Bad POM content:\n{}\n", relPath, s);
                 } catch (Exception ex) {
@@ -117,16 +127,22 @@ public class MavenModelUtils {
         }
     }
 
-    public static String dateToTimestamp(Date date) {
-        return SnapshotTransformation.getUtcDateFormatter().format(date);
+    public static String dateToUniqueSnapshotTimestamp(Date date) {
+        return getUtcDateFormatter().format(date);
     }
 
-    public static Date timestampToDate(String timestamp) {
+    public static Date uniqueSnapshotToUtc(String timestamp) {
         try {
-            return SnapshotTransformation.getUtcDateFormatter().parse(timestamp);
+            return getUtcDateFormatter().parse(timestamp);
         } catch (ParseException e) {
             throw new RuntimeException("Failed to transfer timestamp to date.", e);
         }
+    }
+
+    private static DateFormat getUtcDateFormatter() {
+        DateFormat utcDateFormatter = new SimpleDateFormat(UTC_TIMESTAMP_PATTERN);
+        utcDateFormatter.setTimeZone(UTC_TIME_ZONE);
+        return utcDateFormatter;
     }
 
     /**
@@ -148,7 +164,7 @@ public class MavenModelUtils {
      * @throws java.io.IOException If the input stream is not a valid maven metadata
      */
     public static Metadata toMavenMetadata(InputStream metadataStream) throws IOException {
-        return toMavenMetadata(new InputStreamReader(metadataStream, "utf-8"));
+        return toMavenMetadata(new InputStreamReader(metadataStream, UTF8));
     }
 
     /**
@@ -182,22 +198,18 @@ public class MavenModelUtils {
         return stringWriter.toString();
     }
 
-    public static Model getMavenModel(MavenArtifactInfo artifactInfo) {
-        //Check if we already have a string model for the pom (set from the jar internal pom or during regular pom
-        //deployment)
-        String originalPomAsString = artifactInfo.getModelAsString();
-        //Create the model
-        Model model;
-        if (originalPomAsString == null) {
-            //Build the model based on user provided values
-            model = generateDefaultPom(artifactInfo);
-        } else {
-            //Build the model based on the string and pacth it with user values
-            model = stringToMavenModel(originalPomAsString);
-            model.setGroupId(artifactInfo.getGroupId());
-            model.setArtifactId(artifactInfo.getArtifactId());
-            model.setVersion(artifactInfo.getVersion());
-        }
+    /**
+     * @param artifactInfo Maven artifact info to build the model from
+     * @return A maven {@link Model} matching the values of the maven artifact info.
+     */
+    public static Model toMavenModel(MavenArtifactInfo artifactInfo) {
+        Model model = new Model();
+        model.setModelVersion("4.0.0");
+        model.setGroupId(artifactInfo.getGroupId());
+        model.setArtifactId(artifactInfo.getArtifactId());
+        model.setVersion(artifactInfo.getVersion());
+        model.setPackaging(artifactInfo.getType());
+        model.setDescription("Artifactory auto generated POM");
         return model;
     }
 
@@ -222,28 +234,25 @@ public class MavenModelUtils {
         }
     }
 
-    static Model generateDefaultPom(MavenArtifactInfo artifactInfo) {
-        Model model = new Model();
-        model.setModelVersion("4.0.0");
-        model.setGroupId(artifactInfo.getGroupId());
-        model.setArtifactId(artifactInfo.getArtifactId());
-        model.setVersion(artifactInfo.getVersion());
-        model.setPackaging(artifactInfo.getType());
-        model.setDescription("Artifactory auto generated POM");
-        return model;
-    }
-
-    public static void fillArtifactInfoFromPomModel(InputStream is, MavenArtifactInfo artifactInfo)
+    /**
+     * @param pomInputStream Input stream of the pom content.
+     * @return Maven artifact info built from the pom data.
+     */
+    public static MavenArtifactInfo mavenModelToArtifactInfo(InputStream pomInputStream)
             throws IOException, XmlPullParserException {
         MavenXpp3Reader reader = new MavenXpp3Reader();
-        InputStreamReader pomStream = new InputStreamReader(is, "utf-8");
+        InputStreamReader pomStream = new InputStreamReader(pomInputStream, UTF8);
         Model model = reader.read(pomStream);
+        return mavenModelToArtifactInfo(model);
+    }
 
+    public static MavenArtifactInfo mavenModelToArtifactInfo(Model model) {
         Parent parent = model.getParent();
         String groupId = model.getGroupId();
         if (groupId == null && parent != null) {
             groupId = parent.getGroupId();
         }
+        MavenArtifactInfo artifactInfo = new MavenArtifactInfo();
         artifactInfo.setGroupId(groupId);
         artifactInfo.setArtifactId(model.getArtifactId());
         String version = model.getVersion();
@@ -251,9 +260,7 @@ public class MavenModelUtils {
             version = parent.getVersion();
         }
         artifactInfo.setVersion(version);
-        String pomAsString = mavenModelToString(model);
-        artifactInfo.setModelAsString(pomAsString);
-        artifactInfo.setBuiltFromPomInfo(true);
+        return artifactInfo;
     }
 
     /**
@@ -263,73 +270,48 @@ public class MavenModelUtils {
      * @return MavenArtifactInfo object containing gathered information
      */
     public static MavenArtifactInfo artifactInfoFromFile(File file) {
-        MavenArtifactInfo result = new MavenArtifactInfo();
-        gatherInfoFromFile(file, result);
-        gatherInfoFromMatching(file, result);
-        gatheringFallback(file, result);
+        MavenArtifactInfo result;
+        result = attemptToBuildInfoFromModel(file);
+        if (result != null) {
+            // built from model - most accurate, we're done
+            return result;
+        }
+
+        // no info from a model, try to guess as good as possible based on the file name and path
+        result = MavenNaming.getInfoByMatching(file.getName());
+        fillMissingRequiredFields(file, result);
         return result;
     }
 
-    public static File addPomFileMetadata(File uploadedFile, Artifact artifact, String pomAsString,
-            File tempUploadsDir) {
-        //Create the pom file in the uploads dir
-        String pomFileName = uploadedFile.getName() + "." + MavenArtifactInfo.POM;
-        //Create the upload folder every time (e.g., in case it has been reaped)
-        File pomFile = new File(tempUploadsDir, pomFileName);
-        //Write the pom to the file
-        OutputStreamWriter osw = null;
-        try {
-            osw = new OutputStreamWriter(new FileOutputStream(pomFile), "utf-8");
-            IOUtils.write(pomAsString, osw);
-        } catch (Exception e) {
-            String msg = "Cannot save Pom file " + pomFile.getName() + ". Cause: " + e.getMessage();
-            log.debug(msg, e);
-            throw new RepositoryRuntimeException(msg, e);
-        } finally {
-            IOUtils.closeQuietly(osw);
-        }
-        //Add project metadata that will trigger additional deployment of the pom file
-        if (artifact != null) {
-            ArtifactMetadata metadata = new ProjectArtifactMetadata(artifact, pomFile);
-            artifact.addMetadata(metadata);
-        }
-        return pomFile;
-    }
-
     /**
-     * Gathers maven artifact information from the given file in several different methods (to handle each kind of
-     * file)
+     * Attempt to gather maven artifact information from the given file based on a model (pom, ivy etc.).
      *
-     * @param file   Uploaded file to gather info from
-     * @param result MavenArtifactInfo object to append info to
+     * @param file Uploaded file to gather info from
+     * @return Maven artifact info based on the model, null if model not found or couldn't be parsed
      */
-    private static void gatherInfoFromFile(File file, MavenArtifactInfo result) {
-        final ContentType ct = NamingUtils.getContentType(file);
+    private static MavenArtifactInfo attemptToBuildInfoFromModel(File file) {
+        MavenArtifactInfo result = null;
+        ContentType ct = NamingUtils.getContentType(file);
         String fileName = file.getName();
         if (ct.isJarVariant()) {
             //File is a jar variant
-            result.setType(PathUtils.getExtension(fileName));
-            gatherInfoFromJarFile(file, result);
+            result = gatherInfoFromJarFile(file);
         } else if (MavenNaming.isClientOrServerPom(fileName)) {
-            gatherInfoFromPomFile(file, result);
+            result = gatherInfoFromPomFile(file);
         } else if (IvyNaming.isIvyFileName(fileName)) {
-            gatherInfoFromIvyFile(file, result);
-        } else {
-            //Other extension
-            String extension = PathUtils.getExtension(fileName);
-            if (extension != null) {
-                result.setType(extension);
-            }
+            result = gatherInfoFromIvyFile(file);
         }
+        return result;
     }
 
     /**
      * Gathers maven artifact information which was (or was not) managed to gather from the given Jar file
      *
-     * @param file   Jar file to gather info from
-     * @param result MavenArtifactInfo object to append info to
+     * @param file Jar file to gather info from
      */
-    private static void gatherInfoFromJarFile(File file, MavenArtifactInfo result) {
+
+    private static MavenArtifactInfo gatherInfoFromJarFile(File file) {
+        MavenArtifactInfo artifactInfo = null;
         JarInputStream jis = null;
         JarEntry entry;
         try {
@@ -341,7 +323,8 @@ public class MavenModelUtils {
             if (entry != null) {
                 try {
                     //Read the uncompressed content
-                    fillArtifactInfoFromPomModel(jis, result);
+                    artifactInfo = mavenModelToArtifactInfo(jis);
+                    artifactInfo.setType(PathUtils.getExtension(file.getPath()));
                 } catch (Exception e) {
                     log.warn("Failed to read maven model from '" + entry.getName() + "'. Cause: " + e.getMessage() +
                             ".", e);
@@ -352,6 +335,7 @@ public class MavenModelUtils {
         } finally {
             IOUtils.closeQuietly(jis);
         }
+        return artifactInfo;
     }
 
     /**
@@ -383,67 +367,67 @@ public class MavenModelUtils {
     }
 
     /**
+     * @param file The file from which to try to extract the POM entry from.
+     * @return The POM from the JAR in its String representation.
+     */
+    public static String getPomFileAsStringFromJar(File file) {
+        JarEntry pomEntry;
+        JarInputStream inputStream = null;
+        try {
+            inputStream = new JarInputStream(new FileInputStream(file));
+            pomEntry = getPomFile(inputStream);
+            if (pomEntry != null) {
+                return IOUtils.toString(inputStream);
+            }
+        } catch (IOException e) {
+            log.warn("Unable to read JAR to extract the POM from it");
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+        }
+        return null;
+    }
+
+    /**
      * Gathers maven artifact information which was (or was not) managed to gather from the given pom file
      *
-     * @param file   Jar file to gather info from
-     * @param result MavenArtifactInfo object to append info to
+     * @param file Jar file to gather info from
+     * @return MavenArtifactInfo object to append info to, null if pom parsing failed
      */
-    private static void gatherInfoFromPomFile(File file, MavenArtifactInfo result) {
+    private static MavenArtifactInfo gatherInfoFromPomFile(File file) {
+        MavenArtifactInfo result = null;
+        FileInputStream in = null;
         try {
-            FileInputStream in = new FileInputStream(file);
-            try {
-                fillArtifactInfoFromPomModel(in, result);
-            } finally {
-                IOUtils.closeQuietly(in);
-            }
+            in = new FileInputStream(file);
+            result = mavenModelToArtifactInfo(in);
             result.setType(MavenArtifactInfo.POM);
         } catch (Exception e) {
             log.debug("Failed to read maven model from '{}'. Cause: {}.", file.getName(), e.getMessage());
-            result.setType(MavenArtifactInfo.XML);
+        } finally {
+            IOUtils.closeQuietly(in);
         }
+        return result;
     }
 
-    private static void gatherInfoFromIvyFile(File file, MavenArtifactInfo result) {
-        result.setType(MavenArtifactInfo.XML);
+    private static MavenArtifactInfo gatherInfoFromIvyFile(File file) {
+        MavenArtifactInfo result = null;
         try {
             IvyService ivyService = ContextHelper.get().beanForType(IvyService.class);
             ModuleDescriptor ivyDescriptor = ivyService.parseIvyFile(file);
             if (ivyDescriptor != null) {
                 ModuleRevisionId ivyModule = ivyDescriptor.getModuleRevisionId();
+                result = new MavenArtifactInfo();
                 result.setGroupId(ivyModule.getOrganisation());
                 result.setArtifactId(ivyModule.getName());
                 result.setVersion(ivyModule.getRevision());
                 result.setClassifier("ivy");
+                result.setType(MavenArtifactInfo.XML);
             } else {
                 log.debug("Failed to read ivy model from '{}'", file.getName());
             }
         } catch (Exception e) {
             log.debug("Failed to read ivy model from '{}'. Cause: {}.", file.getName(), e.getMessage());
         }
-    }
-
-    /**
-     * Gathers maven artifact information from the given file in using maven naming matching
-     *
-     * @param file   Uploaded file to gather info from
-     * @param result MavenArtifactInfo object to append info to
-     */
-    private static void gatherInfoFromMatching(File file, MavenArtifactInfo result) {
-        //Try to match file name
-        MavenArtifactInfo matchingInfo = MavenNaming.getInfoByMatching(file.getName());
-
-        //Append any info if needed and existing
-        if (!result.hasArtifactId() && matchingInfo.hasArtifactId()) {
-            result.setArtifactId(matchingInfo.getArtifactId());
-        }
-        if (!result.hasVersion() && matchingInfo.hasVersion()) {
-            result.setVersion(matchingInfo.getVersion());
-        }
-        if (!result.isBuiltFromPomInfo()) {
-            if (!result.hasClassifier() && matchingInfo.hasClassifier()) {
-                result.setClassifier(matchingInfo.getClassifier());
-            }
-        }
+        return result;
     }
 
     /**
@@ -452,7 +436,7 @@ public class MavenModelUtils {
      * @param file   Uploaded file to gather info from
      * @param result MavenArtifactInfo object to append info to
      */
-    private static void gatheringFallback(File file, MavenArtifactInfo result) {
+    private static void fillMissingRequiredFields(File file, MavenArtifactInfo result) {
         String fileName = file.getName();
         String baseFileName = FilenameUtils.getBaseName(fileName);
 
@@ -466,6 +450,13 @@ public class MavenModelUtils {
         }
         if (MavenArtifactInfo.NA.equals(result.getVersion())) {
             result.setVersion(baseFileName);
+        }
+
+        // fill the type if the extension is not null and the result holds the default (jar) or is NA
+        String extension = PathUtils.getExtension(fileName);
+        if (extension != null &&
+                (MavenArtifactInfo.NA.equals(result.getType()) || MavenArtifactInfo.JAR.equals(result.getType()))) {
+            result.setType(extension);
         }
     }
 

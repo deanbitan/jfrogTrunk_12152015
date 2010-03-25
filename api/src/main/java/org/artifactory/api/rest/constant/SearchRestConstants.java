@@ -29,13 +29,14 @@ public interface SearchRestConstants {
     String PATH_ARCHIVE = "archive";
     String PATH_GAVC = "gavc";
     String PATH_PROPERTY = "prop";
-    String PATH_METADATA = "xpath";
+    String PATH_XPATH = "xpath";
     String PATH_USAGE_SINCE = "usage";
     String PATH_CREATED_IN_RANGE = "creation";
 
     //Common query params
     String PARAM_REPO_TO_SEARCH = "repos";
     String PARAM_SEARCH_NAME = "name";
+    String PARAM_NO_LIMIT = "noLimit";
 
     //Gavc query params
     String PARAM_GAVC_GROUP_ID = "g";
@@ -50,7 +51,7 @@ public interface SearchRestConstants {
     String PARAM_METADATA_VALUE = "val";
 
     //Downloaded Since query param
-    String PARAM_SEARCH_SINCE = "since";
+    String PARAM_SEARCH_NOT_USED_SINCE = "notUsedSince";
 
     //Modified in range query params
     String PARAM_IN_RANGE_FROM = "from";

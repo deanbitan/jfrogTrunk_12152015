@@ -18,11 +18,9 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.2"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.2"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.3"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.3"
            elementFormDefault="qualified">
-
-    <!-- TODO: storage type -->
 
     <xs:element name="config" type="CentralConfigType"/>
 
@@ -185,6 +183,30 @@
                                 <xs:enumeration value="deployer"/>
                                 <xs:enumeration value="non-unique"/>
                                 <xs:enumeration value="unique"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="localRepoChecksumPolicyType" default="client-checksums" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Checksum policy determines how Artifactory behaves when a client checksum for a deployed
+                                resource is missing or conflicts with the locally calculated checksum (bad checksum).
+                                Checksum checking effectively verifies the integrity of the deployed resource.
+                                The options are:
+                                (1) Verify against client checksums (default) - Until a client has sent a valid checksum
+                                for a deployed artifact that matches the server's locally calculated checksum, the
+                                artifact will not be available and will return 404 (not found). If the client has sent a
+                                checksum that conflicts with the one calculated on the server a 409 (conflict) will be
+                                returned until a valid checksum is deployed.
+                                (2) Trust server generated checksums - Do not verify against checksums sent by clients
+                                and trust the ones store server's locally calculated checksums. An uploaded artifact
+                                will be available for consumption immediately, but integrity might be compromised.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="client-checksums"/>
+                                <xs:enumeration value="server-generated-checksums"/>
                             </xs:restriction>
                         </xs:simpleType>
                     </xs:element>
@@ -410,9 +432,11 @@
                     <xs:element name="storeArtifactsLocally" type="xs:boolean" default="true" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                Whether the repository should cache artifacts locally. Leave as
-                                'true', as direct-to-client streaming has not been thoroughly tested
-                                yet.
+                                Whether the repository should store cached artifacts locally or not. When not storing
+                                artifacts locally direct repository-to-client streaming is used. This can be useful for
+                                multi-server setups over a high-speed LAN, with one Artifactory caching certain data
+                                on a central storage and streaming it directly to satellite pass-though Artifactory
+                                servers.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -458,7 +482,7 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
-                    <xs:element name="checksumPolicyType" default="generate-if-absent" minOccurs="0">
+                    <xs:element name="remoteRepoChecksumPolicyType" default="generate-if-absent" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
                                 Checksum policy determines how Artifactory behaves when a checksum for a remote resource
@@ -511,6 +535,14 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
+                    <xs:element name="synchronizeProperties" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Whether to synchronize properties of artifacts retrieved from a remote instance of
+                                Artifactory.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -555,9 +587,11 @@
                                 minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                (1) Discard Active References - Will removes repository elements that are declared directly
+                                (1) Discard Active References - Will removes repository elements that are declared
+                                directly
                                 under project or under a profile in the same pom that is activeByDefault.
-                                (2)Discard Any References - Will removes all repository elements regardless of whether they are
+                                (2)Discard Any References - Will removes all repository elements regardless of whether
+                                they are
                                 included in an active profile or not.
                                 (3)Nothing - Don't removes any repository elements declared in the POM.
                             </xs:documentation>

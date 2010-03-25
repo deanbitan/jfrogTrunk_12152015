@@ -44,10 +44,10 @@ import java.util.List;
 /**
  * @author Noam Tenne
  */
-@Path(TrafficRestConstants.PATH_ROOT)
-@RolesAllowed({AuthorizationService.ROLE_ADMIN})
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Path(TrafficRestConstants.PATH_ROOT)
+@RolesAllowed({AuthorizationService.ROLE_ADMIN})
 public class TrafficResource {
 
     @Context

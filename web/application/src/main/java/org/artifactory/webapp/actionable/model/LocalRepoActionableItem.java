@@ -24,6 +24,8 @@ import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FolderInfo;
+import org.artifactory.api.mime.ContentType;
+import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.DirectoryItem;
 import org.artifactory.api.repo.RepoPath;
@@ -98,7 +100,13 @@ public class LocalRepoActionableItem extends RepoAwareActionableItemBase
             if (item.isDirectory()) {
                 child = new FolderActionableItem((FolderInfo) item.getItemInfo(), isCompactAllowed());
             } else {
-                child = new FileActionableItem((FileInfo) item.getItemInfo());
+                // TODO: factory
+                ContentType contentType = NamingUtils.getContentType(item.getPath());
+                if (ContentType.zip.equals(contentType) || contentType.isJarVariant()) {
+                    child = new ZipFileActionableItem((FileInfo) item.getItemInfo());
+                } else {
+                    child = new FileActionableItem((FileInfo) item.getItemInfo());
+                }
             }
             result.add(child);
         }

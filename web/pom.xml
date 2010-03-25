@@ -22,17 +22,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.artifactory</groupId>
-    <artifactId>artifactory-web-parent</artifactId>
-    <packaging>pom</packaging>
-    <version>2.2.0</version>
-    <name>Artifactory Web</name>
 
     <parent>
-        <artifactId>artifactory-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.2.0</version>
+        <artifactId>artifactory-parent</artifactId>
+        <version>2.2.2</version>
     </parent>
+
+    <artifactId>artifactory-web-parent</artifactId>
+    <packaging>pom</packaging>
+    <name>Artifactory Web</name>
 
     <modules>
         <module>common</module>

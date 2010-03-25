@@ -18,11 +18,13 @@
 
 package org.artifactory.webapp.wicket.page.config.repos;
 
+import org.apache.commons.collections15.OrderedMap;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
+import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.markup.repeater.data.DataView;
@@ -33,6 +35,9 @@ import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WebstartWebAddon;
+import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -40,14 +45,18 @@ import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.dnd.select.DragDropSelection;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
+import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoResolver;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.components.IconDragDropSelection;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
+import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -61,8 +70,14 @@ import java.util.List;
  */
 public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDescriptor> {
 
+    private static final Logger log = LoggerFactory.getLogger(VirtualRepoPanel.class);
+
+
     @SpringBean
     private AddonsManager addonsManager;
+
+    @SpringBean
+    private RepositoryService repositoryService;
 
     public VirtualRepoPanel(CreateUpdateAction action, VirtualRepoDescriptor repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
@@ -83,7 +98,14 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
 
     @Override
     public void saveEditDescriptor(VirtualRepoDescriptor repoDescriptor) {
-        getCachingDescriptorHelper().syncAndSaveVirtualRepositories();
+        CachingDescriptorHelper helper = getCachingDescriptorHelper();
+        //update the model being saved
+        OrderedMap<String, VirtualRepoDescriptor> virtualRepos =
+                helper.getModelMutableDescriptor().getVirtualRepositoriesMap();
+        if (virtualRepos.containsKey(repoDescriptor.getKey())) {
+            virtualRepos.put(repoDescriptor.getKey(), repoDescriptor);
+        }
+        helper.syncAndSaveVirtualRepositories();
     }
 
     private void addBasicSettings(CachingDescriptorHelper cachingDescriptorHelper) {
@@ -146,6 +168,35 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
 
         advancedSettings.add(new TextArea("notes"));
         advancedSettings.add(new SchemaHelpBubble("notes.help"));
+        addCleanCache(advancedSettings, repoDescriptor);
+    }
+
+    private void addCleanCache(TitledBorder advancedSettings, final VirtualRepoDescriptor descriptor) {
+        TitledAjaxSubmitLink cleanCacheButton =
+                new TitledAjaxSubmitLink("cleanCache", new Model("Zap Caches"), form) {
+                    @Override
+                    protected void onSubmit(AjaxRequestTarget target, Form form) {
+                        String repoKey = descriptor.getKey();
+                        RepoPath repoPath = RepoPath.repoRootPath(repoKey);
+                        StatusHolder statusHolder;
+                        statusHolder = repositoryService.undeploy(repoPath, false);
+                        if (!statusHolder.isError()) {
+                            info("The caches of '" + repoKey + "' have been successfully zapped.");
+                        } else {
+                            String message = "Could not zap caches for the virtual repository '" + repoKey + "': " +
+                                    statusHolder.getStatusMsg() + ".";
+                            error(message);
+                        }
+                        AjaxUtils.refreshFeedback(target);
+                    }
+                };
+        cleanCacheButton.setVisible(!isCreate());
+        advancedSettings.add(cleanCacheButton);
+        HelpBubble help = new HelpBubble("cleanCache.help",
+                "Clears all caches that are stored on the virtual repository level\n" +
+                        "(transformed POMs, JNLP files, merged indexes, etc.)");
+        help.setVisible(!isCreate());
+        advancedSettings.add(help);
     }
 
     private List<RepoDescriptor> getReposExcludingCurrent() {

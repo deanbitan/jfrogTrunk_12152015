@@ -53,7 +53,7 @@ public class LdapsListPanel extends ModalListPanel<LdapSetting> {
 
     @Override
     public String getTitle() {
-        return "";
+        return "LDAP Servers";
     }
 
     @Override

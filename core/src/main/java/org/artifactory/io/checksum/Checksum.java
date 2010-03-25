@@ -20,9 +20,6 @@ package org.artifactory.io.checksum;
 
 import org.artifactory.api.mime.ChecksumType;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -55,14 +52,6 @@ public class Checksum {
 
     public String getChecksum() {
         return checksum;
-    }
-
-    public InputStream asInputStream() throws UnsupportedEncodingException {
-        if (checksum == null) {
-            throw new IllegalStateException("Checksum has not been calculated yet.");
-        }
-        byte[] checksumAsBytes = checksum.getBytes("ISO-8859-1");
-        return new ByteArrayInputStream(checksumAsBytes);
     }
 
     void update(byte[] bytes, int length) {

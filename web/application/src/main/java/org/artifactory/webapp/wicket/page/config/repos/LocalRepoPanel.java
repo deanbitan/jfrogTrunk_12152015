@@ -32,6 +32,7 @@ import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
@@ -122,6 +123,13 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
 
         advancedSettings.add(new TextArea("notes"));
         advancedSettings.add(new SchemaHelpBubble("notes.help"));
+
+        // snapshotVersionBehavior
+        LocalRepoChecksumPolicyType[] checksumPolicyTypes = LocalRepoChecksumPolicyType.values();
+        DropDownChoice checksumPolicyDropDown = new DropDownChoice("checksumPolicyType",
+                Arrays.asList(checksumPolicyTypes), new ChecksumPolicyChoiceRenderer());
+        advancedSettings.add(checksumPolicyDropDown);
+        advancedSettings.add(new SchemaHelpBubble("localRepoChecksumPolicyType.help", "checksumPolicyType"));
     }
 
     private class MaxUniqueSnapshotsTextField extends TextField {
@@ -149,6 +157,17 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
                 return ((SnapshotVersionBehavior) object).getDisplayName();
             }
             return WordUtils.capitalizeFully(object.toString());
+        }
+    }
+
+    private static class ChecksumPolicyChoiceRenderer extends ChoiceRenderer {
+        @Override
+        public Object getDisplayValue(Object object) {
+            if (LocalRepoChecksumPolicyType.SERVER.equals(object)) {
+                return "Trust server generated checksums";
+            } else {
+                return "Verify against client checksums (default)";
+            }
         }
     }
 }

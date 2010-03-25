@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.actionable;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
@@ -32,16 +33,19 @@ import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.GeneralTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.MetadataTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.permissions.PermissionsTabPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.TabbedPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
+import org.slf4j.Logger;
 
 import java.util.List;
 
@@ -50,6 +54,8 @@ import java.util.List;
  */
 public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         implements RepoAwareActionableItem, TabViewedActionableItem {
+
+    private static final Logger log = LoggerFactory.getLogger(RepoAwareActionableItemBase.class);
 
     private final RepoPath repoPath;
 
@@ -193,13 +199,17 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
     }
 
     /**
-     * Returns a list of metadata type names that are associated with this item
-     *
-     * @return
+     * @return a list of metadata type names that are associated with this item
      */
     private List<String> getMetadataNames(RepoPath canonicalRepoPath) {
-        List<String> metadataNames = getRepoService().getMetadataNames(canonicalRepoPath);
-        return metadataNames;
+        try {
+            return getRepoService().getMetadataNames(canonicalRepoPath);
+        } catch (RepositoryRuntimeException rre) {
+            String repoPathId = canonicalRepoPath.getId();
+            log.error("Error while retrieving metadata names for '{}': {}", repoPathId, rre.getMessage());
+            log.debug("Error while retrieving metadata names for '" + repoPathId + "'.", rre);
+            return Lists.newArrayList();
+        }
     }
 
     private static class PermissionsTab extends BaseTab {

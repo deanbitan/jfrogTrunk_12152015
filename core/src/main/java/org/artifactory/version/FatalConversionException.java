@@ -18,8 +18,9 @@
 
 package org.artifactory.version;
 
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 /**
  * @author freds
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 public class FatalConversionException extends RuntimeException {
     @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(FatalConversionException.class);
+
 
     public FatalConversionException(String message) {
         super(message);

@@ -26,6 +26,7 @@ import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 
@@ -34,7 +35,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.List;
 
@@ -45,6 +45,7 @@ import java.util.List;
  */
 public class ArtifactSearchResource {
 
+    private AuthorizationService authorizationService;
     private SearchService searchService;
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -53,11 +54,11 @@ public class ArtifactSearchResource {
      * Main constructor
      *
      * @param searchService Search service instance
-     * @param request
-     * @param response
      */
-    public ArtifactSearchResource(SearchService searchService, HttpServletRequest request,
+    public ArtifactSearchResource(AuthorizationService authorizationService, SearchService searchService,
+            HttpServletRequest request,
             HttpServletResponse response) {
+        this.authorizationService = authorizationService;
         this.searchService = searchService;
         this.request = request;
         this.response = response;
@@ -71,8 +72,7 @@ public class ArtifactSearchResource {
      * @return Rest search results object
      */
     @GET
-    @Produces({SearchRestConstants.MT_ARTIFACT_SEARCH_RESULT,
-            MediaType.APPLICATION_JSON})
+    @Produces({SearchRestConstants.MT_ARTIFACT_SEARCH_RESULT})
     public InfoRestSearchResult get(
             @QueryParam(SearchRestConstants.PARAM_SEARCH_NAME) String name,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
@@ -90,6 +90,7 @@ public class ArtifactSearchResource {
     private InfoRestSearchResult search(String name, List<String> reposToSearch) throws IOException {
         ArtifactSearchControls controls = new ArtifactSearchControls();
         controls.setQuery(appendAndReturnWildcards(name));
+        controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
         SearchResults<ArtifactSearchResult> searchResults;
         try {

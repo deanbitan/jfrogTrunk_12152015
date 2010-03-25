@@ -22,9 +22,10 @@ import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.build.api.Build;
+import org.jfrog.build.api.Build;
 
-import java.util.List;
+import java.io.IOException;
+import java.util.Set;
 
 /**
  * Build service main interface
@@ -45,19 +46,34 @@ public interface BuildService extends ImportableExportable {
     void addBuild(Build build);
 
     /**
-     * Returns the JSON string of the given build object
+     * Returns the JSON string of the given build details
      *
-     * @param build Build to parse as JSON
+     * @param buildName    Build name
+     * @param buildNumber  Build number
+     * @param buildStarted Build started
      * @return Build JSON if parsing succeeded. Empty string if not
      */
-    String getBuildAsJson(Build build);
+    String getBuildAsJson(String buildName, long buildNumber, String buildStarted);
 
     /**
-     * Removes the given build
+     * Removes the build of the given details
      *
-     * @param build Build to remove
+     * @param buildName    Build name
+     * @param buildNumber  Build number
+     * @param buildStarted Build started
      */
-    void deleteBuild(Build build);
+    void deleteBuild(String buildName, long buildNumber, String buildStarted);
+
+    /**
+     * Returns the build of the given details
+     *
+     * @param buildName    Build name
+     * @param buildNumber  Build number
+     * @param buildStarted Build started
+     * @return Build if found. Null if not
+     */
+    @Lock(transactional = true)
+    Build getBuild(String buildName, long buildNumber, String buildStarted);
 
     /**
      * Returns the latest build for the given name and number
@@ -73,12 +89,20 @@ public interface BuildService extends ImportableExportable {
      * Locates builds that are named as the given name
      *
      * @param buildName Name of builds to locate
-     * @return List of builds with the given name
+     * @return Set of builds with the given name
      */
-    List<Build> searchBuildsByName(String buildName);
+    Set<BasicBuildInfo> searchBuildsByName(String buildName);
 
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);
 
     void importFrom(ImportSettings settings);
+
+    /**
+     * Returns the CI server URL of the given build
+     *
+     * @param basicBuildInfo Basic build info to extract URL of
+     * @return URL if exists, form of blank string if not
+     */
+    String getBuildCiServerUrl(BasicBuildInfo basicBuildInfo) throws IOException;
 }

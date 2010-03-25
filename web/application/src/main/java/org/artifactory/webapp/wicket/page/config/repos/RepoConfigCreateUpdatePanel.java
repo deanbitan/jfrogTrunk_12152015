@@ -47,7 +47,7 @@ import java.util.List;
 public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> extends CreateUpdatePanel<E> {
 
     @SpringBean
-    private CentralConfigService centralConfigService;
+    protected CentralConfigService centralConfigService;
 
     @SpringBean
     private AddonsManager addons;

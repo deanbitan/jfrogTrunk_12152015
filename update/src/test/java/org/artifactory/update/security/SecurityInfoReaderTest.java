@@ -20,9 +20,9 @@ package org.artifactory.update.security;
 
 import org.apache.commons.io.FileUtils;
 import org.artifactory.api.security.SecurityInfo;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ResourceUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import java.io.File;

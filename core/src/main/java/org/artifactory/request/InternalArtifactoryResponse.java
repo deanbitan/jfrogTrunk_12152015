@@ -18,6 +18,7 @@
 
 package org.artifactory.request;
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.io.output.NullWriter;
 import org.slf4j.Logger;
@@ -54,18 +55,6 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
         // ignore
     }
 
-    public int getContentLength() {
-        return -1;
-    }
-
-    public boolean isContentLengthSet() {
-        return false;
-    }
-
-    public void setContentLength(int length) {
-        // ignore
-    }
-
     public OutputStream getOutputStream() throws IOException {
         return new NullOutputStream();
     }
@@ -74,16 +63,12 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
         return new NullWriter();
     }
 
-    public void setStatus(int status) {
-        // ignore
-    }
-
     public void setHeader(String header, String value) {
         // ignore
     }
 
     public void sendOk() {
-        // ignore
+        setStatus(HttpStatus.SC_OK);
     }
 
     public void flush() {
@@ -101,6 +86,7 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
     @Override
     public void sendError(int statusCode, String reason, Logger logger) throws IOException {
         logger.info("Eager download failed with code {}. Reason: {}", statusCode, reason);
+        super.sendError(statusCode, reason, logger);
     }
 
 }

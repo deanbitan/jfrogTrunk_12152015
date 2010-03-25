@@ -21,9 +21,12 @@ package org.artifactory.webapp.wicket.page.build.tabs;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.build.BuildService;
-import org.artifactory.build.api.Build;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
+import org.jfrog.build.api.Build;
 
 /**
  * Displays the build's JSON representation
@@ -47,10 +50,12 @@ public class BuildInfoJsonTabPanel extends Panel {
         FieldSetBorder border = new FieldSetBorder("jsonBorder");
         add(border);
 
-        String buildJson = buildService.getBuildAsJson(build);
-
-        TextContentPanel contentPanel = new TextContentPanel("jsonContent");
-        contentPanel.setContent(buildJson);
-        border.add(contentPanel);
+        String buildJson = buildService.getBuildAsJson(build.getName(), build.getNumber(), build.getStarted());
+        if (ConstantValues.uiSyntaxColoringMaxTextSizeBytes.getLong() >= buildJson.getBytes().length) {
+            border.add(new SyntaxHighlighter("jsonContent", buildJson, Syntax.JavaScript));
+        } else {
+            TextContentPanel contentPanel = new TextContentPanel("jsonContent");
+            border.add(contentPanel.setContent(buildJson));
+        }
     }
 }

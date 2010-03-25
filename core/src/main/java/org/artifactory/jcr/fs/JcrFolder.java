@@ -33,6 +33,7 @@ import org.artifactory.api.fs.FolderInfoImpl;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
@@ -50,6 +51,7 @@ import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -217,7 +219,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
         boolean created = false;
         int to;
         do {
-            to = path.indexOf("/", from);
+            to = path.indexOf('/', from);
             String subPath = to > 0 ? path.substring(0, to) : path;
             if (created || !getRepo().itemExists(subPath)) {
                 RepoPath subRepoPath = new RepoPath(getRepoKey(), subPath);
@@ -286,7 +288,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
             }
 
             if (settings.isIncremental()) {
-                cleanupIncrementalBackupDirectory(list, targetDir);
+                cleanupIncrementalBackupDirectory(list, targetDir, status);
             }
         } catch (Exception e) {
             //If a child export fails, we collect the error but not fail the whole export
@@ -330,9 +332,10 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
 
     private void exportMavenFiles(StatusHolder status, File targetDir) {
         String metadataName = MavenNaming.MAVEN_METADATA_NAME;
-        String xmlData = (String) getMetadata(metadataName);
-        if (StringUtils.isNotBlank(xmlData)) {
-            try {
+        try {
+            RepositoryService repoService = InternalContextHelper.get().getRepositoryService();
+            String xmlData = repoService.getXmlMetadata(getRepoPath(), metadataName);
+            if (StringUtils.isNotBlank(xmlData)) {
                 //MetadataDefinition definition =
                 //        getRepoGeneric().getMetadataDefinition(metadataName, true);
                 //MetadataInfo metadataInfo = getMdService().getMetadataInfo(this, metadataName);
@@ -341,15 +344,16 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
                 writeFile(status, metadataFile, xmlData, lastModified);
                 // create checksum files for the maven-metadata.xml
                 //TODO: writeChecksums(targetDir, metadataInfo.getChecksumsInfo(), metadataName, lastModified);
-            } catch (Exception e) {
-                status.setError("Failed to export maven info for '" + getAbsolutePath() + "'.", e, log);
             }
+        } catch (Exception e) {
+            status.setError("Failed to export maven info for '" + getAbsolutePath() + "'.", e, log);
         }
     }
 
     // remove files and folders from the incremental backup dir if they were deleted from the repository
 
-    private void cleanupIncrementalBackupDirectory(List<JcrFsItem> currentJcrFolderItems, File targetDir) {
+    private void cleanupIncrementalBackupDirectory(List<JcrFsItem> currentJcrFolderItems, File targetDir,
+            MultiStatusHolder status) {
         //Metadata File filter
         IOFileFilter metadataFilter = new AbstractFileFilter() {
             @Override
@@ -370,14 +374,14 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
         @SuppressWarnings({"unchecked"})
         Collection<File> subTargetMetadataFiles = FileUtils.listFiles(targetDir, metadataFilter,
                 DirectoryFileFilter.INSTANCE);
-        cleanMetadata(currentJcrFolderItems, subTargetMetadataFiles);
+        cleanMetadata(currentJcrFolderItems, subTargetMetadataFiles, status);
 
         //List all target metadata
         File targetDirMetadataContainerFolder = getMetadataContainerFolder(targetDir);
         @SuppressWarnings({"unchecked"})
         Collection<File> targetMetadataFiles = FileUtils.listFiles(targetDirMetadataContainerFolder, metadataFilter,
                 DirectoryFileFilter.INSTANCE);
-        cleanTargetMetadata(targetMetadataFiles);
+        cleanTargetMetadata(targetMetadataFiles, status);
     }
 
     /**
@@ -428,8 +432,10 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
      *
      * @param currentJcrFolderItems List of jcr items in the current jcr folder
      * @param metadataFiles         List of metadata files in the current target's metadata folder
+     * @param status                Status holder
      */
-    private void cleanMetadata(List<JcrFsItem> currentJcrFolderItems, Collection<File> metadataFiles) {
+    private void cleanMetadata(List<JcrFsItem> currentJcrFolderItems, Collection<File> metadataFiles,
+            MultiStatusHolder status) {
         for (File metadataFile : metadataFiles) {
             if ((metadataFile != null) && (metadataFile.isFile())) {
                 String metadataFolderPath = metadataFile.getParent();
@@ -442,8 +448,15 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
                 if ((metadataName != null) && (metadataContainerName != null)) {
                     JcrFsItem jcrFsItem = getFsItem(currentJcrFolderItems, metadataContainerName);
                     if (jcrFsItem != null) {
-                        boolean hasMetadata = jcrFsItem.hasMetadata(metadataName);
                         //If the metadata container does not contain this metadata anymore
+                        boolean hasMetadata = false;
+                        try {
+                            hasMetadata = jcrFsItem.hasMetadata(metadataName);
+                        } catch (RepositoryException e) {
+                            String message = String.format("Unable to determine whether %s is annotated by metadata " +
+                                    "of type %s. Metadata was not cleaned.", jcrFsItem.getAbsolutePath(), metadataName);
+                            status.setError(message, e, log);
+                        }
                         if (!hasMetadata) {
                             boolean deleted = FileUtils.deleteQuietly(metadataFile);
                             if (!deleted) {
@@ -461,13 +474,21 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
      * folder and clean them out.
      *
      * @param targetMetadataFiles List of metadata files in the current target's metadata folder
+     * @param status              Status holder
      */
-    private void cleanTargetMetadata(Collection<File> targetMetadataFiles) {
+    private void cleanTargetMetadata(Collection<File> targetMetadataFiles, MultiStatusHolder status) {
         for (File metadataFile : targetMetadataFiles) {
             if ((metadataFile != null) && metadataFile.isFile()) {
                 //Extract the metadata name from the metadata file name
                 String metadataName = PathUtils.stripExtension(metadataFile.getName());
-                boolean hasMetadata = hasMetadata(metadataName);
+                boolean hasMetadata = false;
+                try {
+                    hasMetadata = hasMetadata(metadataName);
+                } catch (RepositoryException e) {
+                    String message = String.format("Unable to determine whether %s is annotated by metadata of type " +
+                            "%s. Metadata was not cleaned.", getAbsolutePath(), metadataName);
+                    status.setError(message, e, log);
+                }
                 //If the metadata container does not contain this metadata anymore
                 if (!hasMetadata) {
                     boolean deleted = FileUtils.deleteQuietly(metadataFile);
@@ -487,7 +508,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
      */
     private String getMetadataContainerName(String metadataFolderPath) {
         //Get last index of slash
-        int indexOfLastSlash = metadataFolderPath.lastIndexOf("/") + 1;
+        int indexOfLastSlash = metadataFolderPath.lastIndexOf('/') + 1;
         //Get index of metadata folder suffix
         int indexOfFolderName = metadataFolderPath.indexOf(ItemInfo.METADATA_FOLDER);
         if ((indexOfLastSlash == -1) || (indexOfFolderName == -1)) {
@@ -566,7 +587,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
                         } else if (getRepo().isCache() && !hasMetadata(MavenNaming.MAVEN_METADATA_NAME)) {
                             //Special fondling for maven-metadata.xml - store it as real metadata if importing
                             //to local cache repository (non cache repositories recalculate the maven metadata)
-                            String xmlData = FileUtils.readFileToString(dirEntry);
+                            String xmlData = FileUtils.readFileToString(dirEntry, "utf-8");
                             InternalContextHelper.get().getRepositoryService()
                                     .setXmlMetadata(getRepoPath(), MavenNaming.MAVEN_METADATA_NAME, xmlData);
                         }

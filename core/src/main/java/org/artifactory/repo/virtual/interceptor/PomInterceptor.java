@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -77,6 +78,10 @@ public class PomInterceptor {
                 log.error(message, e);
             }
             return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + e.getMessage());
+        } catch (RepositoryException e) {
+            String message = "Failed to transform pom file";
+            log.error(message, e);
+            return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + e.getMessage());
         }
 
         RepoPath localStoragePath = new RepoPath(virtualRepo.getKey(), resourcePath);
@@ -100,7 +105,8 @@ public class PomInterceptor {
         return transformedResource;
     }
 
-    private String transformPomResource(RepoResource resource, VirtualRepo virtualRepo) throws IOException {
+    private String transformPomResource(RepoResource resource, VirtualRepo virtualRepo)
+            throws IOException, RepositoryException {
         String repoKey = resource.getResponseRepoPath().getRepoKey();
         Repo repository = repoService.repositoryByKey(repoKey);
         ResourceStreamHandle handle;

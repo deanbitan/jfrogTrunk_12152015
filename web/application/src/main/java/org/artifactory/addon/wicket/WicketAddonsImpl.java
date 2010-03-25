@@ -47,11 +47,8 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
-import org.artifactory.addon.wicket.disabledaddon.AddonNeededBehavior;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonHelpBubble;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonMenuNode;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
+import org.artifactory.addon.wicket.disabledaddon.*;
+import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
@@ -67,10 +64,6 @@ import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.api.version.VersionHolder;
 import org.artifactory.api.version.VersionInfoService;
-import org.artifactory.build.api.Artifact;
-import org.artifactory.build.api.Build;
-import org.artifactory.build.api.Dependency;
-import org.artifactory.build.api.Module;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -99,6 +92,7 @@ import org.artifactory.webapp.wicket.page.base.BasePage;
 import org.artifactory.webapp.wicket.page.base.EditProfileLink;
 import org.artifactory.webapp.wicket.page.base.LogoutLink;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.BaseBuildsTabPanel;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildDependencyActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildTabActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
@@ -133,6 +127,9 @@ import org.artifactory.webapp.wicket.panel.export.ExportResultsPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 import org.artifactory.webapp.wicket.util.validation.ServerIdValidator;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
+import org.jfrog.build.api.Artifact;
+import org.jfrog.build.api.Build;
+import org.jfrog.build.api.Module;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collections;
@@ -291,7 +288,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public SaveSearchResultsPanel getSaveSearchResultsPanel(String wicketId, IModel model,
-            LimitlessCapableSearcher limitlessCapableSearcher) {
+                                                            LimitlessCapableSearcher limitlessCapableSearcher) {
         SaveSearchResultsPanel panel = new SaveSearchResultsPanel(wicketId, model);
         panel.setEnabled(false);
         return panel;
@@ -326,7 +323,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public WebMarkupContainer getPropertySetsBorder(String borderId, String dragDropId, final RealRepoDescriptor entity,
-            List<PropertySet> propertySets) {
+                                                    List<PropertySet> propertySets) {
         TitledBorder propertySetsBorder = new DisabledTitledBorder(borderId);
         propertySetsBorder.add(new DisabledCollapsibleBehavior());
         MarkupContainer dragDropContainer = new WebMarkupContainer(dragDropId);
@@ -407,7 +404,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public CreateUpdatePanel<LdapGroupSetting> getLdapGroupPanel(CreateUpdateAction createUpdateAction,
-            LdapGroupSetting ldapGroupSetting, LdapGroupListPanel ldapGroupListPanel) {
+                                                                 LdapGroupSetting ldapGroupSetting, LdapGroupListPanel ldapGroupListPanel) {
         return null;
     }
 
@@ -424,7 +421,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public Set refreshLdapGroupList(String userName, LdapGroupSetting ldapGroupSetting,
-            MultiStatusHolder statusHolder) {
+                                    MultiStatusHolder statusHolder) {
         return Sets.newHashSet();
     }
 
@@ -443,12 +440,13 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(String buildName, long buildNumber,
-            List<Artifact> artifacts) {
+                                                                               List<Artifact> artifacts) {
         return Lists.newArrayList();
     }
 
-    public List<ModuleDependencyActionableItem> getModuleDependencyActionableItem(String buildName, long buildNumber,
-            List<Dependency> dependencies) {
+    public List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(String buildName,
+                                                                                       long buildNumber,
+                                                                                       List<ModuleDependencyActionableItem> dependencies) {
         return Lists.newArrayList();
     }
 
@@ -501,7 +499,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return null;
     }
 
-    public String getSearchResultsPageMountPath() {
+    public String getSearchResultsPageMountPath(String resultToSelect) {
         return "";
     }
 
@@ -632,12 +630,22 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         }
 
         @Override
-        protected List<BuildTabActionableItem> getArtifactActionableItems() {
+        protected List<BasicBuildInfo> getArtifactBuilds() {
             return Lists.newArrayList();
         }
 
         @Override
-        protected List<BuildTabActionableItem> getDependencyActionableItems() {
+        protected List<BasicBuildInfo> getDependencyBuilds() {
+            return Lists.newArrayList();
+        }
+
+        @Override
+        protected List<BuildTabActionableItem> getArtifactActionableItems(List<BasicBuildInfo> builds) {
+            return Lists.newArrayList();
+        }
+
+        @Override
+        protected List<BuildDependencyActionableItem> getDependencyActionableItems(BasicBuildInfo basicInfo) {
             return Lists.newArrayList();
         }
     }

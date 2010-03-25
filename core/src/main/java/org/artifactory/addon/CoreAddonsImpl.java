@@ -18,18 +18,14 @@
 
 package org.artifactory.addon;
 
-import com.google.common.collect.Lists;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * Default implementation of the core-related addon factories.
@@ -37,7 +33,9 @@ import java.util.List;
  * @author Yossi Shaul
  */
 @Component
-public class CoreAddonsImpl implements WebstartAddon, LdapGroupCoreAddon {
+public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon {
+    private static final String POWERPACK_MESSAGE =
+            "This API is available only in the Artifactory Addon-ons Power Pack (http://www.jfrog.org/addons.php).";
 
     public boolean isDefault() {
         return true;
@@ -59,15 +57,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupCoreAddon {
         // do nothing
     }
 
-    public List getExternalGroups(String dn, UserInfo userInfo, LdapGroupSetting ldapGroupSetting) {
-        return Lists.newArrayList();
-    }
-
     public void populateGroups(String dn, UserInfo info) {
         // do nothing
-    }
-
-    public String getDnFromUsername(String username) {
-        return "";
     }
 }

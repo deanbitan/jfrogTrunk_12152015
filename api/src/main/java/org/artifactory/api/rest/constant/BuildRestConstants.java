@@ -26,9 +26,6 @@ package org.artifactory.api.rest.constant;
 public interface BuildRestConstants {
     String PATH_ROOT = "build";
 
-    String BUILD_NAME = "buildName";
-    String BUILD_NUMBER = "buildNumber";
-
     //TODO: [by yl] Move to the buildInfo module
     String MT_BUILDS = RestConstants.MT_JFROG_APP + PATH_ROOT + ".Builds+json";
     String MT_BUILDS_BY_NAME = RestConstants.MT_JFROG_APP + PATH_ROOT + ".BuildsByName+json";

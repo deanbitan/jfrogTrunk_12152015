@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 import java.io.File;
 
 /**
- * This singleton is reposible for providing the path structure in the JCR DB, and for converting RepoPath to absPath
- * (in JCR) and vice-versa. User: freds Date: Jun 4, 2008 Time: 11:36:11 PM
+ * This singleton is responsible for providing the path structure in the JCR DB, and for converting RepoPath to absPath
+ * (in JCR) and vice-versa.
  */
 public class JcrPath {
 
@@ -41,7 +41,7 @@ public class JcrPath {
     protected static final String BUILDS_FOLDER = "builds";
 
     /**
-     * Strange stuff of a child class overidable singleton
+     * Strange stuff of a child class overrideable singleton
      */
     private static JcrPath instance = new JcrPath();
 
@@ -112,6 +112,9 @@ public class JcrPath {
     }
 
     public RepoPath getRepoPath(String absPath) {
+        if (absPath == null || absPath.length() == 0) {
+            throw new IllegalArgumentException("Absolute path cannot be empty");
+        }
         String modifiedAbsPath = absPath.replace('\\', '/');
         String repoJcrRootPath = getRepoJcrRootPath();
         String repoKey = repoKeyFromPath(modifiedAbsPath);
@@ -122,8 +125,7 @@ public class JcrPath {
         String relPath = "";
         int repoRootPathLength = repoJcrRootPath.length() + repoKey.length() + 1;
         if (modifiedAbsPath.length() > repoRootPathLength) {
-            relPath = PathUtils.formatRelativePath(
-                    modifiedAbsPath.substring(repoRootPathLength));
+            relPath = PathUtils.formatRelativePath(modifiedAbsPath.substring(repoRootPathLength));
         }
         RepoPath repoPath = new RepoPath(repoKey, relPath);
         return repoPath;

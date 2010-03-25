@@ -18,10 +18,8 @@
 
 package org.artifactory.webapp.wicket.util;
 
-import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
@@ -30,17 +28,7 @@ import org.testng.annotations.Test;
  * @author Yossi Shaul
  */
 @Test
-public class CssClassTest {
-
-    @BeforeMethod
-    public void bindProperties() {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
-    }
-
-    @AfterMethod
-    public void unbindProperties() {
-        ArtifactorySystemProperties.unbind();
-    }
+public class CssClassTest extends SystemPropertiesBoundTest {
 
     public void pomCss() {
         String path = "/a/path/to/somewhere/my.pom";

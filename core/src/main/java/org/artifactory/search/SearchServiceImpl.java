@@ -19,6 +19,7 @@
 package org.artifactory.search;
 
 import com.google.common.collect.Lists;
+import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
@@ -30,19 +31,19 @@ import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
+import org.artifactory.api.search.deployable.DeployableUnitSearchControls;
+import org.artifactory.api.search.deployable.DeployableUnitSearchResult;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
-import org.artifactory.api.search.metadata.GenericMetadataSearchControls;
-import org.artifactory.api.search.metadata.GenericMetadataSearchResult;
-import org.artifactory.api.search.metadata.MetadataSearchControls;
-import org.artifactory.api.search.metadata.MetadataSearchResult;
-import org.artifactory.api.search.metadata.pom.PomSearchControls;
-import org.artifactory.api.search.metadata.pom.PomSearchResult;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
+import org.artifactory.api.search.xml.XmlSearchResult;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
+import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
+import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.util.Pair;
-import org.artifactory.build.api.Build;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrPath;
@@ -52,18 +53,18 @@ import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionService;
-import org.artifactory.jcr.md.MetadataService;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.search.archive.ArchiveIndexer;
 import org.artifactory.search.archive.ArchiveSearcher;
 import org.artifactory.search.build.BuildSearcher;
+import org.artifactory.search.deployable.DeployableUnitSearcher;
 import org.artifactory.search.gavc.GavcSearcher;
-import org.artifactory.search.metadata.MetadataSearcher;
-import org.artifactory.search.metadata.xml.XmlFileSearcher;
 import org.artifactory.search.property.PropertySearcher;
 import org.artifactory.search.version.SearchVersion;
+import org.artifactory.search.xml.XmlFileSearcher;
+import org.artifactory.search.xml.metadata.MetadataSearcher;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.Reloadable;
@@ -79,7 +80,6 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.QueryResult;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
@@ -91,7 +91,7 @@ import java.util.Set;
  */
 @Service
 @Reloadable(beanClass = InternalSearchService.class,
-        initAfter = {MetadataService.class, InternalRepositoryService.class})
+        initAfter = {InternalRepositoryService.class})
 public class SearchServiceImpl implements InternalSearchService {
 
     private static final Logger log = LoggerFactory.getLogger(SearchServiceImpl.class);
@@ -172,13 +172,13 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
-    public SearchResults<PomSearchResult> searchXmlContent(MetadataSearchControls controls) {
+    public SearchResults<XmlSearchResult> searchXmlContent(MetadataSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new SearchResults<PomSearchResult>(Lists.<PomSearchResult>newArrayList());
+            return new SearchResults<XmlSearchResult>(Lists.<XmlSearchResult>newArrayList());
         }
 
         XmlFileSearcher searcher = new XmlFileSearcher();
-        SearchResults<PomSearchResult> results = searcher.search(controls);
+        SearchResults<XmlSearchResult> results = searcher.search(controls);
 
         return results;
     }
@@ -216,7 +216,7 @@ public class SearchServiceImpl implements InternalSearchService {
 
             QueryResult resultXpath = jcrService.executeQuery(JcrQuerySpec.xpath(queryStr).noLimit());
             NodeIterator nodeIterator = resultXpath.getNodes();
-            List<Pair<RepoPath, Calendar>> result = new ArrayList<Pair<RepoPath, Calendar>>();
+            List<Pair<RepoPath, Calendar>> result = Lists.newArrayList();
             while (nodeIterator.hasNext()) {
                 Node fileNode = (Node) nodeIterator.next();
                 Calendar modified = fileNode.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getValue().getDate();
@@ -233,13 +233,13 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
-    public QueryResult searchPomInPath(RepoPath repoPath) throws RepositoryException {
-        XmlFileSearcher searcher = new XmlFileSearcher();
-        QueryResult result = searcher.searchForDeployableUnits(new PomSearchControls(repoPath));
-        return result;
+    public SearchResults<DeployableUnitSearchResult> searchDeployableUnits(DeployableUnitSearchControls controls)
+            throws RepositoryException {
+        DeployableUnitSearcher searcher = new DeployableUnitSearcher();
+        return searcher.doSearch(controls);
     }
 
-    public List<Build> getLatestBuildsByName() {
+    public Set<BasicBuildInfo> getLatestBuildsByName() {
         BuildSearcher searcher = new BuildSearcher();
         try {
             return searcher.getLatestBuildsByName();
@@ -248,7 +248,7 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
-    public List<Build> findBuildsByArtifactChecksum(String sha1, String md5) {
+    public List<BasicBuildInfo> findBuildsByArtifactChecksum(String sha1, String md5) {
         BuildSearcher searcher = new BuildSearcher();
         try {
             return searcher.findBuildsByArtifactChecksum(sha1, md5);
@@ -257,7 +257,7 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
-    public List<Build> findBuildsByDependencyChecksum(String sha1, String md5) {
+    public List<BasicBuildInfo> findBuildsByDependencyChecksum(String sha1, String md5) {
         BuildSearcher searcher = new BuildSearcher();
         try {
             return searcher.findBuildsByDependencyChecksum(sha1, md5);
@@ -297,7 +297,7 @@ public class SearchServiceImpl implements InternalSearchService {
 
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         SearchVersion.values();
-        //We cannot convert the indexes staright away since the JCR will initialize and close the session on us,
+        //We cannot convert the indexes straight away since the JCR will initialize and close the session on us,
         //so we just mark and index on init
         SearchVersion originalVersion = source.getVersion().getSubConfigElementVersion(SearchVersion.class);
         originalVersion.convert(this);
@@ -308,7 +308,7 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     /**
-     * Marks all archives under the sepecified repo path for indexing
+     * Marks all archives under the specified repo path for indexing
      *
      * @param searchPath Path to search under, search under root if null is passed
      * @param force      True if should force marking

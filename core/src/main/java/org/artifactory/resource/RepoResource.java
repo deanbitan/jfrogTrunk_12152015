@@ -31,14 +31,15 @@ import java.io.Serializable;
 public interface RepoResource extends Serializable {
 
     /**
-     * @return The resource repository path
+     * @return The resource repository path. This path might be virtual and is usually represent the path from the
+     *         request.
      */
     RepoPath getRepoPath();
 
     /**
-     * @return The response repo path. Might be different from the request repo path. For example when a request is made
-     *         on a virtual repository, the response repo path should point to the actual repository containing this
-     *         resource.
+     * @return The actual repo path the resource came from. Might be different from the request repo path. For example
+     *         when a request is made on a virtual repository, the response repo path should point to the actual
+     *         repository containing this resource.
      */
     RepoPath getResponseRepoPath();
 
@@ -47,6 +48,8 @@ public interface RepoResource extends Serializable {
     RepoResourceInfo getInfo();
 
     boolean isFound();
+
+    boolean isExactQueryMatch();
 
     boolean isExpired();
 

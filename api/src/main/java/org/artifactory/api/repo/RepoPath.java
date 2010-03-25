@@ -38,7 +38,7 @@ public final class RepoPath implements Info {
 
     /**
      * @param repoKey The key of any repo
-     * @param path    The relativ path inside the repo
+     * @param path    The relative path inside the repo
      */
     public RepoPath(String repoKey, String path) {
         this.repoKey = repoKey;
@@ -59,12 +59,12 @@ public final class RepoPath implements Info {
     public RepoPath(String id) {
         if (id == null || id.length() == 0) {
             throw new IllegalArgumentException(
-                    "RepoAndGroupIdIdentity cannot have a null id");
+                    "RepoAndPathIdIdentity cannot have a null id");
         }
         int idx = id.indexOf(REPO_PATH_SEP);
         if (idx <= 0) {
             throw new IllegalArgumentException(
-                    "Could not determine both repository key and groupId from '" +
+                    "Could not determine both repository key and path from '" +
                             id + "'.");
         }
         this.repoKey = id.substring(0, idx);
@@ -149,6 +149,33 @@ public final class RepoPath implements Info {
             childRelPath = "/" + childRelPath;
         }
         return new RepoPath(repoPath.getRepoKey(), repoPath.getPath() + childRelPath);
+    }
+
+    /**
+     * Construct a RepoPath from a path containing both repo key and the relative path in the repo
+     *
+     * @param rpp - {repoKey}/{itemRelativePath}
+     * @return
+     */
+    public static RepoPath fromRepoPathPath(String rpp) {
+        if (rpp == null || rpp.length() == 0) {
+            throw new IllegalArgumentException("Path cannot be empty.");
+        }
+        rpp = PathUtils.formatPath(rpp);
+        //Cannot return null
+        rpp = PathUtils.trimSlashes(rpp).toString();
+        int idx = rpp.indexOf('/');
+        String repoKey;
+        String path;
+        if (idx < 0) {
+            //Just a repo name with no rel path
+            repoKey = rpp;
+            path = "";
+        } else {
+            repoKey = rpp.substring(0, idx);
+            path = PathUtils.formatRelativePath(rpp.substring(idx + 1));
+        }
+        return new RepoPath(repoKey, path);
     }
 
     /**

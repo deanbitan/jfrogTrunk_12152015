@@ -20,7 +20,7 @@ package org.artifactory.webapp.actionable.action.metadata;
 
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.search.metadata.MetadataSearchResult;
+import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.action.DownloadAction;
 import org.artifactory.webapp.servlet.RequestUtils;

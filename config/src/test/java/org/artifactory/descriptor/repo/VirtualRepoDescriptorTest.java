@@ -18,8 +18,10 @@
 
 package org.artifactory.descriptor.repo;
 
-import org.testng.Assert;
+import com.google.common.collect.Lists;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
 
 /**
  * Tests the VirtualRepoDescriptor.
@@ -31,8 +33,26 @@ public class VirtualRepoDescriptorTest {
 
     public void defaultConstructor() {
         VirtualRepoDescriptor virtualRepo = new VirtualRepoDescriptor();
-        Assert.assertNull(virtualRepo.getKey());
-        Assert.assertNull(virtualRepo.getKeyPair());
-        Assert.assertTrue(virtualRepo.getRepositories().isEmpty());
+        assertNull(virtualRepo.getKey());
+        assertNull(virtualRepo.getKeyPair());
+        assertTrue(virtualRepo.getRepositories().isEmpty());
+    }
+
+    public void identicalCache() {
+        VirtualRepoDescriptor virtualRepo1 = new VirtualRepoDescriptor();
+        VirtualRepoDescriptor virtualRepo2 = new VirtualRepoDescriptor();
+
+        assertTrue(virtualRepo1.identicalCache(virtualRepo2));
+
+        LocalRepoDescriptor local1 = new LocalRepoDescriptor();
+        local1.setKey("local1");
+
+        LocalRepoDescriptor local2 = new LocalRepoDescriptor();
+        local1.setKey("local2");
+
+        virtualRepo1.setRepositories(Lists.<RepoDescriptor>newArrayList(local1));
+        virtualRepo2.setRepositories(Lists.<RepoDescriptor>newArrayList(local2));
+
+        assertFalse(virtualRepo1.identicalCache(virtualRepo2));
     }
 }

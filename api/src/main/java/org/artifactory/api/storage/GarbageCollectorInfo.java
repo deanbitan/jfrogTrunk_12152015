@@ -18,8 +18,8 @@
 
 package org.artifactory.api.storage;
 
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Holds the garbage collection information

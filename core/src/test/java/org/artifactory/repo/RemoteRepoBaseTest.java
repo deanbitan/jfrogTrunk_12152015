@@ -24,9 +24,9 @@ import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
-import org.artifactory.jcr.md.MetadataService;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.easymock.EasyMock;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
@@ -42,11 +42,10 @@ import java.lang.reflect.Method;
  *
  * @author Noam Tenne
  */
-public class RemoteRepoBaseTest {
+public class RemoteRepoBaseTest extends SystemPropertiesBoundTest {
     AuthorizationService authService = EasyMock.createNiceMock(AuthorizationService.class);
     InternalRepositoryService internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
     InternalArtifactoryContext context = EasyMock.createMock(InternalArtifactoryContext.class);
-    MetadataService metadataService = EasyMock.createMock(MetadataService.class);
 
     {
         resetMocks();
@@ -237,7 +236,6 @@ public class RemoteRepoBaseTest {
     @BeforeMethod
     private void resetMocks() {
         EasyMock.reset(authService, internalRepoService, context);
-        EasyMock.expect(context.beanForType(MetadataService.class)).andReturn(metadataService).anyTimes();
         ArtifactoryContextThreadBinder.bind(context);
     }
 }

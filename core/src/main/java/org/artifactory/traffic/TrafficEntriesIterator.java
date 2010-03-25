@@ -42,8 +42,8 @@ public class TrafficEntriesIterator implements Iterator<TrafficEntry> {
 
     public TrafficEntriesIterator(NodeIterator nodeIterator) {
         this.nodeIterator = nodeIterator;
-        final long size = nodeIterator.getSize();
-        /*if (size > 0) {
+        /*final long size = nodeIterator.getSize();
+        if (size > 0) {
             log.trace("Found {} traffic entries to process.", size);
         }*/
     }

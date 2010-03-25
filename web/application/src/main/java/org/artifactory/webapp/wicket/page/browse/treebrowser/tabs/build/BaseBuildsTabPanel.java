@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -25,20 +26,28 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.build.BasicBuildInfo;
+import org.artifactory.api.build.BuildService;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.table.SortableTable;
+import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn;
+import org.artifactory.common.wicket.component.table.masterdetail.MasterDetailEntry;
+import org.artifactory.common.wicket.component.table.masterdetail.MasterDetailTable;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildDependencyActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildTabActionableItem;
+import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -50,6 +59,12 @@ import java.util.List;
 public abstract class BaseBuildsTabPanel extends Panel {
 
     private static final Logger log = LoggerFactory.getLogger(BaseBuildsTabPanel.class);
+
+    @SpringBean
+    private CentralConfigService centralConfigService;
+
+    @SpringBean
+    protected BuildService buildService;
 
     @SpringBean
     protected SearchService searchService;
@@ -66,7 +81,6 @@ public abstract class BaseBuildsTabPanel extends Panel {
      */
     public BaseBuildsTabPanel(String id, RepoAwareActionableItem item) {
         super(id);
-
         sha1 = ((FileInfo) item.getItemInfo()).getSha1();
         md5 = ((FileInfo) item.getItemInfo()).getMd5();
         textContentViewer = new ModalHandler("contentDialog");
@@ -83,71 +97,123 @@ public abstract class BaseBuildsTabPanel extends Panel {
     }
 
     /**
+     * Adds the build tables
+     */
+    private void addBuildTables() {
+        // add artifacts border
+        FieldSetBorder artifactsBorder = new FieldSetBorder("artifactBorder");
+        add(artifactsBorder);
+
+        List<IColumn> buildColumns = Lists.newArrayList();
+        buildColumns.add(new ActionsColumn(""));
+        buildColumns.add(new PropertyColumn(new Model("Build Name"), "basicBuildInfo.name", "basicBuildInfo.name"));
+        buildColumns.add(new PropertyColumn(new Model("Build Number"), "basicBuildInfo.number", "basicBuildInfo.number"));
+        buildColumns.add(new FormattedDateColumn(new Model("Build Started"), "basicBuildInfo.startedDate", "basicBuildInfo.started", centralConfigService, Build.STARTED_FORMAT));
+        buildColumns.add(new PropertyColumn(new Model("Module ID"), "moduleId"));
+
+        artifactsBorder.add(new SortableTable("artifactBuilds", buildColumns, new ArtifactsDataProvider(getArtifactBuilds()), 10));
+
+        // add dependencies border
+        FieldSetBorder dependenciesBorder = new FieldSetBorder("dependencyBorder");
+        add(dependenciesBorder);
+
+        List<IColumn> dependencyColumns = Lists.newArrayList();
+        dependencyColumns.add(new DependencyActionsColumn());
+        dependencyColumns.add(new PropertyColumn(new Model("Build Name"), "master.name", "master.name"));
+        dependencyColumns.add(new PropertyColumn(new Model("Build Number"), "master.number", "master.number"));
+        dependencyColumns.add(new PropertyColumn(new Model("Module ID"), "detail.moduleId", "detail.moduleId"));
+        dependencyColumns.add(new PropertyColumn(new Model("Scope"), "detail.scope", "detail.scope"));
+
+        dependenciesBorder.add(new UsedByTable("dependencyBuilds", dependencyColumns));
+    }
+
+    /**
+     * Returns the list of artifact basic build info items to display
+     *
+     * @return Artifact basic build info list
+     */
+    protected abstract List<BasicBuildInfo> getArtifactBuilds();
+
+    /**
+     * Returns the list of dependency basic build info items to display
+     *
+     * @return Dependency basic build info item list
+     */
+    protected abstract List<BasicBuildInfo> getDependencyBuilds();
+
+    /**
      * Returns the list of artifact build actionable items to display
      *
+     * @param builds Basic build infos to create actionable items from
      * @return Artifact build actionable item list
      */
-    protected abstract List<BuildTabActionableItem> getArtifactActionableItems();
+    protected abstract List<BuildTabActionableItem> getArtifactActionableItems(List<BasicBuildInfo> builds);
 
     /**
      * Returns the list of dependency build actionable items to display
      *
+     * @param basicInfo Basic build info to create actionable items from
      * @return Dependency build actionable item list
      */
-    protected abstract List<BuildTabActionableItem> getDependencyActionableItems();
+    protected abstract List<BuildDependencyActionableItem> getDependencyActionableItems(BasicBuildInfo basicInfo);
 
-    /**
-     * Adds the build tables
-     */
-    private void addBuildTables() {
-        List<IColumn> columns = new ArrayList<IColumn>();
-        columns.add(new ActionsColumn(""));
-        columns.add(new PropertyColumn(new Model("Build Name"), "build.name", "build.name"));
-        columns.add(new PropertyColumn(new Model("Build Number"), "build.number", "build.number"));
-        columns.add(new PropertyColumn(new Model("Build Started"), "buildStartedDate", "build.started"));
-        columns.add(new PropertyColumn(new Model("Module ID"), "moduleId", "moduleId"));
+    private class UsedByTable extends MasterDetailTable<BasicBuildInfo, BuildDependencyActionableItem> {
+        public UsedByTable(String id, List<IColumn> columns) {
+            super(id, columns, BaseBuildsTabPanel.this.getDependencyBuilds(), 10);
+        }
 
-        FieldSetBorder artifactsBorder = new FieldSetBorder("artifactBorder");
-        FieldSetBorder dependenciesBorder = new FieldSetBorder("dependencyBorder");
+        @Override
+        protected String getMasterLabel(BasicBuildInfo masterObject) {
+            return String.format("%s, Build #%s", masterObject.getName(), masterObject.getNumber());
+        }
 
-        add(artifactsBorder);
-        add(dependenciesBorder);
-
-        artifactsBorder.add(new SortableTable("artifactBuilds", columns,
-                new BuildTabDataProvider(getArtifactActionableItems()), 10));
-        dependenciesBorder.add(new SortableTable("dependencyBuilds", columns,
-                new BuildTabDataProvider(getDependencyActionableItems()), 10));
+        @Override
+        protected List<BuildDependencyActionableItem> getDetails(BasicBuildInfo masterObject) {
+            return getDependencyActionableItems(masterObject);
+        }
     }
 
+    private static class DependencyActionsColumn extends ActionsColumn {
+        public DependencyActionsColumn() {
+            super("");
+        }
+
+        @SuppressWarnings({"unchecked"})
+        @Override
+        protected ActionableItem getRowObject(IModel rowModel) {
+            return ((MasterDetailEntry<BasicBuildInfo, BuildTabActionableItem>) rowModel.getObject()).getDetail();
+        }
+    }
+
+
     /**
-     * The repo item's build tab table data provider
+     * The artifacts table data provider
      */
-    private static class BuildTabDataProvider extends SortableDataProvider {
+    private class ArtifactsDataProvider extends SortableDataProvider {
+        List<BasicBuildInfo> builds;
 
-        List<BuildTabActionableItem> buildsToDisplay;
-
-        /**
-         * Main constructor
-         *
-         * @param buildsToDisplay Builds to display
-         */
-        public BuildTabDataProvider(List<BuildTabActionableItem> buildsToDisplay) {
+        public ArtifactsDataProvider(List<BasicBuildInfo> builds) {
             setSort("buildStarted", false);
-            this.buildsToDisplay = buildsToDisplay;
+            this.builds = builds;
+        }
+
+        protected List<BuildTabActionableItem> getActionableItems(List<BasicBuildInfo> builds) {
+            return getArtifactActionableItems(builds);
         }
 
         public Iterator iterator(int first, int count) {
-            ListPropertySorter.sort(buildsToDisplay, getSort());
-            List<BuildTabActionableItem> listToReturn = buildsToDisplay.subList(first, first + count);
+            ListPropertySorter.sort(builds, getSort());
+            List<BuildTabActionableItem> listToReturn = getActionableItems(builds.subList(first, first + count));
             return listToReturn.iterator();
         }
 
         public int size() {
-            return buildsToDisplay.size();
+            return builds.size();
         }
 
         public IModel model(Object object) {
             return new Model((BuildTabActionableItem) object);
         }
     }
+
 }

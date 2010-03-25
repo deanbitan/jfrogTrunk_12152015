@@ -89,7 +89,7 @@
         <PersistenceManager class="org.apache.jackrabbit.core.persistence.bundle.OraclePersistenceManager">
             <param name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
             <param name="user" value="artifactory_user"/>
-            <param name="password" value="password"/>
+            <param name="password" value="artifactory"/>
             <param name="schemaObjectPrefix" value="${wsp.name}_"/>
             <param name="bundleCacheSize" value="16"/>
             <param name="errorHandling" value="IGN_MISSING_BLOBS"/>

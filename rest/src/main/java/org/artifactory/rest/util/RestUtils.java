@@ -92,6 +92,13 @@ public abstract class RestUtils {
         response.sendError(HttpStatus.SC_NOT_FOUND);
     }
 
+    public static void sendUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
+        response.sendError(HttpStatus.SC_UNAUTHORIZED, message);
+    }
+
+    public static void sendUnauthorizedNoLimitResponse(HttpServletResponse response) throws IOException {
+        sendUnauthorizedResponse(response, "Unlimited search results are available to authenticated users only.");
+    }
 
     public static String buildStorageInfoUri(HttpServletRequest request, SearchResultBase result) {
         String servletContextUrl = HttpUtils.getServletContextUrl(request);

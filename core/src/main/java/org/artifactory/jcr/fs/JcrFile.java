@@ -25,6 +25,7 @@ import org.artifactory.api.config.ExportCallback;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.fs.ChecksumInfo;
+import org.artifactory.api.fs.ChecksumsInfo;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FileInfoImpl;
 import org.artifactory.api.fs.ItemInfo;
@@ -399,6 +400,18 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         }
     }
 
+    private void writeChecksums(File targetPath, ChecksumsInfo checksumsInfo, String fileName, long modified)
+            throws IOException {
+        File sha1 = new File(targetPath, fileName + ".sha1");
+        File md5 = new File(targetPath, fileName + ".md5");
+        FileUtils.writeStringToFile(sha1, checksumsInfo.getSha1(), "utf-8");
+        FileUtils.writeStringToFile(md5, checksumsInfo.getMd5(), "utf-8");
+        if (modified > 0) {
+            sha1.setLastModified(modified);
+            md5.setLastModified(modified);
+        }
+    }
+
     @Override
     public long length() {
         return getInfo().getSize();
@@ -462,9 +475,13 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         FileInfo info = getInfo();
         ContentType ct = NamingUtils.getContentType(name);
         info.setMimeType(ct.getMimeType());
-        //If it is an XML document save the XML in memory since marking does not always work on the
-        //remote stream, and import its xml content into the repo for indexing
-        if (ct.isXml()) {
+        /**
+         * If it is an XML document save the XML in memory since marking does not always work on the remote stream, and
+         * import its xml content into the repo for indexing.
+         * Process the XML stream only if it's a real repo. Virtual repos don't needed the XML parsing and also may fall
+         * On POM consistency checks
+         */
+        if (ct.isXml() && (getRepo().isReal())) {
             in = processXmlStream(node, resourceNode, name, in);
         }
         try {
@@ -545,37 +562,26 @@ public class JcrFile extends JcrFsItem<FileInfo> {
     }
 
     private void setFileActualChecksums(FileInfo info, Checksum[] checksums) {
-        Set<ChecksumInfo> checksumInfos = info.getChecksums();
+        ChecksumsInfo checksumsInfo = info.getChecksumsInfo();
         for (Checksum checksum : checksums) {
             ChecksumType checksumType = checksum.getType();
             String calculatedChecksum = checksum.getChecksum();
-            ChecksumInfo checksumInfo = getChecksumInfo(checksumType, checksumInfos);
+            ChecksumInfo checksumInfo = checksumsInfo.getChecksumInfo(checksumType);
             if (checksumInfo != null) {
                 // set the actual checksum
-                checksumInfo.setActual(calculatedChecksum);
-                // original checksum migh be null
-                String originalChecksum = checksumInfo.getOriginal();
+                checksumInfo = new ChecksumInfo(checksumType, checksumInfo.getOriginal(), calculatedChecksum);
+                checksumsInfo.addChecksumInfo(checksumInfo);
                 if (!checksumInfo.checksumsMatch()) {
                     log.debug("Checksum mismatch {}. original: {} calculated: {}",
-                            new String[]{checksumType.toString(), originalChecksum, calculatedChecksum});
+                            new String[]{checksumType.toString(), checksumInfo.getOriginal(), calculatedChecksum});
                 }
             } else {
                 log.debug(checksumType + " checksum info not found for '" + info.getRepoPath().getPath() +
                         ". Creating one with empty original checksum.");
-                ChecksumInfo missingChecksumInfo = new ChecksumInfo(checksumType);
-                missingChecksumInfo.setActual(calculatedChecksum);
-                info.addChecksumInfo(missingChecksumInfo);
+                ChecksumInfo missingChecksumInfo = new ChecksumInfo(checksumType, null, calculatedChecksum);
+                checksumsInfo.addChecksumInfo(missingChecksumInfo);
             }
         }
-    }
-
-    private ChecksumInfo getChecksumInfo(ChecksumType type, Set<ChecksumInfo> infos) {
-        for (ChecksumInfo info : infos) {
-            if (type.equals(info.getType())) {
-                return info;
-            }
-        }
-        return null;
     }
 
     private Checksum[] getChecksumsToCompute() {

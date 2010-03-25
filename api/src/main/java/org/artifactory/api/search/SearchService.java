@@ -18,6 +18,7 @@
 
 package org.artifactory.api.search;
 
+import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.repo.RepoPath;
@@ -28,15 +29,14 @@ import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
-import org.artifactory.api.search.metadata.GenericMetadataSearchControls;
-import org.artifactory.api.search.metadata.GenericMetadataSearchResult;
-import org.artifactory.api.search.metadata.MetadataSearchControls;
-import org.artifactory.api.search.metadata.MetadataSearchResult;
-import org.artifactory.api.search.metadata.pom.PomSearchResult;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
+import org.artifactory.api.search.xml.XmlSearchResult;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
+import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
+import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
+import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.api.util.Pair;
-import org.artifactory.build.api.Build;
 
 import javax.annotation.Nullable;
 import java.util.Calendar;
@@ -87,7 +87,7 @@ public interface SearchService {
     SearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls);
 
     @Lock(transactional = true)
-    SearchResults<PomSearchResult> searchXmlContent(MetadataSearchControls controls);
+    SearchResults<XmlSearchResult> searchXmlContent(MetadataSearchControls controls);
 
     @Lock(transactional = true)
     SearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls);
@@ -98,11 +98,11 @@ public interface SearchService {
     //TODO: [by yl] Move all these methods to the InternalBuildService!
 
     @Lock(transactional = true)
-    List<Build> getLatestBuildsByName() throws RepositoryRuntimeException;
+    Set<BasicBuildInfo> getLatestBuildsByName() throws RepositoryRuntimeException;
 
     @Lock(transactional = true)
-    List<Build> findBuildsByArtifactChecksum(String sha1, String md5) throws RepositoryRuntimeException;
+    List<BasicBuildInfo> findBuildsByArtifactChecksum(String sha1, String md5) throws RepositoryRuntimeException;
 
     @Lock(transactional = true)
-    List<Build> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryRuntimeException;
+    List<BasicBuildInfo> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryRuntimeException;
 }

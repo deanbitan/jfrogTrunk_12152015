@@ -53,8 +53,6 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
     @SpringBean
     private AddonsManager addonsManager;
 
-    List<GroupInfo> cachedGroups;
-
     public GroupsListPanel(String id) {
         super(id);
     }

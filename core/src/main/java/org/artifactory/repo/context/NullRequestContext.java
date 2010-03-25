@@ -18,6 +18,8 @@
 
 package org.artifactory.repo.context;
 
+import org.artifactory.api.md.Properties;
+
 /**
  * Dummy implementation of the request context.
  *
@@ -41,5 +43,9 @@ public class NullRequestContext implements RequestContext {
 
     public String getServletContextUrl() {
         return "";
+    }
+
+    public Properties getProperties() {
+        return new Properties();
     }
 }

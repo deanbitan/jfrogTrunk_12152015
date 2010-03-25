@@ -158,9 +158,9 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         updateMethod(method);
         client.executeMethod(method);
 
-        //Not found
         int statusCode = method.getStatusCode();
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
+            //Not found
             method.releaseConnection();
             throw new RemoteRequestException("Unable to find " + fullUrl, statusCode);
         }

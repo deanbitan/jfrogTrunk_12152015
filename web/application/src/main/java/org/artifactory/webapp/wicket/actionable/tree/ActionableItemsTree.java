@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.actionable.tree;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxEventBehavior;
@@ -42,6 +43,7 @@ import org.artifactory.webapp.actionable.action.ItemActionListener;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 import org.artifactory.webapp.actionable.model.Compactable;
 import org.artifactory.webapp.actionable.model.HierarchicActionableItem;
+import org.artifactory.webapp.actionable.model.ZipFileActionableItem;
 import org.artifactory.webapp.wicket.actionable.tree.menu.ActionsMenuPanel;
 import org.slf4j.Logger;
 
@@ -67,12 +69,12 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
      * Builds a tree and set the selected path to the input repo path. If the repoPath is null or not found, we use the
      * default view.
      *
-     * @param id             The wicket id
-     * @param itemsProvider  Actionable items provider
-     * @param repoPath       The path to select
-     * @param compactAllowed Is folder nodes compacting allowed
+     * @param id               The wicket id
+     * @param itemsProvider    Actionable items provider
+     * @param defaultSelection The path to select
+     * @param compactAllowed   Is folder nodes compacting allowed
      */
-    public ActionableItemsTree(String id, ActionableItemsProvider itemsProvider, RepoPath repoPath,
+    public ActionableItemsTree(String id, ActionableItemsProvider itemsProvider, DefaultTreeSelection defaultSelection,
             boolean compactAllowed) {
         super(id);
         this.itemsProvider = itemsProvider;
@@ -80,9 +82,8 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
 
         setRootLess(true);
         setCompactAllowed(compactAllowed);
-        selectPath(repoPath);
+        selectPath(defaultSelection);
     }
-
 
     public void setCompactAllowed(boolean compactAllowed) {
         HierarchicActionableItem root = this.itemsProvider.getRoot();
@@ -123,60 +124,60 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
         return ((Compactable) getTreeModel().getRoot()).isCompactAllowed();
     }
 
-    private void selectPath(RepoPath repoPath) {
-        if (repoPath == null) {
+    private void selectPath(DefaultTreeSelection defaultSelection) {
+        if (defaultSelection == null) {
             return;
         }
 
-        try {
-            DefaultTreeModel treeModel = getTreeModel();
-            ActionableItemTreeNode rootNode = (ActionableItemTreeNode) treeModel.getRoot();
+        String treePath = defaultSelection.getDefaultSelectionTreePath();
+        if (StringUtils.isNotBlank(treePath)) {
+            try {
+                // now build all the nodes on the way to the destination path and
+                // expand only the nodes to the destination path
+                DefaultTreeModel treeModel = getTreeModel();
+                ActionableItemTreeNode parentNode = (ActionableItemTreeNode) treeModel.getRoot();
+                String remainingPath = treePath;
+                ActionableItemTreeNode currentNode = null;
+                while (PathUtils.hasText(remainingPath)) {
 
-            // now build all the nodes on the way to the destination path and
-            // expand only the nodes to the destination path
-            String treePath = getTreePath(repoPath);
-            ActionableItemTreeNode parentNode = rootNode;
-            String remainingPath = treePath;
-            ActionableItemTreeNode currentNode = null;
-            while (PathUtils.hasText(remainingPath)) {
+                    // get deepest node for the path (will also take care of compacted paths)
+                    currentNode = defaultSelection.getNodeAt(parentNode, remainingPath);
+                    if (currentNode == parentNode) {
+                        throw new ItemNotFoundRuntimeException(
+                                format("Child node %s not found under %s",
+                                        remainingPath, parentNode.getUserObject().getDisplayName()));
+                    }
 
-                // get deepest node for the path (will also tale care of compacted paths)
-                currentNode = getNodeAt(parentNode, remainingPath);
-                if (currentNode == parentNode) {
-                    throw new ItemNotFoundRuntimeException(
-                            format("Child node %s not found under %s",
-                                    remainingPath, parentNode.getUserObject().getDisplayName()));
+                    ActionableItem userObject = currentNode.getUserObject();
+                    if (userObject instanceof HierarchicActionableItem &&
+                            !(userObject instanceof ZipFileActionableItem)) {
+                        // the node found is hierarchical, meaning it can have children
+                        // so we get and create all the current node children
+                        List<? extends ActionableItem> folderChildren = itemsProvider
+                                .getChildren((HierarchicActionableItem) userObject);
+                        setChildren(currentNode, folderChildren);
+                        getTreeState().expandNode(currentNode);
+                        parentNode = currentNode;
+                    }
+
+                    // subtract the resolved path from the remaining path
+                    // we are currently relying on the display name as there is
+                    // no better way to know if the node was compacted or not
+                    String displayName = userObject.getDisplayName();
+                    remainingPath = remainingPath.substring(displayName.length());
+                    // just make sure we don't have '/' at the beginning
+                    remainingPath = PathUtils.trimLeadingSlashes(remainingPath);
                 }
 
-                ActionableItem userObject = currentNode.getUserObject();
-                if (userObject instanceof HierarchicActionableItem) {
-                    // the node found is hierarchical, meaning it can have children
-                    // so we get and create all the current node children
-                    List<? extends ActionableItem> folderChildren = itemsProvider
-                            .getChildren((HierarchicActionableItem) userObject);
-                    setChildren(currentNode, folderChildren);
-                    getTreeState().expandNode(currentNode);
-                    parentNode = currentNode;
-                }
+                // everything went well and we have the destination node. now select it
+                selectNode(currentNode);
 
-                // subtract the resolved path from the remainng path
-                // we are currently relying on the display name as there is
-                // no better way to know if the node was compacted or not
-                String displayName = userObject.getDisplayName();
-                remainingPath = remainingPath.substring(displayName.length());
-                // just make sure we don't have '/' at the beginning
-                remainingPath = PathUtils.trimLeadingSlashes(remainingPath);
+            } catch (Exception e) {
+                String message = "Unable to find path " + treePath;
+                error(message);
+                log.error(message, e);
+                getTreeState().collapseAll();
             }
-
-            // everything went well and we have the destination node. now select it
-            selectNode(currentNode);
-
-        } catch (Exception e) {
-            String message = "Unable to find path " +
-                    repoPath.getRepoKey() + ":" + repoPath.getPath();
-            error(message);
-            log.error(message, e);
-            getTreeState().collapseAll();
         }
     }
 
@@ -467,42 +468,7 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
         return selectedNodes.iterator().next();
     }
 
-    /**
-     * Returns the deepest node matching the given path. For example if the parent look like parent/child/1 and we ask
-     * for child/1/2/3 the returned node will be child/1.
-     *
-     * @param parentNode The parent node of the path.
-     * @param path       The path relative to the parent node we are looking for.
-     * @return The deepest node under the parent node for the given path. If no node under the parent matches part of
-     *         the path, the parent path is returned.
-     */
-    private ActionableItemTreeNode getNodeAt(ActionableItemTreeNode parentNode, String path) {
-        String firstPart = PathUtils.getPathFirstPart(path);
-        if (firstPart.length() > 0) {
-            Enumeration children = parentNode.children();
-            while (children.hasMoreElements()) {
-                ActionableItemTreeNode child = (ActionableItemTreeNode) children.nextElement();
-                RepoAwareActionableItem childItem = (RepoAwareActionableItem) child.getUserObject();
-                RepoPath childRepoPath = childItem.getRepoPath();
-                String name = PathUtils.getName(getTreePath(childRepoPath));
-                if (name.equals(firstPart)) {
-                    //Handle compacted folders
-                    String displayName = child.getUserObject().getDisplayName();
-                    int from = path.indexOf(displayName) + displayName.length() + 1;
-                    String newPath = from < path.length() ? path.substring(from) : "";
-                    return getNodeAt(child, newPath);
-                }
-            }
-        }
-        return parentNode;
-    }
-
-    private static String getTreePath(RepoPath repoPath) {
-        return repoPath.getRepoKey() + "/" + repoPath.getPath();
-    }
-
-    private static void setChildren(ActionableItemTreeNode node,
-            List<? extends ActionableItem> children) {
+    private static void setChildren(ActionableItemTreeNode node, List<? extends ActionableItem> children) {
         node.removeAllChildren();
         for (ActionableItem child : children) {
             ActionableItemTreeNode newChildNode = new ActionableItemTreeNode(child);

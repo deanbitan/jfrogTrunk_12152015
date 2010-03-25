@@ -29,33 +29,45 @@ package org.artifactory.api.mime;
  */
 public enum ContentType {
     def(new MimeEntry("application/octet-stream")),
-    textPlain(new MimeEntry("text/plain", "txt")),
-    textXml(new MimeEntry("text/xml")),
-    //textHtml(new MimeEntry("text/html", "htm", "html")),
-    applicationXml(new MimeEntry("application/xml", "xml", "xsl", "xsi")/*, textXml*/),
-    mavenPom(new MimeEntry("application/x-maven-pom+xml", "pom")),
-    applicationXmlDtd(new MimeEntry("application/xml-dtd", "dtd"), applicationXml),
-    applicationXmlSchema(new MimeEntry("application/xml-schema", "xsd"), applicationXml),
-    applicationXmlExternal(new MimeEntry("application/xml-external-parsed-entity", "ent"), applicationXml),
+    textPlain(new MimeEntry("text/plain", "txt", "properties", "mf"), true),
+    textXml(new MimeEntry("text/xml"), true),
+    textHtml(new MimeEntry("text/html", "htm", "html"), true),
+    applicationXml(new MimeEntry("application/xml", "xml", "xsl", "xsi")/*, textXml*/, true),
+    mavenPom(new MimeEntry("application/x-maven-pom+xml", "pom"), true),
+    applicationXmlDtd(new MimeEntry("application/xml-dtd", "dtd"), applicationXml, true),
+    applicationXmlSchema(new MimeEntry("application/xml-schema", "xsd"), applicationXml, true),
+    applicationXmlExternal(new MimeEntry("application/xml-external-parsed-entity", "ent"), applicationXml, true),
     zip(new MimeEntry("application/zip", "zip")),
     javaArchive(new MimeEntry("application/java-archive", "jar", "war", "ear", "sar", "har", "rar")),
     javaPack200(new MimeEntry("application/x-java-pack200", "jar.pack.gz")),
     javaArchiveDiff(new MimeEntry("application/x-java-archive-diff", "jardiff")),
-    javaJnlp(new MimeEntry("application/x-java-jnlp-file", "jnlp")),
-    cheksum(new MimeEntry("application/x-checksum", "sha1", "md5"), textPlain),
-    ivyXml(new MimeEntry("application/x-ivy+xml", "ivy"));
+    javaJnlp(new MimeEntry("application/x-java-jnlp-file", "jnlp"), true),
+    cheksum(new MimeEntry("application/x-checksum", "sha1", "md5"), textPlain, true),
+    ivyXml(new MimeEntry("application/x-ivy+xml", "ivy"), true),
+    javaSource(new MimeEntry("text/x-java-source", "java"), true),
+    groovySource(new MimeEntry("text/x-groovy-source", "groovy", "gradle"), true),
+    css(new MimeEntry("text/css", "css"), true);
 
     private final MimeEntry mimeEntry;
     private final ContentType alternate;
+    private final boolean viewable;
 
     ContentType(MimeEntry mimeEntry) {
-        this.mimeEntry = mimeEntry;
-        this.alternate = null;
+        this(mimeEntry, null, false);
     }
 
     ContentType(MimeEntry mimeEntry, ContentType alternate) {
+        this(mimeEntry, alternate, false);
+    }
+
+    ContentType(MimeEntry mimeEntry, boolean viewable) {
+        this(mimeEntry, null, viewable);
+    }
+
+    ContentType(MimeEntry mimeEntry, ContentType alternate, boolean viewable) {
         this.mimeEntry = mimeEntry;
         this.alternate = alternate;
+        this.viewable = viewable;
     }
 
     public String getMimeType() {
@@ -71,6 +83,13 @@ public enum ContentType {
 
     public ContentType getAlternate() {
         return alternate;
+    }
+
+    /**
+     * @return True files of this type can be viewed as text file
+     */
+    public boolean isViewable() {
+        return viewable;
     }
 
     public boolean isXml() {

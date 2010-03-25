@@ -46,5 +46,6 @@ public class LocalRepoDescriptorTest {
         assertFalse(localRepo.isSuppressPomConsistencyChecks(),
                 "Default should not supress pom consistency checks");
         assertNotNull(localRepo.getPropertySets(), "Property sets list should not be null");
+        assertEquals(localRepo.getChecksumPolicyType(), LocalRepoChecksumPolicyType.CLIENT, "Client checksum should be the default");
     }
 }

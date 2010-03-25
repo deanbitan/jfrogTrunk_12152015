@@ -20,7 +20,6 @@ package org.artifactory.webapp.wicket.page.build.tabs.list;
 
 import com.google.common.collect.Lists;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
-import org.artifactory.build.api.Dependency;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
 import org.slf4j.Logger;
@@ -54,12 +53,13 @@ public class DisabledModuleDependenciesListPanel extends BaseModuleDependenciesL
     }
 
     @Override
-    protected List<Dependency> getDependencies() {
+    protected List<ModuleDependencyActionableItem> getDependencies() {
         return Lists.newArrayList();
     }
 
     @Override
-    protected List<ModuleDependencyActionableItem> getModuleDependencyActionableItem(List<Dependency> dependencies) {
+    protected List<ModuleDependencyActionableItem>
+    populateModuleDependencyActionableItem(List<ModuleDependencyActionableItem> dependencies) {
         return Lists.newArrayList();
     }
 }

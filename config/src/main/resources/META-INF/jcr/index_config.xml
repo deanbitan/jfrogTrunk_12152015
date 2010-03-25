@@ -17,7 +17,7 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<!DOCTYPE configuration SYSTEM "http://www.jfrog.org/xsd/indexing-configuration-1.2.dtd">
+<!DOCTYPE configuration SYSTEM "http://jackrabbit.apache.org/dtd/indexing-configuration-1.2.dtd">
 <configuration xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
                xmlns:jcr="http://www.jcp.org/jcr/1.0"
                xmlns:artifactory="http://artifactory.jfrog.org/1.0"
@@ -63,6 +63,9 @@
         <!-- build item checksums -->
         <property nodeScopeIndex="false" useInExcerpt="false">artifactory:build.artifact.checksums</property>
         <property nodeScopeIndex="false" useInExcerpt="false">artifactory:build.dependency.checksums</property>
+
+        <!-- Metadata element name property -->
+        <property nodeScopeIndex="false" useInExcerpt="false">artifactory:metadataName</property>
 
         <!--
         nodeScopeIndex="false" will also cause properties not to be used in excerpts by default, since to be used in

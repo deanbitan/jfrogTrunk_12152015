@@ -23,7 +23,6 @@ goto :end
 
 :next
 
-echo on
 %_JAVACMD% -Xmx400m -Djetty.home="%ARTIFACTORY_HOME%" -Dartifactory.home="%ARTIFACTORY_HOME%" -cp "%CLASSPATH%" org.artifactory.standalone.main.Main %*
 
 @endlocal

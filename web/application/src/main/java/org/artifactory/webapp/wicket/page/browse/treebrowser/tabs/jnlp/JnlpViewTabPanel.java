@@ -31,9 +31,10 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.PlaceHolder;
-import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.combobox.FilteringSelect;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
@@ -133,7 +134,7 @@ public class JnlpViewTabPanel extends Panel {
                     return format("Applet's Script Snippet (%s repository)", key);
                 }
             };
-            scriptSnippetBorder.add(new TextContentPanel("scriptSnippet").setContent(appletInfo.getScriptSnippet()));
+            scriptSnippetBorder.add(new SyntaxHighlighter("scriptSnippet", appletInfo.getScriptSnippet(), Syntax.XML));
             addOrReplace(scriptSnippetBorder);
         } else {
             MarkupContainer scriptSnippetBorder = new PlaceHolder("scriptSnippetBorder");
@@ -158,10 +159,7 @@ public class JnlpViewTabPanel extends Panel {
     private void addJnlpContent() {
         MarkupContainer jnlpContentBorder = new FieldSetBorder("jnlpContentBorder");
         add(jnlpContentBorder);
-
-        TextContentPanel contentPanel = new TextContentPanel("jnlpContent");
-        contentPanel.setContent(jnlpContent);
-        jnlpContentBorder.add(contentPanel);
+        jnlpContentBorder.add(new SyntaxHighlighter("jnlpContent", jnlpContent, Syntax.XML));
     }
 
     private List<VirtualRepoDescriptor> getWebStartRepos(RepoAwareActionableItem fileItem) {

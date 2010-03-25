@@ -58,6 +58,10 @@ public class MetadataResource implements RepoResource {
         return true;
     }
 
+    public boolean isExactQueryMatch() {
+        return true;
+    }
+
     public boolean isExpired() {
         return false;
     }

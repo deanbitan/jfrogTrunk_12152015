@@ -18,6 +18,7 @@
 
 package org.artifactory.search.property;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
@@ -59,6 +60,8 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
     private static String PROPERTY_NODE_PATH = FORWARD_SLASH + JcrTypes.NODE_ARTIFACTORY_METADATA + FORWARD_SLASH +
             Properties.ROOT + FORWARD_SLASH + JcrTypes.NODE_ARTIFACTORY_PROPERTIES;
 
+    private long totalResultCount = 0;
+
     @Override
     public SearchResults<PropertySearchResult> doSearch(PropertySearchControls controls) throws RepositoryException {
         this.controls = controls;
@@ -73,9 +76,9 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
         Set<String> closedPropertyKeys = controls.getPropertyKeysByOpenness(PropertySearchControls.CLOSED);
         executeClosedPropSearch(queryBase, closedPropertyKeys);
 
-        //Return global results lisr
+        //Return global results list
         return new SearchResults<PropertySearchResult>(new ArrayList<PropertySearchResult>(globalResults),
-                globalResults.size());
+                totalResultCount);
     }
 
     /**
@@ -89,9 +92,9 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
             Set<String> values = controls.get(key);
             for (String value : values) {
 
-                StringBuilder queryBuilder =
-                        new StringBuilder().append(queryBase).append("/. [jcr:contains(").append("@")
-                                .append(key).append(",'*");
+                StringBuilder queryBuilder = new StringBuilder().append(queryBase).append("/element(*, ").
+                        append(JcrConstants.NT_UNSTRUCTURED).append(") [jcr:contains(").append("@").append(key).
+                        append(",'*");
 
                 //If no value is specified, search for all artifacts with the current key
                 if (StringUtils.isNotBlank(value)) {
@@ -99,11 +102,7 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
                 }
                 queryBuilder.append("')]");
 
-                JcrQuerySpec spec = JcrQuerySpec.xpath(queryBuilder.toString());
-                if (!controls.isLimitSearchResults()) {
-                    spec.noLimit();
-                }
-                QueryResult queryResult = getJcrService().executeQuery(spec);
+                QueryResult queryResult = performQuery(controls.isLimitSearchResults(), queryBuilder.toString());
                 //*[jcr:contains(@myapp:title, 'JSR 170')]
                 processResults(queryResult);
             }
@@ -123,7 +122,8 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
         }
 
         Iterator<String> keyIterator = closedPropertyKeys.iterator();
-        StringBuilder propertiesBuilder = new StringBuilder().append(queryBase).append("/. [");
+        StringBuilder propertiesBuilder = new StringBuilder().append(queryBase).append("/element(*, ").
+                append(JcrConstants.NT_UNSTRUCTURED).append(") [");
 
         while (keyIterator.hasNext()) {
             //Add key
@@ -168,15 +168,17 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
 
         /**
          * If the global results is empty (either first query made, or there were no results from queries executed up
-         * untill now
+         * until now
          */
         boolean noGlobalResults = globalResults.isEmpty();
 
-        List<PropertySearchResult> currentSearchResults = new ArrayList<PropertySearchResult>();
+        List<PropertySearchResult> currentSearchResults = Lists.newArrayList();
         RowIterator rows = queryResult.getRows();
+        totalResultCount += rows.getSize();
 
         //Filter the results and if the search results are limited, stop when reached more than max results + 1
-        while (rows.hasNext() && (!controls.isLimitSearchResults() || (globalResults.size() < getMaxResults()))) {
+        while (rows.hasNext() && (!controls.isLimitSearchResults() ||
+                ((currentSearchResults.size() < getMaxResults()) && (globalResults.size() < getMaxResults())))) {
             try {
                 Row row = rows.nextRow();
                 String path = row.getValue(JcrConstants.JCR_PATH).getString();
@@ -218,7 +220,7 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
             ArrayList<PropertySearchResult> globalCopy = new ArrayList<PropertySearchResult>(globalResults);
             for (PropertySearchResult globalResult : globalCopy) {
 
-                //If the recieved results do not exist in the global results, discard them
+                //If the received results do not exist in the global results, discard them
                 if (!currentSearchResults.contains(globalResult)) {
                     globalResults.remove(globalResult);
                 }

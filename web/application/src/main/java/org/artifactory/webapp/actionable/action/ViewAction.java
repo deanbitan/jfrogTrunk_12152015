@@ -18,13 +18,17 @@
 
 package org.artifactory.webapp.actionable.action;
 
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
+import org.artifactory.api.fs.FileInfo;
+import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.TextContentPanel;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
-import org.artifactory.webapp.actionable.event.ItemEventTargetComponents;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 
 /**
@@ -36,20 +40,44 @@ public abstract class ViewAction extends RepoAwareItemAction {
     public static final String ACTION_NAME = "View";
 
     public ViewAction() {
-        super(ACTION_NAME);
+        this(ACTION_NAME);
     }
 
-    protected void displayModalWindow(RepoAwareItemEvent e, String content, String title) {
-        ItemEventTargetComponents eventTargetComponents = e.getTargetComponents();
-        ModalWindow textContentViewer = eventTargetComponents.getModalWindow();
-        TextContentPanel contentPanel = new TextContentPanel(textContentViewer.getContentId());
-        contentPanel.setContent(content);
-        BaseModalPanel modelPanel = new BorderedModalPanel(contentPanel);
+    public ViewAction(String actionName) {
+        super(actionName);
+    }
+
+    protected void showHighlightedSourceModal(RepoAwareItemEvent e, String content, String title) {
+        String mimeType = getMimeType(e);
+        Syntax syntax = Syntax.fromMimeType(mimeType);
+        showHighlightedSourceModal(e, content, title, syntax);
+    }
+
+    protected void showHighlightedSourceModal(RepoAwareItemEvent e, String content, String title, Syntax syntax) {
+        final String id = e.getTargetComponents().getModalWindow().getContentId();
+        showModal(e, title, new SyntaxHighlighter(id, content, syntax));
+    }
+
+    protected void showPlainTextModal(RepoAwareItemEvent e, String content, String title, Syntax syntax) {
+        final String id = e.getTargetComponents().getModalWindow().getContentId();
+        showModal(e, title, new TextContentPanel(id).setContent(content));
+    }
+
+    private void showModal(RepoAwareItemEvent e, String title, Component content) {
+        ModalWindow modalWindow = e.getTargetComponents().getModalWindow();
+        BaseModalPanel modelPanel = new BorderedModalPanel(content);
         modelPanel.setTitle(title);
-        contentPanel.add(new CssClass("modal-code"));
-        textContentViewer.setContent(modelPanel);
+        content.add(new CssClass("modal-code"));
+        modalWindow.setContent(modelPanel);
         AjaxRequestTarget target = e.getTarget();
-        textContentViewer.show(target);
+        modalWindow.show(target);
     }
 
+    protected String getMimeType(RepoAwareItemEvent e) {
+        ItemInfo itemInfo = e.getSource().getItemInfo();
+        if (itemInfo.isFolder()) {
+            return null;
+        }
+        return ((FileInfo) itemInfo).getMimeType();
+    }
 }

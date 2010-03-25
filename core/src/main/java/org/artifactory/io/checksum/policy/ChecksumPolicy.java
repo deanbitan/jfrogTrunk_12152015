@@ -20,6 +20,7 @@ package org.artifactory.io.checksum.policy;
 
 import org.artifactory.api.fs.ChecksumInfo;
 import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.api.repo.RepoPath;
 
 import java.util.Set;
 
@@ -46,4 +47,14 @@ public interface ChecksumPolicy {
      * @return Checksum value for the checksum type
      */
     String getChecksum(ChecksumType checksumType, Set<ChecksumInfo> checksumInfos);
+
+    /**
+     * Returns the checksum value by type. Actual implementation will decide if to return the original, calculated or
+     * something else. The repo path might also be used by the policy.
+     *
+     * @param checksumType The checksum type
+     * @param repoPath     The repo path of the resource the checksum is requested upon
+     * @return Checksum value for the checksum type
+     */
+    String getChecksum(ChecksumType checksumType, Set<ChecksumInfo> checksumInfos, RepoPath repoPath);
 }

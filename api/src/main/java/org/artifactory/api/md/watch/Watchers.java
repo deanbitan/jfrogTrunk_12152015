@@ -162,13 +162,13 @@ public class Watchers implements Info {
     }
 
     /**
-     * Indicates if the given repo path is equal to the containd one
+     * Indicates if the given repo path is equal to the contained one
      *
      * @param repoPath To compare
      * @return True if both paths are equal. False if not
      */
     public boolean isRepoPathEqual(RepoPath repoPath) {
-        return repoPath != null && this.repoPath.equals(repoPath);
+        return this.repoPath.equals(repoPath);
     }
 
     @Override

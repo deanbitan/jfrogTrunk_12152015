@@ -22,6 +22,7 @@ import org.apache.wicket.Page;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.Model;
@@ -74,6 +75,10 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
                 "results, since there may be too many."));
 
         form.add(new HelpBubble("searchHelp", "Entry name.<br/>* and ? are accepted."));
+
+        //Group entry names which are similar but have different character cases
+        getDataProvider().setGroupReneder("searchResult.entry", new ChoiceRenderer("searchResult.entry",
+                "searchResult.lowerCaseEntry"));
     }
 
     @Override

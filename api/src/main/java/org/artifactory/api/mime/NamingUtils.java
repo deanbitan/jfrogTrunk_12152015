@@ -19,6 +19,7 @@
 package org.artifactory.api.mime;
 
 import com.google.common.collect.Maps;
+import org.apache.commons.io.FilenameUtils;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.util.Pair;
 import org.artifactory.common.ConstantValues;
@@ -29,7 +30,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Used when deploying manually to artifactory, and classifiyng pom files. Only jar are queried to contain a pom file.
+ * Used when deploying manually to artifactory, and classifying pom files. Only jar are queried to contain a pom file.
  *
  * @author freds
  * @author yoavl
@@ -74,7 +75,7 @@ public class NamingUtils {
         return ct.isChecksum();
     }
 
-    public static Pair<String, String> getMetadtaNameAndParent(String path) {
+    public static Pair<String, String> getMetadataNameAndParent(String path) {
         int mdPrefixIdx = path.lastIndexOf(METADATA_PREFIX);
         String name = null;
         String parent = null;
@@ -103,6 +104,19 @@ public class NamingUtils {
         }
         //Fallback to checking maven metadata
         return MavenNaming.isMavenMetadataFileName(fileName);
+    }
+
+    /**
+     * @param path The path to check
+     * @return True if the path represents a checksum for metadata (ie metadata path and ends with checksum file extension)
+     */
+    public static boolean isMetadataChecksum(String path) {
+        if (isChecksum(path)) {
+            String checksumTargetFile = MavenNaming.getChecksumTargetFile(path);
+            return isMetadata(checksumTargetFile);
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -253,5 +267,36 @@ public class NamingUtils {
         }
 
         contentTypePerExtension = types;
+    }
+
+    /**
+     * @param classFilePath Path to a java class file (ends with .class)
+     * @return Path of the matching java source path (.java).
+     */
+    public static String javaSourceNameFromClassName(String classFilePath) {
+        String classFileName = FilenameUtils.getName(classFilePath);
+        if (!"class".equals(FilenameUtils.getExtension(classFileName))) {
+            return classFilePath;
+        }
+
+        String javaFileName;
+        if (classFileName.indexOf('$') > 0) {
+            // it's a subclass, take the first part (the main class name)
+            javaFileName = classFileName.substring(0, classFileName.indexOf('$')) + ".java";
+        } else {
+            javaFileName = classFileName.replace(".class", ".java");
+        }
+
+        String javaFilePath = FilenameUtils.getFullPath(classFilePath) + javaFileName;
+        return javaFilePath;
+    }
+
+    /**
+     * @param fileName The file name
+     * @return True if the filename represents a viewable file (ie, text based)
+     */
+    public static boolean isViewable(String fileName) {
+        ContentType contentType = NamingUtils.getContentType(fileName);
+        return contentType.isViewable();
     }
 }

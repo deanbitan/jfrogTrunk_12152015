@@ -25,12 +25,13 @@ import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumCalculator;
+import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Node;
 import javax.jcr.Property;
@@ -59,8 +60,7 @@ public abstract class AbstractMetadataPersistenceHandler<T> extends AbstractPers
     protected abstract String getXml(MetadataAware metadataAware);
 
     protected Node getOrCreateMetadataContainer(MetadataAware metadataAware) {
-        return JcrHelper
-                .getOrCreateNode(metadataAware.getNode(), NODE_ARTIFACTORY_METADATA, NT_UNSTRUCTURED);
+        return JcrHelper.getOrCreateNode(metadataAware.getNode(), NODE_ARTIFACTORY_METADATA, NT_UNSTRUCTURED);
     }
 
     protected Node getMetadataNode(MetadataAware metadataAware, boolean createIfEmpty) {
@@ -93,9 +93,12 @@ public abstract class AbstractMetadataPersistenceHandler<T> extends AbstractPers
         }
     }
 
-    protected Node createMetadataNode(Node metadataContainer) {
-        return JcrHelper.getOrCreateNode(metadataContainer, getMetadataName(), JcrTypes.NT_ARTIFACTORY_METADATA,
+    protected Node createMetadataNode(Node metadataContainer) throws RepositoryException {
+        String metadataName = getMetadataName();
+        Node metadataNode = JcrHelper.getOrCreateNode(metadataContainer, metadataName, JcrTypes.NT_ARTIFACTORY_METADATA,
                 JcrTypes.MIX_ARTIFACTORY_BASE);
+        metadataNode.setProperty(JcrTypes.PROP_ARTIFACTORY_METADATA_NAME, metadataName);
+        return metadataNode;
     }
 
     public boolean hasMetadata(MetadataAware metadataAware) {
@@ -149,7 +152,7 @@ public abstract class AbstractMetadataPersistenceHandler<T> extends AbstractPers
         } finally {
             IOUtils.closeQuietly(is);
         }
-        InternalMetadataService service = InternalContextHelper.get().beanForType(InternalMetadataService.class);
+        JcrService service = InternalContextHelper.get().beanForType(JcrService.class);
         service.saveChecksums((JcrFsItem) metadataAware, metadataName, checksums);
         for (Checksum checksum : checksums) {
             log.debug("Creating non-exitent metadata checksum '{}' for '{}#{}'",

@@ -19,6 +19,7 @@
 package org.artifactory.rest.resource.artifact;
 
 import com.google.common.collect.Iterables;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.fs.ChecksumInfo;
 import org.artifactory.api.fs.ChecksumsInfo;
@@ -35,6 +36,7 @@ import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.rest.artifact.ItemMetadata;
 import org.artifactory.api.rest.artifact.ItemMetadataNames;
+import org.artifactory.api.rest.artifact.ItemProperties;
 import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
 import org.artifactory.api.rest.artifact.RestFileInfo;
 import org.artifactory.api.rest.artifact.RestFolderInfo;
@@ -63,7 +65,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
@@ -78,6 +80,7 @@ import static org.artifactory.api.rest.constant.ArtifactRestConstants.*;
 @Path(PATH_ROOT)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class ArtifactResource {
+
     @Context
     private HttpServletRequest request;
 
@@ -89,63 +92,48 @@ public class ArtifactResource {
 
     @GET
     @Path("{path: .+}")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces({MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_METADATA_NAMES, MT_ITEM_PROPERTIES, MT_ITEM_METADATA})
     public Object getStorageInfo(@PathParam("path") String path,
             @QueryParam("mdns") String mdns,
             @QueryParam("md") StringList md,
             @QueryParam("properties") StringList properties) throws IOException {
+        String accept = request.getHeader("Accept");
+        boolean isTypeNotBlank = StringUtils.isNotBlank(accept);
         if (isItemMetadataNameRequest(mdns, md, properties)) {
             //get all metadata names on requested path
-            return getItemMetadataNames(path, "");
-        } else if (isItemMetadataRequest(mdns, md, properties)) {
-            //get metadata storage info on requested specific metadata or properties
-            return getItemMetadata(path, md, properties);
+            if (isTypeNotBlank && MT_ITEM_METADATA_NAMES.equals(accept)) {
+                ItemMetadataNames res = getItemMetadataNames(path, mdns);
+                return Response.ok(res, MT_ITEM_METADATA_NAMES).build();
+            } else {
+                return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
+            }
+        } else if (isItemMetadataRequest(mdns, md)) {
+            //get metadata storage info on requested specific metadata
+            if (isTypeNotBlank && MT_ITEM_METADATA.equals(accept)) {
+                ItemMetadata res = getItemMetadata(path, md);
+                return Response.ok(res, MT_ITEM_METADATA).build();
+            } else {
+                return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
+            }
+        } else if (properties != null && !properties.isEmpty()) {
+            // get property storage info on the requested specific property
+            if (isTypeNotBlank && MT_ITEM_PROPERTIES.equals(accept)) {
+                ItemProperties res = getItemProperties(path, properties);
+                return Response.ok(res, MT_ITEM_PROPERTIES).build();
+            } else {
+                return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
+            }
         } else {
             //get folderInfo or FileInfo on requested path
-            return processStorageInfoRequest(path);
+            return processStorageInfoRequest(isTypeNotBlank, accept, path);
         }
     }
 
-
-    @GET
-    @Path("{path: .+}")
-    @Produces({MT_FOLDER_INFO})
-    public RestFolderInfo getFolderInfo(@PathParam("path") String path) throws IOException {
-        RestBaseStorageInfo restBaseStorageInfo = processStorageInfoRequest(path);
-        if (restBaseStorageInfo instanceof RestFolderInfo) {
-            return (RestFolderInfo) restBaseStorageInfo;
-        } else if (restBaseStorageInfo != null) {
-            RestUtils.sendNotFoundResponse(response, "Requested a folder but found file");
-        } else {
-            RestUtils.sendNotFoundResponse(response);
-        }
-        return null;
-    }
-
-    @GET
-    @Path("{path: .+}")
-    @Produces({MT_FILE_INFO})
-    public RestFileInfo getFileInfo(@PathParam("path") String path) throws IOException {
-        RestBaseStorageInfo restBaseStorageInfo = processStorageInfoRequest(path);
-        if (restBaseStorageInfo instanceof RestFileInfo) {
-            return (RestFileInfo) restBaseStorageInfo;
-        } else if (restBaseStorageInfo != null) {
-            RestUtils.sendNotFoundResponse(response, "Requested a file but found folder");
-        } else {
-            RestUtils.sendNotFoundResponse(response);
-        }
-        return null;
-    }
-
-    @GET
-    @Path("{path: .+}")
-    @Produces({MT_ITEM_METADATA_NAMES})
-    public ItemMetadataNames getItemMetadataNames(@PathParam("path") String path,
-            @QueryParam(METADATA_NAMES_PREFIX) String mdns) throws IOException {
+    private ItemMetadataNames getItemMetadataNames(String path, String mdns) throws IOException {
         //validate method call is valid (the mdns parameter value is empty and not virtual repo)
         RepoPath repoPath = calcRepPath(path);
         if (StringUtils.isWhitespace(mdns) && isLocalRepo(repoPath.getRepoKey())) {
-            ItemMetadataNames itemMetadataNames = null;
+            ItemMetadataNames itemMetadataNames;
             List<String> metadataNameList = repositoryService.getMetadataNames(repoPath);
             if (metadataNameList != null && !metadataNameList.isEmpty()) {
                 itemMetadataNames = new ItemMetadataNames();
@@ -162,26 +150,18 @@ public class ArtifactResource {
         return null;
     }
 
-    @GET
-    @Path("{path: .+}")
-    @Produces({MT_ITEM_METADATA})
-    public ItemMetadata getItemMetadata(@PathParam("path") String path,
-            @QueryParam("md") StringList md,
-            @QueryParam("properties") StringList properties) throws IOException {
+    /**
+     * Get the property values from a certain path.
+     *
+     * @param path       The path from where to find the properties.
+     * @param properties The property keys to find the values for.
+     * @return A JSON object that contains the URI of the artifact as well as the property values.
+     * @throws IOException In case of IO problems.
+     */
+    private ItemProperties getItemProperties(String path, StringList properties) throws IOException {
         RepoPath repoPath = calcRepPath(path);
-        //not supporting virtual repo metadata
         if (isLocalRepo(repoPath.getRepoKey())) {
-            ItemMetadata itemMetadata = new ItemMetadata();
-            //add metadata
-            if (md != null) {
-                for (String metadataName : md) {
-                    String metadata = repositoryService.getXmlMetadata(repoPath, metadataName);
-                    if (metadata != null) {
-                        itemMetadata.metadata.put(metadataName, metadata);
-                    }
-
-                }
-            }
+            ItemProperties itemProperties = new ItemProperties();
             //add properties
             if (properties != null && !properties.isEmpty()) {
                 Properties pathProperties = repositoryService.getMetadata(repoPath, Properties.class);
@@ -189,13 +169,39 @@ public class ArtifactResource {
                     for (String propertyName : properties) {
                         Set<String> propertySet = pathProperties.get(propertyName);
                         if (!propertySet.isEmpty()) {
-                            itemMetadata.properties.put(propertyName, Iterables.toArray(propertySet, String.class));
+                            itemProperties.properties.put(propertyName, Iterables.toArray(propertySet, String.class));
                         }
                     }
                 }
             }
+            if (!itemProperties.properties.isEmpty()) {
+                itemProperties.slf = request.getRequestURL().toString();
+                return itemProperties;
+            }
+        }
+        RestUtils.sendNotFoundResponse(response);
+        return null;
+    }
 
-            if (!itemMetadata.metadata.isEmpty() || !itemMetadata.properties.isEmpty()) {
+
+    public ItemMetadata getItemMetadata(String path, StringList md) throws IOException {
+        RepoPath repoPath = calcRepPath(path);
+        //not supporting virtual repo metadata
+        if (isLocalRepo(repoPath.getRepoKey())) {
+            ItemMetadata itemMetadata = new ItemMetadata();
+            //add metadata
+            if (md != null) {
+                for (String metadataName : md) {
+                    if (StringUtils.isNotBlank(metadataName)) {
+                        String metadata = repositoryService.getXmlMetadata(repoPath, metadataName);
+                        if (metadata != null) {
+                            itemMetadata.metadata.put(metadataName, metadata);
+                        }
+                    }
+
+                }
+            }
+            if (!itemMetadata.metadata.isEmpty()) {
                 itemMetadata.slf = request.getRequestURL().toString();
                 return itemMetadata;
             }
@@ -204,11 +210,11 @@ public class ArtifactResource {
         return null;
     }
 
-
-    private RestBaseStorageInfo processStorageInfoRequest(String requestPath) throws IOException {
+    private Response processStorageInfoRequest(boolean isTypeBlank, String accept, String requestPath)
+            throws IOException {
         RepoPath repoPath = calcRepPath(requestPath);
         String repoKey = repoPath.getRepoKey();
-        RestBaseStorageInfo storageInfoRest = null;
+        RestBaseStorageInfo storageInfoRest;
         ItemInfo itemInfo = null;
         if (isLocalRepo(repoKey)) {
             try {
@@ -230,7 +236,20 @@ public class ArtifactResource {
         // we don't use the repo key from the item info because we want to set the virtual repo key if it came
         // from a virtual repository
         storageInfoRest.repo = repoKey;
-        return storageInfoRest;
+        if (itemInfo.isFolder()) {
+            if (isTypeBlank && MT_FOLDER_INFO.equals(accept)) {
+                return Response.ok(storageInfoRest, MT_FOLDER_INFO).build();
+            } else {
+                return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
+
+            }
+        } else {
+            if (isTypeBlank && MT_FILE_INFO.equals(accept)) {
+                return Response.ok(storageInfoRest, MT_FILE_INFO).build();
+            } else {
+                return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
+            }
+        }
     }
 
     private RestBaseStorageInfo createStorageInfoData(ItemInfo itemInfo, String requestPath) {
@@ -358,10 +377,9 @@ public class ArtifactResource {
     /**
      * @param mdns
      * @param md
-     * @param properties
      * @return one or more md or properties parameter and no mdns
      */
-    private boolean isItemMetadataRequest(String mdns, List md, List properties) {
-        return mdns == null && ((md != null && !md.isEmpty()) || (properties != null && !properties.isEmpty()));
+    private boolean isItemMetadataRequest(String mdns, List md) {
+        return mdns == null && ((md != null && !md.isEmpty()));
     }
 }

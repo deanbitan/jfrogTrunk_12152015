@@ -25,7 +25,7 @@
         <div class="field-row field-sep">
             <div class="field">
                 <label>Checksum Policy</label>
-                <span wicket:id="checksumPolicyType.help"></span>
+                <span wicket:id="remoteRepoChecksumPolicyType.help"></span>
 
                 <div class="value">
                     <select wicket:id="checksumPolicyType"></select>
@@ -175,6 +175,11 @@
             <div class="field">
                 <input wicket:id="suppressPomConsistencyChecks" type="checkbox"/>
                 <span wicket:id="suppressPomConsistencyChecks.help"></span>
+            </div>
+
+            <div class="field">
+                <input wicket:id="synchronizeProperties" type="checkbox"/>
+                <span wicket:id="synchronizeProperties.help"></span>
             </div>
         </div>
 

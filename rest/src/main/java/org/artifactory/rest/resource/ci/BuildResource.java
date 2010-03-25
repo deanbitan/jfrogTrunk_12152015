@@ -18,8 +18,9 @@
 
 package org.artifactory.rest.resource.ci;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.build.BuildInfo;
@@ -30,9 +31,9 @@ import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.build.api.Build;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.rest.util.RestUtils;
+import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -50,7 +51,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 
 /**
  * A resource to manage the build actions
@@ -86,17 +87,17 @@ public class BuildResource {
      * @return Builds json object
      */
     @GET
-    @Produces({BuildRestConstants.MT_BUILDS,
-            MediaType.APPLICATION_JSON})
+    @Produces({BuildRestConstants.MT_BUILDS})
     public Builds getAllBuilds() throws IOException {
-        List<Build> allBuilds = searchService.getLatestBuildsByName();
-        if (!allBuilds.isEmpty()) {
+        Set<BasicBuildInfo> latestBuildsByName = searchService.getLatestBuildsByName();
+        if (!latestBuildsByName.isEmpty()) {
             //Add our builds to the list of build resources
             Builds builds = new Builds();
             builds.slf = getBaseBuildsHref();
-            for (Build build : allBuilds) {
-                String buildHref = getBuildRelativeHref(build);
-                builds.builds.add(new Builds.Build(buildHref, build.getStarted()));
+
+            for (BasicBuildInfo buildInfo : latestBuildsByName) {
+                String buildHref = getBuildRelativeHref(buildInfo.getName());
+                builds.builds.add(new Builds.Build(buildHref, buildInfo.getStarted()));
             }
             return builds;
 
@@ -114,23 +115,22 @@ public class BuildResource {
      */
     @GET
     @Path("/{name}")
-    @Produces({BuildRestConstants.MT_BUILDS_BY_NAME,
-            MediaType.APPLICATION_JSON})
+    @Produces({BuildRestConstants.MT_BUILDS_BY_NAME})
     public BuildsByName getAllSpecificBuilds() throws IOException {
         String buildName = RestUtils.getBuildNameFromRequest(request);
-        List<Build> buildList;
+        Set<BasicBuildInfo> buildsByName;
         try {
-            buildList = buildService.searchBuildsByName(buildName);
+            buildsByName = buildService.searchBuildsByName(buildName);
         } catch (RepositoryRuntimeException e) {
-            buildList = Lists.newArrayList();
+            buildsByName = Sets.newHashSet();
         }
-        if (!buildList.isEmpty()) {
+        if (!buildsByName.isEmpty()) {
             String uri = getBaseBuildsHref() + "/" + buildName;
             BuildsByName builds = new BuildsByName();
             builds.slf = uri;
-            for (Build build : buildList) {
-                String versionHref = getBuildNumberRelativeHref(build);
-                builds.buildsNumbers.add(new BuildsByName.Build(versionHref, build.getStarted()));
+            for (BasicBuildInfo basicBuildInfo : buildsByName) {
+                String versionHref = getBuildNumberRelativeHref(basicBuildInfo.getNumber());
+                builds.buildsNumbers.add(new BuildsByName.Build(versionHref, basicBuildInfo.getStarted()));
             }
             return builds;
         }
@@ -146,15 +146,14 @@ public class BuildResource {
      */
     @GET
     @Path("/{name}/{buildNumber}")
-    @Produces({BuildRestConstants.MT_BUILD_INFO,
-            MediaType.APPLICATION_JSON})
+    @Produces({BuildRestConstants.MT_BUILD_INFO})
     public BuildInfo getBuildInfo() throws IOException {
         String buildName = RestUtils.getBuildNameFromRequest(request);
         long buildNumber = RestUtils.getBuildNumberFromRequest(request);
         Build build = buildService.getLatestBuildByNameAndNumber(buildName, buildNumber);
         if (build != null) {
             BuildInfo buildInfo = new BuildInfo();
-            buildInfo.slf = getBuildInfoHref(build);
+            buildInfo.slf = getBuildInfoHref(build.getName(), build.getNumber());
             buildInfo.buildInfo = build;
             return buildInfo;
         } else {
@@ -189,15 +188,15 @@ public class BuildResource {
         return RestUtils.getRestApiUrl(request) + "/" + BuildRestConstants.PATH_ROOT;
     }
 
-    private String getBuildRelativeHref(Build build) {
-        return "/" + build.getName();
+    private String getBuildRelativeHref(String buildName) {
+        return "/" + buildName;
     }
 
-    private String getBuildNumberRelativeHref(Build build) {
-        return "/" + build.getNumber();
+    private String getBuildNumberRelativeHref(long buildNumber) {
+        return "/" + buildNumber;
     }
 
-    private String getBuildInfoHref(Build build) {
-        return getBaseBuildsHref() + getBuildRelativeHref(build) + getBuildNumberRelativeHref(build);
+    private String getBuildInfoHref(String buildName, long buildNumber) {
+        return getBaseBuildsHref() + getBuildRelativeHref(buildName) + getBuildNumberRelativeHref(buildNumber);
     }
 }

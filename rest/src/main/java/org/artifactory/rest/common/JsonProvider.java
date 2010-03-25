@@ -23,6 +23,7 @@ import org.artifactory.api.rest.constant.BuildRestConstants;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.rest.constant.SearchRestConstants;
+import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.common.ConstantValues;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 import org.codehaus.jackson.map.AnnotationIntrospector;
@@ -80,13 +81,16 @@ import javax.ws.rs.ext.Provider;
         ArtifactRestConstants.MT_FILE_INFO,
         ArtifactRestConstants.MT_ITEM_METADATA_NAMES,
         ArtifactRestConstants.MT_ITEM_METADATA,
+        ArtifactRestConstants.MT_ITEM_PROPERTIES,
         SearchRestConstants.MT_ARTIFACT_SEARCH_RESULT,
         SearchRestConstants.MT_ARCHIVE_ENTRY_SEARCH_RESULT,
         SearchRestConstants.MT_GAVC_SEARCH_RESULT,
         SearchRestConstants.MT_PROPERTY_SEARCH_RESULT,
         SearchRestConstants.MT_XPATH_SEARCH_RESULT,
         SearchRestConstants.MT_USAGE_SINCE_SEARCH_RESULT,
-        SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT
+        SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT,
+        SystemRestConstants.MT_VERSION_RESULT,
+        ArtifactRestConstants.MT_COPY_MOVE_RESULT
 })
 public class JsonProvider extends JacksonJsonProvider implements ContextResolver<ObjectMapper> {
 

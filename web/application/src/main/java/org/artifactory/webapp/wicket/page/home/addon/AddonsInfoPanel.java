@@ -61,7 +61,7 @@ public class AddonsInfoPanel extends TitledPanel {
      * @param enabledAddonNames   Name list of enabled addons
      */
     public AddonsInfoPanel(String id, final List<String> installedAddonNames,
-            final Collection<String> enabledAddonNames) {
+                           final Collection<String> enabledAddonNames) {
         super(id);
         add(new CssClass("addons-table"));
 
@@ -91,7 +91,7 @@ public class AddonsInfoPanel extends TitledPanel {
                     item.add(new Label("status", "Disabled").add(new CssClass("addon-disabled")));
                 }
 
-                if (item.getIndex() % 2 == 1) {
+                if (item.getIndex() % 2 == 0) {
                     item.add(new CssClass("even"));
                 }
             }

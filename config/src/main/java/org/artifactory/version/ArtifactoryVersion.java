@@ -58,9 +58,11 @@ public enum ArtifactoryVersion {
     v208("2.0.8", 7829),
     v210("2.1.0", 8350),
     v211("2.1.1", 8514),
-    v212("2.1.2", 8715),
+    v212("2.1.2", 8706),
     v213("2.1.3", 9204),
-    v220("2.2.0", Integer.MAX_VALUE);
+    v220("2.2.0", 9932),
+    v221("2.2.1", 10024),
+    v222("2.2.2", Integer.MAX_VALUE);
 
     public static ArtifactoryVersion getCurrent() {
         ArtifactoryVersion[] versions = ArtifactoryVersion.values();
@@ -78,7 +80,7 @@ public enum ArtifactoryVersion {
     }
 
     public static <T extends SubConfigElementVersion> void addSubConfigElementVersion(T scev,
-            VersionComparator versionComparator) {
+                                                                                      VersionComparator versionComparator) {
         ArtifactoryVersion[] versions = values();
         for (ArtifactoryVersion version : versions) {
             if (versionComparator.supports(version)) {

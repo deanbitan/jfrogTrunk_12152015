@@ -336,6 +336,19 @@ public class JcrHelper {
         return is;
     }
 
+    public static Node getNode(Node parent, String relPath) {
+        try {
+            String cleanPath = relPath.startsWith("/") ? relPath.substring(1) : relPath;
+            if (!parent.hasNode(cleanPath)) {
+                return null;
+            }
+
+            return parent.getNode(cleanPath);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
     public static Node getOrCreateNode(Node parent, String relPath, String type, String... mixins) {
         try {
             String cleanPath = relPath.startsWith("/") ? relPath.substring(1) : relPath;

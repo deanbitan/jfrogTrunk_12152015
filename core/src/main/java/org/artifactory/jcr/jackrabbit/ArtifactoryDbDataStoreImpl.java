@@ -22,8 +22,8 @@ import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.core.data.db.TempFileInputStream;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -282,7 +282,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore {
             //return;
         }
         String maxSize = getBlobsCacheMaxSize();
-        if (maxSize == null | maxSize.length() < 2) {
+        if (maxSize == null || maxSize.length() < 2) {
             throw new DataStoreException("Maximum size of all cached files is mandatory!\n" +
                     "The format is Xg Xm or Xk for X in Gb Mb and Kb respectively");
         }

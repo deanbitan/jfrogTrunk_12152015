@@ -18,11 +18,13 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action;
 
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.RequestCycle;
-import org.apache.wicket.request.target.basic.RedirectRequestTarget;
+import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
+import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 
 /**
  * Redirects to the build history view of the given build name
@@ -32,25 +34,24 @@ import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
 public class GoToBuildAction extends ItemAction {
 
     private static String ACTION_NAME = "Go To Build";
-    private String buildName;
-    private long buildNumber;
+    private BasicBuildInfo basicBuildInfo;
 
     /**
      * Main constructor
      *
-     * @param buildName   Name of build to go to
-     * @param buildNumber Number of build to go to
+     * @param basicBuildInfo Basic build info to act upon
      */
-    public GoToBuildAction(String buildName, long buildNumber) {
+    public GoToBuildAction(BasicBuildInfo basicBuildInfo) {
         super(ACTION_NAME);
-        this.buildName = buildName;
-        this.buildNumber = buildNumber;
+        this.basicBuildInfo = basicBuildInfo;
     }
 
     @Override
     public void onAction(ItemEvent e) {
-        String url = new StringBuilder().append(BuildBrowserConstants.BUILDS).append("/").append(buildName).append("/").
-                append(buildNumber).toString();
-        RequestCycle.get().setRequestTarget(new RedirectRequestTarget(url));
+        PageParameters pageParameters = new PageParameters();
+        pageParameters.put(BuildBrowserConstants.BUILD_NAME, basicBuildInfo.getName());
+        pageParameters.put(BuildBrowserConstants.BUILD_NUMBER, Long.toString(basicBuildInfo.getNumber()));
+        pageParameters.put(BuildBrowserConstants.BUILD_STARTED, basicBuildInfo.getStarted());
+        RequestCycle.get().setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }
 }

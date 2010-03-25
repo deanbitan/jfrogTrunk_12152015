@@ -58,6 +58,7 @@ import org.artifactory.resource.RepoResource;
 import org.slf4j.Logger;
 
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -339,7 +340,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
      * @return Recursively resolved list of all the local and cache repos of this virtual repo and nested virtual
      *         repos.
      */
-    private ArrayList<LocalRepo> getResolvedLocalAndCachedRepos() {
+    private List<LocalRepo> getResolvedLocalAndCachedRepos() {
         ArrayList<LocalRepo> localAndCahcedRepos = Lists.newArrayList();
         localAndCahcedRepos.addAll(getResolvedLocalRepos());
         localAndCahcedRepos.addAll(getResolvedLocalCachedRepos());
@@ -392,6 +393,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         }
         return foundResource;
     }
+
 
     public PomCleanupPolicy getPomRepositoryReferencesCleanupPolicy() {
         return getDescriptor().getPomRepositoryReferencesCleanupPolicy();
@@ -500,7 +502,8 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return downloadStrategy.getInfo(context);
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(final RepoResource res) throws IOException {
+    public ResourceStreamHandle getResourceStreamHandle(final RepoResource res)
+            throws IOException, RepositoryException {
         return storageMixin.getResourceStreamHandle(res);
     }
 

@@ -18,11 +18,11 @@
 
 package org.artifactory.jcr.fs;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.ImportSettings;
-import org.artifactory.api.fs.ChecksumsInfo;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.fs.MetadataInfo;
 import org.artifactory.api.maven.MavenNaming;
@@ -53,6 +53,7 @@ import org.slf4j.Logger;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import java.io.File;
 import java.io.FileFilter;
@@ -62,9 +63,10 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import static org.artifactory.jcr.JcrTypes.NODE_ARTIFACTORY_METADATA;
 
 /**
  * Metadata structure:
@@ -544,7 +546,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
     public final boolean setLastModified(long time) {
         checkMutable("setLastModified");
         getInfo().setLastModified(time);
-        return true;        
+        return true;
     }
 
     /**
@@ -624,7 +626,14 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
 
     public void writeMetadataEntries(StatusHolder status, File metadataFolder, boolean incremental) {
         File metadataFile;
-        Set<MetadataDefinition<?>> metadataDefinitions = getExistingMetadata(true);
+        Set<MetadataDefinition<?>> metadataDefinitions;
+        try {
+            metadataDefinitions = getExistingMetadata(true);
+        } catch (RepositoryException e) {
+            status.setError("Unable to retrieve existing metadata definitions for node " + getAbsolutePath() +
+                    ". Skipping metadata entry writing.", e, log);
+            return;
+        }
         for (MetadataDefinition<?> definition : metadataDefinitions) {
             MetadataPersistenceHandler<?> mdph = definition.getPersistenceHandler();
             String metadataName = definition.getMetadataName();
@@ -674,21 +683,6 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
                     this + "'.", e, log);
             status.setError("Removing '" + metadataFile.getPath() + "'.", log);
             FileUtils.deleteQuietly(metadataFile);
-        }
-    }
-
-    protected void writeChecksums(File targetPath, ChecksumsInfo checksumsInfo, String fileName, long modified) {
-        File sha1 = new File(targetPath, fileName + ".sha1");
-        File md5 = new File(targetPath, fileName + ".md5");
-        try {
-            FileUtils.writeStringToFile(sha1, checksumsInfo.getSha1(), "utf-8");
-            FileUtils.writeStringToFile(md5, checksumsInfo.getMd5(), "utf-8");
-            if (modified > 0) {
-                sha1.setLastModified(modified);
-                md5.setLastModified(modified);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
@@ -814,82 +808,186 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         }
     }
 
-    public Set<MetadataDefinition<?>> getExistingMetadata(boolean includeInternal) {
-        Set<MetadataDefinition<?>> allMdDefs = getRepoGeneric().getAllMetadataDefinitions(includeInternal);
-        Iterator<MetadataDefinition<?>> mdDefIterator = allMdDefs.iterator();
-        while (mdDefIterator.hasNext()) {
-            MetadataDefinition definition = mdDefIterator.next();
-            if (!definition.getPersistenceHandler().hasMetadata(this)) {
-                mdDefIterator.remove();
+    /**
+     * Returns a set of metadata definitions that this item adorns
+     *
+     * @param includeInternal True if the list should include internal metadata
+     * @return Set of metadata definitions that annotate this item
+     */
+    public Set<MetadataDefinition<?>> getExistingMetadata(boolean includeInternal) throws RepositoryException {
+        Set<MetadataDefinition<?>> metadataDefinitions = Sets.newHashSet();
+        Set<MetadataDefinition<?>> cachedDefs = getRepoGeneric().getAllMetadataDefinitions(includeInternal);
+        for (MetadataDefinition<?> cachedDef : cachedDefs) {
+            if (cachedDef.getPersistenceHandler().hasMetadata(this)) {
+                metadataDefinitions.add(cachedDef);
             }
         }
-        return allMdDefs;
-    }
 
-    public <T> void setMetadata(Class<T> mdClass, T metadata) {
-        MetadataDefinition<T> definition = getRepoGeneric().getMetadataDefinition(mdClass);
-        MetadataPersistenceHandler<T> mdph = definition.getPersistenceHandler();
-        if (metadata == null) {
-            mdph.remove(this);
-        } else {
-            mdph.update(this, metadata);
+        Node itemNode = getNode();
+        if (itemNode.hasNode(NODE_ARTIFACTORY_METADATA)) {
+            Node metadataContainerNode = itemNode.getNode(NODE_ARTIFACTORY_METADATA);
+            NodeIterator metadataNodes = metadataContainerNode.getNodes();
+            while (metadataNodes.hasNext()) {
+                Node metadataNode = metadataNodes.nextNode();
+                String metadataName = metadataNode.getName();
+                MetadataDefinition definition = getRepoGeneric().getMetadataDefinition(metadataName, true);
+                if ((includeInternal || !definition.isInternal())) {
+                    metadataDefinitions.add(definition);
+                }
+            }
         }
+
+        return metadataDefinitions;
     }
 
-    public void setMetadata(String metadataName, Object metadata) {
-        MetadataDefinition definition = getRepoGeneric().getMetadataDefinition(metadataName, true);
-        MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
-        if (metadata == null) {
-            mdph.remove(this);
-        } else {
-            mdph.update(this, metadata);
-        }
-    }
-
-    public void setXmlMetadata(String metadataName, String xmlData) {
-        MetadataDefinition definition = getRepoGeneric().getMetadataDefinition(metadataName, true);
-        MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
-        if (xmlData == null) {
-            mdph.remove(this);
-        } else {
-            mdph.update(this, definition.getXmlProvider().fromXml(xmlData));
-        }
-    }
-
+    /**
+     * Returns the metadata of the given type class.<br>
+     * To be used only with non-generic metadata classes.<br>
+     * Generic (String class) will be ignored.<br>
+     *
+     * @param mdClass Class of metadata type. Cannot be generic or null
+     * @param <T>     Metadata type
+     * @return Requested metadata if found. Null if not
+     * @throws IllegalArgumentException If given a null metadata class
+     */
     public <T> T getMetadata(Class<T> mdClass) {
+        if (mdClass == null) {
+            throw new IllegalArgumentException("Metadata type class to locate cannot be null.");
+        }
+
         MetadataDefinition<T> definition = getRepoGeneric().getMetadataDefinition(mdClass);
         MetadataPersistenceHandler<T> mdph = definition.getPersistenceHandler();
         return mdph.read(this);
     }
 
-    public Object getMetadata(String metadataName) {
-        MetadataDefinition definition = getRepoGeneric().getMetadataDefinition(metadataName, false);
-        if (definition == null) {
+    /**
+     * Returns the metadata of the given name.
+     *
+     * @param metadataName Name of metadata to return. Cannot be null
+     * @return Requested metadata if found. Null if not
+     * @throws IllegalArgumentException If given a blank metadata name
+     */
+    public Object getMetadata(String metadataName) throws RepositoryException {
+        MetadataDefinition metadataDefinition = getMetadataDefinition(metadataName);
+        if (metadataDefinition == null) {
             return null;
         }
-        MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
-        return mdph.read(this);
+        return metadataDefinition.getPersistenceHandler().read(this);
     }
 
-    public String getXmlMetadata(String metadataName) {
-        MetadataDefinition definition = getRepoGeneric().getMetadataDefinition(metadataName, false);
-        if (definition == null) {
+    /**
+     * Returns the metadata of the given name.
+     *
+     * @param metadataName Name of metadata to return. Cannot be null
+     * @return Requested metadata if found. Null if not
+     * @throws IllegalArgumentException If given a blank metadata name
+     */
+    public String getXmlMetadata(String metadataName) throws RepositoryException {
+        MetadataDefinition metadataDefinition = getMetadataDefinition(metadataName);
+        if (metadataDefinition == null) {
             return null;
         }
-        MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
+
+        MetadataPersistenceHandler mdph = metadataDefinition.getPersistenceHandler();
         Object metadata = mdph.read(this);
         if (metadata == null) {
             return null;
         }
-        return definition.getXmlProvider().toXml(metadata);
+        return metadataDefinition.getXmlProvider().toXml(metadata);
     }
 
-    public boolean hasMetadata(String metadataName) {
-        MetadataDefinition definition = getRepoGeneric().getMetadataDefinition(metadataName, false);
-        if (definition == null) {
-            return false;
+    /**
+     * Indicates whether this item adorns the given metadata
+     *
+     * @param metadataName Name of metadata to locate
+     * @return True if annotated by the given metadata. False if not
+     * @throws IllegalArgumentException If given a blank metadata name
+     */
+    public boolean hasMetadata(String metadataName) throws RepositoryException {
+        MetadataDefinition metadataDefinition = getMetadataDefinition(metadataName);
+        return metadataDefinition != null && metadataDefinition.getPersistenceHandler().hasMetadata(this);
+    }
+
+    /**
+     * Sets the given metadata on the item.<br>
+     * To be used only with non-generic metadata classes.<br>
+     * Generic (String class) will be ignored.<br>
+     *
+     * @param mdClass  Class of metadata type to set. Cannot be generic
+     * @param metadata Metadata value to set. Cannot be null
+     * @param <T>      Metadata type
+     * @throws IllegalArgumentException When given a null metadata value
+     */
+    public <T> void setMetadata(Class<T> mdClass, T metadata) {
+        if (metadata == null) {
+            throw new IllegalArgumentException("Cannot set a null value for metadata " + mdClass.getSimpleName() +
+                    " on item " + getAbsolutePath() + ".");
         }
+        MetadataDefinition<T> definition = getRepoGeneric().getMetadataDefinition(mdClass);
+        MetadataPersistenceHandler<T> mdph = definition.getPersistenceHandler();
+        mdph.update(this, metadata);
+    }
+
+    /**
+     * Sets the given metadata on the item.<br>
+     *
+     * @param metadataName Name of metadata type to set
+     * @param xmlData      Metadata value to set. Cannot be null
+     * @throws IllegalArgumentException When given a null metadata value
+     */
+    public void setXmlMetadata(String metadataName, String xmlData) {
+        if (xmlData == null) {
+            throw new IllegalArgumentException("Cannot set a null value for metadata " + metadataName + " on item " +
+                    getAbsolutePath() + ".");
+        }
+        MetadataDefinition definition = getRepoGeneric().getMetadataDefinition(metadataName, true);
         MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
-        return mdph.hasMetadata(this);
+        mdph.update(this, definition.getXmlProvider().fromXml(xmlData));
+    }
+
+    /**
+     * Removes the metadata of the given name
+     *
+     * @param metadataName Name of metadata to remove
+     */
+    public void removeMetadata(String metadataName) {
+        MetadataDefinition definition = getRepoGeneric().getMetadataDefinition(metadataName, true);
+        MetadataPersistenceHandler metadataPersistenceHandler = definition.getPersistenceHandler();
+        if (metadataPersistenceHandler.hasMetadata(this)) {
+            metadataPersistenceHandler.remove(this);
+        }
+    }
+
+    /**
+     * Returns the metadata definition of the given name only and only if it exists on the item
+     *
+     * @param metadataName Name of metadata to locate
+     * @return Metadata definition if found. Null if not
+     */
+    private MetadataDefinition getMetadataDefinition(String metadataName) throws RepositoryException {
+        if (StringUtils.isBlank(metadataName)) {
+            throw new IllegalArgumentException("Metadata type name to locate cannot be null.");
+        }
+
+        MetadataDefinition cachedDef = getRepoGeneric().getMetadataDefinition(metadataName, false);
+        if ((cachedDef != null) && cachedDef.getPersistenceHandler().hasMetadata(this)) {
+            return cachedDef;
+        }
+
+        Node itemNode = getNode();
+        if (itemNode.hasNode(NODE_ARTIFACTORY_METADATA)) {
+            Node metadataContainerNode = itemNode.getNode(NODE_ARTIFACTORY_METADATA);
+            if (!metadataContainerNode.hasNode(metadataName)) {
+                return null;
+            }
+
+            MetadataDefinition newDef = getRepoGeneric().getMetadataDefinition(metadataName, true);
+            MetadataPersistenceHandler metadataPersistenceHandler = newDef.getPersistenceHandler();
+            if (metadataPersistenceHandler.hasMetadata(this)) {
+                return newDef;
+            }
+        }
+
+        return null;
     }
 }

@@ -48,10 +48,9 @@ import org.artifactory.api.fs.FolderInfoImpl;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.jackson.JacksonFactory;
 import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.maven.MavenUnitInfo;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.repo.ArtifactCount;
-import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.DirectoryItem;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.VirtualRepoItem;
@@ -61,10 +60,15 @@ import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.JcrQuerySpec;
+import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.deployable.DeployableUnitSearchControls;
+import org.artifactory.api.search.deployable.DeployableUnitSearchResult;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.PermissionTargetInfo;
+import org.artifactory.api.tree.fs.ZipEntriesTree;
+import org.artifactory.api.tree.fs.ZipEntryInfo;
 import org.artifactory.backup.BackupJob;
 import org.artifactory.cache.InternalCacheService;
 import org.artifactory.common.ConstantValues;
@@ -90,7 +94,6 @@ import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.jcr.md.MetadataDefinition;
-import org.artifactory.jcr.md.MetadataService;
 import org.artifactory.jcr.trash.Trashman;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenMetadataCalculator;
@@ -103,6 +106,7 @@ import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoDetails;
 import org.artifactory.repo.RepoDetailsType;
+import org.artifactory.repo.RepoRepoPath;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
 import org.artifactory.repo.context.NullRequestContext;
 import org.artifactory.repo.index.IndexerJob;
@@ -146,6 +150,8 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.artifactory.api.repo.DirectoryItem.UP;
 
@@ -154,7 +160,7 @@ import static org.artifactory.api.repo.DirectoryItem.UP;
  */
 @Service
 @Reloadable(beanClass = InternalRepositoryService.class,
-        initAfter = {JcrService.class, MetadataService.class, InternalCacheService.class, RepoInterceptors.class})
+        initAfter = {JcrService.class, InternalCacheService.class, RepoInterceptors.class})
 public class RepositoryServiceImpl implements InternalRepositoryService {
     private static final Logger log = LoggerFactory.getLogger(RepositoryServiceImpl.class);
 
@@ -181,9 +187,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Autowired
     private AddonsManager addonsManager;
-
-    @Autowired
-    private DeployService deployService;
 
     private VirtualRepo globalVirtualRepo;
 
@@ -329,13 +332,23 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
         for (LocalRepoDescriptor repoDescriptor : localRepoDescriptorMap.values()) {
             JcrLocalRepo oldLocalRepo = null;
+            String key = repoDescriptor.getKey();
             if (oldLocalRepos != null) {
-                String key = repoDescriptor.getKey();
                 LocalRepo oldRepo = oldLocalRepos.get(key);
-                if (oldRepo == null || !(oldRepo instanceof JcrLocalRepo)) {
-                    log.error("Reloading configuration did not find local repository " + key);
+                if (oldRepo != null) {
+                    if (!(oldRepo instanceof JcrLocalRepo)) {
+                        log.error("Reloading configuration did not find local repository " + key);
+                    } else {
+                        oldLocalRepo = (JcrLocalRepo) oldRepo;
+                    }
                 } else {
-                    oldLocalRepo = (JcrLocalRepo) oldRepo;
+                    // This could be a new repo that is in the newly saved config but not in the global map yet.
+                    // Only if we do not find it there as well then it is an error
+                    LocalRepoDescriptor newLocalRepo = centralConfig.getLocalRepositoriesMap().get(key);
+                    if (newLocalRepo == null) {
+                        log.error("Reloading configuration did not find local repository " + key);
+                    }
+
                 }
             }
             LocalRepo repo = new JcrLocalRepo(transactionalMe, repoDescriptor, oldLocalRepo);
@@ -551,31 +564,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return getChildrenNames(repoPath).size() > 0;
     }
 
-    public boolean pomExists(RepoDescriptor targetRepo, MavenArtifactInfo artifactInfo) {
-        if (!artifactInfo.isValid()) {
-            return false;
-        }
-
-        MavenArtifactInfo pomArtifactInfo = new MavenArtifactInfo(artifactInfo);
-        pomArtifactInfo.setType(MavenArtifactInfo.POM);
-        pomArtifactInfo.setClassifier(MavenUnitInfo.NA);
-        String path = pomArtifactInfo.getPath();
-
-        //Sanity check
-        if (targetRepo == null) {
-            throw new IllegalArgumentException("Empty target repository illegal for deployment.");
-        }
-        LocalRepo localRepo = globalVirtualRepo.localRepositoryByKey(targetRepo.getKey());
-        if (localRepo == null) {
-            throw new IllegalArgumentException(
-                    "Target repository " + targetRepo + " does not exists.");
-        }
-
-        //If a pom is already deployed (or a folder by the same name exists), default value
-        //should be not to override it
-        return localRepo.itemExists(path);
-    }
-
     public VirtualRepo getGlobalVirtualRepo() {
         return globalVirtualRepo;
     }
@@ -630,6 +618,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     public String getTextFileContent(FileInfo fileInfo) {
         LocalRepo repo = localOrCachedRepositoryByKey(fileInfo.getRepoKey());
         return repo.getTextFileContent(fileInfo.getRepoPath());
+    }
+
+    public ArchiveFileContent getArchiveFileContent(RepoPath archivePath, String sourceEntryPath) throws IOException {
+        LocalRepo repo = localOrCachedRepositoryByKey(archivePath.getRepoKey());
+        return repo.getArchiveFileContent(archivePath, sourceEntryPath);
     }
 
     /**
@@ -787,6 +780,30 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @SuppressWarnings({"unchecked"})
+    public List<String> getMetadataNames(RepoPath repoPath) {
+        if (!authService.canRead(repoPath)) {
+            AccessLogger.downloadDenied(repoPath);
+            return Lists.newArrayList();
+        }
+        JcrFsItem fsItem = getFsItem(repoPath);
+        if (fsItem == null) {
+            return null;
+        }
+
+        List<String> metadataNames = Lists.newArrayList();
+        Set<MetadataDefinition<?>> existingMetadata;
+        try {
+            existingMetadata = fsItem.getExistingMetadata(false);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+        for (MetadataDefinition<?> metadata : existingMetadata) {
+            metadataNames.add(metadata.getMetadataName());
+        }
+        return metadataNames;
+    }
+
+    @SuppressWarnings({"unchecked"})
     public <MD> MD getMetadata(RepoPath repoPath, Class<MD> metadataClass) {
         if (!authService.canRead(repoPath)) {
             AccessLogger.downloadDenied(repoPath);
@@ -798,6 +815,43 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
         // TODO: should use read lock?
         return (MD) fsItem.getMetadata(metadataClass);
+    }
+
+    public String getXmlMetadata(RepoPath repoPath, String metadataName) {
+        try {
+            if (!authService.canRead(repoPath)) {
+                AccessLogger.downloadDenied(repoPath);
+                return null;
+            }
+            JcrFsItem fsItem = getFsItem(repoPath);
+            if (fsItem == null) {
+                return null;
+            }
+            return fsItem.getXmlMetadata(metadataName);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        } finally {
+            // release the read lock on the fsItem
+            LockingHelper.releaseReadLock(repoPath);
+        }
+    }
+
+    public boolean hasMetadata(RepoPath repoPath, String metadataName) {
+        try {
+            LocalRepo localRepo = getLocalRepository(repoPath);
+            // will place a read lock on the fsItem
+            JcrFsItem fsItem = localRepo.getJcrFsItem(repoPath);
+            if (fsItem == null) {
+                log.debug("No file or folder found in {}", repoPath);
+                return false;
+            }
+            return fsItem.hasMetadata(metadataName);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        } finally {
+            // release the read lock on the fsItem
+            LockingHelper.releaseReadLock(repoPath);
+        }
     }
 
     public <MD> void setMetadata(RepoPath repoPath, Class<MD> metadataClass, MD metadata) {
@@ -815,23 +869,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         fsItem.setMetadata(metadataClass, metadata);
     }
 
-    public String getXmlMetadata(RepoPath repoPath, String metadataName) {
-        try {
-            if (!authService.canRead(repoPath)) {
-                AccessLogger.downloadDenied(repoPath);
-                return null;
-            }
-            JcrFsItem fsItem = getFsItem(repoPath);
-            if (fsItem == null) {
-                return null;
-            }
-            return fsItem.getXmlMetadata(metadataName);
-        } finally {
-            // release the read lock on the fsItem
-            LockingHelper.releaseReadLock(repoPath);
-        }
-    }
-
     public void setXmlMetadata(RepoPath repoPath, String metadataName, String metadataContent) {
         if (!authService.canAnnotate(repoPath)) {
             AccessLogger.annotateDenied(repoPath);
@@ -847,52 +884,32 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         fsItem.setXmlMetadata(metadataName, metadataContent);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public List<String> getMetadataNames(RepoPath repoPath) {
-        if (!authService.canRead(repoPath)) {
-            AccessLogger.downloadDenied(repoPath);
-            return Collections.emptyList();
+    public void removeMetadata(RepoPath repoPath, String metadataName) {
+        if (!authService.canAnnotate(repoPath)) {
+            AccessLogger.annotateDenied(repoPath);
+            return;
         }
-        JcrFsItem fsItem = getFsItem(repoPath);
+
+        LocalRepo repository = getLocalRepository(repoPath);
+        JcrFsItem<?> fsItem = repository.getLockedJcrFsItem(repoPath);
         if (fsItem == null) {
-            return null;
+            return;
         }
-        Set<MetadataDefinition> existingMetadata = fsItem.getExistingMetadata(false);
-        if (existingMetadata.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<String> names = new ArrayList<String>(existingMetadata.size());
-        for (MetadataDefinition definition : existingMetadata) {
-            names.add(definition.getMetadataName());
-        }
-        return names;
+
+        fsItem.removeMetadata(metadataName);
     }
 
-    public boolean hasMetadata(RepoPath repoPath, String metadataName) {
-        try {
-            LocalRepo localRepo = getLocalRepository(repoPath);
-            // will place a read lock on the fsItem
-            JcrFsItem fsItem = localRepo.getJcrFsItem(repoPath);
-            if (fsItem == null) {
-                log.debug("No file or folder found in {}", repoPath);
-                return false;
-            }
-            return fsItem.hasMetadata(metadataName);
-        } finally {
-            // release the read lock on the fsItem
-            LockingHelper.releaseReadLock(repoPath);
-        }
+
+    public MoveMultiStatusHolder move(RepoPath from, RepoPath to, boolean dryRun) {
+        MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, to)
+                .copy(false).dryRun(dryRun).executeMavenMetadataCalculation(true);
+        return moveOrCopy(configBuilder.build());
     }
 
-    public MoveMultiStatusHolder move(RepoPath fromRepoPath, String targetLocalRepoKey, boolean dryRun) {
-        RepoPathMover mover = getRepoPathMover();
-        MoveMultiStatusHolder status = mover.moveOrCopy(
-                new MoverConfigBuilder(fromRepoPath, targetLocalRepoKey).setCopy(false).setDryRun(dryRun).
-                        setExecuteMavenMetadataCalculation(true).build());
-        if (status.noItemsMoved()) {
-            status.setError("No items were moved during this operation.", log);
-        }
-        return status;
+    public MoveMultiStatusHolder move(RepoPath from, String targetLocalRepoKey, boolean dryRun) {
+        MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, targetLocalRepoKey)
+                .copy(false).dryRun(dryRun).executeMavenMetadataCalculation(true);
+        return moveOrCopy(configBuilder.build());
     }
 
     public MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetLocalRepoKey, boolean dryRun) {
@@ -905,12 +922,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         for (RepoPath pathToMove : pathsToMoveIncludingParents) {
             log.debug("Moving path: {} to {}", pathToMove, targetLocalRepoKey);
             MoveMultiStatusHolder result = mover.moveOrCopy(
-                    new MoverConfigBuilder(pathToMove, targetLocalRepoKey).setCopy(false).setDryRun(dryRun)
-                            .setExecuteMavenMetadataCalculation(false).setSearchResult(true).build());
+                    new MoverConfigBuilder(pathToMove, targetLocalRepoKey).copy(false).dryRun(dryRun)
+                            .executeMavenMetadataCalculation(false).searchResult(true).build());
             status.merge(result);
         }
 
-        if (status.noItemsMoved()) {
+        if (status.noItemsMovedOrCopied()) {
             status.setError("No items were moved during this operation.", log);
         }
         // done moving, launch async call to execute metadata recalculation on all marked folders
@@ -918,15 +935,16 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return status;
     }
 
-    public MoveMultiStatusHolder copy(RepoPath fromRepoPath, String targetLocalRepoKey, boolean dryRun) {
-        RepoPathMover mover = getRepoPathMover();
-        MoveMultiStatusHolder status = mover.moveOrCopy(
-                new MoverConfigBuilder(fromRepoPath, targetLocalRepoKey).setCopy(true).setDryRun(dryRun).
-                        setExecuteMavenMetadataCalculation(true).build());
-        if (status.noItemsMoved()) {
-            status.setError("No items were copied during this operation.", log);
-        }
-        return status;
+    public MoveMultiStatusHolder copy(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun) {
+        MoverConfigBuilder configBuilder = new MoverConfigBuilder(fromRepoPath, targetRepoPath)
+                .copy(true).dryRun(dryRun).executeMavenMetadataCalculation(true);
+        return moveOrCopy(configBuilder.build());
+    }
+
+    public MoveMultiStatusHolder copy(RepoPath from, String targetLocalRepoKey, boolean dryRun) {
+        MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, targetLocalRepoKey)
+                .copy(true).dryRun(dryRun).executeMavenMetadataCalculation(true);
+        return moveOrCopy(configBuilder.build());
     }
 
     public MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey, boolean dryRun) {
@@ -939,12 +957,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         for (RepoPath pathToCopy : pathsToCopyIncludingParents) {
             log.debug("Moving path: {} to {}", pathToCopy, targetLocalRepoKey);
             MoveMultiStatusHolder result = mover.moveOrCopy(
-                    new MoverConfigBuilder(pathToCopy, targetLocalRepoKey).setCopy(true).setDryRun(dryRun)
-                            .setExecuteMavenMetadataCalculation(false).setSearchResult(true).build());
+                    new MoverConfigBuilder(pathToCopy, targetLocalRepoKey).copy(true).dryRun(dryRun)
+                            .executeMavenMetadataCalculation(false).searchResult(true).build());
             status.merge(result);
         }
 
-        if (status.noItemsMoved()) {
+        if (status.noItemsMovedOrCopied()) {
             status.setError("No items were copied during this operation.", log);
         }
         //Done copying, launch async call to execute metadata recalculation on all marked folders
@@ -952,15 +970,22 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return status;
     }
 
+    private MoveMultiStatusHolder moveOrCopy(MoverConfig config) {
+        MoveMultiStatusHolder status = getRepoPathMover().moveOrCopy(config);
+        if (status.noItemsMovedOrCopied()) {
+            status.setError("No items were moved during this operation.", log);
+        }
+        return status;
+    }
+
     public StatusHolder undeploy(RepoPath repoPath, boolean calcMavenMetadata) {
         String repoKey = repoPath.getRepoKey();
         StoringRepo storingRepo = storingRepositoryByKey(repoKey);
-
-        if (storingRepo == null) {
-            throw new IllegalArgumentException("Could find storing repository by key '" + repoKey + "'");
-        }
-
         StatusHolder statusHolder = new StatusHolder();
+        if (storingRepo == null) {
+            statusHolder.setError("Could find storing repository by key '" + repoKey + "'", log);
+            return statusHolder;
+        }
         assertDelete(storingRepo, repoPath.getPath(), false, statusHolder);
         if (!statusHolder.isError()) {
             storingRepo.undeploy(repoPath, calcMavenMetadata);
@@ -993,14 +1018,16 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return multiStatusHolder;
     }
 
-    public void zap(RepoPath repoPath) {
+    public int zap(RepoPath repoPath) {
+        int zappedItems = 0;
         LocalRepo localRepo = getLocalRepository(repoPath);
         if (localRepo.isCache()) {
             LocalCacheRepo cache = (LocalCacheRepo) localRepo;
-            cache.zap(repoPath);
+            zappedItems = cache.zap(repoPath);
         } else {
             log.warn("Got a zap request on a non-local-cache node '" + repoPath + "'.");
         }
+        return zappedItems;
     }
 
     public MavenArtifactInfo getMavenArtifactInfo(ItemInfo itemInfo) {
@@ -1022,8 +1049,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         JcrFolder folder = (JcrFolder) repository.getJcrFsItem(folderInfo.getRepoPath());
 
         FolderCompactor compactor = ContextHelper.get().beanForType(FolderCompactor.class);
-        List<JcrFolder> children = compactor.getFolderWithCompactedChildren(folder);
-        List<FolderInfo> result = new ArrayList<FolderInfo>(children.size());
+        List<JcrFolder> children;
+        children = compactor.getFolderWithCompactedChildren(folder);
+        List<FolderInfo> result = Lists.newArrayList();
         for (JcrFolder child : children) {
             result.add(child.getInfo());
         }
@@ -1073,6 +1101,18 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     public LocalRepo localOrCachedRepositoryByKey(String key) {
         return globalVirtualRepo.localOrCachedRepositoryByKey(key);
     }
+
+    @SuppressWarnings({"unchecked"})
+    public <R extends Repo> RepoRepoPath<R> getRepoRepoPath(RepoPath repoPath) {
+        String repoKey = repoPath.getRepoKey();
+        R repo = (R) repositoryByKey(repoKey);
+        if (repo == null) {
+            throw new IllegalArgumentException("Repository '" + repoKey + "' not found!");
+        }
+        RepoRepoPath<R> rrp = new RepoRepoPath<R>(repo, repoPath);
+        return rrp;
+    }
+
 
     public StoringRepo storingRepositoryByKey(String key) {
         LocalRepo localRepo = localOrCachedRepositoryByKey(key);
@@ -1180,9 +1220,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             // Just write locking the file will save the stats
             repo.getLockedJcrFile(repoPath, false);
         }
-    }
-
-    public void calculateStats() {
     }
 
     // get all folders marked for maven metadata calculation and execute the metadata calculation
@@ -1319,11 +1356,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     public <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(
-            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException {
+            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException {
         LocalCacheRepo localCache = remoteRepo.getLocalCacheRepo();
         String path = res.getRepoPath().getPath();
-        RepoResource repoResource = localCache.getInfo(new NullRequestContext(path));
-        return remoteRepo.downloadAndSave(res, repoResource);
+        RepoResource cachedResource = localCache.getInfo(new NullRequestContext(path));
+        return remoteRepo.downloadAndSave(res, cachedResource);
     }
 
     public RepoResource unexpireIfExists(LocalRepo localCacheRepo, String path) {
@@ -1335,7 +1372,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     public ResourceStreamHandle unexpireAndRetrieveIfExists(LocalRepo localCacheRepo, String path)
-            throws IOException {
+            throws IOException, RepositoryException {
         RepoResource resource = internalUnexpireIfExists(localCacheRepo, path);
         if (resource != null && resource.isFound()) {
             return localCacheRepo.getResourceStreamHandle(resource);
@@ -1344,7 +1381,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     public ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res)
-            throws IOException, RepoAccessException {
+            throws IOException, RepoAccessException, RepositoryException {
         if (res instanceof StringResource) {
             // resource already contains the content - just extract it and return a string resource handle
             String content = ((StringResource) res).getContent();
@@ -1364,17 +1401,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     public List<DeployableUnit> getDeployableUnitsUnder(RepoPath repoPath) {
-        List<DeployableUnit> deployableUnits = new ArrayList<DeployableUnit>();
+        List<DeployableUnit> deployableUnits = Lists.newArrayList();
         try {
-            QueryResult result = searchService.searchPomInPath(repoPath);
-            NodeIterator nodeIterator = result.getNodes();
-            while (nodeIterator.hasNext()) {
-                Node node = nodeIterator.nextNode();
-                // this is the parent node of the pom files - the version folder
-                Node versionNode = node.getParent();
-                RepoPath folderRepoPath = JcrPath.get().getRepoPath(versionNode.getPath());
-                DeployableUnit du = new DeployableUnit(folderRepoPath);
-                deployableUnits.add(du);
+            DeployableUnitSearchControls controls = new DeployableUnitSearchControls(repoPath);
+            SearchResults<DeployableUnitSearchResult> searchResults = searchService.searchDeployableUnits(controls);
+            for (DeployableUnitSearchResult result : searchResults.getResults()) {
+                deployableUnits.add(result.getDeployableUnit());
             }
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException("Could not get deployable units under '" + repoPath + "'.", e);
@@ -1478,6 +1510,24 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return remoteRepos;
     }
 
+    public ZipEntriesTree zipEntriesToTree(RepoPath zipPath) throws IOException {
+        LocalRepo localRepo = getLocalOrCachedRepository(zipPath);
+        JcrFile file = localRepo.getLocalJcrFile(zipPath.getPath());
+        ZipInputStream zin = null;
+        try {
+            ZipEntriesTree tree;
+            InputStream in = file.getStream();
+            zin = new ZipInputStream(in);
+            ZipEntry zipEntry;
+            tree = new ZipEntriesTree();
+            while ((zipEntry = zin.getNextEntry()) != null) {
+                tree.insert(new ZipEntryInfo(zipEntry));
+            }
+            return tree;
+        } finally {
+            IOUtils.closeQuietly(zin);
+        }
+    }
 
     private String importAsync(String repoKey, ImportSettings settings, boolean deleteExistingRepo, boolean wait) {
         MultiStatusHolder status = settings.getStatusHolder();
@@ -1573,7 +1623,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
         List<String> listOfRepoKeys = Arrays.asList(baseDirList);
         children.addAll(listOfRepoKeys);
-        int executionCounter = 0;
+        int activeImports = 0;
+        int maxParallelImports = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
         for (LocalRepoDescriptor newLocalRepo : newRepoList) {
             File rootImportFolder = new File(settings.getBaseDir(), newLocalRepo.getKey());
             try {
@@ -1586,11 +1637,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                             deleteExistingRepo = true;
                         }
                         // avoid spawning too many threads
-                        boolean wait = executionCounter % 2 == 0;
+                        boolean wait = activeImports == maxParallelImports;
+                        if (!wait) {
+                            activeImports++;
+                        }
                         String importTaskToken =
                                 importAsync(newLocalRepo.getKey(), repoSettings, deleteExistingRepo, wait);
-                        tokens.add(importTaskToken);
-                        executionCounter++;
+                        if (!wait) {
+                            tokens.add(importTaskToken);
+                        }
                     }
                     children.remove(newLocalRepo.getKey());
                 }

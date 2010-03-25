@@ -27,8 +27,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "RemoteRepoBaseType", propOrder = {"url", "offline", "hardFail", "storeArtifactsLocally",
         "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "failedRetrievalCachePeriodSecs",
         "missedRetrievalCachePeriodSecs", "checksumPolicyType", "unusedArtifactsCleanupEnabled",
-        "unusedArtifactsCleanupPeriodHours", "shareConfiguration"},
-        namespace = Descriptor.NS)
+        "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties"}, namespace = Descriptor.NS)
 public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(required = true)
@@ -58,7 +57,7 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     @XmlElement(defaultValue = "43200", required = false)
     private long missedRetrievalCachePeriodSecs = 43200;//12hrs
 
-    @XmlElement(defaultValue = "generate-if-absent", required = false)
+    @XmlElement(name = "remoteRepoChecksumPolicyType", defaultValue = "generate-if-absent", required = false)
     private ChecksumPolicyType checksumPolicyType = ChecksumPolicyType.GEN_IF_ABSENT;
 
     @XmlElement(defaultValue = "false", required = false)
@@ -69,6 +68,9 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(defaultValue = "false", required = false)
     protected boolean shareConfiguration = false;
+
+    @XmlElement(defaultValue = "false", required = false)
+    private boolean synchronizeProperties;
 
     public String getUrl() {
         return url;
@@ -174,6 +176,14 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
         this.shareConfiguration = shareConfiguration;
     }
 
+    public boolean isSynchronizeProperties() {
+        return synchronizeProperties;
+    }
+
+    public void setSynchronizeProperties(boolean synchronizeProperties) {
+        this.synchronizeProperties = synchronizeProperties;
+    }
+
     @Override
     public boolean isLocal() {
         return false;
@@ -190,7 +200,7 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
             return false;
         }
         RemoteRepoDescriptor old = (RemoteRepoDescriptor) oldDescriptor;
-        if (!PathUtils.safeStringEquals(this.url,old.url) ||
+        if (!PathUtils.safeStringEquals(this.url, old.url) ||
                 this.storeArtifactsLocally != old.storeArtifactsLocally ||
                 this.retrievalCachePeriodSecs != old.retrievalCachePeriodSecs ||
                 this.failedRetrievalCachePeriodSecs != old.failedRetrievalCachePeriodSecs ||

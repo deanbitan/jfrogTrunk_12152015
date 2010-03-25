@@ -19,15 +19,23 @@
 package org.artifactory.rest.resource.repositories;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.common.StatusEntry;
+import org.artifactory.api.common.StatusEntryLevel;
+import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
+import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoDetails;
 import org.artifactory.repo.RepoDetailsType;
+import org.artifactory.rest.resource.system.StreamStatusHolder;
 import org.artifactory.rest.util.RestUtils;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -36,12 +44,17 @@ import org.springframework.stereotype.Component;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import static org.artifactory.repo.RepoDetailsType.*;
@@ -51,20 +64,29 @@ import static org.artifactory.repo.RepoDetailsType.*;
  *
  * @author Noam Tenne
  */
-@Path(RepositoriesRestConstants.PATH_ROOT)
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Path(RepositoriesRestConstants.PATH_ROOT)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class RepositoriesResource {
 
-    @Context
-    private HttpServletRequest httpRequest;
+    private static final Logger log = LoggerFactory.getLogger(RepositoriesResource.class);
+
 
     @Context
-    private HttpServletResponse httpResponse;
+    HttpServletRequest httpRequest;
+
+    @Context
+    HttpServletResponse httpResponse;
 
     @Autowired
     RepositoryService repositoryService;
+
+    @Autowired
+    AuthorizationService authorizationService;
+
+    @Autowired
+    SearchService searchService;
 
     /**
      * Repository configuration resource delegator
@@ -73,11 +95,13 @@ public class RepositoriesResource {
      */
     @Path("{repoKey}/" + RepositoriesRestConstants.PATH_CONFIGURATION)
     public RepoConfigurationResource getRepoConfigResource(@PathParam("repoKey") String repoKey) {
-        return new RepoConfigurationResource(httpResponse, repositoryService, repoKey);
+        return new RepoConfigurationResource(repositoryService, repoKey);
     }
 
     /**
-     * Returns a JSON list of repository details
+     * Returns a JSON list of repository details.
+     * <p/>
+     * NOTE: Used by CI integration to get a list of deployment repository targets.
      *
      * @param repoType Name of repository type, as defined in {@link org.artifactory.repo.RepoDetailsType}. Can be null
      * @return JSON repository details list. Will return details of defined type, if given. And will return details of
@@ -90,6 +114,65 @@ public class RepositoriesResource {
     String repoType) throws Exception {
         return getRepoDetailsList(repoType);
     }
+
+    @POST
+    @Consumes("application/x-www-form-urlencoded")
+    public void importRepositories(
+            //The base path to import from (may contain a single repo or multiple repos with named sub folders
+            @FormParam(RepositoriesRestConstants.PATH) String path,
+            //Empty/null repo -> all
+            @FormParam(RepositoriesRestConstants.TARGET_REPO) String targetRepo,
+            //Include metadata - default 1
+            @FormParam(RepositoriesRestConstants.INCLUDE_METADATA) String includeMetadata,
+            //Verbose - default 0
+            @FormParam(RepositoriesRestConstants.VERBOSE) String verbose) throws IOException {
+        StreamStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
+        String repoNameToImport = targetRepo;
+        if (StringUtils.isBlank(repoNameToImport)) {
+            repoNameToImport = "All repositories";
+        }
+        statusHolder.setStatus("Starting Repositories Import of " + repoNameToImport + " from " + path, log);
+        if (!authorizationService.isAdmin()) {
+            statusHolder.setError(
+                    "User " + authorizationService.currentUsername() + " is not permitted to import repositories",
+                    HttpStatus.SC_UNAUTHORIZED, log);
+        }
+        if (StringUtils.isEmpty(path)) {
+            statusHolder.setError("Source directory path may not be empty.", HttpStatus.SC_BAD_REQUEST, log);
+        }
+        File baseDir = new File(path);
+        if (!baseDir.exists()) {
+            statusHolder.setError("Directory " + path + " does not exist.", HttpStatus.SC_BAD_REQUEST, log);
+        }
+        ImportSettings importSettings = new ImportSettings(baseDir, statusHolder);
+        if (StringUtils.isNotBlank(includeMetadata)) {
+            importSettings.setIncludeMetadata(Integer.parseInt(includeMetadata) == 1);
+        }
+        if (StringUtils.isNotBlank(verbose)) {
+            importSettings.setVerbose(Integer.parseInt(verbose) == 1);
+        }
+        try {
+            if (StringUtils.isBlank(targetRepo)) {
+                repositoryService.importAll(importSettings);
+            } else {
+                importSettings.setIndexMarkedArchives(true);
+                repositoryService.importRepo(targetRepo, importSettings);
+            }
+        } catch (Exception e) {
+            statusHolder.setError("Unable to import repository", e, log);
+        } finally {
+            if (!importSettings.isIndexMarkedArchives()) {
+                searchService.indexMarkedArchives();
+            }
+        }
+        StringBuilder builder = new StringBuilder();
+        List<StatusEntry> statusEntries = statusHolder.getEntries(StatusEntryLevel.INFO);
+        for (StatusEntry entry : statusEntries) {
+            String message = entry.getMessage();
+            builder.append(message).append("\n");
+        }
+    }
+
 
     /**
      * Returns a list of repository details

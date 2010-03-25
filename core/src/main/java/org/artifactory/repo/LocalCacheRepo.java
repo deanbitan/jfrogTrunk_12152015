@@ -33,5 +33,8 @@ public interface LocalCacheRepo extends LocalRepo<LocalCacheRepoDescriptor> {
 
     void unexpire(String path);
 
-    void zap(RepoPath repoPath);
+    /**
+     * @see org.artifactory.api.repo.RepositoryService#zap(org.artifactory.api.repo.RepoPath)
+     */
+    int zap(RepoPath repoPath);
 }

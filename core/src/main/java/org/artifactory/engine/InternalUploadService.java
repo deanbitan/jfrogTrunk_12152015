@@ -23,7 +23,7 @@ import org.artifactory.api.repo.Request;
 import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.UploadService;
-import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.repo.LocalRepo;
 
 import java.io.IOException;
 
@@ -35,16 +35,13 @@ import java.io.IOException;
 public interface InternalUploadService extends UploadService {
 
     /**
-     * Performs the actual uploading proccess
+     * Performs the actual uploading process.
      *
      * @param request  Originating request
      * @param response Response to send
-     * @param repo     Target repo
-     * @param path     Path of upload
-     * @throws IOException
+     * @param repo     Target local non-cahce repo
      */
     @Lock(transactional = true)
     @Request(aggregateEventsByTimeWindow = true)
-    void doProcess(ArtifactoryRequest request, ArtifactoryResponse response, StoringRepo repo, String path)
-            throws IOException;
+    void doProcess(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo) throws IOException;
 }

@@ -53,7 +53,7 @@ public class MetadataReader125 implements MetadataReader {
         }
         List<MetadataEntry> result = new ArrayList<MetadataEntry>();
         try {
-            String xmlContent = FileUtils.readFileToString(file);
+            String xmlContent = FileUtils.readFileToString(file, "utf-8");
             if (xmlContent.contains("<file>")) {
                 // convert to file metadata
                 String fileXmlContent = MetadataConverterUtils.convertString(fileConverter, xmlContent);

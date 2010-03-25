@@ -26,6 +26,7 @@ import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 
@@ -34,7 +35,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.List;
 
@@ -47,6 +47,7 @@ import static org.artifactory.api.rest.constant.SearchRestConstants.NOT_FOUND;
  */
 public class GavcSearchResource {
 
+    private AuthorizationService authorizationService;
     private SearchService searchService;
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -54,7 +55,9 @@ public class GavcSearchResource {
     /**
      * @param searchService Search service instance
      */
-    public GavcSearchResource(SearchService searchService, HttpServletRequest request, HttpServletResponse response) {
+    public GavcSearchResource(AuthorizationService authorizationService, SearchService searchService,
+            HttpServletRequest request, HttpServletResponse response) {
+        this.authorizationService = authorizationService;
         this.searchService = searchService;
         this.request = request;
         this.response = response;
@@ -71,7 +74,7 @@ public class GavcSearchResource {
      * @return Rest search results object
      */
     @GET
-    @Produces({SearchRestConstants.MT_GAVC_SEARCH_RESULT, MediaType.APPLICATION_JSON})
+    @Produces({SearchRestConstants.MT_GAVC_SEARCH_RESULT})
     public InfoRestSearchResult get(
             @QueryParam(SearchRestConstants.PARAM_GAVC_GROUP_ID) String groupId,
             @QueryParam(SearchRestConstants.PARAM_GAVC_ARTIFACT_ID) String artifactId,
@@ -100,6 +103,7 @@ public class GavcSearchResource {
             searchControls.setArtifactId(artifactId);
             searchControls.setVersion(version);
             searchControls.setClassifier(classifier);
+            searchControls.setLimitSearchResults(authorizationService.isAnonymous());
             searchControls.setSelectedRepoForSearch(reposToSearch);
 
             SearchResults<GavcSearchResult> searchResults = null;

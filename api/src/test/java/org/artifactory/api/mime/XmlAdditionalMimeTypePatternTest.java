@@ -19,9 +19,8 @@
 package org.artifactory.api.mime;
 
 import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.artifactory.util.ResourceUtils;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -31,17 +30,7 @@ import static org.testng.Assert.*;
 /**
  * @author Eli Givoni
  */
-public class XmlAdditionalMimeTypePatternTest {
-
-    @BeforeMethod
-    public void bindProperties() {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
-    }
-
-    @AfterMethod
-    public void unbindProperties() {
-        ArtifactorySystemProperties.unbind();
-    }
+public class XmlAdditionalMimeTypePatternTest extends SystemPropertiesBoundTest {
 
     @Test
     public void getXmlAdditionalMimeTypeContentType() {

@@ -22,14 +22,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
+import org.apache.jackrabbit.JcrConstants;
+import org.apache.jackrabbit.util.Text;
+import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
-import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchControls;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.util.Pair;
-import org.artifactory.build.InternalBuildService;
-import org.artifactory.build.api.Build;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.log.LoggerFactory;
@@ -54,28 +54,19 @@ public class BuildSearcher extends SearcherBase {
 
     private static final Logger log = LoggerFactory.getLogger(BuildSearcher.class);
 
-    private InternalBuildService buildService;
-
     /**
-     * Default constructor
-     */
-    public BuildSearcher() {
-        buildService = ContextHelper.get().beanForType(InternalBuildService.class);
-    }
-
-    /**
-     * Returns a list of build concentrated by name and latest date
+     * Returns a set of build concentrated by name and latest date
      *
-     * @return List of latest builds by name
+     * @return Set of latest builds by name
      * @throws RepositoryException Any exception that might occur while executing the query
      */
-    public List<Build> getLatestBuildsByName() throws Exception {
-        JcrPath jcrPath = JcrPath.get();
+    public Set<BasicBuildInfo> getLatestBuildsByName() throws Exception {
 
-        Map<String, Pair<Calendar, Build>> map = Maps.newHashMap();
+        Map<String, Pair<Calendar, String[]>> map = Maps.newHashMap();
 
         StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("/jcr:root").append(jcrPath.getBuildsJcrRootPath()).append("/*/*/.");
+        queryBuilder.append("/jcr:root").append(JcrPath.get().getBuildsJcrRootPath()).append("/*/*/element(*, ").
+                append(JcrConstants.NT_UNSTRUCTURED).append(")");
 
         QueryResult queryResult = getJcrService().executeQuery(JcrQuerySpec.xpath(queryBuilder.toString()).noLimit());
 
@@ -85,28 +76,33 @@ public class BuildSearcher extends SearcherBase {
             try {
                 Node node = nodes.nextNode();
 
-                String buildPath = node.getPath();
+                String nodePath = node.getPath();
+                String[] splitPath = node.getPath().split("/");
+                if (splitPath.length < 5) {
+                    log.debug("Latest build by name search result '{}' path hierarchy does not contain sufficient info."
+                            , nodePath);
+                    continue;
+                }
                 Calendar buildCreated = node.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getDate();
 
-                String buildName = jcrPath.getBuildNameFromPath(buildPath);
+                String buildName = splitPath[2];
 
-                if (!map.containsKey(buildName) ||
-                        map.get(buildName).getFirst().before(buildCreated)) {
+                if (!map.containsKey(buildName) || map.get(buildName).getFirst().before(buildCreated)) {
 
-                    Build build = buildService.getBuild(node);
-
-                    if (build != null) {
-                        map.put(buildName, new Pair<Calendar, Build>(buildCreated, build));
-                    }
+                    map.put(buildName, new Pair<Calendar, String[]>(buildCreated, splitPath));
                 }
             } catch (RepositoryException re) {
                 handleNotFoundException(re);
             }
         }
 
-        List<Build> buildsToReturn = Lists.newArrayList();
-        for (Pair<Calendar, Build> buildPair : map.values()) {
-            buildsToReturn.add(buildPair.getSecond());
+        Set<BasicBuildInfo> buildsToReturn = Sets.newHashSet();
+        for (String buildName : map.keySet()) {
+            String[] splitPath = map.get(buildName).getSecond();
+            String decodedBuildName = Text.unescapeIllegalJcrChars(buildName);
+            long buildNumber = Long.parseLong(splitPath[3]);
+            String decodedBuildStarted = Text.unescapeIllegalJcrChars(splitPath[4]);
+            buildsToReturn.add(new BasicBuildInfo(decodedBuildName, buildNumber, decodedBuildStarted));
         }
 
         return buildsToReturn;
@@ -117,9 +113,9 @@ public class BuildSearcher extends SearcherBase {
      *
      * @param sha1 SHA1 checksum to search for. Can be blank.
      * @param md5  MD5 checksum to search for. Can be blank.
-     * @return List of builds that deployed at least one artifact with the given checksum
+     * @return List of basic build infos that deployed at least one artifact with the given checksum
      */
-    public List<Build> findBuildsByArtifactChecksum(String sha1, String md5) throws RepositoryException {
+    public List<BasicBuildInfo> findBuildsByArtifactChecksum(String sha1, String md5) throws RepositoryException {
         return findBuildsByItemChecksums(JcrTypes.PROP_BUILD_ARTIFACT_CHECKSUMS, sha1, md5);
     }
 
@@ -128,9 +124,9 @@ public class BuildSearcher extends SearcherBase {
      *
      * @param sha1 SHA1 checksum to search for. Can be blank.
      * @param md5  MD5 checksum to search for. Can be blank.
-     * @return List of builds that depend on the artifact with the given checksum
+     * @return List of basic build infos that depend on the artifact with the given checksum
      */
-    public List<Build> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryException {
+    public List<BasicBuildInfo> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryException {
         return findBuildsByItemChecksums(JcrTypes.PROP_BUILD_DEPENDENCY_CHECKSUMS, sha1, md5);
     }
 
@@ -150,9 +146,9 @@ public class BuildSearcher extends SearcherBase {
      * @param md5          MD5 checksum. May be blank
      * @return List of results
      */
-    private List<Build> findBuildsByItemChecksums(String itemTypeProp, String sha1, String md5)
+    private List<BasicBuildInfo> findBuildsByItemChecksums(String itemTypeProp, String sha1, String md5)
             throws RepositoryException {
-        List<Build> results = Lists.newArrayList();
+        List<BasicBuildInfo> results = Lists.newArrayList();
 
         findBuildsByItemChecksum(itemTypeProp, sha1, md5, results);
 
@@ -167,7 +163,7 @@ public class BuildSearcher extends SearcherBase {
      * @param md5          MD5 checksum value
      * @param results      List of results to append to
      */
-    private void findBuildsByItemChecksum(String itemTypeProp, String sha1, String md5, List<Build> results)
+    private void findBuildsByItemChecksum(String itemTypeProp, String sha1, String md5, List<BasicBuildInfo> results)
             throws RepositoryException {
         boolean validSha1 = StringUtils.isNotBlank(sha1);
         boolean validMd5 = StringUtils.isNotBlank(md5);
@@ -176,7 +172,8 @@ public class BuildSearcher extends SearcherBase {
             return;
         }
 
-        StringBuilder queryBuilder = new StringBuilder().append("//. ").append("[");
+        StringBuilder queryBuilder =
+                new StringBuilder().append("//element(*, ").append(JcrConstants.NT_UNSTRUCTURED).append(") [");
 
         if (validSha1) {
             queryBuilder.append("@").append(itemTypeProp).append(" = '").append(BuildService.BUILD_CHECKSUM_PREFIX_SHA1)
@@ -184,7 +181,7 @@ public class BuildSearcher extends SearcherBase {
         }
         if (validMd5) {
             if (validSha1) {
-                queryBuilder.append(" and ");
+                queryBuilder.append(" or ");
             }
             queryBuilder.append("@").append(itemTypeProp).append(" = '").append(BuildService.BUILD_CHECKSUM_PREFIX_MD5).
                     append(md5).append("'");
@@ -211,10 +208,17 @@ public class BuildSearcher extends SearcherBase {
         }
 
         for (Node node : nodeSet) {
-            Build build = buildService.getBuild(node);
-            if (build != null) {
-                results.add(build);
+            String nodePath = node.getPath();
+            String[] splitPath = nodePath.split("/");
+            if (splitPath.length < 5) {
+                log.debug("Build by item checksum search result '{}' path hierarchy does not contain sufficient " +
+                        "info.", nodePath);
+                continue;
             }
+            String decodedBuildName = Text.unescapeIllegalJcrChars(splitPath[2]);
+            long buildNumber = Long.parseLong(splitPath[3]);
+            String decodedBuildStarted = Text.unescapeIllegalJcrChars(splitPath[4]);
+            results.add(new BasicBuildInfo(decodedBuildName, buildNumber, decodedBuildStarted));
         }
     }
 }

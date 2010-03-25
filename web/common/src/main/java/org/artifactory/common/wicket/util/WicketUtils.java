@@ -20,6 +20,7 @@ package org.artifactory.common.wicket.util;
 
 import org.apache.wicket.Application;
 import org.apache.wicket.Page;
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -50,8 +51,19 @@ public class WicketUtils {
      * @return CharSequence - Bookmarkable path
      */
     public static CharSequence mountPathForPage(Class pageClass) {
+        return mountPathForPage(pageClass, null);
+    }
+
+    /**
+     * Get the bookmarkable path of a page that has been mounted
+     *
+     * @param pageClass      Mounted page
+     * @param pageParameters Optional page parameters
+     * @return CharSequence - Bookmarkable path
+     */
+    public static CharSequence mountPathForPage(Class pageClass, PageParameters pageParameters) {
         return getWebApplication().getRequestCycleProcessor().getRequestCodingStrategy()
-                .pathForTarget(new BookmarkablePageRequestTarget(pageClass));
+                .pathForTarget(new BookmarkablePageRequestTarget(pageClass, pageParameters));
     }
 
     /**

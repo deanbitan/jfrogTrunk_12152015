@@ -23,10 +23,10 @@ import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.jcr.md.MetadataService;
 import org.artifactory.repo.jcr.JcrLocalRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.test.SystemPropertiesBoundTest;
 import org.easymock.EasyMock;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
@@ -37,15 +37,13 @@ import org.testng.annotations.Test;
  *
  * @author Noam Tenne
  */
-public class JcrRepoTest {
+public class JcrRepoTest extends SystemPropertiesBoundTest {
     @Test
     public void testNoFilePermission() {
         AuthorizationService authService = EasyMock.createMock(AuthorizationService.class);
 
         InternalArtifactoryContext context = EasyMock.createMock(InternalArtifactoryContext.class);
         EasyMock.expect(context.getAuthorizationService()).andReturn(authService);
-        MetadataService metadataService = EasyMock.createMock(MetadataService.class);
-        EasyMock.expect(context.beanForType(MetadataService.class)).andReturn(metadataService).anyTimes();
         EasyMock.replay(context);
         ArtifactoryContextThreadBinder.bind(context);
 

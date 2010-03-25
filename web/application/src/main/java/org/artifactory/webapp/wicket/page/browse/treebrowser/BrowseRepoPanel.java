@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser;
 
-import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.model.GlobalRepoActionableItem;
 import org.artifactory.webapp.actionable.model.HierarchicActionableItem;
 
@@ -29,12 +28,8 @@ import org.artifactory.webapp.actionable.model.HierarchicActionableItem;
  */
 public class BrowseRepoPanel extends TreeBrowsePanel {
 
-    public BrowseRepoPanel(String id) {
-        this(id, null);
-    }
-
-    public BrowseRepoPanel(String id, ActionableItem initialItem) {
-        super(id, initialItem);
+    public BrowseRepoPanel(String id, DefaultRepoTreeSelection defaultTreeSelection) {
+        super(id, defaultTreeSelection);
     }
 
     @Override

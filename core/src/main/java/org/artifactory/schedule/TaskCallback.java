@@ -74,7 +74,7 @@ public abstract class TaskCallback<C> {
         try {
             String token = currentTaskToken();
             if (token == null) {
-                //We were not started (probably defered due to context not being ready)
+                //We were not started (probably deferred due to context not being ready)
                 return;
             }
             //Notify listeners that we are done
@@ -86,7 +86,7 @@ public abstract class TaskCallback<C> {
                     taskService.cancelTask(token, true);
                 }
             } else {
-                log.warn("After execute: Could not locate active task with toke {}. Taks may have been canceled.",
+                log.warn("After execute: Could not locate active task with toke {}. Task may have been canceled.",
                         token);
             }
             log.debug("Finished task {}.", token);

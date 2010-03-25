@@ -81,7 +81,7 @@ public enum SecurityVersion implements SubConfigElementVersion {
      *                               one
      */
     SecurityVersion(ArtifactoryVersion from, ArtifactoryVersion until,
-            ConfigurationConverter<Session> configurationConverter, XmlConverter... xmlConverters) {
+                    ConfigurationConverter<Session> configurationConverter, XmlConverter... xmlConverters) {
         this.configurationConverter = configurationConverter;
         this.comparator = new VersionComparator(this, from, until);
         this.xmlConverters = xmlConverters;
@@ -168,7 +168,7 @@ public enum SecurityVersion implements SubConfigElementVersion {
         if (versionIdx != -1) {
             int versionStartIndex = versionIdx + VERSION_ATT.length();
             String cutVersion = securityData.substring(versionStartIndex);
-            String isolatedVersion = cutVersion.substring(0, cutVersion.indexOf("\""));
+            String isolatedVersion = cutVersion.substring(0, cutVersion.indexOf('"'));
             return valueOf(isolatedVersion);
         } else {
             // Hack to find old versions

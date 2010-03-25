@@ -25,7 +25,8 @@ import org.artifactory.api.rest.search.result.InfoRestSearchResult;
 import org.artifactory.api.search.SearchResultBase;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.SearchService;
-import org.artifactory.api.search.metadata.MetadataSearchControls;
+import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 
@@ -34,7 +35,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.List;
 
@@ -47,15 +47,19 @@ import static org.artifactory.api.rest.constant.SearchRestConstants.NOT_FOUND;
  */
 public class XpathSearchResource {
 
+    private AuthorizationService authorizationService;
     private SearchService searchService;
     private HttpServletResponse response;
     private HttpServletRequest request;
 
     /**
-     * @param searchService Search service instance
+     * @param authorizationService
+     * @param searchService        Search service instance
      */
-    public XpathSearchResource(SearchService searchService, HttpServletRequest request,
+    public XpathSearchResource(AuthorizationService authorizationService, SearchService searchService,
+            HttpServletRequest request,
             HttpServletResponse response) {
+        this.authorizationService = authorizationService;
         this.searchService = searchService;
         this.request = request;
         this.response = response;
@@ -72,7 +76,7 @@ public class XpathSearchResource {
      * @return Rest search results object
      */
     @GET
-    @Produces({SearchRestConstants.MT_XPATH_SEARCH_RESULT, MediaType.APPLICATION_JSON})
+    @Produces({SearchRestConstants.MT_XPATH_SEARCH_RESULT})
     public InfoRestSearchResult get(
             @QueryParam(SearchRestConstants.PARAM_METADATA_NAME_SEARCH) String metadataName,
             @QueryParam(SearchRestConstants.PARAM_METADATA_SEARCH_TYPE) String searchType,
@@ -100,6 +104,7 @@ public class XpathSearchResource {
         controls.setMetadataName(dataToSearch);
         controls.setPath(path);
         controls.setValue(value);
+        controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
 
         SearchResults searchResults = null;

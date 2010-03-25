@@ -78,6 +78,9 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
         return httpRequest.getInputStream();
     }
 
+    /**
+     * @see javax.servlet.ServletRequest#getContentLength()
+     */
     public int getContentLength() {
         return httpRequest.getContentLength();
     }

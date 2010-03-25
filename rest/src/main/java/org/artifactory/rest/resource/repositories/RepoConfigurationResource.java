@@ -19,15 +19,16 @@
 package org.artifactory.rest.resource.repositories;
 
 import com.thoughtworks.xstream.XStream;
+import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 
@@ -38,20 +39,16 @@ import java.util.List;
  */
 public class RepoConfigurationResource {
 
-    private HttpServletResponse response;
     private RepositoryService repositoryService;
     private String remoteRepoKey;
 
     /**
      * Default constructor
      *
-     * @param response          Response to write to
      * @param repositoryService Repository service
      * @param remoteRepoKey     Key of selected remote repository
      */
-    public RepoConfigurationResource(HttpServletResponse response, RepositoryService repositoryService,
-            String remoteRepoKey) {
-        this.response = response;
+    public RepoConfigurationResource(RepositoryService repositoryService, String remoteRepoKey) {
         this.repositoryService = repositoryService;
         this.remoteRepoKey = remoteRepoKey;
     }
@@ -64,17 +61,15 @@ public class RepoConfigurationResource {
      */
     @GET
     @Produces(RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIGURATION)
-    public RemoteRepoDescriptor getRemoteDescriptor() throws IOException {
-
+    public Response getRemoteDescriptor() throws IOException {
         List<RemoteRepoDescriptor> remoteRepoDescriptors = repositoryService.getRemoteRepoDescriptors();
         for (RemoteRepoDescriptor remoteRepoDescriptor : remoteRepoDescriptors) {
             String currentRepoKey = remoteRepoDescriptor.getKey();
             if (remoteRepoKey.equals(currentRepoKey) && remoteRepoDescriptor.isShareConfiguration()) {
-                return maskData(remoteRepoDescriptor);
+                return Response.ok().entity(maskData(remoteRepoDescriptor)).build();
             }
         }
-
-        return null;
+        return Response.status(HttpStatus.SC_NOT_FOUND).build();
     }
 
     /**

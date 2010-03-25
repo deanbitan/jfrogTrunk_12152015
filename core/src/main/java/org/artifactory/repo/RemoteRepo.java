@@ -23,6 +23,7 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.resource.RepoResource;
 
+import javax.jcr.RepositoryException;
 import java.io.IOException;
 
 public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> {
@@ -66,5 +67,6 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
 
     RepoType getType();
 
-    ResourceStreamHandle downloadAndSave(RepoResource res, RepoResource targetResource) throws IOException;
+    ResourceStreamHandle downloadAndSave(RepoResource remoteResource, RepoResource cachedResource)
+            throws IOException, RepositoryException;
 }

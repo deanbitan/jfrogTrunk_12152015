@@ -109,8 +109,7 @@ public class VirtualRepoDescriptor extends RepoBaseDescriptor {
         if (this.artifactoryRequestsCanRetrieveRemoteArtifacts != old.artifactoryRequestsCanRetrieveRemoteArtifacts ||
                 this.pomRepositoryReferencesCleanupPolicy != old.pomRepositoryReferencesCleanupPolicy ||
                 !PathUtils.safeStringEquals(this.keyPair, old.keyPair) ||
-                !this.repositories.equals(repositories)
-                ) {
+                !this.repositories.equals(old.repositories)) {
             return false;
         }
         return true;

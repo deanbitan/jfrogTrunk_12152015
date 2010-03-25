@@ -22,14 +22,12 @@ import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
@@ -49,16 +47,10 @@ import java.security.Principal;
 @Scope(BeanDefinition.SCOPE_SINGLETON)
 public class RestAuthenticationFilter implements ContainerRequestFilter {
     @Context
-    HttpServletRequest httpRequest;
-
-    @Context
     HttpServletResponse response;
 
     @Autowired
     AuthorizationService authorizationService;
-
-    @Autowired
-    SecurityService securityService;
 
     public ContainerRequest filter(ContainerRequest request) {
 

@@ -65,6 +65,10 @@ public class ExpiredRepoResource implements RepoResource {
         return false;
     }
 
+    public boolean isExactQueryMatch() {
+        return wrappedResource.isExactQueryMatch();
+    }
+
     public boolean isExpired() {
         return true;
     }

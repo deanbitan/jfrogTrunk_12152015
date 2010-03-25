@@ -22,11 +22,11 @@ import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.DescriptorAware;
 import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.jcr.md.MetadataService;
 import org.artifactory.repo.context.RequestContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.resource.RepoResource;
 
+import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.Serializable;
 
@@ -53,8 +53,6 @@ public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Seri
 
     InternalRepositoryService getRepositoryService();
 
-    MetadataService getMetadataService();
-
     /**
      * Returns the resource info (not the resource content but the metadata)
      *
@@ -68,10 +66,11 @@ public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Seri
      *
      * @param checksumPath The url to the checksum file
      * @param res          The repo resource of the file the checksum is requested on
-     * @return The checksum value.
+     * @return The checksum value. Might be null
      * @throws IOException If tried and failed to retrieve the checksum from db/remote source.
      */
     String getChecksum(String checksumPath, RepoResource res) throws IOException;
 
-    ResourceStreamHandle getResourceStreamHandle(RepoResource res) throws IOException, FileExpectedException;
+    ResourceStreamHandle getResourceStreamHandle(RepoResource res) throws IOException, FileExpectedException,
+            RepositoryException;
 }
