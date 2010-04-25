@@ -18,6 +18,7 @@
 
 package org.artifactory.security;
 
+import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
@@ -30,11 +31,24 @@ public abstract class AccessLogger {
     private static final Logger log = LoggerFactory.getLogger(AccessLogger.class);
 
     public enum Action {
-        ANNOTATE, DOWNLOAD, DEPLOY, DELETE, SEARCH, LOGIN, CONFIGURATION_CHANGE
+        ANNOTATE, ANNOTATE_DELETE, DOWNLOAD, DEPLOY, DELETE, SEARCH, LOGIN, CONFIGURATION_CHANGE
     }
 
-    public static void anotated(RepoPath repoPath) {
+    public static void annotated(RepoPath repoPath, String metadataName) {
+        if (!MavenNaming.MAVEN_METADATA_NAME.equals(metadataName)) {
+            // don't log maven metadata since it is mostly internal
+            RepoPath metadataPath = new RepoPath(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataName);
+            annotated(metadataPath);
+        }
+    }
+
+    public static void annotated(RepoPath repoPath) {
         annotated(repoPath, false, AuthenticationHelper.getAuthentication());
+    }
+
+    public static void annotationDeleted(RepoPath repoPath, String metadataName) {
+        RepoPath metadataPath = new RepoPath(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataName);
+        logAction(metadataPath, Action.ANNOTATE_DELETE, false, AuthenticationHelper.getAuthentication());
     }
 
     public static void annotateDenied(RepoPath repoPath) {

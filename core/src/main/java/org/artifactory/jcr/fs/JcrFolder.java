@@ -34,6 +34,7 @@ import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
@@ -74,8 +75,8 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
      * @param repo
      * @throws RepositoryRuntimeException if the node cannot be read
      */
-    public JcrFolder(Node node, StoringRepo repo) {
-        super(node, repo);
+    public JcrFolder(Node node, StoringRepo repo, JcrFolder original) {
+        super(node, repo, original);
     }
 
     public JcrFolder(RepoPath repoPath, StoringRepo repo) {
@@ -185,8 +186,12 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
         if (isDeleted()) {
             throw new IllegalStateException("Cannot save item " + getRepoPath() + " it is schedule for deletion");
         }
-        getInfoPersistenceHandler().update(this, getInfo());
-        return new JcrFolder(getNode(), getRepo());
+        // Save the main info only if new (original null, or main info non identical)
+        if (originalFsItem == null || !originalFsItem.getInfo().isIdentical(getInfo())) {
+            getInfoPersistenceHandler().update(this, getInfo());
+        }
+        saveDirtyState();
+        return new JcrFolder(getNode(), getRepo(), this);
     }
 
     @Override
@@ -584,13 +589,19 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
                                 // Created successfully, release lock
                                 LockingHelper.removeLockEntry(jcrFile.getRepoPath());
                             }
-                        } else if (getRepo().isCache() && !hasMetadata(MavenNaming.MAVEN_METADATA_NAME)) {
-                            //Special fondling for maven-metadata.xml - store it as real metadata if importing
-                            //to local cache repository (non cache repositories recalculate the maven metadata)
-                            String xmlData = FileUtils.readFileToString(dirEntry, "utf-8");
-                            InternalContextHelper.get().getRepositoryService()
-                                    .setXmlMetadata(getRepoPath(), MavenNaming.MAVEN_METADATA_NAME, xmlData);
+                        } else if (getRepo().isCache()) {
+                            //We are out of transaction scope - check metadata via service
+                            RepositoryService repositoryService = InternalContextHelper.get().getRepositoryService();
+                            if (!repositoryService.hasMetadata(getRepoPath(), MavenNaming.MAVEN_METADATA_NAME)) {
+                                //Special fondling for maven-metadata.xml - store it as real metadata if importing
+                                //to local cache repository (non cache repositories recalculate the maven metadata)
+                                String xmlData = FileUtils.readFileToString(dirEntry, "utf-8");
+                                repositoryService.setXmlMetadata(getRepoPath(), MavenNaming.MAVEN_METADATA_NAME,
+                                        xmlData);
+                            }
                         }
+                    } catch (RepoRejectionException rre) {
+                        status.setError("Artifact rejected: " + rre.getMessage(), log);
                     } catch (Exception e) {
                         //Just log an error and continue
                         status.setWarning("Error importing file: " + msg, e, log);

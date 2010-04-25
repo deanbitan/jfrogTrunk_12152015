@@ -74,12 +74,11 @@ public class DeleteAction extends RepoAwareItemAction {
     }
 
     protected String getDeleteSuccessMessage(RepoPath repoPath) {
-        return "Successfully delete '" + repoPath + "'.";
+        return "Successfully deleted '" + repoPath + "'.";
     }
 
     @Override
-    public boolean isNotifyingListeners
-            () {
+    public boolean isNotifyingListeners() {
         return false;
     }
 

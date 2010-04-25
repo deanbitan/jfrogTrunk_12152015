@@ -28,7 +28,7 @@ import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.webapp.actionable.FileActionable;
 
-import static org.artifactory.common.wicket.component.label.highlighter.Syntax.XML;
+import static org.artifactory.common.wicket.component.label.highlighter.Syntax.xml;
 
 /**
  * This tab will be displayed when a pom file is selected from the browse tree.
@@ -73,7 +73,7 @@ public class PomViewTabPanel extends Panel {
 
         FieldSetBorder border = new FieldSetBorder("mavenDependencyBorder");
         add(border);
-        border.add(new SyntaxHighlighter("mavenDependencyDeclaration", sb.toString(), XML));
+        border.add(new SyntaxHighlighter("mavenDependencyDeclaration", sb.toString(), xml));
     }
 
     /**
@@ -92,7 +92,7 @@ public class PomViewTabPanel extends Panel {
 
         FieldSetBorder border = new FieldSetBorder("ivyDependencyBorder");
         add(border);
-        border.add(new SyntaxHighlighter("ivyDependencyDeclaration", sb.toString(), XML));
+        border.add(new SyntaxHighlighter("ivyDependencyDeclaration", sb.toString(), xml));
     }
 
     /**
@@ -105,6 +105,6 @@ public class PomViewTabPanel extends Panel {
         add(border);
 
         String content = repoService.getTextFileContent(fileInfo);
-        border.add(new SyntaxHighlighter("pomContent", content, XML));
+        border.add(new SyntaxHighlighter("pomContent", content, xml));
     }
 }

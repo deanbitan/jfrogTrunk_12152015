@@ -40,7 +40,6 @@ import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.schedule.quartz.QuartzTask;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.spring.ReloadableBean;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.FileUtils;
 import org.artifactory.version.CompoundVersionDetails;
@@ -79,11 +78,6 @@ public class IndexerServiceImpl implements InternalIndexerService {
     private InternalRepositoryService repositoryService;
 
     private IndexerDescriptor descriptor;
-
-    @SuppressWarnings({"unchecked"})
-    public Class<? extends ReloadableBean>[] initAfter() {
-        return new Class[]{TaskService.class, InternalRepositoryService.class};
-    }
 
     public void init() {
         descriptor = centralConfig.getDescriptor().getIndexer();
@@ -343,7 +337,6 @@ public class IndexerServiceImpl implements InternalIndexerService {
                 log.error("Saving index files failed.", e);
             }
         }
-
     }
 
     public void fetchOrCreateIndex(RepoIndexManager repoIndexManager, Date fireTime) {

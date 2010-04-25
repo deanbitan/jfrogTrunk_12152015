@@ -56,13 +56,18 @@ public interface BuildService extends ImportableExportable {
     String getBuildAsJson(String buildName, long buildNumber, String buildStarted);
 
     /**
+     * Removes all the builds of the given name
+     *
+     * @param buildName Name of builds to remove
+     */
+    void deleteBuild(String buildName);
+
+    /**
      * Removes the build of the given details
      *
-     * @param buildName    Build name
-     * @param buildNumber  Build number
-     * @param buildStarted Build started
+     * @param basicBuildInfo
      */
-    void deleteBuild(String buildName, long buildNumber, String buildStarted);
+    void deleteBuild(BasicBuildInfo basicBuildInfo);
 
     /**
      * Returns the build of the given details

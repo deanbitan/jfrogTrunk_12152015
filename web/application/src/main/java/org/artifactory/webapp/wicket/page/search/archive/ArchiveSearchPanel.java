@@ -39,7 +39,6 @@ import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPanel;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableArchiveSearchResult;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableSearchResult;
-import org.artifactory.webapp.wicket.util.validation.ArchiveSearchValidator;
 
 import java.util.List;
 
@@ -51,6 +50,9 @@ import java.util.List;
 public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
 
     private ArchiveSearchControls searchControls;
+
+    @WicketProperty
+    private boolean excludeInnerClasses;
 
     @WicketProperty
     private boolean searchAllTypes;
@@ -66,15 +68,17 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
 
         TextField searchControl = new TextField("query", new PropertyModel(searchControls, "query"));
         searchControl.setOutputMarkupId(true);
-        searchControl.add(new ArchiveSearchValidator());
         form.add(searchControl);
+
+        form.add(new StyledCheckbox("excludeInnerClasses", new PropertyModel(this, "excludeInnerClasses")));
+        form.add(new HelpBubble("excludeInnerClassesHelp", "Exclude inner classes from the list of results."));
 
         form.add(new StyledCheckbox("allFileTypes", new PropertyModel(this, "searchAllTypes")));
         form.add(new HelpBubble("allFileTypesHelp", "Search through all types of files (including package names).\n" +
-                "Be aware: supplying a search term which may be to common, might not display the complete list of\n" +
-                "results, since there may be too many."));
+                "Please note: providing a search term which is too frequent in an archive, may yield\n" +
+                "too many results, which will not be displayed."));
 
-        form.add(new HelpBubble("searchHelp", "Entry name.<br/>* and ? are accepted."));
+        form.add(new HelpBubble("searchHelp", "Archive entry name.<br/>* and ? are accepted."));
 
         //Group entry names which are similar but have different character cases
         getDataProvider().setGroupReneder("searchResult.entry", new ChoiceRenderer("searchResult.entry",
@@ -136,7 +140,6 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
     /**
      * Performs the search
      *
-     * @param controls        Search controls
      * @param limitlessSearch True if should perform a limitless search
      * @return List of search results
      */
@@ -151,6 +154,7 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
             controlsCopy.setLimitSearchResults(false);
             controlsCopy.setShouldCalcEntries(false);
         }
+        controlsCopy.setExcludeInnerClasses(excludeInnerClasses);
         return searchService.searchArchiveContent(controlsCopy);
     }
 }

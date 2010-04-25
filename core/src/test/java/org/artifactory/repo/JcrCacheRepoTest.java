@@ -20,25 +20,21 @@ package org.artifactory.repo;
 
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
-import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.MetadataResource;
 import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.mock.MockUtils;
 import org.easymock.EasyMock;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
  * @author Yoav Landman
  */
-public class JcrCacheRepoTest {
-    InternalRepositoryService internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
+public class JcrCacheRepoTest extends ArtifactoryHomeBoundTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
@@ -95,17 +91,5 @@ public class JcrCacheRepoTest {
         EasyMock.expect(remoteRepo.getUrl()).andReturn("http://jfrog").anyTimes();
         EasyMock.replay(remoteRepo);
         return remoteRepo;
-    }
-
-    @BeforeMethod
-    void bind() {
-        ArtifactorySystemProperties artifactorySystemProperties = new ArtifactorySystemProperties();
-        artifactorySystemProperties.loadArtifactorySystemProperties(null, null);
-        ArtifactorySystemProperties.bind(artifactorySystemProperties);
-    }
-
-    @AfterMethod
-    void unbind() {
-        ArtifactorySystemProperties.unbind();
     }
 }

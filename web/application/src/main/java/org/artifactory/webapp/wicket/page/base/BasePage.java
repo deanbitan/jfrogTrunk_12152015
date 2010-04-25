@@ -196,9 +196,9 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
     private String getLoggedInMessage() {
         if (isNotSignedInOrAnonymous()) {
-            return "Not logged in";
+            return "Not Logged In";
         }
-        return "Logged in as";
+        return "Logged In as";
     }
 
 

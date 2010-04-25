@@ -21,7 +21,7 @@ package org.artifactory.api.fs;
 import com.google.common.collect.Sets;
 import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertFalse;
@@ -32,7 +32,7 @@ import static org.testng.Assert.assertFalse;
  * @author Yossi Shaul
  */
 @Test
-public class FileInfoImplTest extends SystemPropertiesBoundTest {
+public class FileInfoImplTest extends ArtifactoryHomeBoundTest {
 
     public void differentChecksumNotIdentical() {
         RepoPath path = new RepoPath("repo", "test.jar");

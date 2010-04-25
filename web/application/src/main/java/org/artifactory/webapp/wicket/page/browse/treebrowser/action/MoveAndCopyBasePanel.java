@@ -32,6 +32,7 @@ import org.artifactory.api.common.StatusEntry;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
@@ -159,11 +160,11 @@ public abstract class MoveAndCopyBasePanel extends Panel {
      * @return List of repo paths associated with the given search result
      */
     protected Set<RepoPath> getResultPaths(String resultName) {
-        List<FileInfo> searchResults = ArtifactoryWebSession.get().getResults(resultName);
+        SavedSearchResults searchResults = ArtifactoryWebSession.get().getResults(resultName);
 
         // collect all the repo paths that needs to be handled
         Set<RepoPath> pathsToReturn = new HashSet<RepoPath>();
-        for (FileInfo fileInfo : searchResults) {
+        for (FileInfo fileInfo : searchResults.getResults()) {
             pathsToReturn.add(fileInfo.getRepoPath());
         }
         return pathsToReturn;

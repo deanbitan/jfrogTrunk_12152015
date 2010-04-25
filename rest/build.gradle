@@ -17,7 +17,7 @@ dependencies {
   compile group: 'org.codehaus.jackson', name: 'jackson-xc', version: '1.5.0'
   compile group: 'org.codehaus.jackson', name: 'jackson-jaxrs', version: '1.5.0'
   compile group: 'org.codehaus.jackson', name: 'jackson-core-asl', version: '1.5.0'
-  compile group: 'org.jfrog', name: 'build-info-api', version: '1.2.1-SNAPSHOT'
+  compile group: 'org.jfrog', name: 'build-info-api', version: '1.2.1'
   compile group: 'net.sourceforge.collections', name: 'collections-generic', version: '4.01'
   compile group: 'com.sun.jersey', name: 'jersey-core', version: '1.1.4.1'
 

@@ -30,7 +30,7 @@ import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.exception.RepoAccessException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumCalculator;
@@ -117,12 +117,12 @@ public class VirtualRepoDownloadStrategy {
                     // call update stats (see RTFACT-2958)
                     LocalRepo repo = repositoryService.localOrCachedRepositoryByKey(sourceRepoKey);
                     searchableHandle = repositoryService.getResourceStreamHandle(repo, searchableResource);
-                } catch (IOException e) {
-                    log.error("Could not update download stats", e);
-                } catch (RepoAccessException e) {
-                    log.error("Could not update download stats", e);
-                } catch (RepositoryException e) {
-                    log.error("Could not update download stats", e);
+                } catch (IOException ioe) {
+                    log.error("Could not update download stats", ioe);
+                } catch (RepoRejectionException rre) {
+                    log.error("Could not update download stats", rre);
+                } catch (RepositoryException re) {
+                    log.error("Could not update download stats", re);
                 } finally {
                     if (searchableHandle != null) {
                         searchableHandle.close();
@@ -163,6 +163,41 @@ public class VirtualRepoDownloadStrategy {
             result = new UnfoundRepoResource(repoPath, "IOException: " + e.getMessage());
         }
         return result;
+    }
+
+    /**
+     * @return A list of local and remote repositories to search the resource in, ordered first by type (local non-cache
+     *         first) and secondly by order of appearance. We don't simply add all the lists since some of the real
+     *         repos are resolved transitively and we might have to remove them in case the path is excluded in the
+     *         virtual repo they belong to.
+     */
+    List<RealRepo> assembleSearchRepositoriesList(RepoPath repoPath, RequestContext context) {
+        OrderedMap<String, LocalRepo> searchableLocalRepositories = newOrderedMap();
+        OrderedMap<String, LocalCacheRepo> searchableLocalCacheRepositories = newOrderedMap();
+        OrderedMap<String, RemoteRepo> searchableRemoteRepositories = newOrderedMap();
+        deeplyAssembleSearchRepositoryLists(repoPath,
+                new ListOrderedMap<String, VirtualRepo>(),
+                searchableLocalRepositories,
+                searchableLocalCacheRepositories,
+                searchableRemoteRepositories);
+
+        //Add all local repositories
+        List<RealRepo> repositories = new ArrayList<RealRepo>();
+        repositories.addAll(searchableLocalRepositories.values());
+        //Add all caches
+        repositories.addAll(searchableLocalCacheRepositories.values());
+
+        //Add all remote repositories conditionally
+        boolean fromAnotherArtifactory = context.isFromAnotherArtifactory();
+        boolean artifactoryRequestsCanRetrieveRemoteArtifacts =
+                virtualRepo.isArtifactoryRequestsCanRetrieveRemoteArtifacts();
+        if (fromAnotherArtifactory && !artifactoryRequestsCanRetrieveRemoteArtifacts) {
+            //If the request comes from another artifactory don't bother checking any remote repos
+            log.debug("Skipping remote repository checks for path '{}'", repoPath);
+        } else {
+            repositories.addAll(searchableRemoteRepositories.values());
+        }
+        return repositories;
     }
 
     /**
@@ -233,15 +268,16 @@ public class VirtualRepoDownloadStrategy {
                 if (repo.isLocal()) {
                     if (foundInLocalRepo) {
                         //Issue a warning for a resource found multiple times in local repos
-                        log.warn(repo + ": found multiple resource instances of '" + resourcePath +
-                                "' in local repositories.");
+                        log.warn("{}: found multiple resource instances of '{}' in local repositories.",
+                                repo, resourcePath);
                     } else {
                         log.debug("{}: found local res: {}", repo, resourcePath);
                         foundInLocalRepo = true;
                     }
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("{} last modified {}", res.getRepoPath(), centralConfig.format(res.getLastModified()));
+                    log.debug("{} last modified {}", res.getRepoPath(),
+                            centralConfig.format(res.getLastModified()));
                 }
 
                 //If we haven't found one yet
@@ -271,36 +307,34 @@ public class VirtualRepoDownloadStrategy {
     }
 
     /**
+     * Merges maven metadata from all the repositories that are part of this virtual repository.
+     *
      * @param repoPath     The repository path pointing to a maven-metadata.xml
      * @param repositories List of repositories to search
-     * @return A StringResource with the metadata content or an unfound resource.
+     * @return A StringResource with the metadata content or an un-found resource.
      */
     private RepoResource processMavenMetadata(RepoPath repoPath, List<RealRepo> repositories) throws IOException {
         String path = repoPath.getPath();
-        boolean foundInLocalRepo = false;
         MergedMavenMetadata mergedMavenMetadata = new MergedMavenMetadata();
         for (RealRepo repo : repositories) {
-            //Skip remote repos if found in local repo (including caches)
-            if (foundInLocalRepo && !repo.isLocal()) {
+            if (repo.isCache()) {
+                //  Skip cache repos - we search in remote repos directly which will handle the cache retrieval
+                // and expiry
                 continue;
             }
 
-            // get the resource
-            final RepoResource res = repo.getInfo(new NullRequestContext(path));
+            RepoResource res = repo.getInfo(new NullRequestContext(path));
             if (!res.isFound()) {
                 continue;
             }
 
             Metadata metadata = getMavenMetadataContent(repo, res);
             if (metadata != null) {
-                mergedMavenMetadata.merge(metadata, res);
                 if (log.isDebugEnabled()) {
                     log.debug("{}: found maven metadata res: {}", repo, path);
                     log.debug(res.getRepoPath() + " last modified " + centralConfig.format(res.getLastModified()));
                 }
-                if (repo.isLocal()) {
-                    foundInLocalRepo = true;
-                }
+                mergedMavenMetadata.merge(metadata, res);
             }
         }   // end repositories iteration
 
@@ -328,12 +362,12 @@ public class VirtualRepoDownloadStrategy {
             metadataInputStream = handle.getInputStream();
             String metadataContent = IOUtils.toString(metadataInputStream, "utf-8");
             return MavenModelUtils.toMavenMetadata(metadataContent);
-        } catch (RepoAccessException e) {
-            log.warn("Metadata retrieval failed on repo '{}': {}", repo, e.getMessage());
+        } catch (RepoRejectionException rre) {
+            log.warn("Metadata retrieval failed on repo '{}': {}", repo, rre.getMessage());
         } catch (IOException ioe) {
             log.error("IO exception retrieving maven metadata content from repo '{}'", repo, ioe);
-        } catch (RepositoryException e) {
-            log.error("Metadata retrieval failed on repo '{}': {}", repo, e);
+        } catch (RepositoryException re) {
+            log.error("Metadata retrieval failed on repo '{}': {}", repo, re);
         } finally {
             if (handle != null) {
                 handle.close();
@@ -356,41 +390,6 @@ public class VirtualRepoDownloadStrategy {
         checksumInfos.add(sha1Info);
         metadataInfo.setChecksums(checksumInfos);
         return new StringResource(metadataInfo, metadataContent);
-    }
-
-    /**
-     * @return A list of local and remote repositories to search the resource in, ordered first by type (local non-cache
-     *         first) and secondly by order of appearance. We don't simply add all the lists since some of the real
-     *         repos are resolved transitively and we might have to remove them in case the path is excluded in the
-     *         virtual repo they belong to.
-     */
-    private List<RealRepo> assembleSearchRepositoriesList(RepoPath repoPath, RequestContext context) {
-        OrderedMap<String, LocalRepo> searchableLocalRepositories = newOrderedMap();
-        OrderedMap<String, LocalCacheRepo> searchableLocalCacheRepositories = newOrderedMap();
-        OrderedMap<String, RemoteRepo> searchableRemoteRepositories = newOrderedMap();
-        deeplyAssembleSearchRepositoryLists(repoPath,
-                new ListOrderedMap<String, VirtualRepo>(),
-                searchableLocalRepositories,
-                searchableLocalCacheRepositories,
-                searchableRemoteRepositories);
-
-        //Add all local repositories
-        List<RealRepo> repositories = new ArrayList<RealRepo>();
-        repositories.addAll(searchableLocalRepositories.values());
-        //Add all caches
-        repositories.addAll(searchableLocalCacheRepositories.values());
-
-        //Add all remote repositories conditionally
-        boolean fromAnotherArtifactory = context.isFromAnotherArtifactory();
-        boolean artifactoryRequestsCanRetrieveRemoteArtifacts =
-                virtualRepo.isArtifactoryRequestsCanRetrieveRemoteArtifacts();
-        if (fromAnotherArtifactory && !artifactoryRequestsCanRetrieveRemoteArtifacts) {
-            //If the request comes from another artifactory don't bother checking any remote repos
-            log.debug("Skipping remote repository checks for path '{}'", repoPath);
-        } else {
-            repositories.addAll(searchableRemoteRepositories.values());
-        }
-        return repositories;
     }
 
     /**

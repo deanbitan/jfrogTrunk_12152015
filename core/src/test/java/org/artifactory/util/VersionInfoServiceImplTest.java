@@ -26,12 +26,12 @@ import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.version.ArtifactoryVersioning;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.TaskBase;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.test.ArtifactoryHomeStub;
 import org.artifactory.version.VersionInfoServiceImpl;
 import org.artifactory.version.VersioningRetrieverJob;
 import org.slf4j.Logger;
@@ -96,10 +96,7 @@ public class VersionInfoServiceImplTest {
         replay(context, centralConfigService);
 
         try {
-            System.setProperty(ConstantValues.artifactoryVersion.getPropertyName(), "test");
-            ArtifactorySystemProperties artifactorySystemProperties = new ArtifactorySystemProperties();
-            artifactorySystemProperties.loadArtifactorySystemProperties(null, null);
-            ArtifactorySystemProperties.bind(artifactorySystemProperties);
+            new ArtifactoryHomeStub().setProperty(ConstantValues.artifactoryVersion, "test").bind();
             VersionInfoServiceImpl infoService = new VersionInfoServiceImpl();
             ArtifactoryVersioning versioning;
             try {
@@ -113,8 +110,7 @@ public class VersionInfoServiceImplTest {
             // verify and tear down
             verify(context, centralConfigService);
         } finally {
-            System.clearProperty(ConstantValues.artifactoryVersion.getPropertyName());
-            ArtifactorySystemProperties.unbind();
+            ArtifactoryHomeStub.unbind();
             ArtifactoryContextThreadBinder.unbind();
         }
     }

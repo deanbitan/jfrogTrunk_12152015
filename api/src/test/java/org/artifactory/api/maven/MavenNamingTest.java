@@ -18,7 +18,7 @@
 
 package org.artifactory.api.maven;
 
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -30,12 +30,19 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class MavenNamingTest extends SystemPropertiesBoundTest {
+public class MavenNamingTest extends ArtifactoryHomeBoundTest {
 
-    public void testIsVersionSnapshot() {
-        assertTrue(MavenNaming.isVersionSnapshot("1.2-SNAPSHOT"));
-        assertFalse(MavenNaming.isVersionSnapshot("1.2-SNAPSHOT123"));
-        assertFalse(MavenNaming.isVersionSnapshot("1.2"));
+    public void isNonUniqueSnapshotVersion() {
+        assertTrue(MavenNaming.isNonUniqueSnapshotVersion("1.2-SNAPSHOT"));
+        assertFalse(MavenNaming.isNonUniqueSnapshotVersion("1.2-SNAPSHOT123"));
+        assertFalse(MavenNaming.isNonUniqueSnapshotVersion("1.2"));
+        assertFalse(MavenNaming.isNonUniqueSnapshotVersion("1.2SNAPSHOT"));
+    }
+
+    public void nonUniqueSnapshotBaseVersion() {
+        assertEquals(MavenNaming.getNonUniqueSnapshotBaseVersion("1.2-SNAPSHOT"), "1.2");
+        assertEquals(MavenNaming.getNonUniqueSnapshotBaseVersion("ABC-SNAPSHOT"), "ABC");
+        assertEquals(MavenNaming.getNonUniqueSnapshotBaseVersion("1-2-3-SNAPSHOT"), "1-2-3");
     }
 
     public void testIsNonUniqueSnapshotFilePath() {
@@ -90,6 +97,14 @@ public class MavenNamingTest extends SystemPropertiesBoundTest {
 
         versionFile = "artifact-456-20081214.120217-777.pom";
         assertEquals(MavenNaming.getUniqueSnapshotVersionBuildNumber(versionFile), 777);
+    }
+
+    public void uniqueSnapshotVersionBaseVersion() {
+        String versionFile = "artifact-5.4-20081214.090217-4.pom";
+        assertEquals(MavenNaming.getUniqueSnapshotVersionBaseVersion(versionFile), "5.4");
+
+        versionFile = "artifact-aaa-20081214.120217-777.pom";
+        assertEquals(MavenNaming.getUniqueSnapshotVersionBaseVersion(versionFile), "aaa");
     }
 
     public void isMetadata() {

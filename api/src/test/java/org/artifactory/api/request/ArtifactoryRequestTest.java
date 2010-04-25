@@ -19,7 +19,7 @@
 package org.artifactory.api.request;
 
 import org.artifactory.api.md.Properties;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ import static org.testng.Assert.assertFalse;
  * @author Yoav Landman
  */
 @Test
-public class ArtifactoryRequestTest extends SystemPropertiesBoundTest {
+public class ArtifactoryRequestTest extends ArtifactoryHomeBoundTest {
 
     public void matrixParams() {
         ArtifactoryRequestBase request = newRequest();

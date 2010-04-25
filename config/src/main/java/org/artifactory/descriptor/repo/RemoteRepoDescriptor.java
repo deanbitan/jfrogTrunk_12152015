@@ -54,8 +54,8 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     @XmlElement(defaultValue = "30", required = false)
     private long failedRetrievalCachePeriodSecs = 30;//30secs
 
-    @XmlElement(defaultValue = "43200", required = false)
-    private long missedRetrievalCachePeriodSecs = 43200;//12hrs
+    @XmlElement(defaultValue = "7200", required = false)
+    private long missedRetrievalCachePeriodSecs = 7200;//2 hours
 
     @XmlElement(name = "remoteRepoChecksumPolicyType", defaultValue = "generate-if-absent", required = false)
     private ChecksumPolicyType checksumPolicyType = ChecksumPolicyType.GEN_IF_ABSENT;

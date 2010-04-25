@@ -21,7 +21,7 @@ package org.artifactory.repo.virtual.interceptor;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.fs.FileInfoImpl;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.exception.RepoAccessException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
@@ -100,6 +100,10 @@ public class PomInterceptor {
             String message = "Failed to import file to local storage";
             log.error(message, e);
             return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + e.getMessage());
+        } catch (RepoRejectionException rre) {
+            String message = "Failed to import file to local storage";
+            log.error(message, rre);
+            return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + rre.getMessage());
         }
 
         return transformedResource;
@@ -112,8 +116,8 @@ public class PomInterceptor {
         ResourceStreamHandle handle;
         try {
             handle = repoService.getResourceStreamHandle(repository, resource);
-        } catch (RepoAccessException e) {
-            throw new IOException(e.getMessage());
+        } catch (RepoRejectionException rre) {
+            throw new IOException(rre.getMessage());
         }
 
         InputStream inputStream = handle.getInputStream();

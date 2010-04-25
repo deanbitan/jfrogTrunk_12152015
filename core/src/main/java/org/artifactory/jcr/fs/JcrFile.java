@@ -18,8 +18,10 @@
 
 package org.artifactory.jcr.fs;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportCallback;
 import org.artifactory.api.config.ExportSettings;
@@ -31,9 +33,9 @@ import org.artifactory.api.fs.FileInfoImpl;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.common.ConstantValues;
@@ -48,6 +50,7 @@ import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.jcr.md.MetadataPersistenceHandler;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
+import org.artifactory.mime.MimeType;
 import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.RealRepoBase;
 import org.artifactory.repo.jcr.JcrHelper;
@@ -62,7 +65,11 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import java.io.*;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -87,17 +94,19 @@ public class JcrFile extends JcrFsItem<FileInfo> {
     }
 
     /**
-     * Constructor used when reading JCR content and creating JCR file item from it. Will not create anything in JCR but
-     * will read the JCR content of the node.
+     * Constructor used when reading JCR content and creating JCR file item from it.
+     * Will not create anything in JCR but will read the JCR content of the node.
      *
      * @param fileNode  the JCR node this file represent
      * @param repo
      * @param downloads
      * @throws RepositoryRuntimeException if the node a file or cannot be read
      */
-    public JcrFile(Node fileNode, StoringRepo repo, BlockingQueue<StatsInfo> downloads) {
-        super(fileNode, repo);
-        this.downloads = downloads;
+    public JcrFile(Node fileNode, StoringRepo repo, JcrFile original) {
+        super(fileNode, repo, original);
+        if (original != null) {
+            this.downloads = original.downloads;
+        }
     }
 
     @Override
@@ -113,7 +122,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
     /**
      * fill the data file from stream
      */
-    public void fillData(InputStream in) throws IOException {
+    public void fillData(InputStream in) throws RepoRejectionException {
         fillData(System.currentTimeMillis(), in);
     }
 
@@ -127,14 +136,14 @@ public class JcrFile extends JcrFsItem<FileInfo> {
      * @throws org.artifactory.concurrent.LockingException
      *                                    if the JCrFile is immutable or not locked for this thread
      */
-    public void fillData(long lastModified, InputStream is) throws IOException {
+    public void fillData(long lastModified, InputStream is) throws RepoRejectionException {
         checkMutable("fillData");
         try {
             getOrCreateFileNode(getParentNode(), getName());
             setModifiedInfoFields(lastModified, System.currentTimeMillis());
             setResourceNode(is);
-        } catch (IOException e) {
-            throw e;    // rethrow ioexceptions
+        } catch (RepoRejectionException rre) {
+            throw rre;
         } catch (Exception e) {
             throw new RepositoryRuntimeException(
                     "Could not create file node resource at '" + getAbsolutePath() + "'.", e);
@@ -163,7 +172,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
      * @throws IOException                if the stream cannot be read or closed
      */
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    public void importFrom(File file, ImportSettings settings) throws IOException {
+    public void importFrom(File file, ImportSettings settings) throws IOException, RepoRejectionException {
         MultiStatusHolder status = settings.getStatusHolder();
         try {
             if (!file.isFile()) {
@@ -181,7 +190,24 @@ public class JcrFile extends JcrFsItem<FileInfo> {
                 importMetadata(file, status, settings);
             }
 
-            // Save checksum for later compare (following method calls will change the info)
+            // trust server checksums if the settings said so and client checksum is missing
+            if (settings.isTrustServerChecksums()) {
+                Set<ChecksumInfo> checksums = getInfo().getChecksumsInfo().getChecksums();
+                if (checksums == null || checksums.isEmpty()) {
+                    getInfo().createTrustedChecksums();
+                } else {
+                    Set<ChecksumInfo> checksumsCopy = Sets.newHashSet(checksums);
+                    for (ChecksumInfo checksum : checksumsCopy) {
+                        if (StringUtils.isBlank(checksum.getOriginal())) {
+                            // replace with checksum that contains trusted mark, but same actual
+                            getInfo().addChecksumInfo(new ChecksumInfo(
+                                    checksum.getType(), ChecksumInfo.TRUSTED_FILE_MARKER, checksum.getActual()));
+                        }
+                    }
+                }
+            }
+
+            // Save actual checksum from metadata/old file for later comparison with actual of newly uploaded file
             String md5 = getInfo().getMd5();
             String sha1 = getInfo().getSha1();
             //Stream the file directly into JCR
@@ -213,8 +239,8 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         info.setCreatedBy(getAuthorizationService().currentUsername());
         info.setModifiedBy(getAuthorizationService().currentUsername());
         info.setSize(file.length());
-        ContentType ct = NamingUtils.getContentType(file.getName());
-        String actualMimeType = ct.getMimeType();
+        MimeType ct = NamingUtils.getContentType(file.getName());
+        String actualMimeType = ct.getType();
         info.setMimeType(actualMimeType);
     }
 
@@ -293,6 +319,13 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         if (originalFsItem == null || !originalFsItem.getInfo().isIdentical(getInfo())) {
             getInfoPersistenceHandler().update(this, getInfo());
         }
+        saveDirtyState();
+        return new JcrFile(getNode(), getRepo(), this);
+    }
+
+    @Override
+    protected void saveDirtyState() {
+        super.saveDirtyState();
         if (downloads != null) {
             LinkedList<StatsInfo> dumpTo = new LinkedList<StatsInfo>();
             downloads.drainTo(dumpTo);
@@ -308,10 +341,9 @@ public class JcrFile extends JcrFsItem<FileInfo> {
                 setMetadata(StatsInfo.class, statsInfo);
             }
         }
-        return new JcrFile(getNode(), getRepo(), downloads);
     }
 
-    public synchronized BlockingQueue<StatsInfo> getOrCreateDownloads() {
+    private synchronized BlockingQueue<StatsInfo> getOrCreateDownloads() {
         if (downloads == null) {
             downloads = new LinkedBlockingQueue<StatsInfo>();
         }
@@ -320,7 +352,13 @@ public class JcrFile extends JcrFsItem<FileInfo> {
 
     @Override
     public boolean isIdentical(JcrFsItem item) {
-        return item instanceof JcrFile && super.isIdentical(item) && (downloads == null || downloads.isEmpty());
+        return item instanceof JcrFile && super.isIdentical(item);
+    }
+
+    @Override
+    public boolean isDirty() {
+        // The only dirty state in a JcrFile is the download queue
+        return super.isDirty() || (downloads != null && !downloads.isEmpty());
     }
 
     @Override
@@ -468,13 +506,13 @@ public class JcrFile extends JcrFsItem<FileInfo> {
      * OVERIDDEN FROM java.io.File END
      */
 
-    private void setResourceNode(InputStream in) throws RepositoryException, IOException {
+    private void setResourceNode(InputStream in) throws RepositoryException, IOException, ChecksumPolicyException {
         Node node = getNode();
         Node resourceNode = getJcrRepoService().getOrCreateNode(node, JCR_CONTENT, NT_RESOURCE);
         String name = getName();
         FileInfo info = getInfo();
-        ContentType ct = NamingUtils.getContentType(name);
-        info.setMimeType(ct.getMimeType());
+        MimeType ct = NamingUtils.getContentType(name);
+        info.setMimeType(ct.getType());
         /**
          * If it is an XML document save the XML in memory since marking does not always work on the remote stream, and
          * import its xml content into the repo for indexing.
@@ -534,7 +572,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         return in;
     }
 
-    private void fillJcrData(Node resourceNode, InputStream in) throws RepositoryException, IOException {
+    private void fillJcrData(Node resourceNode, InputStream in) throws RepositoryException, ChecksumPolicyException {
 
         //Check if needs to create checksum and not checksum file
         log.debug("Calculating checksums for '{}'.", getRepoPath());
@@ -569,7 +607,9 @@ public class JcrFile extends JcrFsItem<FileInfo> {
             ChecksumInfo checksumInfo = checksumsInfo.getChecksumInfo(checksumType);
             if (checksumInfo != null) {
                 // set the actual checksum
-                checksumInfo = new ChecksumInfo(checksumType, checksumInfo.getOriginal(), calculatedChecksum);
+                String original = checksumInfo.isMarkedAsTrusted() ?
+                        ChecksumInfo.TRUSTED_FILE_MARKER : checksumInfo.getOriginal();
+                checksumInfo = new ChecksumInfo(checksumType, original, calculatedChecksum);
                 checksumsInfo.addChecksumInfo(checksumInfo);
                 if (!checksumInfo.checksumsMatch()) {
                     log.debug("Checksum mismatch {}. original: {} calculated: {}",

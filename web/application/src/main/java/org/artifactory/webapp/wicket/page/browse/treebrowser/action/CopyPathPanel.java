@@ -39,8 +39,6 @@ import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 import java.util.List;
 
 /**
@@ -117,8 +115,6 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
                     Tree tree = (Tree) componentToRefresh;
                     ITreeState treeState = tree.getTreeState();
                     treeState.collapseAll();
-                    DefaultTreeModel treeModel = (DefaultTreeModel) tree.getModelObject();
-                    treeState.selectNode(((TreeNode) treeModel.getRoot()).getChildAt(0), true);
                 }
 
                 browseRepoPanel.removeNodePanel(target);
@@ -136,10 +132,12 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
         };
     }
 
+    @Override
     protected List<LocalRepoDescriptor> getDeployableLocalReposKeys() {
         return getDeployableLocalReposKeysExcludingSource(pathToCopy.getRepoKey());
     }
 
+    @Override
     protected MoveMultiStatusHolder executeDryRun(String targetRepoKey) {
         return repoService.copy(pathToCopy, targetRepoKey, true);
     }

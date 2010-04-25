@@ -23,12 +23,14 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.ItemInfo;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
+import org.artifactory.mime.MimeType;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 
 /**
@@ -48,8 +50,8 @@ public abstract class ViewAction extends RepoAwareItemAction {
     }
 
     protected void showHighlightedSourceModal(RepoAwareItemEvent e, String content, String title) {
-        String mimeType = getMimeType(e);
-        Syntax syntax = Syntax.fromMimeType(mimeType);
+        MimeType mimeType = getMimeType(e);
+        Syntax syntax = Syntax.fromContentType(mimeType);
         showHighlightedSourceModal(e, content, title, syntax);
     }
 
@@ -73,11 +75,12 @@ public abstract class ViewAction extends RepoAwareItemAction {
         modalWindow.show(target);
     }
 
-    protected String getMimeType(RepoAwareItemEvent e) {
+    protected MimeType getMimeType(RepoAwareItemEvent e) {
         ItemInfo itemInfo = e.getSource().getItemInfo();
         if (itemInfo.isFolder()) {
             return null;
         }
-        return ((FileInfo) itemInfo).getMimeType();
+        String type = ((FileInfo) itemInfo).getMimeType();
+        return ArtifactoryHome.get().getMimeTypes().getByMime(type);
     }
 }

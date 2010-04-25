@@ -24,7 +24,7 @@ import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.repo.exception.RepoAccessException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -105,22 +105,22 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * @return A status holder with info on error
      */
     @Transactional
-    StatusHolder assertValidDeployPath(LocalRepo repo, String path);
+    void assertValidDeployPath(LocalRepo repo, String path) throws RepoRejectionException;
 
     @Lock(transactional = true)
     <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(RemoteRepo<T> remoteRepo, RepoResource res)
-            throws IOException, RepositoryException;
+            throws IOException, RepositoryException, RepoRejectionException;
 
     @Lock(transactional = true)
     RepoResource unexpireIfExists(LocalRepo localCacheRepo, String path);
 
     @Lock(transactional = true)
     ResourceStreamHandle unexpireAndRetrieveIfExists(LocalRepo localCacheRepo, String path) throws IOException,
-            RepositoryException;
+            RepositoryException, RepoRejectionException;
 
     @Lock(transactional = true)
-    ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res) throws IOException, RepoAccessException,
-            RepositoryException;
+    ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res) throws IOException, RepoRejectionException
+            , RepositoryException;
 
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);
@@ -146,11 +146,20 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     @Lock(transactional = true)
     void removeMarkForMavenMetadataRecalculation(RepoPath basePath);
 
+    /**
+     * Asynchronous method called at the end of the transaction to acquire a write lock on the repo path
+     * and activate the automatic save.
+     * The write will be acquire only if the fs item is not already write locked.
+     * @param repoPath The RepoPath of the item with dirty state.
+     */
     @Async(delayUntilAfterCommit = true, transactional = true)
-    void updateStats(RepoPath repoPath);
+    void updateDirtyState(RepoPath repoPath);
 
     Repository getJcrHandle();
 
     @Lock(transactional = true)
     void reload(CentralConfigDescriptor oldDescriptor);
+
+    @Lock(transactional = true)
+    void setXmlMetadataLater(RepoPath repoPath, String metadataName, String metadataContent);
 }

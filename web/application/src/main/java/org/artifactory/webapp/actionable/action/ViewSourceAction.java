@@ -20,11 +20,11 @@ package org.artifactory.webapp.actionable.action;
 
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.mime.MimeType;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableArchiveSearchResult;
 
@@ -56,12 +56,13 @@ public class ViewSourceAction extends ViewAction {
         Syntax syntax = null;
         String title = itemInfo.getName();
         try {
-            ArchiveFileContent result = getRepoService().getArchiveFileContent(fileInfo.getRepoPath(), searchResult.getEntryPath());
+            ArchiveFileContent result = getRepoService().getArchiveFileContent(fileInfo.getRepoPath(),
+                    searchResult.getEntryPath());
             final String failureReason = result.getFailureReason();
             if (failureReason == null) {
                 // content successfully retrieved
                 title = result.getSourceArchive() + "!/" + result.getSourcePath();
-                ContentType contentType = NamingUtils.getContentType(result.getSourcePath());
+                MimeType contentType = NamingUtils.getContentType(result.getSourcePath());
                 syntax = Syntax.fromContentType(contentType);
                 showHighlightedSourceModal(event, result.getContent(), title, syntax);
             } else {

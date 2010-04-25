@@ -60,7 +60,7 @@ public class MetadataTabPanel extends Panel {
     @SpringBean
     private AuthorizationService authorizationService;
 
-    private SyntaxHighlighter contentPanel = new SyntaxHighlighter("metadataContent").setSyntax(Syntax.XML);
+    private SyntaxHighlighter contentPanel = new SyntaxHighlighter("metadataContent").setSyntax(Syntax.xml);
 
     private RepoPath repoPath;
 

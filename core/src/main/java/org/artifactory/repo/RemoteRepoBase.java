@@ -33,6 +33,7 @@ import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.FileExpectedException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.ResourceStreamHandle;
@@ -347,16 +348,15 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return status;
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(RepoResource res) throws IOException, RepositoryException {
+    public ResourceStreamHandle getResourceStreamHandle(RepoResource res) throws IOException, RepositoryException,
+            RepoRejectionException {
         String path = res.getRepoPath().getPath();
         if (isStoreArtifactsLocally()) {
             try {
                 //Reflect the fact that we return a locally cached resource
                 res.setResponseRepoPath(new RepoPath(localCacheRepo.getKey(), path));
                 ResourceStreamHandle handle = getRepositoryService().downloadAndSave(this, res);
-                if (log.isDebugEnabled()) {
-                    log.debug("Retrieving info from cache for '" + path + "' from '" + localCacheRepo + "'.");
-                }
+                log.debug("Retrieving info from cache for '{}' from '{}'.", path, localCacheRepo);
                 return handle;
             } catch (IOException e) {
                 //If we fail on remote fetching and we can get the resource from an expired entry in
@@ -377,18 +377,14 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     public ResourceStreamHandle downloadAndSave(RepoResource remoteResource, RepoResource cachedResource)
-            throws IOException, RepositoryException {
+            throws IOException, RepositoryException, RepoRejectionException {
         RepoPath remoteRepoPath = remoteResource.getRepoPath();
         String relativePath = remoteRepoPath.getPath();
         //Retrieve remotely only if locally cached artifact not found or is found but expired and is older than remote one
         if (!isOffline() && (foundExpiredAndRemoteIsNewer(remoteResource, cachedResource)
                 || notFoundAndNotExpired(cachedResource))) {
             // Check for security deploy rights
-            StatusHolder status = getRepositoryService().assertValidDeployPath(localCacheRepo, relativePath);
-            if (status.isError()) {
-                throw new IOException(status.getStatusMsg());
-            }
-
+            getRepositoryService().assertValidDeployPath(localCacheRepo, relativePath);
             //Check that the resource is not being downloaded in parallel
             DownloadEntry completedConcurrentDownload = getCompletedConcurrentDownload(relativePath);
             log.trace("Got completed concurrent download: {}.", completedConcurrentDownload);
@@ -511,8 +507,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
     }
 
-    private void notifyConcurrentWaiters(RepoResource resource, String relPath) throws IOException,
-            RepositoryException {
+    private void notifyConcurrentWaiters(RepoResource resource, String relPath) throws IOException, RepositoryException,
+            RepoRejectionException {
         DownloadEntry currentDownload = inTransit.remove(relPath);
         if (currentDownload != null) {
             //Put it low enough in case it is incremented by multiple late waiters

@@ -37,9 +37,11 @@ import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.cache.InternalCacheService;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.exception.IllegalNameException;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.StringResourceStreamHandle;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
@@ -331,22 +333,23 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         //path and the metadata name.
         if (NamingUtils.isMetadata(path)) {
             String metadataName = NamingUtils.getMetadataName(path);
-            MetadataDefinition definition = getMetadataDefinition(metadataName, true);
-            if (definition != null) {
-                MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
-                MetadataInfo mdi = mdph.getMetadataInfo(item);
-                if (mdi != null) {
-                    if (MavenNaming.isMavenMetadata(path)) {
-                        // this is hack (YS: at least I think so) for maven metadata use the last updated time of the folder.
-                        // the cache repo will use this value to determine if the resource is expired.
-                        mdi.setLastModified(item.getInfo().getLastUpdated());
-                    }
-                    localRes = new MetadataResource(mdi);
-                } else {
-                    return new UnfoundRepoResource(repoPath, "metadata " + metadataName + " not found for " + item);
+            MetadataDefinition definition;
+            try {
+                definition = getMetadataDefinition(metadataName, true);
+            } catch (IllegalNameException e) {
+                return new UnfoundRepoResource(repoPath, e.getMessage());
+            }
+            MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
+            MetadataInfo mdi = mdph.getMetadataInfo(item);
+            if (mdi != null) {
+                if (MavenNaming.isMavenMetadata(path)) {
+                    // this is hack (YS: at least I think so) for maven metadata use the last updated time of the folder.
+                    // the cache repo will use this value to determine if the resource is expired.
+                    mdi.setLastModified(item.getInfo().getLastUpdated());
                 }
+                localRes = new MetadataResource(mdi);
             } else {
-                return new UnfoundRepoResource(repoPath, "metadata " + metadataName + " not found");
+                return new UnfoundRepoResource(repoPath, "metadata " + metadataName + " not found for " + item);
             }
         } else {
             if (item.isDirectory()) {
@@ -409,7 +412,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
             RepoPath responsePath = res.getResponseRepoPath();
             if (getRepositoryService().virtualRepositoryByKey(responsePath.getRepoKey()) == null) {
-                getRepositoryService().updateStats(responsePath);
+                getRepositoryService().updateDirtyState(responsePath);
             }
             long size = jcrFile.getSize();
             handle = new SimpleResourceStreamHandle(is, size);
@@ -481,7 +484,8 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
      * @param in         the stream to save at the location
      * @param properties A set of keyval metadata to attach to the (file) resource as part of this storage process
      */
-    public RepoResource saveResource(RepoResource res, final InputStream in, Properties properties) throws IOException {
+    public RepoResource saveResource(RepoResource res, final InputStream in, Properties properties)
+            throws IOException, RepoRejectionException {
         RepoPath repoPath = new RepoPath(getKey(), res.getRepoPath().getPath());
         try {
             if (res.isMetadata()) {
@@ -498,12 +502,18 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                         jcrFsItem = getLockedJcrFolder(metadataContainerRepoPath, true);
                         jcrFsItem.mkdirs();
                     } else {
-                        //If there is no container return unfound
+                        //If there is no container return un-found
                         return new UnfoundRepoResource(repoPath,
                                 "No metadata container exists: " + metadataContainerRepoPath);
                     }
                 }
                 String metadataName = res.getInfo().getName();
+                if (MavenNaming.isMavenMetadata(repoPath.getPath())) {
+                    // HACK: maven metadata age is taken from the containing folder (because currently metadata
+                    // doesn't have lastUpdated field) so we need to reset it whenever we deploy/download new
+                    // maven metadata
+                    jcrFsItem.unexpire();
+                }
                 jcrFsItem.setXmlMetadata(metadataName, IOUtils.toString(in, "utf-8"));
             } else {
                 //Create the parent folder if it does not exist
@@ -531,8 +541,8 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                 }
 
                 // set the file extension checksums (only needed if the file is currently being downloaded)
-                Set<ChecksumInfo> newChecksums = ((FileResource) res).getInfo().getChecksums();
-                jcrFile.getInfo().setChecksums(newChecksums);
+                Set<ChecksumInfo> resourceChecksums = ((FileResource) res).getInfo().getChecksums();
+                jcrFile.getInfo().setChecksums(resourceChecksums);
 
                 //Deploy
                 long lastModified = res.getInfo().getLastModified();
@@ -546,7 +556,9 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                     throw e;
                 }
 
-                ChecksumsInfo newChecksumsToCompare = jcrFile.getInfo().getChecksumsInfo();
+                ChecksumsInfo newlyCalculatedChecksums = jcrFile.getInfo().getChecksumsInfo();
+                // update the resource with actual checksums (calculated in fillData) - RTFACT-3112
+                res.getInfo().setChecksums(newlyCalculatedChecksums.getChecksums());
 
                 /**
                  * If the artifact is not a non-unique snapshot and already exists but with a different checksum, remove
@@ -554,7 +566,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                  */
                 if (!artifactNonUniqueSnapshot && fileExists && (existingChecksumsToCompare != null)) {
 
-                    if (checksumsDiffer(existingChecksumsToCompare, newChecksumsToCompare)) {
+                    if (checksumsDiffer(existingChecksumsToCompare, newlyCalculatedChecksums)) {
                         Set<MetadataDefinition<?>> metadataDefinitions = jcrFile.getExistingMetadata(false);
                         for (MetadataDefinition<?> metadataDefinition : metadataDefinitions) {
                             jcrFile.removeMetadata(metadataDefinition.getMetadataName());

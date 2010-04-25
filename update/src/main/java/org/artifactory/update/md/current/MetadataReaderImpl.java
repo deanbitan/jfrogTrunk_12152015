@@ -24,9 +24,9 @@ import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.md.MetadataReader;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.MimeType;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
@@ -85,7 +85,7 @@ public class MetadataReaderImpl implements MetadataReader {
                     "'. Expected a file but encountered a folder.", log);
             return false;
         }
-        ContentType type = null;
+        MimeType type = null;
         if (extension != null) {
             type = NamingUtils.getContentTypeByExtension(extension);
         }

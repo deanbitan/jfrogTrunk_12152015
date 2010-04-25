@@ -27,8 +27,8 @@ import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.common.StatusEntry;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
@@ -111,10 +111,9 @@ public class ExportResultsPanel extends FieldSetPanel {
                 try {
                     Session.get().cleanupFeedbackMessages();
                     exportToPath = new File(exportToPathTf.getModelObjectAsString());
-                    List<FileInfo> searchResults = ArtifactoryWebSession.get().getResults(searchResultName);
-                    MultiStatusHolder status = repoService
-                            .exportSearchResults(searchResults, exportToPath, !excludeMetadata, m2Compatible,
-                                    createArchive);
+                    SavedSearchResults searchResults = ArtifactoryWebSession.get().getResults(searchResultName);
+                    MultiStatusHolder status = repoService.exportSearchResults(
+                            searchResults, exportToPath, !excludeMetadata, m2Compatible, createArchive);
                     List<StatusEntry> warnings = status.getWarnings();
                     if (!warnings.isEmpty()) {
                         CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);

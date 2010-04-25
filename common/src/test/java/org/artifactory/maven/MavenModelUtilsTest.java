@@ -24,7 +24,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.Test;
 
@@ -40,7 +40,7 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class MavenModelUtilsTest extends SystemPropertiesBoundTest {
+public class MavenModelUtilsTest extends ArtifactoryHomeBoundTest {
 
     public void testToMaven1Path() {
         String maven1Url = MavenNaming.toMaven1Path(

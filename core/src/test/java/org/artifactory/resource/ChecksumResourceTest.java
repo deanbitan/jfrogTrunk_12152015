@@ -19,9 +19,9 @@
 package org.artifactory.resource;
 
 import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.mime.MimeType;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -32,7 +32,7 @@ import static org.testng.Assert.assertEquals;
  * @author Yossi Shaul
  */
 @Test
-public class ChecksumResourceTest extends SystemPropertiesBoundTest {
+public class ChecksumResourceTest extends ArtifactoryHomeBoundTest {
 
     public void checksumResource() {
         RepoPath fileRepoPath = new RepoPath("test", "test.jar");
@@ -42,7 +42,7 @@ public class ChecksumResourceTest extends SystemPropertiesBoundTest {
 
         assertEquals(resource.getRepoPath(), new RepoPath("test", "test.jar.sha1"));
         assertEquals(resource.getResponseRepoPath(), new RepoPath("test", "test.jar.sha1"));
-        assertEquals(resource.getMimeType(), ContentType.cheksum.getMimeType());
+        assertEquals(resource.getMimeType(), MimeType.checksum);
         assertEquals(resource.getSize(), "456789".length());
     }
 }

@@ -23,7 +23,6 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.ResourceStreamHandle;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.io.StringResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
@@ -66,7 +65,7 @@ public class JcrConfResourceLoader implements ResourceStreamHandle {
 
     public InputStream getInputStream() {
         String alternateRepoXml =
-                ArtifactorySystemProperties.get().getProperty(ARTIFACTORY_ALTERNATE_REPO_XML, null);
+                ArtifactoryHome.get().getArtifactoryProperties().getProperty(ARTIFACTORY_ALTERNATE_REPO_XML, null);
         if (hasText(alternateRepoXml)) {
             try {
                 is = new StringResourceStreamHandle(alternateRepoXml).getInputStream();

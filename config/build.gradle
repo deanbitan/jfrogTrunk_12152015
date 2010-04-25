@@ -9,3 +9,10 @@ dependencies {
   runtime group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.1.10'
   compile project(':open:log')
 }
+
+jar {
+  metaInf {
+    from 'src/main/resources/META-INF'
+    from 'src/main/filtered-resources/META-INF'
+  }
+}

@@ -44,6 +44,9 @@ public class ImportSettings extends BaseSettings {
         private MetadataReader metadataReader;
 
         private boolean indexMarkedArchives;
+
+        // set this flag to true if Artifactory should mark uploaded artifacts with trusted checksums mark
+        private boolean trustServerChecksums;
     }
 
     private final SharedInfo info;
@@ -59,8 +62,7 @@ public class ImportSettings extends BaseSettings {
     }
 
     public ImportSettings(File baseDir, ImportSettings settings) {
-        super(baseDir, settings);
-        info = settings.info;
+        this(baseDir, settings, settings.getStatusHolder());
     }
 
     public ImportSettings(File baseDir, ImportSettings settings, MultiStatusHolder statusHolder) {
@@ -98,4 +100,16 @@ public class ImportSettings extends BaseSettings {
     public void setIndexMarkedArchives(boolean indexMarkedArchives) {
         info.indexMarkedArchives = indexMarkedArchives;
     }
+
+    public boolean isTrustServerChecksums() {
+        return info.trustServerChecksums;
+    }
+
+    /**
+     * set this flag to true if Artifactory should mark uploaded artifacts with trusted checksums mark
+     */
+    public void setTrustServerChecksums(boolean trustServerChecksums) {
+        info.trustServerChecksums = trustServerChecksums;
+    }
+
 }

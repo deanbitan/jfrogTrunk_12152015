@@ -113,7 +113,7 @@ public class DistributionManagementPanel extends FieldSetPanel {
         if (!isCache) {
             sb.append("</distributionManagement>");
         }
-        add(new SyntaxHighlighter("ditributionManagamentContainer", sb.toString(), Syntax.XML));
+        add(new SyntaxHighlighter("ditributionManagamentContainer", sb.toString(), Syntax.xml));
 
         log.debug("Pom definition: {}", sb);
     }

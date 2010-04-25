@@ -26,7 +26,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.easymock.EasyMock;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
@@ -42,7 +42,7 @@ import java.lang.reflect.Method;
  *
  * @author Noam Tenne
  */
-public class RemoteRepoBaseTest extends SystemPropertiesBoundTest {
+public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     AuthorizationService authService = EasyMock.createNiceMock(AuthorizationService.class);
     InternalRepositoryService internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
     InternalArtifactoryContext context = EasyMock.createMock(InternalArtifactoryContext.class);

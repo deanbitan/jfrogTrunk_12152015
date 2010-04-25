@@ -23,7 +23,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.jcr.version.v150.xml.RepoXmlConverterTest;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ResourceUtils;
@@ -59,7 +58,7 @@ public class RepoConfigConverterTest {
 
     @AfterMethod
     public void tearDown() {
-        ArtifactorySystemProperties.unbind();
+        ArtifactoryHome.unbind();
     }
 
     /**
@@ -80,7 +79,7 @@ public class RepoConfigConverterTest {
                 is = new FileInputStream(new File(repoDir, ArtifactoryHome.ARTIFACTORY_JCR_FILE));
                 Document doc = XmlConverterUtils.parse(is);
                 RepoXmlConverterTest xmlConverterTest = new RepoXmlConverterTest();
-                xmlConverterTest.testConvertedDoc(doc);
+                xmlConverterTest.assertConvertedDoc(doc);
             } finally {
                 IOUtils.closeQuietly(is);
             }
@@ -105,7 +104,7 @@ public class RepoConfigConverterTest {
                 is = new FileInputStream(new File(repoDir, ArtifactoryHome.ARTIFACTORY_JCR_FILE));
                 Document doc = XmlConverterUtils.parse(is);
                 RepoXmlConverterTest xmlConverterTest = new RepoXmlConverterTest();
-                xmlConverterTest.testConvertedDoc(doc);
+                xmlConverterTest.assertConvertedDoc(doc);
             } finally {
                 IOUtils.closeQuietly(is);
             }
@@ -130,7 +129,7 @@ public class RepoConfigConverterTest {
                 is = new FileInputStream(new File(repoDir, ArtifactoryHome.ARTIFACTORY_JCR_FILE));
                 Document doc = XmlConverterUtils.parse(is);
                 RepoXmlConverterTest xmlConverterTest = new RepoXmlConverterTest();
-                xmlConverterTest.testConvertedDoc(doc);
+                xmlConverterTest.assertConvertedDoc(doc);
             } finally {
                 IOUtils.closeQuietly(is);
             }
@@ -155,7 +154,7 @@ public class RepoConfigConverterTest {
                 is = new FileInputStream(new File(repoDir, ArtifactoryHome.ARTIFACTORY_JCR_FILE));
                 Document doc = XmlConverterUtils.parse(is);
                 RepoXmlConverterTest xmlConverterTest = new RepoXmlConverterTest();
-                xmlConverterTest.testConvertedDoc(doc);
+                xmlConverterTest.assertConvertedDoc(doc);
             } catch (AssertionError assertionError) {
                 log.info("Received expected assertion error: " + assertionError.getMessage());
             } finally {
@@ -197,7 +196,7 @@ public class RepoConfigConverterTest {
             IOUtils.closeQuietly(propOutStream);
         }
         artifactoryHome = new ArtifactoryHome(homeDir);
-        ArtifactorySystemProperties.bind(artifactoryHome.getArtifactoryProperties());
+        ArtifactoryHome.bind(artifactoryHome);
 
         File originalConfig = ResourceUtils.getResourceAsFile(validOptionalDatastore ?
                 "/org/artifactory/jcr/version/v150/xml/repo.xml" :

@@ -35,6 +35,7 @@ import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepoAccessException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.UploadService;
@@ -64,7 +65,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Provides artifacts deploy services.
+ * Provides artifacts deploy services from the UI.
  *
  * @author Yossi Shaul
  */
@@ -84,14 +85,14 @@ public class DeployServiceImpl implements DeployService {
     @Autowired
     private UploadService uploadService;
 
-    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File file) throws RepoAccessException {
+    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File file) throws RepoRejectionException {
         String pomString = getPomModelString(file);
         deploy(targetRepo, artifactInfo, file, pomString, false, false);
     }
 
     public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo,
             final File fileToDeploy, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy)
-            throws RepoAccessException {
+            throws RepoRejectionException {
 
         validatePath(artifactInfo);
 
@@ -108,10 +109,7 @@ public class DeployServiceImpl implements DeployService {
         }
         //Check acceptance according to include/exclude patterns
         String path = artifactInfo.getPath();
-        StatusHolder statusHolder = repositoryService.assertValidDeployPath(localRepo, path);
-        if (statusHolder.isError()) {
-            throw new IllegalArgumentException(statusHolder.getStatusMsg());
-        }
+        repositoryService.assertValidDeployPath(localRepo, path);
         RepoPath repoPath = new RepoPath(targetRepo.getKey(), path);
         if (!authService.canDeploy(repoPath)) {
             AccessLogger.deployDenied(repoPath);
@@ -191,7 +189,7 @@ public class DeployServiceImpl implements DeployService {
             IOFileFilter deployableFilesFilter = new AbstractFileFilter() {
                 @Override
                 public boolean accept(File file) {
-                    return !MavenNaming.isChecksum(file) && !NamingUtils.isSystem(file.getAbsolutePath());
+                    return !NamingUtils.isSystem(file.getAbsolutePath());
                 }
             };
             Collection<File> archiveContent = FileUtils.listFiles(

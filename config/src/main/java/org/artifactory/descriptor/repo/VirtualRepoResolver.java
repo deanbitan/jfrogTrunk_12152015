@@ -18,35 +18,43 @@
 
 package org.artifactory.descriptor.repo;
 
+import com.google.common.collect.Lists;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Resolvesd recursively the search order of the virtual repositories. The resolving is done according to the virtual
- * repository resopsitories list order. Local repositories are always placed first. If the virtual repo has cycles (one
+ * Resolved recursively the search order of the virtual repositories. The resolving is done according to the virtual
+ * repository repositories list order. Local repositories are always placed first. If the virtual repo has cycles (one
  * or more virtual repos appears more than once) the resolver will skip the repeated virtual repo.
  *
  * @author Yossi Shaul
  */
-public class VirtualRepoResolver {
+public class VirtualRepoResolver implements Serializable {
     private static final Logger log = LoggerFactory.getLogger(VirtualRepoResolver.class);
 
-    private List<LocalRepoDescriptor> localRepos = new ArrayList<LocalRepoDescriptor>();
-    private List<RemoteRepoDescriptor> remoteRepos = new ArrayList<RemoteRepoDescriptor>();
+    private List<LocalRepoDescriptor> localRepos;
+    private List<RemoteRepoDescriptor> remoteRepos;
 
     private boolean hasCycle = false;
 
     public VirtualRepoResolver(VirtualRepoDescriptor virtual) {
+        update(virtual);
+    }
+
+    public void update(VirtualRepoDescriptor virtual) {
+        localRepos = Lists.newArrayList();
+        remoteRepos = Lists.newArrayList();
+        hasCycle = false;
         resolve(virtual, new ArrayList<VirtualRepoDescriptor>());
     }
 
-    private void resolve(VirtualRepoDescriptor virtualRepo,
-            ArrayList<VirtualRepoDescriptor> visitedVirtualRepos) {
+    private void resolve(VirtualRepoDescriptor virtualRepo, ArrayList<VirtualRepoDescriptor> visitedVirtualRepos) {
         if (visitedVirtualRepos.contains(virtualRepo)) {
-            // don't visit twice the same virtual repo to prvent cycles
+            // don't visit twice the same virtual repo to prevent cycles
             log.debug("Virtual repo {} already visited.", visitedVirtualRepos);
             hasCycle = true;
             return;
@@ -69,7 +77,7 @@ public class VirtualRepoResolver {
                 // resolve recursively
                 resolve((VirtualRepoDescriptor) repo, visitedVirtualRepos);
             } else {
-                log.warn("Unexpected repository of type " + repo.getClass());
+                log.warn("Unexpected repository of type '{}'.", repo.getClass());
             }
         }
     }
@@ -92,7 +100,7 @@ public class VirtualRepoResolver {
      * @return List with all the resolved local and remote repositories ordered correctly.
      */
     public List<RealRepoDescriptor> getOrderedRepos() {
-        ArrayList<RealRepoDescriptor> orderedRepos =
+        List<RealRepoDescriptor> orderedRepos =
                 new ArrayList<RealRepoDescriptor>(localRepos.size() + remoteRepos.size());
         orderedRepos.addAll(localRepos);
         orderedRepos.addAll(remoteRepos);

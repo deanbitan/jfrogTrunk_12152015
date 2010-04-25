@@ -20,21 +20,20 @@ package org.artifactory.descriptor.reader;
 
 import org.apache.commons.collections15.OrderedMap;
 import org.apache.commons.io.FileUtils;
-import org.artifactory.common.ConstantValues;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.jaxb.JaxbHelper;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
+import org.artifactory.test.TestUtils;
 import org.artifactory.util.ResourceUtils;
 import org.artifactory.version.ArtifactoryConfigVersion;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.Collection;
 
+import static org.artifactory.common.ConstantValues.substituteRepoKeys;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
@@ -44,17 +43,7 @@ import static org.testng.Assert.assertTrue;
  * @author Tomer Cohen
  */
 @Test
-public class CentralConfigReaderTest extends SystemPropertiesBoundTest {
-
-
-    @AfterMethod
-    public void clearArtifactoryProperties() {
-        // clear any property that might have been set in a test
-        for (ConstantValues constantsValue : ConstantValues.values()) {
-            System.clearProperty(constantsValue.getPropertyName());
-        }
-    }
-
+public class CentralConfigReaderTest extends ArtifactoryHomeBoundTest {
 
     public void readV6Config() throws Exception {
         File oldConfigFile = ResourceUtils.getResourceAsFile("/config/install/config.1.4.1.xml");
@@ -66,14 +55,11 @@ public class CentralConfigReaderTest extends SystemPropertiesBoundTest {
 
     @SuppressWarnings("unchecked")
     public void readAllConfigFiles() throws Exception {
-        System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +
-                "3rdp-releases", "third-party-releases");
-        System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +
-                "3rdp-snapshots", "third-party-snapshots");
-        ArtifactorySystemProperties.get().loadArtifactorySystemProperties(null, null);
-        System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +
-                "3rd-party", "third-party");
-        ArtifactorySystemProperties.get().loadArtifactorySystemProperties(null, null);
+        getBound().setProperty(substituteRepoKeys.getPropertyName() + "3rdp-releases", "third-party-releases")
+                .setProperty(substituteRepoKeys.getPropertyName() + "3rdp-snapshots", "third-party-snapshots")
+                .setProperty(substituteRepoKeys.getPropertyName() + "3rd-party", "third-party");
+        // load the repo key substitute
+        TestUtils.invokeMethodNoArgs(getBound().getArtifactoryProperties(), "fillRepoKeySubstitute");
         File backupDirs = ResourceUtils.getResourceAsFile("/config");
         Collection<File> oldArtifactoryConfigs = FileUtils.listFiles(backupDirs, new String[]{"xml"}, true);
         assertTrue(oldArtifactoryConfigs.size() > 10, "Where are all my test files??");
@@ -86,8 +72,5 @@ public class CentralConfigReaderTest extends SystemPropertiesBoundTest {
             assertNotNull(configVersion, "Null value returned from security reader for file " + file.getAbsolutePath());
             assertTrue(configVersion.isCurrent(), "Artifactory config version is not up to date");
         }
-        System.clearProperty(ConstantValues.substituteRepoKeys.getPropertyName() + "3rdp-releases");
-        System.clearProperty(ConstantValues.substituteRepoKeys.getPropertyName() + "3rdp-snapshots");
-        System.clearProperty(ConstantValues.substituteRepoKeys.getPropertyName() + "3rd-party");
     }
 }

@@ -18,9 +18,8 @@
 
 package org.artifactory.common;
 
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.util.ResourceUtils;
 import org.slf4j.Logger;
 import org.testng.Assert;
@@ -37,7 +36,7 @@ import static org.testng.Assert.assertEquals;
  * @author freds
  * @date Oct 12, 2008
  */
-public class ArtifactoryPropertiesTest extends SystemPropertiesBoundTest {
+public class ArtifactoryPropertiesTest extends ArtifactoryHomeBoundTest {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryPropertiesTest.class);
 
     @AfterMethod
@@ -61,7 +60,7 @@ public class ArtifactoryPropertiesTest extends SystemPropertiesBoundTest {
     @Test
     public void testLoadProps() throws URISyntaxException {
         File file = ResourceUtils.getResourceAsFile("/config/system/artifactory.system.1.properties");
-        ArtifactorySystemProperties.get().loadArtifactorySystemProperties(file, null);
+        ArtifactoryHome.get().getArtifactoryProperties().loadArtifactorySystemProperties(file, null);
         assertEquals(ConstantValues.logsViewRefreshRateSecs.getInt(), 1000);
         assertEquals(ConstantValues.locksTimeoutSecs.getInt(),
                 parseInt(ConstantValues.locksTimeoutSecs.getDefValue()));
@@ -76,7 +75,7 @@ public class ArtifactoryPropertiesTest extends SystemPropertiesBoundTest {
         File file = ResourceUtils.getResourceAsFile("/config/system/artifactory.system.1.properties");
         System.setProperty(ConstantValues.securityAuthenticationCacheIdleTimeSecs.getPropertyName(), "800");
 
-        ArtifactorySystemProperties.get().loadArtifactorySystemProperties(file, null);
+        ArtifactoryHome.get().getArtifactoryProperties().loadArtifactorySystemProperties(file, null);
         assertEquals(ConstantValues.logsViewRefreshRateSecs.getInt(), 1000);
         assertEquals(ConstantValues.locksTimeoutSecs.getInt(), 120);
         assertEquals(ConstantValues.securityAuthenticationCacheIdleTimeSecs.getInt(), 800);
@@ -87,7 +86,7 @@ public class ArtifactoryPropertiesTest extends SystemPropertiesBoundTest {
 
     @Test
     public void defaultArtifactoryVersion() throws URISyntaxException {
-        ArtifactorySystemProperties.get().loadArtifactorySystemProperties(null, null);
+        ArtifactoryHome.get().getArtifactoryProperties().loadArtifactorySystemProperties(null, null);
         Assert.assertNull(ConstantValues.artifactoryVersion.getString(), "Expected null but was " +
                 ConstantValues.artifactoryVersion.getString());
         Assert.assertNull(ConstantValues.artifactoryRevision.getString(), "Expected null but was " +
@@ -97,7 +96,7 @@ public class ArtifactoryPropertiesTest extends SystemPropertiesBoundTest {
     @Test
     public void artifactoryVersion() throws URISyntaxException {
         File file = ResourceUtils.getResourceAsFile("/config/system/artifactory.properties");
-        ArtifactorySystemProperties.get().loadArtifactorySystemProperties(null, file);
+        ArtifactoryHome.get().getArtifactoryProperties().loadArtifactorySystemProperties(null, file);
         assertEquals(ConstantValues.artifactoryVersion.getString(), "10.3");
         assertEquals(ConstantValues.artifactoryRevision.getInt(), 12345);
     }
@@ -108,7 +107,7 @@ public class ArtifactoryPropertiesTest extends SystemPropertiesBoundTest {
         System.setProperty(ConstantValues.artifactoryRevision.getPropertyName(), "5555");
 
         File file = ResourceUtils.getResourceAsFile("/config/system/artifactory.properties");
-        ArtifactorySystemProperties.get().loadArtifactorySystemProperties(null, file);
+        ArtifactoryHome.get().getArtifactoryProperties().loadArtifactorySystemProperties(null, file);
         assertEquals(ConstantValues.artifactoryVersion.getString(), "3.0");
         assertEquals(ConstantValues.artifactoryRevision.getInt(), 5555);
     }

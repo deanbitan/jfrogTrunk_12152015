@@ -192,9 +192,17 @@ class SessionLockEntry implements FsItemLockEntry {
         this.lockedFsItem = null;
     }
 
+    /**
+     * Test the state of this entry for unsaved data.
+     * @return true if the entry needs to be saved, false otherwise
+     */
     boolean isUnsaved() {
+        // The entry is unsaved if it has a mutable locked object
+        // which is not deleted (Delete happens immediately has JCR delete method is called)
+        // and if it comes from a cache immutable object (basically (immutableFsItem != null) means in update mode)
+        //  We test that the item actually changed or is marked dirty
         return lockedFsItem != null && !lockedFsItem.isDeleted() &&
-                (immutableFsItem == null || !immutableFsItem.isIdentical(lockedFsItem));
+                (lockedFsItem.isDirty() || immutableFsItem == null || !immutableFsItem.isIdentical(lockedFsItem));
     }
 
     /**

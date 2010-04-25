@@ -33,7 +33,6 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
@@ -88,7 +87,7 @@ public class MavenModelUtils {
                 }
                 //For snapshots with unique snapshot version, do not include the model version in the path
                 boolean snapshot = MavenNaming.isSnapshot(relPath);
-                boolean versionSnapshot = MavenNaming.isVersionSnapshot(modelVersion);
+                boolean versionSnapshot = MavenNaming.isNonUniqueSnapshotVersion(modelVersion);
                 String pathPrefix = null;
                 if (snapshot && !versionSnapshot) {
                     pathPrefix = groupId.replace('.', '/') + "/" + model.getArtifactId() + "/";
@@ -291,9 +290,8 @@ public class MavenModelUtils {
      */
     private static MavenArtifactInfo attemptToBuildInfoFromModel(File file) {
         MavenArtifactInfo result = null;
-        ContentType ct = NamingUtils.getContentType(file);
         String fileName = file.getName();
-        if (ct.isJarVariant()) {
+        if (NamingUtils.isJarVariant(fileName)) {
             //File is a jar variant
             result = gatherInfoFromJarFile(file);
         } else if (MavenNaming.isClientOrServerPom(fileName)) {

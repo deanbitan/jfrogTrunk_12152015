@@ -62,7 +62,6 @@ import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.spring.ReloadableBean;
 import org.artifactory.version.CompoundVersionDetails;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
@@ -142,11 +141,6 @@ public class BuildServiceImpl implements InternalBuildService {
         sha1Cache = cacheService.getCache(ArtifactoryCache.buildItemMissingSha1);
         //Create initial builds folder
         jcrService.getOrCreateUnstructuredNode(getJcrPath().getBuildsJcrRootPath());
-    }
-
-    @SuppressWarnings({"unchecked"})
-    public Class<? extends ReloadableBean>[] initAfter() {
-        return new Class[]{JcrService.class};
     }
 
     public void reload(CentralConfigDescriptor oldDescriptor) {
@@ -238,8 +232,14 @@ public class BuildServiceImpl implements InternalBuildService {
         return jcrService.getString(buildPath);
     }
 
-    public void deleteBuild(String buildName, long buildNumber, String buildStarted) {
-        String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
+    public void deleteBuild(String buildName) {
+        String buildPath = JcrPath.get().getBuildsJcrPath(buildName);
+        jcrService.delete(buildPath);
+    }
+
+    public void deleteBuild(BasicBuildInfo basicBuildInfo) {
+        String buildPath = getBuildPathFromParams(basicBuildInfo.getName(), basicBuildInfo.getNumber(),
+                basicBuildInfo.getStarted());
         jcrService.delete(buildPath);
     }
 

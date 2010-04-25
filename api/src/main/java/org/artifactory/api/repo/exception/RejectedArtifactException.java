@@ -16,29 +16,29 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.test;
+package org.artifactory.api.repo.exception;
 
-import org.artifactory.common.property.ArtifactorySystemProperties;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.artifactory.api.repo.RepoPath;
+import org.artifactory.descriptor.repo.RepoDescriptor;
 
 /**
- * A convenience class for tests that require bind/unbind of {@link ArtifactorySystemProperties}.
+ * An exception thrown when is rejected for deployment
  *
- * @author Yossi Shaul
+ * @author Noam Y. Tenne
  */
-@Test
-public class SystemPropertiesBoundTest {
+public abstract class RejectedArtifactException extends RepoRejectionException {
 
-    @BeforeMethod
-    public void setup() {
-        ArtifactorySystemProperties.bind(new ArtifactorySystemProperties());
+    protected RepoDescriptor rejectingRepo;
+    protected RepoPath rejectedArtifact;
+
+    /**
+     * Main constructor
+     *
+     * @param rejectingRepo    The descriptor of the rejecting repo
+     * @param rejectedArtifact The repo path of the rejected artifact
+     */
+    public RejectedArtifactException(RepoDescriptor rejectingRepo, RepoPath rejectedArtifact) {
+        this.rejectingRepo = rejectingRepo;
+        this.rejectedArtifact = rejectedArtifact;
     }
-
-    @AfterMethod
-    public void tearDown() {
-        ArtifactorySystemProperties.unbind();
-    }
-
 }

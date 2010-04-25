@@ -40,8 +40,6 @@ import org.artifactory.api.rest.artifact.ItemProperties;
 import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
 import org.artifactory.api.rest.artifact.RestFileInfo;
 import org.artifactory.api.rest.artifact.RestFolderInfo;
-import org.artifactory.api.rest.constant.ArtifactRestConstants;
-import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -65,12 +63,14 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
 import static org.artifactory.api.rest.constant.ArtifactRestConstants.*;
+import static org.artifactory.api.rest.constant.RestConstants.PATH_API;
 
 /**
  * @author Eli Givoni
@@ -97,7 +97,7 @@ public class ArtifactResource {
             @QueryParam("mdns") String mdns,
             @QueryParam("md") StringList md,
             @QueryParam("properties") StringList properties) throws IOException {
-        String accept = request.getHeader("Accept");
+        String accept = request.getHeader(HttpHeaders.ACCEPT);
         boolean isTypeNotBlank = StringUtils.isNotBlank(accept);
         if (isItemMetadataNameRequest(mdns, md, properties)) {
             //get all metadata names on requested path
@@ -108,7 +108,7 @@ public class ArtifactResource {
                 return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
             }
         } else if (isItemMetadataRequest(mdns, md)) {
-            //get metadata storage info on requested specific metadata
+            //get metadata storage info on requested specific metadata - DEPRECATED
             if (isTypeNotBlank && MT_ITEM_METADATA.equals(accept)) {
                 ItemMetadata res = getItemMetadata(path, md);
                 return Response.ok(res, MT_ITEM_METADATA).build();
@@ -137,9 +137,9 @@ public class ArtifactResource {
             List<String> metadataNameList = repositoryService.getMetadataNames(repoPath);
             if (metadataNameList != null && !metadataNameList.isEmpty()) {
                 itemMetadataNames = new ItemMetadataNames();
-                itemMetadataNames.slf = buildMetadataUri(path, "").trim();
+                itemMetadataNames.slf = buildMetadataSlf(path).trim();
                 for (String name : metadataNameList) {
-                    String uri = buildMetadataUri(path, "?md=") + name;
+                    String uri = String.format("%s%s", buildMetadataUri(path, ":"), name);
                     ItemMetadataNames.MetadataNamesInfo info = new ItemMetadataNames.MetadataNamesInfo(uri);
                     itemMetadataNames.metadata.put(name, info);
                 }
@@ -184,6 +184,7 @@ public class ArtifactResource {
     }
 
 
+    @Deprecated
     public ItemMetadata getItemMetadata(String path, StringList md) throws IOException {
         RepoPath repoPath = calcRepPath(path);
         //not supporting virtual repo metadata
@@ -295,11 +296,17 @@ public class ArtifactResource {
     }
 
 
+    private String buildMetadataSlf(String path) {
+        String servletContextUrl = HttpUtils.getServletContextUrl(request);
+        StringBuilder sb = new StringBuilder(servletContextUrl);
+        sb.append("/").append(PATH_API).append("/").append(PATH_ROOT).append("/").append(path);
+        return sb.toString();
+    }
+
     private String buildMetadataUri(String path, String addedProperty) {
         String servletContextUrl = HttpUtils.getServletContextUrl(request);
         StringBuilder sb = new StringBuilder(servletContextUrl);
-        sb.append("/").append(RestConstants.PATH_API).append("/").append(ArtifactRestConstants.PATH_ROOT).append("/")
-                .append(path).append(addedProperty);
+        sb.append("/").append(path).append(addedProperty);
         return sb.toString();
     }
 

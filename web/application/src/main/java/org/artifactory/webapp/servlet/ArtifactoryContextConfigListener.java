@@ -21,7 +21,6 @@ package org.artifactory.webapp.servlet;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.log.logback.LogbackContextSelector;
 import org.artifactory.log.logback.LoggerConfigInfo;
@@ -147,7 +146,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
 
         ApplicationContext context;
         try {
-            ArtifactorySystemProperties.bind(artifactoryHome.getArtifactoryProperties());
+            ArtifactoryHome.bind(artifactoryHome);
 
             Class<?> contextClass = ClassUtils.forName(
                     "org.artifactory.spring.ArtifactoryApplicationContext", ClassUtils.getDefaultClassLoader());
@@ -159,7 +158,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             SpringConfigPaths springConfigPaths = SpringConfigResourceLoader.getConfigurationPaths(artifactoryHome);
             context = (ApplicationContext) constructor.newInstance(
                     contextUniqueName, springConfigPaths, artifactoryHome);
-            ArtifactorySystemProperties.unbind();
+            ArtifactoryHome.unbind();
 
         } catch (Exception e) {
             log.error("Error creating spring context", e);

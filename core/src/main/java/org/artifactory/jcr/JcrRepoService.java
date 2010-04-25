@@ -23,6 +23,7 @@ import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
@@ -47,7 +48,7 @@ public interface JcrRepoService {
     void saveXmlHierarchy(Node xmlNode, InputStream in) throws RepositoryException, IOException;
 
     @Lock(transactional = true)
-    JcrFile importFile(JcrFolder parentFolder, File file, ImportSettings settings);
+    JcrFile importFile(JcrFolder parentFolder, File file, ImportSettings settings) throws RepoRejectionException;
 
     @Lock(transactional = true)
     RepoPath importFolder(LocalRepo repo, RepoPath jcrFolder, ImportSettings settings);

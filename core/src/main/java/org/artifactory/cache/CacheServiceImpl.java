@@ -29,7 +29,6 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.spring.ReloadableBean;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
@@ -107,11 +106,6 @@ public class CacheServiceImpl implements InternalCacheService {
         }
         //Add the global repo cache
         repoCaches.put(VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY, newStoringRepoCaches());
-    }
-
-    @SuppressWarnings({"unchecked"})
-    public Class<? extends ReloadableBean>[] initAfter() {
-        return new Class[]{InternalCentralConfigService.class};
     }
 
     public void reload(CentralConfigDescriptor oldDescriptor) {

@@ -36,13 +36,17 @@ import static org.artifactory.common.wicket.util.JavaScriptUtils.jsFunctionCall;
  * @author Yoav Aharoni
  */
 public class SyntaxHighlighter extends WebComponent implements IHeaderContributor {
-    private static final ResourceReference CORE_JS_REFERENCE = new JavascriptResourceReference(SyntaxHighlighter.class, "resources/scripts/shCore.js");
-    private static final ResourceReference CORE_CSS_REFERENCE = new CompressedResourceReference(SyntaxHighlighter.class, "resources/styles/shCore.css");
-    private static final ResourceReference JAVASCRIPT_REFERENCE = new ResourceReference(SyntaxHighlighter.class, "SyntaxHighlighter.js");
-    private static final ResourceReference CLIPBOARD_SWF_REFERENCE = new ResourceReference(SyntaxHighlighter.class, "resources/scripts/clipboard.swf");
+    private static final ResourceReference CORE_JS_REFERENCE = new JavascriptResourceReference(SyntaxHighlighter.class,
+            "resources/scripts/shCore.js");
+    private static final ResourceReference CORE_CSS_REFERENCE = new CompressedResourceReference(SyntaxHighlighter.class,
+            "resources/styles/shCore.css");
+    private static final ResourceReference JAVASCRIPT_REFERENCE = new ResourceReference(SyntaxHighlighter.class,
+            "SyntaxHighlighter.js");
+    private static final ResourceReference CLIPBOARD_SWF_REFERENCE = new ResourceReference(SyntaxHighlighter.class,
+            "resources/scripts/clipboard.swf");
 
     private Theme theme = Theme.Default;
-    private Syntax syntax = Syntax.PlainText;
+    private Syntax syntax = Syntax.plain;
     private boolean gutter = false;
     private boolean toolbar = true;
     private boolean autoLinks = true;

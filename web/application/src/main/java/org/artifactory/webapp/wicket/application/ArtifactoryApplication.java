@@ -252,7 +252,6 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         setupSpring();
 
         // bind context
-        boolean propsAlreadyBound = ArtifactorySystemProperties.isBound();
         ArtifactoryContext originalContext = ContextHelper.get();
         boolean ctxAlreadyBound = originalContext != null;
         ArtifactoryContext context = getArtifactoryContext();
@@ -266,9 +265,9 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
             }
         }
 
-        ArtifactoryHome artifactoryHome = context.getArtifactoryHome();
-        if (!propsAlreadyBound) {
-            ArtifactorySystemProperties.bind(artifactoryHome.getArtifactoryProperties());
+        boolean artifactoryHomeAlreadyBound = ArtifactoryHome.isBound();
+        if (!artifactoryHomeAlreadyBound) {
+            ArtifactoryHome.bind(context.getArtifactoryHome());
         }
 
         super.init();
@@ -280,8 +279,8 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
             if (!ctxAlreadyBound) {
                 ArtifactoryContextThreadBinder.unbind();
             }
-            if (!propsAlreadyBound) {
-                ArtifactorySystemProperties.unbind();
+            if (!artifactoryHomeAlreadyBound) {
+                ArtifactoryHome.unbind();
             }
         }
     }

@@ -22,9 +22,9 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.common.StatusHolder;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.security.AuthorizationService;
@@ -33,6 +33,7 @@ import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.MimeType;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.jcr.StoringRepo;
@@ -193,9 +194,10 @@ public class WebdavServiceImpl implements WebdavService {
             return;
         }
         //Check that we are allowed to write
-        StatusHolder statusHolder = repoService.assertValidDeployPath(repo, path);
-        if (statusHolder.isError()) {
-            response.sendError(statusHolder);
+        try {
+            repoService.assertValidDeployPath(repo, path);
+        } catch (RepoRejectionException rre) {
+            response.sendError(rre.getErrorCode(), rre.getMessage(), log);
             return;
         }
         JcrFolder targetFolder = repo.getLockedJcrFolder(repoPath, true);
@@ -364,9 +366,9 @@ public class WebdavServiceImpl implements WebdavService {
                     generatedXml.writeProperty(null, "getlastmodified", lastModified);
                     generatedXml.writeProperty(null, "getcontentlength", resourceLength);
 
-                    ContentType ct = NamingUtils.getContentType(path);
+                    MimeType ct = NamingUtils.getContentType(path);
                     if (ct != null) {
-                        generatedXml.writeProperty(null, "getcontenttype", ct.getMimeType());
+                        generatedXml.writeProperty(null, "getcontenttype", ct.getType());
                     }
                     generatedXml.writeProperty(
                             null, "getetag", getEtag(resourceLength, lastModified));

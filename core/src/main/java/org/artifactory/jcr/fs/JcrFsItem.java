@@ -28,6 +28,7 @@ import org.artifactory.api.fs.MetadataInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.md.MetadataReader;
+import org.artifactory.api.md.Properties;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
@@ -45,6 +46,7 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.update.md.MetadataVersion;
 import org.artifactory.util.ExceptionUtils;
@@ -63,8 +65,13 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.artifactory.jcr.JcrTypes.NODE_ARTIFACTORY_METADATA;
 
@@ -105,6 +112,38 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
     private transient StoringRepo repo;
 
     /**
+     * The queue that receive all metadata object that need to be saved at the end of a write lock transaction.
+     */
+    protected BlockingQueue<SetMetadataMessage> metadataToSave = null;
+
+    protected void saveDirtyState() {
+        if (metadataToSave != null) {
+            LinkedList<SetMetadataMessage> dumpTo = new LinkedList<SetMetadataMessage>();
+            metadataToSave.drainTo(dumpTo);
+            if (!dumpTo.isEmpty()) {
+                Map<String, String> toSave = new LinkedHashMap<String, String>();
+                for (SetMetadataMessage message : dumpTo) {
+                    toSave.put(message.metadataName, message.xmlContent);
+                }
+                for (Map.Entry<String, String> entry : toSave.entrySet()) {
+                    setXmlMetadata(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+    }
+
+    protected static class SetMetadataMessage {
+        final String metadataName;
+        final String xmlContent;
+        // TODO: [by fs] support Metadata object
+
+        private SetMetadataMessage(String metadataName, String xmlContent) {
+            this.metadataName = metadataName;
+            this.xmlContent = xmlContent;
+        }
+    }
+
+    /**
      * Copy constructor used to create a mutable version of this fsItem out of JCR based one.
      *
      * @param copy A JCR based fsItem to copy
@@ -118,6 +157,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         this.uuid = copy.uuid;
         this.mutable = true;
         this.info = getInfoPersistenceHandler().copy(copy.info);
+        this.metadataToSave = copy.metadataToSave;
     }
 
     /**
@@ -143,7 +183,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      * @param repo The local repo that this fsItem belongs to
      * @throws RepositoryRuntimeException if the node info cannot be read
      */
-    public JcrFsItem(final Node node, StoringRepo repo) {
+    public JcrFsItem(final Node node, StoringRepo repo, JcrFsItem<T> original) {
         super(JcrHelper.getAbsolutePath(node));
         this.repo = repo;
         this.uuid = JcrHelper.getUuid(node);
@@ -152,6 +192,10 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         if (repoPath == null) {
             //Item does not exist in a current repo
             throw new ItemNotFoundRuntimeException("No valid fs item exists in path '" + absPath + "'.");
+        }
+        if (original != null) {
+            // Copy the dirty state queue
+            this.metadataToSave = original.metadataToSave;
         }
         final boolean folder = isDirectory();
         MetadataAware dummyNodeWrapper = new MetadataAware() {
@@ -797,6 +841,15 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         getInfo().setLastUpdated(lastUpdated);
     }
 
+    /**
+     * Reset the resource age so it is kept being cached (only relevant to cached snapshots and maven-metadata)
+     */
+    public void unexpire() {
+        //TODO: Change this mechanism since the last updated is used for artifact popularity measurement
+        setLastUpdated(System.currentTimeMillis());
+        log.debug("Unexpired '{}' from local cache '{}'.", getRelativePath(), repo.getKey());
+    }
+
     public boolean isIdentical(JcrFsItem item) {
         return absPath.equals(item.absPath) && info.isIdentical(item.info);
     }
@@ -816,6 +869,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      */
     public Set<MetadataDefinition<?>> getExistingMetadata(boolean includeInternal) throws RepositoryException {
         Set<MetadataDefinition<?>> metadataDefinitions = Sets.newHashSet();
+        // add system metadata definitions (like file info) that might not be on the general metadata node
         Set<MetadataDefinition<?>> cachedDefs = getRepoGeneric().getAllMetadataDefinitions(includeInternal);
         for (MetadataDefinition<?> cachedDef : cachedDefs) {
             if (cachedDef.getPersistenceHandler().hasMetadata(this)) {
@@ -823,6 +877,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
             }
         }
 
+        // add all user defined metadata definitions (all under the metadata node)
         Node itemNode = getNode();
         if (itemNode.hasNode(NODE_ARTIFACTORY_METADATA)) {
             Node metadataContainerNode = itemNode.getNode(NODE_ARTIFACTORY_METADATA);
@@ -841,9 +896,8 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
     }
 
     /**
-     * Returns the metadata of the given type class.<br>
-     * To be used only with non-generic metadata classes.<br>
-     * Generic (String class) will be ignored.<br>
+     * Returns the metadata of the given type class.<br> To be used only with non-generic metadata classes.<br> Generic
+     * (String class) will be ignored.<br>
      *
      * @param mdClass Class of metadata type. Cannot be generic or null
      * @param <T>     Metadata type
@@ -883,6 +937,18 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      * @throws IllegalArgumentException If given a blank metadata name
      */
     public String getXmlMetadata(String metadataName) throws RepositoryException {
+        if (metadataToSave != null && !metadataToSave.isEmpty()) {
+            String result = null;
+            for (SetMetadataMessage message : metadataToSave) {
+                if (message.metadataName.equals(metadataName)) {
+                    result = message.xmlContent;
+                }
+            }
+            if (result != null) {
+                return result;
+            }
+        }
+
         MetadataDefinition metadataDefinition = getMetadataDefinition(metadataName);
         if (metadataDefinition == null) {
             return null;
@@ -904,14 +970,21 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      * @throws IllegalArgumentException If given a blank metadata name
      */
     public boolean hasMetadata(String metadataName) throws RepositoryException {
+        if (metadataToSave != null && !metadataToSave.isEmpty()) {
+            String result = null;
+            for (SetMetadataMessage message : metadataToSave) {
+                if (message.metadataName.equals(metadataName)) {
+                    return true;
+                }
+            }
+        }
         MetadataDefinition metadataDefinition = getMetadataDefinition(metadataName);
         return metadataDefinition != null && metadataDefinition.getPersistenceHandler().hasMetadata(this);
     }
 
     /**
-     * Sets the given metadata on the item.<br>
-     * To be used only with non-generic metadata classes.<br>
-     * Generic (String class) will be ignored.<br>
+     * Sets the given metadata on the item.<br> To be used only with non-generic metadata classes.<br> Generic (String
+     * class) will be ignored.<br>
      *
      * @param mdClass  Class of metadata type to set. Cannot be generic
      * @param metadata Metadata value to set. Cannot be null
@@ -926,6 +999,12 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         MetadataDefinition<T> definition = getRepoGeneric().getMetadataDefinition(mdClass);
         MetadataPersistenceHandler<T> mdph = definition.getPersistenceHandler();
         mdph.update(this, metadata);
+        if (Properties.class.equals(mdClass)) {
+            if (!((Properties) metadata).isEmpty()) {
+                // only log the properties as metadata/annotate access (the rest are internal)
+                AccessLogger.annotated(getRepoPath(), "properties");
+            }
+        }
     }
 
     /**
@@ -943,6 +1022,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         MetadataDefinition definition = getRepoGeneric().getMetadataDefinition(metadataName, true);
         MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
         mdph.update(this, definition.getXmlProvider().fromXml(xmlData));
+        AccessLogger.annotated(getRepoPath(), metadataName);
     }
 
     /**
@@ -955,8 +1035,21 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         MetadataPersistenceHandler metadataPersistenceHandler = definition.getPersistenceHandler();
         if (metadataPersistenceHandler.hasMetadata(this)) {
             metadataPersistenceHandler.remove(this);
+            AccessLogger.annotationDeleted(getRepoPath(), metadataName);
         }
     }
+
+    public void setXmlMetadataLater(String name, String content) {
+        getOrCreateMetadataToSave().add(new SetMetadataMessage(name, content));
+    }
+
+    private synchronized BlockingQueue<SetMetadataMessage> getOrCreateMetadataToSave() {
+        if (metadataToSave == null) {
+            metadataToSave = new LinkedBlockingQueue<SetMetadataMessage>();
+        }
+        return metadataToSave;
+    }
+
 
     /**
      * Returns the metadata definition of the given name only and only if it exists on the item
@@ -965,10 +1058,6 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      * @return Metadata definition if found. Null if not
      */
     private MetadataDefinition getMetadataDefinition(String metadataName) throws RepositoryException {
-        if (StringUtils.isBlank(metadataName)) {
-            throw new IllegalArgumentException("Metadata type name to locate cannot be null.");
-        }
-
         MetadataDefinition cachedDef = getRepoGeneric().getMetadataDefinition(metadataName, false);
         if ((cachedDef != null) && cachedDef.getPersistenceHandler().hasMetadata(this)) {
             return cachedDef;
@@ -989,5 +1078,9 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         }
 
         return null;
+    }
+
+    public boolean isDirty() {
+        return metadataToSave != null && !metadataToSave.isEmpty();
     }
 }

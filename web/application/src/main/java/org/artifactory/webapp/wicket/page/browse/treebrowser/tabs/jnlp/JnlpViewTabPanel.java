@@ -134,7 +134,7 @@ public class JnlpViewTabPanel extends Panel {
                     return format("Applet's Script Snippet (%s repository)", key);
                 }
             };
-            scriptSnippetBorder.add(new SyntaxHighlighter("scriptSnippet", appletInfo.getScriptSnippet(), Syntax.XML));
+            scriptSnippetBorder.add(new SyntaxHighlighter("scriptSnippet", appletInfo.getScriptSnippet(), Syntax.xml));
             addOrReplace(scriptSnippetBorder);
         } else {
             MarkupContainer scriptSnippetBorder = new PlaceHolder("scriptSnippetBorder");
@@ -159,7 +159,7 @@ public class JnlpViewTabPanel extends Panel {
     private void addJnlpContent() {
         MarkupContainer jnlpContentBorder = new FieldSetBorder("jnlpContentBorder");
         add(jnlpContentBorder);
-        jnlpContentBorder.add(new SyntaxHighlighter("jnlpContent", jnlpContent, Syntax.XML));
+        jnlpContentBorder.add(new SyntaxHighlighter("jnlpContent", jnlpContent, Syntax.xml));
     }
 
     private List<VirtualRepoDescriptor> getWebStartRepos(RepoAwareActionableItem fileItem) {

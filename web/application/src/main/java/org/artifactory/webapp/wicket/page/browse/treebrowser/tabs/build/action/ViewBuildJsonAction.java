@@ -66,7 +66,7 @@ public class ViewBuildJsonAction extends ItemAction {
 
         Component contentPanel;
         if (ConstantValues.uiSyntaxColoringMaxTextSizeBytes.getLong() >= json.getBytes().length) {
-            contentPanel = new SyntaxHighlighter(textContentViewer.getContentId(), json, Syntax.JavaScript);
+            contentPanel = new SyntaxHighlighter(textContentViewer.getContentId(), json, Syntax.javascript);
         } else {
             TextContentPanel textPanel = new TextContentPanel(textContentViewer.getContentId());
             contentPanel = textPanel.setContent(json);

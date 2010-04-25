@@ -18,6 +18,7 @@
 
 package org.artifactory.repo;
 
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
@@ -67,6 +68,6 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
 
     RepoType getType();
 
-    ResourceStreamHandle downloadAndSave(RepoResource remoteResource, RepoResource cachedResource)
-            throws IOException, RepositoryException;
+    ResourceStreamHandle downloadAndSave(RepoResource remoteResource, RepoResource cachedResource) throws IOException,
+            RepositoryException, RepoRejectionException;
 }

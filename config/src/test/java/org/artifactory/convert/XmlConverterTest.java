@@ -19,6 +19,7 @@
 package org.artifactory.convert;
 
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.util.ResourceUtils;
 import org.artifactory.version.XmlConverterUtils;
 import org.artifactory.version.converter.XmlConverter;
@@ -32,7 +33,7 @@ import java.io.InputStream;
  *
  * @author Yossi Shaul
  */
-public abstract class XmlConverterTest {
+public abstract class XmlConverterTest extends ArtifactoryHomeBoundTest {
     private static final Logger log = LoggerFactory.getLogger(XmlConverterTest.class);
 
     protected Document convertXml(String resourcePath, XmlConverter converter) throws Exception {

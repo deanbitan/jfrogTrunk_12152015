@@ -27,6 +27,7 @@ import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.common.ConstantValues;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 import org.codehaus.jackson.map.AnnotationIntrospector;
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.introspect.JacksonAnnotationIntrospector;
@@ -94,7 +95,17 @@ import javax.ws.rs.ext.Provider;
 })
 public class JsonProvider extends JacksonJsonProvider implements ContextResolver<ObjectMapper> {
 
-    private final ObjectMapper mapper = createMapper();
+    public JsonProvider() {
+        ObjectMapper mapper = getMapper();
+        //Update the annotation interceptor to also include jaxb annotations as a second choice
+        AnnotationIntrospector primary = new JacksonAnnotationIntrospector();
+        AnnotationIntrospector secondary = new JaxbAnnotationIntrospector();
+        AnnotationIntrospector pair = new AnnotationIntrospector.Pair(primary, secondary);
+        mapper.getSerializationConfig().setAnnotationIntrospector(pair);
+        mapper.getDeserializationConfig().setAnnotationIntrospector(pair);
+        //Ignore missing properties
+        mapper.getDeserializationConfig().disable(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
 
     /**
      * Provide a contextual (by media type and type) mapper object that is configured to pretty-print when in dev mode
@@ -103,21 +114,15 @@ public class JsonProvider extends JacksonJsonProvider implements ContextResolver
      * @return
      */
     public ObjectMapper getContext(Class objectType) {
-        //TODO: [by yl] should be done once but we have not thread-bound props on jersey construction
+        ObjectMapper mapper = getMapper();
         if (ConstantValues.dev.getBoolean()) {
             mapper.getSerializationConfig().set(SerializationConfig.Feature.INDENT_OUTPUT, true);
         }
         return mapper;
     }
 
-    private ObjectMapper createMapper() {
-        //Update the annotation interceptor to also include jaxb annotations as a second choice
-        AnnotationIntrospector primary = new JacksonAnnotationIntrospector();
-        AnnotationIntrospector secondary = new JaxbAnnotationIntrospector();
-        AnnotationIntrospector pair = new AnnotationIntrospector.Pair(primary, secondary);
-        ObjectMapper m = new ObjectMapper();
-        m.getSerializationConfig().setAnnotationIntrospector(pair);
-        m.getDeserializationConfig().setAnnotationIntrospector(pair);
-        return m;
+    private ObjectMapper getMapper() {
+        ObjectMapper mapper = super._mapperConfig.getDefaultMapper();
+        return mapper;
     }
 }

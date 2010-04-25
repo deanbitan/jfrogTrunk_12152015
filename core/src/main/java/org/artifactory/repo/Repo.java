@@ -19,6 +19,7 @@
 package org.artifactory.repo;
 
 import org.artifactory.api.repo.exception.FileExpectedException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.DescriptorAware;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -72,5 +73,5 @@ public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Seri
     String getChecksum(String checksumPath, RepoResource res) throws IOException;
 
     ResourceStreamHandle getResourceStreamHandle(RepoResource res) throws IOException, FileExpectedException,
-            RepositoryException;
+            RepositoryException, RepoRejectionException;
 }

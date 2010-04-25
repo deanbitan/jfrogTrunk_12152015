@@ -85,7 +85,9 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         } else {
             status = HttpStatus.SC_INTERNAL_SERVER_ERROR;
             reason = exception.getMessage();
-            logger.error(makeDebugMessage(status, reason), exception);
+            String message = makeDebugMessage(status, reason);
+            logger.debug(makeDebugMessage(status, reason), exception);
+            logger.error(message);
         }
         state = State.FAILURE;
         sendErrorInternal(status, reason);

@@ -38,7 +38,7 @@ public class RemoteRepoDescriptorTest {
         assertNull(remote.getDescription());
         assertEquals(remote.getFailedRetrievalCachePeriodSecs(), 30);
         assertEquals(remote.getMaxUniqueSnapshots(), 0);
-        assertEquals(remote.getMissedRetrievalCachePeriodSecs(), 43200);
+        assertEquals(remote.getMissedRetrievalCachePeriodSecs(), 7200);
         assertEquals(remote.getRetrievalCachePeriodSecs(), 43200);
         assertEquals(remote.getType(), RepoType.maven2);
         assertEquals(remote.getChecksumPolicyType(), ChecksumPolicyType.GEN_IF_ABSENT);

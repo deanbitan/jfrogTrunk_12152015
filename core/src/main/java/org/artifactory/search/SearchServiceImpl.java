@@ -20,7 +20,6 @@ package org.artifactory.search;
 
 import com.google.common.collect.Lists;
 import org.artifactory.api.build.BasicBuildInfo;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
@@ -343,8 +342,7 @@ public class SearchServiceImpl implements InternalSearchService {
     public boolean markArchiveForIndexing(JcrFile newJcrFile, boolean force) {
         Node archiveNode = newJcrFile.getNode();
         String name = newJcrFile.getName();
-        ContentType contentType = NamingUtils.getContentType(name);
-        if (contentType.isJarVariant()) {
+        if (NamingUtils.isJarVariant(name)) {
             try {
                 return ArchiveIndexer.markArchiveForIndexing(archiveNode, force);
             } catch (RepositoryException e) {
@@ -373,9 +371,9 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     public void index(RepoPath archiveRepoPath) {
-        ContentType contentType = NamingUtils.getContentType(archiveRepoPath.getPath());
-        if (!contentType.isJarVariant()) {
-            log.trace("Not indexing non jar variant path '{}' - with mime type '{}'.", archiveRepoPath, contentType);
+        if (!NamingUtils.isJarVariant(archiveRepoPath.getPath())) {
+            log.trace("Not indexing non jar variant path '{}' - with mime type '{}'.", archiveRepoPath,
+                    NamingUtils.getContentType(archiveRepoPath.getPath()));
             return;
         }
 

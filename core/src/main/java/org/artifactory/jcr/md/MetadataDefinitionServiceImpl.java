@@ -19,6 +19,7 @@
 package org.artifactory.jcr.md;
 
 import org.apache.commons.collections15.map.FastHashMap;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.maven.MavenNaming;
@@ -26,6 +27,7 @@ import org.artifactory.api.md.Properties;
 import org.artifactory.api.md.watch.Watchers;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.jcr.utils.JcrUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.logging.LoggingService;
 import org.artifactory.spring.Reloadable;
@@ -47,9 +49,8 @@ import java.util.Set;
 public class MetadataDefinitionServiceImpl implements MetadataDefinitionService {
     private static final Logger log = LoggerFactory.getLogger(MetadataDefinitionServiceImpl.class);
 
-    private final Map<Class, MetadataDefinition> mdDefsByClass = new FastHashMap<Class, MetadataDefinition>(3);
-    private final Map<String, MetadataDefinition> mdDefsByName = new FastHashMap<String, MetadataDefinition>(3);
-
+    private final Map<Class, MetadataDefinition> mdDefsByClass = new FastHashMap<Class, MetadataDefinition>();
+    private final Map<String, MetadataDefinition> mdDefsByName = new FastHashMap<String, MetadataDefinition>();
 
     public void init() {
         // Internal metadata
@@ -98,27 +99,18 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         return definition;
     }
 
-    private <T> MetadataDefinition createMetadataDefinition(
-            Class<T> clazz,
-            XmlMetadataProvider<T> xmlProvider,
-            MetadataPersistenceHandler<T> persistenceHandler,
-            boolean internal) {
-        MetadataDefinition definition = new MetadataDefinition<T>(xmlProvider, persistenceHandler, internal);
-        if (clazz != String.class) {
-            mdDefsByClass.put(clazz, definition);
-        }
-        mdDefsByName.put(definition.getMetadataName(), definition);
-        return definition;
-    }
-
     public MetadataDefinition getMetadataDefinition(String metadataName, boolean createIfEmpty) {
+        if (StringUtils.isBlank(metadataName)) {
+            throw new IllegalArgumentException("Metadata type name to locate cannot be null.");
+        }
+
         MetadataDefinition definition = mdDefsByName.get(metadataName);
         if (definition == null && createIfEmpty) {
+            JcrUtils.assertValidJcrName(metadataName);
             log.debug("Creating new Metadata definition on demand for '{}'.", metadataName);
             GenericXmlProvider xmlProvider = new GenericXmlProvider(metadataName);
-            definition = new MetadataDefinition<String>(xmlProvider, new GenericPersistenceHandler(xmlProvider, true),
-                    false);
-            mdDefsByName.put(metadataName, definition);
+            definition = new MetadataDefinition<String>(xmlProvider,
+                    new GenericPersistenceHandler(xmlProvider, true), false);
         }
         return definition;
     }
@@ -132,5 +124,18 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
             }
         }
         return result;
+    }
+
+    private <T> MetadataDefinition createMetadataDefinition(
+            Class<T> clazz,
+            XmlMetadataProvider<T> xmlProvider,
+            MetadataPersistenceHandler<T> persistenceHandler,
+            boolean internal) {
+        MetadataDefinition definition = new MetadataDefinition<T>(xmlProvider, persistenceHandler, internal);
+        if (clazz != String.class) {
+            mdDefsByClass.put(clazz, definition);
+        }
+        mdDefsByName.put(definition.getMetadataName(), definition);
+        return definition;
     }
 }

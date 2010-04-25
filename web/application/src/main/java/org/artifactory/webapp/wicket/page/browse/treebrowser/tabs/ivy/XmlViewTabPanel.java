@@ -59,7 +59,7 @@ public class XmlViewTabPanel extends Panel {
         }
         TitledBorder xmlBorder = xmlType.getTabBorder();
         add(xmlBorder);
-        xmlBorder.add(new SyntaxHighlighter("content", getContent(repoItem), Syntax.XML));
+        xmlBorder.add(new SyntaxHighlighter("content", getContent(repoItem), Syntax.xml));
     }
 
     private void addDependencySection(FileActionable item) {
@@ -74,7 +74,7 @@ public class XmlViewTabPanel extends Panel {
             buildModuleContent(sb, descriptor);
         }
         String content = sb.toString();
-        moduleBorder.add(new SyntaxHighlighter("moduleContent", content, Syntax.XML));
+        moduleBorder.add(new SyntaxHighlighter("moduleContent", content, Syntax.xml));
         add(moduleBorder);
     }
 

@@ -25,12 +25,11 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.easymock.EasyMock;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -40,29 +39,27 @@ import org.testng.annotations.Test;
 /**
  * @author Yoav Landman
  */
-public class HttpRepoTest extends SystemPropertiesBoundTest {
+public class HttpRepoTest extends ArtifactoryHomeBoundTest {
     private InternalRepositoryService internalRepoService;
 
     @BeforeClass
     public void setup() {
-        System.setProperty(ConstantValues.artifactoryVersion.getPropertyName(), "test");
         internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
         ArtifactoryContext contextMock = EasyMock.createMock(InternalArtifactoryContext.class);
         ArtifactoryContextThreadBinder.bind(contextMock);
         EasyMock.replay(contextMock);
-        ArtifactorySystemProperties artifactorySystemProperties = new ArtifactorySystemProperties();
-        artifactorySystemProperties.loadArtifactorySystemProperties(null, null);
-        ArtifactorySystemProperties.bind(artifactorySystemProperties);
     }
 
     @AfterClass
     public void tearDown() {
         ArtifactoryContextThreadBinder.unbind();
-        ArtifactorySystemProperties.unbind();
     }
 
     @Test
     public void testProxyRemoteAuthAndMultihome() {
+        // set artifactory version (used by getUserAgent)
+        getBound().setProperty(ConstantValues.artifactoryVersion, "test");
+
         ProxyDescriptor proxyDescriptor = new ProxyDescriptor();
         proxyDescriptor.setHost("proxyHost");
         proxyDescriptor.setUsername("proxy-username");

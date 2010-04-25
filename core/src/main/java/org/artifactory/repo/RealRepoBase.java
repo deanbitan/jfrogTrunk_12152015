@@ -18,11 +18,13 @@
 
 package org.artifactory.repo;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.exception.BlackedOutException;
+import org.artifactory.api.repo.exception.IncludeExcludeException;
+import org.artifactory.api.repo.exception.SnapshotPolicyException;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -70,14 +72,10 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
         }
         boolean snapshot = MavenNaming.isSnapshot(path);
         if (snapshot && !isHandleSnapshots()) {
-            if (log.isDebugEnabled()) {
-                log.debug("{} rejected '{}': not handling snapshots.", this, path);
-            }
+            log.debug("{} rejected '{}': not handling snapshots.", this, path);
             return false;
         } else if (!snapshot && !isHandleReleases()) {
-            if (log.isDebugEnabled()) {
-                log.debug("{} rejected '{}': not handling releases.", this, path);
-            }
+            log.debug("{} rejected '{}': not handling releases.", this, path);
             return false;
         }
         return true;
@@ -91,18 +89,14 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
         StatusHolder statusHolder = new StatusHolder();
         statusHolder.setActivateLogging(log.isDebugEnabled());
         if (isBlackedOut()) {
-            statusHolder.setError(
-                    "The repository '" + this.getKey() + "' is blacked out and cannot accept artifact '" + repoPath +
-                            "'.", HttpStatus.SC_FORBIDDEN, log);
+            BlackedOutException exception = new BlackedOutException(this.getDescriptor(), repoPath);
+            statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
         } else if (!handles(repoPath.getPath())) {
-            statusHolder.setError("The repository '" + this.getKey() + "' rejected the artifact '" + repoPath +
-                    "' due to its snapshot/release handling policy.",
-                    HttpStatus.SC_FORBIDDEN, log);
+            SnapshotPolicyException exception = new SnapshotPolicyException(this.getDescriptor(), repoPath);
+            statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
         } else if (!accepts(repoPath)) {
-            statusHolder.setError("The repository '" + this.getKey() + "' rejected the artifact '" + repoPath +
-                    "' due to its include/exclude pattern settings.",
-                    HttpStatus.SC_FORBIDDEN, log);
-
+            IncludeExcludeException exception = new IncludeExcludeException(this.getDescriptor(), repoPath);
+            statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
         }
         return statusHolder;
     }

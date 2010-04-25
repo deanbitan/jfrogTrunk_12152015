@@ -18,8 +18,10 @@
 
 package org.artifactory.api.request;
 
+import org.artifactory.api.repo.exception.RepoRejectionException;
+
 import java.io.IOException;
 
 public interface UploadService {
-    void process(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
+    void process(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException, RepoRejectionException;
 }

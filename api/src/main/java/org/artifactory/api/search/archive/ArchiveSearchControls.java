@@ -28,12 +28,14 @@ import org.artifactory.api.search.SearchControlsBase;
  */
 public class ArchiveSearchControls extends SearchControlsBase {
     private String query;
+    private boolean excludeInnerClasses;
     private boolean shouldCalcEntries;
 
     /**
      * Default constructor
      */
     public ArchiveSearchControls() {
+        excludeInnerClasses = false;
         shouldCalcEntries = true;
     }
 
@@ -46,6 +48,7 @@ public class ArchiveSearchControls extends SearchControlsBase {
         this.query = archiveSearchControls.query;
         this.selectedRepoForSearch = archiveSearchControls.selectedRepoForSearch;
         setLimitSearchResults(archiveSearchControls.isLimitSearchResults());
+        this.excludeInnerClasses = archiveSearchControls.excludeInnerClasses;
         this.shouldCalcEntries = archiveSearchControls.shouldCalcEntries;
     }
 
@@ -59,6 +62,14 @@ public class ArchiveSearchControls extends SearchControlsBase {
 
     public boolean isEmpty() {
         return StringUtils.isEmpty(query);
+    }
+
+    public boolean isExcludeInnerClasses() {
+        return excludeInnerClasses;
+    }
+
+    public void setExcludeInnerClasses(boolean excludeInnerClasses) {
+        this.excludeInnerClasses = excludeInnerClasses;
     }
 
     public boolean shouldCalcEntries() {

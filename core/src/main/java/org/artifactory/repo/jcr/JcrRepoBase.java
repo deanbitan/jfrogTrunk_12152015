@@ -28,12 +28,12 @@ import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.md.Properties;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ResourceStreamHandle;
@@ -226,9 +226,10 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
 
     public ArchiveFileContent getArchiveFileContent(RepoPath archivePath, String archiveEntryPath) throws IOException {
         String content = null;
+        String sourceJarPath = null;
+        List<String> searchList = null;
         String failureReason = null;
         ZipInputStream jis = null;
-        String sourcesJarPath = null;
         String sourceEntryPath = null;
         try {
             if (archiveEntryPath.endsWith(".class")) {
@@ -236,39 +237,52 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
                 // locate the sources jar and find the source file in it
                 String sourceJarName = PathUtils.stripExtension(archivePath.getName()) + "-sources." +
                         PathUtils.getExtension(archivePath.getName());
-                sourcesJarPath = archivePath.getParent().getPath() + "/" + sourceJarName;
+                String sourcesJarPath = archivePath.getParent().getPath() + "/" + sourceJarName;
+                // search in the sources file first
+                searchList = Lists.newArrayList(sourcesJarPath, archivePath.getPath());
             } else if (isTextFile(archiveEntryPath)) {
                 // read directly from this archive
-                sourcesJarPath = archivePath.getPath();
+                searchList = Lists.newArrayList(archivePath.getPath());
                 sourceEntryPath = archiveEntryPath;
             } else {
                 failureReason = "View source for " + archiveEntryPath + " is not supported";
             }
 
-            if (sourcesJarPath != null) {
-                JcrFile jcrFile = getLocalJcrFile(sourcesJarPath);
-                if (jcrFile == null) {
-                    failureReason = "Sources jar not found";
-                } else if (!getAuthorizationService().canRead(new RepoPath(getKey(), sourcesJarPath))) {
-                    failureReason = "No read permissions for the sources jar";
-                } else {
-                    List<String> alternativeExtensions = null;
-                    if (NamingUtils.getContentType(sourceEntryPath).equals(ContentType.javaSource)) {
-                        alternativeExtensions = Lists.newArrayList("groovy");
-                    }
-
-                    jis = new ZipInputStream(jcrFile.getStream());
-                    ZipEntry zipEntry = ZipUtils.locateEntry(jis, sourceEntryPath, alternativeExtensions);
-                    int maxAllowedSize = 1024 * 1024;
-                    if (zipEntry == null) {
-                        failureReason = "Source file not found in: " + sourcesJarPath;
-                    } else if (zipEntry.getSize() > maxAllowedSize) {
-                        failureReason = String.format("Source file is too big to display: File size: %s, Max size: %s",
-                                zipEntry.getSize(), maxAllowedSize);
+            if (searchList != null) {
+                boolean found = false;
+                for (int i = 0; i < searchList.size() && !found; i++) {
+                    String sourcesJarPath = searchList.get(i);
+                    log.debug("Looking for {} source in {}", sourceEntryPath, sourceJarPath);
+                    JcrFile jcrFile = getLocalJcrFile(sourcesJarPath);
+                    if (jcrFile == null) {
+                        failureReason = "Sources jar not found";
+                    } else if (!getAuthorizationService().canRead(new RepoPath(getKey(), sourcesJarPath))) {
+                        failureReason = "No read permissions for the sources jar";
                     } else {
-                        // read the current entry (the source entry path)
-                        content = IOUtils.toString(jis, "UTF-8");
-                        sourceEntryPath = zipEntry.getName();
+                        List<String> alternativeExtensions = null;
+                        if ("java".equalsIgnoreCase(PathUtils.getExtension(sourceEntryPath))) {
+                            alternativeExtensions = Lists.newArrayList("groovy");
+                        }
+
+                        jis = new ZipInputStream(jcrFile.getStream());
+                        ZipEntry zipEntry = ZipUtils.locateEntry(jis, sourceEntryPath, alternativeExtensions);
+                        if (zipEntry == null) {
+                            failureReason = "Source file not found";
+                        } else {
+                            found = true;   // source entry was found in the jar
+                            int maxAllowedSize = 1024 * 1024;
+                            if (zipEntry.getSize() > maxAllowedSize) {
+                                failureReason = String.format(
+                                        "Source file is too big to display: File size: %s, Max size: %s",
+                                        zipEntry.getSize(), maxAllowedSize);
+
+                            } else {
+                                // read the current entry (the source entry path)
+                                content = IOUtils.toString(jis, "UTF-8");
+                                sourceEntryPath = zipEntry.getName();
+                                sourceJarPath = sourcesJarPath;
+                            }
+                        }
                     }
                 }
             }
@@ -277,7 +291,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         }
 
         if (content != null) {
-            return new ArchiveFileContent(content, new RepoPath(getKey(), sourcesJarPath), sourceEntryPath);
+            return new ArchiveFileContent(content, new RepoPath(getKey(), sourceJarPath), sourceEntryPath);
         } else {
             return ArchiveFileContent.contentNotFound(failureReason);
         }
@@ -315,7 +329,8 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         storageMixin.undeploy(repoPath, calcMavenMetadata);
     }
 
-    public RepoResource saveResource(RepoResource res, final InputStream in, Properties keyvals) throws IOException {
+    public RepoResource saveResource(RepoResource res, final InputStream in, Properties keyvals) throws IOException,
+            RepoRejectionException {
         return storageMixin.saveResource(res, in, keyvals);
     }
 
@@ -387,8 +402,8 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         return storageMixin.getInfo(context);
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(final RepoResource res)
-            throws IOException, RepositoryException {
+    public ResourceStreamHandle getResourceStreamHandle(final RepoResource res) throws IOException, RepositoryException,
+            RepoRejectionException {
         return storageMixin.getResourceStreamHandle(res);
     }
 

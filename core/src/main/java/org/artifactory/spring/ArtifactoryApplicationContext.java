@@ -35,7 +35,6 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.JcrService;
@@ -276,10 +275,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
     public void init() {
         // Nothing
-    }
-
-    public Class<? extends ReloadableBean>[] initAfter() {
-        throw new IllegalStateException("The context cannot be part of dependency ordering");
     }
 
     @Override
@@ -626,7 +621,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             File dumpTargetFile = new File(settings.getBaseDir(),
                     ArtifactoryHome.ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
             targetOutputStream = new FileOutputStream(dumpTargetFile);
-            ArtifactorySystemProperties.get().store(targetOutputStream);
+            ArtifactoryHome.get().getArtifactoryProperties().store(targetOutputStream);
         } catch (IOException e) {
             status.setError("Failed to dump artifactory.system.properties file", e, log);
         } finally {

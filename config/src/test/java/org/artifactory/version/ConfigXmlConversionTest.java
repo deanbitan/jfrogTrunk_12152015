@@ -20,8 +20,6 @@ package org.artifactory.version;
 
 import org.apache.commons.collections15.OrderedMap;
 import org.apache.commons.io.IOUtils;
-import org.artifactory.common.ConstantValues;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
@@ -36,7 +34,9 @@ import org.artifactory.descriptor.security.PasswordSettings;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
+import org.artifactory.test.ArtifactoryHomeStub;
+import org.artifactory.test.TestUtils;
 import org.artifactory.version.converter.XmlConverter;
 import org.slf4j.Logger;
 import org.testng.annotations.Test;
@@ -54,105 +54,97 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.artifactory.common.ConstantValues.substituteRepoKeys;
+import static org.artifactory.version.ArtifactoryConfigVersion.*;
 import static org.testng.Assert.*;
 
 /**
  * @author freds
  * @author Yossi Shaul
  */
-public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
+@Test
+public class ConfigXmlConversionTest extends ArtifactoryHomeBoundTest {
     private static final Logger log = LoggerFactory.getLogger(ConfigXmlConversionTest.class);
 
-    @Test
     public void convert100() throws Exception {
-        System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +
-                "3rdp-releases", "third-party-releases");
-        System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +
-                "3rdp-snapshots", "third-party-snapshots");
-        ArtifactorySystemProperties.get().loadArtifactorySystemProperties(null, null);
-        CentralConfigDescriptor cc =
-                transform("/config/install/config.1.0.0.xml", ArtifactoryConfigVersion.v100);
-        assertNotNull(cc.getSecurity());
-        assertTrue(cc.getSecurity().isAnonAccessEnabled(),
-                "Annon access should be enabled by default");
+        ArtifactoryHomeStub artifactory = getBound();
+        artifactory.setProperty(substituteRepoKeys.getPropertyName() + "3rdp-releases", "third-party-releases")
+                .setProperty(substituteRepoKeys.getPropertyName() + "3rdp-snapshots", "third-party-snapshots");
+        artifactory.setProperty(substituteRepoKeys.getPropertyName() + "3rd-party", "third-party");
+        // load the repo key substitute
+        TestUtils.invokeMethodNoArgs(artifactory.getArtifactoryProperties(), "fillRepoKeySubstitute");
 
-        System.setProperty(ConstantValues.substituteRepoKeys.getPropertyName() +
-                "3rd-party", "third-party");
-        ArtifactorySystemProperties.get().loadArtifactorySystemProperties(null, null);
-        cc = transform("/config/test/config.1.0.0.xml", ArtifactoryConfigVersion.v100);
+        // convert the default config
+        CentralConfigDescriptor cc = transform("/config/install/config.1.0.0.xml", v100);
+        assertNotNull(cc.getSecurity());
+        assertTrue(cc.getSecurity().isAnonAccessEnabled(), "Annon access should be enabled by default");
+
+        // convert custom config
+        cc = transform("/config/test/config.1.0.0.xml", v100);
         assertFalse(cc.getSecurity().isAnonAccessEnabled());
         OrderedMap<String, LocalRepoDescriptor> localRepos = cc.getLocalRepositoriesMap();
 
         LocalRepoDescriptor frogReleases = localRepos.get("frog-releases");
-        assertEquals(frogReleases.getSnapshotVersionBehavior(),
-                SnapshotVersionBehavior.DEPLOYER,
+        assertEquals(frogReleases.getSnapshotVersionBehavior(), SnapshotVersionBehavior.DEPLOYER,
                 "Should have been converted from 'true' to 'deployer'");
 
         LocalRepoDescriptor frogSnapshots = localRepos.get("frog-snapshots");
-        assertEquals(frogSnapshots.getSnapshotVersionBehavior(),
-                SnapshotVersionBehavior.NONUNIQUE,
+        assertEquals(frogSnapshots.getSnapshotVersionBehavior(), SnapshotVersionBehavior.NONUNIQUE,
                 "Should have been converted from 'false' to 'non-unique'");
 
         LocalRepoDescriptor pluginsReleases = localRepos.get("plugins-releases");
-        assertEquals(pluginsReleases.getSnapshotVersionBehavior(),
-                SnapshotVersionBehavior.NONUNIQUE,
+        assertEquals(pluginsReleases.getSnapshotVersionBehavior(), SnapshotVersionBehavior.NONUNIQUE,
                 "Should have kept the default");
     }
 
-    @Test
     public void convert100NoBackupCron() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/test/config.1.0.0_no-backup-cron.xml", ArtifactoryConfigVersion.v100);
+                transform("/config/test/config.1.0.0_no-backup-cron.xml", v100);
         assertNotNull(cc.getBackups());
         assertTrue(cc.getBackups().isEmpty());
     }
 
-    @Test
     public void convert110() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/install/config.1.1.0.xml", ArtifactoryConfigVersion.v110);
+                transform("/config/install/config.1.1.0.xml", v110);
         assertNotNull(cc.getSecurity());
         assertTrue(cc.getSecurity().isAnonAccessEnabled());
-        cc = transform("/config/test/config.1.1.0.xml", ArtifactoryConfigVersion.v110);
+        cc = transform("/config/test/config.1.1.0.xml", v110);
         assertTrue(cc.getSecurity().isAnonAccessEnabled());
     }
 
-    @Test
-    public void testConvert120() throws Exception {
+    public void convert120() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/install/config.1.2.0.xml", ArtifactoryConfigVersion.v120);
+                transform("/config/install/config.1.2.0.xml", v120);
         assertFalse(cc.getSecurity().isAnonAccessEnabled());
-        cc = transform("/config/test/config.1.2.0.xml", ArtifactoryConfigVersion.v120);
+        cc = transform("/config/test/config.1.2.0.xml", v120);
         assertTrue(cc.getSecurity().isAnonAccessEnabled());
     }
 
-    @Test
     public void convert130() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/install/config.1.3.0.xml", ArtifactoryConfigVersion.v130);
+                transform("/config/install/config.1.3.0.xml", v130);
         assertFalse(cc.getSecurity().isAnonAccessEnabled());
-        cc = transform("/config/test/config.1.3.0.xml", ArtifactoryConfigVersion.v130);
+        cc = transform("/config/test/config.1.3.0.xml", v130);
         assertNotNull(cc.getSecurity());
         assertTrue(cc.getSecurity().isAnonAccessEnabled());
     }
 
-    @Test
     public void convert131() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/install/config.1.3.1.xml", ArtifactoryConfigVersion.v131);
+                transform("/config/install/config.1.3.1.xml", v131);
         assertTrue(cc.getSecurity().isAnonAccessEnabled());
         assertNull(cc.getSecurity().getLdapSettings());
 
-        cc = transform("/config/test/config.1.3.1.xml", ArtifactoryConfigVersion.v131);
+        cc = transform("/config/test/config.1.3.1.xml", v131);
         assertFalse(cc.getSecurity().isAnonAccessEnabled());
         assertNotNull(cc.getSecurity().getLdapSettings());
         assertEquals(cc.getSecurity().getLdapSettings().size(), 1);
     }
 
-    @Test
     public void convert132Install() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/install/config.1.3.2.xml", ArtifactoryConfigVersion.v132);
+                transform("/config/install/config.1.3.2.xml", v132);
         List<BackupDescriptor> backups = cc.getBackups();
         assertEquals(backups.size(), 1);
 
@@ -162,10 +154,9 @@ public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
         assertTrue(backup.isEnabled(), "All existing backups should be enabled");
     }
 
-    @Test
     public void convert132Custom() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/test/config.1.3.2.xml", ArtifactoryConfigVersion.v132);
+                transform("/config/test/config.1.3.2.xml", v132);
 
         // check backups conversion
         List<BackupDescriptor> backups = cc.getBackups();
@@ -198,17 +189,15 @@ public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
         assertEquals(search.getManagerPassword(), "loko");
     }
 
-    @Test
     public void convert132WithNoSchemaLocation() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/test/config.1.3.2_no-location.xml", ArtifactoryConfigVersion.v132);
+                transform("/config/test/config.1.3.2_no-location.xml", v132);
         assertTrue(cc.getSecurity().isAnonAccessEnabled());
         assertEquals(cc.getFileUploadMaxSizeMb(), 100);
     }
 
-    @Test
     public void convert134Install() throws Exception {
-        CentralConfigDescriptor cc = transform("/config/install/config.1.3.4.xml", ArtifactoryConfigVersion.v134);
+        CentralConfigDescriptor cc = transform("/config/install/config.1.3.4.xml", v134);
 
         // PasswordSettings were added in 1.3.5 - no converter was needed as this is not
         // a required tag and we can use the default
@@ -218,9 +207,8 @@ public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
                 "If the default was changed, a converter needs to do it!");
     }
 
-    @Test
     public void convert135Install() throws Exception {
-        CentralConfigDescriptor cc = transform("/config/install/config.1.3.5.xml", ArtifactoryConfigVersion.v135);
+        CentralConfigDescriptor cc = transform("/config/install/config.1.3.5.xml", v135);
 
         // PropertySets were added in 1.3.6 - no converter was needed as this is not
         // a required tag and we can use the default
@@ -233,10 +221,9 @@ public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
         assertNull(virtualRepo.getKeyPair(), "Keypair should be null");
     }
 
-    @Test
     public void convert135ProxyWithDomain() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/test/config.1.3.5_proxy-with-domain.xml", ArtifactoryConfigVersion.v135);
+                transform("/config/test/config.1.3.5_proxy-with-domain.xml", v135);
 
         List<ProxyDescriptor> proxies = cc.getProxies();
         ProxyDescriptor proxy = proxies.get(0);
@@ -246,19 +233,17 @@ public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
         assertEquals(proxy.getNtHost(), InetAddress.getLocalHost().getHostName(), "Wrong hostname");
     }
 
-    @Test
     public void convert140DefaultProxy() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/test/config.1.4.0_default-proxy.xml", ArtifactoryConfigVersion.v140);
+                transform("/config/test/config.1.4.0_default-proxy.xml", v140);
 
         List<ProxyDescriptor> proxies = cc.getProxies();
         ProxyDescriptor proxy = proxies.get(0);
         assertTrue(proxy.isDefaultProxy(), "Proxy not default");
     }
 
-    @Test
     public void convert141() throws Exception {
-        CentralConfigDescriptor cc = transform("/config/install/config.1.4.1.xml", ArtifactoryConfigVersion.v141);
+        CentralConfigDescriptor cc = transform("/config/install/config.1.4.1.xml", v141);
         assertNull(cc.getLocalRepositoriesMap().get("libs-releases-local").getExcludesPattern());
         assertEquals(cc.getRemoteRepositoriesMap().get("java.net.m2").getExcludesPattern(), "commons-*,org/apache/**");
         assertEquals(cc.getRemoteRepositoriesMap().get("java.net.m2").getIncludesPattern(), "**/*");
@@ -269,26 +254,24 @@ public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
         assertNull(cc.getVirtualRepositoriesMap().get("libs-releases").getExcludesPattern());
     }
 
-    @Test
     public void convert141Custom() throws Exception {
         CentralConfigDescriptor cc =
-                transform("/config/test/config.1.4.1_with_type.xml", ArtifactoryConfigVersion.v141);
+                transform("/config/test/config.1.4.1_with_type.xml", v141);
 
         assertEquals(cc.getLocalRepositoriesMap().get("libs-snapshots-local").getIncludesPattern(), "org/jfrog/**");
         assertNull(cc.getLocalRepositoriesMap().get("libs-snapshots-local").getExcludesPattern());
         assertEquals(cc.getRemoteRepositoriesMap().get("jfrog-libs").getExcludesPattern(), "org/apache/maven/**");
     }
 
-    @Test
     public void convert142Custom() throws Exception {
         CentralConfigDescriptor cc = transform("/config/test/config.1.4.2_with_checksum_policy.xml",
-                ArtifactoryConfigVersion.v142);
-        assertEquals(cc.getRemoteRepositoriesMap().get("repo1").getChecksumPolicyType(), ChecksumPolicyType.GEN_IF_ABSENT);
+                v142);
+        assertEquals(cc.getRemoteRepositoriesMap().get("repo1").getChecksumPolicyType(),
+                ChecksumPolicyType.GEN_IF_ABSENT);
     }
 
-    @Test
     public void configVersionSanityCheck() {
-        ArtifactoryConfigVersion[] versions = ArtifactoryConfigVersion.values();
+        ArtifactoryConfigVersion[] versions = values();
         Set<XmlConverter> allConversions = new HashSet<XmlConverter>();
         ArtifactoryConfigVersion configVersionTest = null;
         for (ArtifactoryConfigVersion configVersion : versions) {
@@ -321,7 +304,7 @@ public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
             throws Exception {
         InputStream is = getClass().getResourceAsStream(textXml);
         String originalXmlString = IOUtils.toString(is, "utf-8");
-        ArtifactoryConfigVersion foundConfigVersion = ArtifactoryConfigVersion.getConfigVersion(originalXmlString);
+        ArtifactoryConfigVersion foundConfigVersion = getConfigVersion(originalXmlString);
         assertEquals(version, foundConfigVersion);
         String finalConfigXml = version.convert(originalXmlString);
         log.debug("Converted:\n{}\nto:\n{}", originalXmlString, finalConfigXml);
@@ -339,7 +322,7 @@ public class ConfigXmlConversionTest extends SystemPropertiesBoundTest {
     }
 
     private ArtifactoryConfigVersion getCurrentVersion() {
-        ArtifactoryConfigVersion[] artifactoryConfigVersions = ArtifactoryConfigVersion.values();
+        ArtifactoryConfigVersion[] artifactoryConfigVersions = values();
         return artifactoryConfigVersions[artifactoryConfigVersions.length - 1];
     }
 }

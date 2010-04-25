@@ -16,34 +16,24 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.api.mime;
+package org.artifactory.jcr.utils;
 
-import org.artifactory.test.SystemPropertiesBoundTest;
 import org.testng.annotations.Test;
 
-import java.io.File;
-
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /**
- * @author freds
- * @date Sep 28, 2008
+ * Unit tests for {@link JcrUtils}.
+ *
+ * @author Yossi Shaul
  */
-public class MimeTableTest extends SystemPropertiesBoundTest {
-
-    @Test
-    public void xmlAppTest() {
-        ContentType ct = NamingUtils.getContentType(new File("/tmp/anXmlFile.xml"));
-        assertNotNull(ct);
-        assertTrue(ct.isXml());
-        assertEquals(ct.getMimeType(), "application/xml");
-    }
-
-    @Test
-    public void ivyAppTest() {
-        ContentType ct = NamingUtils.getContentType(new File("/tmp/anXmlFile.ivy"));
-        assertNotNull(ct);
-        assertEquals(ct.getMimeType(), "application/x-ivy+xml");
-        assertTrue(ct.isXml());
+@Test
+public class JcrUtilsTest {
+    public void isValidJcrName() {
+        assertTrue(JcrUtils.isValidJcrName("test"));
+        assertTrue(JcrUtils.isValidJcrName("test 123"));
+        assertTrue(JcrUtils.isValidJcrName("123"));
+        assertFalse(JcrUtils.isValidJcrName(" test"), "Names starting with space are not allowed");
     }
 }

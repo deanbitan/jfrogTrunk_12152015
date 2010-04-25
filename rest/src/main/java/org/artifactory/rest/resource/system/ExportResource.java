@@ -19,6 +19,7 @@
 package org.artifactory.rest.resource.system;
 
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -30,6 +31,8 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.File;
 
 /**
@@ -48,7 +51,7 @@ public class ExportResource {
     }
 
     @GET
-    @Produces("application/xml")
+    @Produces(MediaType.APPLICATION_XML)
     public ExportSettings settingsExample() {
         ExportSettings settings = new ExportSettings(new File("/import/path"));
         settings.setRepositories(repoService.getLocalAndCachedRepoDescriptors());
@@ -56,9 +59,14 @@ public class ExportResource {
     }
 
     @POST
-    @Consumes("application/xml")
-    public void activateExport(ExportSettings settings) {
+    @Consumes(MediaType.APPLICATION_XML)
+    public Response activateExport(ExportSettings settings) {
         log.debug("Activating export {}", settings);
-        ContextHelper.get().exportTo(settings);
+        try {
+            ContextHelper.get().exportTo(settings);
+        } catch (Exception e) {
+            return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+        }
+        return Response.ok().build();
     }
 }

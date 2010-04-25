@@ -161,7 +161,7 @@ public class RepoIndexManager {
         //storage
         if (!indexedRepo.isLocal() && remoteIndexExists) {
             if (!((RemoteRepo) indexedRepo).isStoreArtifactsLocally()) {
-                log.debug("Skipping index creation for remote repo '{}': repo does not store artifacts locally",
+                log.debug("Skipping local index creation for remote repo '{}': repo does not store artifacts locally",
                         indexedRepo.getKey());
             }
             return;
@@ -182,11 +182,11 @@ public class RepoIndexManager {
     boolean saveIndexFiles() {
         log.debug("Saving index file for {}", indexStorageRepo);
         try {
-            //Might be virtual
-            if (!indexStorageRepo.isLocal() && indexStorageRepo.isReal()) {
-                if (!((RemoteRepo) indexStorageRepo).isStoreArtifactsLocally()) {
+            //indexStorageRepo might be a virtual repo
+            if (indexedRepo != null && !indexedRepo.isLocal()) {
+                if (!((RemoteRepo) indexedRepo).isStoreArtifactsLocally()) {
                     log.debug("Skipping index saving for remote repo '{}': repo does not store artifacts locally",
-                            indexStorageRepo.getKey());
+                            indexedRepo.getKey());
                     return false;
                 }
             }
@@ -196,7 +196,9 @@ public class RepoIndexManager {
             }
             //Create the new jcr files for index and properties
             //Create the index dir
-            JcrFolder targetIndexDir = indexStorageRepo.getLockedJcrFolder(getIndexFolderRepoPath(), true);
+            RepoPath indexFolderRepoPath = new RepoPath(indexStorageRepo.getRootFolder().getRepoPath(),
+                    MavenNaming.NEXUS_INDEX_DIR);
+            JcrFolder targetIndexDir = indexStorageRepo.getLockedJcrFolder(indexFolderRepoPath, true);
             targetIndexDir.mkdirs();
             InputStream indexInputStream = indexHandle.getInputStream();
             InputStream propertiesInputStream = propertiesHandle.getInputStream();
@@ -225,10 +227,6 @@ public class RepoIndexManager {
         if (propertiesHandle != null) {
             propertiesHandle.close();
         }
-    }
-
-    RepoPath getIndexFolderRepoPath() {
-        return new RepoPath(indexStorageRepo.getRootFolder().getRepoPath(), MavenNaming.NEXUS_INDEX_DIR);
     }
 
     private boolean shouldFetchRemoteIndex(RemoteRepo remoteRepo) {

@@ -41,7 +41,9 @@ import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
 import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
+import org.artifactory.webapp.wicket.page.build.actionable.LatestBuildByNameActionableItem;
 import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
@@ -96,9 +98,11 @@ public class AllBuildsPanel extends TitledPanel {
      */
     private void addTable(Set<BasicBuildInfo> latestBuildsByName) {
         List<IColumn> columns = Lists.newArrayList();
+        columns.add(new ActionsColumn(""));
         columns.add(new AbstractColumn(new Model("Build Name"), "name") {
             public void populateItem(Item cellItem, String componentId, IModel rowModel) {
-                BasicBuildInfo info = (BasicBuildInfo) cellItem.getParent().getParent().getModelObject();
+                LatestBuildByNameActionableItem info =
+                        (LatestBuildByNameActionableItem) cellItem.getParent().getParent().getModelObject();
                 cellItem.add(getBuildNameLink(componentId, info.getName()));
             }
         });
@@ -153,7 +157,8 @@ public class AllBuildsPanel extends TitledPanel {
 
         public Iterator iterator(int first, int count) {
             ListPropertySorter.sort(buildList, getSort());
-            List<BasicBuildInfo> listToReturn = buildList.subList(first, first + count);
+            List<LatestBuildByNameActionableItem> listToReturn =
+                    getActionableItems(buildList.subList(first, first + count));
             return listToReturn.iterator();
         }
 
@@ -162,7 +167,22 @@ public class AllBuildsPanel extends TitledPanel {
         }
 
         public IModel model(Object object) {
-            return new Model((BasicBuildInfo) object);
+            return new Model((LatestBuildByNameActionableItem) object);
+        }
+
+        /**
+         * Returns actionable items for the given list of builds
+         *
+         * @param builds Builds to return as actionable
+         * @return Actionable builds
+         */
+        private List<LatestBuildByNameActionableItem> getActionableItems(List<BasicBuildInfo> builds) {
+            List<LatestBuildByNameActionableItem> items = Lists.newArrayList();
+            for (BasicBuildInfo build : builds) {
+                items.add(new LatestBuildByNameActionableItem(build));
+            }
+
+            return items;
         }
     }
 }

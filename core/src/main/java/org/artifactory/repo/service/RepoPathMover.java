@@ -18,8 +18,8 @@
 
 package org.artifactory.repo.service;
 
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MoveMultiStatusHolder;
+import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPath;
@@ -108,7 +108,7 @@ public class RepoPathMover {
         }
 
         // if the target is a directory and it exists we move/copy the source UNDER the target directory (ie, we don't
-        // replace it). We do it only if the target repo key is null and the target fs item is a directory. 
+        // replace it). We do it only if the target repo key is null and the target fs item is a directory.
         JcrFsItem targetFsItem = targetLocalRepo.getLockedJcrFsItem(targetLocalRepoPath);
         if (targetFsItem != null && targetFsItem.isDirectory() && moverConfig.getTargetLocalRepoKey() == null) {
             String adjustedPath = targetLocalRepoPath.getPath() + "/" + fsItemToMove.getName();
@@ -335,11 +335,6 @@ public class RepoPathMover {
         }
     }
 
-    private JcrFsItem getLockedTargetFsItem(LocalRepo targetRepo, JcrFsItem item) {
-        RepoPath targetRepoPath = new RepoPath(targetRepo.getKey(), item.getRepoPath().getPath());
-        return targetRepo.getLockedJcrFsItem(targetRepoPath);
-    }
-
     private boolean canMove(JcrFsItem source, RepoRepoPath<LocalRepo> targetRrp, MoveMultiStatusHolder status,
             boolean isCopy) {
         RepoPath sourceRepoPath = source.getRepoPath();
@@ -415,33 +410,28 @@ public class RepoPathMover {
     }
 
     /**
-     * Cleans the empty folders of the upper hierarchy, starting from the given folder
+     * Cleans the empty folders of the upper hierarchy, starting from the given folder. This method is only called
+     * after moving search results and only if a folder was the root of the move operation (which means that all the
+     * descendants were selected to move).
      *
      * @param sourceFolder Folder to start clean up at
      * @param status       MoveMultiStatusHolder
      * @return Parent of highest removed folder
      */
-    private JcrFolder cleanEmptyFolders(JcrFolder sourceFolder, MoveMultiStatusHolder status) {
-        JcrFolder toReturn = null;
-        while (toReturn == null) {
-            JcrFolder parent = sourceFolder.getLockedParentFolder();
-            boolean parentIsRepo = StringUtils.isBlank(parent.getRepoPath().getPath());
-
-            if (!parentIsRepo && hasNoSiblings(parent.getAbsolutePath())) {
-                /**
-                 * If the current item is a search result, the parent of the current folder isn't the repo node and
-                 * the current folder has no siblings, go up
-                 */
-                sourceFolder = parent;
-            } else {
-                //Remove current folder, return the parent
-                repoInterceptors.onDelete(sourceFolder, status);
-                sourceFolder.bruteForceDelete();
-                toReturn = parent;
+    private JcrFolder cleanEmptyFolders(JcrFolder sourceFolder, StatusHolder status) {
+        JcrFolder highestRemovedPath = sourceFolder;
+        boolean emptyAndNotRoot = true;
+        while (emptyAndNotRoot) {
+            boolean isRoot = highestRemovedPath.getRepoPath().isRoot();
+            emptyAndNotRoot = !isRoot && hasNoSiblings(highestRemovedPath.getAbsolutePath());
+            if (emptyAndNotRoot) {
+                //Remove current folder, continue to the parent
+                repoInterceptors.onDelete(highestRemovedPath, status);
+                highestRemovedPath.bruteForceDelete();
+                highestRemovedPath = highestRemovedPath.getLockedParentFolder();
             }
         }
-
-        return toReturn;
+        return highestRemovedPath;
     }
 
     private boolean contains(RepoRepoPath<LocalRepo> rrp) {
@@ -456,6 +446,6 @@ public class RepoPathMover {
      */
     private boolean hasNoSiblings(String parentAbsPath) {
         //Important: Make sure to get the child count in a non-locking way
-        return (jcrRepoService.getChildrenNames(parentAbsPath).size() == 1);
+        return jcrRepoService.getChildrenNames(parentAbsPath).isEmpty();
     }
 }

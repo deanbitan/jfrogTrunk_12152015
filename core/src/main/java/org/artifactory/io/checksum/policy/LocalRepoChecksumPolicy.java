@@ -75,4 +75,8 @@ public class LocalRepoChecksumPolicy implements ChecksumPolicy, Serializable {
         }
         return null;
     }
+
+    public LocalRepoChecksumPolicyType getPolicyType() {
+        return policyType;
+    }
 }

@@ -173,7 +173,7 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
                 selectNode(currentNode);
 
             } catch (Exception e) {
-                String message = "Unable to find path " + treePath;
+                String message = "Unable to find path: " + treePath;
                 error(message);
                 log.error(message, e);
                 getTreeState().collapseAll();

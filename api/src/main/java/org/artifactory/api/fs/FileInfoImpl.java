@@ -23,6 +23,7 @@ import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 
+import javax.annotation.Nonnull;
 import java.util.Set;
 
 /**
@@ -96,6 +97,7 @@ public class FileInfoImpl extends ItemInfoImpl implements FileInfo {
         return additionalInfo.getMd5();
     }
 
+    @Nonnull
     public ChecksumsInfo getChecksumsInfo() {
         return additionalInfo.getChecksumsInfo();
     }

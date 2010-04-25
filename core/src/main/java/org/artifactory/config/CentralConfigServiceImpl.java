@@ -28,7 +28,6 @@ import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.util.Pair;
@@ -42,13 +41,13 @@ import org.artifactory.jaxb.JaxbHelper;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.MimeType;
 import org.artifactory.repo.index.InternalIndexerService;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.spring.ReloadableBean;
 import org.artifactory.version.ArtifactoryConfigVersion;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
@@ -95,11 +94,6 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     private ConfigurationChangesInterceptors interceptors;
 
     public CentralConfigServiceImpl() {
-    }
-
-    @SuppressWarnings({"unchecked"})
-    public Class<? extends ReloadableBean>[] initAfter() {
-        return new Class[]{JcrService.class};
     }
 
     public void init() {
@@ -282,7 +276,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
             log.info("Saving new configuration in storage...");
             JcrService jcr = InternalContextHelper.get().getJcrService();
             jcr.setString(getConfigRootNodePath(), "current", JaxbHelper.toXml(descriptor),
-                    ContentType.applicationXml.getMimeType(), authService.currentUsername());
+                    MimeType.applicationXml, authService.currentUsername());
             log.info("New configuration saved.");
         }
     }

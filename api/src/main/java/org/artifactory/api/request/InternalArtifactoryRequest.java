@@ -23,13 +23,15 @@ import org.artifactory.api.repo.RepoPath;
 import java.io.InputStream;
 
 /**
- * An internal resource request that is sent by Artyifactory itself to the DownloadService asking for a resource.
+ * An internal resource request that is sent by Artifactory itself to the DownloadService asking for a resource.
  *
  * @author Yossi Shaul
  */
 public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     private boolean skipJarIndexing;
+    // set this flag to true if Artifactory should mark uploaded artifacts with trusted checksums mark
+    private boolean trustServerChecksums;
 
     public InternalArtifactoryRequest(RepoPath repoPath) {
         setRepoPath(repoPath);
@@ -94,6 +96,18 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     public void setSkipJarIndexing(boolean skipJarIndexing) {
         this.skipJarIndexing = skipJarIndexing;
+    }
+
+    public void setTrustServerChecksums(boolean trustServerChecksums) {
+        this.trustServerChecksums = trustServerChecksums;
+    }
+
+    public boolean isSkipJarIndexing() {
+        return skipJarIndexing;
+    }
+
+    public boolean isTrustServerChecksums() {
+        return trustServerChecksums;
     }
 
     public String getParameter(String name) {

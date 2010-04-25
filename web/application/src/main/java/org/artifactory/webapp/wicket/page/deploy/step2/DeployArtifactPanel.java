@@ -42,12 +42,12 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.artifact.ArtifactInfo;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.mime.ContentType;
+import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.repo.exception.RepoAccessException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
@@ -285,7 +285,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             }
             MavenArtifactInfo mavenArtifactInfo = (MavenArtifactInfo) artifactInfo;
             String packagingType = mavenArtifactInfo.getType();
-            return ContentType.mavenPom.getDefaultExtension().equalsIgnoreCase(packagingType);
+            return MavenArtifactInfo.POM.equalsIgnoreCase(packagingType);
         }
 
         private boolean isPomExists(LocalRepoDescriptor repo) {
@@ -451,15 +451,6 @@ public class DeployArtifactPanel extends TitledActionPanel {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 try {
-                    String targetPath = model.getTargetPath();
-                    ChecksumType[] checksumTypes = ChecksumType.values();
-                    for (ChecksumType checksumType : checksumTypes) {
-                        if (targetPath.endsWith(checksumType.ext())) {
-                            error("Unable to deploy, cannot deploy checksum types");
-                            AjaxUtils.refreshFeedback();
-                            return;
-                        }
-                    }
                     //Make sure not to override a good pom.
                     boolean deployPom = model.deployPom && model.isMavenArtifact && !isPomExists(model.targetRepo);
                     if (deployPom) {
@@ -517,28 +508,32 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 }
             }
 
-            private void deployFileAndPom() throws IOException, RepoAccessException {
+            private void deployFileAndPom() throws IOException, RepoRejectionException {
                 deployService.validatePom(model.pomXml, model.getTargetPath(),
                         model.targetRepo.isSuppressPomConsistencyChecks());
                 deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, model.pomXml, true, false);
             }
 
-            private void deployFile() throws RepoAccessException {
+            private void deployFile() throws RepoRejectionException {
                 deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file);
             }
 
             /**
-             * Returns an HTTP link that points to the deployed item within the browser tree
+             * Returns an HTTP link that points to the deployed item within the browser tree.
              *
              * @param repoKey      Repo key of item to point to
              * @param artifactPath Relative path of item to point to
              * @return HTTP link if permitted and valid, null if not
              */
             private String getRepoPathUrl(String repoKey, String artifactPath) {
-                if (!shouldProvideTreeLink()) {
+                if (!shouldProvideTreeLink(artifactPath)) {
                     return null;
                 }
                 StringBuilder urlBuilder = new StringBuilder();
+                if (NamingUtils.isChecksum(artifactPath)) {
+                    // if a checksum file is deployed, link to the target file
+                    artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
+                }
                 String repoPathId = new RepoPath(repoKey, artifactPath).getId();
 
                 String encodedPathId;
@@ -546,7 +541,6 @@ public class DeployArtifactPanel extends TitledActionPanel {
                     encodedPathId = URLEncoder.encode(repoPathId, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
                     log.error("Unable to encode deployed artifact ID '{}': {}.", repoPathId, e.getMessage());
-                    log.debug("Unable to encode deployed artifact ID '" + repoPathId + "'.", e);
                     return null;
                 }
 
@@ -558,18 +552,21 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
             /**
              * Indicates whether a link to the tree item of the deployed artifact should be provided. Links should be
-             * provided as long as the artifact is not a snapshot being deployed to a snapshot-enabled repository with a
-             * unique-snapshot policy
+             * provided if deploying a snapshot file to repository with different snapshot version policy.
              *
+             * @param artifactPath The artifact deploy path
              * @return True if should provide the link
              */
-            private boolean shouldProvideTreeLink() {
-                boolean repoHandlesReleases = model.targetRepo.isHandleReleases();
-                boolean repoHandlesSnapshots = model.targetRepo.isHandleSnapshots();
+            private boolean shouldProvideTreeLink(String artifactPath) {
                 SnapshotVersionBehavior repoSnapshotBehavior = model.targetRepo.getSnapshotVersionBehavior();
-                boolean uniqueSnapshotBehavior = SnapshotVersionBehavior.UNIQUE.equals(repoSnapshotBehavior);
 
-                return repoHandlesReleases || (repoHandlesSnapshots && !uniqueSnapshotBehavior);
+                boolean uniqueToNonUnique = MavenNaming.isUniqueSnapshot(artifactPath)
+                        && SnapshotVersionBehavior.NONUNIQUE.equals(repoSnapshotBehavior);
+
+                boolean nonUniqueToNonUnique = MavenNaming.isNonUniqueSnapshot(artifactPath)
+                        && SnapshotVersionBehavior.UNIQUE.equals(repoSnapshotBehavior);
+
+                return !uniqueToNonUnique && !nonUniqueToNonUnique;
             }
         }
 

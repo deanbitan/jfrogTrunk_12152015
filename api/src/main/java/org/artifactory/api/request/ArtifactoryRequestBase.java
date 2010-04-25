@@ -22,7 +22,7 @@ import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.md.Properties;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
@@ -157,7 +157,8 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         //Calculate matrix params on the repo
         targetRepo = processMatrixParamsIfExist(targetRepo);
         //Test if we need to substitute the targetRepo due to system prop existence
-        String substTargetRepo = ArtifactorySystemProperties.get().getSubstituteRepoKeys().get(targetRepo);
+        String substTargetRepo = ArtifactoryHome.get().getArtifactoryProperties().getSubstituteRepoKeys().get(
+                targetRepo);
         if (substTargetRepo != null) {
             targetRepo = substTargetRepo;
         }

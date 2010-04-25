@@ -69,6 +69,9 @@ public abstract class BasicImportPanel extends TitledPanel {
     @WicketProperty
     private boolean excludeMetadata;
 
+    @WicketProperty
+    private boolean trustServerChecksums;
+
     private Form importForm;
 
     public BasicImportPanel(String id) {
@@ -123,6 +126,7 @@ public abstract class BasicImportPanel extends TitledPanel {
                     importSettings.setFailIfEmpty(true);
                     importSettings.setVerbose(verbose);
                     importSettings.setIncludeMetadata(!excludeMetadata);
+                    importSettings.setTrustServerChecksums(trustServerChecksums);
                     //If we chose "All" import all local repositories, else import a single repo
                     if (ImportExportReposPage.ALL_REPOS.equals(targetRepoKey)) {
                         //Do not activate archive indexing until all repositories were imported

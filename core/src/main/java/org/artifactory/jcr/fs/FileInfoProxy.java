@@ -24,8 +24,6 @@ import org.artifactory.api.fs.FileAdditionalInfo;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 import java.util.Set;
 
@@ -33,8 +31,6 @@ import java.util.Set;
  * @author Yoav Landman
  */
 public class FileInfoProxy extends ItemInfoProxy<FileInfo> implements FileInfo {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(FileInfoProxy.class);
 
     public FileInfoProxy(RepoPath repoPath) {
         super(repoPath);

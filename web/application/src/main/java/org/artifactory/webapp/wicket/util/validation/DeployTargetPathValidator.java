@@ -23,7 +23,6 @@ import org.apache.jackrabbit.spi.commons.conversion.PathParser;
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
 import org.apache.wicket.validation.validator.StringValidator;
-import org.artifactory.api.mime.ChecksumType;
 
 /**
  * Validates that the deploy target path is a valid JCR one. And that checksums cannot be uploaded through the UI.
@@ -41,12 +40,6 @@ public class DeployTargetPathValidator extends StringValidator {
         } catch (MalformedPathException e) {
             ValidationError validateError = new ValidationError();
             validateError.setMessage(e.getMessage());
-            validatable.error(validateError);
-        }
-        // Don't allow to upload checksums
-        if (targetPath.endsWith(ChecksumType.md5.ext()) || targetPath.endsWith(ChecksumType.sha1.ext())) {
-            ValidationError validateError = new ValidationError();
-            validateError.setMessage("Unable to deploy, cannot deploy checksum types");
             validatable.error(validateError);
         }
     }

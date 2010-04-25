@@ -29,7 +29,7 @@ import org.apache.wicket.proxy.IProxyTargetLocator;
 import org.apache.wicket.proxy.LazyInitProxyFactory;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.fs.FileInfo;
+import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
@@ -54,7 +54,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,7 +66,7 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
     private AuthenticationManager authenticationManager;
     private Authentication authentication;
     private Roles roles;
-    private Map<String, List<FileInfo>> results;
+    private Map<String, SavedSearchResults> results;
     private Pair<String, Long> lastLoginInfo;
 
     public static ArtifactoryWebSession get() {
@@ -193,18 +192,14 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
         return roles != null && roles.hasRole(role);
     }
 
-    public void setResults(String resultsName, List<FileInfo> artifacts) {
-        if (artifacts == null || artifacts.isEmpty()) {
-            return;
-        }
-
+    public void setResults(SavedSearchResults savedSearchResults) {
         AuthorizationService authService = ContextHelper.get().getAuthorizationService();
         if (authService.hasPermission(ArtifactoryPermission.DEPLOY)) {
-            getResults().put(resultsName, artifacts);
+            getResults().put(savedSearchResults.getName(), savedSearchResults);
         }
     }
 
-    public List<FileInfo> getResults(String resultsName) {
+    public SavedSearchResults getResults(String resultsName) {
         if (results != null) {
             return getResults().get(resultsName);
         } else {
@@ -237,9 +232,9 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
         this.lastLoginInfo = lastLoginInfo;
     }
 
-    private Map<String, List<FileInfo>> getResults() {
+    private Map<String, SavedSearchResults> getResults() {
         if (results == null) {
-            results = new HashMap<String, List<FileInfo>>();
+            results = new HashMap<String, SavedSearchResults>();
         }
         return results;
     }

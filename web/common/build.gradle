@@ -1,4 +1,18 @@
 group = 'web'
+sourceSets {
+  main {
+    java {
+      srcDir 'src/java'
+    }
+    resources {
+      srcDir 'src/main/java'
+      srcDir 'src/main/resources'
+    }
+  }
+}
+jar {
+  baseName = 'artifactory-web-' + project.name
+}
 dependencies {
   compile group: 'commons-lang', name: 'commons-lang', version: '2.4'
   compile group: 'commons-collections', name: 'commons-collections', version: '3.2.1'

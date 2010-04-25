@@ -30,6 +30,7 @@ import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActiona
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
+import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Module;
 
 import java.util.List;
@@ -126,4 +127,14 @@ public interface BuildAddon extends AddonFactory {
      * @return Build save search results panel
      */
     Panel getBuildSearchResultsPanel(Addon requestingAddon, Build build);
+
+    /**
+     * Returns a file info object for a build file bean
+     *
+     * @param buildName   The name of the searched build
+     * @param buildNumber The number of the searched build
+     * @param bean        File bean to get info for  @return Bean file info if found. Null if not
+     * @return file info
+     */
+    FileInfo getBuildFileBeanInfo(String buildName, long buildNumber, BuildFileBean bean);
 }

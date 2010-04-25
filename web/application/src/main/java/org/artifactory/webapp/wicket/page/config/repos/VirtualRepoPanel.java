@@ -53,10 +53,8 @@ import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoResolver;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.components.IconDragDropSelection;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
-import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -69,9 +67,6 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDescriptor> {
-
-    private static final Logger log = LoggerFactory.getLogger(VirtualRepoPanel.class);
-
 
     @SpringBean
     private AddonsManager addonsManager;
@@ -209,13 +204,14 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
     }
 
     private class ResolvedReposDataProvider implements IDataProvider {
+        private final VirtualRepoResolver resolver = new VirtualRepoResolver(getRepoDescriptor());
+
         public Iterator iterator(int first, int count) {
-            VirtualRepoResolver resolver = new VirtualRepoResolver(getRepoDescriptor());
             return resolver.getOrderedRepos().iterator();
         }
 
         public int size() {
-            VirtualRepoResolver resolver = new VirtualRepoResolver(getRepoDescriptor());
+            resolver.update(getRepoDescriptor());
             return resolver.getOrderedRepos().size();
         }
 

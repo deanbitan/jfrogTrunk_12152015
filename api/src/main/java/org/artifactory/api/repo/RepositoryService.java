@@ -29,6 +29,7 @@ import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.api.tree.fs.ZipEntriesTree;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -345,7 +346,7 @@ public interface RepositoryService extends ImportableExportable {
      * @return The status of the procedure
      */
     @Lock(transactional = true)
-    MultiStatusHolder exportSearchResults(List<FileInfo> searchResults, File baseDir, boolean includeMetadata,
+    MultiStatusHolder exportSearchResults(SavedSearchResults searchResults, File baseDir, boolean includeMetadata,
             boolean m2Compatible, boolean archive);
 
     /**
@@ -390,7 +391,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param baseFolderPath A path to a folder to start calculating metadata from. Must be a local non-cache repository
      *                       path.
      */
-    @Async(delayUntilAfterCommit = true, transactional = true)
+    @Async(delayUntilAfterCommit = true, transactional = false)
     public void calculateMavenMetadataAsync(RepoPath baseFolderPath);
 
     /**
@@ -406,7 +407,6 @@ public interface RepositoryService extends ImportableExportable {
     @Async(delayUntilAfterCommit = true, transactional = true)
     public void calculateMavenPluginsMetadataAsync(String localRepoKey);
 
-    @Lock(transactional = true)
     public void calculateMavenMetadata(RepoPath baseFolderPath);
 
     /**

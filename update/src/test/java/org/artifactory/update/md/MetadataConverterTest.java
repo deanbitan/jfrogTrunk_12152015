@@ -35,7 +35,7 @@ public abstract class MetadataConverterTest extends XmlConverterTest {
     protected XStream xstream;
 
     @BeforeClass
-    public void setup() {
+    public void setupXStream() {
         xstream = XStreamFactory.create(FileInfoImpl.class, StatsInfo.class, FolderInfoImpl.class);
     }
 

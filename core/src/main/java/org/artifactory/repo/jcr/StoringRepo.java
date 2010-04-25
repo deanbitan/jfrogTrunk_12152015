@@ -22,6 +22,7 @@ import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.md.Properties;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.jcr.fs.JcrFolder;
@@ -48,9 +49,9 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, JcrFsIte
      * @param res     the destination resource definition
      * @param stream  the stream to save at the location
      * @param keyvals A set of keyval metadata to attach to the (file) resource as part of this storage process. Null is
-     *                allowed.
      */
-    RepoResource saveResource(RepoResource res, InputStream stream, Properties keyvals) throws IOException;
+    RepoResource saveResource(RepoResource res, InputStream stream, Properties keyvals) throws IOException,
+            RepoRejectionException;
 
     void undeploy(RepoPath repoPath);
 

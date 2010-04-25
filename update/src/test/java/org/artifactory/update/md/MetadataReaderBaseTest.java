@@ -19,6 +19,7 @@
 package org.artifactory.update.md;
 
 import org.artifactory.api.md.MetadataEntry;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 
 import java.util.List;
 
@@ -27,7 +28,7 @@ import java.util.List;
  *
  * @author Yossi Shaul
  */
-public abstract class MetadataReaderBaseTest {
+public abstract class MetadataReaderBaseTest extends ArtifactoryHomeBoundTest {
 
     protected MetadataEntry getMetadataByName(List<MetadataEntry> entries, String metadataName) {
         for (MetadataEntry entry : entries) {

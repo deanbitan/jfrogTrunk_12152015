@@ -18,8 +18,8 @@
 
 package org.artifactory.info;
 
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.common.property.ArtifactorySystemProperties;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -40,7 +40,7 @@ public class ArtifactoryPropInfo extends BasePropInfoGroup {
     @Override
     public InfoObject[] getInfo() {
         //Make a copy of the artifactory properties
-        Properties propertiesCopy = ArtifactorySystemProperties.get().getPropertiesCopy();
+        Properties propertiesCopy = ArtifactoryHome.get().getArtifactoryProperties().getPropertiesCopy();
         ArrayList<InfoObject> infoList = new ArrayList<InfoObject>();
         ConstantValues[] constants = ConstantValues.values();
 

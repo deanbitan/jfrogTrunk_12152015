@@ -41,8 +41,11 @@ import java.util.Set;
 public class ZipFileActionableItem extends FileActionableItem implements HierarchicActionableItem {
     private static final Logger log = LoggerFactory.getLogger(ZipFileActionableItem.class);
 
-    public ZipFileActionableItem(FileInfo fileInfo) {
+    private boolean compactAllowed;
+
+    public ZipFileActionableItem(FileInfo fileInfo, boolean compactAllowed) {
         super(fileInfo);
+        this.compactAllowed = compactAllowed;
     }
 
     public List<ActionableItem> getChildren(AuthorizationService authService) {
@@ -63,7 +66,7 @@ public class ZipFileActionableItem extends FileActionableItem implements Hierarc
         Set<ZipTreeNode> children = root.getChildren();
         for (ZipTreeNode childTreeNode : children) {
             if (childTreeNode.isDirectory()) {
-                items.add(new ArchivedFolderActionableItem(getRepoPath(), childTreeNode));
+                items.add(new ArchivedFolderActionableItem(getRepoPath(), childTreeNode, isCompactAllowed()));
             } else {
                 items.add(new ArchivedFileActionableItem(getRepoPath(), childTreeNode));
             }
@@ -77,10 +80,10 @@ public class ZipFileActionableItem extends FileActionableItem implements Hierarc
     }
 
     public boolean isCompactAllowed() {
-        return false;
+        return compactAllowed;
     }
 
     public void setCompactAllowed(boolean compactAllowed) {
-
+        this.compactAllowed = compactAllowed;
     }
 }

@@ -24,6 +24,7 @@ import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Plugin;
 import org.apache.maven.model.Model;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
+import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
@@ -96,7 +97,7 @@ public class MavenPluginsMetadataCalculator extends AbstractMetadataCalculator {
 
             // save only if something changed
             if (modified(getPluginMetadata(pluginsMetadataContainer), metadata)) {
-                saveMetadata(pluginsMetadataContainer, metadata);
+                saveMetadata(pluginsMetadataContainer.getRepoPath(), metadata, new StatusHolder());
             }
         }
         log.debug("Finished maven plugins metadata calculation on '{}'", localRepo.getKey());

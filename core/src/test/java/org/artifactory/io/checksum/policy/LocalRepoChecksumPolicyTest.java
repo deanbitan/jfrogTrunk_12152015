@@ -22,7 +22,7 @@ import com.google.common.collect.Sets;
 import org.artifactory.api.fs.ChecksumInfo;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -38,7 +38,7 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class LocalRepoChecksumPolicyTest extends SystemPropertiesBoundTest {
+public class LocalRepoChecksumPolicyTest extends ArtifactoryHomeBoundTest {
     private Set<ChecksumInfo> checksums;
 
     @BeforeClass

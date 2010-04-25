@@ -21,7 +21,7 @@ package org.artifactory.webapp.servlet;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
-import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.ResourceUtils;
 
@@ -73,12 +73,12 @@ public class ArtifactoryFilter implements Filter {
         ServletContext servletContext = filterConfig.getServletContext();
         ArtifactoryContext context = RequestUtils.getArtifactoryContext(servletContext);
         ArtifactoryContextThreadBinder.bind(context);
-        ArtifactorySystemProperties.bind(context.getArtifactoryHome().getArtifactoryProperties());
+        ArtifactoryHome.bind(context.getArtifactoryHome());
     }
 
     private void unbind() {
         ArtifactoryContextThreadBinder.unbind();
-        ArtifactorySystemProperties.unbind();
+        ArtifactoryHome.unbind();
     }
 
     public void destroy() {

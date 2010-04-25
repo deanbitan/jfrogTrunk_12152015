@@ -26,10 +26,12 @@ import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
 import org.apache.wicket.validation.validator.NumberValidator;
 import org.apache.wicket.validation.validator.StringValidator;
+import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -39,7 +41,6 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
@@ -56,6 +57,10 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescriptor> {
+
+    @WicketProperty
+    private boolean isStoreArtifactsLocally = false;
+
     public HttpRepoPanel(CreateUpdateAction action, HttpRepoDescriptor repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor, cachingDescriptorHelper);
@@ -72,7 +77,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
 
     @Override
     public void addAndSaveDescriptor(HttpRepoDescriptor repoDescriptor) {
-        repoDescriptor.setStoreArtifactsLocally(!repoDescriptor.isStoreArtifactsLocally());
+        repoDescriptor.setStoreArtifactsLocally(!isStoreArtifactsLocally);
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
         mccd.addRemoteRepository(repoDescriptor);
@@ -82,7 +87,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     @Override
     public void saveEditDescriptor(HttpRepoDescriptor repoDescriptor) {
         // flip back the logic again from the checkbox.
-        repoDescriptor.setStoreArtifactsLocally(!repoDescriptor.isStoreArtifactsLocally());
+        repoDescriptor.setStoreArtifactsLocally(!isStoreArtifactsLocally);
         getCachingDescriptorHelper().syncAndSaveRemoteRepositories();
     }
 
@@ -186,7 +191,9 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         advancedSettings.add(new StyledCheckbox("hardFail"));
         advancedSettings.add(new SchemaHelpBubble("hardFail.help"));
         flipLogic();
-        advancedSettings.add(new StyledCheckbox("storeArtifactsLocally"));
+        StyledCheckbox checkbox = new StyledCheckbox("storeArtifactsLocally");
+        checkbox.setModel(new PropertyModel(this, "isStoreArtifactsLocally"));
+        advancedSettings.add(checkbox);
         advancedSettings.add(new SchemaHelpBubble("storeArtifactsLocally.help"));
 
         advancedSettings.add(new StyledCheckbox("suppressPomConsistencyChecks"));
@@ -229,12 +236,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     }
 
     private void flipLogic() {
-        if (isCreate()) {
-            getRepoDescriptor().setStoreArtifactsLocally(false);
-        } else {
-            RemoteRepoDescriptor repoDescriptor = centralConfigService.getMutableDescriptor().getRemoteRepositoriesMap()
-                    .get(getRepoDescriptor().getKey());
-            getRepoDescriptor().setStoreArtifactsLocally(!repoDescriptor.isStoreArtifactsLocally());
+        if (!isCreate()) {
+            isStoreArtifactsLocally = !getRepoDescriptor().isStoreArtifactsLocally();
         }
     }
 

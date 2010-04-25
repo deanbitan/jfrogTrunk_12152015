@@ -64,6 +64,9 @@ public abstract class ItemInfoImpl implements ItemInfo {
         return repoPath.getRepoKey();
     }
 
+    /**
+     * @return The path part of the repo path of this item (ie, path without the repository key).
+     */
     public String getRelPath() {
         return repoPath.getPath();
     }

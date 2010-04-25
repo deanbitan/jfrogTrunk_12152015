@@ -18,23 +18,25 @@
 
 package org.artifactory.webapp.wicket.page.build.action;
 
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.wicket.component.confirm.AjaxConfirm;
+import org.artifactory.common.wicket.component.confirm.ConfirmDialog;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.action.DeleteAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;
+import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
+import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 import org.slf4j.Logger;
 
 import java.util.Set;
-
-import static org.artifactory.webapp.wicket.page.build.BuildBrowserConstants.BUILDS;
 
 /**
  * Deletes the selected build
@@ -59,14 +61,39 @@ public class DeleteBuildAction extends ItemAction {
     }
 
     @Override
-    public void onAction(ItemEvent e) {
+    public void onAction(final ItemEvent e) {
+        AjaxConfirm.get().confirm(new ConfirmDialog() {
+            public String getMessage() {
+                return String.format("Are you sure you wish to delete the build '%s' #%s?",
+                        basicBuildInfo.getName(), basicBuildInfo.getNumber());
+            }
+
+            public void onConfirm(boolean approved, AjaxRequestTarget target) {
+                if (approved) {
+                    delete(e);
+                }
+            }
+        });
+    }
+
+    @Override
+    public String getCssClass() {
+        return DeleteAction.class.getSimpleName();
+    }
+
+    /**
+     * Deletes the build
+     *
+     * @param e Item event
+     */
+    private void delete(ItemEvent e) {
         AjaxRequestTarget target = e.getTarget();
         BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
         String buildName = basicBuildInfo.getName();
         long buildNumber = basicBuildInfo.getNumber();
 
         try {
-            buildService.deleteBuild(buildName, buildNumber, basicBuildInfo.getStarted());
+            buildService.deleteBuild(basicBuildInfo);
             String info = String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber);
             Session.get().info(info);
             AjaxUtils.refreshFeedback(target);
@@ -79,17 +106,12 @@ public class DeleteBuildAction extends ItemAction {
         }
 
         Set<BasicBuildInfo> remainingBuilds = buildService.searchBuildsByName(buildName);
+        PageParameters pageParameters = new PageParameters();
 
-        if (remainingBuilds.isEmpty()) {
-            RequestCycle.get().setRequestTarget(new RedirectRequestTarget(BUILDS));
-        } else {
-            String buildUrl = new StringBuilder().append(BUILDS).append("/").append(buildName).toString();
-            RequestCycle.get().setRequestTarget(new RedirectRequestTarget(buildUrl));
+        if (!remainingBuilds.isEmpty()) {
+            pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildName);
         }
-    }
 
-    @Override
-    public String getCssClass() {
-        return DeleteAction.class.getSimpleName();
+        RequestCycle.get().setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }
 }

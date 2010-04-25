@@ -21,6 +21,8 @@ package org.artifactory.jcr.utils;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.data.DataStore;
 import org.apache.jackrabbit.core.data.db.DbDataStore;
+import org.apache.jackrabbit.spi.commons.conversion.IllegalNameException;
+import org.apache.jackrabbit.spi.commons.conversion.NameParser;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
@@ -233,6 +235,24 @@ public abstract class JcrUtils {
         } else {
             // Some other store
             return null;
+        }
+    }
+
+    public static boolean isValidJcrName(String value) {
+        try {
+            assertValidJcrName(value);
+        } catch (org.artifactory.exception.IllegalNameException e) {
+            log.debug(e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    public static void assertValidJcrName(String value) {
+        try {
+            NameParser.checkFormat(value);
+        } catch (IllegalNameException e) {
+            throw new org.artifactory.exception.IllegalNameException("Invalid jcr name: " + e.getMessage());
         }
     }
 }

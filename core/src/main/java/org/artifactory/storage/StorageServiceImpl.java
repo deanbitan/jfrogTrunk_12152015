@@ -43,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.text.DecimalFormat;
 
 /**
  * @author yoavl
@@ -73,16 +74,23 @@ public class StorageServiceImpl implements InternalStorageService {
 
     public void logStorageSizes() {
         StringBuilder sb = new StringBuilder();
-        sb.append("\n-----Storage sizes (in bytes)-----\n");
+        sb.append("\n-----Storage sizes-----\n");
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
         File dataDir = artifactoryHome.getDataDir();
         File[] dirs = {new File(dataDir, "db"), new File(dataDir, "store"), new File(dataDir, "index")};
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");
         for (File dir : dirs) {
             if (dir.exists()) {
-                sb.append(dir.getName()).append("=").append(FileUtils.sizeOfDirectory(dir)).append("\n");
+                long sizeOfDirectory = FileUtils.sizeOfDirectory(dir);
+                double sizeOfDirectoryGb = StorageUnit.GB.convert(sizeOfDirectory);
+                sb.append(dir.getName()).append("=").append(sizeOfDirectory).append(" bytes ").append(" (").append(
+                        decimalFormat.format(sizeOfDirectoryGb)).append(" GB)").append("\n");
             }
         }
-        sb.append("datastore table=").append(getStorageSize()).append("\n");
+        long storageSize = getStorageSize();
+        double storageSizeInGb = StorageUnit.GB.convert(storageSize);
+        sb.append("datastore table=").append(storageSize).append(" bytes ").append(" (").append(
+                decimalFormat.format(storageSizeInGb)).append(" GB)").append("\n");
         sb.append("-----------------------");
         log.info(sb.toString());
     }

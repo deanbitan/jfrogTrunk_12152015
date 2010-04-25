@@ -41,15 +41,23 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 public class ArchivedFolderActionableItem extends RepoAwareActionableItemBase implements HierarchicActionableItem {
-    private final ZipTreeNode node;
+    private ZipTreeNode node;
+    private boolean compactAllowed;
+    private String displayName;
+    private boolean compacted;
 
-    public ArchivedFolderActionableItem(RepoPath archivePath, ZipTreeNode node) {
+    public ArchivedFolderActionableItem(RepoPath archivePath, ZipTreeNode node, boolean compact) {
         super(archivePath);
         this.node = node;
+        this.displayName = node.getName();
+        this.compactAllowed = compact;
+        if (compact) {
+            compact();
+        }
     }
 
     public String getDisplayName() {
-        return node.getName();
+        return displayName;
     }
 
     public ZipEntryInfo getZipEntry() {
@@ -76,7 +84,7 @@ public class ArchivedFolderActionableItem extends RepoAwareActionableItemBase im
         Set<ZipTreeNode> children = node.getChildren();
         for (ZipTreeNode file : children) {
             if (file.isDirectory()) {
-                items.add(new ArchivedFolderActionableItem(getRepoPath(), file));
+                items.add(new ArchivedFolderActionableItem(getRepoPath(), file, compactAllowed));
             } else {
                 items.add(new ArchivedFileActionableItem(getRepoPath(), file));
             }
@@ -89,14 +97,43 @@ public class ArchivedFolderActionableItem extends RepoAwareActionableItemBase im
     }
 
     public boolean isCompactAllowed() {
-        return false;
+        return compactAllowed;
     }
 
     public void setCompactAllowed(boolean compactAllowed) {
+        this.compactAllowed = compactAllowed;
+    }
 
+    private void compact() {
+        StringBuilder compactedName = new StringBuilder(displayName);
+        ZipTreeNode next = getNextCompactedNode(node);
+        while (next != null) {
+            compacted = true;
+            node = next;
+            compactedName.append('/').append(next.getName());
+            next = getNextCompactedNode(next);
+        }
+        displayName = compactedName.toString();
+    }
+
+    private ZipTreeNode getNextCompactedNode(ZipTreeNode next) {
+        Set<ZipTreeNode> children = next.getChildren();
+
+        // only compact folders with exactly one child
+        if (children == null || children.size() != 1) {
+            return null;
+        }
+
+        // the only child must be a folder
+        ZipTreeNode firstChild = children.iterator().next();
+        if (!firstChild.isDirectory()) {
+            return null;
+        }
+
+        return firstChild;
     }
 
     public String getCssClass() {
-        return ItemCssClass.folder.getCssClass();
+        return compacted ? ItemCssClass.folderCompact.getCssClass() : ItemCssClass.folder.getCssClass();
     }
 }

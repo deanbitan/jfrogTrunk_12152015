@@ -31,6 +31,7 @@ import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
@@ -245,7 +246,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     }
 
     public VirtualRepoItem getVirtualRepoItem(RepoPath repoPath) {
-        List<LocalRepo> localAndCahcedRepos = getResolvedLocalAndCachedRepos();
+        Set<LocalRepo> localAndCahcedRepos = getResolvedLocalAndCachedRepos();
         //Add paths from all children virtual repositories
         VirtualRepoItem item = null;
         for (LocalRepo repo : localAndCahcedRepos) {
@@ -261,9 +262,16 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return item;
     }
 
+    public List<RealRepo> getSearchRepositoriesList() {
+        List<RealRepo> localAndRemoteRepos = Lists.newArrayList();
+        localAndRemoteRepos.addAll(getResolvedLocalRepos());
+        localAndRemoteRepos.addAll(getResolvedRemoteRepos());
+        return localAndRemoteRepos;
+    }
+
     public Set<String> getChildrenNamesDeeply(RepoPath folderPath) {
         String path = folderPath.getPath();
-        List<LocalRepo> localAndCahcedRepos = getResolvedLocalAndCachedRepos();
+        Set<LocalRepo> localAndCahcedRepos = getResolvedLocalAndCachedRepos();
         Set<String> children = Sets.newHashSet();
         for (LocalRepo repo : localAndCahcedRepos) {
             if (!repo.itemExists(path)) {
@@ -305,17 +313,25 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         }
     }
 
+    public Set<RemoteRepo> getResolvedRemoteRepos() {
+        Set<RemoteRepo> resolvedRemoteRepos = Sets.newLinkedHashSet();
+        for (VirtualRepo vrepo : getResolvedVirtualRepos()) {
+            for (RemoteRepo rrepo : vrepo.getRemoteRepositories()) {
+                resolvedRemoteRepos.add(rrepo);
+            }
+        }
+        return resolvedRemoteRepos;
+    }
+
     /**
      * @return Recursively resolved list of all the local non-cache repos of this virtual repo and nested virtual
      *         repos.
      */
-    public List<LocalRepo> getResolvedLocalRepos() {
-        List<LocalRepo> resolvedLocalRepos = new ArrayList<LocalRepo>();
+    public Set<LocalRepo> getResolvedLocalRepos() {
+        Set<LocalRepo> resolvedLocalRepos = Sets.newLinkedHashSet();
         for (VirtualRepo repo : getResolvedVirtualRepos()) {
             for (LocalRepo localRepo : repo.getLocalRepositories()) {
-                if (!resolvedLocalRepos.contains(localRepo)) {
-                    resolvedLocalRepos.add(localRepo);
-                }
+                resolvedLocalRepos.add(localRepo);
             }
         }
         return resolvedLocalRepos;
@@ -324,13 +340,11 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     /**
      * @return Recursively resolved list of all the cache repos of this virtual repo and nested virtual repos.
      */
-    public List<LocalCacheRepo> getResolvedLocalCachedRepos() {
-        List<LocalCacheRepo> resolvedLocalRepos = new ArrayList<LocalCacheRepo>();
+    public Set<LocalCacheRepo> getResolvedLocalCachedRepos() {
+        Set<LocalCacheRepo> resolvedLocalRepos = Sets.newLinkedHashSet();
         for (VirtualRepo repo : getResolvedVirtualRepos()) {
             for (LocalCacheRepo localRepo : repo.getLocalCaches()) {
-                if (!resolvedLocalRepos.contains(localRepo)) {
-                    resolvedLocalRepos.add(localRepo);
-                }
+                resolvedLocalRepos.add(localRepo);
             }
         }
         return resolvedLocalRepos;
@@ -340,8 +354,8 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
      * @return Recursively resolved list of all the local and cache repos of this virtual repo and nested virtual
      *         repos.
      */
-    private List<LocalRepo> getResolvedLocalAndCachedRepos() {
-        ArrayList<LocalRepo> localAndCahcedRepos = Lists.newArrayList();
+    private Set<LocalRepo> getResolvedLocalAndCachedRepos() {
+        Set<LocalRepo> localAndCahcedRepos = Sets.newLinkedHashSet();
         localAndCahcedRepos.addAll(getResolvedLocalRepos());
         localAndCahcedRepos.addAll(getResolvedLocalCachedRepos());
         return localAndCahcedRepos;
@@ -432,7 +446,8 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         storageMixin.undeploy(repoPath, calcMavenMetadata);
     }
 
-    public RepoResource saveResource(RepoResource res, final InputStream in, Properties keyvals) throws IOException {
+    public RepoResource saveResource(RepoResource res, final InputStream in, Properties keyvals) throws IOException,
+            RepoRejectionException {
         return storageMixin.saveResource(res, in, keyvals);
     }
 
@@ -502,8 +517,8 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return downloadStrategy.getInfo(context);
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(final RepoResource res)
-            throws IOException, RepositoryException {
+    public ResourceStreamHandle getResourceStreamHandle(RepoResource res) throws IOException, RepositoryException,
+            RepoRejectionException {
         return storageMixin.getResourceStreamHandle(res);
     }
 

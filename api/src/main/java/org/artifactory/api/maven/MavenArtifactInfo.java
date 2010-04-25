@@ -19,7 +19,6 @@
 package org.artifactory.api.maven;
 
 import org.artifactory.api.artifact.UnitInfo;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.log.LoggerFactory;
@@ -39,9 +38,9 @@ import java.util.StringTokenizer;
 public class MavenArtifactInfo implements UnitInfo {
     private static final Logger log = LoggerFactory.getLogger(MavenArtifactInfo.class);
     public static final String ROOT = "artifactory-maven-artifact";
-    public static final String POM = ContentType.mavenPom.getDefaultExtension();
-    public static final String JAR = ContentType.javaArchive.getDefaultExtension();
-    public static final String XML = ContentType.applicationXml.getDefaultExtension();
+    public static final String POM = "pom";
+    public static final String JAR = "jar";
+    public static final String XML = "xml";
 
     private String artifactId;
     private String groupId;
@@ -125,7 +124,7 @@ public class MavenArtifactInfo implements UnitInfo {
     }
 
     public boolean isSnapshot() {
-        return MavenNaming.isVersionSnapshot(version);
+        return MavenNaming.isNonUniqueSnapshotVersion(version);
     }
 
     public String getClassifier() {
@@ -230,7 +229,7 @@ public class MavenArtifactInfo implements UnitInfo {
         groupId = groupIdBuff.toString();
         //Extract the type and classifier except for metadata files
         if (!metaData) {
-            boolean snapshot = MavenNaming.isVersionSnapshot(version);
+            boolean snapshot = MavenNaming.isNonUniqueSnapshotVersion(version);
             //Extract the type
             String versionInName = version;
             if (snapshot && MavenNaming.isUniqueSnapshotFileName(name)) {

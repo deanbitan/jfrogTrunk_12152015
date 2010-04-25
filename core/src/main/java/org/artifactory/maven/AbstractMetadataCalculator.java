@@ -19,25 +19,27 @@
 package org.artifactory.maven;
 
 import org.apache.maven.artifact.repository.metadata.Metadata;
+import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.fs.JcrFolder;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
-
-import java.io.IOException;
+import org.slf4j.Logger;
 
 /**
  * @author freds
  */
 public class AbstractMetadataCalculator {
-    private JcrService jcrService;
-    private RepositoryService repositoryService;
+    private static final Logger log = LoggerFactory.getLogger(AbstractMetadataCalculator.class);
 
-    protected RepositoryService getRepositoryService() {
+    private JcrService jcrService;
+    private InternalRepositoryService repositoryService;
+
+    protected InternalRepositoryService getRepositoryService() {
         if (repositoryService == null) {
-            repositoryService = InternalContextHelper.get().getRepositoryService();
+            repositoryService = (InternalRepositoryService) InternalContextHelper.get().getRepositoryService();
         }
         return repositoryService;
     }
@@ -49,15 +51,14 @@ public class AbstractMetadataCalculator {
         return jcrService;
     }
 
-    protected void saveMetadata(JcrFolder folder, Metadata metadata) {
+    protected void saveMetadata(RepoPath repoPath, Metadata metadata, StatusHolder status) {
         String metadataStr;
         try {
             metadataStr = MavenModelUtils.mavenMetadataToString(metadata);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to convert maven metadata into string", e);
+            // Write lock auto upgrade supported LockingHelper.releaseReadLock(repoPath);
+            getRepositoryService().setXmlMetadataLater(repoPath, MavenNaming.MAVEN_METADATA_NAME, metadataStr);
+        } catch (Exception e) {
+            status.setError("Error while writing metadata for " + repoPath + ".", e, log);
         }
-        RepoPath repoPath = folder.getRepoPath();
-        // Write lock auto upgrade supported LockingHelper.releaseReadLock(repoPath);
-        getRepositoryService().setXmlMetadata(repoPath, MavenNaming.MAVEN_METADATA_NAME, metadataStr);
     }
 }

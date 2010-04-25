@@ -26,6 +26,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.repo.snapshot.SnapshotVersionAdapter;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.annotations.BeforeMethod;
@@ -94,6 +95,10 @@ public class JcrRepoBaseTest {
             }
 
             public void onCreate(JcrFsItem fsItem) {
+            }
+
+            public SnapshotVersionAdapter getSnapshotVersionAdapter() {
+                return null;
             }
         };
         repo.setDescriptor(descriptor);

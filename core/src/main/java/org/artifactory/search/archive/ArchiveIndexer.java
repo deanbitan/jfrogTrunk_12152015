@@ -19,7 +19,6 @@
 package org.artifactory.search.archive;
 
 import com.google.common.collect.Lists;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
@@ -64,8 +63,7 @@ public abstract class ArchiveIndexer {
         }
 
         //Index classes if necessary
-        ContentType contentType = NamingUtils.getContentType(file.getPath());
-        if (!contentType.isJarVariant()) {
+        if (!NamingUtils.isJarVariant(file.getPath())) {
             return;
         }
 
@@ -158,8 +156,7 @@ public abstract class ArchiveIndexer {
         if (archiveNode != null) {
             String nodeType = archiveNode.getPrimaryNodeType().getName();
             if (nodeType.equals(JcrTypes.NT_ARTIFACTORY_FILE)) {
-                ContentType contentType = NamingUtils.getContentType(archiveNode.getName());
-                if (contentType.isJarVariant()) {
+                if (NamingUtils.isJarVariant(archiveNode.getName())) {
                     if (force || !archiveNode.hasProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED)) {
                         archiveNode.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, false);
                         log.debug("The archive: '{}' was successfully marked for indexing", archiveNode.getName());

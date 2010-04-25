@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.wicket.util;
 
-import org.artifactory.api.mime.ContentType;
+import com.google.common.collect.ImmutableMap;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.DirectoryItem;
 import org.artifactory.api.repo.RepositoryService;
@@ -26,7 +26,10 @@ import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.mime.MimeType;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
+
+import javax.annotation.Nonnull;
 
 /**
  * Enum of the files, folders and repositories CSS classes. Use cssClass() for the name of the css class.
@@ -39,6 +42,17 @@ public enum ItemCssClass {
     jar, pom, xml, jnlp, parent,
     repository, repositoryCache("repository-cache"),
     repositoryVirtual("repository-virtual"), root, treeSearch("tree-search");
+
+    private static final ImmutableMap<String, ItemCssClass> cssClassByName;
+
+    static {
+        ImmutableMap.Builder<String, ItemCssClass> builder = ImmutableMap.builder();
+        for (ItemCssClass cssClass : ItemCssClass.values()) {
+            builder.put(cssClass.cssClass, cssClass);
+        }
+        cssClassByName = builder.build();
+    }
+
 
     private String cssClass;
 
@@ -103,20 +117,19 @@ public enum ItemCssClass {
      * @return The matching css class for the give file path. If there is no special css class for the given path, the
      *         generic 'doc' class will be returned.
      */
+    @Nonnull
     public static ItemCssClass getFileCssClass(String path) {
-        ContentType ct = NamingUtils.getContentType(path);
-        if (ct.isJarVariant()) {
-            return jar;
-        } else if (ct.isPom()) {
-            return pom;
-        } else if (ct.isJnlp()) {
-            return jnlp;
-        } else if (ct.isXml()) {
-            return xml;
-        } else if (path.endsWith(DirectoryItem.UP)) {
-            return parent;
+        ItemCssClass cssClass;
+        if (path.endsWith(DirectoryItem.UP)) {
+            cssClass = parent;
         } else {
-            return doc;
+            MimeType ct = NamingUtils.getContentType(path);
+            cssClass = cssClassByName.get(ct.getCss());
         }
+
+        if (cssClass == null) {
+            cssClass = doc;
+        }
+        return cssClass;
     }
 }

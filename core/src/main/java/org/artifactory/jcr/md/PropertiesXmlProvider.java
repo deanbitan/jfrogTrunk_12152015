@@ -19,15 +19,11 @@
 package org.artifactory.jcr.md;
 
 import org.artifactory.api.md.Properties;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author freds
  */
 public class PropertiesXmlProvider extends XStreamMetadataProvider<Properties> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(PropertiesXmlProvider.class);
 
     public PropertiesXmlProvider() {
         super(Properties.class);

@@ -36,10 +36,7 @@ public class ArtifactoryDeployRequest extends InternalArtifactoryRequest {
     private long lastModified;
 
     public ArtifactoryDeployRequest(RepoPath pathToUpload, File fileToUpload) throws FileNotFoundException {
-        super(pathToUpload);
-        this.inputStream = new FileInputStream(fileToUpload);
-        contentLength = (int) fileToUpload.length();
-        lastModified = fileToUpload.lastModified();
+        this(pathToUpload, new FileInputStream(fileToUpload), fileToUpload.length(), fileToUpload.lastModified());
     }
 
     public ArtifactoryDeployRequest(RepoPath pathToUpload, InputStream inputStream, long contentLength,
@@ -48,6 +45,8 @@ public class ArtifactoryDeployRequest extends InternalArtifactoryRequest {
         this.inputStream = inputStream;
         this.contentLength = (int) contentLength;
         this.lastModified = lastModified;
+        // when uploading from the ui, trust the server checksums
+        setTrustServerChecksums(true);
     }
 
     @Override

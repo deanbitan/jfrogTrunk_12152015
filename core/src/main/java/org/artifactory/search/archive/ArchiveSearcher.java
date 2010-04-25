@@ -26,15 +26,18 @@ import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.search.SearcherBase;
+import org.artifactory.util.PathUtils;
 import org.jdom.Element;
 import org.slf4j.Logger;
 
 import javax.jcr.RepositoryException;
+import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
@@ -51,7 +54,11 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
 
     @Override
     public SearchResults<ArchiveSearchResult> doSearch(ArchiveSearchControls controls) throws RepositoryException {
-        String escapedExp = Text.escapeIllegalXpathSearchChars(controls.getQuery());
+
+        String query = controls.getQuery();
+        validateQueryLength(query);
+
+        String escapedExp = Text.escapeIllegalXpathSearchChars(query);
 
         /**
          * We cross queries between the property level and the node level so we can utilize the custom analyzer, and get
@@ -78,7 +85,17 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
                 String excerpt =
                         row.getValue("rep:excerpt(" + JcrTypes.PROP_ARTIFACTORY_ARCHIVE_ENTRY + ")").getString();
                 log.debug("Archive search excerpt result: {}", excerpt);
-                List<ArchiveSearchEntry> entriesToInclude = getContentSearchEntries(excerpt);
+                List<ArchiveSearchEntry> entriesToInclude =
+                        getContentSearchEntries(controls.isExcludeInnerClasses(), excerpt);
+
+                /**
+                 * If the list is null, skip the adding of the result since all it's content was excluded as opposed to
+                 * a case of too many results
+                 */
+                if (entriesToInclude == null) {
+                    continue;
+                }
+
                 int entriesSize = entriesToInclude.size();
                 fullResults += (entriesSize == 0) ? 1 : entriesSize;
 
@@ -100,15 +117,13 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
                         //If we need only the files (i.e. when saving), skip entries calculation to speed up things
                         if (shouldCalc && entriesNotEmpty) {
                             for (ArchiveSearchEntry entry : entriesToInclude) {
-                                if (!entry.getEntryPath().equals(fileInfo.getName())) {
-                                    String entryName = entry.getEntryName();
-                                    if (StringUtils.isEmpty(entryName)) {
-                                        entryName = escapedExp;
-                                    }
-                                    ArchiveSearchResult result =
-                                            new ArchiveSearchResult(fileInfo, entryName, entry.getEntryPath());
-                                    resultList.add(result);
+                                String entryName = entry.getEntryName();
+                                if (StringUtils.isEmpty(entryName)) {
+                                    entryName = escapedExp;
                                 }
+                                ArchiveSearchResult result =
+                                        new ArchiveSearchResult(fileInfo, entryName, entry.getEntryPath());
+                                resultList.add(result);
                             }
                         } else {
                             String noPathReason = "";
@@ -133,36 +148,70 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
     /**
      * Produces a list of content search entries based on a given excerpt
      *
-     * @param excerpt Highlighted excerpt
-     * @return ArrayList<ContentSearchEntry> - List of ContentSearchEntry objects
+     * @param excludeInnerClasses True if inner classes should be excluded from results
+     * @param excerpt             Highlighted excerpt
+     * @return List of results if found. Null if all results have been excluded
      */
     @SuppressWarnings({"unchecked"})
-    private List<ArchiveSearchEntry> getContentSearchEntries(String excerpt) {
+    private List<ArchiveSearchEntry> getContentSearchEntries(boolean excludeInnerClasses, String excerpt) {
         List<ArchiveSearchEntry> entriesToInclude = Lists.newArrayList();
 
+        long highlightCount = 0;
         //Divide excerpt by fragments
         Element[] fragments = getFragmentElements(excerpt);
         for (Element fragment : fragments) {
 
             List<Element> highlights = fragment.getChildren(HIGHLIGHT_TAG);
+            highlightCount += highlights.size();
 
             for (Element highlight : highlights) {
-                String entryName = "";
+                String entryName;
                 String completePath = highlight.getText();
 
-                int lastSlash = completePath.lastIndexOf('/');
-                if (lastSlash == -1) {
-                    entryName = completePath;
-                    completePath = "/";
-                } else {
-                    entryName = completePath.substring(lastSlash + 1);
-                }
+                if ((completePath != null) && (!excludeInnerClasses || !completePath.contains("$"))) {
+                    int lastSlash = completePath.lastIndexOf('/');
+                    if (lastSlash == -1) {
+                        entryName = completePath;
+                    } else {
+                        entryName = completePath.substring(lastSlash + 1);
+                    }
 
-                ArchiveSearchEntry searchEntry = new ArchiveSearchEntry(entryName, completePath);
-                entriesToInclude.add(searchEntry);
+                    ArchiveSearchEntry searchEntry = new ArchiveSearchEntry(entryName, completePath);
+                    entriesToInclude.add(searchEntry);
+                }
             }
         }
 
+        /**
+         * If no entries are chosen, but highlights were available, return null instead of list so we can determine if
+         * results were all excluded, or simply couldn't be extracted
+         */
+        if ((entriesToInclude.size() == 0) && (highlightCount > 0)) {
+            return null;
+        }
+
         return entriesToInclude;
+    }
+
+    /**
+     * Validates the length of the given query
+     *
+     * @param query Query to validate
+     * @throws InvalidQueryException If whitespace and wildcard-stripped query is less than 3 characters
+     */
+    private void validateQueryLength(String query) throws InvalidQueryException {
+        String trimmedQuery = PathUtils.trimWhitespace(query);
+
+        if (trimmedQuery.startsWith("*")) {
+            trimmedQuery = trimmedQuery.substring(1);
+        }
+        if (trimmedQuery.endsWith("*")) {
+            trimmedQuery = trimmedQuery.substring(0, trimmedQuery.length() - 1);
+        }
+
+        if (trimmedQuery.length() < ConstantValues.searchArchiveMinQueryLength.getLong()) {
+            throw new InvalidQueryException("Search term must be at least " +
+                    ConstantValues.searchArchiveMinQueryLength.getString() + " characters long.");
+        }
     }
 }

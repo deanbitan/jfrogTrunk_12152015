@@ -19,7 +19,6 @@
 package org.artifactory.interceptor;
 
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
-import org.artifactory.jcr.JcrService;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.ArtifactoryApplicationContext;
 import org.artifactory.spring.ReloadableBean;
@@ -77,11 +76,6 @@ public abstract class Interceptors<T extends Interceptor> implements Iterable<T>
 
     public void setBeanName(String beanName) {
         this.beanName = beanName;
-    }
-
-    @SuppressWarnings({"unchecked"})
-    public Class<? extends ReloadableBean>[] initAfter() {
-        return new Class[]{JcrService.class};
     }
 
     public void reload(CentralConfigDescriptor oldDescriptor) {

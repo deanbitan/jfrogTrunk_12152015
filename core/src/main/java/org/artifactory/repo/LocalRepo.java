@@ -24,12 +24,15 @@ import org.artifactory.api.repo.RepoPath;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.repo.snapshot.SnapshotVersionAdapter;
 
 import java.io.IOException;
 
 public interface LocalRepo<T extends LocalRepoDescriptor> extends RealRepo<T>, StoringRepo<T>, ImportableExportable {
 
     SnapshotVersionBehavior getSnapshotVersionBehavior();
+
+    SnapshotVersionAdapter getSnapshotVersionAdapter();
 
     String getTextFileContent(RepoPath repoPath);
 

@@ -19,6 +19,7 @@
 package org.artifactory.jcr;
 
 import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
+import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
@@ -27,6 +28,7 @@ import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.storage.GarbageCollectorInfo;
 import org.artifactory.io.checksum.Checksum;
+import org.artifactory.jcr.fs.FolderTreeNode;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.repo.jcr.StoringRepo;
@@ -191,6 +193,8 @@ public interface JcrService extends ReloadableBean {
 
     boolean isFile(RepoPath repoPath);
 
+    boolean isFolder(RepoPath repoPath);
+
     void reCreateJcrRepository() throws Exception;
 
     void setStream(Node parent, String nodeName, InputStream value, String mimeType, String userId,
@@ -209,4 +213,15 @@ public interface JcrService extends ReloadableBean {
 
     @Async(delayUntilAfterCommit = true, transactional = true)
     void saveChecksums(JcrFsItem fsItem, String metadataName, Checksum[] checksums);
+
+    /**
+     * Extract in pure JCR the tree of folder (with their name) and pom file names.
+     * This method will recursively populate the whole tree.
+     *
+     * @param folder The original folder epo path to start from
+     * @param status The status holder containing all error and message during tree building
+     * @return the fully populated tree node for the above folder or null on error
+     */
+    @Transactional
+    FolderTreeNode getFolderTreeNode(RepoPath folder, StatusHolder status);
 }

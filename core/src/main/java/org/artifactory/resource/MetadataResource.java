@@ -19,8 +19,8 @@
 package org.artifactory.resource;
 
 import org.artifactory.api.fs.MetadataInfo;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.mime.MimeType;
 
 /**
  * Created by IntelliJ IDEA. User: yoavl
@@ -79,7 +79,7 @@ public class MetadataResource implements RepoResource {
     }
 
     public String getMimeType() {
-        return ContentType.applicationXml.getMimeType();
+        return MimeType.applicationXml;
     }
 
     public long getCacheAge() {

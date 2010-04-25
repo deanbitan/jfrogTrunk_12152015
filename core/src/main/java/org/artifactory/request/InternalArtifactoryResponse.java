@@ -84,9 +84,9 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
     }
 
     @Override
-    public void sendError(int statusCode, String reason, Logger logger) throws IOException {
-        logger.info("Eager download failed with code {}. Reason: {}", statusCode, reason);
-        super.sendError(statusCode, reason, logger);
+    public void sendError(int statusCode, String reason, Logger log) throws IOException {
+        log.info("Internal request failed with code {}. Reason: {}", statusCode, reason);
+        super.sendError(statusCode, reason, log);
     }
 
 }

@@ -846,7 +846,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
             VirtualRepo virtualRepo = repositoryService.virtualRepositoryByKey(repoKey);
             // Go over all resolved cached repos, i.e. if we have virtual repository aggregation,
             // This will give the resolved cached repos.
-            List<LocalCacheRepo> localCacheRepoList = virtualRepo.getResolvedLocalCachedRepos();
+            Set<LocalCacheRepo> localCacheRepoList = virtualRepo.getResolvedLocalCachedRepos();
             for (LocalCacheRepo localCacheRepo : localCacheRepoList) {
                 LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(localCacheRepo.getKey());
                 if (localRepo != null) {
@@ -856,7 +856,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
                 }
             }
             // Go over all resolved local repositories, will bring me the resolved local repos from aggregation.
-            List<LocalRepo> repoList = virtualRepo.getResolvedLocalRepos();
+            Set<LocalRepo> repoList = virtualRepo.getResolvedLocalRepos();
             for (LocalRepo localCacheRepo : repoList) {
                 LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(localCacheRepo.getKey());
                 if (localRepo != null) {

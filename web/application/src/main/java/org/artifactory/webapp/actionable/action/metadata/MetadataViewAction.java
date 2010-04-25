@@ -46,7 +46,7 @@ public class MetadataViewAction extends ViewAction {
         MetadataSearchResult searchResult = getSearchResult(source);
         String metadataName = searchResult.getMetadataName();
         try {
-            showHighlightedSourceModal(e, getContent(source.getRepoPath(), searchResult), metadataName, Syntax.XML);
+            showHighlightedSourceModal(e, getContent(source.getRepoPath(), searchResult), metadataName, Syntax.xml);
         } catch (RepositoryRuntimeException rre) {
             String logs;
             if (ContextHelper.get().getAuthorizationService().isAdmin()) {

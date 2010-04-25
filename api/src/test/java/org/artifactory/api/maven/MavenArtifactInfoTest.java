@@ -19,7 +19,7 @@
 package org.artifactory.api.maven;
 
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -30,7 +30,7 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class MavenArtifactInfoTest extends SystemPropertiesBoundTest {
+public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
 
     public void fromSimplePath() {
         RepoPath path = new RepoPath("repo", "/org/jfrog/artifactory-core/2.0/artifactory-core-2.0.pom");

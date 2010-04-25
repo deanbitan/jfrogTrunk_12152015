@@ -19,24 +19,36 @@
 package org.artifactory.repo.jcr;
 
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.LocalRepoChecksumPolicy;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.repo.snapshot.SnapshotVersionAdapter;
+import org.artifactory.repo.snapshot.SnapshotVersionAdapterBase;
 
 public class JcrLocalRepo extends JcrRepoBase<LocalRepoDescriptor> {
 
     // For local non-cache repositories use the special local repo checksum policy
-    private LocalRepoChecksumPolicy checksumPolicy = new LocalRepoChecksumPolicy();
+    private final LocalRepoChecksumPolicy checksumPolicy = new LocalRepoChecksumPolicy();
+    private final SnapshotVersionAdapter snapshotVersionAdapter;
 
-    public JcrLocalRepo(InternalRepositoryService repositoryService, LocalRepoDescriptor descriptor, JcrLocalRepo oldRepo) {
+    public JcrLocalRepo(InternalRepositoryService repositoryService, LocalRepoDescriptor descriptor,
+            JcrLocalRepo oldRepo) {
         super(repositoryService, oldRepo != null ? oldRepo.getStorageMixin() : null);
         setDescriptor(descriptor);
         checksumPolicy.setPolicyType(descriptor.getChecksumPolicyType());
+        SnapshotVersionBehavior snapshotVersionBehavior = descriptor.getSnapshotVersionBehavior();
+        snapshotVersionAdapter = SnapshotVersionAdapterBase.getByType(snapshotVersionBehavior);
+
     }
 
     public ChecksumPolicy getChecksumPolicy() {
         return checksumPolicy;
+    }
+
+    public SnapshotVersionAdapter getSnapshotVersionAdapter() {
+        return snapshotVersionAdapter;
     }
 
     public void onCreate(JcrFsItem fsItem) {

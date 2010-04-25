@@ -95,8 +95,12 @@ class MasterDetailRowPanel<M extends Serializable, D extends Serializable> exten
     }
 
     private void addDetailRows(MasterDetailTable<M, D> table, M masterObject, boolean expanded) {
-        final List<D> list = table.getDetails(masterObject);
-        if (list == null || !expanded) {
+        List<D> list = null;
+        if (expanded) {
+            // calculate inner rows only if this parent row is expanded
+            list = table.getDetails(masterObject);
+        }
+        if (list == null) {
             add(new WebMarkupContainer("rows").setVisible(false));
             return;
         }

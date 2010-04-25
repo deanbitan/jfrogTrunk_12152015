@@ -36,9 +36,6 @@ import java.util.Properties;
  */
 public class ArtifactorySystemProperties {
 
-    private static final InheritableThreadLocal<ArtifactorySystemProperties> current =
-            new InheritableThreadLocal<ArtifactorySystemProperties>();
-
     /**
      * The combine properties of System, artifactory.system.properties file and artifactory.properties file. All System
      * properties starting with 'artifactory.' will be included.
@@ -73,26 +70,6 @@ public class ArtifactorySystemProperties {
                     put("artifactory.spring.configPath", new SamePropertyMapper("artifactory.spring.configDir")).
                     put("artifactory.lockTimeoutSecs", new SamePropertyMapper("artifactory.locks.timeoutSecs")).
                     build();
-
-    public static boolean isBound() {
-        return current.get() != null;
-    }
-
-    public static ArtifactorySystemProperties get() {
-        ArtifactorySystemProperties props = current.get();
-        if (props == null) {
-            throw new IllegalStateException("Artifactory system properties are not bound to the current thread");
-        }
-        return props;
-    }
-
-    public static void bind(ArtifactorySystemProperties props) {
-        current.set(props);
-    }
-
-    public static void unbind() {
-        current.remove();
-    }
 
     public String getProperty(String key, String defaultValue) {
         return artifactoryProperties.getProperty(key, defaultValue);

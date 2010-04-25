@@ -38,13 +38,9 @@ public class ImportRepoPanel extends BasicImportPanel {
         super(string);
         Form form = getImportForm();
         PropertyModel pathModel = new PropertyModel(this, "importFromPath");
-        final PathAutoCompleteTextField importFromPathTf =
-                new PathAutoCompleteTextField("importFromPath", pathModel);
+        final PathAutoCompleteTextField importFromPathTf = new PathAutoCompleteTextField("importFromPath", pathModel);
         importFromPathTf.setMask(PathMask.FOLDERS);
         importFromPathTf.setRequired(true);
-
-        StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel(this, "verbose"));
-        verboseCheckbox.setRequired(false);
 
         FileBrowserButton browserButton = new FileBrowserButton("browseButton", pathModel) {
             @Override
@@ -57,13 +53,30 @@ public class ImportRepoPanel extends BasicImportPanel {
         form.add(browserButton);
         form.add(importFromPathTf);
         form.add(new HelpBubble("repoSelectHelp", getRepoSelectHelpText()));
+
+        addVerboseCheckbox(form);
+        addExcludeMetadataCheckbox(form);
+        addTrustServerChecksumsCheckbox(form);
+    }
+
+    private void addVerboseCheckbox(Form form) {
+        StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel(this, "verbose"));
+        verboseCheckbox.setRequired(false);
         form.add(verboseCheckbox);
         CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
         form.add(new HelpBubble("verboseHelp",
                 "Hint: You can monitor the log in the <a href=\"" + systemLogsPage + "\">'System Logs'</a> page."));
+    }
 
+    private void addExcludeMetadataCheckbox(Form form) {
         form.add(new StyledCheckbox("excludeMetadata", new PropertyModel(this, "excludeMetadata")));
         form.add(new HelpBubble("excludeMetadataHelp", "Exclude Artifactory-specific metadata from the export."));
+    }
+
+    private void addTrustServerChecksumsCheckbox(Form form) {
+        form.add(new StyledCheckbox("trustServerChecksums", new PropertyModel(this, "trustServerChecksums")));
+        form.add(new HelpBubble("trustServerChecksumsHelp",
+                "Ignore missing checksum and calculate them automatically."));
     }
 
     @Override

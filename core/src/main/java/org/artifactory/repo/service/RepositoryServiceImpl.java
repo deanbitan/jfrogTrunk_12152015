@@ -48,6 +48,7 @@ import org.artifactory.api.fs.FolderInfoImpl;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.jackson.JacksonFactory;
 import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.repo.ArtifactCount;
@@ -56,10 +57,12 @@ import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoAccessException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.JcrQuerySpec;
+import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.deployable.DeployableUnitSearchControls;
 import org.artifactory.api.search.deployable.DeployableUnitSearchResult;
@@ -380,8 +383,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             try {
                 repo.init();
             } catch (Exception e) {
-                log.error("Failed to initialize remote repository '{}'. Repository will be blacked-out!", repo.getKey(),
-                        e);
+                log.error("Failed to initialize remote repository '" + repo.getKey() + "'. " +
+                        "Repository will be blacked-out!", e);
                 ((HttpRepoDescriptor) repo.getDescriptor()).setBlackedOut(true);
             }
             remoteRepositoriesMap.put(repo.getKey(), repo);
@@ -662,7 +665,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 //Import each file seperately to avoid a long running transaction
                 LocalRepo localRepo = localOrCachedRepositoryByKey(repoKey);
                 if (localRepo == null) {
-                    String msg = "The repo key " + repoKey + " is not a local or cached repoitory!";
+                    String msg = "The repo key " + repoKey + " is not a local or cached repository!";
                     IllegalArgumentException ex = new IllegalArgumentException(msg);
                     status.setError(msg, ex, log);
                     return;
@@ -725,10 +728,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     /**
      * {@inheritDoc}
      */
-    public MultiStatusHolder exportSearchResults(List<FileInfo> searchResults, File baseDir, boolean includeMetadata,
+    public MultiStatusHolder exportSearchResults(SavedSearchResults searchResults, File baseDir,
+            boolean includeMetadata,
             boolean m2Compatible, boolean archive) {
         MultiStatusHolder statusHolder = new MultiStatusHolder();
-        for (FileInfo searchResult : searchResults) {
+        for (FileInfo searchResult : searchResults.getResults()) {
             RepoPath repoPath = searchResult.getRepoPath();
             ExportSettings settings = new ExportSettings(new File(baseDir, repoPath.getRepoKey()));
             settings.setM2Compatible(m2Compatible);
@@ -867,6 +871,22 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
 
         fsItem.setMetadata(metadataClass, metadata);
+    }
+
+    public void setXmlMetadataLater(RepoPath repoPath, String metadataName, String metadataContent) {
+        if (!authService.canAnnotate(repoPath)) {
+            AccessLogger.annotateDenied(repoPath);
+            return;
+        }
+
+        LocalRepo repository = getLocalRepository(repoPath);
+        JcrFsItem fsItem = repository.getJcrFsItem(repoPath);
+        if (fsItem == null) {
+            return;
+        }
+
+        fsItem.setXmlMetadataLater(metadataName, metadataContent);
+        getTransactionalMe().updateDirtyState(repoPath);
     }
 
     public void setXmlMetadata(RepoPath repoPath, String metadataName, String metadataContent) {
@@ -1207,7 +1227,10 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
     }
 
-    public void updateStats(RepoPath repoPath) {
+    /**
+     * {@inheritDoc}
+     */
+    public void updateDirtyState(RepoPath repoPath) {
         LocalRepo repo = localOrCachedRepositoryByKey(repoPath.getRepoKey());
         if (repo == null) {
             log.debug("Not updating download counters - {} is not a local or cached repo resource (no store in use?)",
@@ -1215,10 +1238,10 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             return;
         }
 
-        // If already write locked nothing to do the stats will be updated
+        // If already write locked nothing to do the stats, metadata in queue will be updated
         if (!repo.isWriteLocked(repoPath)) {
-            // Just write locking the file will save the stats
-            repo.getLockedJcrFile(repoPath, false);
+            // Just write locking the file will save any dirty state (stats and metadata)
+            repo.getLockedJcrFsItem(repoPath);
         }
     }
 
@@ -1254,18 +1277,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             log.debug("Couldn't find local non-cache repository for path " + baseFolderPath);
             return;
         }
-        JcrFolder baseFolder = localRepo.getJcrFolder(baseFolderPath);
-        if (baseFolder == null) {
-            log.debug("No folder found in " + baseFolderPath);
-            return;
-        }
 
         MavenMetadataCalculator metadataCalculator = new MavenMetadataCalculator();
-        metadataCalculator.calculate(baseFolder, new StatusHolder());
-        removeMarkForMavenMetadataRecalculation(baseFolderPath);
+        boolean hasMavenPlugins = metadataCalculator.calculate(baseFolderPath, new StatusHolder());
+        getTransactionalMe().removeMarkForMavenMetadataRecalculation(baseFolderPath);
 
-        // always calculate maven plugins metadata asynchronously
-        getTransactionalMe().calculateMavenPluginsMetadataAsync(localRepo.getKey());
+        if (hasMavenPlugins) {
+            // Calculate maven plugins metadata asynchronously if the poms contains some maven plugins
+            getTransactionalMe().calculateMavenPluginsMetadataAsync(localRepo.getKey());
+        }
     }
 
     public void calculateMavenPluginsMetadataAsync(String repoKey) {
@@ -1334,29 +1354,51 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return repo.assertValidPath(new RepoPath(repo.getKey(), path));
     }
 
-    public StatusHolder assertValidDeployPath(LocalRepo repo, String path) {
+    public void assertValidDeployPath(LocalRepo repo, String path) throws RepoRejectionException {
         StatusHolder status = assertValidPath(repo, path);
-        if (status.isError()) {
-            return status;
-        }
 
-        //Assert deploy privileges
-        RepoPath repoPath = new RepoPath(repo.getKey(), path);
-        boolean canDeploy = authService.canDeploy(repoPath);
-        if (!canDeploy) {
-            String msg = "User " + authService.currentUsername() + " is not permitted to deploy '" +
-                    path + "' into '" + repoPath + "'.";
-            status.setError(msg, HttpStatus.SC_FORBIDDEN, log);
-            AccessLogger.deployDenied(repoPath);
-        }
         if (!status.isError()) {
-            assertDelete(repo, path, true, status);
+            RepoPath repoPath = new RepoPath(repo.getKey(), path);
+            // if it is metadata, assert annotate privileges. Maven metadata is treated as regular file
+            // (needs deploy permissions).
+            if (NamingUtils.isMetadata(path) && !MavenNaming.isMavenMetadata(path)) {
+                if (!authService.canAnnotate(repoPath)) {
+                    String msg = "User " + authService.currentUsername() + " is not permitted to annotate '" +
+                            path + "' into '" + repoPath + "'.";
+                    status.setError(msg, HttpStatus.SC_FORBIDDEN, log);
+                    AccessLogger.annotateDenied(repoPath);
+                }
+            } else {
+                //Assert deploy privileges
+                boolean canDeploy = authService.canDeploy(repoPath);
+                if (!canDeploy) {
+                    String msg = "User " + authService.currentUsername() + " is not permitted to deploy '" +
+                            path + "' into '" + repoPath + "'.";
+                    status.setError(msg, HttpStatus.SC_FORBIDDEN, log);
+                    AccessLogger.deployDenied(repoPath);
+                }
+            }
+            if (!status.isError()) {
+                assertDelete(repo, path, true, status);
+            }
         }
-        return status;
+        if (status.isError()) {
+            if (status.isError()) {
+                if (status.getException() != null) {
+                    Throwable throwable = status.getException();
+                    if (throwable instanceof RepoRejectionException) {
+                        throw (RepoRejectionException) throwable;
+                    }
+                    throw new RepoRejectionException(throwable);
+                }
+                throw new RepoRejectionException(status.getStatusMsg());
+            }
+        }
     }
 
     public <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(
-            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException {
+            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException,
+            RepoRejectionException {
         LocalCacheRepo localCache = remoteRepo.getLocalCacheRepo();
         String path = res.getRepoPath().getPath();
         RepoResource cachedResource = localCache.getInfo(new NullRequestContext(path));
@@ -1371,8 +1413,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return resource;
     }
 
-    public ResourceStreamHandle unexpireAndRetrieveIfExists(LocalRepo localCacheRepo, String path)
-            throws IOException, RepositoryException {
+    public ResourceStreamHandle unexpireAndRetrieveIfExists(LocalRepo localCacheRepo, String path) throws IOException,
+            RepositoryException, RepoRejectionException {
         RepoResource resource = internalUnexpireIfExists(localCacheRepo, path);
         if (resource != null && resource.isFound()) {
             return localCacheRepo.getResourceStreamHandle(resource);
@@ -1380,8 +1422,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return null;
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res)
-            throws IOException, RepoAccessException, RepositoryException {
+    public ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res) throws IOException,
+            RepoRejectionException, RepositoryException {
         if (res instanceof StringResource) {
             // resource already contains the content - just extract it and return a string resource handle
             String content = ((StringResource) res).getContent();
@@ -1427,7 +1469,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         RepoDescriptor descriptor = repoDescriptor;
         if (repoDescriptor instanceof LocalCacheRepoDescriptor) {
             //VirtualRepoResolver does not directly support local cache repos, so if the items descriptor is a cache,
-            //We extract the caches remote repo, and use it insted
+            //We extract the caches remote repo, and use it instead
             descriptor = ((LocalCacheRepoDescriptor) repoDescriptor).getRemoteRepo();
         }
 
@@ -1698,10 +1740,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         JcrFsItem fsItem = repo.getLockedJcrFsItem(fsItemRepoPath);
         if (fsItem != null) {
             log.debug("{}: falling back to using cache entry for resource info at '{}'.", this, path);
-            //TODO: Change this mechanism since the last updated is used for artifact popularity measurement
             //Reset the resource age so it is kept being cached
-            fsItem.setLastUpdated(System.currentTimeMillis());
-            log.debug("Unexpired '{}' from local cache '{}'.", path, repo.getKey());
+            fsItem.unexpire();
             return repo.getInfo(new NullRequestContext(path));
         }
         return null;

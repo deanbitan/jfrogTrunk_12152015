@@ -20,6 +20,7 @@ package org.artifactory.engine;
 
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.repo.Request;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.UploadService;
@@ -43,5 +44,6 @@ public interface InternalUploadService extends UploadService {
      */
     @Lock(transactional = true)
     @Request(aggregateEventsByTimeWindow = true)
-    void doProcess(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo) throws IOException;
+    void doProcess(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo) throws IOException,
+            RepoRejectionException;
 }

@@ -58,7 +58,7 @@ public class BuildTabActionableItem extends ActionableItemBase {
         this.basicBuildInfo = basicBuildInfo;
         this.moduleId = moduleId;
 
-        getActions().add(new GoToBuildAction(basicBuildInfo));
+        getActions().add(new GoToBuildAction(basicBuildInfo, moduleId));
         getActions().add(new ViewBuildJsonAction(textContentViewer, basicBuildInfo));
 
         try {

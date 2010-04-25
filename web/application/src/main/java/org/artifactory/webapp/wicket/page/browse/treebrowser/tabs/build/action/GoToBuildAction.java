@@ -35,15 +35,18 @@ public class GoToBuildAction extends ItemAction {
 
     private static String ACTION_NAME = "Go To Build";
     private BasicBuildInfo basicBuildInfo;
+    private String moduleId;
 
     /**
      * Main constructor
      *
      * @param basicBuildInfo Basic build info to act upon
+     * @param moduleId       ID of module to point to
      */
-    public GoToBuildAction(BasicBuildInfo basicBuildInfo) {
+    public GoToBuildAction(BasicBuildInfo basicBuildInfo, String moduleId) {
         super(ACTION_NAME);
         this.basicBuildInfo = basicBuildInfo;
+        this.moduleId = moduleId;
     }
 
     @Override
@@ -52,6 +55,7 @@ public class GoToBuildAction extends ItemAction {
         pageParameters.put(BuildBrowserConstants.BUILD_NAME, basicBuildInfo.getName());
         pageParameters.put(BuildBrowserConstants.BUILD_NUMBER, Long.toString(basicBuildInfo.getNumber()));
         pageParameters.put(BuildBrowserConstants.BUILD_STARTED, basicBuildInfo.getStarted());
+        pageParameters.put(BuildBrowserConstants.MODULE_ID, moduleId);
         RequestCycle.get().setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }
 }

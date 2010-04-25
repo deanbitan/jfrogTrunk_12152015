@@ -36,7 +36,6 @@ import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
@@ -55,9 +54,6 @@ public class GeneralInfoPanel extends Panel {
 
     @SpringBean
     private AddonsManager addonsManager;
-
-    @SpringBean
-    private AuthorizationService authorizationService;
 
     @SpringBean
     private CentralConfigService centralConfigService;
@@ -139,7 +135,11 @@ public class GeneralInfoPanel extends Panel {
             String remoteRepoUrl = remoteRepo.getUrl();
             if ((remoteRepoUrl != null) && (!StringUtils.endsWith(remoteRepoUrl, "/"))) {
                 remoteRepoUrl += "/";
-                remoteRepoUrl += repoItem.getRepoPath().getPath();
+                if (repoItem instanceof FolderActionableItem) {
+                    remoteRepoUrl += ((FolderActionableItem) repoItem).getCanonicalPath().getPath();
+                } else {
+                    remoteRepoUrl += repoItem.getRepoPath().getPath();
+                }
             }
             ExternalLink externalLink = new ExternalLink("url", remoteRepoUrl, remoteRepoUrl);
             urlContainer.replaceWith(externalLink);
@@ -192,7 +192,13 @@ public class GeneralInfoPanel extends Panel {
 
         infoBorder.add(watchAddon.getWatchingSinceLabel("watchingSince", selectedPath));
         infoBorder.add(watchAddon.getDirectlyWatchedPathPanel("watchedPath", selectedPath));
-        LabeledValue repoPath = new LabeledValue("repoPath", "Repository Path: ", repoItem.getRepoPath() + "");
+        RepoPath path;
+        if (repoItem instanceof FolderActionableItem) {
+            path = ((FolderActionableItem) repoItem).getCanonicalPath();
+        } else {
+            path = repoItem.getRepoPath();
+        }
+        LabeledValue repoPath = new LabeledValue("repoPath", "Repository Path: ", path + "");
         infoBorder.add(repoPath);
         // disable/enable and set info according to the node type
         if (itemInfo.isFolder()) {

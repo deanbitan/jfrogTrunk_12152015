@@ -31,6 +31,7 @@ import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.ivy.IvyNaming;
+import org.artifactory.mime.MimeType;
 import org.artifactory.webapp.actionable.FileActionable;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.CopyAction;
@@ -201,7 +202,8 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     }
 
     private boolean isJnlpFile() {
-        return NamingUtils.getContentType((getFileInfo().getName())).isJnlp();
+        MimeType mimeType = NamingUtils.getContentType((getFileInfo().getName()));
+        return "application/x-java-jnlp-file".equalsIgnoreCase(mimeType.getType());
     }
 
 

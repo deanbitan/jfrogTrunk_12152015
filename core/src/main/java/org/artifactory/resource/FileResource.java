@@ -20,9 +20,9 @@ package org.artifactory.resource;
 
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FileInfoImpl;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.mime.MimeType;
 
 /**
  * Created by IntelliJ IDEA. User: yoavl
@@ -87,8 +87,8 @@ public class FileResource implements RepoResource {
     }
 
     public String getMimeType() {
-        ContentType contentType = NamingUtils.getContentType(info.getRelPath());
-        return contentType.getMimeType();
+        MimeType contentType = NamingUtils.getContentType(info.getRelPath());
+        return contentType.getType();
     }
 
     public long getCacheAge() {

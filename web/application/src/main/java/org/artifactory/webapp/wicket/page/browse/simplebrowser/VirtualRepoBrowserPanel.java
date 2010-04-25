@@ -35,7 +35,6 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
@@ -43,6 +42,7 @@ import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.mime.MimeType;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.springframework.util.StringUtils;
@@ -188,12 +188,12 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
                 this.path = UP.equals(path) ? path : path + "/";
             } else {
                 this.path = path;
-                ContentType ct = NamingUtils.getContentType(name);
-                if (ct.isJarVariant()) {
+                MimeType ct = NamingUtils.getContentType(name);
+                if (ct.isArchive()) {
                     cssClass = "jar";
                 } else if (name.equals(UP)) {
                     cssClass = "parent";
-                } else if (ct.isPom()) {
+                } else if (NamingUtils.isPom(name)) {
                     cssClass = "pom";
                 } else if (ct.isXml()) {
                     cssClass = "xml";

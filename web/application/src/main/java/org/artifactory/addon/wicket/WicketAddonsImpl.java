@@ -47,7 +47,11 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
-import org.artifactory.addon.wicket.disabledaddon.*;
+import org.artifactory.addon.wicket.disabledaddon.AddonNeededBehavior;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonHelpBubble;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonMenuNode;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
@@ -129,6 +133,7 @@ import org.artifactory.webapp.wicket.util.validation.ServerIdValidator;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
+import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Module;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -288,7 +293,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public SaveSearchResultsPanel getSaveSearchResultsPanel(String wicketId, IModel model,
-                                                            LimitlessCapableSearcher limitlessCapableSearcher) {
+            LimitlessCapableSearcher limitlessCapableSearcher) {
         SaveSearchResultsPanel panel = new SaveSearchResultsPanel(wicketId, model);
         panel.setEnabled(false);
         return panel;
@@ -296,6 +301,10 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     public Panel getBuildSearchResultsPanel(Addon requestingAddon, Build build) {
         return new BuildSearchResultsPanel(requestingAddon, build);
+    }
+
+    public FileInfo getBuildFileBeanInfo(String buildName, long buildNumber, BuildFileBean bean) {
+        return null;
     }
 
     public String getSearchLimitDisclaimer() {
@@ -323,7 +332,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public WebMarkupContainer getPropertySetsBorder(String borderId, String dragDropId, final RealRepoDescriptor entity,
-                                                    List<PropertySet> propertySets) {
+            List<PropertySet> propertySets) {
         TitledBorder propertySetsBorder = new DisabledTitledBorder(borderId);
         propertySetsBorder.add(new DisabledCollapsibleBehavior());
         MarkupContainer dragDropContainer = new WebMarkupContainer(dragDropId);
@@ -404,7 +413,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public CreateUpdatePanel<LdapGroupSetting> getLdapGroupPanel(CreateUpdateAction createUpdateAction,
-                                                                 LdapGroupSetting ldapGroupSetting, LdapGroupListPanel ldapGroupListPanel) {
+            LdapGroupSetting ldapGroupSetting, LdapGroupListPanel ldapGroupListPanel) {
         return null;
     }
 
@@ -421,7 +430,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public Set refreshLdapGroupList(String userName, LdapGroupSetting ldapGroupSetting,
-                                    MultiStatusHolder statusHolder) {
+            MultiStatusHolder statusHolder) {
         return Sets.newHashSet();
     }
 
@@ -440,13 +449,13 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(String buildName, long buildNumber,
-                                                                               List<Artifact> artifacts) {
+            List<Artifact> artifacts) {
         return Lists.newArrayList();
     }
 
     public List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(String buildName,
-                                                                                       long buildNumber,
-                                                                                       List<ModuleDependencyActionableItem> dependencies) {
+            long buildNumber,
+            List<ModuleDependencyActionableItem> dependencies) {
         return Lists.newArrayList();
     }
 

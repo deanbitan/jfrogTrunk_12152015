@@ -18,7 +18,7 @@
 
 package org.artifactory.version.converter.v100;
 
-import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
@@ -63,7 +63,7 @@ public class RepositoriesKeysConverter implements XmlConverter {
             Element localRepo = (Element) repo;
             Element keyElement = localRepo.getChild("key", ns);
             String key = keyElement.getText();
-            Map<String, String> keys = ArtifactorySystemProperties.get().getSubstituteRepoKeys();
+            Map<String, String> keys = ArtifactoryHome.get().getArtifactoryProperties().getSubstituteRepoKeys();
             if (keys.containsKey(key)) {
                 String newKey = keys.get(key);
                 log.debug("Changing repository key from {} to {}", key, newKey);

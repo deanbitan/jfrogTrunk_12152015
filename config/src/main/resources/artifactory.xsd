@@ -473,7 +473,7 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
-                    <xs:element name="missedRetrievalCachePeriodSecs" type="xs:long" default="43200" minOccurs="0">
+                    <xs:element name="missedRetrievalCachePeriodSecs" type="xs:long" default="7200" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
                                 The number of seconds to cache artifact retrieval misses (artifact

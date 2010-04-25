@@ -26,7 +26,7 @@ import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.repo.jcr.JcrLocalRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.easymock.EasyMock;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  *
  * @author Noam Tenne
  */
-public class JcrRepoTest extends SystemPropertiesBoundTest {
+public class JcrRepoTest extends ArtifactoryHomeBoundTest {
     @Test
     public void testNoFilePermission() {
         AuthorizationService authService = EasyMock.createMock(AuthorizationService.class);

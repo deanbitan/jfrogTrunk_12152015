@@ -26,6 +26,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.config.CentralConfigService;
@@ -59,6 +60,9 @@ import java.util.List;
 public abstract class BaseBuildsTabPanel extends Panel {
 
     private static final Logger log = LoggerFactory.getLogger(BaseBuildsTabPanel.class);
+
+    @SpringBean
+    protected AddonsManager addonsManager;
 
     @SpringBean
     private CentralConfigService centralConfigService;
@@ -107,11 +111,14 @@ public abstract class BaseBuildsTabPanel extends Panel {
         List<IColumn> buildColumns = Lists.newArrayList();
         buildColumns.add(new ActionsColumn(""));
         buildColumns.add(new PropertyColumn(new Model("Build Name"), "basicBuildInfo.name", "basicBuildInfo.name"));
-        buildColumns.add(new PropertyColumn(new Model("Build Number"), "basicBuildInfo.number", "basicBuildInfo.number"));
-        buildColumns.add(new FormattedDateColumn(new Model("Build Started"), "basicBuildInfo.startedDate", "basicBuildInfo.started", centralConfigService, Build.STARTED_FORMAT));
+        buildColumns.add(
+                new PropertyColumn(new Model("Build Number"), "basicBuildInfo.number", "basicBuildInfo.number"));
+        buildColumns.add(new FormattedDateColumn(new Model("Build Started"), "basicBuildInfo.startedDate",
+                "basicBuildInfo.started", centralConfigService, Build.STARTED_FORMAT));
         buildColumns.add(new PropertyColumn(new Model("Module ID"), "moduleId"));
 
-        artifactsBorder.add(new SortableTable("artifactBuilds", buildColumns, new ArtifactsDataProvider(getArtifactBuilds()), 10));
+        artifactsBorder.add(
+                new SortableTable("artifactBuilds", buildColumns, new ArtifactsDataProvider(getArtifactBuilds()), 10));
 
         // add dependencies border
         FieldSetBorder dependenciesBorder = new FieldSetBorder("dependencyBorder");
@@ -215,5 +222,4 @@ public abstract class BaseBuildsTabPanel extends Panel {
             return new Model((BuildTabActionableItem) object);
         }
     }
-
 }

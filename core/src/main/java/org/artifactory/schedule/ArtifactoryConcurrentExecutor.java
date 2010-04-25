@@ -19,9 +19,12 @@
 package org.artifactory.schedule;
 
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
+import org.slf4j.Logger;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,6 +41,8 @@ import java.util.concurrent.TimeUnit;
  * @author Fred Simon
  */
 class ArtifactoryConcurrentExecutor implements Executor {
+    private static final Logger log = LoggerFactory.getLogger(ArtifactoryConcurrentExecutor.class);
+
     private final InternalArtifactoryContext artifactoryContext;
     private final ArtifactorySystemProperties artifactorySystemProperties;
     private final ExecutorService executor;
@@ -79,14 +84,18 @@ class ArtifactoryConcurrentExecutor implements Executor {
 
         public void run() {
             try {
-                ArtifactorySystemProperties.bind(artifactorySystemProperties);
                 ArtifactoryContextThreadBinder.bind(artifactoryContext);
+                ArtifactoryHome.bind(artifactoryContext.getArtifactoryHome());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 delegate.run();
             } finally {
-                SecurityContextHolder.clearContext();
+                // in case an async operation is fired while shutdown (i.e gc) the context holder strategy is
+                // cleared and NPE can happen after the async finished (or is finishing). see RTFACT-2812
+                if (artifactoryContext.isReady()) {
+                    SecurityContextHolder.clearContext();
+                }
                 ArtifactoryContextThreadBinder.unbind();
-                ArtifactorySystemProperties.unbind();
+                ArtifactoryHome.unbind();
             }
         }
     }

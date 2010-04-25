@@ -44,11 +44,11 @@ if [ -z "$hasMaxPermSize" ]; then
     JAVA_OPTIONS="$JAVA_OPTIONS -XX:MaxPermSize=128m"
 fi
 hasMinNewSize=`echo "$JAVA_OPTIONS" | grep "\\-XX:NewSize"`
-if [ -z "hasMinNewSize" ]; then
+if [ -z "$hasMinNewSize" ]; then
     JAVA_OPTIONS="$JAVA_OPTIONS -XX:NewSize=180m"
 fi
 hasMaxNewSize=`echo "$JAVA_OPTIONS" | grep "\\-XX:MaxNewSize"`
-if [ -z "hasMaxNewSize" ]; then
+if [ -z "$hasMaxNewSize" ]; then
     JAVA_OPTIONS="$JAVA_OPTIONS -XX:MaxNewSize=180m"
 fi
 

@@ -51,7 +51,7 @@ public class RepoXmlConverterTest extends XmlConverterTest {
         RepoXmlConverter xmlConverter = new RepoXmlConverter();
         xmlConverter.convert(doc, true);
 
-        testConvertedDoc(doc);
+        assertConvertedDoc(doc);
     }
 
     /**
@@ -64,7 +64,7 @@ public class RepoXmlConverterTest extends XmlConverterTest {
         RepoXmlConverter xmlConverter = new RepoXmlConverter();
         xmlConverter.convert(doc, true);
 
-        testConvertedDoc(doc);
+        assertConvertedDoc(doc);
     }
 
     /**
@@ -72,7 +72,7 @@ public class RepoXmlConverterTest extends XmlConverterTest {
      *
      * @param doc Doc to test
      */
-    public void testConvertedDoc(Document doc) {
+    public void assertConvertedDoc(Document doc) {
         DocType docType = doc.getDocType();
 
         assertNotNull(docType, "repo.xml 'DocType' element cannot be null.");

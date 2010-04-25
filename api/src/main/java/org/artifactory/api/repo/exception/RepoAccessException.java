@@ -20,22 +20,16 @@ package org.artifactory.api.repo.exception;
 
 import org.artifactory.api.repo.RepoPath;
 
-public class RepoAccessException extends Exception {
-    private final String username;
+public class RepoAccessException extends RepoRejectionException {
+
     private final RepoPath repoPath;
+    private final String username;
     private final String action;
 
     public RepoAccessException(String message, RepoPath repoPath, String action, String username) {
         super(message);
-        this.username = username;
         this.repoPath = repoPath;
-        this.action = action;
-    }
-
-    public RepoAccessException(String message, RepoPath repoPath, String action, String username, Throwable cause) {
-        super(message, cause);
         this.username = username;
-        this.repoPath = repoPath;
         this.action = action;
     }
 

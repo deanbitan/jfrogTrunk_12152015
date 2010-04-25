@@ -24,16 +24,13 @@ import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.repo.RepoPath;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
-import org.artifactory.jcr.fs.JcrFile;
-import org.artifactory.jcr.fs.JcrFolder;
-import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.jcr.fs.FolderTreeNode;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.jcr.StoringRepo;
 import org.slf4j.Logger;
 
-import javax.jcr.RepositoryException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -52,66 +49,54 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
      *
      * @param folder Base folder to start calculating from.
      * @param status Status holder.
+     * @return true if some pom are maven plugin type, false if no maven plugin pom exists under the folder
      */
-    public void calculate(JcrFolder folder, StatusHolder status) {
-        StoringRepo storingRepo = folder.getRepo();
-        if (!storingRepo.isLocal() || storingRepo.isCache()) {
-            throw new IllegalArgumentException(
-                    "Maven metadata calculation is allowed only on local non-cache repositories");
-        }
-
+    public boolean calculate(RepoPath folder, StatusHolder status) {
         log.debug("Calculating maven metadata recursively on '{}'", folder);
-        processFolder(folder, status);
-        log.debug("Finished maven metadata calculation on '{}'", folder);
+        FolderTreeNode folders = getJcrService().getFolderTreeNode(folder, status);
+        if (folders != null) {
+            calculateAndSet(folder, folders, status);
+            log.debug("Finished maven metadata calculation on '{}'", folder);
+            return folders.hasMavenPlugins;
+        }
+        return false;
     }
 
-    /**
-     * Scan folders recursively, postorder
-     */
-    private void processFolder(JcrFolder folder, StatusHolder status) {
-        List<JcrFsItem> items = folder.getItems();
-        for (JcrFsItem item : items) {
-            if (item.isDirectory()) {
-                processFolder((JcrFolder) item, status);
-            }
-        }
-
-        boolean containsMetadataInfo = false;
-        if (MavenNaming.isSnapshot(folder.getPath())) {
+    private void calculateAndSet(RepoPath repoPath, FolderTreeNode folder, StatusHolder status) {
+        String nodePath = repoPath.getPath();
+        boolean containsMetadataInfo;
+        if (MavenNaming.isSnapshot(nodePath)) {
             // if this folder contains snapshots create snapshots maven.metadata
-            log.trace("Detected snapshots container: {}", folder);
-            createSnapshotsMetadata(folder, status);
-            containsMetadataInfo = true;
+            log.trace("Detected snapshots container: {}", nodePath);
+            containsMetadataInfo = createSnapshotsMetadata(repoPath, folder, status);
         } else {
             // if this folder contains "version folders" create versions maven metadata
-            List<JcrFolder> subFoldersContainingPoms = getSubFoldersContainingPoms(folder);
+            List<FolderTreeNode> subFoldersContainingPoms = getSubFoldersContainingPoms(folder);
             if (!subFoldersContainingPoms.isEmpty()) {
                 log.trace("Detected versions container: {}", folder);
-                createVersionsMetadata(folder, subFoldersContainingPoms);
+                createVersionsMetadata(repoPath, subFoldersContainingPoms, status);
                 containsMetadataInfo = true;
+            } else {
+                containsMetadataInfo = false;
             }
         }
 
         if (!containsMetadataInfo) {
-            try {
-                removeMetadataIfExist(folder);
-            } catch (RepositoryException e) {
-                status.setError("Error while removing metadata of folder " + folder.getAbsolutePath() + ".", e, log);
-            }
+            removeMetadataIfExist(repoPath, status);
+        }
+
+        // Recursive call to calculate and set
+        for (FolderTreeNode childFolder : folder.folders) {
+            calculateAndSet(new RepoPath(repoPath, childFolder.name), childFolder, status);
         }
     }
 
-    private void createSnapshotsMetadata(JcrFolder folder, StatusHolder status) {
-        List<JcrFile> poms = getPomItems(folder);
-        if (poms.isEmpty()) {
-            try {
-                removeMetadataIfExist(folder);
-            } catch (RepositoryException e) {
-                status.setError("Error while removing metadata of folder " + folder.getAbsolutePath() + ".", e, log);
-            }
-            return;
+    private boolean createSnapshotsMetadata(RepoPath repoPath, FolderTreeNode folder, StatusHolder status) {
+        if (folder.poms.length == 0) {
+            return false;
         }
-        MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(poms.get(0).getRepoPath());
+        RepoPath firstPom = new RepoPath(repoPath, folder.poms[0]);
+        MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(firstPom);
         Metadata metadata = new Metadata();
         metadata.setGroupId(artifactInfo.getGroupId());
         metadata.setArtifactId(artifactInfo.getArtifactId());
@@ -122,26 +107,32 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         Snapshot snapshot = new Snapshot();
         versioning.setSnapshot(snapshot);
 
-        SnapshotVersionBehavior snapshotBehavior = ((LocalRepo) folder.getRepo()).getSnapshotVersionBehavior();
-        JcrFile latestUniquePom = getLatestUniqueSnapshotPom(poms);
+        LocalRepoDescriptor localRepoDescriptor =
+                getRepositoryService().localOrCachedRepoDescriptorByKey(repoPath.getRepoKey());
+        SnapshotVersionBehavior snapshotBehavior = localRepoDescriptor.getSnapshotVersionBehavior();
+        String latestUniquePom = getLatestUniqueSnapshotPom(folder.poms);
         if (snapshotBehavior.equals(SnapshotVersionBehavior.NONUNIQUE) ||
                 (snapshotBehavior.equals(SnapshotVersionBehavior.DEPLOYER) && latestUniquePom == null)) {
             snapshot.setBuildNumber(1);
         } else if (snapshotBehavior.equals(SnapshotVersionBehavior.UNIQUE)) {
             // take the latest unique snapshot file file
             if (latestUniquePom != null) {
-                String pomName = latestUniquePom.getName();
-                snapshot.setBuildNumber(MavenNaming.getUniqueSnapshotVersionBuildNumber(pomName));
-                snapshot.setTimestamp(MavenNaming.getUniqueSnapshotVersionTimestamp(pomName));
+                snapshot.setBuildNumber(MavenNaming.getUniqueSnapshotVersionBuildNumber(latestUniquePom));
+                snapshot.setTimestamp(MavenNaming.getUniqueSnapshotVersionTimestamp(latestUniquePom));
             }
         }
-        saveMetadata(folder, metadata);
+        saveMetadata(repoPath, metadata, status);
+        return true;
     }
 
-    private void createVersionsMetadata(JcrFolder folder, List<JcrFolder> subFoldersContainingPoms) {
+    private void createVersionsMetadata(RepoPath repoPath,
+            List<FolderTreeNode> subFoldersContainingPoms, StatusHolder status) {
         // get artifact info from the first pom
-        JcrFile samplePom = getPomItems(subFoldersContainingPoms.get(0)).get(0);
-        MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(samplePom.getRepoPath());
+        FolderTreeNode firstSubFolder = subFoldersContainingPoms.get(0);
+        RepoPath firstSubRepoPath = new RepoPath(repoPath, firstSubFolder.name);
+        String samplePom = firstSubFolder.poms[0];
+        RepoPath samplePomRepoPath = new RepoPath(firstSubRepoPath, samplePom);
+        MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(samplePomRepoPath);
         Metadata metadata = new Metadata();
         metadata.setGroupId(artifactInfo.getGroupId());
         metadata.setArtifactId(artifactInfo.getArtifactId());
@@ -151,8 +142,8 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         versioning.setLastUpdatedTimestamp(new Date());
 
         // add the different versions and set the release to be the latest release version (if exists) 
-        for (JcrFolder pomFilesContainer : subFoldersContainingPoms) {
-            String version = pomFilesContainer.getName();
+        for (FolderTreeNode pomFilesContainer : subFoldersContainingPoms) {
+            String version = pomFilesContainer.name;
             versioning.addVersion(version);
             if (!MavenNaming.isSnapshot(version)) {
                 versioning.setRelease(version);
@@ -160,48 +151,38 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         }
 
         // the latest is the last folder
-        versioning.setLatest(subFoldersContainingPoms.get(subFoldersContainingPoms.size() - 1).getName());
+        versioning.setLatest(subFoldersContainingPoms.get(subFoldersContainingPoms.size() - 1).name);
 
-        saveMetadata(folder, metadata);
+        saveMetadata(repoPath, metadata, status);
     }
 
-    private JcrFile getLatestUniqueSnapshotPom(List<JcrFile> poms) {
-        for (int i = poms.size() - 1; i >= 0; i--) {
-            JcrFile pom = poms.get(i);
-            String pomName = pom.getName();
+    private String getLatestUniqueSnapshotPom(String[] poms) {
+        for (int i = poms.length - 1; i >= 0; i--) {
+            String pomName = poms[i];
             if (MavenNaming.isUniqueSnapshotFileName(pomName)) {
-                return pom;
+                return pomName;
             }
         }
         return null;
     }
 
-    private List<JcrFile> getPomItems(JcrFolder folder) {
-        ArrayList<JcrFile> poms = new ArrayList<JcrFile>();
-        for (JcrFsItem jcrFsItem : folder.getItems()) {
-            if (jcrFsItem.isFile() && MavenNaming.isPom(jcrFsItem.getPath())) {
-                poms.add((JcrFile) jcrFsItem);
-            }
-        }
-        return poms;
-    }
-
-    private List<JcrFolder> getSubFoldersContainingPoms(JcrFolder parent) {
-        ArrayList<JcrFolder> result = new ArrayList<JcrFolder>();
-        for (JcrFsItem item : parent.getItems()) {
-            if (item.isDirectory()) {
-                JcrFolder folder = (JcrFolder) item;
-                if (!getPomItems(folder).isEmpty()) {
-                    result.add(folder);
-                }
+    private List<FolderTreeNode> getSubFoldersContainingPoms(FolderTreeNode parent) {
+        List<FolderTreeNode> result = new ArrayList<FolderTreeNode>();
+        for (FolderTreeNode item : parent.folders) {
+            if (item.poms.length > 0) {
+                result.add(item);
             }
         }
         return result;
     }
 
-    protected void removeMetadataIfExist(JcrFolder folder) throws RepositoryException {
-        if (folder.hasMetadata(MavenNaming.MAVEN_METADATA_NAME)) {
-            folder.removeMetadata(MavenNaming.MAVEN_METADATA_NAME);
+    private void removeMetadataIfExist(RepoPath repoPath, StatusHolder status) {
+        try {
+            // Write lock auto upgrade supported LockingHelper.releaseReadLock(repoPath);
+            getRepositoryService().removeMetadata(repoPath, MavenNaming.MAVEN_METADATA_NAME);
+        } catch (Exception e) {
+            status.setError("Error while removing metadata of folder " + repoPath + ".", e, log);
         }
     }
+
 }

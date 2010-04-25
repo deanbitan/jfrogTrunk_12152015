@@ -64,9 +64,9 @@ public class VirtualRepoResolverTest {
         assertNotNull(localRepos, "Local repo list should not be null");
         assertNotNull(remoteRepos, "Remote repo list should not be null");
         assertNotNull(orderedRepos, "Ordered repo list should not be null");
-        assertEquals(localRepos.size(), 3, "Excpecting 3 local repositories");
-        assertEquals(remoteRepos.size(), 2, "Excpecting 2 remote repositories");
-        assertEquals(orderedRepos.size(), 5, "Excpecting 5 repositories");
+        assertEquals(localRepos.size(), 3, "Expecting 3 local repositories");
+        assertEquals(remoteRepos.size(), 2, "Expecting 2 remote repositories");
+        assertEquals(orderedRepos.size(), 5, "Expecting 5 repositories");
 
         // check the order in each list
         assertSame(localRepos.get(0), local1);
@@ -98,9 +98,9 @@ public class VirtualRepoResolverTest {
         List<LocalRepoDescriptor> localRepos = resolver.getLocalRepos();
         List<RemoteRepoDescriptor> remoteRepos = resolver.getRemoteRepos();
         List<RealRepoDescriptor> orderedRepos = resolver.getOrderedRepos();
-        assertEquals(localRepos.size(), 2, "Excpecting 2 local repositories");
-        assertEquals(remoteRepos.size(), 2, "Excpecting 2 remote repositories");
-        assertEquals(orderedRepos.size(), 4, "Excpecting 4 repositories");
+        assertEquals(localRepos.size(), 2, "Expecting 2 local repositories");
+        assertEquals(remoteRepos.size(), 2, "Expecting 2 remote repositories");
+        assertEquals(orderedRepos.size(), 4, "Expecting 4 repositories");
 
         // excpect [local2, local1, remote1, remote2]
         assertSame(orderedRepos.get(0), local2);
@@ -126,7 +126,7 @@ public class VirtualRepoResolverTest {
         VirtualRepoResolver resolver = new VirtualRepoResolver(virtualToTest);
 
         List<RealRepoDescriptor> orderedRepos = resolver.getOrderedRepos();
-        assertEquals(orderedRepos.size(), 3, "Excpecting 3 repositories");
+        assertEquals(orderedRepos.size(), 3, "Expecting 3 repositories");
 
         // excpect [local2, local1, remote2]
         assertSame(orderedRepos.get(0), local2);
@@ -151,7 +151,7 @@ public class VirtualRepoResolverTest {
 
         List<RealRepoDescriptor> orderedRepos = resolver.getOrderedRepos();
         assertTrue(resolver.hasCycle(), "This configuration contains a cycle");
-        assertEquals(orderedRepos.size(), 2, "Excpecting 2 repositories");
+        assertEquals(orderedRepos.size(), 2, "Expecting 2 repositories");
 
         // excpect [local2, remote2]
         assertSame(orderedRepos.get(0), local2);

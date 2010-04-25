@@ -18,8 +18,6 @@
 
 package org.artifactory.common;
 
-import org.artifactory.common.property.ArtifactorySystemProperties;
-
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
@@ -55,6 +53,7 @@ public enum ConstantValues {
     searchUserQueryLimit("search.userQueryLimit", 1000),
     searchMaxFragments("search.content.maxFragments", 500),
     searchMaxFragmentsSize("search.content.maxFragmentsSize", 5000),
+    searchArchiveMinQueryLength("search.archive.minQueryLength", 3),
     gcIntervalSecs("gc.intervalSecs", Seconds.HOUR * 6),
     gcBatchDeleteMaxSize("gc.batchDeleteMaxSize", 30),
     gcSleepBetweenNodesMillis("gc.sleepBetweenNodesMillis", 20),
@@ -95,7 +94,7 @@ public enum ConstantValues {
     }
 
     public String getString() {
-        return ArtifactorySystemProperties.get().getProperty(propertyName, defValue);
+        return ArtifactoryHome.get().getArtifactoryProperties().getProperty(propertyName, defValue);
     }
 
     public int getInt() {
@@ -103,11 +102,11 @@ public enum ConstantValues {
     }
 
     public long getLong() {
-        return ArtifactorySystemProperties.get().getLongProperty(propertyName, defValue);
+        return ArtifactoryHome.get().getArtifactoryProperties().getLongProperty(propertyName, defValue);
     }
 
     public boolean getBoolean() {
-        return ArtifactorySystemProperties.get().getBooleanProperty(propertyName, defValue);
+        return ArtifactoryHome.get().getArtifactoryProperties().getBooleanProperty(propertyName, defValue);
     }
 
     private static class Seconds {

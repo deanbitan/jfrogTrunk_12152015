@@ -21,14 +21,11 @@ package org.artifactory.webapp.wicket.page.importexport.system;
 import org.apache.commons.io.FileUtils;
 import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.util.time.Duration;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.common.StatusEntry;
 import org.artifactory.api.config.ImportSettings;
@@ -61,7 +58,6 @@ import java.util.Locale;
  * @author Yoav Landman
  */
 public class ImportSystemPanel extends TitledPanel {
-
     private static final Logger log = LoggerFactory.getLogger(ImportSystemPanel.class);
 
     @SpringBean
@@ -79,11 +75,12 @@ public class ImportSystemPanel extends TitledPanel {
     @WicketProperty
     private boolean excludeContent;
 
+    @WicketProperty
+    private boolean trustServerChecksums;
+
     public ImportSystemPanel(String string) {
         super(string);
 
-        final MultiStatusHolder status = new MultiStatusHolder();
-        status.setStatus("Idle.", log);
         Form importForm = new Form("importForm");
         add(importForm);
         PropertyModel pathModel = new PropertyModel(this, "importFromPath");
@@ -100,14 +97,29 @@ public class ImportSystemPanel extends TitledPanel {
             }
         });
 
-        StyledCheckbox verboseCheckbox =
-                new StyledCheckbox("verbose", new PropertyModel(this, "verbose"));
+        addExcludeMetadataCheckbox(importForm);
+        addTrustServerChecksumsCheckbox(importForm);
+        addVerboseCheckbox(importForm);
+
+        addImportButton(importForm);
+    }
+
+    private void addTrustServerChecksumsCheckbox(Form form) {
+        form.add(new StyledCheckbox("trustServerChecksums", new PropertyModel(this, "trustServerChecksums")));
+        form.add(new HelpBubble("trustServerChecksumsHelp",
+                "Ignore missing checksum and calculate them automatically."));
+    }
+
+    private void addVerboseCheckbox(Form importForm) {
+        StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel(this, "verbose"));
         verboseCheckbox.setRequired(false);
         importForm.add(verboseCheckbox);
         CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
         importForm.add(new HelpBubble("verboseHelp",
                 "HINT: You can monitor the log in the <a href=\"" + systemLogsPage + "\">'System Logs'</a> page."));
+    }
 
+    private void addExcludeMetadataCheckbox(Form importForm) {
         final StyledCheckbox excludeMetadataCheckbox =
                 new StyledCheckbox("excludeMetadata", new PropertyModel(this, "excludeMetadata"));
         excludeMetadataCheckbox.setOutputMarkupId(true);
@@ -132,121 +144,113 @@ public class ImportSystemPanel extends TitledPanel {
         importForm.add(excludeContentCheckbox);
         importForm.add(new HelpBubble("excludeContentHelp",
                 "Exclude repository content from the import.\n" + "(Import only settings)"));
+    }
 
-        TitledAjaxSubmitLink importButton =
-                new TitledAjaxSubmitLink("import", "Import", importForm) {
-                    @Override
-                    protected IAjaxCallDecorator getAjaxCallDecorator() {
-                        String confirmImportMessage =
-                                "Full system import will wipe all existing Artifactory content.\n" +
-                                        "Are you sure you want to continue?";
+    private void addImportButton(final Form importForm) {
+        TitledAjaxSubmitLink importButton = new TitledAjaxSubmitLink("import", "Import", importForm) {
+            @Override
+            protected IAjaxCallDecorator getAjaxCallDecorator() {
+                String confirmImportMessage =
+                        "Full system import will wipe all existing Artifactory content.\n" +
+                                "Are you sure you want to continue?";
 
-                        return new ConfirmationAjaxCallDecorator(super.getAjaxCallDecorator(),
-                                confirmImportMessage);
+                return new ConfirmationAjaxCallDecorator(super.getAjaxCallDecorator(),
+                        confirmImportMessage);
+            }
+
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form form) {
+                Session.get().cleanupFeedbackMessages();
+                MultiStatusHolder status = new MultiStatusHolder();
+                //If the path denotes an archive extract it first, else use the directory
+                File importFromFolder = null;
+                try {
+                    if (!importFromPath.exists()) {
+                        error("Specified location '" + importFromPath +
+                                "' does not exist.");
+                        return;
                     }
+                    if (importFromPath.isDirectory()) {
+                        if (importFromPath.list().length == 0) {
+                            error("Directory '" + importFromPath + "' is empty.");
+                            return;
+                        }
+                        importFromFolder = importFromPath;
 
-                    @Override
-                    protected void onSubmit(AjaxRequestTarget target, Form form) {
-                        Session.get().cleanupFeedbackMessages();
-                        status.reset();
-                        //If the path denotes an archive extract it first, else use the directory
-                        File importFromFolder = null;
+                    } else if (isZip(importFromPath)) {
+                        //Extract the archive
+                        status.setStatus("Extracting archive...", log);
+                        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
+                        importFromFolder =
+                                new File(artifactoryHome.getTmpUploadsDir(),
+                                        importFromPath.getName() + "_extract");
+                        FileUtils.deleteDirectory(importFromFolder);
+                        FileUtils.forceMkdir(importFromFolder);
                         try {
-                            if (!importFromPath.exists()) {
-                                error("Specified location '" + importFromPath +
-                                        "' does not exist.");
-                                return;
-                            }
-                            if (importFromPath.isDirectory()) {
-                                if (importFromPath.list().length == 0) {
-                                    error("Directory '" + importFromPath + "' is empty.");
-                                    return;
-                                }
-                                importFromFolder = importFromPath;
-
-                            } else if (isZip(importFromPath)) {
-                                //Extract the archive
-                                status.setStatus("Extracting archive...", log);
-                                ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-                                importFromFolder =
-                                        new File(artifactoryHome.getTmpUploadsDir(),
-                                                importFromPath.getName() + "_extract");
-                                FileUtils.deleteDirectory(importFromFolder);
-                                FileUtils.forceMkdir(importFromFolder);
-                                try {
-                                    ZipUtils.extract(importFromPath, importFromFolder);
-                                } catch (Exception e) {
-                                    String message = "Failed to extract file " + importFromPath.getAbsolutePath();
-                                    error(message);
-                                    log.error(message, e);
-                                    return;
-                                }
-                            } else {
-                                error("Failed to import system from '" + importFromPath +
-                                        "': Unrecognized file type.");
-                                return;
-                            }
-                            status.setStatus("Importing from directory...", log);
-                            ArtifactoryContext context = ContextHelper.get();
-                            ImportSettings importSettings = new ImportSettings(importFromFolder, status);
-                            importSettings.setFailFast(false);
-                            importSettings.setFailIfEmpty(true);
-                            importSettings.setVerbose(verbose);
-                            importSettings.setIncludeMetadata(!excludeMetadata);
-                            importSettings.setExcludeContent(excludeContent);
-                            context.importFrom(importSettings);
-                            List<StatusEntry> warnings = status.getWarnings();
-                            if (!warnings.isEmpty()) {
-                                CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
-                                warn(warnings.size() + " Warnings have been produces during the export. Please " +
-                                        "review the <a href=\"" + systemLogsPage +
-                                        "\">log</a> for further information.");
-                            }
-                            if (status.isError()) {
-                                String msg =
-                                        "Error while importing system from '" + importFromPath +
-                                                "': " + status.getStatusMsg();
-                                error(msg);
-                                if (status.getException() != null) {
-                                    log.warn(msg, status.getException());
-                                }
-                            } else {
-                                info("Successfully imported system from '" + importFromPath + "'.");
-                            }
+                            ZipUtils.extract(importFromPath, importFromFolder);
                         } catch (Exception e) {
-                            error("Failed to import system from '" + importFromPath + "': " +
-                                    e.getMessage());
-                            log.error("Failed to import system.", e);
-                        } finally {
-                            AjaxUtils.refreshFeedback(target);
-                            if (isZip(importFromPath)) {
-                                //Delete the extracted dir
-                                try {
-                                    if (importFromFolder != null) {
-                                        FileUtils.deleteDirectory(importFromFolder);
-                                    }
-                                } catch (IOException e) {
-                                    log.warn("Failed to delete export directory: " +
-                                            importFromFolder, e);
-                                }
+                            String message = "Failed to extract file " + importFromPath.getAbsolutePath();
+                            error(message);
+                            log.error(message, e);
+                            return;
+                        }
+                    } else {
+                        error("Failed to import system from '" + importFromPath +
+                                "': Unrecognized file type.");
+                        return;
+                    }
+                    status.setStatus("Importing from directory...", log);
+                    ArtifactoryContext context = ContextHelper.get();
+                    ImportSettings importSettings = new ImportSettings(importFromFolder, status);
+                    importSettings.setFailFast(false);
+                    importSettings.setFailIfEmpty(true);
+                    importSettings.setVerbose(verbose);
+                    importSettings.setIncludeMetadata(!excludeMetadata);
+                    importSettings.setExcludeContent(excludeContent);
+                    importSettings.setTrustServerChecksums(trustServerChecksums);
+                    context.importFrom(importSettings);
+                    List<StatusEntry> warnings = status.getWarnings();
+                    if (!warnings.isEmpty()) {
+                        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                        warn(warnings.size() + " Warnings have been produces during the export. Please " +
+                                "review the <a href=\"" + systemLogsPage +
+                                "\">log</a> for further information.");
+                    }
+                    if (status.isError()) {
+                        String msg =
+                                "Error while importing system from '" + importFromPath +
+                                        "': " + status.getStatusMsg();
+                        error(msg);
+                        if (status.getException() != null) {
+                            log.warn(msg, status.getException());
+                        }
+                    } else {
+                        info("Successfully imported system from '" + importFromPath + "'.");
+                    }
+                } catch (Exception e) {
+                    error("Failed to import system from '" + importFromPath + "': " +
+                            e.getMessage());
+                    log.error("Failed to import system.", e);
+                } finally {
+                    AjaxUtils.refreshFeedback(target);
+                    if (isZip(importFromPath)) {
+                        //Delete the extracted dir
+                        try {
+                            if (importFromFolder != null) {
+                                FileUtils.deleteDirectory(importFromFolder);
                             }
-                            status.reset();
-                            searchService.indexMarkedArchives();
+                        } catch (IOException e) {
+                            log.warn("Failed to delete export directory: " +
+                                    importFromFolder, e);
                         }
                     }
-                };
+                    status.reset();
+                    searchService.indexMarkedArchives();
+                }
+            }
+        };
         importForm.add(importButton);
         importForm.add(new DefaultButtonBehavior(importButton));
-
-        final Label statusLabel = new Label("status");
-        statusLabel.add(new AjaxSelfUpdatingTimerBehavior(Duration.milliseconds(1000)) {
-            @Override
-            protected void onPostProcessTarget(AjaxRequestTarget target) {
-                super.onPostProcessTarget(target);
-                statusLabel.setModel(new PropertyModel(status, "status"));
-            }
-        });
-        //importForm.add(statusLabel);
     }
 
     private boolean isZip(File file) {

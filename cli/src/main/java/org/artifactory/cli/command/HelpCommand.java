@@ -76,7 +76,8 @@ public class HelpCommand extends BaseCommand {
         usage.append("Artifactory Command Line Interface");
 
         try {
-            CompoundVersionDetails version = new ArtifactoryHome().getRunningVersionDetails();
+            CompoundVersionDetails version = new ArtifactoryHome(new ArtifactoryHome.SystemOutLog())
+                    .getRunningVersionDetails();
             usage.append(", version ").append(version.getVersionName());
             usage.append(" (rev. ").append(version.getRevision()).append(")");
         } catch (Exception e) {

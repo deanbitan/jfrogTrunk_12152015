@@ -36,7 +36,6 @@ public interface SearchRestConstants {
     //Common query params
     String PARAM_REPO_TO_SEARCH = "repos";
     String PARAM_SEARCH_NAME = "name";
-    String PARAM_NO_LIMIT = "noLimit";
 
     //Gavc query params
     String PARAM_GAVC_GROUP_ID = "g";

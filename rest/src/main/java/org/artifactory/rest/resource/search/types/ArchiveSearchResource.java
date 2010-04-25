@@ -88,14 +88,11 @@ public class ArchiveSearchResource {
      * Performs the archive search
      *
      * @param name          Entry name to search for
-     * @param reposToSearch Specific repositories to search in
-     * @return Rest search results object
+     * @param reposToSearch Specific repositories to search in  @return Rest search results object
      */
-    private ArchiveRestSearchResult search(String name, List<String> reposToSearch)
-            throws IOException {
+    private ArchiveRestSearchResult search(String name, List<String> reposToSearch) throws IOException {
         ArchiveSearchControls controls = new ArchiveSearchControls();
         controls.setQuery(name);
-        controls.setShouldCalcEntries(true);
         controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
         SearchResults<ArchiveSearchResult> searchResults;

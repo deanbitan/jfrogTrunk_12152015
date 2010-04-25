@@ -41,7 +41,6 @@ import org.artifactory.schedule.TaskService;
 import org.artifactory.schedule.quartz.QuartzTask;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.spring.ReloadableBean;
 import org.artifactory.util.EmailException;
 import org.artifactory.version.CompoundVersionDetails;
 import org.quartz.CronExpression;
@@ -88,14 +87,6 @@ public class BackupServiceImpl implements InternalBackupService {
 
     @Autowired
     private UserGroupService userGroupService;
-
-    @SuppressWarnings({"unchecked"})
-    public Class<? extends ReloadableBean>[] initAfter() {
-        return new Class[]{
-                InternalRepositoryService.class,
-                TaskService.class
-        };
-    }
 
     public void init() {
         List<BackupDescriptor> backupDescriptors = centralConfig.getDescriptor().getBackups();

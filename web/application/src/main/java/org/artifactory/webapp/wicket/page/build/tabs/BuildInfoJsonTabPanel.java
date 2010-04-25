@@ -52,7 +52,7 @@ public class BuildInfoJsonTabPanel extends Panel {
 
         String buildJson = buildService.getBuildAsJson(build.getName(), build.getNumber(), build.getStarted());
         if (ConstantValues.uiSyntaxColoringMaxTextSizeBytes.getLong() >= buildJson.getBytes().length) {
-            border.add(new SyntaxHighlighter("jsonContent", buildJson, Syntax.JavaScript));
+            border.add(new SyntaxHighlighter("jsonContent", buildJson, Syntax.javascript));
         } else {
             TextContentPanel contentPanel = new TextContentPanel("jsonContent");
             border.add(contentPanel.setContent(buildJson));

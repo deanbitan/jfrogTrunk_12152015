@@ -20,7 +20,6 @@ package org.artifactory.api.maven;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.util.Pair;
 import org.artifactory.util.PathUtils;
@@ -47,13 +46,14 @@ public class MavenNaming {
 
     // Matcher for unique snapshot names of the form artifactId-version-date.time-buildNumber.type
     // for example: artifactory-1.0-20081214.090217-4.pom
-    // groups: 1: artifactId-version, 2: date.time-buildNumber 3: date.time 4: buildNumber
+    // groups: 1: artifactId-version, 2. artifactId 3. base version (without the snapshoti part) 4. date.time-buildNumber
+    // 5. date.time 6. buildNumber
     private static final Pattern UNIQUE_SNAPSHOT_NAME_PATTERN =
-            Pattern.compile("^(.+-.+)-(([0-9]{8}.[0-9]{6})-([0-9]+))[\\.-].+$");
+            Pattern.compile("^((.+)-(.+))-(([0-9]{8}.[0-9]{6})-([0-9]+))[\\.-].+$");
 
     public static final String METADATA_PREFIX = "maven-metadata";
     public static final String MAVEN_METADATA_NAME = "maven-metadata.xml";
-    public static final String SNAPSHOT_VERSION = "SNAPSHOT";
+    public static final String SNAPSHOT = "SNAPSHOT";
     public static final String NEXUS_INDEX_DIR = ".index";
     public static final String NEXUS_INDEX_PREFIX = "nexus-maven-repository-index";
     public static final String NEXUS_INDEX_ZIP = NEXUS_INDEX_PREFIX + ".zip";
@@ -93,10 +93,17 @@ public class MavenNaming {
 
     /**
      * @param version String representing the maven version
-     * @return True if the version is a non-unique snapshot version (ie, ends with SNAPSHOT)
+     * @return True if the version is a non-unique snapshot version (ie, ends with -SNAPSHOT)
      */
-    public static boolean isVersionSnapshot(String version) {
-        return version.endsWith(SNAPSHOT_VERSION);
+    public static boolean isNonUniqueSnapshotVersion(String version) {
+        return version.endsWith("-" + SNAPSHOT);
+    }
+
+    public static String getNonUniqueSnapshotBaseVersion(String nonUniqueVersion) {
+        if (!isNonUniqueSnapshotVersion(nonUniqueVersion)) {
+            throw new IllegalArgumentException("Version is not a non-unique maven version: " + nonUniqueVersion);
+        }
+        return nonUniqueVersion.substring(0, nonUniqueVersion.lastIndexOf("-" + SNAPSHOT));
     }
 
     /**
@@ -104,15 +111,15 @@ public class MavenNaming {
      * @return True if the path is of a non-unique snapshot version file
      */
     public static boolean isNonUniqueSnapshot(String path) {
-        int idx = path.indexOf("-SNAPSHOT.");
+        int idx = path.indexOf("-" + SNAPSHOT + ".");
         if (idx < 0) {
-            idx = path.indexOf("-SNAPSHOT-");
+            idx = path.indexOf("-" + SNAPSHOT + "-");
         }
         return idx > 0 && idx > path.lastIndexOf('/');
     }
 
     public static boolean isUniqueSnapshot(String path) {
-        int versionIdx = path.indexOf("SNAPSHOT/");
+        int versionIdx = path.indexOf(SNAPSHOT + "/");
         if (versionIdx > 0) {
             String fileName = PathUtils.getName(path);
             return isUniqueSnapshotFileName(fileName);
@@ -132,11 +139,11 @@ public class MavenNaming {
         }
         //A path ending with just the version dir
         if (!result) {
-            int versionIdx = path.indexOf("SNAPSHOT/");
+            int versionIdx = path.indexOf(SNAPSHOT + "/");
             result = versionIdx > 0 && path.lastIndexOf('/') == versionIdx + 8;
         }
         if (!result) {
-            result = path.endsWith("SNAPSHOT");
+            result = path.endsWith(SNAPSHOT);
         }
         return result;
     }
@@ -188,7 +195,7 @@ public class MavenNaming {
         final Pair<String, String> nameAndParent = NamingUtils.getMetadataNameAndParent(path);
         String name = nameAndParent.getFirst();
         String parent = nameAndParent.getSecond();
-        return parent != null && parent.endsWith("-SNAPSHOT") && isMavenMetadataFileName(name);
+        return parent != null && parent.endsWith("-" + SNAPSHOT) && isMavenMetadataFileName(name);
     }
 
     /**
@@ -224,8 +231,7 @@ public class MavenNaming {
     }
 
     public static boolean isPom(String path) {
-        ContentType ct = NamingUtils.getContentType(path);
-        return ct.isPom();
+        return NamingUtils.isPom(path);
     }
 
     public static boolean isClientOrServerPom(String path) {
@@ -253,11 +259,8 @@ public class MavenNaming {
      * @return The timestamp of the unique snapshot version
      */
     public static String getUniqueSnapshotVersionTimestamp(String uniqueVersion) {
-        Matcher matcher = UNIQUE_SNAPSHOT_NAME_PATTERN.matcher(uniqueVersion);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Not a valid maven unique snapshot version: " + uniqueVersion);
-        }
-        return matcher.group(3);
+        Matcher matcher = matchUniqueSnapshotVersion(uniqueVersion);
+        return matcher.group(5);
     }
 
     /**
@@ -265,11 +268,8 @@ public class MavenNaming {
      * @return The timestamp-buildNumber of the unique snapshot version
      */
     public static String getUniqueSnapshotVersionTimestampAndBuildNumber(String uniqueVersion) {
-        Matcher matcher = UNIQUE_SNAPSHOT_NAME_PATTERN.matcher(uniqueVersion);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Not a valid maven unique snapshot version: " + uniqueVersion);
-        }
-        return matcher.group(2);
+        Matcher matcher = matchUniqueSnapshotVersion(uniqueVersion);
+        return matcher.group(4);
     }
 
     /**
@@ -277,10 +277,27 @@ public class MavenNaming {
      * @return The buildNumber of the unique snapshot version
      */
     public static int getUniqueSnapshotVersionBuildNumber(String uniqueVersion) {
+        Matcher matcher = matchUniqueSnapshotVersion(uniqueVersion);
+        return Integer.parseInt(matcher.group(6));
+    }
+
+    /**
+     * Returns the base build number of the unique snapshot version.<p/>
+     * For example, the base version of 'artifact-5.4-20090623.090500-2.pom' is 5.4.
+     *
+     * @param uniqueVersion A file name representing a valid unique snapshot version.
+     * @return The base build number of the unique snapshot version
+     */
+    public static String getUniqueSnapshotVersionBaseVersion(String uniqueVersion) {
+        Matcher matcher = matchUniqueSnapshotVersion(uniqueVersion);
+        return matcher.group(3);
+    }
+
+    private static Matcher matchUniqueSnapshotVersion(String uniqueVersion) {
         Matcher matcher = UNIQUE_SNAPSHOT_NAME_PATTERN.matcher(uniqueVersion);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Not a valid maven unique snapshot version: " + uniqueVersion);
         }
-        return Integer.parseInt(matcher.group(4));
+        return matcher;
     }
 }

@@ -19,8 +19,8 @@
 package org.artifactory.resource;
 
 import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.mime.MimeType;
 
 /**
  * A checksum resource is used as a response for checksum request and it wraps the actual file resource for which the
@@ -61,6 +61,6 @@ public class ChecksumResource extends FileResource {
 
     @Override
     public String getMimeType() {
-        return ContentType.cheksum.getMimeType();
+        return MimeType.checksum;
     }
 }

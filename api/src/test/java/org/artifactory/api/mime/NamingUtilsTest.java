@@ -18,7 +18,7 @@
 
 package org.artifactory.api.mime;
 
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
 import static org.artifactory.api.mime.NamingUtils.*;
@@ -28,7 +28,7 @@ import static org.testng.Assert.*;
  * @author yoavl
  */
 @Test
-public class NamingUtilsTest extends SystemPropertiesBoundTest {
+public class NamingUtilsTest extends ArtifactoryHomeBoundTest {
 
     public void testIsMetadata() {
         assertTrue(isMetadata("path/1.0-SNAPSHOT/maven-metadata.xml"));

@@ -166,7 +166,7 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
             if (LocalRepoChecksumPolicyType.SERVER.equals(object)) {
                 return "Trust server generated checksums";
             } else {
-                return "Verify against client checksums (default)";
+                return "Verify against client checksums";
             }
         }
     }

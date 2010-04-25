@@ -21,6 +21,7 @@ package org.artifactory.api.fs;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.api.mime.ChecksumType;
 
+import javax.annotation.Nonnull;
 import java.util.Set;
 
 /**
@@ -48,6 +49,7 @@ public class FileAdditionalInfo extends ItemAdditionalInfo {
 
     }
 
+    @Nonnull
     public ChecksumsInfo getChecksumsInfo() {
         return checksumsInfo;
     }

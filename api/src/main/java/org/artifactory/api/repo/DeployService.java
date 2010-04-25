@@ -21,7 +21,7 @@ package org.artifactory.api.repo;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.repo.exception.RepoAccessException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 
@@ -37,13 +37,13 @@ public interface DeployService {
 
     @Request
     @Lock(transactional = true)
-    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy) throws RepoAccessException;
+    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy) throws RepoRejectionException;
 
     @Request
     @Lock(transactional = true)
     void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo,
             File fileToDeploy, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy)
-            throws RepoAccessException;
+            throws RepoRejectionException;
 
     @Request
     void deployBundle(File bundle, RealRepoDescriptor targetRepo, StatusHolder status);

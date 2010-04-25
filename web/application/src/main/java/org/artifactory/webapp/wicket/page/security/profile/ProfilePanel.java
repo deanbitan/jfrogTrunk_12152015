@@ -60,7 +60,7 @@ import org.springframework.util.StringUtils;
 import javax.crypto.SecretKey;
 import java.security.KeyPair;
 
-import static org.artifactory.common.wicket.component.label.highlighter.Syntax.XML;
+import static org.artifactory.common.wicket.component.label.highlighter.Syntax.xml;
 
 /**
  * Created by IntelliJ IDEA. User: yoavl
@@ -313,7 +313,7 @@ public class ProfilePanel extends TitledActionPanel {
         FieldSetBorder border = new FieldSetBorder("settingsBorder");
         add(border);
 
-        border.add(new SyntaxHighlighter("settingsDeclaration", sb.toString(), XML));
+        border.add(new SyntaxHighlighter("settingsDeclaration", sb.toString(), xml));
         return border;
     }
 

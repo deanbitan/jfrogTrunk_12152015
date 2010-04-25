@@ -22,6 +22,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.mime.MimeTypes;
+import org.artifactory.mime.MimeTypesReader;
 import org.artifactory.version.ArtifactoryVersionReader;
 import org.artifactory.version.CompoundVersionDetails;
 import org.artifactory.version.ConfigVersion;
@@ -47,13 +49,17 @@ public class ArtifactoryHome {
     public static final String ARTIFACTORY_PROPERTIES_FILE = "artifactory.properties";
     public static final String ARTIFACTORY_JCR_FILE = "repo.xml";
     public static final String LOGBACK_CONFIG_FILE_NAME = "logback.xml";
+    public static final String MIME_TYPES_FILE_NAME = "mimetypes.xml";
+
+    private static final InheritableThreadLocal<ArtifactoryHome> current = new InheritableThreadLocal<ArtifactoryHome>();
 
     private CompoundVersionDetails runningVersion;
     private CompoundVersionDetails originalStorageVersion;
 
-    private final File homeDir;
+    private MimeTypes mimeTypes;
     private ArtifactorySystemProperties artifactorySystemProperties;
 
+    private final File homeDir;
     private File etcDir;
     private File dataDir;
     private File jcrRootDir;
@@ -63,12 +69,11 @@ public class ArtifactoryHome {
     private File tmpUploadsDir;
     private File logoDir;
 
-    public ArtifactoryHome() {
-        this(new SimpleLog() {
-            public void log(String message) {
-                System.out.println(message);
-            }
-        });
+    /**
+     * protected constructor for testing usage only.
+     */
+    protected ArtifactoryHome() {
+        homeDir = null;
     }
 
     public ArtifactoryHome(SimpleLog logger) {
@@ -165,6 +170,7 @@ public class ArtifactoryHome {
 
             //Manage the artifactory.system.properties file under etc dir
             initAndLoadSystemPropertyFile();
+            initAndLoadMimeTypes();
 
             //Check the write access to all directories that need it
             checkWritableDirectory(dataDir);
@@ -287,11 +293,8 @@ public class ArtifactoryHome {
         return artifactorySystemProperties;
     }
 
-    /**
-     * Missing Closure ;-)
-     */
-    public interface SimpleLog {
-        public void log(String message);
+    public MimeTypes getMimeTypes() {
+        return mimeTypes;
     }
 
     public File getArtifactoryPropertiesFile() {
@@ -378,9 +381,58 @@ public class ArtifactoryHome {
         artifactorySystemProperties.loadArtifactorySystemProperties(systemPropertiesFile, artifactoryPropertiesFile);
     }
 
+    private void initAndLoadMimeTypes() {
+        File mimeTypesFile = new File(etcDir, MIME_TYPES_FILE_NAME);
+        if (!mimeTypesFile.exists()) {
+            // Copy default mime types configuration file
+            try {
+                URL configUrl = ArtifactoryHome.class.getResource("/META-INF/default/" + MIME_TYPES_FILE_NAME);
+                FileUtils.copyURLToFile(configUrl, mimeTypesFile);
+            } catch (IOException e) {
+                // we might not have the logger configuration yet - use System.err
+                System.err.printf("Could not create default %s into %s\n", MIME_TYPES_FILE_NAME, mimeTypesFile);
+                e.printStackTrace();
+            }
+        }
+        mimeTypes = new MimeTypesReader().read(mimeTypesFile);
+    }
+
     private static void checkWritableDirectory(File dir) {
         if (!dir.exists() || !dir.isDirectory() || !dir.canWrite()) {
             throw new IllegalArgumentException("Directory '" + dir.getAbsolutePath() + "' is not writable!");
+        }
+    }
+
+    public static boolean isBound() {
+        return current.get() != null;
+    }
+
+    public static ArtifactoryHome get() {
+        ArtifactoryHome home = current.get();
+        if (home == null) {
+            throw new IllegalStateException("Artifactory home is not bound to the current thread");
+        }
+        return home;
+    }
+
+    public static void bind(ArtifactoryHome props) {
+        current.set(props);
+    }
+
+    public static void unbind() {
+        current.remove();
+    }
+
+    /**
+     * Missing Closure ;-)
+     */
+    public interface SimpleLog {
+        public void log(String message);
+    }
+
+    public static class SystemOutLog implements SimpleLog {
+        public void log(String message) {
+            System.out.println(message);
         }
     }
 }

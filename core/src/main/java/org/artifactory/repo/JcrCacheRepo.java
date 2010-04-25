@@ -31,6 +31,7 @@ import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.context.RequestContext;
 import org.artifactory.repo.jcr.JcrRepoBase;
+import org.artifactory.repo.snapshot.SnapshotVersionAdapter;
 import org.artifactory.resource.ExpiredRepoResource;
 import org.artifactory.resource.RepoResource;
 import org.slf4j.Logger;
@@ -93,11 +94,9 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
     }
 
     public void unexpire(String path) {
-        // TODO: Change this mechanism since the last updated is used for artifact popularity measurement
         //Reset the resource age so it is kept being cached
         JcrFsItem item = getLockedJcrFsItem(path);
-        item.setLastUpdated(System.currentTimeMillis());
-        log.debug("Unexpired '{}' from local cache '{}'.", path, getKey());
+        item.unexpire();
     }
 
     public int zap(RepoPath repoPath) {
@@ -153,5 +152,9 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
             retrievalCachePeriodMillis = remoteRepo.getRetrievalCachePeriodSecs() * 1000L;
         }
         return retrievalCachePeriodMillis;
+    }
+
+    public SnapshotVersionAdapter getSnapshotVersionAdapter() {
+        throw new UnsupportedOperationException("Local cache repositories doesn't have snapshot version adapter");
     }
 }

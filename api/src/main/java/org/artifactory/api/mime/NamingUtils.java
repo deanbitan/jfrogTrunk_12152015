@@ -18,16 +18,15 @@
 
 package org.artifactory.api.mime;
 
-import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.util.Pair;
-import org.artifactory.common.ConstantValues;
+import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.mime.MimeType;
 import org.artifactory.util.PathUtils;
 
+import javax.annotation.Nonnull;
 import java.io.File;
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * Used when deploying manually to artifactory, and classifying pom files. Only jar are queried to contain a pom file.
@@ -36,11 +35,9 @@ import java.util.Map;
  * @author yoavl
  */
 public class NamingUtils {
-    private static Map<String, ContentType> contentTypePerExtension;
-
     public static final String METADATA_PREFIX = ":";
 
-    public static ContentType getContentType(File file) {
+    public static MimeType getContentType(File file) {
         return getContentType(file.getName());
     }
 
@@ -48,31 +45,40 @@ public class NamingUtils {
      * @param path A file path
      * @return The content type for the path. Will return default content type if not mapped.
      */
-    public static ContentType getContentType(String path) {
+    @Nonnull
+    public static MimeType getContentType(String path) {
         String extension = PathUtils.getExtension(path);
         return getContentTypeByExtension(extension);
     }
 
-    public static ContentType getContentTypeByExtension(String extension) {
-        if (contentTypePerExtension == null) {
-            initializeContentTypesMap();
-        }
-        ContentType result = null;
+    @Nonnull
+    public static MimeType getContentTypeByExtension(String extension) {
+        MimeType result = null;
         if (extension != null) {
-            result = contentTypePerExtension.get(extension.toLowerCase());
+            result = ArtifactoryHome.get().getMimeTypes().getByExtension(extension);
         }
 
-        return result != null ? result : ContentType.def;
+        return result != null ? result : MimeType.def;
     }
 
     public static String getMimeTypeByPathAsString(String path) {
-        ContentType ct = getContentType(path);
-        return ct.getMimeType();
+        MimeType ct = getContentType(path);
+        return ct.getType();
     }
 
     public static boolean isChecksum(String path) {
-        ContentType ct = getContentType(path);
-        return ct.isChecksum();
+        MimeType ct = getContentType(path);
+        return MimeType.checksum.equalsIgnoreCase(ct.getType());
+    }
+
+    public static boolean isJarVariant(String path) {
+        MimeType ct = getContentType(path);
+        return MimeType.javaArchive.equalsIgnoreCase(ct.getType());
+    }
+
+    public static boolean isPom(String path) {
+        MimeType ct = NamingUtils.getContentType(path);
+        return "application/x-maven-pom+xml".equalsIgnoreCase(ct.getType());
     }
 
     public static Pair<String, String> getMetadataNameAndParent(String path) {
@@ -242,33 +248,6 @@ public class NamingUtils {
         return metadataName;
     }
 
-    public static void initializeContentTypesMap() {
-        Map<String, ContentType> types = Maps.newHashMap();
-        ContentType[] contentTypes = ContentType.values();
-        for (ContentType type : contentTypes) {
-            MimeEntry mimeEntry = type.getMimeEntry();
-            Collection<String> exts = mimeEntry.getFileExts();
-            if (exts != null) {
-                for (String ext : exts) {
-                    types.put(ext, type);
-                }
-            }
-        }
-
-        //add any xmlAdditionalMimeTypeExtensions from a.s.p to applicationXml content type
-        String additionalMimeTypes = ConstantValues.xmlAdditionalMimeTypeExtensions.getString();
-        if (additionalMimeTypes != null) {
-            String[] exts = additionalMimeTypes.split(",");
-            for (String ext : exts) {
-                //for support *.ext
-                String fileExt = PathUtils.getExtension(ext);
-                types.put(fileExt != null ? fileExt : ext, ContentType.applicationXml);
-            }
-        }
-
-        contentTypePerExtension = types;
-    }
-
     /**
      * @param classFilePath Path to a java class file (ends with .class)
      * @return Path of the matching java source path (.java).
@@ -296,7 +275,7 @@ public class NamingUtils {
      * @return True if the filename represents a viewable file (ie, text based)
      */
     public static boolean isViewable(String fileName) {
-        ContentType contentType = NamingUtils.getContentType(fileName);
+        MimeType contentType = NamingUtils.getContentType(fileName);
         return contentType.isViewable();
     }
 }

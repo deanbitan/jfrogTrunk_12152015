@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.wicket.util;
 
-import org.artifactory.test.SystemPropertiesBoundTest;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
  * @author Yossi Shaul
  */
 @Test
-public class CssClassTest extends SystemPropertiesBoundTest {
+public class CssClassTest extends ArtifactoryHomeBoundTest {
 
     public void pomCss() {
         String path = "/a/path/to/somewhere/my.pom";
@@ -51,7 +51,7 @@ public class CssClassTest extends SystemPropertiesBoundTest {
     public void zipAsDocCss() {
         String path = "a/path/to/my.zip";
         ItemCssClass cssClass = ItemCssClass.getFileCssClass(path);
-        Assert.assertEquals(cssClass.getCssClass(), "doc", "Expected jar css class");
+        Assert.assertEquals(cssClass.getCssClass(), "jar", "Expected jar css class");
     }
 
     public void parentCss() {

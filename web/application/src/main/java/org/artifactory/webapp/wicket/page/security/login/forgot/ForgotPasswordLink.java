@@ -29,7 +29,7 @@ import org.artifactory.common.wicket.component.links.TitledLink;
  */
 public class ForgotPasswordLink extends TitledLink {
     public ForgotPasswordLink(String id) {
-        super(id, "Forgot your password?");
+        super(id, "Forgot Your Password?");
         add(new CssClass("forgot-password"));
     }
 

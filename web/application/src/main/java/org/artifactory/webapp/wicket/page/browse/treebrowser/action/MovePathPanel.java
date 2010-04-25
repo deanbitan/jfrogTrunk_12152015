@@ -40,7 +40,6 @@ import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 import java.util.List;
 
 /**
@@ -110,7 +109,6 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
                     ITreeState treeState = tree.getTreeState();
                     treeState.collapseAll();
                     DefaultTreeModel treeModel = (DefaultTreeModel) tree.getModelObject();
-                    treeState.selectNode(((TreeNode) treeModel.getRoot()).getChildAt(0), true);
                 }
 
                 browseRepoPanel.removeNodePanel(target);

@@ -21,7 +21,7 @@ package org.artifactory.engine;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.repo.exception.RepoAccessException;
+import org.artifactory.api.repo.exception.RepoRejectionException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.api.request.ArtifactoryResponse;
@@ -29,7 +29,6 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.cache.InternalCacheService;
 import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
-import org.artifactory.io.checksum.policy.ChecksumPolicyException;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.context.DownloadRequestContext;
@@ -43,7 +42,6 @@ import org.artifactory.resource.RepoResource;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.spring.ReloadableBean;
 import org.artifactory.traffic.InternalTrafficService;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
@@ -77,11 +75,6 @@ public class DownloadServiceImpl implements InternalDownloadService {
 
     public void init() {
         requestResponseHelper = new RequestResponseHelper(trafficService);
-    }
-
-    @SuppressWarnings({"unchecked"})
-    public Class<? extends ReloadableBean>[] initAfter() {
-        return new Class[]{InternalRepositoryService.class, InternalCacheService.class};
     }
 
     public void reload(CentralConfigDescriptor oldDescriptor) {
@@ -187,11 +180,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
             handle = repositoryService.getResourceStreamHandle(repository, resource);
             //Streaming the file is done outside a tx, so there is a chance that the content will change!
             requestResponseHelper.sendBodyResponse(response, resource, handle);
-        } catch (RepoAccessException rae) {
-            String msg = "Rejected artifact download request: " + rae.getMessage();
-            response.sendError(HttpStatus.SC_FORBIDDEN, msg, log);
-        } catch (ChecksumPolicyException cpe) {
-            response.sendError(HttpStatus.SC_CONFLICT, cpe.getMessage(), log);
+        } catch (RepoRejectionException rre) {
+            String msg = "Rejected artifact download request: " + rre.getMessage();
+            response.sendError(rre.getErrorCode(), msg, log);
         } catch (RemoteRequestException rre) {
             response.sendError(rre.getRemoteReturnCode(), rre.getMessage(), log);
         } catch (BadPomException bpe) {

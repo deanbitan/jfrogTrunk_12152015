@@ -21,9 +21,9 @@ package org.artifactory.jcr.md;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.artifactory.api.fs.MetadataInfo;
-import org.artifactory.api.mime.ContentType;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrTypes;
+import org.artifactory.mime.MimeType;
 import org.artifactory.repo.jcr.JcrHelper;
 
 import javax.jcr.Node;
@@ -75,7 +75,7 @@ public abstract class AbstractXmlContentPersistenceHandler<T> extends AbstractMe
         getJcr().setString(getOrCreateMetadataContainer(metadataAware),
                 getMetadataName(),
                 xmlData,
-                ContentType.applicationXml.getMimeType(),
+                MimeType.applicationXml,
                 getAuthorizationService().currentUsername(),
                 shouldSaveXmlHierarchy());
     }
