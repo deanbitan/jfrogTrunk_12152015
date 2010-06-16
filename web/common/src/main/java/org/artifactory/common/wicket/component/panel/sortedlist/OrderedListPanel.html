@@ -13,12 +13,14 @@
         </div>
     </div>
 
-    <ul wicket:id="items" class="ordered-list-panel">
-        <li wicket:id="item">
-            <span wicket:id="actions" class="LinksColumn"></span>
-            <span wicket:id="name"></span>
-        </li>
-    </ul>
+    <div class="ordered-list">
+        <ul wicket:id="items">
+            <li wicket:id="item">
+                <span wicket:id="actions" class="LinksColumn"></span>
+                <span wicket:id="name"></span>
+            </li>
+        </ul>
+    </div>
 
     <div class="info">
         <wicket:message key="OrderedListPanel.hint"/>

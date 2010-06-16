@@ -33,7 +33,7 @@ import java.util.Date;
 public class BasicBuildInfo implements Serializable {
 
     private String name;
-    private long number;
+    private String number;
     private String started;
 
     /**
@@ -43,7 +43,7 @@ public class BasicBuildInfo implements Serializable {
      * @param number  Build number
      * @param started Build started
      */
-    public BasicBuildInfo(String name, long number, String started) {
+    public BasicBuildInfo(String name, String number, String started) {
         this.name = name;
         this.number = number;
         this.started = started;
@@ -63,7 +63,7 @@ public class BasicBuildInfo implements Serializable {
      *
      * @return Build number
      */
-    public long getNumber() {
+    public String getNumber() {
         return number;
     }
 
@@ -102,10 +102,10 @@ public class BasicBuildInfo implements Serializable {
 
         BasicBuildInfo that = (BasicBuildInfo) o;
 
-        if (number != that.number) {
+        if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (number != null ? !number.equals(that.number) : that.number != null) {
             return false;
         }
         if (started != null ? !started.equals(that.started) : that.started != null) {
@@ -118,7 +118,7 @@ public class BasicBuildInfo implements Serializable {
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (int) (number ^ (number >>> 32));
+        result = 31 * result + (number != null ? number.hashCode() : 0);
         result = 31 * result + (started != null ? started.hashCode() : 0);
         return result;
     }

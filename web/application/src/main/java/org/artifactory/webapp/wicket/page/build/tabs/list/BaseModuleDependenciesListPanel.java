@@ -25,6 +25,7 @@ import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.groupable.GroupableTable;
 import org.artifactory.common.wicket.component.table.groupable.column.GroupableColumn;
@@ -50,6 +51,7 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
      */
     public BaseModuleDependenciesListPanel(String id) {
         super(id);
+        add(new CssClass("dependencies-panel"));
     }
 
     @Override

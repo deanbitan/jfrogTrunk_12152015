@@ -26,6 +26,7 @@ public class RestFileInfo extends RestBaseStorageInfo {
     public String downloadUri;
     public String remoteUrl;
     public String mimeType;
+    public long size;
     public Checksums checksums;
     public Checksums originalChecksums;
 

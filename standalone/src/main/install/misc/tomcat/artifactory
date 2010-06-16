@@ -5,7 +5,7 @@
 # chkconfig: 345 86 14
 # description: Artifactory Tomcat Servlet Engine
 # processname: artifactory
-# pidfile: /var/run/artifactory.pid
+# pidfile: /var/run/artifactory/artifactory.pid
 #
 ### BEGIN INIT INFO
 # Provides:          artifactory
@@ -21,6 +21,16 @@
 # Read default Artifactory environment variables from etc
 . /etc/artifactory/default
 
+if [ -z "$ARTIFACTORY_HOME" ] || [ ! -d "$ARTIFACTORY_HOME" ]; then
+    echo "ERROR: Artifactory home folder not defined or does not exists at $ARTIFACTORY_HOME"
+    exit 1
+fi
+
+if [ -z "$TOMCAT_HOME" ] || [ ! -d "$TOMCAT_HOME" ]; then
+    echo "ERROR: Tomcat Artifactory folder not defined or does not exists at $TOMCAT_HOME"
+    exit 1
+fi
+
 # User under which tomcat will run
 NORMAL_PORT=8015
 LOCK_FILE=/var/lock/subsys/artifactory
@@ -28,12 +38,6 @@ LOCK_FILE=/var/lock/subsys/artifactory
 if [ -z "$ARTIFACTORY_USER" ]; then
     # Will run as current user (may be root!!!)
     ARTIFACTORY_USER=$USER
-fi
-
-if [ -n "$CATALINA_PID" ]; then
-    # Make sure the pid file is writable by Artifactory user
-    touch $CATALINA_PID
-    chown $ARTIFACTORY_USER $CATALINA_PID
 fi
 
 RETVAL=0
@@ -50,7 +54,7 @@ start() {
         echo "Artifactory Tomcat already started"
     else
         echo "Starting tomcat..."
-        su -l $ARTIFACTORY_USER -c '/opt/tomcat/artifactory/bin/startup.sh'
+        su -l $ARTIFACTORY_USER -c "$TOMCAT_HOME/bin/startup.sh"
         RETVAL=$?
         if [ $RETVAL -ne 0 ]; then
             echo "ERROR: Artifactory Tomcat server did not start. Please check the logs"
@@ -79,7 +83,7 @@ stop() {
         RETVAL=0
     else
         echo "Stopping Artifactory Tomcat..."
-        su -l $ARTIFACTORY_USER -c '/opt/tomcat/artifactory/bin/shutdown.sh'
+        su -l $ARTIFACTORY_USER -c "$TOMCAT_HOME/bin/shutdown.sh"
         RETVAL=$?
         killed=false
         if [ -n "$CATALINA_PID" ] && [ -e "$CATALINA_PID" ]; then

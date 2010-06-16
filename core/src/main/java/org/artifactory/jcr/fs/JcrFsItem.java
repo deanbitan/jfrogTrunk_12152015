@@ -345,21 +345,40 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      * @return Parent folder of this folder or null if parent doesn't exist
      */
     public JcrFolder getParentFolder() {
-        RepoPath parentRepoPath = getParentRepoPath();
-        return getRepo().getJcrFolder(parentRepoPath);
+        RepoPath parentRepoPath = getRepoPath().getParent();
+        if (parentRepoPath == null) {
+            return null;
+        } else {
+            return getRepo().getJcrFolder(parentRepoPath);
+        }
     }
 
     /**
      * @return Parent folder of this folder with write lock or null if parent doesn't exist
      */
     public JcrFolder getLockedParentFolder() {
-        RepoPath parentRepoPath = getParentRepoPath();
-        return getRepo().getLockedJcrFolder(parentRepoPath, false);
+        RepoPath parentRepoPath = getRepoPath().getParent();
+        if (parentRepoPath == null) {
+            return null;
+        } else {
+            return getRepo().getLockedJcrFolder(parentRepoPath, false);
+        }
     }
 
-    public RepoPath getParentRepoPath() {
-        RepoPath myRepoPath = getRepoPath();
-        return new RepoPath(myRepoPath.getRepoKey(), PathUtils.getParent(myRepoPath.getPath()));
+    /**
+     * @param degree The degree of the ancestor (1 - parent, 2 - grandparent, etc)
+     * @return Returns the n-th ancestor of this item. Null if doesn't exist.
+     */
+    public JcrFolder getAncestor(int degree) {
+        if (degree < 1) {
+            throw new IllegalArgumentException("Ancestor degree must be greater than 1");
+        }
+
+        JcrFolder result = getParentFolder();   // first ancestor
+        for (int i = degree - 1; i > 0 && result != null; i--) {
+            result = result.getParentFolder();
+        }
+        return result;
     }
 
     /**

@@ -58,7 +58,7 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * @return The file info of a result that best matches the given criteria
      */
     FileInfo getBestMatchingResult(Set<RepoPath> searchResults, Map<RepoPath, Properties> resultProperties,
-            String buildName, long buildNumber);
+            String buildName, String buildNumber);
 
     /**
      * Locates builds that are named as the given name within a transaction
@@ -68,6 +68,16 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      */
     @Lock(transactional = true)
     Set<BasicBuildInfo> transactionalSearchBuildsByName(String buildName);
+
+    /**
+     * Locates builds that are named and numbered as the given name and number within a transaction
+     *
+     * @param buildName   Name of builds to locate
+     * @param buildNumber Number of builds to locate
+     * @return Set of builds with the given name
+     */
+    @Lock(transactional = true)
+    Set<BasicBuildInfo> transactionalSearchBuildsByNameAndNumber(String buildName, String buildNumber);
 
     /**
      * Imports an exportable build info into the database. This is an internal method and should be used to import a

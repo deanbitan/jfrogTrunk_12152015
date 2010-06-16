@@ -20,15 +20,11 @@ package org.artifactory.jcr.md;
 
 import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.FolderInfoImpl;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author freds
  */
 public class FolderInfoXmlProvider extends XStreamMetadataProvider<FolderInfo> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(FolderInfoXmlProvider.class);
 
     public FolderInfoXmlProvider() {
         super(FolderInfoImpl.class);

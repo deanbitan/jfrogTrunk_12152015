@@ -18,12 +18,12 @@
 
 package org.artifactory.jcr.jackrabbit;
 
-import org.apache.jackrabbit.core.NodeId;
-import org.apache.jackrabbit.core.PropertyId;
 import org.apache.jackrabbit.core.PropertyImpl;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.data.DataStore;
 import org.apache.jackrabbit.core.data.ScanEventListener;
+import org.apache.jackrabbit.core.id.NodeId;
+import org.apache.jackrabbit.core.id.PropertyId;
 import org.apache.jackrabbit.core.observation.SynchronousEventListener;
 import org.apache.jackrabbit.core.persistence.IterablePersistenceManager;
 import org.apache.jackrabbit.core.state.ItemStateException;
@@ -66,7 +66,6 @@ import java.util.Set;
  * @author Yoav Landman
  */
 public class ArtifactoryGarbageCollector implements JcrGarbageCollector {
-    @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryGarbageCollector.class);
 
     private ScanEventListener callback;
@@ -229,7 +228,8 @@ public class ArtifactoryGarbageCollector implements JcrGarbageCollector {
     private void scanPersistenceManagers() throws ItemStateException, RepositoryException {
         long result = 0L;
         for (IterablePersistenceManager pm : pmList) {
-            Iterator it = pm.getAllNodeIds(null, 0);
+            Iterable<NodeId> ids = pm.getAllNodeIds(null, 0);
+            Iterator it = ids.iterator();
             while (it.hasNext()) {
                 NodeId id = (NodeId) it.next();
                 if (callback != null) {
@@ -245,16 +245,13 @@ public class ArtifactoryGarbageCollector implements JcrGarbageCollector {
                         if (ps.getType() == PropertyType.BINARY) {
                             InternalValue[] values = ps.getValues();
                             for (InternalValue value : values) {
-                                result += value.getBLOBFileValue().getLength();
+                                result += value.getLength();
                             }
                         }
                     }
                 } catch (NoSuchItemStateException e) {
                     // the node may have been deleted or moved in the meantime
                     // ignore it
-                }
-                if (callback != null) {
-                    callback.afterScanning(null);
                 }
             }
         }
@@ -346,9 +343,6 @@ public class ArtifactoryGarbageCollector implements JcrGarbageCollector {
                     }
                 }
             }
-        }
-        if (callback != null) {
-            callback.afterScanning(n);
         }
         //Sleep before recursing to children (instead of between each node)
         sleep(sleep);

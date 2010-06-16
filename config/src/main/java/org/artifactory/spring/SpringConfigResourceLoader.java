@@ -111,7 +111,7 @@ public class SpringConfigResourceLoader {
                     if (!disabledAddons.contains(addonName)) {
                         // addon is enabled, add it's addon.xml to the spring context
                         log.info("Adding enabled addon: {}", addonName);
-                        state = AddonState.ACTIVATED;
+                        state = AddonState.INACTIVATED; //  if license is installed it will be activated by the manager 
                     } else {
                         log.info("Adding disabled addon: {}", addonName);
                         state = AddonState.DISABLED;

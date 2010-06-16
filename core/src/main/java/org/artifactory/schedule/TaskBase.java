@@ -153,8 +153,8 @@ public abstract class TaskBase implements Task {
             if (resumeBarriersCount > 0) {
                 resumeBarriersCount--;
             } else {
-                log.warn("Skipping resume since there are no active resume barriers. " +
-                        "Maybe invoked resume() more than needed.");
+                log.info("Skipping resume since there are no active resume barriers " +
+                        "(probably invoked resume() more than needed).");
                 return true;
             }
             log.trace("resumeBarriersCount-- to {} after resume on {}", resumeBarriersCount, this);

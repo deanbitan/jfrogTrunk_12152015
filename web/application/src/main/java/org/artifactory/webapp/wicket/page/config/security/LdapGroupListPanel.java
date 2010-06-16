@@ -31,12 +31,9 @@ import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
-import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 import java.util.List;
 
@@ -44,9 +41,6 @@ import java.util.List;
  * @author Tomer Cohen
  */
 public class LdapGroupListPanel extends ModalListPanel<LdapGroupSetting> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(LdapGroupListPanel.class);
-
 
     @SpringBean
     private CentralConfigService centralConfigService;
@@ -98,12 +92,13 @@ public class LdapGroupListPanel extends ModalListPanel<LdapGroupSetting> {
     @Override
     protected void addColumns(List<IColumn> columns) {
         columns.add(new PropertyColumn(new Model("Name"), "name", "name"));
-        columns.add(new BooleanColumn(new Model("Enabled"), "enabled", "enabled"));
+        columns.add(new PropertyColumn(new Model("Strategy"), "strategy", "strategy"));
+        columns.add(new PropertyColumn(new Model("Attached LDAP"), "enabledLdap", "enabledLdap"));
     }
 
     @Override
     protected String getDeleteConfirmationText(LdapGroupSetting itemObject) {
-        return "Are you sure you wish to delete the ldap " + itemObject.getName() + "?";
+        return "Are you sure you wish to delete the LDAP group '" + itemObject.getName() + "'?";
     }
 
     @Override

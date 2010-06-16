@@ -20,6 +20,7 @@ package org.artifactory.jcr.version.v150;
 
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.jcr.JcrConfResourceLoader;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
@@ -27,8 +28,6 @@ import org.artifactory.version.FatalConversionException;
 import org.artifactory.version.converter.ConfigurationConverter;
 
 import javax.jcr.Session;
-
-import static org.artifactory.jcr.JcrConfResourceLoader.ARTIFACTORY_ALTERNATE_REPO_XML;
 
 /**
  * @author freds
@@ -64,9 +63,9 @@ public class JcrMetadataConverter implements ConfigurationConverter<Session> {
         }
 
         try {
-            // Put back the alternate repo xml to empty
-            context.getArtifactoryHome().getArtifactoryProperties().setProperty(ARTIFACTORY_ALTERNATE_REPO_XML, "");
-            // MAke sure the repo.xml loader is closed for full reinit
+            // Discard the transient repo xml
+            JcrConfResourceLoader.removeTransientRepoXml();
+            // Make sure the repo.xml loader is closed for full re-init
             ResourceStreamHandle jcrConfBean = (ResourceStreamHandle) context.getBean("repoXmlResource");
             jcrConfBean.close();
             // Full reinitialization of JCR Repository

@@ -23,7 +23,9 @@ import org.artifactory.api.security.UserInfo;
 import org.artifactory.webapp.wicket.page.security.profile.ProfileModel;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -39,7 +41,7 @@ public class UserModel extends ProfileModel {
     private Set<UserInfo.UserGroupInfo> groups;
     private long lastLoginTimeMillis;
     private long lastAccessTimeMillis;
-    private Status status = Status.UNKNOWN;
+    private Map<String, Status> statuses;
 
     public UserModel(Set<String> defaultGroupsNames) {
         super();
@@ -47,6 +49,7 @@ public class UserModel extends ProfileModel {
         updatableProfile = true;
         selected = false;
         groups = UserInfo.UserGroupInfo.getInternalGroups(defaultGroupsNames);
+        statuses = new HashMap<String, Status>();
     }
 
     public UserModel(UserInfo userInfo) {
@@ -59,8 +62,11 @@ public class UserModel extends ProfileModel {
         disableInternalPassword = userInfo.hasInvalidPassword();
         lastLoginTimeMillis = userInfo.getLastLoginTimeMillis();
         lastAccessTimeMillis = userInfo.getLastAccessTimeMillis();
+        statuses = new HashMap<String, Status>();
         if (!disableInternalPassword) {
-            setStatus(Status.NOT_LDAP_USER);
+            //setStatus(Status.NOT_LDAP_USER);
+        } else {
+            //setStatus(Status.UNKNOWN);
         }
     }
 
@@ -121,7 +127,7 @@ public class UserModel extends ProfileModel {
     }
 
     /**
-     * @return A copy of the user group. We delibarately Don't allow updating it directly.
+     * @return A copy of the user group. We deliberately Don't allow updating it directly.
      */
     public Set<UserInfo.UserGroupInfo> getGroups() {
         return (groups == null ? groups : new HashSet<UserInfo.UserGroupInfo>(groups));
@@ -160,12 +166,8 @@ public class UserModel extends ProfileModel {
         this.lastAccessTimeMillis = lastAccessTimeMillis;
     }
 
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
+    public Map<String, Status> getStatuses() {
+        return statuses;
     }
 
     public enum Status {

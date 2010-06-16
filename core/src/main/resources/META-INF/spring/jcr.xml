@@ -27,7 +27,5 @@
         <constructor-arg value="/META-INF/jcr/artifactory_nodetypes.xml"/>
     </bean>
 
-    <bean id="repoXmlResource" class="org.artifactory.jcr.JcrConfResourceLoader">
-        <constructor-arg value="repo.xml"/>
-    </bean>
+    <bean id="repoXmlResource" class="org.artifactory.jcr.JcrConfResourceLoader"/>
 </beans>

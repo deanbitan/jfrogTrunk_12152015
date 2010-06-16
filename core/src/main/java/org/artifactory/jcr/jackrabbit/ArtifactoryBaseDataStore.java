@@ -22,15 +22,20 @@ import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataRecord;
 import org.apache.jackrabbit.core.data.DataStoreException;
-import org.apache.jackrabbit.core.data.db.DbDataStore;
 import org.apache.jackrabbit.core.data.db.TempFileInputStream;
 import org.apache.jackrabbit.core.persistence.bundle.DerbyPersistenceManager;
-import org.apache.jackrabbit.core.persistence.bundle.util.TrackingInputStream;
-import org.apache.jackrabbit.util.Text;
+import org.apache.jackrabbit.core.util.TrackingInputStream;
+import org.apache.jackrabbit.core.util.db.ArtifactoryConnectionHelper;
+import org.apache.jackrabbit.core.util.db.CheckSchemaOperation;
+import org.apache.jackrabbit.core.util.db.ConnectionHelper;
+import org.apache.jackrabbit.core.util.db.DbUtility;
+import org.apache.jackrabbit.core.util.db.StreamWrapper;
+import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
-import javax.jcr.RepositoryException;
+import javax.sql.DataSource;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -38,16 +43,15 @@ import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -87,7 +91,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author freds
  * @date Mar 12, 2009
  */
-public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
+public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryBaseDataStore.class);
 
     /**
@@ -106,16 +110,6 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
     public static final int DEFAULT_MAX_CONNECTIONS = 3;
 
     /**
-     * The database URL used.
-     */
-    protected String url;
-
-    /**
-     * The database driver.
-     */
-    protected String driver;
-
-    /**
      * The user name.
      */
     protected String user;
@@ -124,11 +118,6 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
      * The password
      */
     protected String password;
-
-    /**
-     * The database type used.
-     */
-    protected String databaseType;
 
     /**
      * The minimum size of an object that should be stored in this data store.
@@ -141,84 +130,24 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
     protected int maxConnections = DEFAULT_MAX_CONNECTIONS;
 
     /**
-     * A list of connections
+     * Whether the schema check must be done during initialization.
      */
-    protected ArtifactoryPool connectionPool;
-
-    /**
-     * The prefix for the datastore table, empty by default.
-     */
-    protected String tablePrefix = "";
-
-    /**
-     * This is the property 'table' in the [databaseType].properties file, initialized with the default value.
-     */
-    protected String tableSQL = "DATASTORE";
-
-    /**
-     * This is the property 'createTable' in the [databaseType].properties file, initialized with the default value.
-     */
-    protected String createTableSQL =
-            "CREATE TABLE ${tablePrefix}${table}(ID VARCHAR(255) PRIMARY KEY, LENGTH BIGINT, LAST_MODIFIED BIGINT, DATA BLOB)";
-
-    /**
-     * This is the property 'insertTemp' in the [databaseType].properties file, initialized with the default value.
-     */
-    protected String insertTempSQL =
-            "INSERT INTO ${tablePrefix}${table} VALUES(?, ?, ?, NULL)";
-
-    /**
-     * This is the property 'updateData' in the [databaseType].properties file, initialized with the default value.
-     */
-    protected String updateDataSQL =
-            "UPDATE ${tablePrefix}${table} SET DATA=? WHERE ID=?";
-
-    /**
-     * This is the property 'updateLastModified' in the [databaseType].properties file, initialized with the default
-     * value.
-     */
-    protected String updateLastModifiedSQL =
-            "UPDATE ${tablePrefix}${table} SET LAST_MODIFIED=? WHERE ID=? AND LAST_MODIFIED<?";
-
-    /**
-     * This is the property 'update' in the [databaseType].properties file, initialized with the default value.
-     */
-    protected String updateSQL =
-            "UPDATE ${tablePrefix}${table} SET ID=?, LENGTH=?, LAST_MODIFIED=? WHERE ID=? AND NOT EXISTS(SELECT ID FROM ${tablePrefix}${table} WHERE ID=?)";
-
-    /**
-     * This is the property 'delete' in the [databaseType].properties file, initialized with the default value.
-     */
-    protected String deleteSQL =
-            "DELETE FROM ${tablePrefix}${table} WHERE ID=?";
-
-    /**
-     * This is the property 'selectMeta' in the [databaseType].properties file, initialized with the default value.
-     */
-    protected String selectMetaSQL =
-            "SELECT LENGTH, LAST_MODIFIED FROM ${tablePrefix}${table} WHERE ID=?";
-
-    /**
-     * This is the property 'selectAll' in the [databaseType].properties file, initialized with the default value.
-     */
-    protected String selectAllSQL =
-            "SELECT ID, LENGTH, LAST_MODIFIED FROM ${tablePrefix}${table}";
-
-    /**
-     * This is the property 'selectData' in the [databaseType].properties file, initialized with the default value.
-     */
-    protected String selectDataSQL =
-            "SELECT ID, DATA FROM ${tablePrefix}${table} WHERE ID=?";
+    private boolean schemaCheckEnabled = true;
 
     /**
      * All data identifiers that are currently in use are in this set until they are garbage collected.
      */
-    private final ConcurrentMap<String, ArtifactoryDbDataRecord> allEntries
-            = new ConcurrentHashMap<String, ArtifactoryDbDataRecord>();
+    private final ConcurrentMap<String, ArtifactoryDbDataRecord> allEntries =
+            new ConcurrentHashMap<String, ArtifactoryDbDataRecord>();
 
     private AtomicLong dataStoreSize = new AtomicLong();
 
     private File tmpDir;
+
+    /**
+     * The {@link ConnectionHelper} set in the {@link #init(String)} method.
+     */
+    protected ArtifactoryConnectionHelper conHelper;
 
     /**
      * {@inheritDoc}
@@ -244,6 +173,7 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
             // Important: Only use putIfAbsent and never re-put the entry in it for concurrency control
             ArtifactoryDbDataRecord oldRecord = allEntries.putIfAbsent(id, dataRecord);
             if (oldRecord != null) {
+                //TODO: [by yl] Write a temp file only if already exists, otherwise take the length from after the insert
                 // Data record cannot be the new one created
                 long length = dataRecord.length;
                 dataRecord = null;
@@ -267,6 +197,7 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
             }
 
             // Now inserting dataRecord to the DB
+            //TODO: [by yl] here - use the stream and update the record length
             insertRecordInDb(dataRecord, now, tempFile);
             dataRecord.setFile(tempFile);
             // Data record successfully inserted
@@ -292,37 +223,32 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
     private void insertRecordInDb(ArtifactoryDbDataRecord dataRecord, long now, File tempFile)
             throws DataStoreException {
         String id = dataRecord.getIdentifier().toString();
-        ArtifactoryConnectionRecoveryManager conn = getConnection();
         ResultSet rs = null;
         InputStream fileStream = null;
         try {
-            PreparedStatement prep = conn.executeStmt(selectMetaSQL, new Object[]{id});
-            rs = prep.getResultSet();
+            rs = conHelper.select(selectMetaSQL, new Object[]{id});
             boolean lineExists = rs.next();
-            conn.closeSilently(rs);
+            DbUtility.close(rs);
             if (!lineExists) {
                 // Need to insert a new row
-                conn.executeStmt(insertTempSQL, new Object[]{id,
-                        dataRecord.length, dataRecord.getLastModified()});
+                conHelper.exec(insertTempSQL, id, dataRecord.length, dataRecord.getLastModified());
             } else {
                 // TODO: Check the length should be the same, and stop updating the BLOB
                 // Update the time stamp of last modified
-                conn.executeStmt(updateLastModifiedSQL, new Object[]{now, id, now});
+                conHelper.exec(updateLastModifiedSQL, now, id, now);
             }
             // Add the BLOB only if not full File System store
             if (saveBinariesAsBlobs()) {
                 fileStream = new FileInputStream(tempFile);
-                ArtifactoryConnectionRecoveryManager.StreamWrapper wrapper =
-                        new ArtifactoryConnectionRecoveryManager.StreamWrapper(fileStream, dataRecord.length);
+                StreamWrapper wrapper = new StreamWrapper(fileStream, dataRecord.length);
                 // UPDATE DATASTORE SET DATA=? WHERE ID=?
-                conn.executeStmt(updateDataSQL, new Object[]{wrapper, id});
+                conHelper.exec(updateDataSQL, wrapper, id);
             }
         } catch (Exception e) {
             throw convert("Can not insert new record", e);
         } finally {
             IOUtils.closeQuietly(fileStream);
-            conn.closeSilently(rs);
-            putBack(conn);
+            DbUtility.close(rs);
         }
     }
 
@@ -381,12 +307,10 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
      * @throws DataStoreException
      */
     private long deleteEntry(ArtifactoryDbDataRecord record) throws DataStoreException {
-        ArtifactoryConnectionRecoveryManager conn = getConnection();
         try {
             long length = record.length;
             // DELETE FROM DATASTORE WHERE ID=? (toremove)
-            PreparedStatement prep = conn.executeStmt(deleteSQL, new Object[]{record.getIdentifier().toString()});
-            int res = prep.getUpdateCount();
+            int res = conHelper.update(deleteSQL, new Object[]{record.getIdentifier().toString()});
             if (res != 1) {
                 log.error("Deleting record " + record + " returned " + res + " updated.");
                 // Mark as deleted anyway since no SQL exception means no entry
@@ -399,8 +323,6 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
         } catch (Exception e) {
             record.setInError(e);
             throw convert("Can not delete records", e);
-        } finally {
-            putBack(conn);
         }
         return 0L;
     }
@@ -408,15 +330,13 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
     /**
      * {@inheritDoc}
      */
-    public Iterator getAllIdentifiers() throws DataStoreException {
+    public Iterator<DataIdentifier> getAllIdentifiers() throws DataStoreException {
         long totalSize = 0L;
-        ArtifactoryConnectionRecoveryManager conn = getConnection();
         List<DataIdentifier> list = new ArrayList<DataIdentifier>();
         ResultSet rs = null;
         try {
             // SELECT ID FROM DATASTORE
-            PreparedStatement prep = conn.executeStmt(selectAllSQL, new Object[0]);
-            rs = prep.getResultSet();
+            rs = conHelper.select(selectAllSQL);
             while (rs.next()) {
                 String id = rs.getString(1);
                 DataIdentifier identifier = new DataIdentifier(id);
@@ -426,25 +346,21 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
             dataStoreSize.set(totalSize);
             return list.iterator();
         } catch (Exception e) {
-            throw convert("Cannot read records", e);
+            throw convert("Can not read records", e);
         } finally {
-            conn.closeSilently(rs);
-            putBack(conn);
+            DbUtility.close(rs);
         }
     }
 
     private void loadAllDbRecords() throws DataStoreException {
         long start = System.nanoTime();
         long totalSize = 0L;
-        ArtifactoryConnectionRecoveryManager conn = getConnection();
         ResultSet rs = null;
         try {
             // SELECT ID, LENGTH, LAST_MODIFIED FROM DATASTORE
-            PreparedStatement prep = conn.executeStmt(selectAllSQL, new Object[0]);
-            rs = prep.getResultSet();
+            rs = conHelper.select(selectAllSQL);
             if (log.isTraceEnabled()) {
-                log.trace("Executing " + selectAllSQL + " took " + ((long) ((System.nanoTime() - start) / 1000000L)) +
-                        "ms");
+                log.trace("Executing " + selectAllSQL + " took " + (System.nanoTime() - start) / 1000000L + "ms");
             }
             while (rs.next()) {
                 String id = rs.getString(1);
@@ -468,11 +384,10 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
         } catch (Exception e) {
             throw convert("Can not read records", e);
         } finally {
-            conn.closeSilently(rs);
-            putBack(conn);
+            DbUtility.close(rs);
         }
         if (log.isTraceEnabled()) {
-            log.trace("loadAllDbRecords took " + ((long) ((System.nanoTime() - start) / 1000000L)) + "ms for " +
+            log.trace("loadAllDbRecords took " + (System.nanoTime() - start) / 1000000L + "ms for " +
                     allEntries.size() + " rows");
         }
     }
@@ -520,13 +435,12 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
             // The record is OK return it
             return record;
         }
-        ArtifactoryConnectionRecoveryManager conn = getConnection();
         ResultSet rs = null;
         try {
             //Long result = allEntries.get(id);
             // SELECT LENGTH, LAST_MODIFIED FROM DATASTORE WHERE ID = ?
-            PreparedStatement prep = conn.executeStmt(selectMetaSQL, new Object[]{id});
-            rs = prep.getResultSet();
+
+            rs = conHelper.select(selectMetaSQL, new Object[]{id});
             if (!rs.next()) {
                 return null;
             }
@@ -547,8 +461,7 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
             }
             throw convert("Can not read identifier " + identifier, e);
         } finally {
-            conn.closeSilently(rs);
-            putBack(conn);
+            DbUtility.close(rs);
         }
     }
 
@@ -559,22 +472,17 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
         try {
             initTmpDir(homeDir);
             initDatabaseType();
-            connectionPool = new ArtifactoryPool(this, maxConnections);
-            ArtifactoryConnectionRecoveryManager conn = getConnection();
-            DatabaseMetaData meta = conn.getConnection().getMetaData();
-            log.info("Using JDBC driver " + meta.getDriverName() + " " + meta.getDriverVersion());
-            meta.getDriverVersion();
-            ResultSet rs = meta.getTables(null, null, tableSQL, null);
-            boolean exists = rs.next();
-            rs.close();
-            if (!exists) {
-                conn.executeStmt(createTableSQL, null);
+            conHelper = createConnectionHelper(getDataSource());
+            if (isSchemaCheckEnabled()) {
+                createCheckSchemaOperation().run();
             }
-            putBack(conn);
         } catch (Exception e) {
-            throw convert("Can not init data store, driver=" + driver + " url=" + url + " user=" + user, e);
+            throw convert("Can not init data store, driver=" + driver + " url=" + url + " user=" + user +
+                    " schemaObjectPrefix=" + schemaObjectPrefix + " tableSQL=" + tableSQL + " createTableSQL=" +
+                    createTableSQL, e);
         }
     }
+
 
     private void initTmpDir(String homeDir) throws DataStoreException {
         tmpDir = new File(homeDir, "tmp/prefilestore");
@@ -585,72 +493,47 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
         }
     }
 
-    protected void initDatabaseType() throws DataStoreException {
-        boolean failIfNotFound;
-        if (databaseType == null) {
-            if (!url.startsWith("jdbc:")) {
-                return;
-            }
-            failIfNotFound = false;
-            int start = "jdbc:".length();
-            int end = url.indexOf(':', start);
-            databaseType = url.substring(start, end);
+    private DataSource getDataSource() throws Exception {
+        if (getDataSourceName() == null || "".equals(getDataSourceName())) {
+            return connectionFactory.getDataSource(getDriver(), getUrl(), getUser(), getPassword());
         } else {
-            failIfNotFound = true;
+            return connectionFactory.getDataSource(dataSourceName);
         }
-
-        InputStream in = DbDataStore.class.getResourceAsStream(databaseType + ".properties");
-        if (in == null) {
-            if (failIfNotFound) {
-                String msg = "Configuration error: The resource '" + databaseType +
-                        ".properties' could not be found; Please verify the databaseType property";
-                log.debug(msg);
-                throw new DataStoreException(msg);
-            } else {
-                return;
-            }
-        }
-        Properties prop = new Properties();
-        try {
-            try {
-                prop.load(in);
-            } finally {
-                in.close();
-            }
-        } catch (IOException e) {
-            String msg = "Configuration error: Could not read properties '" + databaseType + ".properties'";
-            log.debug(msg);
-            throw new DataStoreException(msg);
-        }
-        if (driver == null) {
-            driver = getProperty(prop, "driver", driver);
-        }
-        tableSQL = getProperty(prop, "table", tableSQL);
-        createTableSQL = getProperty(prop, "createTable", createTableSQL);
-        insertTempSQL = getProperty(prop, "insertTemp", insertTempSQL);
-        updateDataSQL = getProperty(prop, "updateData", updateDataSQL);
-        updateLastModifiedSQL = getProperty(prop, "updateLastModified", updateLastModifiedSQL);
-        updateSQL = getProperty(prop, "update", updateSQL);
-        deleteSQL = getProperty(prop, "delete", deleteSQL);
-        selectMetaSQL = getProperty(prop, "selectMeta", selectMetaSQL);
-        selectAllSQL = getProperty(prop, "selectAll", selectAllSQL);
-        selectDataSQL = getProperty(prop, "selectData", selectDataSQL);
     }
 
     /**
-     * Get the expanded property value. The following placeholders are supported: ${table}: the table name (the default
-     * is DATASTORE) and ${tablePrefix}: the prefix as set in the configuration (empty by default).
+     * This method is called from the {@link #init(String)} method of this class and returns a {@link
+     * org.apache.jackrabbit.core.util.db.ConnectionHelper} instance which is assigned to the {@code conHelper} field.
+     * Subclasses may override it to return a specialized connection helper.
      *
-     * @param prop         the properties object
-     * @param key          the key
-     * @param defaultValue the default value
-     * @return the property value (placeholders are replaced)
+     * @param dataSrc the {@link DataSource} of this persistence manager
+     * @return a {@link org.apache.jackrabbit.core.util.db.ConnectionHelper}
+     * @throws Exception on error
      */
-    protected String getProperty(Properties prop, String key, String defaultValue) {
-        String sql = prop.getProperty(key, defaultValue);
-        sql = Text.replace(sql, "${table}", tableSQL).trim();
-        sql = Text.replace(sql, "${tablePrefix}", tablePrefix).trim();
-        return sql;
+    protected ArtifactoryConnectionHelper createConnectionHelper(DataSource dataSrc) throws Exception {
+        ArtifactoryConnectionHelper helper = new ArtifactoryConnectionHelper(dataSrc);
+        Connection con = null;
+        try {
+            con = helper.takeConnection();
+            DatabaseMetaData meta = con.getMetaData();
+            log.info("Using JDBC driver " + meta.getDriverName() + " " + meta.getDriverVersion());
+        } catch (Exception e) {
+            throw new RepositoryRuntimeException("Cannot create a database connection.", e);
+        } finally {
+            helper.putConnection(con);
+        }
+        return helper;
+    }
+
+    /**
+     * This method is called from {@link #init(String)} after the {@link #createConnectionHelper(javax.sql.DataSource)}
+     * method, and returns a default {@link org.apache.jackrabbit.core.util.db.CheckSchemaOperation}.
+     *
+     * @return a new {@link org.apache.jackrabbit.core.util.db.CheckSchemaOperation} instance
+     */
+    protected final CheckSchemaOperation createCheckSchemaOperation() {
+        String tableName = tablePrefix + schemaObjectPrefix + tableSQL;
+        return new CheckSchemaOperation(conHelper, new ByteArrayInputStream(createTableSQL.getBytes()), tableName);
     }
 
     /**
@@ -738,56 +621,12 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
     public abstract File getBinariesFolder();
 
     private void updateLastModifiedDate(String id, long now) throws DataStoreException {
-        Long n = now;
-        ArtifactoryConnectionRecoveryManager conn = getConnection();
         try {
             // UPDATE DATASTORE SET LAST_MODIFIED = ? WHERE ID = ? AND LAST_MODIFIED < ?
-            conn.executeStmt(updateLastModifiedSQL, new Object[]{
-                    n, id, n
-            });
+            conHelper.exec(updateLastModifiedSQL, now, id, now);
         } catch (Exception e) {
             throw convert("Can not update lastModified", e);
-        } finally {
-            putBack(conn);
         }
-    }
-
-    /**
-     * Get the database type (if set).
-     *
-     * @return the database type
-     */
-    public String getDatabaseType() {
-        return databaseType;
-    }
-
-    /**
-     * Set the database type. By default the sub-protocol of the JDBC database URL is used if it is not set. It must
-     * match the resource file [databaseType].properties. Example: mysql.
-     *
-     * @param databaseType
-     */
-    public void setDatabaseType(String databaseType) {
-        this.databaseType = databaseType;
-    }
-
-    /**
-     * Get the database driver
-     *
-     * @return the driver
-     */
-    public String getDriver() {
-        return driver;
-    }
-
-    /**
-     * Set the database driver class name. If not set, the default driver class name for the database type is used, as
-     * set in the [databaseType].properties resource; key 'driver'.
-     *
-     * @param driver
-     */
-    public void setDriver(String driver) {
-        this.driver = driver;
     }
 
     /**
@@ -809,24 +648,6 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
     }
 
     /**
-     * Get the database URL.
-     *
-     * @return the URL
-     */
-    public String getUrl() {
-        return url;
-    }
-
-    /**
-     * Set the database URL. Example: jdbc:postgresql:test
-     *
-     * @param url
-     */
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    /**
      * Get the user name.
      *
      * @return the user name
@@ -845,19 +666,25 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
     }
 
     /**
+     * @return whether the schema check is enabled
+     */
+    public final boolean isSchemaCheckEnabled() {
+        return schemaCheckEnabled;
+    }
+
+    /**
+     * @param enabled set whether the schema check is enabled
+     */
+    public final void setSchemaCheckEnabled(boolean enabled) {
+        schemaCheckEnabled = enabled;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public synchronized void close() throws DataStoreException {
         //If derby, prepare connection url for issuing shutdown command
         String derbyShutdownUrl = getDerbyShutdownUrl();
-
-        //Close all connections in pool
-        List<ArtifactoryConnectionRecoveryManager> list = connectionPool.getAll();
-        for (ArtifactoryConnectionRecoveryManager conn : list) {
-            conn.close();
-        }
-        list.clear();
-
         if (derbyShutdownUrl != null) {
             //If derby - shutdown the embedded Derby database
             try {
@@ -884,24 +711,8 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
         }
     }
 
-    protected ArtifactoryConnectionRecoveryManager getConnection() throws DataStoreException {
-        try {
-            ArtifactoryConnectionRecoveryManager conn = connectionPool.get();
-            conn.setAutoReconnect(true);
-            return conn;
-        } catch (InterruptedException e) {
-            throw new DataStoreException("Interrupted", e);
-        } catch (RepositoryException e) {
-            throw new DataStoreException("Can not open a new connection", e);
-        }
-    }
-
-    protected void putBack(ArtifactoryConnectionRecoveryManager conn) throws DataStoreException {
-        try {
-            connectionPool.add(conn);
-        } catch (InterruptedException e) {
-            throw new DataStoreException("Interrupted", e);
-        }
+    public ArtifactoryConnectionHelper getConnectionHelper() {
+        return conHelper;
     }
 
     /**
@@ -920,21 +731,6 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
      */
     public void setMaxConnections(int maxConnections) {
         this.maxConnections = maxConnections;
-    }
-
-    /**
-     * Create a new connection.
-     *
-     * @return the new connection
-     */
-    public ArtifactoryConnectionRecoveryManager createNewConnection() throws RepositoryException {
-        ArtifactoryConnectionRecoveryManager conn =
-                new ArtifactoryConnectionRecoveryManager(false, driver, url, user, password);
-        return conn;
-    }
-
-    public long getStorageSize() throws RepositoryException {
-        return DataStoreHelper.calcStorageSize(createNewConnection());
     }
 
     /**
@@ -966,7 +762,8 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
     }
 
     /**
-     * Set the new table prefix.
+     * Set the new table prefix. The default is empty. The table name is constructed like this:
+     * ${tablePrefix}${schemaObjectPrefix}${tableName}
      *
      * @param tablePrefix the new value
      */
@@ -974,14 +771,37 @@ public abstract class ArtifactoryBaseDataStore implements GenericDbDataStore {
         this.tablePrefix = tablePrefix;
     }
 
+    /**
+     * Get the schema prefix.
+     *
+     * @return the schema object prefix
+     */
+    public String getSchemaObjectPrefix() {
+        return schemaObjectPrefix;
+    }
+
+    /**
+     * Set the schema object prefix. The default is empty. The table name is constructed like this:
+     * ${tablePrefix}${schemaObjectPrefix}${tableName}
+     *
+     * @param schemaObjectPrefix the new prefix
+     */
+    public void setSchemaObjectPrefix(String schemaObjectPrefix) {
+        this.schemaObjectPrefix = schemaObjectPrefix;
+    }
+
     private String getDerbyShutdownUrl() {
         String derbyShutdownUrl = null;
         if (DerbyPersistenceManager.DERBY_EMBEDDED_DRIVER.equals(driver)) {
+            Connection con = null;
             try {
-                derbyShutdownUrl = getConnection().getConnection().getMetaData().getURL();
+                con = conHelper.takeConnection();
+                derbyShutdownUrl = con.getMetaData().getURL();
             } catch (Exception e) {
-                log.warn("Cannot get Derby's shutdown URL: ", e.getMessage());
+                log.warn("Cannot get Derby's shutdown URL: {}", e.getMessage());
                 return null;
+            } finally {
+                conHelper.putConnection(con);
             }
             int pos = derbyShutdownUrl.lastIndexOf(';');
             if (pos != -1) {

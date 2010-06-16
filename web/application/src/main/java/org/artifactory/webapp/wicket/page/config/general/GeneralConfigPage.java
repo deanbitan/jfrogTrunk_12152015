@@ -119,11 +119,6 @@ public class GeneralConfigPage extends AuthenticatedPage {
                 newSettings.setShowAddonsInfoCookie(Long.toString(System.currentTimeMillis()));
             }
 
-            // update server id
-            String newServerId = newSettings.getServerId();
-            String currentServerId = oldSettings.getServerId();
-            addonsManager.onServerIdUpdated(currentServerId, newServerId);
-
             // save changes
             centralConfigService.saveEditedDescriptorAndReload(descriptor);
 

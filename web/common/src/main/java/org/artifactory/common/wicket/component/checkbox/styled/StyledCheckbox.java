@@ -44,7 +44,7 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
     private CheckBox checkbox;
     private Component button;
     private String title = null;
-    private String inputName;
+    private Component submitButton;
 
     public StyledCheckbox(String id) {
         super(id);
@@ -76,7 +76,7 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
 
             @Override
             public String getInputName() {
-                return inputName != null ? inputName : super.getInputName();
+                return StyledCheckbox.this.getCheckboxInputName(super.getInputName());
             }
         };
         checkbox.setOutputMarkupId(true);
@@ -84,6 +84,13 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
 
         button = new CheckboxButton("button");
         add(button);
+    }
+
+    /**
+     * Get a custom input name to be used as 'name' attribute of the form element
+     */
+    protected String getCheckboxInputName(String defaultName) {
+        return defaultName;
     }
 
     @Override
@@ -166,6 +173,15 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
         return this;
     }
 
+    public Component getSubmitButton() {
+        return submitButton;
+    }
+
+    public void setSubmitButton(Component submitButton) {
+        this.submitButton = submitButton;
+        submitButton.setOutputMarkupId(true);
+    }
+
     @Override
     public void updateModel() {
         checkbox.updateModel();
@@ -175,13 +191,6 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
     public void setModelValue(final String[] value) {
         super.setModelValue(value);
         checkbox.setModelValue(value);
-    }
-
-    /**
-     * Sets a custom input name to be used as 'name' attribute of the form element
-     */
-    public void setInputName(String inputName) {
-        this.inputName = inputName;
     }
 
     private class CheckboxButton extends WebMarkupContainer {
@@ -212,6 +221,9 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
                 tag.put("onmouseover", "StyledCheckbox.onmouseover(this);");
                 tag.put("onmouseout", "StyledCheckbox.onmouseout(this);");
                 tag.put("onclick", "StyledCheckbox.onclick(this);");
+                if (submitButton != null) {
+                    tag.put("onkeydown", String.format("return StyledCheckbox.onkeydown('%s',event);", submitButton.getMarkupId()));
+                }
             }
         }
 

@@ -20,6 +20,7 @@ package org.artifactory.jcr.lock.aop;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.lucene.util.CloseableThreadLocal;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.jcr.lock.InternalLockManager;
 import org.artifactory.log.LoggerFactory;
@@ -93,6 +94,8 @@ public class LockingAdvice implements MethodInterceptor {
 
     public static void clearLockManager() {
         lockHolder.remove();
+        // The lock manager removed no more JCR queries
+        CloseableThreadLocal.closeAllThreadLocal();
     }
 
     public static boolean isInJcrTransaction() {

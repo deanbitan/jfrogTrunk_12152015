@@ -33,11 +33,10 @@ import javax.transaction.xa.Xid;
 
 import static org.testng.Assert.*;
 
-@Test
+@Test(sequential = false)
 public class TransactionVisibilityTest extends RepositoryTestBase {
 
-
-    @Test(invocationCount = 3, threadPoolSize = 3, enabled = false)
+    //@Test(invocationCount = 3, threadPoolSize = 3, enabled = false)
     public void testVisibilityAfterMove() throws Exception {
         XASessionImpl session = login();
         Xid xid1 = new DummyXid((byte) 1);
@@ -72,7 +71,6 @@ public class TransactionVisibilityTest extends RepositoryTestBase {
         beginTx(xid1, session);
         Node root = session.getRootNode();
         root.addNode("a", "nt:unstructured");
-        session.save();
         try {
             root.getNode("a");
         } catch (RepositoryException e) {
@@ -80,10 +78,11 @@ public class TransactionVisibilityTest extends RepositoryTestBase {
         }
         //Search the new node
         Node newNode = findNewNode(session);
-        // accordind to jcr spec we cannot search non committed objects
+        // according to jcr spec we cannot search non committed objects
         assertNull(newNode);
         //assertEquals("a", newNode.getName());
         //Commit and search again
+        session.save();
         commitTx(xid1, session);
         //Try to search it again - this time it will work!
         Xid xid2 = new DummyXid((byte) 1);
@@ -92,7 +91,7 @@ public class TransactionVisibilityTest extends RepositoryTestBase {
         assertNotNull(newNode);
         assertEquals("a", newNode.getName());
         commitTx(xid2, session);
-        //Finally logout
+        //Finally log out
         session.logout();
     }
 
@@ -113,7 +112,7 @@ public class TransactionVisibilityTest extends RepositoryTestBase {
         session.logout();
     }
 
-    public void testTXCreateVisbilityOk() throws Exception {
+    public void testTxCreateVisbilityOk() throws Exception {
         XASessionImpl session = login();
         Xid xid2 = new DummyXid((byte) 1);
         beginTx(xid2, session);
@@ -128,7 +127,7 @@ public class TransactionVisibilityTest extends RepositoryTestBase {
         assertNotNull(newNode);
         assertEquals("a", newNode.getName());
         commitTx(xid3, session);
-        //Finally logout
+        //Finally log out
         session.logout();
     }
 

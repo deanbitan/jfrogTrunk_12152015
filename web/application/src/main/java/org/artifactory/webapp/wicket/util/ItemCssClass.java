@@ -123,7 +123,7 @@ public enum ItemCssClass {
         if (path.endsWith(DirectoryItem.UP)) {
             cssClass = parent;
         } else {
-            MimeType ct = NamingUtils.getContentType(path);
+            MimeType ct = NamingUtils.getMimeType(path);
             cssClass = cssClassByName.get(ct.getCss());
         }
 

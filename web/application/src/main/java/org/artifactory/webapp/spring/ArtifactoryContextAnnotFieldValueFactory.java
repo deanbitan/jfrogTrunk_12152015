@@ -23,8 +23,6 @@ import org.apache.wicket.proxy.IProxyTargetLocator;
 import org.apache.wicket.proxy.LazyInitProxyFactory;
 import org.apache.wicket.spring.ISpringContextLocator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 
@@ -32,8 +30,6 @@ import java.lang.reflect.Field;
  * @author Yoav Landman
  */
 public class ArtifactoryContextAnnotFieldValueFactory implements IFieldValueFactory {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(ArtifactoryContextAnnotFieldValueFactory.class);
 
     private ISpringContextLocator contextLocator;
 

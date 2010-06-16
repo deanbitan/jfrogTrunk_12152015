@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.security.login;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.IFormSubmittingComponent;
@@ -85,16 +86,22 @@ public class LoginPanel extends TitledActionPanel {
         password.setOutputMarkupId(true);
         add(password);
 
-        // add remember me checkbox
-        StyledCheckbox checkbox = new StyledCheckbox("rememberMe");
-        // set the parameter name to springs' remember me filter default name
-        checkbox.setInputName(AbstractRememberMeServices.DEFAULT_PARAMETER);
-        add(checkbox);
-
         // add login link
         IFormSubmittingComponent loginLink =
                 addons.addonByType(WebApplicationAddon.class).getLoginLink("loginLink", form);
         addDefaultButton(loginLink);
+
+
+        // add remember me checkbox
+        StyledCheckbox checkbox = new StyledCheckbox("rememberMe") {
+            @Override
+            protected String getCheckboxInputName(String defaultName) {
+                return AbstractRememberMeServices.DEFAULT_PARAMETER;
+            }
+        };
+        // set the parameter name to springs' remember me filter default name
+        add(checkbox);
+        checkbox.setSubmitButton((Component) loginLink);
 
         // add cancel link
         addButton(new TitledPageLink("cancel", "Cancel", ArtifactoryApplication.get().getHomePage()));

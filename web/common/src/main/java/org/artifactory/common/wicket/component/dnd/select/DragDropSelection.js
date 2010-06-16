@@ -19,13 +19,15 @@
 dojo.provide('artifactory.DragDropSelection');
 
 dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
-    init: function(panelId, sourceListId, targetListId, addLinkId, removeLinkId, textFieldId) {
+    init: function(panelId, sourceListId, targetListId, addLinkId, removeLinkId, addAllLinkId, removeAllLinkId, textFieldId) {
         this.domNode = dojo.byId(panelId);
         this.sourceNode = dojo.byId(sourceListId);
         this.targetNode = dojo.byId(targetListId);
         this.textField = dojo.byId(textFieldId);
         this.addLink = dojo.byId(addLinkId);
         this.removeLink = dojo.byId(removeLinkId);
+        this.addAllLink = dojo.byId(addAllLinkId);
+        this.removeAllLink = dojo.byId(removeAllLinkId);
         this.domNode.widget = this;
 
         this.initSourceNode(this.sourceNode);
@@ -38,27 +40,43 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
 
         // handle add/remove buttons
         this.addLink.onclick = function() {
-            me.addItem();
+            me.addSelectedItems();
             return false;
         };
 
         this.removeLink.onclick = function() {
-            me.removeItem();
+            me.removeSelectedItems();
             return false;
         };
+
+        this.addAllLink.onclick = function() {
+            me.sourceNode.sourceWidget.selectAll();
+            me.addSelectedItems();
+            return false;
+        };
+
+        this.removeAllLink.onclick = function() {
+            me.targetNode.sourceWidget.selectAll();
+            me.removeSelectedItems();
+            return false;
+        };
+
+        this.updateMoveButtons();
     },
 
     updateMoveButtons: function() {
         this.setButtonEnabled(this.addLink, 'add-link', this.sourceNode.sourceWidget.isAnySelected());
         this.setButtonEnabled(this.removeLink, 'remove-link', this.targetNode.sourceWidget.isAnySelected());
+        this.setButtonEnabled(this.addAllLink, 'add-all-link', this.sourceNode.sourceWidget.node.firstChild);
+        this.setButtonEnabled(this.removeAllLink, 'remove-all-link', this.targetNode.sourceWidget.node.firstChild);
     },
 
-    addItem: function() {
-        this.moveItem(this.sourceNode, this.targetNode);
+    addSelectedItems: function() {
+        this.moveSelectedItems(this.sourceNode, this.targetNode);
     },
 
-    removeItem: function() {
-        this.moveItem(this.targetNode, this.sourceNode);
+    removeSelectedItems: function() {
+        this.moveSelectedItems(this.targetNode, this.sourceNode);
     },
 
     /**
@@ -68,8 +86,7 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
      * @param fromList source list
      * @param toList target list
      */
-    moveItem: function(fromList, toList) {
-        console.info(toList.sourceWidget)
+    moveSelectedItems: function(fromList, toList) {
         fromList.sourceWidget.forEachSelected(function(item, index) {
             var accepts = toList.sourceWidget.accept[item.getAttribute('dndtype')];
             if (accepts) {
@@ -134,8 +151,12 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
     destroy: function() {
         this.inherited(arguments);
 
-        this.upLink.onclick = undefined;
-        this.downLink.onclick = undefined;
+        this.upLink.onclick = null;
+        this.downLink.onclick = null;
+        this.addLink.onclick = null;
+        this.removeLink.onclick = null;
+        this.addAllLink.onclick = null;
+        this.removeAllLink.onclick = null;
 
         delete this.domNode.widget;
         delete this.domNode;
@@ -144,5 +165,7 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
         delete this.targetNode;
         delete this.addLink;
         delete this.removeLink;
+        delete this.addAllLink;
+        delete this.removeAllLink;
     }
 });

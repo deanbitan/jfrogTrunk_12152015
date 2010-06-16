@@ -62,7 +62,7 @@ public class ViewSourceAction extends ViewAction {
             if (failureReason == null) {
                 // content successfully retrieved
                 title = result.getSourceArchive() + "!/" + result.getSourcePath();
-                MimeType contentType = NamingUtils.getContentType(result.getSourcePath());
+                MimeType contentType = NamingUtils.getMimeType(result.getSourcePath());
                 syntax = Syntax.fromContentType(contentType);
                 showHighlightedSourceModal(event, result.getContent(), title, syntax);
             } else {

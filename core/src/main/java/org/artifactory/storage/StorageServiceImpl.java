@@ -26,7 +26,7 @@ import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
-import org.artifactory.jcr.jackrabbit.GenericDbDataStore;
+import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
 import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.jcr.utils.DerbyUtils;
 import org.artifactory.jcr.utils.JcrUtils;
@@ -43,7 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.text.DecimalFormat;
 
 /**
  * @author yoavl
@@ -78,19 +77,18 @@ public class StorageServiceImpl implements InternalStorageService {
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
         File dataDir = artifactoryHome.getDataDir();
         File[] dirs = {new File(dataDir, "db"), new File(dataDir, "store"), new File(dataDir, "index")};
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
         for (File dir : dirs) {
             if (dir.exists()) {
                 long sizeOfDirectory = FileUtils.sizeOfDirectory(dir);
-                double sizeOfDirectoryGb = StorageUnit.GB.convert(sizeOfDirectory);
+                String sizeOfDirectoryGb = StorageUnit.toReadableString(sizeOfDirectory);
                 sb.append(dir.getName()).append("=").append(sizeOfDirectory).append(" bytes ").append(" (").append(
-                        decimalFormat.format(sizeOfDirectoryGb)).append(" GB)").append("\n");
+                        (sizeOfDirectoryGb)).append(")").append("\n");
             }
         }
         long storageSize = getStorageSize();
-        double storageSizeInGb = StorageUnit.GB.convert(storageSize);
+        String sizeOfDirectoryGb = StorageUnit.toReadableString(storageSize);
         sb.append("datastore table=").append(storageSize).append(" bytes ").append(" (").append(
-                decimalFormat.format(storageSizeInGb)).append(" GB)").append("\n");
+                (sizeOfDirectoryGb)).append(")").append("\n");
         sb.append("-----------------------");
         log.info(sb.toString());
     }
@@ -99,7 +97,7 @@ public class StorageServiceImpl implements InternalStorageService {
         JcrSession session = jcrService.getUnmanagedSession();
         try {
             RepositoryImpl repository = (RepositoryImpl) session.getRepository();
-            GenericDbDataStore dataStore = JcrUtils.getDataStore(repository);
+            ExtendedDbDataStore dataStore = JcrUtils.getDataStore(repository);
             return dataStore.getStorageSize();
         } catch (Exception e) {
             throw new RuntimeException("Failed to calculate storage size.", e);

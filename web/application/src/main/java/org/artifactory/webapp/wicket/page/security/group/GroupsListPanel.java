@@ -108,7 +108,7 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
 
     @Override
     protected String getDeleteConfirmationText(GroupInfo group) {
-        return "Are you sure you wish to delete the group " + group.getGroupName() + "?";
+        return "Are you sure you wish to delete the group '" + group.getGroupName() + "'?";
     }
 
     @Override

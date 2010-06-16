@@ -31,6 +31,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 
@@ -50,7 +51,7 @@ public class ImportResource {
     }
 
     @GET
-    @Produces("application/xml")
+    @Produces(MediaType.APPLICATION_XML)
     public ImportSettings settingsExample() {
         ImportSettings settings = new ImportSettings(new File("/import/path"));
         settings.setRepositories(repoService.getLocalAndCachedRepoDescriptors());
@@ -58,7 +59,7 @@ public class ImportResource {
     }
 
     @POST
-    @Consumes("application/xml")
+    @Consumes(MediaType.APPLICATION_XML)
     public Response activateImport(ImportSettings settings) {
         log.debug("Activating import {}", settings);
         StreamStatusHolder holder = new StreamStatusHolder(httpResponse);

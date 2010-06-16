@@ -32,7 +32,7 @@ dojo.declare('artifactory.SortedDragDropSelection', artifactory.DragDropSelectio
         this.sortList(this.targetNode);
     },
 
-    moveItem: function(fromList, toList) {
+    moveSelectedItems: function(fromList, toList) {
         this.inherited(arguments);
         this.sortList(toList);
     },

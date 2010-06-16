@@ -18,6 +18,8 @@
 
 package org.artifactory.rest.resource.search;
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
@@ -25,6 +27,7 @@ import org.artifactory.rest.resource.search.types.ArchiveSearchResource;
 import org.artifactory.rest.resource.search.types.ArtifactSearchResource;
 import org.artifactory.rest.resource.search.types.CreatedInRangeResource;
 import org.artifactory.rest.resource.search.types.GavcSearchResource;
+import org.artifactory.rest.resource.search.types.PatternSearchResource;
 import org.artifactory.rest.resource.search.types.PropertySearchResource;
 import org.artifactory.rest.resource.search.types.UsageSinceResource;
 import org.artifactory.rest.resource.search.types.XpathSearchResource;
@@ -61,6 +64,9 @@ public class SearchResource {
 
     @Autowired
     SearchService searchService;
+
+    @Autowired
+    AddonsManager addonsManager;
 
     /**
      * Delegates the request to the artifact search resource
@@ -130,6 +136,12 @@ public class SearchResource {
     @Path(SearchRestConstants.PATH_CREATED_IN_RANGE)
     public CreatedInRangeResource createdInDateRangeQuery() {
         return new CreatedInRangeResource(authorizationService, searchService, request, response);
+    }
+
+    @Path(SearchRestConstants.PATH_PATTERN)
+    public PatternSearchResource patternSearchQuery() {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return new PatternSearchResource(authorizationService, restAddon, request, response);
     }
 
     /**

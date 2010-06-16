@@ -38,6 +38,8 @@ public interface ArtifactoryRequest {
 
     String SKIP_JAR_INDEXING = "skipJarIndexing";
 
+    String FORCE_DOWNLOAD_IF_NEWER = "forceDownloadIfNewer";
+
     String getRepoKey();
 
     long getLastModified();

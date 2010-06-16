@@ -106,7 +106,7 @@ public class PublishedModulesTabPanel extends Panel {
             public void onClick(AjaxRequestTarget target) {
                 PageParameters pageParameters = new PageParameters();
                 pageParameters.put(BUILD_NAME, build.getName());
-                pageParameters.put(BUILD_NUMBER, Long.toString(build.getNumber()));
+                pageParameters.put(BUILD_NUMBER, build.getNumber());
                 pageParameters.put(BUILD_STARTED, build.getStarted());
                 pageParameters.put(MODULE_ID, moduleId);
                 setResponsePage(BuildBrowserRootPage.class, pageParameters);

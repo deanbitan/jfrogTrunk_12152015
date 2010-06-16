@@ -34,19 +34,28 @@ import java.net.URL;
 @Test
 public class ArtifactoryVersionReaderTest {
 
-    public void readFromFile() {
+    public void readFromFileNoTimestamp() {
         URL resource = getClass().getResource("/version/artifactory1.2.5.properties");
         String fileName = resource.getFile();
         CompoundVersionDetails version = ArtifactoryVersionReader.read(new File(fileName));
         Assert.assertNotNull(version, "Version should have been resolved");
         Assert.assertEquals(version.getVersion(), ArtifactoryVersion.v125, "Unexpected version");
+        Assert.assertEquals(version.getTimestamp(), 0, "Unexpected timestamp");
     }
 
-    public void readFromStream() {
+    public void readFromStreamNoTimestamp() {
         InputStream propertiesFileStream = getClass().getResourceAsStream("/version/artifactory1.2.5.properties");
         CompoundVersionDetails version = ArtifactoryVersionReader.read(propertiesFileStream);
         Assert.assertNotNull(version, "Version should have been resolved");
         Assert.assertEquals(version.getVersion(), ArtifactoryVersion.v125, "Unexpected version");
+    }
+
+    public void readFromStreamWithTimestamp() {
+        InputStream in = createInputStream("9.5", 123456, 789456);
+        CompoundVersionDetails version = ArtifactoryVersionReader.read(in);
+        Assert.assertNotNull(version, "Version should have been resolved");
+        Assert.assertEquals(version.getVersion(), ArtifactoryVersion.getCurrent(), "Unexpected version");
+        Assert.assertEquals(version.getTimestamp(), 789456, "Unexpected version");
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -78,7 +87,14 @@ public class ArtifactoryVersionReaderTest {
 
     private InputStream createInputStream(String version, int revision) {
         return new ByteArrayInputStream(String.format("artifactory.version=%s%n" +
-                "artifactory.revision=%s%n", version, revision + "").getBytes());
+                "artifactory.revision=%s%n", version, revision).getBytes());
+    }
+
+    private InputStream createInputStream(String version, int revision, long timestamp) {
+        return new ByteArrayInputStream(String.format(
+                "artifactory.version=%s%n" +
+                        "artifactory.revision=%s%n" +
+                        "artifactory.timestamp=%s%n", version, revision, timestamp).getBytes());
     }
 
 }

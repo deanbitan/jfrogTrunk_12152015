@@ -24,7 +24,6 @@ import org.apache.wicket.PageParameters;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.util.string.StringValueConversionException;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
@@ -99,7 +98,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      */
     private Panel getModuleSpecificTabbedPanel(String forcedModule) {
         String buildName = getBuildName();
-        long buildNumber = getBuildNumber();
+        String buildNumber = getBuildNumber();
         String buildStarted = null;
         String moduleId;
 
@@ -128,7 +127,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      */
     private Panel getTabbedPanel() {
         String buildName = getBuildName();
-        long buildNumber = getBuildNumber();
+        String buildNumber = getBuildNumber();
 
         String buildStarted = null;
         /**
@@ -206,7 +205,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * @return Build object if found.
      * @throws AbortWithWebErrorCodeException If the build was not found
      */
-    private Build getBuild(String buildName, long buildNumber, String buildStarted) {
+    private Build getBuild(String buildName, String buildNumber, String buildStarted) {
         try {
             Build build;
             if (StringUtils.isNotBlank(buildStarted)) {
@@ -267,17 +266,8 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      *
      * @return Build number
      */
-    protected long getBuildNumber() {
-        validateKey(BUILD_NUMBER);
-
-        try {
-            return pageParameters.getLong(BUILD_NUMBER);
-        } catch (StringValueConversionException e) {
-            throwNotFoundError("Invalid value for build number parameter: " + e.getMessage());
-        }
-
-        //Shouldn't get here
-        return 0;
+    protected String getBuildNumber() {
+        return getStringParameter(BUILD_NUMBER);
     }
 
     /**

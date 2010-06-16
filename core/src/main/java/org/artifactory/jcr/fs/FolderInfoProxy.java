@@ -21,15 +21,11 @@ package org.artifactory.jcr.fs;
 import org.artifactory.api.fs.FolderAdditionalInfo;
 import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author Yoav Landman
  */
 public class FolderInfoProxy extends ItemInfoProxy<FolderInfo> implements FolderInfo {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(FolderInfoProxy.class);
 
     public FolderInfoProxy(RepoPath repoPath) {
         super(repoPath);

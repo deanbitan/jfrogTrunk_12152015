@@ -23,7 +23,7 @@ import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverterTest;
 import org.artifactory.util.ResourceUtils;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.slf4j.Logger;
 import org.testng.Assert;
@@ -42,7 +42,7 @@ public class FolderAdditionalInfoNameConverterTest extends MetadataConverterTest
         String fileMetadata = "/metadata/v130beta6/artifactory-folder.xml";
         Document doc = convertXml(fileMetadata, new FolderAdditionalInfoNameConverter());
 
-        String result = XmlConverterUtils.outputString(doc);
+        String result = XmlUtils.outputString(doc);
         log.debug(result);
 
         // the result is intermediate so it might not be compatible with latest FolderInfo

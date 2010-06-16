@@ -19,6 +19,8 @@
 package org.artifactory.engine;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.repo.exception.RepoRejectionException;
@@ -69,7 +71,10 @@ public class DownloadServiceImpl implements InternalDownloadService {
     private CentralConfigService centralConfig;
 
     @Autowired
-    InternalTrafficService trafficService;
+    private InternalTrafficService trafficService;
+
+    @Autowired
+    private AddonsManager addonsManager;
 
     private RequestResponseHelper requestResponseHelper;
 
@@ -106,20 +111,29 @@ public class DownloadServiceImpl implements InternalDownloadService {
             return;
         }
 
+        String intercept = addonsManager.interceptRequest();
+        if (StringUtils.isNotBlank(intercept)) {
+            response.sendError(HttpStatus.SC_FORBIDDEN, intercept, log);
+            return;
+        }
+
         try {
             String repoKey = request.getRepoKey();
             log.debug("Download request processing ({}) for repo '{}'.", request, repoKey);
             RepoResource resource;
             Repo repository = repositoryService.repositoryByKey(repoKey);
+
+            DownloadRequestContext requestContext = new DownloadRequestContext(request);
+
             if (repository == null) {
                 String message = "Failed to find the repository '" + repoKey + "' specified in the request.";
                 log.warn(message);
                 resource = new UnfoundRepoResource(request.getRepoPath(), message);
             } else {
-                resource = callGetInfoInTransaction(repository, new DownloadRequestContext(request));
+                resource = callGetInfoInTransaction(repository, requestContext);
             }
 
-            respond(request, response, resource);
+            respond(requestContext, response, resource);
 
         } catch (IOException e) {
             response.setException(e);
@@ -150,9 +164,10 @@ public class DownloadServiceImpl implements InternalDownloadService {
         return repo.getInfo(context);
     }
 
-    private void respond(ArtifactoryRequest request, ArtifactoryResponse response, RepoResource resource)
+    private void respond(RequestContext requestContext, ArtifactoryResponse response, RepoResource resource)
             throws IOException {
         try {
+            ArtifactoryRequest request = requestContext.getRequest();
             if (!resource.isFound()) {
                 respondResourceNotFound(response, resource);
             } else if (request.isHeadOnly() && !request.isChecksum()) {
@@ -163,21 +178,22 @@ public class DownloadServiceImpl implements InternalDownloadService {
             } else if (request.isChecksum()) {
                 respondForChecksumRequest(request, response, resource);
             } else {
-                respondFoundResource(response, resource);
+                respondFoundResource(requestContext, response, resource);
             }
         } catch (IOException e) {
             handleGenericIoException(response, resource, e);
         }
     }
 
-    private void respondFoundResource(ArtifactoryResponse response, RepoResource resource) throws IOException {
+    private void respondFoundResource(RequestContext requestContext, ArtifactoryResponse response,
+            RepoResource resource) throws IOException {
         //Get the actual repository the resource is in
         String repoKey = resource.getResponseRepoPath().getRepoKey();
         Repo repository = repositoryService.repositoryByKey(repoKey);
         //Send the resource file back (will update the cache for remote repositories)
         ResourceStreamHandle handle = null;
         try {
-            handle = repositoryService.getResourceStreamHandle(repository, resource);
+            handle = repositoryService.getResourceStreamHandle(requestContext, repository, resource);
             //Streaming the file is done outside a tx, so there is a chance that the content will change!
             requestResponseHelper.sendBodyResponse(response, resource, handle);
         } catch (RepoRejectionException rre) {

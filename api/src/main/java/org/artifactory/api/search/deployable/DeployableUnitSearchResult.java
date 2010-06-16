@@ -48,4 +48,32 @@ public class DeployableUnitSearchResult extends SearchResultBase {
     public DeployableUnit getDeployableUnit() {
         return deployableUnit;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        DeployableUnitSearchResult that = (DeployableUnitSearchResult) o;
+
+        if (!deployableUnit.equals(that.deployableUnit)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + deployableUnit.hashCode();
+        return result;
+    }
 }

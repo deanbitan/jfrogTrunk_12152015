@@ -113,4 +113,10 @@ public class NonUniqueSnapshotVersionAdapterTest extends ArtifactoryHomeBoundTes
                 "should not be affected");
     }
 
+    public void uniqueArtifactVersionWithDashes() {
+        String snapshotPath = "groupId/artifact_id/2.5-TEST-SNAPSHOT/";
+        String uniqueVersionFile = "artifact_id-2.5-TEST-20071014.090217-2.jar";
+        String result = nonUniqueAdapter.adaptSnapshotPath(new RepoPath("local", snapshotPath + uniqueVersionFile));
+        assertEquals(result, snapshotPath + "artifact_id-2.5-TEST-SNAPSHOT.jar");
+    }
 }

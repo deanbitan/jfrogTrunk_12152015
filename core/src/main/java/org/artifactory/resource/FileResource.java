@@ -87,7 +87,7 @@ public class FileResource implements RepoResource {
     }
 
     public String getMimeType() {
-        MimeType contentType = NamingUtils.getContentType(info.getRelPath());
+        MimeType contentType = NamingUtils.getMimeType(info.getRelPath());
         return contentType.getType();
     }
 

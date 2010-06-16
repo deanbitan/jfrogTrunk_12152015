@@ -184,8 +184,6 @@ public class InternalLockManager {
     private void releaseAllLocks() {
         log.trace("Release all locks of lm={}", this.hashCode());
         try {
-
-
             if (!hasLocks()) {
                 return;
             }

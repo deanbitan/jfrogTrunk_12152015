@@ -51,8 +51,6 @@
 
     <!-- LDAP provider first - auth provider will be auto-wired by annotation -->
     <bean id="ldapAuthenticationProvider" class="org.artifactory.security.ldap.ArtifactoryLdapAuthenticationProvider">
-        <constructor-arg ref="artifactoryLdapAuthenticator"/>
-        <!--<security:custom-authentication-provider/>-->
     </bean>
 
     <!-- Dao provider second -->
@@ -61,7 +59,7 @@
         <security:authentication-provider user-service-ref="userDetailsService">
             <security:password-encoder hash="md5"/>
         </security:authentication-provider>
-        <security:authentication-provider ref="rememberMeAuthenticationProvider "/>
+        <security:authentication-provider ref="rememberMeAuthenticationProvider"/>
     </security:authentication-manager>
 
     <bean id="rememberMeProcessingFilter"

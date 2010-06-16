@@ -29,11 +29,11 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 
 import static org.artifactory.api.rest.constant.ArtifactRestConstants.PATH_MOVE;
 
@@ -64,9 +64,9 @@ public class MoveResource {
             // The path of the source item to be moved/copied
             @PathParam("path") String path,
             // The target path to to move/copy the item.
-            @FormParam(ArtifactRestConstants.PARAM_TARGET) String target,
+            @QueryParam(ArtifactRestConstants.PARAM_TARGET) String target,
             // Flag to indicate whether to perform a dry run first. default false
-            @FormParam(ArtifactRestConstants.PARAM_DRY_RUN) int dryRun) throws Exception {
+            @QueryParam(ArtifactRestConstants.PARAM_DRY_RUN) int dryRun) throws Exception {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         return addonsManager.addonByType(RestAddon.class).move(path, target, dryRun);
     }

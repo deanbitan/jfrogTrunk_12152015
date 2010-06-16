@@ -21,7 +21,7 @@ package org.artifactory.convert;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.util.ResourceUtils;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.slf4j.Logger;
@@ -38,12 +38,12 @@ public abstract class XmlConverterTest extends ArtifactoryHomeBoundTest {
 
     protected Document convertXml(String resourcePath, XmlConverter converter) throws Exception {
         InputStream is = ResourceUtils.getResource(resourcePath);
-        Document doc = XmlConverterUtils.parse(is);
+        Document doc = XmlUtils.parse(is);
         converter.convert(doc);
         return doc;
     }
 
     protected void debugContent(Document doc) {
-        log.debug(XmlConverterUtils.outputString(doc));
+        log.debug(XmlUtils.outputString(doc));
     }
 }

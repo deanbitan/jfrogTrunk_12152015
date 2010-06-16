@@ -712,10 +712,19 @@ button.help-link {
     min-width: 732px;
 }
 
+.search-tabs .data-table {
+    margin-top: 10px;
+}
+
 /* -- navigation ------------------------------------------------------*/
 
 .navigation td {
     padding: 10px;
+}
+
+.IE-6 .navigation td,
+.IE-7 .navigation td {
+    width: 0;
 }
 
 .navigatorLabel {
@@ -1464,6 +1473,16 @@ td.one-line span {
     width: 98%;
 }
 
+.IE-7 .browse-repo-panel .syntaxhighlighter {
+    width: 10000% !important;
+}
+
+.browse-repo-panel .syntaxhighlighter .lines.no-wrap {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+}
+
 /*-- ActionsMenuPanel --*/
 
 .tundra table.dijitMenu, .tundra .dijitMenuTable {
@@ -1520,7 +1539,7 @@ button.button, button.styled-checkbox {
     overflow: visible;
 }
 
-.Moz button.button, .Win32.Chrome button.button {
+.Moz button.button {
     margin: 0 -1px;
 }
 
@@ -1703,40 +1722,70 @@ td.main {
     vertical-align: top;
 }
 
+.IE-7 div.main {
+    min-width: 960px;
+}
+
 td.footer {
     vertical-align: bottom;
 }
 
 div.footer {
-    height: 23px;
-    padding: 0;
     margin: 0;
-    background-color: #D5EAA5;
     border-top: solid 1px #999999;
+    text-align: center;
+    position: relative;
+    padding-bottom: 3px;
 }
 
-div.footer p {
+div.footer span {
     margin: 0;
-    padding: 3px 5px 5px 5px;
+    padding: 3px 3px 0 3px;
     font-size: 10px;
 }
 
+div.footer, .copywrites, .version {
+    background-color: #D5EAA5;
+}
+
 .copywrites {
-    float: left;
+    position: absolute;
+    left: 0;
+    top: 0;
 }
 
 .version {
-    float: right;
+    position: absolute;
+    top: 0;
+    right: 0;
 }
 
-.footer a {
-    color: black;
-    text-decoration: none;
+.license {
+    text-align: center;
 }
 
-.footer a:hover, .footer a:focus {
+.no-license {
+    background-color: #FF6241;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px;
+    text-align: center;
+}
+
+.no-license a {
+    color: white;
+    text-decoration: underline;
+}
+
+.no-license a:hover, .footer a:focus {
     color: blue;
     text-decoration: underline;
+}
+
+.copywrites a {
+    color: black;
+    text-decoration: none;
 }
 
 .header {
@@ -1774,6 +1823,12 @@ div.footer p {
     width: 180px;
     display: block;
     text-align: center;
+    line-height: 81px;
+    font-size: 0;
+}
+
+.company-logo span {
+    font-size: 13px;
 }
 
 .company-logo img {
@@ -1796,6 +1851,7 @@ div.footer p {
     top: 3px;
     font-weight: bold;
     color: #666666;
+    line-height: 1em;
 }
 
 .quick-search-box {
@@ -2179,6 +2235,11 @@ div.quick-search-box button.button:hover .button-right, div.quick-search-box but
     margin-top: 10px;
 }
 
+.IE-7 .outer-border-wrapper {
+    position: relative;
+    min-width: 1px;
+}
+
 .outer-border-title {
     margin: 0;
     padding: 15px 5px 8px 20px;
@@ -2237,42 +2298,46 @@ div.list-panel .border-title {
     padding-top: 10px;
 }
 
-ul.ordered-list-panel {
+.ordered-list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ordered-list {
     border: solid 1px #41413F;
     background: white url("images/buttons/field-center.gif") top repeat-x;
     margin: 0 104px 5px 15px;
-    padding: 0;
-    list-style: none;
     height: 203px;
     overflow: auto;
 }
 
-.IE-7 ul.ordered-list-panel {
+.IE-7 .ordered-list {
     height: 205px;
 }
 
-.Chrome ul.ordered-list-panel {
+.Chrome .ordered-list {
     margin-right: 0;
 }
 
-.Safari ul.ordered-list-panel {
+.Safari .ordered-list {
     margin: 0 0 5px 15px;
 }
 
-.IE ul.ordered-list-panel {
+.IE .ordered-list {
     position: relative;
 }
 
-ul.ordered-list-panel li {
+.ordered-list li {
     padding: 0 2px;
 }
 
-.IE ul.ordered-list-panel li {
+.IE .ordered-list li {
     padding: 1px 2px 3px 2px;
     position: relative;
 }
 
-.IE-6 ul.ordered-list-panel li {
+.IE-6 .ordered-list li {
     padding: 0 2px 3px 2px;
     position: relative;
 }
@@ -2921,14 +2986,14 @@ button.styled-checkbox-disabled-checked, button.styled-checkbox-disabled-uncheck
 .dnd-selection .sep {
     width: 37px;
     float: left;
-    margin-top: 45px;
+    margin-top: 40px;
     text-align: center;
 }
 
 .dnd-selection .sep button {
     width: 37px;
     height: 35px;
-    margin: 2px auto;
+    margin: 1px auto;
 }
 
 .IE-6 .dnd-selection .sep button {
@@ -2988,6 +3053,54 @@ button.styled-checkbox-disabled-checked, button.styled-checkbox-disabled-uncheck
     background: url("images/drag-drop/BTN-remove-ro.gif") no-repeat;
 }
 
+.dnd-selection button.add-all-link {
+    background: url("images/drag-drop/BTN-add-all.png") no-repeat;
+}
+
+.dnd-selection button.add-all-link-disabled {
+    background: url("images/drag-drop/BTN-add-all-disabled.png") no-repeat;
+}
+
+.dnd-selection button.add-all-link:hover, .dnd-selection button.add-all-link:focus {
+    background: url("images/drag-drop/BTN-add-all-ro.png") no-repeat;
+}
+
+.dnd-selection button.remove-all-link {
+    background: url("images/drag-drop/BTN-remove-all.png") no-repeat;
+}
+
+.dnd-selection button.remove-all-link-disabled {
+    background: url("images/drag-drop/BTN-remove-all-disabled.png") no-repeat;
+}
+
+.dnd-selection button.remove-all-link:hover, dnd-selection button.remove-all-link:focus {
+    background: url("images/drag-drop/BTN-remove-all-ro.png") no-repeat;
+}
+
+.IE-6 .dnd-selection button.add-all-link {
+    background: url("images/drag-drop/BTN-add-all.gif") no-repeat;
+}
+
+.IE-6 .dnd-selection button.add-all-link-disabled {
+    background: url("images/drag-drop/BTN-add-all-disabled.gif") no-repeat;
+}
+
+.IE-6 .dnd-selection button.add-all-link:hover, .IE-6 .dnd-selection button.add-all-link:focus {
+    background: url("images/drag-drop/BTN-add-all-ro.gif") no-repeat;
+}
+
+.IE-6 .dnd-selection button.remove-all-link {
+    background: url("images/drag-drop/BTN-remove-all.gif") no-repeat;
+}
+
+.IE-6 .dnd-selection button.remove-all-link-disabled {
+    background: url("images/drag-drop/BTN-remove-all-disabled.gif") no-repeat;
+}
+
+.IE-6 .dnd-selection button.remove-all-link:hover, .IE-6 dnd-selection button.remove-all-link:focus {
+    background: url("images/drag-drop/BTN-remove-all-ro.gif") no-repeat;
+}
+
 .dnd-selection .sep button span {
     display: none;
 }
@@ -3002,7 +3115,7 @@ button.styled-checkbox-disabled-checked, button.styled-checkbox-disabled-uncheck
     padding: 0;
     margin: 0;
     border: solid 1px #cccccc;
-    height: 100px;
+    height: 150px;
     overflow: auto;
     background-color: white;
 }
@@ -3066,6 +3179,9 @@ table.data-table {
 table.data-table tr.headers th {
     border-top: 1px solid #777777;
     font-weight: bold;
+}
+
+table.data-table tr.headers th span {
     white-space: nowrap;
 }
 
@@ -3385,7 +3501,7 @@ table.selectable tbody tr.hover td, table.selectable tbody tr.opened td {
     height: 399px;
 }
 
-div.ordered-list-panel .table-wrapper {
+.ordered-list-panel .table-wrapper {
     height: 148px;
 }
 
@@ -3409,6 +3525,17 @@ div.ordered-list-panel .table-wrapper {
 
 div.general-settings-panel input.text-file {
     width: auto;
+}
+
+.license-key-text-area {
+    font-family: monospace;
+    width: 650px
+}
+
+.license-border {
+    margin-top: -3px;
+    margin-left: 8px;
+    width: 655px;
 }
 
 /*-- GeneralTabPanel --*/
@@ -3609,6 +3736,10 @@ div.login-panel {
 
 .login-panel .outer-border-title, .logout-border .outer-border-title {
     padding-bottom: 0;
+}
+
+.login-panel .buttons {
+    position: relative;
 }
 
 /*-- LogoutPage --*/
@@ -4973,11 +5104,11 @@ div.list-panel-buttons button.cancel-link .button-right {
     left: -206px;
 }
 
-.remote-repos ul.ordered-list-panel {
+.remote-repos .ordered-list {
     height: 237px;
 }
 
-.IE-7 .remote-repos ul.ordered-list-panel {
+.IE-7 .remote-repos .ordered-list {
     height: 249px;
 }
 
@@ -5109,6 +5240,7 @@ div.list-panel-buttons button.cancel-link .button-right {
 }
 
 /*--LdapGroupSettingsPanel--*/
+
 .ldap-setting-form .enabled {
     margin-bottom: 10px;
     padding-top: 14px;
@@ -5340,10 +5472,12 @@ td.warn span {
     zoom: 1;
 }
 
-/*--RepoConfigCreateUpdatePanel--*/
+.local-repo-config .field-row input.text, .local-repo-config .field-row textarea {
+    width: 260px;
+}
 
-.local-repo-addvanced-settings .line-sep {
-    height: 20px;
+.local-repo-advanced-settings .field-row input.text {
+    width: 290px;
 }
 
 .http-repo-panell-advanced-settings .line-sep {
@@ -5352,6 +5486,11 @@ td.warn span {
 
 .virtual-repo-panel-advanced-settings .line-sep {
     margin-bottom: 2px;
+}
+
+.resolved-repos {
+    overflow: auto;
+    height: 100px;
 }
 
 /*-- HighlightedCodeLabel --*/
@@ -5367,10 +5506,10 @@ div.syntaxhighlighter .toolbar a.about {
 /*-- ForgotPasswordLink --*/
 
 .forgot-password {
-    float: left;
-    margin-top: 10px;
-    margin-left: 5px;
-    color: darkblue;
+    position: absolute;
+    left: 5px;
+    top: 10px;
+    color: #00008b;
 }
 
 /*-- MaintenancePage --*/
@@ -5382,4 +5521,51 @@ div.syntaxhighlighter .toolbar a.about {
 
 .IE-7 .checkbox-row .help-link {
     margin-top: -5px;
+}
+
+/*-- BuildInfoJsonTabPanel --*/
+
+.build-json .syntaxhighlighter .lines.no-wrap {
+    overflow: auto !important;
+}
+
+.build-json {
+    width: 200px;
+    margin-bottom: 0;
+}
+
+.build-json .syntaxhighlighter .toolbar {
+    right: 20px !important;
+}
+
+.build-json .border-content {
+    padding: 5px;
+}
+
+.lines {
+    overflow: auto;
+}
+
+.syntaxhighlighter div.lines {
+    min-height: 16px !important;
+}
+
+.syntaxhighlighter div.line {
+    min-height: 0 !important;
+}
+
+/*-- BaseModuleDependenciesListPanel --*/
+
+.dependencies-panel .border-content {
+    padding-top: 0;
+}
+
+table.data-table {
+    margin-top: 0;
+}
+
+.info-panel-text-area {
+    width: 100%;
+    height: 200px;
+    font-family: "Courier New", Courier, monospace;
 }

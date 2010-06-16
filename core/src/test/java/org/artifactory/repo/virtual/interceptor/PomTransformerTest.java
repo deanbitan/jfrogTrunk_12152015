@@ -23,10 +23,11 @@ import org.apache.maven.model.Activation;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Profile;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
+import org.artifactory.io.checksum.Checksum;
+import org.artifactory.io.checksum.ChecksumCalculator;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.repo.virtual.interceptor.transformer.PomTransformer;
 import org.artifactory.util.ResourceUtils;
-import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -35,33 +36,55 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.testng.Assert.*;
+
 /**
+ * IMPORTANT FOR FUTURE EDITORS: WHEN ADDING A NEW POM TRANSFORMATION SCENARIO, MAKE SURE TO ADD ONE FOR THE
+ * TRANSFORMABLE ONE AND ONE FOR THE CLEAN ONE AND COMPARE CHECKSUMS AT THE END
+ *
  * @author Eli Givoni
  */
 @Test
 public class PomTransformerTest {
-    private String pomAsString;
+
+    private String transformablePomAsString;
+    private String cleanPomAsString;
 
     @BeforeClass
     private void setup() throws IOException {
-        InputStream resource = ResourceUtils.getResource(
+        InputStream transformablePomResource = ResourceUtils.getResource(
                 "/org/artifactory/repo/virtual/interceptor/activeByDefault-test.pom");
-        pomAsString = IOUtils.toString(resource, "utf-8");
-        IOUtils.closeQuietly(resource);
+        InputStream cleanPomResource = ResourceUtils.getResource(
+                "/org/artifactory/repo/virtual/interceptor/clean-test.pom");
+        transformablePomAsString = IOUtils.toString(transformablePomResource, "utf-8");
+        cleanPomAsString = IOUtils.toString(cleanPomResource, "utf-8");
+        IOUtils.closeQuietly(transformablePomResource);
+        IOUtils.closeQuietly(cleanPomResource);
     }
 
-    public void transformWithNothingPolicy() throws IOException {
-        PomTransformer pomTransformer = new PomTransformer(pomAsString, PomCleanupPolicy.nothing);
+    public void transformableWithNothingPolicy() throws IOException {
+        PomTransformer pomTransformer = new PomTransformer(transformablePomAsString, PomCleanupPolicy.nothing);
         String transformedPom = pomTransformer.transform();
 
-        Assert.assertEquals(pomAsString, transformedPom, "Expected a matching document");
-        Assert.assertTrue(pomAsString.contains("This is a comment"));
+        assertEquals(transformablePomAsString, transformedPom, "Expected a matching document");
+        assertTrue(transformablePomAsString.contains("This is a comment"));
+        compareChecksums(transformablePomAsString, transformedPom, true);
+    }
+
+    public void cleanWithNothingPolicy() throws IOException {
+        PomTransformer pomTransformer = new PomTransformer(cleanPomAsString, PomCleanupPolicy.nothing);
+        String transformedPom = pomTransformer.transform();
+
+        assertEquals(cleanPomAsString, transformedPom, "Expected a matching document");
+        assertTrue(cleanPomAsString.contains("This is a comment"));
+        compareChecksums(cleanPomAsString, transformedPom, true);
     }
 
     @SuppressWarnings({"unchecked"})
-    public void transformWithDiscardActiveReference() {
+    public void transformableWithDiscardActiveReference() throws IOException {
 
-        PomTransformer pomTransformer = new PomTransformer(pomAsString, PomCleanupPolicy.discard_active_reference);
+        PomTransformer pomTransformer = new PomTransformer(transformablePomAsString,
+                PomCleanupPolicy.discard_active_reference);
         String transformedPom = pomTransformer.transform();
 
         Model pom = MavenModelUtils.stringToMavenModel(transformedPom);
@@ -85,11 +108,22 @@ public class PomTransformerTest {
                 assertNotEmptyList(profileRepositories, profilePluginsRepositories);
             }
         }
-        Assert.assertTrue(pomAsString.contains("This is a comment"));
+        assertTrue(transformablePomAsString.contains("This is a comment"));
+        compareChecksums(transformablePomAsString, transformedPom, false);
     }
 
-    public void transformWithDiscardAnyReference() {
-        PomTransformer pomTransformer = new PomTransformer(pomAsString, PomCleanupPolicy.discard_any_reference);
+    public void cleanWithDiscardActiveReference() throws IOException {
+        PomTransformer pomTransformer = new PomTransformer(cleanPomAsString, PomCleanupPolicy.discard_active_reference);
+        String transformedPom = pomTransformer.transform();
+
+        assertEquals(cleanPomAsString, transformedPom, "Expected a matching document");
+        assertTrue(cleanPomAsString.contains("This is a comment"));
+        compareChecksums(cleanPomAsString, transformedPom, true);
+    }
+
+    public void transformableWithDiscardAnyReference() throws IOException {
+        PomTransformer pomTransformer = new PomTransformer(transformablePomAsString,
+                PomCleanupPolicy.discard_any_reference);
         String transformedPom = pomTransformer.transform();
 
         Model pom = MavenModelUtils.stringToMavenModel(transformedPom);
@@ -105,7 +139,17 @@ public class PomTransformerTest {
 
             assertEmptyList(profileRepositories, profilePluginsRepositories);
         }
-        Assert.assertTrue(pomAsString.contains("This is a comment"));
+        assertTrue(transformablePomAsString.contains("This is a comment"));
+        compareChecksums(transformablePomAsString, transformedPom, false);
+    }
+
+    public void cleanWithDiscardAnyReference() throws IOException {
+        PomTransformer pomTransformer = new PomTransformer(cleanPomAsString, PomCleanupPolicy.discard_any_reference);
+        String transformedPom = pomTransformer.transform();
+
+        assertEquals(cleanPomAsString, transformedPom, "Expected a matching document");
+        assertTrue(cleanPomAsString.contains("This is a comment"));
+        compareChecksums(cleanPomAsString, transformedPom, true);
     }
 
     public void transformBadPom() throws IOException {
@@ -115,21 +159,46 @@ public class PomTransformerTest {
         IOUtils.closeQuietly(badPomResource);
         PomTransformer transformer = new PomTransformer(badPom, PomCleanupPolicy.discard_active_reference);
         String nonTransformedPom = transformer.transform();
-        Assert.assertEquals(nonTransformedPom, badPom, "xml document should not have been altered");
-        Assert.assertTrue(pomAsString.contains("This is a comment"));
+        assertEquals(nonTransformedPom, badPom, "xml document should not have been altered");
+        assertTrue(transformablePomAsString.contains("This is a comment"));
     }
 
     private void assertEmptyList(Object... list) {
         for (Object o : list) {
             List elementList = (ArrayList) o;
-            Assert.assertTrue(elementList.isEmpty(), "Expected an empty list");
+            assertTrue(elementList.isEmpty(), "Expected an empty list");
         }
     }
 
     private void assertNotEmptyList(Object... list) {
         for (Object o : list) {
             List elementList = (ArrayList) o;
-            Assert.assertFalse(elementList.isEmpty(), "Expected not an empty list");
+            assertFalse(elementList.isEmpty(), "Expected not an empty list");
         }
+    }
+
+    /**
+     * Compares the checksums of two strings
+     *
+     * @param a             String to compare
+     * @param b             String to compare
+     * @param shouldBeEqual True if both strings should have equal checksums
+     */
+    private void compareChecksums(String a, String b, boolean shouldBeEqual) throws IOException {
+        InputStream streamA = IOUtils.toInputStream(a);
+        InputStream streamB = IOUtils.toInputStream(b);
+        Checksum[] checksumsA = ChecksumCalculator.calculateAll(streamA);
+        Checksum[] checksumsB = ChecksumCalculator.calculateAll(streamB);
+        for (int i = 0; i < checksumsA.length; i++) {
+            if (shouldBeEqual) {
+                assertEquals(checksumsA[i].getChecksum(), checksumsB[i].getChecksum(),
+                        "POM checksums should be equal.");
+            } else {
+                assertNotSame(checksumsA[i].getChecksum(), checksumsB[i].getChecksum(),
+                        "POM checksums should not be equal.");
+            }
+        }
+        IOUtils.closeQuietly(streamA);
+        IOUtils.closeQuietly(streamB);
     }
 }

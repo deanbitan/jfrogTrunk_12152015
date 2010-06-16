@@ -31,7 +31,7 @@ import java.io.Reader;
  *
  * @author Noam Y. Tenne
  */
-public class ArtifactoryAnalyzer extends Analyzer {
+public class ArtifactoryAnalyzer extends Analyzer<Tokenizer> {
 
     @Override
     public TokenStream tokenStream(String fieldName, Reader reader) {
@@ -40,7 +40,7 @@ public class ArtifactoryAnalyzer extends Analyzer {
 
     @Override
     public TokenStream reusableTokenStream(String fieldName, Reader reader) throws IOException {
-        Tokenizer tokenizer = (Tokenizer) getPreviousTokenStream();
+        Tokenizer tokenizer = getPreviousTokenStream();
         if (tokenizer == null) {
             tokenizer = new LowCaseWhitespaceTokenizer(reader);
             setPreviousTokenStream(tokenizer);

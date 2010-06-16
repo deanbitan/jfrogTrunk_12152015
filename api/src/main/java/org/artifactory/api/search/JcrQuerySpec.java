@@ -49,7 +49,7 @@ public final class JcrQuerySpec {
     }
 
     public JcrQuerySpec noLimit() {
-        this.limit = 0;
+        this.limit = -1;
         return this;
     }
 

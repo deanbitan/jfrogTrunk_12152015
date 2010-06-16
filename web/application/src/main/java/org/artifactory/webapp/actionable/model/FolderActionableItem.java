@@ -174,7 +174,7 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
                 if (item.isFolder()) {
                     child = new FolderActionableItem(((FolderInfo) item), isCompactAllowed());
                 } else {
-                    MimeType mimeType = NamingUtils.getContentType(item.getRelPath());
+                    MimeType mimeType = NamingUtils.getMimeType(item.getRelPath());
                     if (mimeType.isArchive()) {
                         child = new ZipFileActionableItem((FileInfo) item, isCompactAllowed());
                     } else {

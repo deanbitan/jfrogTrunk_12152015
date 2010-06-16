@@ -18,12 +18,16 @@
 
 package org.artifactory.addon;
 
+import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
+import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.DownloadResource;
+import org.artifactory.rest.resource.artifact.SyncResource;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import java.util.Set;
 
 /**
  * Default implementation of the rest add-on
@@ -45,8 +49,26 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
-    public Response download(String path, DownloadResource.Content content, int mark, HttpServletResponse response)
-            throws Exception {
+    public Response download(String path, DownloadResource.Content content, int mark,
+            HttpServletResponse response) throws Exception {
+        throw new MissingRestAddonException();
+    }
+
+    public Set<String> searchArtifactsByPattern(String pattern) {
+        throw new MissingRestAddonException();
+    }
+
+    public MoveCopyResult moveOrCopyBuildItems(boolean move, String buildName, String buildNumber, String started,
+            String to, int arts, int deps, StringList scopes, int dry) {
+        throw new MissingRestAddonException();
+    }
+
+    public FileList getFileList(String uri, String path, int deep) {
+        throw new MissingRestAddonException();
+    }
+
+    public Response replicate(String path, int progress, int mark, int deleteExisting, SyncResource.Overwrite overwrite,
+            HttpServletResponse httpResponse) {
         throw new MissingRestAddonException();
     }
 }

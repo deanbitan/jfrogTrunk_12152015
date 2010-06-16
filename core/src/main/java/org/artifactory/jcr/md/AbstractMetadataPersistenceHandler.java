@@ -50,7 +50,6 @@ import static org.artifactory.jcr.JcrTypes.NT_UNSTRUCTURED;
  * @author freds
  */
 public abstract class AbstractMetadataPersistenceHandler<T> extends AbstractPersistenceHandler<T> {
-    @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(AbstractMetadataPersistenceHandler.class);
 
     protected AbstractMetadataPersistenceHandler(XmlMetadataProvider<T> xmlProvider) {

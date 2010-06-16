@@ -175,6 +175,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo> {
             //Add our node
             JcrHelper.getOrCreateNode(parentNode, dir, JcrTypes.NT_ARTIFACTORY_FOLDER, JcrTypes.MIX_ARTIFACTORY_BASE);
             setModifiedInfoFields(System.currentTimeMillis(), System.currentTimeMillis());
+            getInfoPersistenceHandler().update(this, getInfo());
             log.debug("Created folder node: {}.", absPath);
             created = true;
         }

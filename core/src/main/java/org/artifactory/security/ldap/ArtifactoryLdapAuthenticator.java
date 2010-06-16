@@ -18,7 +18,10 @@
 
 package org.artifactory.security.ldap;
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.LdapGroupAddon;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
@@ -38,6 +41,9 @@ import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Wrapper for the LDAP bind authenticator. Used to authenticate users against ldap and as a factory for the security
@@ -51,26 +57,29 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryLdapAuthenticator.class);
 
     private static final String NO_LDAP_SERVICE_CONFIGURED = "No LDAP service configured";
-    private static final String LDAP_SERVICE_MISCONFIGURED = "LDAP service misconfigured";
+    public static final String LDAP_SERVICE_MISCONFIGURED = "LDAP service misconfigured";
 
     @Autowired
     private CentralConfigService centralConfig;
 
-    private BindAuthenticator authenticator;
+    private Map<String, BindAuthenticator> authenticators;
 
     public void init() {
         try {
-            authenticator = createBindAuthenticator();
+            authenticators = createBindAuthenticators();
+            if (authenticators.isEmpty()) {
+                authenticators = null;
+            }
         } catch (Exception e) {
             log.error("Failed to create LDAP authenticator. Please verify and fix your LDAP settings.", e);
         }
-        if (authenticator == null) {
+        if (authenticators == null) {
             log.debug("LDAP service is disabled");
         }
     }
 
     public void reload(CentralConfigDescriptor oldDescriptor) {
-        authenticator = null;
+        authenticators = null;
         init();
     }
 
@@ -80,15 +89,22 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
-    private BindAuthenticator createBindAuthenticator() {
-        LdapSetting ldapSetting = centralConfig.getDescriptor().getSecurity().getEnabledLdapSettings();
-        if (ldapSetting != null) {
+    public Map<String, BindAuthenticator> getAuthenticators() {
+        return authenticators;
+    }
+
+    private Map<String, BindAuthenticator> createBindAuthenticators() {
+        Map<String, BindAuthenticator> result = new LinkedHashMap<String, BindAuthenticator>();
+        LdapGroupAddon groupAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
+                LdapGroupAddon.class);
+        List<LdapSetting> ldapSettings = groupAddon.getEnabledLdapSettings();
+        for (LdapSetting ldapSetting : ldapSettings) {
             LdapContextSource contextSource = createSecurityContext(ldapSetting);
             ArtifactoryBindAuthenticator bindAuthenticator =
                     new ArtifactoryBindAuthenticator(contextSource, ldapSetting);
-            return bindAuthenticator;
+            result.put(ldapSetting.getKey(), bindAuthenticator);
         }
-        return null;
+        return result;
     }
 
     static LdapContextSource createSecurityContext(LdapSetting ldapSetting) {
@@ -119,10 +135,21 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
 
     public DirContextOperations authenticate(Authentication authentication) {
         //Spring expects an exception on failed authentication
-        if (authenticator != null && centralConfig.getDescriptor().getSecurity().isLdapEnabled()) {
-            DirContextOperations user = authenticator.authenticate(authentication);
-            if (user != null) {
-                return user;
+        if (authenticators != null && centralConfig.getDescriptor().getSecurity().isLdapEnabled()) {
+            RuntimeException authenticationException = null;
+            for (BindAuthenticator authenticator : authenticators.values()) {
+                DirContextOperations user = null;
+                try {
+                    user = authenticator.authenticate(authentication);
+                } catch (RuntimeException e) {
+                    authenticationException = e;
+                }
+                if (user != null) {
+                    return user;
+                }
+            }
+            if (authenticationException != null) {
+                throw authenticationException;
             }
             throw new AuthenticationServiceException(LDAP_SERVICE_MISCONFIGURED);
         } else {

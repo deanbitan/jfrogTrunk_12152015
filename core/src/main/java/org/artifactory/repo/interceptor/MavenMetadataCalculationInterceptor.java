@@ -48,8 +48,10 @@ public class MavenMetadataCalculationInterceptor implements RepoInterceptor {
             RepositoryService repositoryService = context.getRepositoryService();
 
             // calculate maven metadata on the grandparent folder (the artifact id node)
-            JcrFolder artifactIdFolder = fsItem.getParentFolder().getParentFolder();
-            repositoryService.calculateMavenMetadata(artifactIdFolder.getRepoPath());
+            JcrFolder artifactIdFolder = fsItem.getAncestor(2);
+            if (artifactIdFolder != null) {
+                repositoryService.calculateMavenMetadata(artifactIdFolder.getRepoPath());
+            }
         }
     }
 

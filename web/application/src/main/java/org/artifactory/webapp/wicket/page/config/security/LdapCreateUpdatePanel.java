@@ -25,6 +25,8 @@ import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.LdapGroupWebAddon;
 import org.artifactory.api.common.StatusEntryLevel;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.CentralConfigService;
@@ -60,6 +62,9 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
     private CentralConfigService centralConfigService;
 
     @SpringBean
+    private AddonsManager addonsManager;
+
+    @SpringBean
     private SecurityService securityService;
 
     SearchPattern searchPattern;
@@ -70,7 +75,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
     @WicketProperty
     private String testPassword;
 
-    public LdapCreateUpdatePanel(CreateUpdateAction action, LdapSetting ldapDescriptor, LdapsListPanel ldapsListPanel) {
+    public LdapCreateUpdatePanel(CreateUpdateAction action, LdapSetting ldapDescriptor) {
         super(action, ldapDescriptor);
         setWidth(500);
 
@@ -84,7 +89,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         ldapKeyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
             ldapKeyField.add(new XsdNCNameValidator("Invalid LDAP key '%s'"));
-            ldapKeyField.add(new UniqueXmlIdValidator(ldapsListPanel.getMutableDescriptor()));
+            ldapKeyField.add(new UniqueXmlIdValidator(centralConfigService.getMutableDescriptor()));
         }
         border.add(ldapKeyField);
         border.add(new SchemaHelpBubble("key.help"));
@@ -111,7 +116,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         form.add(new ModalCloseLink("cancel"));
 
         // Submit button
-        TitledAjaxSubmitLink submitButton = createSubmitButton(ldapsListPanel);
+        TitledAjaxSubmitLink submitButton = createSubmitButton();
         form.add(submitButton);
         form.add(new DefaultButtonBehavior(submitButton));
 
@@ -162,7 +167,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         borderTest.add(createTestConnectionButton());
     }
 
-    private TitledAjaxSubmitLink createSubmitButton(final LdapsListPanel ldapsListPanel) {
+    private TitledAjaxSubmitLink createSubmitButton() {
         String submitCaption = isCreate() ? "Create" : "Save";
         TitledAjaxSubmitLink submit = new TitledAjaxSubmitLink("submit", submitCaption, form) {
             @Override
@@ -178,14 +183,15 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                     configDescriptor.getSecurity().addLdap(ldapSetting);
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
                     getPage().info("LDAP '" + entity.getKey() + "' successfully created.");
+                    ((LdapsListPage) getPage()).refresh(target);
                 } else {
-                    configDescriptor.getSecurity().ldapSettingChanged(entity);
+                    LdapGroupWebAddon addon = addonsManager.addonByType(LdapGroupWebAddon.class);
+                    addon.saveLdapSetting(configDescriptor, entity);
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
                     getPage().info("LDAP '" + entity.getKey() + "' successfully updated.");
+                    ((LdapsListPage) getPage()).refresh(target);
                 }
-                ldapsListPanel.setMutableDescriptor(configDescriptor);
                 AjaxUtils.refreshFeedback(target);
-                target.addComponent(ldapsListPanel);
                 ModalHandler.closeCurrent(target);
             }
         };

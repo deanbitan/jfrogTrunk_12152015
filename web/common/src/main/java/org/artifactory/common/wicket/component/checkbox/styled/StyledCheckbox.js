@@ -42,5 +42,12 @@ var StyledCheckbox = {
         } else {
             button.className = 'styled-checkbox styled-checkbox-unchecked';
         }
+    },
+
+    onkeydown: function(id, e) {
+        if (e.keyCode == 13) {
+            document.getElementById(id).click();
+            return false;
+        }
     }
 };

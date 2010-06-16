@@ -186,7 +186,7 @@
             <!-- Indexing configuration -->
             <param name="indexingConfiguration" value="${rep.home}/index/index_config.xml"/>
             <!-- Custom text extractor -->
-            <param name="textFilterClasses" value="org.artifactory.jcr.extractor.ArtifctoryTextExtractor"/>
+            <param name="textFilterClasses" value="org.artifactory.jcr.extractor.ArtifactoryTextExtractor"/>
             <!-- Workspace inconsistency handler -->
             <param name="onWorkspaceInconsistency" value="lenient"/>
         </SearchIndex>

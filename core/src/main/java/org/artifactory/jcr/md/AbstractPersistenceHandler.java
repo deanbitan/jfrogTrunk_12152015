@@ -25,10 +25,8 @@ import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrTypes;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.search.SearcherBase;
 import org.artifactory.spring.InternalContextHelper;
-import org.slf4j.Logger;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -42,8 +40,6 @@ import static org.artifactory.util.PathUtils.hasText;
  * @author freds
  */
 public abstract class AbstractPersistenceHandler<T> implements MetadataPersistenceHandler<T> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(AbstractPersistenceHandler.class);
 
     private JcrService jcr;
     private AuthorizationService authService;
@@ -98,8 +94,8 @@ public abstract class AbstractPersistenceHandler<T> implements MetadataPersisten
         itemInfo.setCreated(getLongProperty(node, PROP_ARTIFACTORY_CREATED, getJcrCreated(node), false));
         itemInfo.setLastModified(
                 getLongProperty(node, PROP_ARTIFACTORY_LAST_MODIFIED, getJcrLastModified(node), false));
-        itemInfo
-                .setCreatedBy(getStringProperty(node, PROP_ARTIFACTORY_CREATED_BY, itemInfo.getCreatedBy(), true));
+        itemInfo.setCreatedBy(
+                getStringProperty(node, PROP_ARTIFACTORY_CREATED_BY, itemInfo.getCreatedBy(), true));
         itemInfo.setModifiedBy(
                 getStringProperty(node, PROP_ARTIFACTORY_LAST_MODIFIED_BY, itemInfo.getModifiedBy(), true));
         itemInfo.setLastUpdated(
@@ -108,11 +104,11 @@ public abstract class AbstractPersistenceHandler<T> implements MetadataPersisten
 
     protected void setPropertiesInNodeFromInfo(Node node, ItemInfo itemInfo) {
         // Created managed by JCR only
-        setLongProperty(node, PROP_ARTIFACTORY_CREATED, itemInfo.getCreated());
+        setCalenderProperty(node, PROP_ARTIFACTORY_CREATED, itemInfo.getCreated());
         //Set the name property for indexing and speedy searches
         setArtifactoryName(node, itemInfo.getName());
         setJcrLastModified(node, itemInfo.getLastModified());
-        setLongProperty(node, PROP_ARTIFACTORY_LAST_MODIFIED, itemInfo.getLastModified());
+        setCalenderProperty(node, PROP_ARTIFACTORY_LAST_MODIFIED, itemInfo.getLastModified());
         String createdBy = itemInfo.getCreatedBy();
         String modifiedBy = itemInfo.getModifiedBy();
         if (!hasText(modifiedBy)) {
@@ -123,6 +119,6 @@ public abstract class AbstractPersistenceHandler<T> implements MetadataPersisten
         }
         setStringProperty(node, PROP_ARTIFACTORY_CREATED_BY, createdBy);
         setStringProperty(node, PROP_ARTIFACTORY_LAST_MODIFIED_BY, modifiedBy);
-        setLongProperty(node, PROP_ARTIFACTORY_LAST_UPDATED, itemInfo.getLastUpdated());
+        setCalenderProperty(node, PROP_ARTIFACTORY_LAST_UPDATED, itemInfo.getLastUpdated());
     }
 }

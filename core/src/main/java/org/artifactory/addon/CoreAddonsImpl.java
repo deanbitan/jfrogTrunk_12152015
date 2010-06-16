@@ -18,14 +18,21 @@
 
 package org.artifactory.addon;
 
+import com.google.common.collect.Lists;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.UserInfo;
+import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Default implementation of the core-related addon factories.
@@ -59,5 +66,15 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon {
 
     public void populateGroups(String dn, UserInfo info) {
         // do nothing
+    }
+
+    public List<LdapSetting> getEnabledLdapSettings() {
+        CentralConfigDescriptor descriptor = ContextHelper.get().beanForType(
+                CentralConfigService.class).getDescriptor();
+        List<LdapSetting> enabledLdapSettings = descriptor.getSecurity().getEnabledLdapSettings();
+        if (enabledLdapSettings != null && !enabledLdapSettings.isEmpty()) {
+            return Lists.newArrayList(enabledLdapSettings.get(0));
+        }
+        return Lists.newArrayList();
     }
 }

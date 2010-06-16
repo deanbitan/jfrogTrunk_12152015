@@ -23,8 +23,8 @@ import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.jackrabbit.core.TransientRepository;
 import org.apache.jackrabbit.core.XASessionImpl;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.SimpleCredentials;
@@ -36,10 +36,10 @@ import java.io.InputStream;
 
 public abstract class RepositoryTestBase {
 
-    private JackrabbitRepository repository;
+    JackrabbitRepository repository;
 
-    @BeforeClass
-    protected void setUp() throws Exception {
+    @BeforeMethod
+    protected void initRepository() throws Exception {
         InputStream is = getClass().getResourceAsStream("test_repo.xml");
         assert is != null;
         // Load the configuration and create the repository
@@ -53,13 +53,9 @@ public abstract class RepositoryTestBase {
         repository = new TransientRepository(rc);
     }
 
-    @AfterClass
-    protected void tearDown() throws Exception {
+    @AfterMethod
+    protected void shutdownRepository() throws Exception {
         repository.shutdown();
-    }
-
-    public JackrabbitRepository getRepository() {
-        return repository;
     }
 
     public static void beginTx(Xid xid1, XASessionImpl session) throws XAException {
@@ -75,7 +71,7 @@ public abstract class RepositoryTestBase {
     protected XASessionImpl login() throws RepositoryException {
         //Transient repo grants everyone
         XASessionImpl session =
-                (XASessionImpl) getRepository().login(new SimpleCredentials("user", "password".toCharArray()));
+                (XASessionImpl) repository.login(new SimpleCredentials("user", "password".toCharArray()));
         return session;
     }
 }

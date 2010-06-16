@@ -20,7 +20,7 @@ package org.artifactory.repo.virtual.interceptor.transformer;
 
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
@@ -31,6 +31,9 @@ import java.util.List;
 /**
  * POM transformer which removes all not needed tags from both the POM itself and the profile tags. Used to strip the
  * repository deceleration from the POM itself.
+ * <p/>
+ * IMPORTANT FOR FUTURE EDITORS: WHEN ADDING A SEGMENT REMOVAL MAKE SURE TO USE removeChild(org.jdom.Element, java.lang.String, org.jdom.Namespace)
+ * SO ALL POM MODIFICATIONS WILL BE TRACKED
  *
  * @author Eli Givoni
  * @author Tomer Cohen
@@ -40,6 +43,11 @@ public class PomTransformer {
 
     private final String pomAsString;
     private final PomCleanupPolicy pomCleanupPolicy;
+
+    /**
+     * POM modification indicator
+     */
+    private boolean pomChanged = false;
 
     public PomTransformer(String pomAsString, PomCleanupPolicy pomCleanupPolicy) {
         if (pomAsString == null) {
@@ -57,15 +65,15 @@ public class PomTransformer {
         try {
             //delete repositories and pluginsRepositories
             //Maven model does not preserve layout
-            pomDocument = XmlConverterUtils.parse(pomAsString);
+            pomDocument = XmlUtils.parse(pomAsString);
         } catch (Exception e) {
             log.warn("Failed to parse pom '{}': ", e.getMessage());
             return pomAsString;
         }
         Element pomRoot = pomDocument.getRootElement();
         Namespace namespace = pomRoot.getNamespace();
-        pomRoot.removeChild("repositories", namespace);
-        pomRoot.removeChild("pluginRepositories", namespace);
+        removeChild(pomRoot, "repositories", namespace);
+        removeChild(pomRoot, "pluginRepositories", namespace);
         boolean onlyActiveDefault = pomCleanupPolicy.equals(PomCleanupPolicy.discard_active_reference);
 
         //delete repositories and pluginsRepositories in profiles
@@ -91,11 +99,34 @@ public class PomTransformer {
                 }
             }
         }
-        return XmlConverterUtils.outputString(pomDocument);
+
+        /**
+         * We might have reached here without the pom actually changing, so return the modified xml only if it was
+         * Actually modified, otherwise it can result with identical looking POMs that calculate to different checksums
+         */
+        if (pomChanged) {
+            return XmlUtils.outputString(pomDocument);
+        } else {
+            return pomAsString;
+        }
     }
 
     private void deleteProfileRepositories(Element profile, Namespace namespace) {
-        profile.removeChild("repositories", namespace);
-        profile.removeChild("pluginRepositories", namespace);
+        removeChild(profile, "repositories", namespace);
+        removeChild(profile, "pluginRepositories", namespace);
+    }
+
+    /**
+     * Create a central child removal method so that we can also track any changes made to the POM file
+     *
+     * @param toRemoveFrom  Element to remove a child from
+     * @param childToRemove Name of child to remove from element
+     * @param namespace     Namespace of current document
+     */
+    private void removeChild(Element toRemoveFrom, String childToRemove, Namespace namespace) {
+        boolean removed = toRemoveFrom.removeChild(childToRemove, namespace);
+        if (!pomChanged && removed) {
+            pomChanged = true;
+        }
     }
 }

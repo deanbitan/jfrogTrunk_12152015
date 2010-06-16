@@ -41,17 +41,11 @@
     <mimetype type="text/x-groovy-source" extensions="groovy, gradle" viewable="true" syntax="groovy"/>
     <mimetype type="text/x-c" extensions="c, cc, cpp" viewable="true" syntax="groovy"/>
 
-    <mimetype type="application/xml" extensions="xml, xsl, xsi" viewable="true" syntax="xml" xml="true" css="xml"/>
-    <mimetype type="application/x-maven-pom+xml" extensions="pom" viewable="true" syntax="xml" xml="true" css="pom"/>
-    <mimetype type="application/x-ivy+xml" extensions="ivy" viewable="true" syntax="xml" xml="true" css="xml"/>
     <mimetype type="application/xml-dtd" extensions="dtd" viewable="true"/>
     <mimetype type="application/xml-schema" extensions="xsd" viewable="true" syntax="xml" xml="true" css="xml"/>
     <mimetype type="application/xml-external-parsed-entity" extensions="ent" viewable="true"/>
-    <mimetype type="application/x-java-jnlp-file" extensions="jnlp" viewable="true" syntax="xml" xml="true" css="jnlp"/>
-    <mimetype type="application/x-checksum" extensions="sha1, md5" viewable="true" syntax="plain"/>
     <mimetype type="application/xhtml+xml" extensions="xhtml" viewable="true" syntax="xml"/>
 
-    <mimetype type="application/java-archive" extensions="jar, war, ear, sar, har" archive="true" css="jar"/>
     <mimetype type="application/x-java-pack200" extensions="jar.pack.gz" archive="true" css="jar"/>
     <mimetype type="application/x-java-archive-diff" extensions="jardiff" archive="false"/>
     <mimetype type="application/zip" extensions="zip" archive="true" css="jar"/>
@@ -62,5 +56,16 @@
     <mimetype type="text/x-ruby-source" extensions="rb" viewable="true" syntax="ruby"/>
     <mimetype type="text/x-script.sh" extensions="sh" viewable="true" syntax="shell"/>
     <mimetype type="text/x-csharp.sh" extensions="cs" viewable="true" syntax="csharp"/>
+
+    <!--
+        NOTE: The following mime types are required for a proper functioning of certain features in Artifactory 
+         DO NOT change them unless you really know what you are doing
+    -->
+    <mimetype type="application/xml" extensions="xml, xsl, xsi" viewable="true" syntax="xml" xml="true" css="xml"/>
+    <mimetype type="application/x-maven-pom+xml" extensions="pom" viewable="true" syntax="xml" xml="true" css="pom"/>
+    <mimetype type="application/x-ivy+xml" extensions="ivy" viewable="true" syntax="xml" xml="true" css="xml"/>
+    <mimetype type="application/x-java-jnlp-file" extensions="jnlp" viewable="true" syntax="xml" xml="true" css="jnlp"/>
+    <mimetype type="application/x-checksum" extensions="sha1, md5" viewable="true" syntax="plain"/>
+    <mimetype type="application/java-archive" extensions="jar, war, ear, sar, har" archive="true" css="jar"/>
 
 </mimetypes>

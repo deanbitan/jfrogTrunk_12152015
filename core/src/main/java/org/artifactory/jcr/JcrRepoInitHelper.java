@@ -26,12 +26,12 @@ import org.apache.jackrabbit.core.config.PersistenceManagerConfig;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.jackrabbit.core.config.WorkspaceConfig;
 import org.apache.jackrabbit.core.nodetype.InvalidNodeTypeDefException;
-import org.apache.jackrabbit.core.nodetype.NodeTypeDef;
 import org.apache.jackrabbit.core.nodetype.NodeTypeManagerImpl;
 import org.apache.jackrabbit.core.nodetype.NodeTypeRegistry;
 import org.apache.jackrabbit.core.persistence.bundle.AbstractBundlePersistenceManager;
 import org.apache.jackrabbit.ocm.mapper.impl.annotation.AnnotationMapperImpl;
 import org.apache.jackrabbit.spi.Name;
+import org.apache.jackrabbit.spi.QNodeTypeDefinition;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.common.ArtifactoryHome;
@@ -49,6 +49,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,13 +60,23 @@ import java.util.List;
 abstract class JcrRepoInitHelper {
     private static final Logger log = LoggerFactory.getLogger(JcrRepoInitHelper.class);
 
-    public static JackrabbitRepository createJcrRepository(ResourceStreamHandle repoXml) {
+    public static JackrabbitRepository createJcrRepository(ResourceStreamHandle repoXml, boolean preInit) {
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
+        //Remove the exiting workspaces
+        File workspacesDir = new File(artifactoryHome.getDataDir(), "workspaces");
+        try {
+            FileUtils.deleteDirectory(workspacesDir);
+        } catch (IOException e) {
+            log.warn("Could not remove original workspaces directory at '{}'.", workspacesDir.getAbsolutePath());
+        }
+
         /**
          * Calling the jcr version converters from here since these are actions that should be performed before the repo
          * is initialized and "standard" conversion of the application context is too late
          */
-        preInitConvert(artifactoryHome);
+        if (preInit) {
+            preInitConvert(artifactoryHome);
+        }
 
         //Copy the index config only after the pre-init conversion is done
         copyLatestIndexConfig(artifactoryHome);
@@ -75,7 +86,7 @@ abstract class JcrRepoInitHelper {
             RepositoryConfig repoConfig = RepositoryConfig.create(
                     repoXml.getInputStream(), artifactoryHome.getJcrRootDir().getAbsolutePath());
             if (ConstantValues.jcrFixConsistency.getBoolean()) {
-                WorkspaceConfig wsConfig = (WorkspaceConfig) repoConfig.getWorkspaceConfigs().iterator().next();
+                WorkspaceConfig wsConfig = repoConfig.getWorkspaceConfigs().iterator().next();
                 PersistenceManagerConfig pmConfig = wsConfig.getPersistenceManagerConfig();
                 String className = pmConfig.getClassName();
                 Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
@@ -123,23 +134,16 @@ abstract class JcrRepoInitHelper {
         }
     }
 
-    protected static void initializeTrash(JcrServiceImpl jcrService) {
-        jcrService.getOrCreateUnstructuredNode(JcrPath.get().getTrashJcrRootPath());
-        //Empty whatever is left in the trash
-        InternalContextHelper.get().getJcrService().emptyTrash();
-    }
-
-    protected static void registerTypes(Workspace workspace, NodeTypeDef[] types)
+    public static void registerTypes(Workspace workspace, QNodeTypeDefinition[] types)
             throws RepositoryException, InvalidNodeTypeDefException {
         //Get the NodeTypeManager from the Workspace.
         //Note that it must be cast from the generic JCR NodeTypeManager to the
         //Jackrabbit-specific implementation.
-        NodeTypeManagerImpl ntmgr =
-                (NodeTypeManagerImpl) workspace.getNodeTypeManager();
+        NodeTypeManagerImpl ntmgr = (NodeTypeManagerImpl) workspace.getNodeTypeManager();
         //Acquire the NodeTypeRegistry
         NodeTypeRegistry ntReg = ntmgr.getNodeTypeRegistry();
-        //Create or update (reregister) all NodeTypeDefs
-        for (NodeTypeDef ntd : types) {
+        //Create or update (re-register) all QNodeTypeDefinitions
+        for (QNodeTypeDefinition ntd : types) {
             Name name = ntd.getName();
             if (!ntReg.isRegistered(name)) {
                 ntReg.registerNodeType(ntd);
@@ -153,6 +157,12 @@ abstract class JcrRepoInitHelper {
                 }
             }
         }
+    }
+
+    protected static void initializeTrash(JcrServiceImpl jcrService) {
+        jcrService.getOrCreateUnstructuredNode(JcrPath.get().getTrashJcrRootPath());
+        //Empty whatever is left in the trash
+        InternalContextHelper.get().getJcrService().emptyTrash();
     }
 
 

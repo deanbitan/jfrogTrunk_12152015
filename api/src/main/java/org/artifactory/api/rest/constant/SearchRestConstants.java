@@ -32,6 +32,7 @@ public interface SearchRestConstants {
     String PATH_XPATH = "xpath";
     String PATH_USAGE_SINCE = "usage";
     String PATH_CREATED_IN_RANGE = "creation";
+    String PATH_PATTERN = "pattern";
 
     //Common query params
     String PARAM_REPO_TO_SEARCH = "repos";
@@ -56,6 +57,9 @@ public interface SearchRestConstants {
     String PARAM_IN_RANGE_FROM = "from";
     String PARAM_IN_RANGE_TO = "to";
 
+    //Pattern of artifacts to search for
+    String PARAM_PATTERN = "pattern";
+
     //Media types
     String MT_ARTIFACT_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactSearchResult+json";
     String MT_ARCHIVE_ENTRY_SEARCH_RESULT =
@@ -66,6 +70,7 @@ public interface SearchRestConstants {
     String MT_USAGE_SINCE_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactUsageResult+json";
     String MT_CREATED_IN_RANGE_SEARCH_RESULT =
             RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactCreationResult+json";
+    String MT_PATTERN_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".PatternResultFileSet+json";
 
     String NOT_FOUND = "No results found.";
 }

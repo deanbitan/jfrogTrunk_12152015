@@ -23,6 +23,22 @@
     <div wicket:id="advancedSettings">
         <div class="field-row">
             <div class="field">
+                <label>Checksum Policy</label>
+                <span wicket:id="localRepoChecksumPolicyType.help"></span>
+
+                <div class="value">
+                    <select wicket:id="checksumPolicyType"></select>
+                </div>
+            </div>
+
+            <div class="field checkbox-field">
+                <input wicket:id="suppressPomConsistencyChecks" type="checkbox"/>
+                <span wicket:id="suppressPomConsistencyChecks.help"></span>
+            </div>
+        </div>
+
+        <div class="field-row line-sep">
+            <div class="field">
                 <label>Maven Snapshot Version Behavior</label>
                 <span wicket:id="snapshotVersionBehavior.help"></span>
 
@@ -41,26 +57,12 @@
             </div>
         </div>
 
-        <div class="field-row checkbox-row line-sep">
-            <div class="field">
-                <input wicket:id="suppressPomConsistencyChecks" type="checkbox"/>
-                <span wicket:id="suppressPomConsistencyChecks.help"></span>
-            </div>
-        </div>
-        <div class="field field-sep field-100">
+        <div class="field field-sep field-100 clear">
             <label>Notes</label>
             <span wicket:id="notes.help"></span>
 
             <div class="value">
                 <textarea wicket:id="notes"></textarea>
-            </div>
-        </div>
-        <div class="field">
-            <label>Checksum Policy</label>
-            <span wicket:id="localRepoChecksumPolicyType.help"></span>
-
-            <div class="value">
-                <select wicket:id="checksumPolicyType"></select>
             </div>
         </div>
     </div>

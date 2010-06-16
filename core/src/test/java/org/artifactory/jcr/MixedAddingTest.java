@@ -27,7 +27,7 @@ import javax.transaction.xa.Xid;
 public class MixedAddingTest extends RepositoryTestBase {
 
     @Test
-    public void testTxMIxedAdd() throws Exception {
+    public void testTxMixedAdd() throws Exception {
         XASessionImpl session1 = login();
         //Create the node
         Xid xid1 = new DummyXid((byte) 1);

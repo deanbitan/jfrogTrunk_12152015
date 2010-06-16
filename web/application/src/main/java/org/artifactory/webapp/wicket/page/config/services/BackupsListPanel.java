@@ -78,7 +78,7 @@ public class BackupsListPanel extends ModalListPanel<BackupDescriptor> {
     @Override
     protected String getDeleteConfirmationText(BackupDescriptor backup) {
         String key = backup.getKey();
-        return "Are you sure you wish to delete the backup " + key + "?";
+        return "Are you sure you wish to delete the backup '" + key + "'?";
     }
 
     @Override

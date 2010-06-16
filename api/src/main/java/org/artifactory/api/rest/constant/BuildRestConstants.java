@@ -32,5 +32,4 @@ public interface BuildRestConstants {
 
     String MT_BUILD = RestConstants.MT_JFROG_APP + PATH_ROOT + ".Build+json";
     String MT_BUILD_INFO = RestConstants.MT_JFROG_APP + PATH_ROOT + ".BuildInfo+json";
-
 }

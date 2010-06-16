@@ -18,6 +18,7 @@
 
 package org.artifactory.addon;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -27,6 +28,8 @@ import java.util.List;
  */
 public interface AddonsManager {
 
+    void refresh();
+
     <T extends AddonFactory> T addonByType(Class<T> type);
 
     List<String> getInstalledAddonNames();
@@ -35,9 +38,9 @@ public interface AddonsManager {
 
     AddonInfo getAddonInfoByName(String addonName);
 
-    boolean isServerIdValid();
+    boolean isLicenseInstalled();
 
-    boolean isServerIdValid(String serverId);
+    boolean isLicenseKeyValid(String licenseKey);
 
     /**
      * Returns the request property of the given addon name
@@ -49,26 +52,37 @@ public interface AddonsManager {
     String getAddonProperty(String addonName, String addonKey);
 
     /**
-     * To be called upon the updating of the server ID so we can notify admins on the addon status
-     *
-     * @param currentServerId Currently configured server ID
-     * @param updatedServerId Newly configured server ID
-     */
-    void onServerIdUpdated(String currentServerId, String updatedServerId);
-
-    /**
-     * Indicates if the server ID has changed since last server restart
-     *
-     * @return True if server ID was modified and the new value is valid. False if no modifications ocurred, or if the
-     *         New value is not a valid ID
-     */
-    boolean isServerIdChanged();
-
-    /**
      * Indicates whether the given addon is activated
      *
      * @param addonName Name of addon to inquire for
      * @return True if the given addon is activated
      */
     <T extends AddonFactory> boolean isAddonActivated(String addonName);
+
+    /**
+     * Installs a new Artifactory license key
+     *
+     * @param licenseKey The license key
+     * @throws IOException If the license is invalid or failed to save the license file
+     */
+    void installLicense(String licenseKey) throws IOException;
+
+    /**
+     * @return The currently installed license key.
+     */
+    String getLicenseKey();
+
+    String getFooterMessage(boolean admin);
+
+    String getLicenseFooterMessage();
+
+    boolean lockdown();
+
+    boolean isInstantiationAuthorized(Class componentClass);
+
+    String interceptRequest();
+
+    String[] getLicenseDetails();
+
+    String getProductName();
 }

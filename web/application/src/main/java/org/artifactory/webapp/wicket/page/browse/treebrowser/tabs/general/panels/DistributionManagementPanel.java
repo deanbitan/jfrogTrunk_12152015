@@ -23,8 +23,8 @@ import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
-import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -113,7 +113,7 @@ public class DistributionManagementPanel extends FieldSetPanel {
         if (!isCache) {
             sb.append("</distributionManagement>");
         }
-        add(new SyntaxHighlighter("ditributionManagamentContainer", sb.toString(), Syntax.xml));
+        add(WicketUtils.getSyntaxHighlighter("ditributionManagamentContainer", sb.toString(), Syntax.xml));
 
         log.debug("Pom definition: {}", sb);
     }

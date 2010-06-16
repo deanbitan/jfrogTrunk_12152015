@@ -24,17 +24,19 @@ import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.jackrabbit.core.config.WorkspaceConfig;
 import org.apache.jackrabbit.core.fs.FileSystem;
 import org.apache.jackrabbit.core.fs.db.DatabaseFileSystem;
-import org.apache.jackrabbit.core.persistence.bundle.DerbyPersistenceManager;
-import org.apache.jackrabbit.core.persistence.bundle.util.ConnectionRecoveryManager;
+import org.apache.jackrabbit.core.persistence.bundle.ConnectionRecoveryManager;
+import org.apache.jackrabbit.core.persistence.pool.DerbyPersistenceManager;
+import org.apache.jackrabbit.core.util.db.ArtifactoryConnectionHelper;
+import org.apache.jackrabbit.core.util.db.ConnectionHelper;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
-import org.artifactory.jcr.jackrabbit.GenericConnectionRecoveryManager;
-import org.artifactory.jcr.jackrabbit.GenericDbDataStore;
+import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
 
+import javax.jcr.RepositoryException;
 import java.lang.reflect.Field;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -90,26 +92,39 @@ public abstract class DerbyUtils {
 
 
     /**
-     * Compresses the datastore tables (holding the blobs) TODO: Move this metohd to the DataStore implementation
+     * Compresses the datastore tables (holding the blobs) TODO: Move this method to the DataStore implementation
      */
     private static void compressDataStore(RepositoryImpl repositoryImpl, StatusHolder holder) throws Exception {
         log.info("Compressing datasource...");
-        GenericDbDataStore dataStore = JcrUtils.getDataStore(repositoryImpl);
+        ExtendedDbDataStore dataStore = JcrUtils.getDataStore(repositoryImpl);
+
         if (dataStore == null || !isDerbyDb(dataStore.getDatabaseType())) {
             holder.setWarning("Cannot compress datastore: not using Derby DB.", log);
             return;
         }
-        GenericConnectionRecoveryManager crm = dataStore.createNewConnection();
+        ArtifactoryConnectionHelper conHelper = dataStore.getConnectionHelper();
+        Connection con = null;
         try {
-            Connection connection = crm.getConnection();
-            connection.setAutoCommit(true);
-            final String schemaName = "APP";
-            final String tableName = "DATASTORE";
-            executeCall(connection, CALL_COMPRESS, schemaName, tableName, 1);
-            executeCall(connection, CALL_COMPRESS_INPLACE, schemaName, tableName, 3);
-            log.debug("Datastore compressed successfully");
+            con = conHelper.takeConnection();
+            con.setAutoCommit(true);
+
+            DatabaseMetaData dbMetadata = con.getMetaData();
+            ResultSet rs = dbMetadata.getTables(null, null, null, null);
+
+            final String tableName = (dataStore.getDataStoreTablePrefix() + dataStore.getDataStoreTableName()).
+                    toUpperCase();
+
+            while (rs.next()) {
+                String currentSchemaName = rs.getString("TABLE_SCHEM").toUpperCase();
+                String currentTableName = rs.getString("TABLE_NAME").toUpperCase();
+                if (currentTableName.equals(tableName)) {
+                    executeCall(con, CALL_COMPRESS, currentSchemaName, currentTableName, 1);
+                    executeCall(con, CALL_COMPRESS_INPLACE, currentSchemaName, currentTableName, 3);
+                    log.debug("Datastore compressed successfully");
+                }
+            }
         } finally {
-            crm.close();
+            conHelper.putConnection(con);
         }
     }
 
@@ -132,23 +147,38 @@ public abstract class DerbyUtils {
             PersistenceManagerConfig persistenceConfig = getPersistenceManagerConf(workspaceInfo);
             String pmSchemaPrefix = getProperty(persistenceConfig.getParameters(), PREFIX_PROPERTY_NAME);
             pmSchemaPrefix = pmSchemaPrefix.toUpperCase();
-            Connection connection = getWsConnection(workspaceInfo);
-            DatabaseMetaData dbMetaData = connection.getMetaData();
-            if (!isDerbyDb(dbMetaData.getDatabaseProductName())) {
-                holder.setWarning("Cannot compress workspace " + workspaceInfoName + ": not using Derby DB.", log);
-                continue;
-            }
-            ResultSet rs = dbMetaData.getTables(null, null, null, null);
-            while (rs.next()) {
-                String currentSchemaName = rs.getString("TABLE_SCHEM").toUpperCase();
-                String currentTableName = rs.getString("TABLE_NAME").toUpperCase();
-                if ((currentTableName.startsWith(fsSchemaPrefix)) ||
-                        (currentTableName.startsWith(pmSchemaPrefix))) {
-                    executeCall(connection, CALL_COMPRESS, currentSchemaName, currentTableName, 1);
-                    executeCall(connection, CALL_COMPRESS_INPLACE, currentSchemaName, currentTableName, 3);
+
+            ConnectionWrapper connectionWrapper = null;
+            try {
+                connectionWrapper = getWsConnection(workspaceInfo);
+                if (connectionWrapper == null) {
+                    holder.setWarning("Cannot compress workspace " + workspaceInfoName +
+                            ": unable to retrieve connection.", log);
+                    continue;
+                }
+
+                Connection connection = connectionWrapper.getConnection();
+                DatabaseMetaData dbMetaData = connection.getMetaData();
+                if (!isDerbyDb(dbMetaData.getDatabaseProductName())) {
+                    holder.setWarning("Cannot compress workspace " + workspaceInfoName + ": not using Derby DB.", log);
+                    continue;
+                }
+                ResultSet rs = dbMetaData.getTables(null, null, null, null);
+                while (rs.next()) {
+                    String currentSchemaName = rs.getString("TABLE_SCHEM").toUpperCase();
+                    String currentTableName = rs.getString("TABLE_NAME").toUpperCase();
+                    if ((currentTableName.startsWith(fsSchemaPrefix)) ||
+                            (currentTableName.startsWith(pmSchemaPrefix))) {
+                        executeCall(connection, CALL_COMPRESS, currentSchemaName, currentTableName, 1);
+                        executeCall(connection, CALL_COMPRESS_INPLACE, currentSchemaName, currentTableName, 3);
+                    }
+                }
+                connection.commit();
+            } finally {
+                if (connectionWrapper != null) {
+                    connectionWrapper.close();
                 }
             }
-            connection.commit();
         }
         log.debug("Workspace compressed successfully");
     }
@@ -188,7 +218,7 @@ public abstract class DerbyUtils {
      */
     private static boolean isDerbyDatastoreOrPms(RepositoryImpl repositoryImpl) throws Exception {
         //First check the datastore
-        GenericDbDataStore dbDataStore = JcrUtils.getDataStore(repositoryImpl);
+        ExtendedDbDataStore dbDataStore = JcrUtils.getDataStore(repositoryImpl);
         boolean derby = dbDataStore != null && isDerbyDb(dbDataStore.getDatabaseType());
         if (derby) {
             return true;
@@ -197,11 +227,23 @@ public abstract class DerbyUtils {
         Map wsInfos = getWsInfos(repositoryImpl);
         for (Object workspaceInfoName : wsInfos.keySet()) {
             Object workspaceInfo = wsInfos.get(workspaceInfoName);
-            if (workspaceInfo instanceof DerbyPersistenceManager) {
-                Connection connection = getWsConnection(workspaceInfo);
-                DatabaseMetaData dbMetaData = connection.getMetaData();
-                if (isDerbyDb(dbMetaData.getDatabaseProductName())) {
-                    return true;
+            if ((workspaceInfo instanceof DerbyPersistenceManager) ||
+                    (workspaceInfo instanceof org.apache.jackrabbit.core.persistence.bundle.DerbyPersistenceManager)) {
+                ConnectionWrapper connectionWrapper = null;
+                try {
+                    connectionWrapper = getWsConnection(workspaceInfo);
+                    if (connectionWrapper == null) {
+                        return false;
+                    }
+                    Connection connection = connectionWrapper.getConnection();
+                    DatabaseMetaData dbMetaData = connection.getMetaData();
+                    if (isDerbyDb(dbMetaData.getDatabaseProductName())) {
+                        return true;
+                    }
+                } finally {
+                    if (connectionWrapper != null) {
+                        connectionWrapper.close();
+                    }
                 }
             }
         }
@@ -233,17 +275,31 @@ public abstract class DerbyUtils {
      * @param workspaceInfo Workspaceinfo object
      * @return Connection - JDBC Connection
      */
-    private static Connection getWsConnection(Object workspaceInfo) throws Exception {
+    private static ConnectionWrapper getWsConnection(Object workspaceInfo) throws Exception {
         Field persistenceManagerField = workspaceInfo.getClass().getDeclaredField("persistMgr");
         persistenceManagerField.setAccessible(true);
-        DerbyPersistenceManager persistenceManager =
-                ((DerbyPersistenceManager) persistenceManagerField.get(workspaceInfo));
+
+        Object persistenceManager = persistenceManagerField.get(workspaceInfo);
         Class clazz = persistenceManager.getClass().getSuperclass();
-        Field connectionField = clazz.getDeclaredField("connectionManager");
-        connectionField.setAccessible(true);
-        ConnectionRecoveryManager crm = (ConnectionRecoveryManager) connectionField.get(persistenceManager);
-        Connection connection = crm.getConnection();
-        return connection;
+
+        ConnectionWrapper connectionWrapper = null;
+        if (persistenceManager instanceof DerbyPersistenceManager) {
+
+            Field connectionField = clazz.getDeclaredField("conHelper");
+            connectionField.setAccessible(true);
+            ConnectionHelper ch = (ConnectionHelper) connectionField.get(persistenceManager);
+            ArtifactoryConnectionHelper helper = new ArtifactoryConnectionHelper(ch);
+            connectionWrapper = ConnectionWrapper.getInstance(helper);
+        } else if (persistenceManager instanceof
+                org.apache.jackrabbit.core.persistence.bundle.DerbyPersistenceManager) {
+
+            Field connectionField = clazz.getDeclaredField("connectionManager");
+            connectionField.setAccessible(true);
+            ConnectionRecoveryManager crm = (ConnectionRecoveryManager) connectionField.get(persistenceManager);
+            connectionWrapper = ConnectionWrapper.getInstance(crm);
+        }
+
+        return connectionWrapper;
     }
 
     /**
@@ -276,5 +332,40 @@ public abstract class DerbyUtils {
             throw new IllegalArgumentException("Property: " + propertyName + " was not found!");
         }
         return property;
+    }
+
+    private static class ConnectionWrapper {
+
+        private Connection connection;
+        private ArtifactoryConnectionHelper artifactoryConnectionHelper;
+
+        private ConnectionWrapper(ArtifactoryConnectionHelper artifactoryConnectionHelper) {
+            this.connection = artifactoryConnectionHelper.takeConnection();
+            this.artifactoryConnectionHelper = artifactoryConnectionHelper;
+        }
+
+        private ConnectionWrapper(ConnectionRecoveryManager connectionRecoveryManager)
+                throws RepositoryException, SQLException {
+            this.connection = connectionRecoveryManager.getConnection();
+        }
+
+        private static ConnectionWrapper getInstance(ArtifactoryConnectionHelper artifactoryConnectionHelper) {
+            return new ConnectionWrapper(artifactoryConnectionHelper);
+        }
+
+        private static ConnectionWrapper getInstance(ConnectionRecoveryManager connectionRecoveryManager)
+                throws RepositoryException, SQLException {
+            return new ConnectionWrapper(connectionRecoveryManager);
+        }
+
+        private Connection getConnection() {
+            return connection;
+        }
+
+        private void close() {
+            if (artifactoryConnectionHelper != null) {
+                artifactoryConnectionHelper.putConnection(connection);
+            }
+        }
     }
 }

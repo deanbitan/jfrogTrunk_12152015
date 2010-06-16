@@ -21,7 +21,7 @@ package org.artifactory.jcr;
 import javax.transaction.xa.Xid;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class DummyXid implements Xid {
     private byte gtxid;

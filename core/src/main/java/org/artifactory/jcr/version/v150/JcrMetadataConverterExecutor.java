@@ -50,7 +50,6 @@ import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.version.FatalConversionException;
 import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Module;
@@ -409,8 +408,7 @@ public class JcrMetadataConverterExecutor {
             Build build = (Build) buildXstream.fromXML(xmlData);
 
             JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(buildOutputStream);
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.writeValue(jsonGenerator, build);
+            jsonGenerator.writeObject(build);
             buildInputStream = new ByteArrayInputStream(buildOutputStream.toByteArray());
 
             Calendar createdDate = Calendar.getInstance();

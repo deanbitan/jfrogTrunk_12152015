@@ -112,6 +112,7 @@ import org.artifactory.repo.RepoDetailsType;
 import org.artifactory.repo.RepoRepoPath;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
 import org.artifactory.repo.context.NullRequestContext;
+import org.artifactory.repo.context.RequestContext;
 import org.artifactory.repo.index.IndexerJob;
 import org.artifactory.repo.interceptor.RepoInterceptors;
 import org.artifactory.repo.jcr.JcrLocalRepo;
@@ -133,8 +134,6 @@ import org.artifactory.util.HttpUtils;
 import org.artifactory.util.ZipUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1249,12 +1248,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     public void recalculateMavenMetadataOnMarkedFolders() {
         try {
+            //Sort the results to ensure nodes are prefetched and nodes.getSize() will not return -1
             String queryStr = "//element(*, " + JcrTypes.NT_ARTIFACTORY_FOLDER + ")[@" +
-                    JcrTypes.PROP_ARTIFACTORY_RECALC_MAVEN_METADATA + "]";
+                    JcrTypes.PROP_ARTIFACTORY_RECALC_MAVEN_METADATA + "] order by @jcr:score descending";
             QueryResult result = jcr.executeQuery(JcrQuerySpec.xpath(queryStr).noLimit());
             NodeIterator nodes = result.getNodes();
             if (nodes.hasNext()) {
-                log.info("Found {} nodes marked for maven metadata recalculation", nodes.getSize());
+                log.info("Found {} nodes marked for maven metadata recalculation.", nodes.getSize());
             }
             while (nodes.hasNext()) {
                 Node node = nodes.nextNode();
@@ -1272,9 +1272,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     public void calculateMavenMetadata(RepoPath baseFolderPath) {
+        if (baseFolderPath == null) {
+            log.debug("Cannot calculate Maven metadata for a null path ");
+            return;
+        }
         LocalRepo localRepo = localRepositoryByKey(baseFolderPath.getRepoKey());
         if (localRepo == null) {
-            log.debug("Couldn't find local non-cache repository for path " + baseFolderPath);
+            log.debug("Couldn't find local non-cache repository for path '{}'.", baseFolderPath);
             return;
         }
 
@@ -1320,8 +1324,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                     MavenPluginsMetadataCalculator calculator = new MavenPluginsMetadataCalculator();
                     calculator.calculate(localRepo);
                 } catch (Exception e) {
-                    log.error("Failed to calculate plugin maven metadata on repo '{}': {}",
-                            repoToCalculate, e.getMessage());
+                    log.error("Failed to calculate plugin maven metadata on repo '" + repoToCalculate + "':", e);
                 }
             }
         } finally {
@@ -1396,13 +1399,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
     }
 
-    public <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(
+    public <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(RequestContext requestContext,
             RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException,
             RepoRejectionException {
         LocalCacheRepo localCache = remoteRepo.getLocalCacheRepo();
-        String path = res.getRepoPath().getPath();
-        RepoResource cachedResource = localCache.getInfo(new NullRequestContext(path));
-        return remoteRepo.downloadAndSave(res, cachedResource);
+        RepoResource cachedResource = localCache.getInfo(requestContext);
+        return remoteRepo.downloadAndSave(requestContext, res, cachedResource);
     }
 
     public RepoResource unexpireIfExists(LocalRepo localCacheRepo, String path) {
@@ -1413,17 +1415,17 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return resource;
     }
 
-    public ResourceStreamHandle unexpireAndRetrieveIfExists(LocalRepo localCacheRepo, String path) throws IOException,
-            RepositoryException, RepoRejectionException {
+    public ResourceStreamHandle unexpireAndRetrieveIfExists(RequestContext requestContext, LocalRepo localCacheRepo,
+            String path) throws IOException, RepositoryException, RepoRejectionException {
         RepoResource resource = internalUnexpireIfExists(localCacheRepo, path);
         if (resource != null && resource.isFound()) {
-            return localCacheRepo.getResourceStreamHandle(resource);
+            return localCacheRepo.getResourceStreamHandle(requestContext, resource);
         }
         return null;
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res) throws IOException,
-            RepoRejectionException, RepositoryException {
+    public ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, Repo repo, RepoResource res)
+            throws IOException, RepoRejectionException, RepositoryException {
         if (res instanceof StringResource) {
             // resource already contains the content - just extract it and return a string resource handle
             String content = ((StringResource) res).getContent();
@@ -1438,7 +1440,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                             authService.currentUsername());
                 }
             }
-            return repo.getResourceStreamHandle(res);
+            return repo.getResourceStreamHandle(requestContext, res);
         }
     }
 
@@ -1921,9 +1923,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 return Lists.newArrayList();
             }
             JsonParser jsonParser = JacksonFactory.createJsonParser(responseStream);
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            return mapper.readValue(jsonParser, new TypeReference<List<RepoDetails>>() {
+            return jsonParser.getCodec().readValue(jsonParser, new TypeReference<List<RepoDetails>>() {
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -1947,9 +1947,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 return null;
             }
             JsonParser jsonParser = JacksonFactory.createJsonParser(responseStream);
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            return mapper.readValue(jsonParser, new TypeReference<HttpRepoDescriptor>() {
+            return jsonParser.getCodec().readValue(jsonParser, new TypeReference<HttpRepoDescriptor>() {
             });
         } catch (Exception e) {
             throw new RuntimeException(e);

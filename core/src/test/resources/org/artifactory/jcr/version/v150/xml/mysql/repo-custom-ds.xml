@@ -185,8 +185,6 @@
             <param name="extractorBackLogSize" value="500"/>
             <!-- Indexing configuration -->
             <param name="indexingConfiguration" value="${rep.home}/index/index_config.xml"/>
-            <!-- Custom text extractor -->
-            <param name="textFilterClasses" value="org.artifactory.jcr.extractor.ArtifctoryTextExtractor"/>
             <!-- Workspace inconsistency handler -->
             <param name="onWorkspaceInconsistency" value="lenient"/>
         </SearchIndex>

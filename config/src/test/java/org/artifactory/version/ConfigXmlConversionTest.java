@@ -31,8 +31,10 @@ import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.EncryptionPolicy;
 import org.artifactory.descriptor.security.PasswordSettings;
+import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
+import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.ArtifactoryHomeStub;
@@ -134,7 +136,7 @@ public class ConfigXmlConversionTest extends ArtifactoryHomeBoundTest {
         CentralConfigDescriptor cc =
                 transform("/config/install/config.1.3.1.xml", v131);
         assertTrue(cc.getSecurity().isAnonAccessEnabled());
-        assertNull(cc.getSecurity().getLdapSettings());
+        assertNotNull(cc.getSecurity().getLdapSettings());
 
         cc = transform("/config/test/config.1.3.1.xml", v131);
         assertFalse(cc.getSecurity().isAnonAccessEnabled());
@@ -155,8 +157,7 @@ public class ConfigXmlConversionTest extends ArtifactoryHomeBoundTest {
     }
 
     public void convert132Custom() throws Exception {
-        CentralConfigDescriptor cc =
-                transform("/config/test/config.1.3.2.xml", v132);
+        CentralConfigDescriptor cc = transform("/config/test/config.1.3.2.xml", v132);
 
         // check backups conversion
         List<BackupDescriptor> backups = cc.getBackups();
@@ -268,6 +269,30 @@ public class ConfigXmlConversionTest extends ArtifactoryHomeBoundTest {
                 v142);
         assertEquals(cc.getRemoteRepositoriesMap().get("repo1").getChecksumPolicyType(),
                 ChecksumPolicyType.GEN_IF_ABSENT);
+    }
+
+
+    public void convert143() throws Exception {
+        CentralConfigDescriptor cc = transform("/config/install/config.1.4.3.xml", v143);
+        SecurityDescriptor securityDescriptor = cc.getSecurity();
+        List<LdapSetting> ldapSettings = securityDescriptor.getLdapSettings();
+        assertEquals(ldapSettings.size(), 0, "Should not have any LDAP settings configured");
+
+        List<LdapGroupSetting> ldapGroupSettings = securityDescriptor.getLdapGroupSettings();
+        assertEquals(ldapGroupSettings.size(), 0, "Should not have any LDAP group settings configured");
+    }
+
+    public void convert143custom() throws Exception {
+        CentralConfigDescriptor cc = transform("/config/test/config.1.4.3_without_multildap.xml", v143);
+        List<LdapGroupSetting> ldapGroupSettings = cc.getSecurity().getLdapGroupSettings();
+        for (LdapGroupSetting ldapGroupSetting : ldapGroupSettings) {
+            assertEquals(ldapGroupSetting.getEnabledLdap(), "myldap");
+        }
+    }
+
+    public void convert143WithServerId() throws Exception {
+        // just removes an element, so if it passes it's ok
+        transform("/config/test/config.1.4.3_with_serverId.xml", v143);
     }
 
     public void configVersionSanityCheck() {

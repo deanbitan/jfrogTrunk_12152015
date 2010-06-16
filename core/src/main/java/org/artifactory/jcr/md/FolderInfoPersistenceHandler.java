@@ -22,8 +22,6 @@ import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.FolderInfoImpl;
 import org.artifactory.api.fs.MetadataInfo;
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 import javax.jcr.Node;
 
@@ -31,9 +29,6 @@ import javax.jcr.Node;
  * @author freds
  */
 public class FolderInfoPersistenceHandler extends AbstractPersistenceHandler<FolderInfo> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(FolderInfoPersistenceHandler.class);
-
 
     public FolderInfoPersistenceHandler(XmlMetadataProvider<FolderInfo> xmlProvider) {
         super(xmlProvider);

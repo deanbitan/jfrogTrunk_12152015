@@ -25,7 +25,7 @@ import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
-import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.mime.MimeType;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.model.ArchivedFileActionableItem;
@@ -53,7 +53,7 @@ public class ViewableTabPanel extends Panel {
             String failureReason = result.getFailureReason();
             if (failureReason == null) {
                 // content successfully retrieved
-                MimeType contentType = NamingUtils.getContentType(result.getSourcePath());
+                MimeType contentType = NamingUtils.getMimeType(result.getSourcePath());
                 syntax = Syntax.fromContentType(contentType);
                 content = result.getContent();
                 sourceFile = PathUtils.getName(result.getSourcePath());
@@ -81,6 +81,6 @@ public class ViewableTabPanel extends Panel {
 
         add(border);
 
-        border.add(new SyntaxHighlighter("content", content, syntax));
+        border.add(WicketUtils.getSyntaxHighlighter("content", content, syntax));
     }
 }

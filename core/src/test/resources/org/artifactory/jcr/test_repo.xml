@@ -18,16 +18,15 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<!DOCTYPE Repository PUBLIC "-//The Apache Software Foundation//DTD Jackrabbit 1.6//EN"
-        "http://jackrabbit.apache.org/dtd/repository-1.6.dtd">
+<!DOCTYPE Repository PUBLIC "-//The Apache Software Foundation//DTD Jackrabbit 2.0//EN"
+        "http://jackrabbit.apache.org/dtd/repository-2.0.dtd">
 
 <Repository>
     <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
 
     <Security appName="Jackrabbit">
         <!--<AccessManager class="org.apache.jackrabbit.core.security.SimpleAccessManager"/>-->
-        <LoginModule class="org.apache.jackrabbit.core.security.simple.SimpleLoginModule">
-        </LoginModule>
+        <LoginModule class="org.apache.jackrabbit.core.security.simple.SimpleLoginModule"/>
     </Security>
 
     <Workspaces rootPath="${rep.home}/workspaces" defaultWorkspace="default"/>
@@ -48,8 +47,7 @@
     <Versioning rootPath="${rep.home}/version">
         <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
 
-        <PersistenceManager
-                class="org.apache.jackrabbit.core.persistence.mem.InMemPersistenceManager">
+        <PersistenceManager class="org.apache.jackrabbit.core.persistence.mem.InMemPersistenceManager">
             <param name="persistent" value="false"/>
         </PersistenceManager>
     </Versioning>

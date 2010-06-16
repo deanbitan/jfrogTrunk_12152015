@@ -50,7 +50,7 @@ public class ArtifactoryFileConverter implements MetadataConverter {
         RepoPath repoPath = MetadataConverterUtils.extractRepoPath(rootElement);
         List<Element> toMove = MetadataConverterUtils.extractExtensionFields(rootElement);
         MetadataConverterUtils.addNewContent(rootElement, repoPath, toMove);
-        MimeType ct = NamingUtils.getContentType(repoPath.getName());
+        MimeType ct = NamingUtils.getMimeType(repoPath.getName());
         rootElement.removeChild("mimeType");
         rootElement.addContent(new Element("mimeType").setText(ct.getType()));
     }

@@ -52,7 +52,6 @@ import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -62,10 +61,6 @@ import static java.lang.String.format;
  */
 public abstract class OrderedListPanel<T> extends TitledPanel {
     private static final Logger log = LoggerFactory.getLogger(OrderedListPanel.class);
-
-    protected OrderedListPanel(String id, Collection<T> collection) {
-        this(id, new ArrayList<T>(collection));
-    }
 
     protected OrderedListPanel(String id, List<T> list) {
         this(id, new Model((Serializable) list));
@@ -134,6 +129,7 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
 
         // add init script
         HtmlTemplate template = new HtmlTemplate("initScript");
+        template.setOutputMarkupId(true);
         template.setParameter("listId", new PropertyModel(container, "markupId"));
         template.setParameter("textFieldId", new PropertyModel(textField, "markupId"));
         template.setParameter("upLinkId", new PropertyModel(upLink, "markupId"));
@@ -159,7 +155,7 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
 
             @Override
             protected void onEvent(AjaxRequestTarget target) {
-                saveRepos(target);
+                saveItems(target);
             }
         });
         return saveOrder;
@@ -177,7 +173,7 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
         return getString(getId() + ".title", null, getId() + ".title");
     }
 
-    protected abstract void saveRepos(AjaxRequestTarget target);
+    protected abstract void saveItems(AjaxRequestTarget target);
 
     protected abstract void resetListOrder(AjaxRequestTarget target);
 
@@ -210,6 +206,15 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
 
     protected void onOrderChanged(AjaxRequestTarget target) {
         target.appendJavascript(format("dojo.byId('%s')._panel.resetIndices();", get("items").getMarkupId()));
+    }
+
+    public void refresh(AjaxRequestTarget target) {
+        target.addComponent(get("items"));
+        target.addComponent(get("listIndices"));
+        target.addComponent(get("moveDownLink"));
+        target.addComponent(get("moveUpLink"));
+        target.addComponent(get("initScript"));
+        target.prependJavascript("LinksColumn.hideCurrent();");
     }
 
     protected IBehavior newOnOrderChangeEventBehavior(String event) {

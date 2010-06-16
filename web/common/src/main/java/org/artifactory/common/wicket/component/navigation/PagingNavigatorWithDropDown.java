@@ -59,10 +59,8 @@ public class PagingNavigatorWithDropDown extends Panel {
             // this is necessary in case the number of results or current page were changed
             // by someone else (for example new search results)
             pageableDropDown.setChoices(getPagesNumbers());
-            if (currentPageIndex != pageable.getCurrentPage()) {
-                currentPageIndex = pageable.getCurrentPage();
-                updateButtons();    // enable/disable next and prev buttons
-            }
+            currentPageIndex = pageable.getCurrentPage();
+            updateButtons();
             super.onBeforeRender();
             return;
         }

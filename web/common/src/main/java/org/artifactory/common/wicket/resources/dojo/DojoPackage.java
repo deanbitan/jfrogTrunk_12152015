@@ -26,6 +26,6 @@ public class DojoPackage extends ResourcePackage {
 
     public boolean isDebug() {
         return false;
-//        return Application.get().getDebugSettings().isAjaxDebugModeEnabled();
+        //        return Application.get().getDebugSettings().isAjaxDebugModeEnabled();
     }
 }

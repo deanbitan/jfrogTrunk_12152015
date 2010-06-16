@@ -126,6 +126,10 @@ public class MavenModelUtils {
         }
     }
 
+    /**
+     * @param date Date to convert
+     * @return Maven unique snapshot version timestamp for the input date
+     */
     public static String dateToUniqueSnapshotTimestamp(Date date) {
         return getUtcDateFormatter().format(date);
     }

@@ -69,7 +69,7 @@ public class BuildTabActionableItem extends ActionableItemBase {
             }
         } catch (IOException e) {
             String buildName = basicBuildInfo.getName();
-            long buildNumber = basicBuildInfo.getNumber();
+            String buildNumber = basicBuildInfo.getNumber();
             String buildStarted = basicBuildInfo.getStarted();
             String message = String.format("Unable to extract CI server URL if build '%s' #%s that started at %s",
                     buildName, buildNumber, buildStarted);

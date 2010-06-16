@@ -20,7 +20,6 @@ package org.artifactory.webapp.wicket.page.config.general.addon;
 
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
@@ -40,17 +39,10 @@ public class AddonSettingsPanel extends TitledPanel {
         super(id);
         add(new CssClass("general-settings-panel"));
 
-        WebApplicationAddon applicationAddon = addonsManager.addonByType(WebApplicationAddon.class);
-
-        add(applicationAddon.getServerIdLabel("serverIdLabel"));
-        add(applicationAddon.getServerIdWarningLabel("serverIdWarningLabel"));
-        add(applicationAddon.getServerIdTextField("addons.serverId"));
-
         StyledCheckbox showAddonsInfoCheckbox = new StyledCheckbox("addons.showAddonsInfo");
         showAddonsInfoCheckbox.setTitle("Show Available Add-ons Info");
         add(showAddonsInfoCheckbox);
 
-        add(applicationAddon.getServerIdHelpBubble("addons.serverId.help"));
         add(new SchemaHelpBubble("addons.showAddonsInfo.help"));
     }
 

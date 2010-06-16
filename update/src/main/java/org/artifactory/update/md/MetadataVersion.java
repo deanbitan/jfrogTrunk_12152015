@@ -35,10 +35,10 @@ import org.artifactory.update.md.v130beta3.MetadataReader130beta3;
 import org.artifactory.update.md.v130beta6.ChecksumsConverter;
 import org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverter;
 import org.artifactory.update.md.v130beta6.MetadataReader130beta6;
+import org.artifactory.util.XmlUtils;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
-import org.artifactory.version.XmlConverterUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
@@ -157,7 +157,7 @@ public enum MetadataVersion implements MetadataReader, SubConfigElementVersion {
     private static Document buildDocFromFile(File file) throws Exception {
         InputStream in = new FileInputStream(file);
         try {
-            return XmlConverterUtils.parse(in);
+            return XmlUtils.parse(in);
         } finally {
             IOUtils.closeQuietly(in);
         }

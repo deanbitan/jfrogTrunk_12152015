@@ -152,38 +152,6 @@ public interface WebApplicationAddon extends AddonFactory {
     HelpBubble getUrlBaseHelpBubble(String id);
 
     /**
-     * Returns an addon-customized Server ID label
-     *
-     * @param id Component wicket ID
-     * @return Server ID label
-     */
-    Label getServerIdLabel(String id);
-
-    /**
-     * Returns an addon-customized Server ID warning label
-     *
-     * @param id Component wicket ID
-     * @return Server ID warning label
-     */
-    Label getServerIdWarningLabel(String id);
-
-    /**
-     * Returns an addon-customized Server ID text field
-     *
-     * @param id Component wicket id
-     * @return Server ID text field
-     */
-    TextField getServerIdTextField(String id);
-
-    /**
-     * Returns an addon-customized Server ID help bubble
-     *
-     * @param id Component wicket id
-     * @return Server ID help bubble
-     */
-    HelpBubble getServerIdHelpBubble(String id);
-
-    /**
      * Returns the addon customized installed addon information panel
      *
      * @param panelId ID to assign to panel

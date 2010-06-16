@@ -19,14 +19,14 @@
 package org.artifactory.webapp.wicket.page.build.panel;
 
 import com.google.common.collect.Lists;
+import org.apache.wicket.Component;
 import org.apache.wicket.PageParameters;
+import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.markup.ComponentTag;
-import org.apache.wicket.markup.MarkupStream;
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
@@ -104,48 +104,13 @@ public class BuildsForNamePanel extends TitledPanel {
         List<IColumn> columns = Lists.newArrayList();
 
         columns.add(new ActionsColumn(""));
-        columns.add(new AbstractColumn(new Model("Build Number"), "number") {
-            public void populateItem(Item cellItem, String componentId, IModel rowModel) {
-                BuildActionableItem build = (BuildActionableItem) cellItem.getParent().getParent().getModelObject();
-                String buildNumberAsString = Long.toString(build.getBuildNumber());
-                cellItem.add(getBuildNumberLink(componentId, buildNumberAsString, build.getStarted()));
-            }
-        });
+        columns.add(new BuildNumberColumn());
         columns.add(new FormattedDateColumn(new Model("Time Built"), "startedDate", "started", centralConfigService,
                 Build.STARTED_FORMAT));
 
         BuildsDataProvider dataProvider = new BuildsDataProvider(buildsByName);
 
         add(new SortableTable("builds", columns, dataProvider, 200));
-    }
-
-    /**
-     * Returns a link that redirects to the build info panel of the given build object
-     *
-     * @param componentId  ID to assign to the link
-     * @param buildNumber  Number of build to display
-     * @param buildStarted Start time of build to display
-     * @return Link to the build info panel
-     */
-    private AjaxLink getBuildNumberLink(String componentId, final String buildNumber, final String buildStarted) {
-        AjaxLink link = new AjaxLink(componentId, new Model(buildNumber)) {
-
-            @Override
-            protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
-                replaceComponentTagBody(markupStream, openTag, buildNumber);
-            }
-
-            @Override
-            public void onClick(AjaxRequestTarget target) {
-                PageParameters pageParameters = new PageParameters();
-                pageParameters.put(BUILD_NAME, buildName);
-                pageParameters.put(BUILD_NUMBER, buildNumber);
-                pageParameters.put(BUILD_STARTED, buildStarted);
-                setResponsePage(BuildBrowserRootPage.class, pageParameters);
-            }
-        };
-        link.add(new CssClass("item-link"));
-        return link;
     }
 
     /**
@@ -193,6 +158,34 @@ public class BuildsForNamePanel extends TitledPanel {
             }
 
             return actionableItems;
+        }
+    }
+
+    private class BuildNumberColumn extends AbstractColumn {
+        public BuildNumberColumn() {
+            super(new Model("Build Number"), "number");
+        }
+
+        public void populateItem(final Item cellItem, String componentId, IModel rowModel) {
+            final BuildActionableItem build = (BuildActionableItem) cellItem.getParent().getParent().getModelObject();
+            final String buildNumber = build.getBuildNumber();
+            Component link = new Label(componentId, buildNumber);
+            link.add(new CssClass("item-link"));
+            cellItem.add(link);
+            cellItem.add(new AjaxEventBehavior("onclick") {
+                @Override
+                protected void onEvent(AjaxRequestTarget target) {
+                    drillDown(build);
+                }
+            });
+        }
+
+        private void drillDown(BuildActionableItem build) {
+            PageParameters pageParameters = new PageParameters();
+            pageParameters.put(BUILD_NAME, buildName);
+            pageParameters.put(BUILD_NUMBER, build.getBuildNumber());
+            pageParameters.put(BUILD_STARTED, build.getStarted());
+            setResponsePage(BuildBrowserRootPage.class, pageParameters);
         }
     }
 }

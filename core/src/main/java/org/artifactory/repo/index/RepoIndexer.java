@@ -250,13 +250,14 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
         FSDirectory indexDir = extractedRepoIndexes.get(repo);
         if (indexDir == null) {
             //Extraction required
-            RepoResource indexRes = repo.getInfo(new NullRequestContext(MavenNaming.NEXUS_INDEX_GZ_PATH));
+            NullRequestContext requestContext = new NullRequestContext(MavenNaming.NEXUS_INDEX_GZ_PATH);
+            RepoResource indexRes = repo.getInfo(requestContext);
             if (!indexRes.isFound()) {
                 log.debug("Cannot find index resource for repository {}", repo);
                 return null;
             }
             //Copy the index file
-            ResourceStreamHandle handle = repo.getResourceStreamHandle(indexRes);
+            ResourceStreamHandle handle = repo.getResourceStreamHandle(requestContext, indexRes);
             try {
                 ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
                 File indexUnzippedDir = FileUtils.createRandomDir(artifactoryHome.getWorkTmpDir(),

@@ -18,14 +18,14 @@
 
 package org.artifactory.webapp.wicket.util.validation;
 
+import org.apache.commons.httpclient.URI;
+import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.artifactory.util.PathUtils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 
 /**
@@ -57,7 +57,7 @@ public class UriValidator extends StringValidator {
         }
 
         try {
-            URI parsedUri = new URI(uri);
+            URI parsedUri = new URI(uri, false);
             String scheme = parsedUri.getScheme();
             if (!anySchemaAllowed() && StringUtils.isBlank(scheme)) {
                 addError(validatable, String.format(
@@ -75,7 +75,7 @@ public class UriValidator extends StringValidator {
             if (host == null) {
                 addError(validatable, "Cannot resolve host from url");
             }
-        } catch (URISyntaxException e) {
+        } catch (URIException e) {
             addError(validatable, String.format("'%s' is not a valid url", uri));
         }
     }

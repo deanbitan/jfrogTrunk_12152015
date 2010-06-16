@@ -18,12 +18,17 @@
 
 package org.artifactory.webapp.wicket.page.config.security;
 
+import org.apache.wicket.Component;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInstantiation;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.LdapGroupWebAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
 /**
@@ -38,13 +43,34 @@ public class LdapsListPage extends AuthenticatedPage {
     @SpringBean
     private AddonsManager addonsManager;
 
+    private WebMarkupContainer ldapSettingPanel;
+    private TitledPanel ldapGroupConfigurationPanel;
+
     public LdapsListPage() {
-        add(new LdapsListPanel("ldapListPanel"));
-        add(addonsManager.addonByType(LdapGroupWebAddon.class).getLdapGroupConfigurationPanel("ldapGroupListPanel"));
+        LdapGroupWebAddon webAddon = addonsManager.addonByType(LdapGroupWebAddon.class);
+        ldapSettingPanel = webAddon.getLdapListPanel("ldapListPanel");
+        add(ldapSettingPanel);
+        ldapGroupConfigurationPanel = webAddon.getLdapGroupConfigurationPanel("ldapGroupListPanel");
+        add(ldapGroupConfigurationPanel);
     }
 
     @Override
     public String getPageName() {
         return "LDAP Settings";
     }
+
+    public void refresh(AjaxRequestTarget target) {
+        Component component = get("ldapListPanel");
+        MutableCentralConfigDescriptor descriptor = centralConfigService.getMutableDescriptor();
+        if (component.getModelObject() != null) {
+            component.setModelObject(descriptor.getSecurity().getLdapSettings());
+        }
+        if (component instanceof LdapsListPanel) {
+            ((LdapsListPanel) component).refresh();
+        }
+        target.addComponent(component);
+        ((LdapGroupListPanel) ldapGroupConfigurationPanel).setMutableDescriptor(descriptor);
+        target.addComponent(ldapGroupConfigurationPanel);
+    }
+
 }

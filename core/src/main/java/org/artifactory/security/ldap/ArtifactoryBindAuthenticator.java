@@ -102,6 +102,10 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
 
         String username = authentication.getName();
         String password = (String) authentication.getCredentials();
+        // may have LDAPs that have no password for the users, see RTFACT-3103
+        if (!StringUtils.hasText(password)) {
+            password = "";
+        }
 
         if (userDnPattern != null) {
             // If DN patterns are configured, try authenticating with them directly

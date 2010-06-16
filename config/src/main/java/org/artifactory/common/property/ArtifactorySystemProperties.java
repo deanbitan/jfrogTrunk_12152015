@@ -229,6 +229,16 @@ public class ArtifactorySystemProperties {
         artifactoryProperties.setProperty(propertyName, value);
     }
 
+    /**
+     * Removes the value of the given key
+     *
+     * @param propertyName Property key
+     * @return the prev value or null
+     */
+    public String removeProperty(String propertyName) {
+        return (String) artifactoryProperties.remove(propertyName);
+    }
+
     public void store(OutputStream out) {
         try {
             artifactoryProperties.store(out, "");

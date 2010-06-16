@@ -122,15 +122,18 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
 
                 StringBuilder msg = new StringBuilder();
                 //Return this only if we limit the search results and don't return the full number of results found
-                if (isLimitSearchResults() && (fullResultsCount > maxResults)) {
-                    msg.append(getRowCount()).append(" out of ").
+                int rowCount = getRowCount();
+                if (isLimitSearchResults() && fullResultsCount > maxResults) {
+                    msg.append(rowCount).append(" out of ").
                             append(fullResultsCount == queryLimit ? "more than " : "").append(fullResultsCount).
-                            append(" matches found for '").
+                            append(" matches found for '").append(searchExpression).append("'");
+                } else if (isLimitSearchResults() && fullResultsCount == -1 && rowCount == maxResults) {
+                    msg.append("Showing first ").append(rowCount).append(" matches found for '").
                             append(searchExpression).append("'");
                 } else if (searchExpression == null) {
-                    msg.append(getRowCount()).append(" matches found ");
+                    msg.append(rowCount).append(" matches found");
                 } else {
-                    msg.append(getRowCount()).append(" matches found for '").append(searchExpression).append("'");
+                    msg.append(rowCount).append(" matches found for '").append(searchExpression).append("'");
                 }
                 String timeStr = NumberFormat.getNumberInstance().format(searchResults.getTime());
                 msg.append(" (").append(timeStr).append(" ms)");
@@ -172,7 +175,6 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
                 onSearch();
                 fetchResults(parent);
                 table.setCurrentPage(0);    // scroll back to the first page
-                target.addComponent(table);
                 target.addComponent(searchBorder);
                 AjaxUtils.refreshFeedback(target);
             }
@@ -269,14 +271,19 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         int maxResults = ConstantValues.searchMaxResults.getInt();
 
         //Display this only if we limit the search results and don't return the full number of results found
-        if (isLimitSearchResults() && (searchResultList.size() > maxResults)) {
+        if (isLimitSearchResults() && searchResultList.size() > maxResults) {
             long fullResultsCount = searchResults.getFullResultsCount();
             int queryLimit = ConstantValues.searchUserQueryLimit.getInt();
-            String fullResultsText =
-                    fullResultsCount == queryLimit ? "more than " + fullResultsCount : "" + fullResultsCount;
+            StringBuilder resultsText = new StringBuilder("Showing first ");
+            resultsText.append(maxResults);
+            if (fullResultsCount == queryLimit) {
+                resultsText.append(" out of more than ").append(fullResultsCount);
+            } else if (fullResultsCount != -1) {
+                resultsText.append(" out of ").append(fullResultsCount);
+            }
             String limitDisclaimer = addons.addonByType(SearchAddon.class).getSearchLimitDisclaimer();
-            Session.get().warn("Displaying first " + maxResults + " out of " + fullResultsText
-                    + " results. Please consider refining your search." + limitDisclaimer);
+            resultsText.append(" results. Please consider refining your search.").append(limitDisclaimer);
+            Session.get().warn(resultsText.toString());
             searchResultList = searchResultList.subList(0, maxResults);
         }
 
@@ -298,7 +305,7 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         return (SaveSearchResultsPanel) searchBorder.get("saveResultsPanel");
     }
 
-    protected class ArtifactNameColumn extends GroupableColumn {
+    protected static class ArtifactNameColumn extends GroupableColumn {
         public ArtifactNameColumn() {
             this("Artifact");
         }

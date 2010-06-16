@@ -26,7 +26,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.jcr.version.v150.xml.RepoXmlConverterTest;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ResourceUtils;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.slf4j.Logger;
 import org.testng.Assert;
@@ -62,14 +62,14 @@ public class RepoConfigConverterTest {
     }
 
     /**
-     * Tests the config file location and noraml conversion process
+     * Tests the config file location and normal conversion process
      */
     @Test
     public void testNormalConvert() throws Exception {
         setup(true, true);
 
         //Scan and convert
-        RepoConfigConverter repoConfigConverter = new RepoConfigConverter();
+        RepoConfigConverterV150 repoConfigConverter = new RepoConfigConverterV150();
         repoConfigConverter.convert(artifactoryHome);
 
         //Validate that all planted repo.xml files were converted properly
@@ -77,7 +77,7 @@ public class RepoConfigConverterTest {
             InputStream is = null;
             try {
                 is = new FileInputStream(new File(repoDir, ArtifactoryHome.ARTIFACTORY_JCR_FILE));
-                Document doc = XmlConverterUtils.parse(is);
+                Document doc = XmlUtils.parse(is);
                 RepoXmlConverterTest xmlConverterTest = new RepoXmlConverterTest();
                 xmlConverterTest.assertConvertedDoc(doc);
             } finally {
@@ -94,7 +94,7 @@ public class RepoConfigConverterTest {
         setup(false, true);
 
         //Scan and convert
-        RepoConfigConverter repoConfigConverter = new RepoConfigConverter();
+        RepoConfigConverterV150 repoConfigConverter = new RepoConfigConverterV150();
         repoConfigConverter.convert(artifactoryHome);
 
         //Validate that all planted repo.xml files were converted properly
@@ -102,7 +102,7 @@ public class RepoConfigConverterTest {
             InputStream is = null;
             try {
                 is = new FileInputStream(new File(repoDir, ArtifactoryHome.ARTIFACTORY_JCR_FILE));
-                Document doc = XmlConverterUtils.parse(is);
+                Document doc = XmlUtils.parse(is);
                 RepoXmlConverterTest xmlConverterTest = new RepoXmlConverterTest();
                 xmlConverterTest.assertConvertedDoc(doc);
             } finally {
@@ -119,7 +119,7 @@ public class RepoConfigConverterTest {
         setup(false, false);
 
         //Scan and convert
-        RepoConfigConverter repoConfigConverter = new RepoConfigConverter();
+        RepoConfigConverterV150 repoConfigConverter = new RepoConfigConverterV150();
         repoConfigConverter.convert(artifactoryHome);
 
         //Validate that all planted repo.xml files were converted properly
@@ -127,7 +127,7 @@ public class RepoConfigConverterTest {
             InputStream is = null;
             try {
                 is = new FileInputStream(new File(repoDir, ArtifactoryHome.ARTIFACTORY_JCR_FILE));
-                Document doc = XmlConverterUtils.parse(is);
+                Document doc = XmlUtils.parse(is);
                 RepoXmlConverterTest xmlConverterTest = new RepoXmlConverterTest();
                 xmlConverterTest.assertConvertedDoc(doc);
             } finally {
@@ -137,14 +137,14 @@ public class RepoConfigConverterTest {
     }
 
     /**
-     * Tests the convertion of an optional repo.xml with an unrecognized datastore
+     * Tests the conversion of an optional repo.xml with an unrecognized datastore
      */
     @Test
     public void testConvertInvalidOptionalDatastore() throws Exception {
         setup(true, false);
 
         //Scan and convert
-        RepoConfigConverter repoConfigConverter = new RepoConfigConverter();
+        RepoConfigConverterV150 repoConfigConverter = new RepoConfigConverterV150();
         repoConfigConverter.convert(artifactoryHome);
 
         //Validate that all planted repo.xml files were converted properly
@@ -152,7 +152,7 @@ public class RepoConfigConverterTest {
             InputStream is = null;
             try {
                 is = new FileInputStream(new File(repoDir, ArtifactoryHome.ARTIFACTORY_JCR_FILE));
-                Document doc = XmlConverterUtils.parse(is);
+                Document doc = XmlUtils.parse(is);
                 RepoXmlConverterTest xmlConverterTest = new RepoXmlConverterTest();
                 xmlConverterTest.assertConvertedDoc(doc);
             } catch (AssertionError assertionError) {

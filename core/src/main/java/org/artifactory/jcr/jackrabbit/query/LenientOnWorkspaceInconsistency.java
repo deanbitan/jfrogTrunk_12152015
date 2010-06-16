@@ -39,7 +39,6 @@ import javax.jcr.RepositoryException;
  * @author Yoav Landman
  */
 public class LenientOnWorkspaceInconsistency extends OnWorkspaceInconsistency {
-    @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(LenientOnWorkspaceInconsistency.class);
 
     public static final OnWorkspaceInconsistency LENIENT = new LenientOnWorkspaceInconsistency("lenient");
@@ -58,19 +57,19 @@ public class LenientOnWorkspaceInconsistency extends OnWorkspaceInconsistency {
 
     @Override
     public void handleMissingChildNode(NoSuchItemStateException exception,
-                                       QueryHandler handler,
-                                       Path path,
-                                       NodeState node,
-                                       ChildNodeEntry child)
+            QueryHandler handler,
+            Path path,
+            NodeState node,
+            ChildNodeEntry child)
             throws RepositoryException, ItemStateException {
         NamePathResolver resolver = new DefaultNamePathResolver(
                 handler.getContext().getNamespaceRegistry());
         log.error("Node {} ({}) has missing child '{}' ({})",
                 new Object[]{
                         resolver.getJCRPath(path),
-                        node.getNodeId().getUUID().toString(),
+                        node.getNodeId().toString(),
                         resolver.getJCRName(child.getName()),
-                        child.getId().getUUID().toString()
+                        child.getId().toString()
                 });
         //throw exception;
     }

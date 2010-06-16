@@ -23,7 +23,10 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.AnnotationIntrospector;
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.codehaus.jackson.map.introspect.Annotated;
 import org.codehaus.jackson.map.introspect.JacksonAnnotationIntrospector;
 import org.codehaus.jackson.xc.JaxbAnnotationIntrospector;
 
@@ -75,8 +78,12 @@ public abstract class JacksonFactory {
      * @throws IOException
      */
     public static JsonParser createJsonParser(InputStream inputStream) throws IOException {
-        return getFactory().createJsonParser(inputStream);
+        JsonFactory jsonFactory = getFactory();
+        JsonParser jsonParser = jsonFactory.createJsonParser(inputStream);
+        updateParser(jsonFactory, jsonParser);
+        return jsonParser;
     }
+
 
     /**
      * Creates a JsonParser using the given byte[] as a reader
@@ -86,7 +93,10 @@ public abstract class JacksonFactory {
      * @throws IOException
      */
     public static JsonParser createJsonParser(byte[] input) throws IOException {
-        return getFactory().createJsonParser(input);
+        JsonFactory jsonFactory = getFactory();
+        JsonParser jsonParser = jsonFactory.createJsonParser(input);
+        updateParser(jsonFactory, jsonParser);
+        return jsonParser;
     }
 
     /**
@@ -115,11 +125,42 @@ public abstract class JacksonFactory {
 
         //Update the annotation interceptor to also include jaxb annotations as a second choice
         AnnotationIntrospector primary = new JacksonAnnotationIntrospector();
-        AnnotationIntrospector secondary = new JaxbAnnotationIntrospector();
+        AnnotationIntrospector secondary = new JaxbAnnotationIntrospector() {
+
+            /**
+             * BUG FIX:
+             * By contract, if findSerializationInclusion didn't encounter any annotations that should change the
+             * inclusion value, it should return the default value it has received; but actually returns null, which
+             * overrides the NON_NULL option we set.
+             * The doc states issue JACKSON-256 which was supposed to be fixed in 1.5.0. *twilight zone theme song*
+             */
+
+            @Override
+            public JsonSerialize.Inclusion findSerializationInclusion(Annotated a, JsonSerialize.Inclusion defValue) {
+                JsonSerialize.Inclusion inclusion = super.findSerializationInclusion(a, defValue);
+                if (inclusion == null) {
+                    return defValue;
+                }
+                return inclusion;
+            }
+        };
         AnnotationIntrospector pair = new AnnotationIntrospector.Pair(primary, secondary);
         mapper.getSerializationConfig().setAnnotationIntrospector(pair);
+        mapper.getSerializationConfig().setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
 
         jsonGenerator.setCodec(mapper);
         jsonGenerator.useDefaultPrettyPrinter();
+    }
+
+    /**
+     * Update the parser with a default codec
+     *
+     * @param jsonFactory Factory to set as codec
+     * @param jsonParser  Parser to configure
+     */
+    private static void updateParser(JsonFactory jsonFactory, JsonParser jsonParser) {
+        ObjectMapper mapper = new ObjectMapper(jsonFactory);
+        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        jsonParser.setCodec(mapper);
     }
 }

@@ -377,8 +377,8 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return localRes;
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(final RepoResource res) throws IOException,
-            RepositoryException {
+    public ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, final RepoResource res)
+            throws IOException, RepositoryException {
         log.debug("Transferring {} directly to user from {}.", res, this);
         String relPath = res.getRepoPath().getPath();
         //If we are dealing with metadata will return the md container item
@@ -682,6 +682,12 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
     public void onCreate(JcrFsItem fsItem) {
         StatusHolder holder = new MultiStatusHolder();
+        // update the item info as late as possible, just before calling the on create interceptors (normally the update
+        // is called after the tx commit but it is too late for the interceptors)
+        if (fsItem.isFile()) {
+            JcrFile jcrFile = (JcrFile) fsItem;
+            getFileInfoMd().getPersistenceHandler().update(jcrFile, jcrFile.getInfo());
+        }
         interceptors.onCreate(fsItem, holder);
         // TODO: Check the statusHolder
         RepoPath repoPath = fsItem.getRepoPath();

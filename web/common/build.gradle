@@ -1,4 +1,3 @@
-group = 'web'
 sourceSets {
   main {
     java {
@@ -11,6 +10,7 @@ sourceSets {
   }
 }
 jar {
+  archiveBaseName = 'web'
   baseName = 'artifactory-web-' + project.name
 }
 dependencies {

@@ -122,19 +122,14 @@ public class WelcomeBorder extends TitledBorder {
         }
         final boolean loginInfoValid = (lastLoginInfo != null);
 
-        Label lastLogin = new Label("lastLogin", new Model()) {
-            @Override
-            public boolean isVisible() {
-                return loginInfoValid;
-            }
-        };
+        Label lastLogin = new Label("lastLogin", new Model());
+        lastLogin.setVisible(loginInfoValid);
         add(lastLogin);
         if (loginInfoValid) {
             Date date = new Date(lastLoginInfo.getSecond());
             String clientIp = lastLoginInfo.getFirst();
             PrettyTime prettyTime = new PrettyTime();
-            lastLogin.setModelObject("Last logged in: " + prettyTime.format(date) + " (" + date.toString() + "), from "
-                    + clientIp + ".");
+            lastLogin.setModelObject("Last logged in: " + prettyTime.format(date) + " (" + date.toString() + "), from " + clientIp + ".");
         }
     }
 

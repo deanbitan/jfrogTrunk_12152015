@@ -71,7 +71,7 @@
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../config/src/main/resources/META-INF/jcr</directory>
-            <outputDirectory>etc/repo/derby</outputDirectory>
+            <outputDirectory>etc/repo/filesystem-derby</outputDirectory>
             <includes>
                 <include>repo.xml</include>
             </includes>

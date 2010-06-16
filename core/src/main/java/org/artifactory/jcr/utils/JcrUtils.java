@@ -21,13 +21,13 @@ package org.artifactory.jcr.utils;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.data.DataStore;
 import org.apache.jackrabbit.core.data.db.DbDataStore;
+import org.apache.jackrabbit.core.data.db.ExtendedDbDataStoreWrapper;
 import org.apache.jackrabbit.spi.commons.conversion.IllegalNameException;
 import org.apache.jackrabbit.spi.commons.conversion.NameParser;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
-import org.artifactory.jcr.jackrabbit.GenericDbDataStore;
-import org.artifactory.jcr.jackrabbit.GenericDbDataStoreWrapper;
+import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
@@ -125,6 +125,7 @@ public abstract class JcrUtils {
         return sb.toString();
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void dump(String absPath) {
         JcrSession session = null;
         JcrService jcr = InternalContextHelper.get().getJcrService();
@@ -214,7 +215,7 @@ public abstract class JcrUtils {
             } else {
                 session = jcr.getUnmanagedSession();
             }
-            Node node = session.getNodeByUUID(uuid);
+            Node node = session.getNodeByIdentifier(uuid);
             nodePath = node.getPath();
         } catch (RepositoryException e1) {
             log.error(e1.getMessage(), e1);
@@ -226,15 +227,16 @@ public abstract class JcrUtils {
         return nodePath;
     }
 
-    public static GenericDbDataStore getDataStore(RepositoryImpl repositoryImpl) {
+    public static ExtendedDbDataStore getDataStore(RepositoryImpl repositoryImpl) {
         DataStore store = repositoryImpl.getDataStore();
-        if (store instanceof GenericDbDataStore) {
-            return (GenericDbDataStore) store;
+        if (store instanceof ExtendedDbDataStore) {
+            return (ExtendedDbDataStore) store;
         } else if (store instanceof DbDataStore) {
-            return new GenericDbDataStoreWrapper((DbDataStore) store);
+            return new ExtendedDbDataStoreWrapper((DbDataStore) store);
         } else {
-            // Some other store
-            return null;
+            Class<? extends DataStore> dsClass = store != null ? store.getClass() : null;
+            throw new IllegalArgumentException(
+                    "Repository is configured with an incompatible datastore: " + dsClass + ".");
         }
     }
 

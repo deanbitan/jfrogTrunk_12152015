@@ -72,6 +72,6 @@ public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Seri
      */
     String getChecksum(String checksumPath, RepoResource res) throws IOException;
 
-    ResourceStreamHandle getResourceStreamHandle(RepoResource res) throws IOException, FileExpectedException,
-            RepositoryException, RepoRejectionException;
+    ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, RepoResource res) throws IOException,
+            FileExpectedException, RepositoryException, RepoRejectionException;
 }

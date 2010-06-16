@@ -49,8 +49,10 @@ import static org.artifactory.descriptor.repo.SnapshotVersionBehavior.*;
 public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescriptor> {
 
     public LocalRepoPanel(CreateUpdateAction action, LocalRepoDescriptor repoDescriptor,
-            CachingDescriptorHelper cachingDescriptorHelper) {
+                          CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor, cachingDescriptorHelper);
+        setWidth(610);
+        add(new CssClass("local-repo-config"));
 
         addBasicSettings(cachingDescriptorHelper);
 
@@ -90,7 +92,7 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
 
     private void addAdvancedSettings() {
         TitledBorder advancedSettings = new TitledBorder("advancedSettings");
-        advancedSettings.add(new CssClass("local-repo-addvanced-settings"));
+        advancedSettings.add(new CssClass("local-repo-advanced-settings"));
         advancedSettings.add(new CollapsibleBehavior().setResizeModal(true));
         form.add(advancedSettings);
 

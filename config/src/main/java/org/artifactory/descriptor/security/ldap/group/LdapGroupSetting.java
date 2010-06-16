@@ -18,6 +18,7 @@
 
 package org.artifactory.descriptor.security.ldap.group;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
 
 import javax.xml.bind.annotation.XmlElement;
@@ -31,7 +32,7 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlType(name = "LdapGroupSettingType",
         propOrder = {"name", "groupBaseDn", "groupNameAttribute", "groupMemberAttribute", "subTree", "filter",
-                "descriptionAttribute", "strategy", "enabled"}, namespace = Descriptor.NS)
+                "descriptionAttribute", "strategy", "enabledLdap"}, namespace = Descriptor.NS)
 public class LdapGroupSetting implements Descriptor {
 
     private String name;
@@ -48,12 +49,10 @@ public class LdapGroupSetting implements Descriptor {
 
     private String descriptionAttribute;
 
+    private String enabledLdap = "";
+
     @XmlElement(defaultValue = "STATIC", required = false)
     private LdapGroupPopulatorStrategies strategy = LdapGroupPopulatorStrategies.STATIC;
-
-    @XmlElement(defaultValue = "true")
-    private boolean enabled = true;
-
 
     public LdapGroupSetting() {
     }
@@ -123,11 +122,16 @@ public class LdapGroupSetting implements Descriptor {
     }
 
     public boolean isEnabled() {
-        return enabled;
+        return StringUtils.isNotBlank(enabledLdap);
     }
 
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+
+    public String getEnabledLdap() {
+        return enabledLdap;
+    }
+
+    public void setEnabledLdap(String enabledLdap) {
+        this.enabledLdap = enabledLdap;
     }
 
     @Override

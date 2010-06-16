@@ -19,14 +19,14 @@
 package org.artifactory.webapp.wicket.page.build.panel;
 
 import com.google.common.collect.Lists;
+import org.apache.wicket.Component;
 import org.apache.wicket.PageParameters;
+import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.markup.ComponentTag;
-import org.apache.wicket.markup.MarkupStream;
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
@@ -99,43 +99,11 @@ public class AllBuildsPanel extends TitledPanel {
     private void addTable(Set<BasicBuildInfo> latestBuildsByName) {
         List<IColumn> columns = Lists.newArrayList();
         columns.add(new ActionsColumn(""));
-        columns.add(new AbstractColumn(new Model("Build Name"), "name") {
-            public void populateItem(Item cellItem, String componentId, IModel rowModel) {
-                LatestBuildByNameActionableItem info =
-                        (LatestBuildByNameActionableItem) cellItem.getParent().getParent().getModelObject();
-                cellItem.add(getBuildNameLink(componentId, info.getName()));
-            }
-        });
+        columns.add(new BuildNameColumn());
         columns.add(new FormattedDateColumn(new Model("Last Built"), "startedDate", "started", centralConfigService,
                 Build.STARTED_FORMAT));
         BuildsDataProvider dataProvider = new BuildsDataProvider(latestBuildsByName);
         add(new SortableTable("builds", columns, dataProvider, 200));
-    }
-
-    /**
-     * Returns a link that redirects to the build history panel of the given build name
-     *
-     * @param componentId ID to assign to the link
-     * @param buildName   Build name to to locate
-     * @return Link to the build history panel
-     */
-    private AjaxLink getBuildNameLink(String componentId, final String buildName) {
-        AjaxLink link = new AjaxLink(componentId, new Model(buildName)) {
-
-            @Override
-            protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
-                replaceComponentTagBody(markupStream, openTag, buildName);
-            }
-
-            @Override
-            public void onClick(AjaxRequestTarget target) {
-                PageParameters pageParameters = new PageParameters();
-                pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildName);
-                setResponsePage(BuildBrowserRootPage.class, pageParameters);
-            }
-        };
-        link.add(new CssClass("item-link"));
-        return link;
     }
 
     /**
@@ -183,6 +151,32 @@ public class AllBuildsPanel extends TitledPanel {
             }
 
             return items;
+        }
+    }
+
+    private class BuildNameColumn extends AbstractColumn {
+        public BuildNameColumn() {
+            super(new Model("Build Name"), "name");
+        }
+
+        public void populateItem(Item cellItem, String componentId, IModel rowModel) {
+            LatestBuildByNameActionableItem info = (LatestBuildByNameActionableItem) cellItem.getParent().getParent().getModelObject();
+            final String buildName = info.getName();
+            Component link = new Label(componentId, buildName);
+            link.add(new CssClass("item-link"));
+            cellItem.add(link);
+            cellItem.add(new AjaxEventBehavior("onclick") {
+                @Override
+                protected void onEvent(AjaxRequestTarget target) {
+                    drillDown(buildName);
+                }
+            });
+        }
+
+        private void drillDown(String buildName) {
+            PageParameters pageParameters = new PageParameters();
+            pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildName);
+            setResponsePage(BuildBrowserRootPage.class, pageParameters);
         }
     }
 }

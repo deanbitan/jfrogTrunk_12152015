@@ -190,7 +190,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     }
 
     private boolean isXmlFile() {
-        return NamingUtils.getContentType(getFileInfo().getName()).isXml();
+        return NamingUtils.getMimeType(getFileInfo().getName()).isXml();
     }
 
     private boolean isIvyFile() {
@@ -202,7 +202,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     }
 
     private boolean isJnlpFile() {
-        MimeType mimeType = NamingUtils.getContentType((getFileInfo().getName()));
+        MimeType mimeType = NamingUtils.getMimeType((getFileInfo().getName()));
         return "application/x-java-jnlp-file".equalsIgnoreCase(mimeType.getType());
     }
 

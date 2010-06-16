@@ -38,6 +38,7 @@ import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.apache.wicket.request.IRequestCycleProcessor;
+import org.apache.wicket.request.target.coding.IRequestTargetUrlCodingStrategy;
 import org.apache.wicket.settings.IApplicationSettings;
 import org.apache.wicket.settings.IMarkupSettings;
 import org.apache.wicket.settings.IRequestCycleSettings;
@@ -79,6 +80,7 @@ import org.artifactory.webapp.wicket.page.security.profile.ProfilePage;
 import org.artifactory.webapp.wicket.resource.LogoResource;
 import org.artifactory.webapp.wicket.service.authentication.LogoutService;
 import org.slf4j.Logger;
+import org.wicketstuff.annotation.scan.AnnotatedMountList;
 import org.wicketstuff.annotation.scan.AnnotatedMountScanner;
 
 import javax.servlet.http.HttpServletRequest;
@@ -135,6 +137,11 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
     public void mountPage(Class<? extends Page> pageClass) {
         String url = "/" + pageClass.getSimpleName().replaceFirst("Page", "").toLowerCase(Locale.ENGLISH) + ".html";
+        mountPage(url, pageClass);
+    }
+
+    private void mountPage(String url, Class<? extends Page> pageClass) {
+        unmount(url);   // un-mount first (in case of re-mounting)
         mountBookmarkablePage(url, pageClass);
     }
 
@@ -285,6 +292,14 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         }
     }
 
+    /**
+     * Rebuild the site map and re-mount the pages.
+     */
+    public void rebuildSiteMap() {
+        buildSiteMap();
+        mountPages();
+    }
+
     private void setupSpring() {
         addComponentInstantiationListener(new ArtifactorySpringComponentInjector(this));
         inject(this);
@@ -334,13 +349,18 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     }
 
     private void mountPages() {
-        new AnnotatedMountScanner().scanPackage("org.artifactory.webapp.wicket.page.build.page")
-                .mount(ArtifactoryApplication.get());
+        AnnotatedMountList annotatedMountList = new AnnotatedMountScanner().scanPackage(
+                "org.artifactory.webapp.wicket.page.build.page");
+        // first make sure to un-mount all paths (required if we rebuild mounting)
+        for (IRequestTargetUrlCodingStrategy strategy : annotatedMountList) {
+            unmount(strategy.getMountPath());
+        }
+        annotatedMountList.mount(ArtifactoryApplication.get());
 
-        mountBookmarkablePage(SimpleRepoBrowserPage.PATH, SimpleRepoBrowserPage.class);
+        mountPage(SimpleRepoBrowserPage.PATH, SimpleRepoBrowserPage.class);
 
         // mount services
-        mountBookmarkablePage("/service/logout", LogoutService.class);
+        mountPage("/service/logout", LogoutService.class);
 
         // mount general pages
         mountPage(InternalErrorPage.class);
@@ -355,7 +375,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
         for (MenuNode pageNode : siteMap.getPages()) {
             if (pageNode.getMountUrl() != null) {
-                mountBookmarkablePage(pageNode.getMountUrl(), pageNode.getPageClass());
+                mountPage(pageNode.getMountUrl(), pageNode.getPageClass());
             } else {
                 mountPage(pageNode.getPageClass());
             }
@@ -373,7 +393,6 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
     private void buildSiteMap() {
         SiteMapBuilder builder = newSiteMapBuilder();
-        builder.createSiteMap();
         builder.buildSiteMap();
         builder.cachePageNodes();
         siteMap = builder.getSiteMap();

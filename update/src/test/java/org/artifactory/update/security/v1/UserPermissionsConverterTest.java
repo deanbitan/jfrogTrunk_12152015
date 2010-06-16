@@ -20,7 +20,7 @@ package org.artifactory.update.security.v1;
 
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.security.SecurityConverterTest;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
@@ -44,7 +44,7 @@ public class UserPermissionsConverterTest extends SecurityConverterTest {
         String fileMetadata = "/security/v1/security.xml";
         Document doc = convertXml(fileMetadata, new UserPermissionsConverter());
 
-        log.debug(XmlConverterUtils.outputString(doc));
+        log.debug(XmlUtils.outputString(doc));
 
         Element root = doc.getRootElement();
 

@@ -92,7 +92,6 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
     public DeployArtifactPanel(String id, File file) {
         super(id);
-
         add(new DeployArtifactForm(file));
     }
 
@@ -326,7 +325,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 UnitInfo artifactInfo = model.getArtifactInfo();
                 model.deployPom = isPomArtifact() || !isPomExists(getPersistentTargetRepo());
                 if (model.deployPom && model.isMavenArtifact) {
-                    model.pomChanged = false;
+                    model.pomChanged = true;
                     MavenArtifactInfo mavenArtifactInfo = (MavenArtifactInfo) artifactInfo;
                     org.apache.maven.model.Model mavenModel;
                     if (model.pomXml != null) {
@@ -390,6 +389,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 try {
                     InputStream pomInputStream = IOUtils.toInputStream(model.pomXml);
                     model.mavenArtifactInfo = MavenModelUtils.mavenModelToArtifactInfo(pomInputStream);
+                    model.mavenArtifactInfo.setType(PathUtils.getExtension(model.getTargetPathFieldValue()));
                 }
                 catch (Exception e) {
                     error("Failed to parse input pom");
@@ -463,7 +463,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                         deployFile();
                     }
                     String repoKey = model.targetRepo.getKey();
-                    String artifactPath = model.getTargetPath();
+                    String artifactPath = model.getTargetPathFieldValue();
                     StringBuilder successMessagesBuilder = new StringBuilder();
                     successMessagesBuilder.append("Successfully deployed ");
                     String repoPathUrl = getRepoPathUrl(repoKey, artifactPath);
@@ -509,7 +509,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             }
 
             private void deployFileAndPom() throws IOException, RepoRejectionException {
-                deployService.validatePom(model.pomXml, model.getTargetPath(),
+                deployService.validatePom(model.pomXml, model.getTargetPathFieldValue(),
                         model.targetRepo.isSuppressPomConsistencyChecks());
                 deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, model.pomXml, true, false);
             }
@@ -581,7 +581,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
     }
 
-    private static class DeployModel implements Serializable {
+    private class DeployModel implements Serializable {
         private List<LocalRepoDescriptor> repos;
         private File file;
         private LocalRepoDescriptor targetRepo;
@@ -592,10 +592,34 @@ public class DeployArtifactPanel extends TitledActionPanel {
         private boolean deployPom;
         private MavenArtifactInfo mavenArtifactInfo;
 
+        /**
+         * Do not use this method to retrieve the actual value of the field, since this method determines the value of
+         * the field (based on the model) before returning value.<br>
+         * To simply return the value of the field use org.artifactory.webapp.wicket.page.deploy.step2.DeployArtifactPanel.DeployModel#getTargetPathFieldValue()
+         *
+         * @return Target path
+         */
         public String getTargetPath() {
-            if (isMavenArtifact || targetPath == null) {
+            /**
+             * If the item should be deployed as a maven artifact, is a pom, or contains a pom, prepare the path in the
+             * Maven format, otherwise, the path should just be the file name so we avoid awkward deployment paths for
+             * non-Maven artifacts
+             */
+            if (isMavenArtifact || MavenArtifactInfo.POM.equalsIgnoreCase(mavenArtifactInfo.getType()) ||
+                    StringUtils.isNotBlank(MavenModelUtils.getPomFileAsStringFromJar(file))) {
                 targetPath = mavenArtifactInfo.getPath();
+            } else {
+                targetPath = file.getName();
             }
+            return targetPath;
+        }
+
+        /**
+         * Simply returns the actual value of the field
+         *
+         * @return Target path field value
+         */
+        public String getTargetPathFieldValue() {
             return targetPath;
         }
 

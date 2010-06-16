@@ -35,6 +35,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
@@ -58,14 +59,14 @@ public class SecurityResource {
     }
 
     @GET
-    @Produces("application/xml")
+    @Produces(MediaType.APPLICATION_XML)
     public SecurityInfo getSecurityData() {
         return securityService.getSecurityData();
     }
 
     @POST
-    @Consumes("application/xml")
-    @Produces("text/plain")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.TEXT_PLAIN)
     public String importSecurityData(String securityXml) {
         log.debug("Activating import of new security data: {}", securityXml);
         securityService.importSecurityData(securityXml);

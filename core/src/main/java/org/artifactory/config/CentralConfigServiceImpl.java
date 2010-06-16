@@ -219,8 +219,8 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         // will fail if not valid without affecting the current configuration
         // in any case we will use this newly loaded config as the descriptor
         CentralConfigReader centralConfigReader = new CentralConfigReader();
-        CentralConfigDescriptor newDescriptor =
-                centralConfigReader.read(JaxbHelper.toXml(descriptor));// will fail if invalid
+        String configXml = JaxbHelper.toXml(descriptor);
+        CentralConfigDescriptor newDescriptor = centralConfigReader.read(configXml);// will fail if invalid
         reloadConfiguration(newDescriptor);
     }
 
@@ -264,7 +264,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         //Get the server name
         serverName = descriptor.getServerName();
         if (serverName == null) {
-            log.debug("No custom server id in configuration. Using hostname instead.");
+            log.debug("No custom server name in configuration. Using hostname instead.");
             try {
                 serverName = InetAddress.getLocalHost().getHostName();
             } catch (UnknownHostException e) {

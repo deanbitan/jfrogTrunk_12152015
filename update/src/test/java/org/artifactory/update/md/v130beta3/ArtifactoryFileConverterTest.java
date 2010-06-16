@@ -20,7 +20,7 @@ package org.artifactory.update.md.v130beta3;
 
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverterTest;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class ArtifactoryFileConverterTest extends MetadataConverterTest {
         String fileMetadata = "/metadata/v130beta3/artifactory.file.xml";
         Document doc = convertXml(fileMetadata, new ArtifactoryFileConverter());
 
-        log.debug(XmlConverterUtils.outputString(doc));
+        log.debug(XmlUtils.outputString(doc));
 
         Element root = doc.getRootElement();
         assertEquals(root.getName(), "artifactory-file", "Root node should have been renamed");

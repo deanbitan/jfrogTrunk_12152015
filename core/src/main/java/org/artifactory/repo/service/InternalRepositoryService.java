@@ -33,6 +33,7 @@ import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoRepoPath;
+import org.artifactory.repo.context.RequestContext;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.resource.RepoResource;
@@ -108,19 +109,19 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     void assertValidDeployPath(LocalRepo repo, String path) throws RepoRejectionException;
 
     @Lock(transactional = true)
-    <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(RemoteRepo<T> remoteRepo, RepoResource res)
-            throws IOException, RepositoryException, RepoRejectionException;
+    <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(RequestContext requestContext,
+            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException, RepoRejectionException;
 
     @Lock(transactional = true)
     RepoResource unexpireIfExists(LocalRepo localCacheRepo, String path);
 
     @Lock(transactional = true)
-    ResourceStreamHandle unexpireAndRetrieveIfExists(LocalRepo localCacheRepo, String path) throws IOException,
-            RepositoryException, RepoRejectionException;
+    ResourceStreamHandle unexpireAndRetrieveIfExists(RequestContext requestContext, LocalRepo localCacheRepo,
+            String path) throws IOException, RepositoryException, RepoRejectionException;
 
     @Lock(transactional = true)
-    ResourceStreamHandle getResourceStreamHandle(Repo repo, RepoResource res) throws IOException, RepoRejectionException
-            , RepositoryException;
+    ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, Repo repo, RepoResource res)
+            throws IOException, RepoRejectionException, RepositoryException;
 
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);
@@ -150,6 +151,7 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * Asynchronous method called at the end of the transaction to acquire a write lock on the repo path
      * and activate the automatic save.
      * The write will be acquire only if the fs item is not already write locked.
+     *
      * @param repoPath The RepoPath of the item with dirty state.
      */
     @Async(delayUntilAfterCommit = true, transactional = true)

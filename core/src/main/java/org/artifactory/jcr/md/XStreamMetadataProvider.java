@@ -20,15 +20,11 @@ package org.artifactory.jcr.md;
 
 import com.thoughtworks.xstream.XStream;
 import org.artifactory.api.xstream.XStreamFactory;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author freds
  */
 public abstract class XStreamMetadataProvider<T> implements XmlMetadataProvider<T> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(XStreamMetadataProvider.class);
 
     private final Class<? extends T> xstreamClass;
     private final XStream xstream;

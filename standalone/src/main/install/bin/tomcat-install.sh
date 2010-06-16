@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# Please make these to links to actual install before running the script
-ARTIFACTORY_HOME=/opt/artifactory/current
-TOMCAT_HOME=/opt/tomcat/artifactory
-
 curUser=`id -nu`
 if [ "$curUser" != "root" ]
 then
@@ -16,13 +12,66 @@ fi
 curDir=`dirname $0`
 curDir=`cd $curDir; pwd`
 
+# Finding good artifactory home
+ARTIFACTORY_HOME="/opt/artifactory/current"
+if [ ! -d "$ARTIFACTORY_HOME" ]; then
+    ARTIFACTORY_HOME=`cd $curDir/..; pwd -P`
+fi
+
+artHome=""
+echo "Where is Artifactory [default $ARTIFACTORY_HOME]?"
+read artHome
+if [ -n "$artHome" ]; then
+    if [ -d "$artHome" ]; then
+        ARTIFACTORY_HOME="$artHome"
+    else
+        echo "\033[31m** ERROR: $artHome is not a folder"
+        exit 1
+    fi
+fi
+
+TOMCAT_HOME="/opt/tomcat/artifactory"
+if [ ! -d "$TOMCAT_HOME" ]; then
+    TOMCAT_HOME="/opt/tomcat/current"
+fi
+
+tomcatHome=""
+echo "Where is Tomcat for Artifactory [default $TOMCAT_HOME]?"
+read tomcatHome
+if [ -n "$tomcatHome" ]; then
+    if [ -d "$tomcatHome" ]; then
+        TOMCAT_HOME="$tomcatHome"
+    fi
+fi
+
+if [ ! -d "$TOMCAT_HOME" ]; then
+    echo "\033[31m** ERROR: Tomcat home $TOMCAT_HOME is not a folder"
+    exit 1
+fi
+
+if [ ! -d "$ARTIFACTORY_HOME" ]; then
+    echo "\033[31m** ERROR: Artifactory home $ARTIFACTORY_HOME is not a folder"
+    exit 1
+fi
+
 $curDir/install.sh || ( echo "Could not execute standard install script $curDir/install.sh" && exit 1 )
 
+# Since tomcat 6.0.24 the PID file cannot be created before running catalina.sh. Using /var/run/artifactory folder.
+artRunFolder=/var/run/artifactory
+if [ ! -d "$artRunFolder" ]; then
+    mkdir "$artRunFolder" || ( echo "Could not create /var/run/artifactory" && exit 1 )
+fi
+chown -R artifactory "$artRunFolder"
+
 echo "" >> /etc/artifactory/default
-echo "export CATALINA_PID=/var/run/artifactory.pid" >> /etc/artifactory/default
+echo "export TOMCAT_HOME=$TOMCAT_HOME" >> /etc/artifactory/default
+echo "export CATALINA_PID=$artRunFolder/artifactory.pid" >> /etc/artifactory/default
 
 tomFiles=$curDir/../misc/tomcat
-cp -i $tomFiles/artifactory /etc/init.d/artifactory
+if [ -e "/etc/init.d/artifactory" ]; then
+    cp -f /etc/init.d/artifactory $tomFiles/artifactory.init.backup
+fi
+cp -f $tomFiles/artifactory /etc/init.d/artifactory
 chmod a+x /etc/init.d/artifactory
 cp $tomFiles/setenv.sh $TOMCAT_HOME/bin
 chmod a+x $TOMCAT_HOME/bin/*

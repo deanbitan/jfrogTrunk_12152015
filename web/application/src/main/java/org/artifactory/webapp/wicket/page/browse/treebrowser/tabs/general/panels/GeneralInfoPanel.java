@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -33,17 +32,27 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.storage.StorageUnit;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
+import org.slf4j.Logger;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 /**
  * Displays general item information. Placed inside the general info panel.
@@ -51,6 +60,7 @@ import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
  * @author Yossi Shaul
  */
 public class GeneralInfoPanel extends Panel {
+    private static final Logger log = LoggerFactory.getLogger(GeneralInfoPanel.class);
 
     @SpringBean
     private AddonsManager addonsManager;
@@ -113,6 +123,15 @@ public class GeneralInfoPanel extends Panel {
 
         LabeledValue versionLabel = new LabeledValue("version", "Version: ");
         infoBorder.add(versionLabel);
+
+        Label label = new Label("treeUrlLabel", "Tree URL: ");
+        infoBorder.add(label);
+        String pathUrl = getRepoPathUrl(repoItem.getRepoPath().getRepoKey(), repoItem.getRepoPath().getPath());
+        if (StringUtils.isBlank(pathUrl)) {
+            pathUrl = "";
+        }
+        ExternalLink treeUrl = new ExternalLink("treeUrl", pathUrl, pathUrl);
+        infoBorder.add(treeUrl);
 
         final boolean isItemARepo = (repoItem instanceof LocalRepoActionableItem);
         LabeledValue deployedByLabel = new LabeledValue("deployed-by", "Deployed by: ",
@@ -215,10 +234,32 @@ public class GeneralInfoPanel extends Panel {
             //If we are looking at a cached item, check the expiry from the remote repository
             String ageStr = DurationFormatUtils.formatDuration(file.getAge(), "d'd' H'h' m'm' s's'");
             ageLabel.setValue(ageStr);
-            sizeLabel.setValue(FileUtils.byteCountToDisplaySize(size));
+            sizeLabel.setValue(StorageUnit.toReadableString(size));
             groupIdLabel.setValue(mavenInfo.getGroupId());
             artifactIdLabel.setValue(mavenInfo.getArtifactId());
             versionLabel.setValue(mavenInfo.getVersion());
         }
+    }
+
+    private String getRepoPathUrl(String repoKey, String artifactPath) {
+        StringBuilder urlBuilder = new StringBuilder();
+        if (NamingUtils.isChecksum(artifactPath)) {
+            // if a checksum file is deployed, link to the target file
+            artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
+        }
+        String repoPathId = new RepoPath(repoKey, artifactPath).getId();
+
+        String encodedPathId;
+        try {
+            encodedPathId = URLEncoder.encode(repoPathId, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            log.error("Unable to encode deployed artifact ID '{}': {}.", repoPathId, e.getMessage());
+            return null;
+        }
+
+        //Using request parameters instead of wicket's page parameters. See RTFACT-2843
+        urlBuilder.append(WicketUtils.mountPathForPage(BrowseRepoPage.class)).append("?pathId=").
+                append(encodedPathId);
+        return urlBuilder.toString();
     }
 }

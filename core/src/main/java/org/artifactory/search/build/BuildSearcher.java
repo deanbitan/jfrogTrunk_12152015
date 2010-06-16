@@ -100,7 +100,7 @@ public class BuildSearcher extends SearcherBase {
         for (String buildName : map.keySet()) {
             String[] splitPath = map.get(buildName).getSecond();
             String decodedBuildName = Text.unescapeIllegalJcrChars(buildName);
-            long buildNumber = Long.parseLong(splitPath[3]);
+            String buildNumber = splitPath[3];
             String decodedBuildStarted = Text.unescapeIllegalJcrChars(splitPath[4]);
             buildsToReturn.add(new BasicBuildInfo(decodedBuildName, buildNumber, decodedBuildStarted));
         }
@@ -216,7 +216,7 @@ public class BuildSearcher extends SearcherBase {
                 continue;
             }
             String decodedBuildName = Text.unescapeIllegalJcrChars(splitPath[2]);
-            long buildNumber = Long.parseLong(splitPath[3]);
+            String buildNumber = splitPath[3];
             String decodedBuildStarted = Text.unescapeIllegalJcrChars(splitPath[4]);
             results.add(new BasicBuildInfo(decodedBuildName, buildNumber, decodedBuildStarted));
         }

@@ -23,8 +23,9 @@ import org.apache.jackrabbit.core.data.DataStore;
 import org.apache.jackrabbit.core.data.db.DbDataStore;
 import org.apache.jackrabbit.core.persistence.IterablePersistenceManager;
 import org.apache.jackrabbit.core.persistence.PersistenceManager;
+import org.apache.jackrabbit.core.persistence.mem.InMemPersistenceManager;
 import org.apache.jackrabbit.core.state.ItemStateException;
-import org.apache.jackrabbit.core.version.VersionManagerImpl;
+import org.apache.jackrabbit.core.version.InternalVersionManagerImpl;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.gc.JcrGarbageCollector;
@@ -66,7 +67,7 @@ public class GarbageCollectorFactory {
             return null;
         }
         List<PersistenceManager> pmList = new ArrayList<PersistenceManager>();
-        VersionManagerImpl vm = (VersionManagerImpl) rep.getVersionManager();
+        InternalVersionManagerImpl vm = (InternalVersionManagerImpl) rep.getVersionManager();
         PersistenceManager pm = vm.getPersistenceManager();
         pmList.add(pm);
         String[] wspNames = rep.getWorkspaceNames();
@@ -78,21 +79,29 @@ public class GarbageCollectorFactory {
             pm = wspInfo.getPersistenceManager();
             pmList.add(pm);
         }
-        IterablePersistenceManager[] ipmList = new IterablePersistenceManager[pmList.size()];
-        for (int i = 0; i < pmList.size(); i++) {
-            pm = pmList.get(i);
-            if (!(pm instanceof IterablePersistenceManager)) {
-                ipmList = null;
-                break;
+        List<IterablePersistenceManager> ipmList = new ArrayList<IterablePersistenceManager>();
+        for (PersistenceManager ipm : pmList) {
+            if (ipm instanceof IterablePersistenceManager) {
+                ipmList.add((IterablePersistenceManager) ipm);
+            } else {
+                // In memory PM are not a problem for GC
+                if (!(ipm instanceof InMemPersistenceManager)) {
+                    // Got an unmanageable persistence manager cannot used it
+                    ipmList = null;
+                    break;
+                }
             }
-            ipmList[i] = (IterablePersistenceManager) pm;
+        }
+        IterablePersistenceManager[] ipmArray = null;
+        if (ipmList != null) {
+            ipmArray = ipmList.toArray(new IterablePersistenceManager[ipmList.size()]);
         }
         JcrGarbageCollector gc = null;
         if (store instanceof ArtifactoryBaseDataStore) {
-            gc = new ArtifactoryDbGarbageCollector(session, ipmList, sysSessions);
+            gc = new ArtifactoryDbGarbageCollector(session, ipmArray, sysSessions);
             ((ArtifactoryDbGarbageCollector) gc).addBinaryPropertyNames(new String[]{JcrConstants.JCR_DATA});
         } else if (!(store instanceof DbDataStore)) {
-            gc = new ArtifactoryGarbageCollector(session, ipmList, sysSessions);
+            gc = new ArtifactoryGarbageCollector(session, ipmArray, sysSessions);
             ((ArtifactoryGarbageCollector) gc).setSleepBetweenNodes(ConstantValues.gcSleepBetweenNodesMillis.getInt());
         } else {
             log.info("Store " + store.getClass().getName() + " does not support garbage collection");

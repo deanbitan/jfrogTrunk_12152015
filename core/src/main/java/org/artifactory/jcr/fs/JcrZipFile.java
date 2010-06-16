@@ -76,8 +76,7 @@ public class JcrZipFile {
                     entries.add(entry);
                 }
             } catch (IOException e) {
-                throw new RuntimeException(
-                        "Failed to read zip entries from '" + getName() + "'.", e);
+                throw new RuntimeException("Failed to read zip entries from '" + getName() + "'.", e);
             }
         }
         return entries;

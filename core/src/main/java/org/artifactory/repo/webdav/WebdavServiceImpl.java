@@ -366,7 +366,7 @@ public class WebdavServiceImpl implements WebdavService {
                     generatedXml.writeProperty(null, "getlastmodified", lastModified);
                     generatedXml.writeProperty(null, "getcontentlength", resourceLength);
 
-                    MimeType ct = NamingUtils.getContentType(path);
+                    MimeType ct = NamingUtils.getMimeType(path);
                     if (ct != null) {
                         generatedXml.writeProperty(null, "getcontenttype", ct.getType());
                     }

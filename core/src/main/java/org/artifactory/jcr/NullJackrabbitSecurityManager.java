@@ -20,7 +20,7 @@ package org.artifactory.jcr;
 
 import org.apache.jackrabbit.api.security.principal.PrincipalManager;
 import org.apache.jackrabbit.api.security.user.UserManager;
-import org.apache.jackrabbit.core.ItemId;
+import org.apache.jackrabbit.core.id.ItemId;
 import org.apache.jackrabbit.core.security.AMContext;
 import org.apache.jackrabbit.core.security.AccessManager;
 import org.apache.jackrabbit.core.security.JackrabbitSecurityManager;
@@ -110,7 +110,7 @@ public class NullJackrabbitSecurityManager implements JackrabbitSecurityManager 
     public void close() {
     }
 
-    public AuthContext getAuthContext(Credentials creds, final Subject subject) {
+    public AuthContext getAuthContext(Credentials creds, final Subject subject, String workspaceName) {
         return new AuthContext() {
             public void login() throws LoginException {
             }
@@ -136,7 +136,7 @@ public class NullJackrabbitSecurityManager implements JackrabbitSecurityManager 
         return (UserManager) unsupportedOperationProxy;
     }
 
-    public String getUserID(Subject subject) {
+    public String getUserID(Subject subject, String workspaceName) throws RepositoryException {
         return SecurityConstants.ADMIN_ID;
     }
 }

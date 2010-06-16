@@ -35,6 +35,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Calendar;
@@ -58,7 +59,7 @@ public class TrafficResource {
 
     @GET
     @Path(TrafficRestConstants.STREAM_ROOT)
-    @Produces("text/plain")
+    @Produces(MediaType.TEXT_PLAIN)
     public String getTrafficLogFilesStream(
             @QueryParam(TrafficRestConstants.PARAM_START_DATE) long startLong,
             @QueryParam(TrafficRestConstants.PARAM_END_DATE) long endLong) throws IOException {

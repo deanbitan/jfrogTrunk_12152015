@@ -122,6 +122,12 @@ public class DragDropSelection<T> extends FormComponentPanel {
         SimpleTitledLink removeLink = new SimpleTitledLink("removeLink", "<<");
         add(removeLink);
 
+        SimpleTitledLink addAllLink = new SimpleTitledLink("addAllLink", ">>>");
+        add(addAllLink);
+
+        SimpleTitledLink removeAllLink = new SimpleTitledLink("removeAllLink", "<<<");
+        add(removeAllLink);
+
         add(new Label("sourceTitle", new TitleModel("selection.source")));
         add(new Label("targetTitle", new TitleModel("selection.target")));
 
@@ -138,6 +144,8 @@ public class DragDropSelection<T> extends FormComponentPanel {
         template.setParameter("targetListId", new PropertyModel(targetList, "markupId"));
         template.setParameter("addLinkId", new PropertyModel(addLink, "markupId"));
         template.setParameter("removeLinkId", new PropertyModel(removeLink, "markupId"));
+        template.setParameter("addAllLinkId", new PropertyModel(addAllLink, "markupId"));
+        template.setParameter("removeAllLinkId", new PropertyModel(removeAllLink, "markupId"));
         template.setParameter("textFieldId", new PropertyModel(selectionField, "markupId"));
         add(template);
     }

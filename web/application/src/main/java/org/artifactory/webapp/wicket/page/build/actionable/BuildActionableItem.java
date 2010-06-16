@@ -107,7 +107,7 @@ public class BuildActionableItem extends ActionableItemBase {
      *
      * @return Selected build number
      */
-    public Long getBuildNumber() {
+    public String getBuildNumber() {
         return basicBuildInfo.getNumber();
     }
 }

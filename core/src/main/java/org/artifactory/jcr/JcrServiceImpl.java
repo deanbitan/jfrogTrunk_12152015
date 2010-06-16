@@ -18,6 +18,7 @@
 
 package org.artifactory.jcr;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -26,12 +27,11 @@ import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.jackrabbit.core.GarbageCollectorFactory;
 import org.apache.jackrabbit.core.nodetype.InvalidNodeTypeDefException;
-import org.apache.jackrabbit.core.nodetype.NodeTypeDef;
 import org.apache.jackrabbit.core.nodetype.xml.NodeTypeReader;
-import org.apache.jackrabbit.core.query.QueryImpl;
 import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
 import org.apache.jackrabbit.ocm.manager.impl.ObjectContentManagerImpl;
 import org.apache.jackrabbit.ocm.mapper.Mapper;
+import org.apache.jackrabbit.spi.QNodeTypeDefinition;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.ExportSettings;
@@ -87,6 +87,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import javax.annotation.PostConstruct;
+import javax.jcr.Binary;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -211,6 +212,10 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
      */
     @PostConstruct
     private void initJcrRepository() throws Exception {
+        initJcrRepository(true);
+    }
+
+    private void initJcrRepository(boolean preInit) throws Exception {
         if (sessionFactory != null) {
             throw new IllegalStateException("JCR Service was already initialized!");
         }
@@ -221,7 +226,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
                 new File(artifactoryHome.getLogDir(), "derby.log").getAbsolutePath());
 
         //Create the repository
-        JackrabbitRepository repository = JcrRepoInitHelper.createJcrRepository(repoXml);
+        JackrabbitRepository repository = JcrRepoInitHelper.createJcrRepository(repoXml, preInit);
         // Create the session pool
         sessionFactory = new JcrSessionFactory();
         sessionFactory.setRepository(repository);
@@ -269,7 +274,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     }
 
     public void reCreateJcrRepository() throws Exception {
-        initJcrRepository();
+        initJcrRepository(false);
         // Don't call init it is going to be called by normal bean refresh
     }
 
@@ -681,7 +686,8 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
                     new Checksum(ChecksumType.md5),
                     new Checksum(ChecksumType.sha1));
             //Save the data and calculate the checksums
-            resourceNode.setProperty(JCR_DATA, checksumInputStream);
+            Binary binary = resourceNode.getSession().getValueFactory().createBinary(checksumInputStream);
+            resourceNode.setProperty(JCR_DATA, binary);
             checksumInputStream.close();
             setChecksums(metadataNode, checksumInputStream.getChecksums(), true);
 
@@ -689,7 +695,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
             //element) will be created from the stored input stream
             if (saveXmlHierarchy) {
                 Property property = resourceNode.getProperty(JCR_DATA);
-                InputStream rawStream = property.getStream();
+                InputStream rawStream = property.getBinary().getStream();
                 try {
                     if (metadataNode.hasNode(NODE_ARTIFACTORY_XML)) {
                         stringNode = metadataNode.getNode(NODE_ARTIFACTORY_XML);
@@ -733,16 +739,22 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
      * Scan folders recursively, to create the data tree of folders and pom names
      */
     private FolderTreeNode processFolder(Node folder, StatusHolder status) {
-        ArrayList<FolderTreeNode> childFolders = new ArrayList<FolderTreeNode>();
-        ArrayList<String> childPoms = new ArrayList<String>();
+        List<FolderTreeNode> childFolders = Lists.newArrayList();
+        List<String> childPoms = Lists.newArrayList();
         NodeIterator nodeIterator;
         String folderName;
+        Calendar created;
         try {
             folderName = folder.getName();
+            if (folder.hasProperty(JcrTypes.PROP_ARTIFACTORY_CREATED)) {
+                created = folder.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getDate();
+            } else {
+                created = Calendar.getInstance();
+                log.info("Folder {} property artifactory:created is missing.");
+            }
             nodeIterator = folder.getNodes();
         } catch (RepositoryException e) {
-            status.setError("Error while reading folder name or child list of " + JcrHelper.display(folder) + ".", e,
-                    log);
+            status.setError("Error while reading folder node " + JcrHelper.display(folder) + ".", e, log);
             return null;
         }
         boolean hasMavenPlugins = false;
@@ -779,7 +791,8 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
                                 }
                             } catch (RepositoryException e) {
                                 status.setError(
-                                        "Error while reading pom packaging value for " + JcrHelper.display(childNode) + ".", e,
+                                        "Error while reading pom packaging value for " + JcrHelper.display(
+                                                childNode) + ".", e,
                                         log);
                             }
                         }
@@ -787,7 +800,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
                 }
             }
         }
-        return new FolderTreeNode(folderName,
+        return new FolderTreeNode(folderName, created,
                 childFolders.toArray(new FolderTreeNode[childFolders.size()]),
                 childPoms.toArray(new String[childPoms.size()]), hasMavenPlugins);
     }
@@ -854,8 +867,8 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
         }
     }
 
-    NodeTypeDef[] getArtifactoryNodeTypes() throws IOException, InvalidNodeTypeDefException {
-        NodeTypeDef[] types;
+    QNodeTypeDefinition[] getArtifactoryNodeTypes() throws IOException, InvalidNodeTypeDefException {
+        QNodeTypeDefinition[] types;
         try {
             types = NodeTypeReader.read(nodeTypes.getInputStream());
         } finally {
@@ -926,19 +939,22 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     public QueryResult executeQuery(JcrQuerySpec spec, JcrSession session) {
         long start = System.currentTimeMillis();
         Workspace workspace = session.getWorkspace();
-        QueryResult queyResult;
+        QueryResult queryResult;
         try {
             QueryManager queryManager = workspace.getQueryManager();
             String queryString = spec.query();
             log.debug("Executing JCR query: {}", queryString);
             Query query = queryManager.createQuery(queryString, spec.jcrType());
-            ((QueryImpl) query).setLimit(spec.limit());
-            queyResult = query.execute();
+            int limit = spec.limit();
+            if (limit >= 0) {
+                query.setLimit(limit);
+            }
+            queryResult = query.execute();
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException("Error while executing query.", e);
         }
         log.debug("{} query execution time: {} ms", spec.jcrType(), System.currentTimeMillis() - start);
-        return queyResult;
+        return queryResult;
     }
 
     public ArtifactCount getArtifactCount() {
@@ -952,8 +968,9 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
             sb.append("/jcr:root").append(JcrPath.get().getRepoJcrRootPath()).append("/").append(repoKey);
         }
 
+        //The 'order by @jcr:score descending' suffix guarantees result count is calculated in JR 2.0
         sb.append("//element(*, ").append(NT_FILE).append(") [@").append(PROP_ARTIFACTORY_NAME).
-                append("]");
+                append("] order by @jcr:score descending");
 
         QueryResult result = executeQuery(JcrQuerySpec.xpath(sb.toString()).noLimit());
         long count = 0;

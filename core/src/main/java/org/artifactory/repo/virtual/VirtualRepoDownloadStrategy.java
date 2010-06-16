@@ -116,7 +116,7 @@ public class VirtualRepoDownloadStrategy {
                     // strangely enough, to update the stats we must get the resource stream handle which will also
                     // call update stats (see RTFACT-2958)
                     LocalRepo repo = repositoryService.localOrCachedRepositoryByKey(sourceRepoKey);
-                    searchableHandle = repositoryService.getResourceStreamHandle(repo, searchableResource);
+                    searchableHandle = repositoryService.getResourceStreamHandle(context, repo, searchableResource);
                 } catch (IOException ioe) {
                     log.error("Could not update download stats", ioe);
                 } catch (RepoRejectionException rre) {
@@ -151,7 +151,7 @@ public class VirtualRepoDownloadStrategy {
             }
 
             if (MavenNaming.isMavenMetadata(path)) {
-                result = processMavenMetadata(repoPath, repositories);
+                result = processMavenMetadata(context, repoPath, repositories);
             } else if (MavenNaming.isSnapshot(path)) {
                 result = processSnapshot(repoPath, repositories);
             } else {
@@ -309,11 +309,12 @@ public class VirtualRepoDownloadStrategy {
     /**
      * Merges maven metadata from all the repositories that are part of this virtual repository.
      *
+     * @param context      Request context
      * @param repoPath     The repository path pointing to a maven-metadata.xml
-     * @param repositories List of repositories to search
-     * @return A StringResource with the metadata content or an un-found resource.
+     * @param repositories List of repositories to search   @return A StringResource with the metadata content or an un-found resource.
      */
-    private RepoResource processMavenMetadata(RepoPath repoPath, List<RealRepo> repositories) throws IOException {
+    private RepoResource processMavenMetadata(RequestContext context, RepoPath repoPath, List<RealRepo> repositories)
+            throws IOException {
         String path = repoPath.getPath();
         MergedMavenMetadata mergedMavenMetadata = new MergedMavenMetadata();
         for (RealRepo repo : repositories) {
@@ -323,12 +324,12 @@ public class VirtualRepoDownloadStrategy {
                 continue;
             }
 
-            RepoResource res = repo.getInfo(new NullRequestContext(path));
+            RepoResource res = repo.getInfo(context);
             if (!res.isFound()) {
                 continue;
             }
 
-            Metadata metadata = getMavenMetadataContent(repo, res);
+            Metadata metadata = getMavenMetadataContent(context, repo, res);
             if (metadata != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("{}: found maven metadata res: {}", repo, path);
@@ -351,10 +352,10 @@ public class VirtualRepoDownloadStrategy {
         resource.setResponseRepoPath(new RepoPath(foundInRepo.getKey(), resource.getRepoPath().getPath()));
     }
 
-    private Metadata getMavenMetadataContent(Repo repo, RepoResource res) {
+    private Metadata getMavenMetadataContent(RequestContext requestContext, Repo repo, RepoResource res) {
         ResourceStreamHandle handle = null;
         try {
-            handle = repositoryService.getResourceStreamHandle(repo, res);
+            handle = repositoryService.getResourceStreamHandle(requestContext, repo, res);
             //Create metadata
             InputStream metadataInputStream;
             //Hold on to the original metatdata string since regenerating it could result in

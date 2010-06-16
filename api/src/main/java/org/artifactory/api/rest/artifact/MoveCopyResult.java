@@ -51,5 +51,4 @@ public class MoveCopyResult {
         private MoveCopyMessages() {
         }
     }
-
 }

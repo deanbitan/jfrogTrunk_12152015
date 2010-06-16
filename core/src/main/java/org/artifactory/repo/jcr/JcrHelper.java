@@ -64,7 +64,7 @@ public class JcrHelper {
 
     public static String getUuid(Node node) {
         try {
-            return node.getUUID();
+            return node.getIdentifier();
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException("Failed to retrieve node's uuid:" + display(node), e);
         }
@@ -287,14 +287,15 @@ public class JcrHelper {
         }
     }
 
-    public static void setLongProperty(Node node, String propName, Long value) {
+    public static void setCalenderProperty(Node node, String propName, Long value) {
         try {
             if (value == null) {
                 if (node.hasProperty(propName)) {
                     node.getProperty(propName).remove();
                 }
             } else {
-                node.setProperty(propName, value);
+                Calendar calendar = getCalendar(value);
+                node.setProperty(propName, calendar);
             }
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException(
@@ -332,7 +333,7 @@ public class JcrHelper {
         Property property = stringNode.getProperty(JCR_DATA);
         log.trace("Read string data '{}' with length: {}.", stringNode.getPath(), property.getLength());
         Value attachedDataValue = property.getValue();
-        InputStream is = attachedDataValue.getStream();
+        InputStream is = attachedDataValue.getBinary().getStream();
         return is;
     }
 

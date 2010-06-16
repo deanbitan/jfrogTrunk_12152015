@@ -29,17 +29,21 @@ public interface ArtifactRestConstants {
     String MT_ITEM_METADATA = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemMetadata+json";
     String MT_ITEM_PROPERTIES = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemProperties+json";
     String MT_COPY_MOVE_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".CopyOrMoveResult+json";
+    String MT_FILE_LIST = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".FileList+json";
 
     String PARAM_METADATA_NAMES_PREFIX = "mdns";
 
     String PATH_COPY = "copy";
     String PATH_MOVE = "move";
     String PARAM_TARGET = "to";
-    String PARAM_DRY_RUN = "dryRun";
+    String PARAM_DRY_RUN = "dry";
 
     String PATH_DOWNLOAD = "download";
     String PARAM_CONTENT = "content";
     String PARAM_MARK = "mark";
 
-
+    String PATH_SYNC = "sync";
+    String PARAM_PROGRESS = "progress";
+    String PARAM_DELETE = "delete";
+    String PARAM_OVERWRITE = "overwrite";
 }

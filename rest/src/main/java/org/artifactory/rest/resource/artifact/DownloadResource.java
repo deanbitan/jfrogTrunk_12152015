@@ -23,8 +23,6 @@ import org.artifactory.addon.RestAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -53,8 +51,6 @@ import static org.artifactory.api.rest.constant.ArtifactRestConstants.PATH_DOWNL
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class DownloadResource {
 
-    private static final Logger log = LoggerFactory.getLogger(DownloadResource.class);
-
     @Context
     HttpServletResponse httpResponse;
 
@@ -68,13 +64,12 @@ public class DownloadResource {
      *
      * @param path    The path of the source artifact to be downloaded
      * @param content The content handling policy (none/progress)
-     * @param mark    Every how many bytes to print a pregress mark (when using progress tracking policy)
-     * @throws Exception
+     * @param mark    Every how many bytes to print a progress mark (when using progress tracking policy)
      */
     @GET
     @Path("{path: .+}")
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN})
-    public Response downloadArtifact(
+    public Response downloadArtifactOrFolder(
             @PathParam("path") String path,
             @QueryParam(ArtifactRestConstants.PARAM_CONTENT) Content content,
             @QueryParam(ArtifactRestConstants.PARAM_MARK) int mark) throws Exception {

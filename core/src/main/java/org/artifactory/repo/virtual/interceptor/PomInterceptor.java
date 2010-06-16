@@ -69,7 +69,7 @@ public class PomInterceptor {
 
         String pomContent;
         try {
-            pomContent = transformPomResource(resource, virtualRepo);
+            pomContent = transformPomResource(context, resource, virtualRepo);
         } catch (IOException e) {
             String message = "Failed to transform pom file";
             if (ExceptionUtils.getRootCause(e) instanceof BadPomException) {
@@ -109,13 +109,13 @@ public class PomInterceptor {
         return transformedResource;
     }
 
-    private String transformPomResource(RepoResource resource, VirtualRepo virtualRepo)
+    private String transformPomResource(RequestContext context, RepoResource resource, VirtualRepo virtualRepo)
             throws IOException, RepositoryException {
         String repoKey = resource.getResponseRepoPath().getRepoKey();
         Repo repository = repoService.repositoryByKey(repoKey);
         ResourceStreamHandle handle;
         try {
-            handle = repoService.getResourceStreamHandle(repository, resource);
+            handle = repoService.getResourceStreamHandle(context, repository, resource);
         } catch (RepoRejectionException rre) {
             throw new IOException(rre.getMessage());
         }

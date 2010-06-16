@@ -22,9 +22,10 @@
 package org.artifactory.jcr.jackrabbit;
 
 import org.apache.jackrabbit.JcrConstants;
-import org.apache.jackrabbit.core.NodeId;
-import org.apache.jackrabbit.core.PropertyId;
 import org.apache.jackrabbit.core.RepositoryImpl;
+import org.apache.jackrabbit.core.SessionImpl;
+import org.apache.jackrabbit.core.id.NodeId;
+import org.apache.jackrabbit.core.id.PropertyId;
 import org.apache.jackrabbit.core.persistence.IterablePersistenceManager;
 import org.apache.jackrabbit.core.state.ItemStateException;
 import org.apache.jackrabbit.core.state.NoSuchItemStateException;
@@ -34,6 +35,7 @@ import org.apache.jackrabbit.core.value.InternalValue;
 import org.apache.jackrabbit.spi.Name;
 import org.artifactory.api.storage.GarbageCollectorInfo;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.gc.JcrGarbageCollector;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
@@ -44,10 +46,8 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -68,13 +68,13 @@ import java.util.Set;
 public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryDbGarbageCollector.class);
 
-    private final Collection<String> binaryPropertyNames = new HashSet<String>();
+    private final Set<String> binaryPropertyNames = new HashSet<String>();
 
     private final ArtifactoryBaseDataStore store;
 
     private final IterablePersistenceManager[] pmList;
 
-    private final Session session;
+    private final SessionImpl session;
     private final SessionWrapper[] sessionList;
 
     /**
@@ -94,7 +94,14 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
      * @param sessionList system sessions - one per workspace
      */
     public ArtifactoryDbGarbageCollector(Session session, IterablePersistenceManager[] list, Session[] sessionList) {
-        this.session = session;
+        if (session instanceof SessionImpl) {
+            this.session = (SessionImpl) session;
+        } else if (session instanceof JcrSession) {
+            this.session = (SessionImpl) ((JcrSession) session).getSession();
+        } else {
+            throw new RuntimeException(
+                    "Could not find " + SessionImpl.class.getName() + " Jackarabbit session from " + session);
+        }
         RepositoryImpl rep = (RepositoryImpl) session.getRepository();
         store = (ArtifactoryBaseDataStore) rep.getDataStore();
         this.pmList = list;
@@ -150,7 +157,8 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
         info.dataStoreQueryTime = store.scanDataStore(System.nanoTime());
         info.initialSize = store.getDataStoreSize();
         info.initialCount = store.getDataStoreNbElements();
-        if (pmList == null || !persistenceManagerScan) {
+        // TODO: remove true
+        if (true || pmList == null || !persistenceManagerScan) {
             scanningSessionList();
         } else {
             scanPersistenceManagers();
@@ -160,9 +168,8 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
 
     private void scanningSessionList() throws RepositoryException, IOException {
         info.totalBinaryPropertiesQueryTime = 0L;
-        long totalBinaryPropertiesCount = 0L;
         for (SessionWrapper sessionWrapper : sessionList) {
-            totalBinaryPropertiesCount += sessionWrapper.findBinaryProperties();
+            sessionWrapper.findBinaryProperties();
             info.totalBinaryPropertiesQueryTime += sessionWrapper.binaryPropertiesQueryTime;
         }
         info.totalSizeFromBinaryProperties = 0L;
@@ -252,6 +259,7 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
                 sqlBuilder.append(propertyName).append(" IS NOT NULL");
                 first = false;
             }
+            sqlBuilder.append(" order by jcr:score");
             String xpathQuery = sqlBuilder.toString();
             return xpathQuery;
         }
@@ -306,22 +314,32 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
     }
 
     private void scanPersistenceManagers() throws ItemStateException, RepositoryException {
-        long result = 0L;
+        info.totalBinaryPropertiesQueryTime = 0L;
+        info.totalSizeFromBinaryProperties = 0L;
+        long start = System.currentTimeMillis();
+        Name[] binaryProps = new Name[binaryPropertyNames.size()];
+        int i = 0;
+        for (String binaryPropertyName : binaryPropertyNames) {
+            binaryProps[i++] = session.getQName(binaryPropertyName);
+        }
         for (IterablePersistenceManager pm : pmList) {
-            Iterator it = pm.getAllNodeIds(null, 0);
-            while (it.hasNext()) {
-                NodeId id = (NodeId) it.next();
+            Iterable<NodeId> ids = pm.getAllNodeIds(null, 0);
+            for (NodeId id : ids) {
                 try {
                     NodeState state = pm.load(id);
-                    Set propertyNames = state.getPropertyNames();
-                    for (Object propertyName : propertyNames) {
-                        Name name = (Name) propertyName;
-                        PropertyId pid = new PropertyId(id, name);
-                        PropertyState ps = pm.load(pid);
-                        if (ps.getType() == PropertyType.BINARY) {
+                    for (Name name : binaryProps) {
+                        if (state.hasPropertyName(name)) {
+                            PropertyId pid = new PropertyId(id, name);
+                            PropertyState ps = pm.load(pid);
                             InternalValue[] values = ps.getValues();
                             for (InternalValue value : values) {
-                                result += value.getBLOBFileValue().getLength();
+                                long length = value.getLength();
+                                if (length < 0) {
+                                    doBereaved(session.getJCRPath(session.getHierarchyManager().getPath(state.getId())),
+                                            name.getLocalName());
+                                } else {
+                                    info.totalSizeFromBinaryProperties += length;
+                                }
                             }
                         }
                     }
@@ -331,7 +349,11 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
                 }
             }
         }
-        info.totalSizeFromBinaryProperties = result;
+        //Remove bereaved nodes
+        if (bereavedNodePaths != null) {
+            cleanBereavedNodes();
+        }
+        info.totalBinaryPropertiesQueryTime = System.currentTimeMillis() - start;
     }
 
     public void stopScan() throws RepositoryException {
@@ -381,28 +403,22 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
             try {
                 if (n.hasProperty(propertyName)) {
                     Property p = n.getProperty(propertyName);
+                    // TODO: FRED Stupid test
                     if (p.getType() == PropertyType.BINARY) {
                         if (p.getDefinition().isMultiple()) {
                             long[] lengths = p.getLengths();
                             for (long length : lengths) {
-                                result += length;
+                                if (length < 0) {
+                                    doBereaved(n.getPath(), propertyName);
+                                } else {
+                                    result += length;
+                                }
                             }
                         } else {
                             long length;
                             length = p.getLength();
                             if (length < 0) {
-                                String nodePath = n.getPath();
-                                info.nbBereavedNodes++;
-                                String msg = "Could not read binary property " + propertyName + " on '" + nodePath +
-                                        "' due to previous error!";
-                                log.warn(msg);
-                                if (bereavedNodePaths != null) {
-                                    //The datastore record of the binary data has not been found - schedule node for cleanup
-                                    bereavedNodePaths.add(nodePath);
-                                    log.warn("Cannot determine the length of property {}. Node {} will be discarded.",
-                                            propertyName, nodePath);
-                                    break;
-                                }
+                                doBereaved(n.getPath(), propertyName);
                             } else {
                                 result += length;
                             }
@@ -423,6 +439,19 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
             }
         }
         return result;
+    }
+
+    private void doBereaved(String nodePath, String propertyName) {
+        info.nbBereavedNodes++;
+        String msg = "Could not read binary property " + propertyName + " on '" + nodePath +
+                "' due to previous error!";
+        log.warn(msg);
+        if (bereavedNodePaths != null) {
+            //The datastore record of the binary data has not been found - schedule node for cleanup
+            bereavedNodePaths.add(nodePath);
+            log.warn("Cannot determine the length of property {}. Node {} will be discarded.",
+                    propertyName, nodePath);
+        }
     }
 
     public ArtifactoryBaseDataStore getDataStore() {

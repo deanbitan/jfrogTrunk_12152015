@@ -120,8 +120,8 @@ if [ -L ${ARTIFACTORY_HOME}/logs ]; then
 else
     echo -n "creating..."
     artLogFolder=/var/log/artifactory
-    if [ ! -d "$artLogfolder" ]; then
-        mkdir -p /var/log/artifactory && \
+    if [ ! -d "$artLogFolder" ]; then
+        mkdir -p $artLogFolder && \
         logsOK=true
     fi
     if [ $logsOK = true ]; then

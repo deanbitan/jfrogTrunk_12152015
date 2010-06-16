@@ -27,11 +27,12 @@ import static java.lang.Boolean.TRUE;
  */
 @SuppressWarnings({"EnumeratedConstantNamingConvention"})
 public enum ConstantValues {
-    test("runMode.test", FALSE), //Use and set only in specifc itests - has serious performance implications
+    test("runMode.test", FALSE), //Use and set only in specific itests - has serious performance implications
     qa("runMode.qa", FALSE),
     dev("runMode.dev", FALSE),
     artifactoryVersion("version", null),
     artifactoryRevision("revision", null),
+    artifactoryTimestamp("timestamp", null),
     disabledAddons("addons.disabled", ""),
     springConfigDir("spring.configDir", null),
     jcrConfigDir("jcr.configDir", null),
@@ -54,12 +55,13 @@ public enum ConstantValues {
     searchMaxFragments("search.content.maxFragments", 500),
     searchMaxFragmentsSize("search.content.maxFragmentsSize", 5000),
     searchArchiveMinQueryLength("search.archive.minQueryLength", 3),
+    searchForceArchiveIndexing("search.content.forceArchiveIndexing", FALSE),
+    searchPatternTimeoutSecs("search.pattern.timeoutSecs", 30),
     gcIntervalSecs("gc.intervalSecs", Seconds.HOUR * 6),
     gcBatchDeleteMaxSize("gc.batchDeleteMaxSize", 30),
     gcSleepBetweenNodesMillis("gc.sleepBetweenNodesMillis", 20),
     gcScanStartSleepingThresholdMillis("gc.scanStartSleepingThresholdMillis", 20000),
     gcScanSleepBetweenIterationsMillis("gc.scanSleepBetweenIterationsMillis", 200),
-    forceArchiveIndexing("search.content.forceArchiveIndexing", FALSE),
     trafficCollectionActive("traffic.collectionActive", FALSE),
     trafficCollectionIntervalSecs("traffic.collectionIntervalSecs", Seconds.MINUTE),
     trafficEntriesRetentionSecs("traffic.trafficEntriesRetentionSecs", Seconds.HOUR * 2),
@@ -73,7 +75,8 @@ public enum ConstantValues {
     missingBuildChecksumCacheIdeTimeSecs("build.checksum.cache.idleTimeSecs", Seconds.MINUTE * 5),
     artifactoryUpdatesRefreshIntervalSecs("updates.refreshIntervalSecs", Seconds.HOUR * 4),
     artifactoryUpdatesUrl("updates.url", "http://service.jfrog.org/artifactory/updates"),
-    uiSyntaxColoringMaxTextSizeBytes("ui.syntaxColoringMaxTextSizeBytes", 512000);
+    uiSyntaxColoringMaxTextSizeBytes("ui.syntaxColoringMaxTextSizeBytes", 512000),
+    artifactoryLicenseDir("licenseDir", null);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

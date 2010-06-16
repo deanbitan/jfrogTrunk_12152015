@@ -19,7 +19,7 @@
 package org.artifactory.update.md;
 
 import org.artifactory.api.repo.RepoPath;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 
@@ -77,8 +77,8 @@ public class MetadataConverterUtils {
     }
 
     public static String convertString(MetadataConverter converter, String xmlContent) {
-        Document doc = XmlConverterUtils.parse(xmlContent);
+        Document doc = XmlUtils.parse(xmlContent);
         converter.convert(doc);
-        return XmlConverterUtils.outputString(doc);
+        return XmlUtils.outputString(doc);
     }
 }

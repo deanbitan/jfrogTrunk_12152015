@@ -20,7 +20,7 @@ package org.artifactory.jcr.version.v150.xml;
 
 import org.artifactory.convert.XmlConverterTest;
 import org.artifactory.util.ResourceUtils;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Attribute;
 import org.jdom.DocType;
 import org.jdom.Document;
@@ -47,7 +47,7 @@ public class RepoXmlConverterTest extends XmlConverterTest {
     @Test
     public void testConvert() throws Exception {
         InputStream is = ResourceUtils.getResource("/org/artifactory/jcr/version/v150/xml/repo.xml");
-        Document doc = XmlConverterUtils.parse(is);
+        Document doc = XmlUtils.parse(is);
         RepoXmlConverter xmlConverter = new RepoXmlConverter();
         xmlConverter.convert(doc, true);
 
@@ -60,7 +60,7 @@ public class RepoXmlConverterTest extends XmlConverterTest {
     @Test(expectedExceptions = IllegalStateException.class)
     public void testConvertConfigWithCustomDatastore() throws Exception {
         InputStream is = ResourceUtils.getResource("/org/artifactory/jcr/version/v150/xml/repo-custom-ds.xml");
-        Document doc = XmlConverterUtils.parse(is);
+        Document doc = XmlUtils.parse(is);
         RepoXmlConverter xmlConverter = new RepoXmlConverter();
         xmlConverter.convert(doc, true);
 
@@ -147,7 +147,6 @@ public class RepoXmlConverterTest extends XmlConverterTest {
                             foundProvider = true;
                         } else if (!foundTextExtractor && "textFilterClasses".equals(nameValue) &&
                                 RepoXmlConverter.EXTRACTOR_CLASS.equals(valueString)) {
-
                             foundTextExtractor = true;
                         }
                     }
@@ -158,9 +157,9 @@ public class RepoXmlConverterTest extends XmlConverterTest {
                 }
             }
 
-            assertTrue(foundAnalyzer, "Could not find artifactory analyzer decleration.");
-            assertTrue(foundProvider, "Could not find archive excerpt provider decleration.");
-            assertTrue(foundTextExtractor, "Could not find artifactory text extractor decleration.");
+            assertTrue(foundAnalyzer, "Could not find artifactory analyzer declaration.");
+            assertTrue(foundProvider, "Could not find archive excerpt provider declaration.");
+            assertTrue(foundTextExtractor, "Could not find artifactory text extractor declaration.");
         }
     }
 }

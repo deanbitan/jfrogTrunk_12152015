@@ -42,6 +42,8 @@ import javax.annotation.Nullable;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author Noam Tenne
@@ -65,14 +67,15 @@ public interface SearchService {
     Set<RepoPath> searchArtifactsByChecksum(String sha1, String md5);
 
     /**
-     * @param from The time to start the search exclusive (eg, >). If empty will start from 1st Jan 1970
-     * @param to   The time to end search inclusive (eg, <=), If empty, will not use current time as the limit
+     * @param from          The time to start the search exclusive (eg, >). If empty will start from 1st Jan 1970
+     * @param to            The time to end search inclusive (eg, <=), If empty, will not use current time as the limit
+     * @param reposToSearch Lists of repositories to search within
      * @return List of file repo paths that were created or modifies between the input time range and the date the file
      *         was modified. Empty if none is found.
      */
     @Lock(transactional = true)
     List<Pair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(
-            @Nullable Calendar from, @Nullable Calendar to);
+            @Nullable Calendar from, @Nullable Calendar to, List<String> reposToSearch);
 
     @Lock(transactional = true)
     SearchResults<ArchiveSearchResult> searchArchiveContent(ArchiveSearchControls controls);
@@ -105,4 +108,14 @@ public interface SearchService {
 
     @Lock(transactional = true)
     List<BasicBuildInfo> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryRuntimeException;
+
+    /**
+     * Search for artifacts within a repository matching a given pattern.<br>
+     * The pattern should be like repo-key:this/is/a/pattern
+     *
+     * @param pattern Pattern to search for
+     * @return Set of matching artifact paths relative to the repo
+     */
+    Set<String> searchArtifactsByPattern(String pattern)
+            throws ExecutionException, InterruptedException, TimeoutException;
 }

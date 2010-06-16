@@ -28,6 +28,7 @@ import org.artifactory.api.rest.search.result.CreatedInRangeRestSearchResult;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.util.Pair;
+import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.util.HttpUtils;
 
@@ -71,23 +72,25 @@ public class CreatedInRangeResource {
      * Where the url is the full url of the modified artifact and the modified is the created or modified date of the
      * artifact that is in within the time range.
      *
-     * @param from The time to start the search. Exclusive (eg, >). If empty will start from 1st Jan 1970
-     * @param to   The time to end search. Inclusive (eg, <=), If empty, will not use current time as the limit
+     * @param from          The time to start the search. Exclusive (eg, >). If empty will start from 1st Jan 1970
+     * @param to            The time to end search. Inclusive (eg, <=), If empty, will not use current time as the limit
+     * @param reposToSearch Lists of repositories to search within
      * @return CreatedInRangeRestSearchResult Json representation of the modified artifacts whiting the time range
      */
     @GET
     @Produces({SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT})
     public CreatedInRangeRestSearchResult get(@QueryParam(PARAM_IN_RANGE_FROM) Long from,
-            @QueryParam(PARAM_IN_RANGE_TO) Long to) throws IOException {
+            @QueryParam(PARAM_IN_RANGE_TO) Long to,
+            @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
         if (authorizationService.isAnonymous()) {
             RestUtils.sendUnauthorizedResponse(response,
                     "This search resource is available to authenticated users only.");
             return null;
         }
-        return search(from, to);
+        return search(from, to, reposToSearch);
     }
 
-    private CreatedInRangeRestSearchResult search(Long from, Long to) throws IOException {
+    private CreatedInRangeRestSearchResult search(Long from, Long to, StringList reposToSearch) throws IOException {
         Calendar fromCal = null;
         if (from != null) {
             fromCal = Calendar.getInstance();
@@ -98,9 +101,9 @@ public class CreatedInRangeResource {
             toCal = Calendar.getInstance();
             toCal.setTimeInMillis(to);
         }
-        List<Pair<RepoPath, Calendar>> results = null;
+        List<Pair<RepoPath, Calendar>> results;
         try {
-            results = searchService.searchArtifactsCreatedOrModifiedInRange(fromCal, toCal);
+            results = searchService.searchArtifactsCreatedOrModifiedInRange(fromCal, toCal, reposToSearch);
         } catch (RepositoryRuntimeException e) {
             RestUtils.sendNotFoundResponse(response, e.getMessage());
             return null;

@@ -29,8 +29,6 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 import java.util.List;
 
@@ -38,8 +36,6 @@ import java.util.List;
  * @author Eli Givoni
  */
 public class AdvancedSearchPanel extends WhiteTitlePanel {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(AdvancedSearchPanel.class);
 
     @SpringBean
     private RepositoryService repoService;

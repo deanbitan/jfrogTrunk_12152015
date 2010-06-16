@@ -24,7 +24,6 @@ import org.artifactory.cli.main.CliOption;
 import org.artifactory.cli.main.CommandDefinition;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.springframework.util.Assert;
 
 import java.util.List;
 
@@ -56,7 +55,9 @@ public abstract class BaseCommand implements Command {
      * Default constructor
      */
     public BaseCommand(CommandDefinition commandDefinition, CliOption... optionalParameters) {
-        Assert.notNull(commandDefinition, "Command object cannot be null");
+        if (commandDefinition == null) {
+            throw new IllegalArgumentException("Command object cannot be null");
+        }
         this.commandDefinition = commandDefinition;
         this.optionalParameters = optionalParameters;
     }

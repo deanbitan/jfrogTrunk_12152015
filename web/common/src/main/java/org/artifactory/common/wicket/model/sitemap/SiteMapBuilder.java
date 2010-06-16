@@ -22,14 +22,10 @@ package org.artifactory.common.wicket.model.sitemap;
  * @author Yoav Aharoni
  */
 public abstract class SiteMapBuilder {
-    private SiteMap siteMap;
+    private SiteMap siteMap = new SiteMap();
 
     public SiteMap getSiteMap() {
         return siteMap;
-    }
-
-    public void createSiteMap() {
-        siteMap = new SiteMap();
     }
 
     public void cachePageNodes() {

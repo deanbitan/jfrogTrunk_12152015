@@ -20,7 +20,7 @@ package org.artifactory.logging.version.v1;
 
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.slf4j.Logger;
@@ -52,6 +52,6 @@ public class LogbackConfigSwapper implements XmlConverter {
         }
 
         doc.detachRootElement();
-        doc.setRootElement(XmlConverterUtils.parse(newConfigFile).detachRootElement());
+        doc.setRootElement(XmlUtils.parse(newConfigFile).detachRootElement());
     }
 }

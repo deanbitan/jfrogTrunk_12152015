@@ -20,6 +20,7 @@ package org.artifactory.version;
 
 import org.artifactory.api.version.ArtifactoryVersioning;
 import org.artifactory.api.version.VersionHolder;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 
@@ -39,7 +40,7 @@ public class VersionParser {
      * @return ArtifactoryVersioning - Object representation of the versioning info xml
      */
     public static ArtifactoryVersioning parse(String input) {
-        Document doc = XmlConverterUtils.parse(input);
+        Document doc = XmlUtils.parse(input);
         Element root = doc.getRootElement();
         Element version = root.getChild("versioning");
         if (version == null) {

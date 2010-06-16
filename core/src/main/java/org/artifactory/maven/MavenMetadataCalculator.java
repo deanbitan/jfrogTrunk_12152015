@@ -32,6 +32,7 @@ import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -141,29 +142,42 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         metadata.setVersioning(versioning);
         versioning.setLastUpdatedTimestamp(new Date());
 
-        // add the different versions and set the release to be the latest release version (if exists) 
+        // add the different versions and set the release and latest versions
+        Calendar latest = null, release = null;
         for (FolderTreeNode pomFilesContainer : subFoldersContainingPoms) {
             String version = pomFilesContainer.name;
             versioning.addVersion(version);
-            if (!MavenNaming.isSnapshot(version)) {
+            // latest is the the folder with the latest creation date
+            if (latest == null || latest.before(pomFilesContainer.created)) {
+                latest = pomFilesContainer.created;
+                versioning.setLatest(version);
+            }
+            // release is the latest non-snapshot version
+            if (!MavenNaming.isSnapshot(version) &&
+                    (release == null || release.before(pomFilesContainer.created))) {
+                release = pomFilesContainer.created;
                 versioning.setRelease(version);
             }
         }
-
-        // the latest is the last folder
-        versioning.setLatest(subFoldersContainingPoms.get(subFoldersContainingPoms.size() - 1).name);
 
         saveMetadata(repoPath, metadata, status);
     }
 
     private String getLatestUniqueSnapshotPom(String[] poms) {
-        for (int i = poms.length - 1; i >= 0; i--) {
-            String pomName = poms[i];
-            if (MavenNaming.isUniqueSnapshotFileName(pomName)) {
-                return pomName;
+        String latestUniquePom = null;
+        int latest = 0;
+
+        for (String pom : poms) {
+            if (MavenNaming.isUniqueSnapshotFileName(pom)) {
+                int currentBuildNumber = MavenNaming.getUniqueSnapshotVersionBuildNumber(pom);
+                if (currentBuildNumber >= latest) {
+                    latest = currentBuildNumber;
+                    latestUniquePom = pom;
+                }
             }
         }
-        return null;
+
+        return latestUniquePom;
     }
 
     private List<FolderTreeNode> getSubFoldersContainingPoms(FolderTreeNode parent) {

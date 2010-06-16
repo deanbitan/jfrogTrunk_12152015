@@ -37,7 +37,6 @@ import java.util.Set;
  * @author freds
  */
 public class PropertiesPersistenceHandler extends AbstractMetadataPersistenceHandler<Properties> {
-    @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(PropertiesPersistenceHandler.class);
 
     public PropertiesPersistenceHandler(XmlMetadataProvider<Properties> xmlProvider) {

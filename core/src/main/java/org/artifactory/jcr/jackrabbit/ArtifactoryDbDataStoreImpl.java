@@ -21,6 +21,8 @@ package org.artifactory.jcr.jackrabbit;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.core.data.db.TempFileInputStream;
+import org.apache.jackrabbit.core.util.db.DatabaseAware;
+import org.apache.jackrabbit.core.util.db.DbUtility;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
@@ -28,7 +30,6 @@ import org.slf4j.Logger;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +40,7 @@ import java.util.concurrent.Callable;
 /**
  * @author freds
  */
-public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore {
+public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore implements DatabaseAware {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryDbDataStoreImpl.class);
 
     // Parameter initialized from repo.xml
@@ -86,12 +87,10 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore {
                         throw new DataStoreException("Could not delete file before writing blobs into it");
                     }
                 }
-                ArtifactoryConnectionRecoveryManager conn = getConnection();
                 ResultSet rs = null;
                 try {
                     // SELECT LENGTH, DATA FROM DATASTORE WHERE ID = ?
-                    PreparedStatement prep = conn.executeStmt(selectDataSQL, new Object[]{id});
-                    rs = prep.getResultSet();
+                    rs = conHelper.select(selectDataSQL, new Object[]{id});
                     if (!rs.next()) {
                         throw new DataStoreRecordNotFoundException("Record not found: " + id);
                     }
@@ -108,8 +107,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore {
                     result.delete();
                     throw convert("Can not read identifier " + id, e);
                 } finally {
-                    conn.closeSilently(rs);
-                    putBack(conn);
+                    DbUtility.close(rs);
                 }
             }
         });

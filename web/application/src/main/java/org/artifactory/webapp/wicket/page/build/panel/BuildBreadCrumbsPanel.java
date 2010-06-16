@@ -18,15 +18,16 @@
 
 package org.artifactory.webapp.wicket.page.build.panel;
 
-import org.apache.jackrabbit.util.Text;
 import org.apache.wicket.PageParameters;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.markup.html.AjaxLink;
+import org.apache.wicket.markup.ComponentTag;
+import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
+import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 
 import static org.artifactory.webapp.wicket.page.build.BuildBrowserConstants.PATH_CONSTANTS;
 
@@ -51,19 +52,17 @@ public class BuildBreadCrumbsPanel extends Panel {
         RepeatingView items = new RepeatingView("item");
         add(items);
 
-        StringBuilder pathBuilder = new StringBuilder();
+        items.add(new BreadCrumbItem(items.newChildId(), "All Builds", new PageParameters(), true));
 
-        pathBuilder.append(BuildBrowserConstants.BUILDS);
-        items.add(new BreadCrumbItem(items.newChildId(), "All Builds", pathBuilder.toString(), true));
-
+        PageParameters responseParams = new PageParameters();
         for (String constant : PATH_CONSTANTS) {
             if (pageParameters.containsKey(constant)) {
                 String constantValue = pageParameters.getString(constant);
-                pathBuilder.append("/").append(Text.escapeIllegalJcrChars(constantValue));
+                responseParams.put(constant, constantValue);
 
                 final String format = getString(constant + ".format");
                 final String value = String.format(format, constantValue);
-                items.add(new BreadCrumbItem(items.newChildId(), value, pathBuilder.toString(), false));
+                items.add(new BreadCrumbItem(items.newChildId(), value, new PageParameters(responseParams), false));
             }
         }
     }
@@ -73,11 +72,21 @@ public class BuildBreadCrumbsPanel extends Panel {
      */
     private static class BreadCrumbItem extends WebMarkupContainer {
 
-        private BreadCrumbItem(String id, final String crumbTitle, final String crumbPath, boolean first) {
+        private BreadCrumbItem(String id, final String crumbTitle, final PageParameters pageParameters, boolean first) {
             super(id);
 
-            final String appPath = WicketUtils.getWicketAppPath();
-            add(new ExternalLink("link", appPath + crumbPath, crumbTitle));
+            add(new AjaxLink("link") {
+
+                @Override
+                protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+                    replaceComponentTagBody(markupStream, openTag, crumbTitle);
+                }
+
+                @Override
+                public void onClick(AjaxRequestTarget target) {
+                    setResponsePage(BuildBrowserRootPage.class, pageParameters);
+                }
+            });
             add(new WebMarkupContainer("sep").setVisible(!first));
         }
     }

@@ -85,8 +85,7 @@ public class PermissionTargetListPanel extends ModalListPanel<PermissionTargetIn
 
     @Override
     protected String getDeleteConfirmationText(PermissionTargetInfo permissionTarget) {
-        return "Are you sure you wish to delete the target " +
-                permissionTarget.getName() + "?";
+        return "Are you sure you wish to delete the target '" + permissionTarget.getName() + "'?";
     }
 
     @Override

@@ -21,15 +21,11 @@ package org.artifactory.webapp.spring;
 import org.apache.wicket.proxy.IProxyTargetLocator;
 import org.apache.wicket.spring.ISpringContextLocator;
 import org.artifactory.api.context.ArtifactoryContext;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author Yoav Landman
  */
 public class ArtifactoryBeanLocator implements IProxyTargetLocator {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(ArtifactoryBeanLocator.class);
 
     private final Class<?> type;
     private final ISpringContextLocator locator;

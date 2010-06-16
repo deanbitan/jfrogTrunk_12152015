@@ -60,10 +60,6 @@ public class WebdavAdminServlet extends SimpleWebdavServlet {
     }
 
     private static Repository newEmptyRepository() {
-        try {
-            return new TransientRepository();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create transient repository.", e);
-        }
+        return new TransientRepository();
     }
 }

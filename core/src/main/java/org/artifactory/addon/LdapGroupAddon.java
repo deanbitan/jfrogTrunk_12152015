@@ -19,7 +19,10 @@
 package org.artifactory.addon;
 
 import org.artifactory.api.security.UserInfo;
+import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.springframework.ldap.core.DirContextOperations;
+
+import java.util.List;
 
 /**
  * Used to populate the user with the groups that he belongs to.
@@ -44,4 +47,11 @@ public interface LdapGroupAddon extends AddonFactory {
      */
     void populateGroups(String userDn, UserInfo userInfo);
 
+    /**
+     * Get the enabled {@link LdapSetting} in the system, in the powerpack version of Artifactory this will return more
+     * than one enabled LDAP setting configuration.
+     *
+     * @return The enabled LDAP setting(s)
+     */
+    List<LdapSetting> getEnabledLdapSettings();
 }

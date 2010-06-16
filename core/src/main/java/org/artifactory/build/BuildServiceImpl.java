@@ -45,6 +45,7 @@ import org.artifactory.api.md.Properties;
 import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.constant.BuildRestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.xstream.XStreamFactory;
@@ -60,7 +61,6 @@ import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.search.InternalSearchService;
-import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.version.CompoundVersionDetails;
 import org.codehaus.jackson.JsonGenerator;
@@ -157,7 +157,7 @@ public class BuildServiceImpl implements InternalBuildService {
     public void addBuild(Build build) {
         String buildName = build.getName();
         String escapedBuildName = escapeAndGetJcrCompatibleString(buildName);
-        long buildNumber = build.getNumber();
+        String buildNumber = build.getNumber();
         String started = build.getStarted();
         String escapedStarted = escapeAndGetJcrCompatibleString(started);
         String currentUser = authorizationService.currentUsername();
@@ -179,8 +179,7 @@ public class BuildServiceImpl implements InternalBuildService {
         ByteArrayInputStream buildInputStream = null;
         try {
             JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(buildOutputStream);
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.writeValue(jsonGenerator, build);
+            jsonGenerator.writeObject(build);
             buildInputStream = new ByteArrayInputStream(buildOutputStream.toByteArray());
             jcrService.setStream(buildNumberNode, escapedStarted, buildInputStream, BuildRestConstants.MT_BUILD_INFO,
                     currentUser, false);
@@ -209,7 +208,7 @@ public class BuildServiceImpl implements InternalBuildService {
         return jcrService.getOrCreateUnstructuredNode(getJcrPath().getBuildsJcrRootPath());
     }
 
-    public Build getBuild(String buildName, long buildNumber, String buildStarted) {
+    public Build getBuild(String buildName, String buildNumber, String buildStarted) {
         String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
         return getBuild(buildPath);
     }
@@ -227,13 +226,13 @@ public class BuildServiceImpl implements InternalBuildService {
         return null;
     }
 
-    public String getBuildAsJson(String buildName, long buildNumber, String buildStarted) {
+    public String getBuildAsJson(String buildName, String buildNumber, String buildStarted) {
         String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
         return jcrService.getString(buildPath);
     }
 
     public void deleteBuild(String buildName) {
-        String buildPath = JcrPath.get().getBuildsJcrPath(buildName);
+        String buildPath = JcrPath.get().getBuildsJcrPath(escapeAndGetJcrCompatibleString(buildName));
         jcrService.delete(buildPath);
     }
 
@@ -243,14 +242,15 @@ public class BuildServiceImpl implements InternalBuildService {
         jcrService.delete(buildPath);
     }
 
-    public Build getLatestBuildByNameAndNumber(String buildName, long buildNumber) {
+    public Build getLatestBuildByNameAndNumber(String buildName, String buildNumber) {
         if (StringUtils.isBlank(buildName)) {
             return null;
         }
         String escapedBuildName = escapeAndGetJcrCompatibleString(buildName);
+        String escapedBuildNumber = escapeAndGetJcrCompatibleString(buildNumber);
         StringBuilder pathBuilder = new StringBuilder();
         String absPath = pathBuilder.append(JcrPath.get().getBuildsJcrRootPath()).append("/").append(escapedBuildName).
-                append("/").append(buildNumber).toString();
+                append("/").append(escapedBuildNumber).toString();
         if (!jcrService.itemNodeExists(absPath)) {
             return null;
         }
@@ -286,8 +286,7 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     public Set<BasicBuildInfo> searchBuildsByName(String buildName) {
-        InternalBuildService internalBuildService = InternalContextHelper.get().beanForType(InternalBuildService.class);
-        return internalBuildService.transactionalSearchBuildsByName(buildName);
+        return getTransactionalMe().transactionalSearchBuildsByName(buildName);
     }
 
     public Set<BasicBuildInfo> transactionalSearchBuildsByName(String buildName) {
@@ -308,7 +307,7 @@ public class BuildServiceImpl implements InternalBuildService {
 
                 while (buildNumberNodes.hasNext()) {
                     Node buildNumberNode = buildNumberNodes.nextNode();
-                    long buildNumber = Long.parseLong(buildNumberNode.getName());
+                    String buildNumber = buildNumberNode.getName();
 
                     NodeIterator buildStartedNodes = buildNumberNode.getNodes();
 
@@ -328,8 +327,46 @@ public class BuildServiceImpl implements InternalBuildService {
         return results;
     }
 
+    public Set<BasicBuildInfo> searchBuildsByNameAndNumber(String buildName, String buildNumber) {
+        return getTransactionalMe().transactionalSearchBuildsByNameAndNumber(buildName, buildNumber);
+    }
+
+    public Set<BasicBuildInfo> transactionalSearchBuildsByNameAndNumber(String buildName, String buildNumber) {
+        Set<BasicBuildInfo> results = Sets.newHashSet();
+
+        if (StringUtils.isBlank(buildName) || StringUtils.isBlank(buildNumber)) {
+            return results;
+        }
+
+        String escapedBuildName = escapeAndGetJcrCompatibleString(buildName);
+        String escapedBuildNumber = escapeAndGetJcrCompatibleString(buildNumber);
+        String absPath = new StringBuilder().append(JcrPath.get().getBuildsJcrRootPath()).append("/").
+                append(escapedBuildName).append("/").append(escapedBuildNumber).toString();
+
+        Node buildNumberNode = jcrService.getNode(absPath);
+
+        if (buildNumberNode != null) {
+            try {
+                NodeIterator buildStartedNodes = buildNumberNode.getNodes();
+
+                while (buildStartedNodes.hasNext()) {
+
+                    Node buildStartedNode = buildStartedNodes.nextNode();
+                    String decodedBuildStarted = unEscapeAndGetJcrCompatibleString(buildStartedNode.getName());
+
+                    results.add(new BasicBuildInfo(buildName, buildNumber, decodedBuildStarted));
+                }
+
+            } catch (RepositoryException e) {
+                throw new RepositoryRuntimeException(e);
+            }
+        }
+
+        return results;
+    }
+
     public FileInfo getBestMatchingResult(Set<RepoPath> searchResults, Map<RepoPath, Properties> resultProperties,
-            String buildName, long buildNumber) {
+            String buildName, String buildNumber) {
 
         if (resultProperties.isEmpty()) {
             return getLatestItem(searchResults);
@@ -380,8 +417,8 @@ public class BuildServiceImpl implements InternalBuildService {
                     while (buildStartedNodes.hasNext()) {
                         Node buildStartedNode = buildStartedNodes.nextNode();
                         try {
-                            exportBuild(settings, buildStartedNode, buildName, Long.parseLong(buildNumber),
-                                    exportedBuildCount, buildsFolder);
+                            exportBuild(settings, buildStartedNode, buildName, buildNumber, exportedBuildCount,
+                                    buildsFolder);
                             exportedBuildCount++;
                         } catch (Exception e) {
                             String errorMessage = String.format("Failed to export build info: %s:%s", buildName,
@@ -447,7 +484,7 @@ public class BuildServiceImpl implements InternalBuildService {
         MultiStatusHolder multiStatusHolder = settings.getStatusHolder();
 
         String buildName = escapeAndGetJcrCompatibleString(build.getBuildName());
-        long buildNumber = build.getBuildNumber();
+        String buildNumber = build.getBuildNumber();
         String buildStarted = escapeAndGetJcrCompatibleString(build.getBuildStarted());
 
         multiStatusHolder.setDebug(
@@ -464,9 +501,9 @@ public class BuildServiceImpl implements InternalBuildService {
         }
 
         Node buildStartedNode = jcrService.getNode(buildNumberNode, buildStarted);
-        buildStartedNode.setProperty(PROP_ARTIFACTORY_CREATED, build.getCreated());
-        buildStartedNode.setProperty(PROP_ARTIFACTORY_LAST_MODIFIED, build.getLastModified());
-        buildStartedNode.setProperty(PROP_ARTIFACTORY_LAST_MODIFIED_BY, build.getLastModifiedBy());
+        setCalenderProperty(buildStartedNode, PROP_ARTIFACTORY_CREATED, build.getCreated());
+        setCalenderProperty(buildStartedNode, PROP_ARTIFACTORY_LAST_MODIFIED, build.getLastModified());
+        setStringProperty(buildStartedNode, PROP_ARTIFACTORY_LAST_MODIFIED_BY, build.getLastModifiedBy());
 
         Node resNode = getResourceNode(buildStartedNode);
         resNode.setProperty(JCR_LASTMODIFIED, build.getLastModified());
@@ -477,7 +514,7 @@ public class BuildServiceImpl implements InternalBuildService {
             String actualChecksum = checksum.getActual();
             ChecksumType checksumType = checksum.getType();
             String propName = checksumType.getActualPropName();
-            buildStartedNode.setProperty(propName, actualChecksum);
+            setStringProperty(buildStartedNode, propName, actualChecksum);
         }
 
         // set the artifacts and dependencies checksums
@@ -524,6 +561,13 @@ public class BuildServiceImpl implements InternalBuildService {
         }
 
         return null;
+    }
+
+    public MoveCopyResult moveOrCopyBuildItems(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
+            boolean artifacts, boolean dependencies, List<String> scopes, boolean dryRun) {
+        BuildItemMoveCopyHelper itemMoveCopyHelper = new BuildItemMoveCopyHelper();
+        return itemMoveCopyHelper.moveOrCopy(move, basicBuildInfo, targetRepoKey, artifacts, dependencies, scopes,
+                dryRun);
     }
 
     private String escapeAndGetJcrCompatibleString(String toEscape) {
@@ -704,10 +748,10 @@ public class BuildServiceImpl implements InternalBuildService {
      * @param buildNumber      Number of build
      * @return The build number node
      */
-    private Node createBuildNumberNode(String escapedBuildName, long buildNumber) {
+    private Node createBuildNumberNode(String escapedBuildName, String buildNumber) {
         Node buildsNode = getOrCreateBuildsRootNode();
         Node buildNameNode = jcrService.getOrCreateUnstructuredNode(buildsNode, escapedBuildName);
-        return jcrService.getOrCreateUnstructuredNode(buildNameNode, Long.toString(buildNumber));
+        return jcrService.getOrCreateUnstructuredNode(buildNameNode, buildNumber);
     }
 
     /**
@@ -731,7 +775,7 @@ public class BuildServiceImpl implements InternalBuildService {
      * @param buildStarted Build started
      * @return Build absolute JCR path
      */
-    private String getBuildPathFromParams(String buildName, long buildNumber, String buildStarted) {
+    private String getBuildPathFromParams(String buildName, String buildNumber, String buildStarted) {
         return new StringBuilder().append(JcrPath.get().
                 getBuildsJcrPath(escapeAndGetJcrCompatibleString(buildName))).append("/").append(buildNumber).
                 append("/").append(escapeAndGetJcrCompatibleString(buildStarted)).toString();
@@ -788,14 +832,14 @@ public class BuildServiceImpl implements InternalBuildService {
      * @return The file info of a result that best matches the given build name and number
      */
     private FileInfo matchResultBuildNameAndNumber(Set<RepoPath> searchResults,
-            Map<RepoPath, Properties> resultProperties, String buildName, long buildNumber) {
+            Map<RepoPath, Properties> resultProperties, String buildName, String buildNumber) {
         Map<RepoPath, Properties> matchingBuildNames = Maps.newHashMap();
 
-        for (RepoPath repoPath : resultProperties.keySet()) {
-            Properties properties = resultProperties.get(repoPath);
+        for (Map.Entry<RepoPath, Properties> repoPathPropertiesEntry : resultProperties.entrySet()) {
+            Properties properties = repoPathPropertiesEntry.getValue();
             Set<String> buildNames = properties.get("build.name");
             if (buildNames.contains(buildName)) {
-                matchingBuildNames.put(repoPath, properties);
+                matchingBuildNames.put(repoPathPropertiesEntry.getKey(), properties);
             }
         }
 
@@ -815,23 +859,15 @@ public class BuildServiceImpl implements InternalBuildService {
      * @return The file info of a result that best matches the given build number
      */
     private FileInfo matchResultBuildNumber(Map<RepoPath, Properties> resultProperties,
-            Map<RepoPath, Properties> matchingPaths, long buildNumber) {
+            Map<RepoPath, Properties> matchingPaths, String buildNumber) {
         RepoPath selectedPath = matchingPaths.keySet().iterator().next();
-        long bestMatch = 0;
 
         for (RepoPath repoPath : matchingPaths.keySet()) {
             Properties properties = resultProperties.get(repoPath);
-            Set<Long> buildNumbers = convertBuildNumberProperties(properties.get("build.number"));
+            Set<String> buildNumbers = properties.get("build.number");
             if (buildNumbers.contains(buildNumber)) {
                 selectedPath = repoPath;
                 break;
-            } else {
-                for (Long number : buildNumbers) {
-                    if ((number > bestMatch) && (number <= buildNumber)) {
-                        selectedPath = repoPath;
-                        bestMatch = number;
-                    }
-                }
             }
         }
 
@@ -857,26 +893,6 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     /**
-     * Converts a set of build number string properties to a set of longs
-     *
-     * @param buildNumberStrings Build number string set
-     * @return Build number long set
-     */
-    private Set<Long> convertBuildNumberProperties(Set<String> buildNumberStrings) {
-        Set<Long> buildNumbers = Sets.newHashSet();
-        for (String numberString : buildNumberStrings) {
-            try {
-                long buildNumber = Long.parseLong(numberString);
-                buildNumbers.add(buildNumber);
-            } catch (NumberFormatException e) {
-                log.error("Found non-long build number '{}'", numberString);
-            }
-        }
-
-        return buildNumbers;
-    }
-
-    /**
      * Returns the JCR path helper object
      *
      * @return JcrPath
@@ -885,7 +901,7 @@ public class BuildServiceImpl implements InternalBuildService {
         return JcrPath.get();
     }
 
-    private void exportBuild(ExportSettings settings, Node buildStartedNode, String buildName, long buildNumber,
+    private void exportBuild(ExportSettings settings, Node buildStartedNode, String buildName, String buildNumber,
             long exportedBuildCount, File buildsFolder) throws Exception {
         MultiStatusHolder multiStatusHolder = settings.getStatusHolder();
 
@@ -966,8 +982,7 @@ public class BuildServiceImpl implements InternalBuildService {
 
     private void exportBuildNodeChecksums(Node buildStartedNode, ImportableExportableBuild exportedBuild) {
         for (ChecksumType type : ChecksumType.values()) {
-            String original =
-                    getStringProperty(buildStartedNode, type.getOriginalPropName(), null, true);
+            String original = getStringProperty(buildStartedNode, type.getOriginalPropName(), null, true);
             String actual = getStringProperty(buildStartedNode, type.getActualPropName(), null, true);
             if (StringUtils.isNotBlank(actual) || StringUtils.isNotBlank(original)) {
                 exportedBuild.addChecksumInfo(new ChecksumInfo(type, original, actual));
@@ -976,12 +991,12 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     private void exportBuildToFile(ImportableExportableBuild exportedBuild, File buildFile) throws Exception {
-        FileOutputStream buildFileOutputSream = null;
+        FileOutputStream buildFileOutputStream = null;
         try {
-            buildFileOutputSream = new FileOutputStream(buildFile);
-            getImportableExportableXStream().toXML(exportedBuild, buildFileOutputSream);
+            buildFileOutputStream = new FileOutputStream(buildFile);
+            getImportableExportableXStream().toXML(exportedBuild, buildFileOutputStream);
         } finally {
-            IOUtils.closeQuietly(buildFileOutputSream);
+            IOUtils.closeQuietly(buildFileOutputStream);
         }
     }
 

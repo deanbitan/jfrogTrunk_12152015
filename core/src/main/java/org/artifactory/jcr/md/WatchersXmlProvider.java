@@ -19,15 +19,11 @@
 package org.artifactory.jcr.md;
 
 import org.artifactory.api.md.watch.Watchers;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author freds
  */
 public class WatchersXmlProvider extends XStreamMetadataProvider<Watchers> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(WatchersXmlProvider.class);
 
     public WatchersXmlProvider() {
         super(Watchers.class);

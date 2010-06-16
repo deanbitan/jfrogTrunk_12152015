@@ -31,8 +31,7 @@
     So, we declare mixin that we dynamically apply in our code.
     -->
 
-    <nodeType name="artifactory:folder" isMixin="false" hasOrderableChildNodes="false"
-              primaryItemName="">
+    <nodeType name="artifactory:folder" isMixin="false" hasOrderableChildNodes="false">
         <supertypes>
             <supertype>nt:folder</supertype>
             <supertype>mix:lockable</supertype>
@@ -42,9 +41,8 @@
     </nodeType>
 
     <!-- file has a primary node of name jcr:content that is of type nt:base,
-    which nt:resource is a child of. nt:resource conatins all binary data -->
-    <nodeType name="artifactory:file" isMixin="false"
-              hasOrderableChildNodes="false" primaryItemName="jcr:content">
+    which nt:resource is a child of. nt:resource contains all binary data -->
+    <nodeType name="artifactory:file" isMixin="false" hasOrderableChildNodes="false">
         <supertypes>
             <supertype>nt:file</supertype>
             <supertype>mix:lockable</supertype>
@@ -53,15 +51,15 @@
         </supertypes>
     </nodeType>
 
-    <nodeType name="artifactory:metadata" isMixin="false"
-              hasOrderableChildNodes="false" primaryItemName="">
+    <nodeType name="artifactory:metadata" isMixin="false" hasOrderableChildNodes="false">
         <supertypes>
             <supertype>nt:unstructured</supertype>
             <supertype>mix:referenceable</supertype>
+            <supertype>nt:unstructured</supertype>
         </supertypes>
     </nodeType>
 
-    <nodeType name="artifactory:base" isMixin="true">
+    <nodeType name="artifactory:base" isMixin="true" hasOrderableChildNodes="false">
         <propertyDefinition name="artifactory:name" requiredType="String" autoCreated="false"
                             mandatory="false" onParentVersion="COPY" protected="false" multiple="false"/>
         <propertyDefinition name="artifactory:created" requiredType="Date" autoCreated="false"

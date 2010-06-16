@@ -24,11 +24,9 @@ import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.jcr.JcrTypes;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.search.SearcherBase;
 import org.artifactory.search.xml.metadata.StatsInfoSearcher;
-import org.slf4j.Logger;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -40,8 +38,6 @@ import static org.artifactory.jcr.JcrTypes.*;
  * @author freds
  */
 public class StatsInfoPersistenceHandler extends AbstractMetadataPersistenceHandler<StatsInfo> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(StatsInfoPersistenceHandler.class);
 
     public StatsInfoPersistenceHandler(XmlMetadataProvider<StatsInfo> xmlProvider) {
         super(xmlProvider);
@@ -70,7 +66,7 @@ public class StatsInfoPersistenceHandler extends AbstractMetadataPersistenceHand
 
     public void update(MetadataAware metadataAware, StatsInfo statsInfo) {
         Node metadataNode = getMetadataNode(metadataAware, true);
-        JcrHelper.setLongProperty(metadataNode, PROP_ARTIFACTORY_STATS_DOWNLOAD_COUNT,
+        JcrHelper.setCalenderProperty(metadataNode, PROP_ARTIFACTORY_STATS_DOWNLOAD_COUNT,
                 statsInfo.getDownloadCount());
         long value = statsInfo.getLastDownloaded();
         if (value <= 0) {

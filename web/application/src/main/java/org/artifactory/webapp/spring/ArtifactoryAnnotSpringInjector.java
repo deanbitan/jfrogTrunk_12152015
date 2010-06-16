@@ -21,15 +21,11 @@ package org.artifactory.webapp.spring;
 import org.apache.wicket.injection.ConfigurableInjector;
 import org.apache.wicket.injection.IFieldValueFactory;
 import org.apache.wicket.spring.ISpringContextLocator;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author Yoav Landman
  */
 public class ArtifactoryAnnotSpringInjector extends ConfigurableInjector {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(ArtifactoryAnnotSpringInjector.class);
 
     private IFieldValueFactory factory;
 

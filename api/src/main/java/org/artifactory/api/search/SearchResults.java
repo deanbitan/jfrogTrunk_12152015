@@ -80,7 +80,8 @@ public class SearchResults<T extends SearchResult> implements Info {
 
     /**
      * Returns the counter of the full amount of results that were returned in the search (Including the excluded
-     * results)
+     * results). May be -1 if the total number of results in unknown for performance reasons (the default since
+     * jackrabbit 2.1).
      *
      * @return long - Full amount of results
      */

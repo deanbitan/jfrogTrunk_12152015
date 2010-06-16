@@ -18,18 +18,13 @@
 
 package org.artifactory.version;
 
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.util.XmlUtils;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Comment;
 import org.jdom.Content;
 import org.jdom.Document;
 import org.jdom.Text;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.XMLOutputter;
-import org.slf4j.Logger;
 
-import java.io.InputStream;
-import java.io.StringReader;
 import java.util.Date;
 import java.util.List;
 
@@ -45,34 +40,11 @@ public class XmlConverterUtils {
         if (converters.isEmpty()) {
             return in;
         }
-        Document doc = parse(in);
+        Document doc = XmlUtils.parse(in);
         for (XmlConverter converter : converters) {
             converter.convert(doc);
         }
-        return outputString(doc);
-    }
-
-    public static String outputString(Document doc) {
-        String convertedXml = new XMLOutputter().outputString(doc);
-        return convertedXml;
-    }
-
-    public static Document parse(String xmlContent) {
-        SAXBuilder sb = createSaxBuilder();
-        try {
-            return sb.build(new StringReader(xmlContent));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to build dom document", e);
-        }
-    }
-
-    public static Document parse(InputStream in) {
-        SAXBuilder sb = createSaxBuilder();
-        try {
-            return sb.build(in);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to build dom document", e);
-        }
+        return XmlUtils.outputString(doc);
     }
 
     /**
@@ -100,16 +72,6 @@ public class XmlConverterUtils {
      */
     public static Content getNewLine() {
         return new Text("\n");
-    }
-
-    private static SAXBuilder createSaxBuilder() {
-        SAXBuilder sb = new SAXBuilder();
-        // don't validate and don't load dtd
-        sb.setValidation(false);
-        sb.setFeature("http://xml.org/sax/features/validation", false);
-        sb.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-        sb.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        return sb;
     }
 
     /**

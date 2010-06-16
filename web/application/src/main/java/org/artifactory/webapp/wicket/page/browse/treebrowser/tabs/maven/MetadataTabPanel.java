@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven;
 
+import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
@@ -26,7 +27,6 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepoPath;
@@ -40,6 +40,7 @@ import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.actionable.tree.ActionableItemsTree;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
@@ -60,12 +61,13 @@ public class MetadataTabPanel extends Panel {
     @SpringBean
     private AuthorizationService authorizationService;
 
-    private SyntaxHighlighter contentPanel = new SyntaxHighlighter("metadataContent").setSyntax(Syntax.xml);
+    private Component contentPanel = new SyntaxHighlighter("metadataContent").setSyntax(Syntax.xml);
 
     private RepoPath repoPath;
 
     @WicketProperty
     private String metadataType;
+    private FieldSetBorder border;
 
     public MetadataTabPanel(String id, RepoPath repoPath, List<String> metadataTypeList) {
         super(id);
@@ -86,7 +88,7 @@ public class MetadataTabPanel extends Panel {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 setContent();
-                target.addComponent(contentPanel);
+                target.addComponent(border);
             }
         });
         metadataTypesDropDown.setModelObject(metadataTypeList.get(0));
@@ -105,7 +107,7 @@ public class MetadataTabPanel extends Panel {
 
             @Override
             protected IAjaxCallDecorator getAjaxCallDecorator() {
-                String message = "Are you sure you wish to delete " + metadataType + " ?";
+                String message = "Are you sure you wish to delete '" + metadataType + "'?";
                 return new ConfirmationAjaxCallDecorator(message);
             }
         };
@@ -113,9 +115,9 @@ public class MetadataTabPanel extends Panel {
         form.add(removeButton);
         add(form);
 
-        FieldSetBorder border = new FieldSetBorder("metadataBorder");
+        border = new FieldSetBorder("metadataBorder");
+        border.setOutputMarkupId(true);
         add(border);
-        contentPanel.setOutputMarkupId(true);
         border.add(contentPanel);
         setContent();
     }
@@ -124,10 +126,11 @@ public class MetadataTabPanel extends Panel {
         if (metadataType != null) {
             try {
                 String xmlContent = repoService.getXmlMetadata(repoPath, metadataType);
-                contentPanel.setModel(new Model(xmlContent));
+                border.replace(WicketUtils.getSyntaxHighlighter("metadataContent", xmlContent, Syntax.xml));
             } catch (RepositoryRuntimeException rre) {
-                contentPanel.setModel(new Model("Error while retrieving selected metadata. Please review the log " +
-                        "for further details."));
+                border.replace(WicketUtils.getSyntaxHighlighter("metadataContent",
+                        "Error while retrieving selected metadata. Please review the log for further details.",
+                        Syntax.plain));
                 log.error("Error while retrieving selected metadata '{}': {}", metadataType, rre.getMessage());
                 log.debug("Error while retrieving selected metadata '" + metadataType + "'.", rre);
             }

@@ -52,17 +52,20 @@ public class ArtifactoryVersionReader {
         }
         String versionString = props.getProperty(ConstantValues.artifactoryVersion.getPropertyName());
         String revisionString = props.getProperty(ConstantValues.artifactoryRevision.getPropertyName());
+        String timestampString = props.getProperty(ConstantValues.artifactoryTimestamp.getPropertyName());
 
         ArtifactoryVersion matchedVersion = null;
-
         // If current version or development version=${project.version.prop} or revision=${buildNumber}
         if (ArtifactoryVersion.getCurrent().getValue().equals(versionString) ||
                 versionString.startsWith("${") ||
                 versionString.endsWith("-SNAPSHOT") ||
                 revisionString.startsWith("${")) {
+            timestampString = System.currentTimeMillis() + "";
             // Just return the current version
             matchedVersion = ArtifactoryVersion.getCurrent();
         }
+
+        long timestamp = timestampString != null ? Long.parseLong(timestampString) : 0;
 
         if (matchedVersion == null) {
             matchedVersion = findByVersionString(versionString, revisionString);
@@ -75,7 +78,7 @@ public class ArtifactoryVersionReader {
             throw new IllegalStateException("No version declared is higher than " + revisionString);
         }
 
-        return new CompoundVersionDetails(matchedVersion, versionString, revisionString);
+        return new CompoundVersionDetails(matchedVersion, versionString, revisionString, timestamp);
     }
 
     private static ArtifactoryVersion findByVersionString(String versionString, String revisionString) {

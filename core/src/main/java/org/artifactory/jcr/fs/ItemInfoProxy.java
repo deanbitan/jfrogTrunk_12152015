@@ -32,7 +32,6 @@ import org.slf4j.Logger;
  * @author Yoav Landman
  */
 public abstract class ItemInfoProxy<T extends ItemInfo> extends ItemInfoImpl {
-    @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(ItemInfoProxy.class);
 
     private T materialized;

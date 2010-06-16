@@ -36,7 +36,7 @@ public class ImportableExportableBuild implements Serializable {
     private String version;
 
     private String buildName;
-    private long buildNumber;
+    private String buildNumber;
     private String buildStarted;
     private String json;
     private Set<String> artifactChecksums;
@@ -65,11 +65,11 @@ public class ImportableExportableBuild implements Serializable {
         this.buildName = buildName;
     }
 
-    public long getBuildNumber() {
+    public String getBuildNumber() {
         return buildNumber;
     }
 
-    public void setBuildNumber(long buildNumber) {
+    public void setBuildNumber(String buildNumber) {
         this.buildNumber = buildNumber;
     }
 

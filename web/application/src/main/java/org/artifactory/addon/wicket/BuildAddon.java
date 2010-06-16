@@ -59,7 +59,7 @@ public interface BuildAddon extends AddonFactory {
      * @param module      Selected module
      * @return Module info tab panel
      */
-    ITab getModuleInfoTab(String buildName, long buildNumber, Module module);
+    ITab getModuleInfoTab(String buildName, String buildNumber, Module module);
 
     /**
      * Returns a customized delete confirmation message that adds alerts in case any selected items are used by builds
@@ -105,7 +105,7 @@ public interface BuildAddon extends AddonFactory {
      * @param artifacts   Artifacts to create actionable items from
      * @return Artifact actionable item list
      */
-    List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(String buildName, long buildNumber,
+    List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(String buildName, String buildNumber,
             List<Artifact> artifacts);
 
     /**
@@ -116,7 +116,7 @@ public interface BuildAddon extends AddonFactory {
      * @param dependencies Unpopulated actionable items
      * @return Dependency actionable item list
      */
-    List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(String buildName, long buildNumber,
+    List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(String buildName, String buildNumber,
             List<ModuleDependencyActionableItem> dependencies);
 
     /**
@@ -136,5 +136,5 @@ public interface BuildAddon extends AddonFactory {
      * @param bean        File bean to get info for  @return Bean file info if found. Null if not
      * @return file info
      */
-    FileInfo getBuildFileBeanInfo(String buildName, long buildNumber, BuildFileBean bean);
+    FileInfo getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean);
 }

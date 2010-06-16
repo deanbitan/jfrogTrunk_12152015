@@ -65,8 +65,12 @@ public class MavenPluginsMetadataCalculator extends AbstractMetadataCalculator {
             // great-grandparent is the plugins metadata container
             // eg, if the plugin pom is org/jfrog/maven/plugins/maven-test-plugin/1.0/maven-test-plugin-1.0.pom
             // the node that contains the plugins metadata is org/jfrog/maven/plugins
-            JcrFolder pluginsMetadataContainer = pom.getParentFolder().getParentFolder().getParentFolder();
-            pluginsMetadataContainers.put(pluginsMetadataContainer, pom);
+            JcrFolder pluginsMetadataContainer = pom.getAncestor(3);
+            if (pluginsMetadataContainer != null) {
+                pluginsMetadataContainers.put(pluginsMetadataContainer, pom);
+            } else {
+                log.info("Found plugin pom without maven GAV path: '{}'. Ignoring...", pom.getRepoPath());
+            }
         }
 
         // for each plugins folder container, create plugins metadata on the parent
@@ -75,7 +79,7 @@ public class MavenPluginsMetadataCalculator extends AbstractMetadataCalculator {
             //Metadata metadata = getOrCreatePluginMetadata(pluginsMetadataContainer);
             Metadata metadata = new Metadata();
             for (JcrFile pomFile : pluginsMetadataContainers.get(pluginsMetadataContainer)) {
-                String artifactId = pomFile.getParentFolder().getParentFolder().getName();
+                String artifactId = pomFile.getAncestor(2).getName();
                 if (hasPlugin(metadata, artifactId)) {
                     continue;
                 }

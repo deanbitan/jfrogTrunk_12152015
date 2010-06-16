@@ -68,7 +68,8 @@ import javax.ws.rs.ext.Provider;
         SearchRestConstants.MT_PROPERTY_SEARCH_RESULT,
         SearchRestConstants.MT_XPATH_SEARCH_RESULT,
         SearchRestConstants.MT_USAGE_SINCE_SEARCH_RESULT,
-        SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT
+        SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT,
+        SearchRestConstants.MT_PATTERN_SEARCH_RESULT
 })
 @Produces({
         MediaType.APPLICATION_JSON,
@@ -91,7 +92,9 @@ import javax.ws.rs.ext.Provider;
         SearchRestConstants.MT_USAGE_SINCE_SEARCH_RESULT,
         SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT,
         SystemRestConstants.MT_VERSION_RESULT,
-        ArtifactRestConstants.MT_COPY_MOVE_RESULT
+        ArtifactRestConstants.MT_COPY_MOVE_RESULT,
+        SearchRestConstants.MT_PATTERN_SEARCH_RESULT,
+        ArtifactRestConstants.MT_FILE_LIST
 })
 public class JsonProvider extends JacksonJsonProvider implements ContextResolver<ObjectMapper> {
 

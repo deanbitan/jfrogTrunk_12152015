@@ -23,8 +23,9 @@ import org.apache.commons.io.FileUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.version.v150.JcrMetadataConverter;
-import org.artifactory.jcr.version.v150.RepoConfigConverter;
+import org.artifactory.jcr.version.v150.RepoConfigConverterV150;
 import org.artifactory.jcr.version.v160.MetadataNamePropertyConverter;
+import org.artifactory.jcr.version.v210.RepoConfigConverterV210;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.CompoundVersionDetails;
@@ -55,9 +56,11 @@ public enum JcrVersion implements SubConfigElementVersion {
      */
 
     v146(ArtifactoryVersion.v130beta5, ArtifactoryVersion.v208, null, null, null),
-    v150(ArtifactoryVersion.v210, ArtifactoryVersion.v213, new RepoConfigConverter(), new JcrMetadataConverter(), null),
+    v150(ArtifactoryVersion.v210, ArtifactoryVersion.v213, new RepoConfigConverterV150(), new JcrMetadataConverter(),
+            null),
     v160(ArtifactoryVersion.v220, ArtifactoryVersion.v221, null, null, new MetadataNamePropertyConverter()),
-    v161(ArtifactoryVersion.v222, ArtifactoryVersion.getCurrent(), null, null, null);
+    v161(ArtifactoryVersion.v222, ArtifactoryVersion.v223, new RepoConfigConverterV210(), null, null),
+    v210(ArtifactoryVersion.v224, ArtifactoryVersion.getCurrent(), null, null, null);
 
     private static final Logger log = LoggerFactory.getLogger(JcrVersion.class);
 
@@ -93,7 +96,7 @@ public enum JcrVersion implements SubConfigElementVersion {
      */
     public void preInitConvert(ArtifactoryHome artifactoryHome) {
         //Always perform this when a version changes
-        updateCurrentWorkspaces(artifactoryHome);
+        backupCurrentWorkspaces(artifactoryHome);
 
         // First create the list of converters to apply
         List<ConfigurationConverter<ArtifactoryHome>> converters = Lists.newArrayList();
@@ -160,10 +163,9 @@ public enum JcrVersion implements SubConfigElementVersion {
      *
      * @param artifactoryHome Artifactory Home
      */
-    private void updateCurrentWorkspaces(ArtifactoryHome artifactoryHome) {
+    private static void backupCurrentWorkspaces(ArtifactoryHome artifactoryHome) {
         CompoundVersionDetails originalStorageVersion = artifactoryHome.getOriginalVersionDetails();
         //Make the loaded repo.xml overwrite any existing workspace by clearing data/workspaces
-        File workspacesDir = new File(artifactoryHome.getDataDir(), "workspaces");
         String origVersionValue = originalStorageVersion.getVersion().getValue();
         File origWorkspacesDir = new File(artifactoryHome.getDataDir(), "workspaces." + origVersionValue + ".orig");
         try {
@@ -171,16 +173,13 @@ public enum JcrVersion implements SubConfigElementVersion {
         } catch (IOException e) {
             log.warn("Failed to remove original workspaces at {}.", origWorkspacesDir.getAbsolutePath());
         }
+        File workspacesDir = new File(artifactoryHome.getDataDir(), "workspaces");
         try {
             FileUtils.copyDirectory(workspacesDir, origWorkspacesDir);
         } catch (IOException e) {
             log.warn("Failed to backup original workspaces from {} to {}.", workspacesDir.getAbsolutePath(),
                     origWorkspacesDir.getAbsolutePath());
         }
-        try {
-            FileUtils.deleteDirectory(workspacesDir);
-        } catch (IOException e) {
-            log.warn("Failed to remove workspaces at {}.", workspacesDir.getAbsolutePath());
-        }
+        //Workspaces removal is always done in the jcr init
     }
 }

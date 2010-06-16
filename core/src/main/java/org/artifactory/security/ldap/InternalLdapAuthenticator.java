@@ -19,10 +19,14 @@
 package org.artifactory.security.ldap;
 
 import org.artifactory.spring.ReloadableBean;
+import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.security.ldap.authentication.LdapAuthenticator;
+
+import java.util.Map;
 
 /**
  * @author Tomer Cohen
  */
 public interface InternalLdapAuthenticator extends LdapAuthenticator, ReloadableBean {
+    Map<String, BindAuthenticator> getAuthenticators();
 }

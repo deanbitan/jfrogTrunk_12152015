@@ -25,7 +25,6 @@ import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInstantiation;
-import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.model.IModel;
@@ -83,15 +82,11 @@ public class RepositoryConfigPage extends AuthenticatedPage {
     private RepositoryService repositoryService;
 
     private MutableCentralConfigDescriptor mutableDescriptor;
-    private WebMarkupContainer reposListContainer;
     private CachingDescriptorHelper cachingDescriptorHelper;
 
     public RepositoryConfigPage() {
         mutableDescriptor = refreshDescriptor();
         cachingDescriptorHelper = new CachingDescriptorHelper(mutableDescriptor);
-        reposListContainer = new WebMarkupContainer("reposList");
-        reposListContainer.setOutputMarkupId(true);
-        add(reposListContainer);
 
         addLocalReposList();
         addRemoteReposList();
@@ -129,9 +124,9 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             }
         };
 
-        reposListContainer.add(new RepoListPanel<LocalRepoDescriptor>("localRepos", repoListModel) {
+        add(new RepoListPanel<LocalRepoDescriptor>("localRepos", repoListModel) {
             @Override
-            protected void saveRepos(AjaxRequestTarget target) {
+            protected void saveItems(AjaxRequestTarget target) {
                 try {
                     cachingDescriptorHelper.syncAndSaveLocalRepositories();
                     info("Local repositories order was successfully saved.");
@@ -216,9 +211,9 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             }
         };
 
-        reposListContainer.add(new RepoListPanel<RemoteRepoDescriptor>("remoteRepos", repoListModel) {
+        add(new RepoListPanel<RemoteRepoDescriptor>("remoteRepos", repoListModel) {
             @Override
-            protected void saveRepos(AjaxRequestTarget target) {
+            protected void saveItems(AjaxRequestTarget target) {
                 try {
                     cachingDescriptorHelper.syncAndSaveRemoteRepositories();
                     info("Remote repositories order was successfully saved.");
@@ -292,9 +287,9 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             }
         };
 
-        reposListContainer.add(new RepoListPanel<VirtualRepoDescriptor>("virtualRepos", repoListModel) {
+        add(new RepoListPanel<VirtualRepoDescriptor>("virtualRepos", repoListModel) {
             @Override
-            protected void saveRepos(AjaxRequestTarget target) {
+            protected void saveItems(AjaxRequestTarget target) {
                 try {
                     cachingDescriptorHelper.syncAndSaveVirtualRepositories();
                     info("Virtual repositories order was successfully saved.");
@@ -342,8 +337,14 @@ public class RepositoryConfigPage extends AuthenticatedPage {
         return new SchemaHelpModel(mutableDescriptor, property);
     }
 
-    public void refresh(AjaxRequestTarget target) {
-        target.addComponent(reposListContainer);
+    public void refresh(final AjaxRequestTarget target) {
+        visitChildren(RepoListPanel.class, new IVisitor() {
+            public Object component(Component component) {
+                RepoListPanel repoListPanel = (RepoListPanel) component;
+                repoListPanel.refresh(target);
+                return CONTINUE_TRAVERSAL;
+            }
+        });
     }
 
     private class DeleteRepoLink extends TitledAjaxLink {
@@ -390,8 +391,8 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             }
             //if remote repo has no cache
             long totalCount = count != null ? count.getCount() : 0;
-            StringBuilder builder = new StringBuilder("Are you sure you wish to delete the repository ");
-            builder.append(key).append(" ").append("?\n").append("The repository ").append(key)
+            StringBuilder builder = new StringBuilder("Are you sure you wish to delete the repository '");
+            builder.append(key).append("'?\n").append("The repository ").append(key)
                     .append(" contains ").append(totalCount).append(" artifacts");
             builder.append(hasCacheItems ? " in cache repo" : "");
             builder.append(" which will be permanently deleted!");

@@ -41,7 +41,8 @@ public class AddonsAuthorizationStrategy implements IAuthorizationStrategy {
         if (applicationAddon == null) {
             applicationAddon = addonsManager.addonByType(WebApplicationAddon.class);
         }
-        return applicationAddon.isInstantiationAuthorized(componentClass);
+        return addonsManager.isInstantiationAuthorized(componentClass) &&
+                applicationAddon.isInstantiationAuthorized(componentClass);
     }
 
     public boolean isActionAuthorized(Component component, Action action) {

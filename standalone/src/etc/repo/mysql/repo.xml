@@ -17,48 +17,48 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<!DOCTYPE Repository PUBLIC "-//The Apache Software Foundation//DTD Jackrabbit 1.6//EN"
-        "http://www.jfrog.org/xsd/repository-1.6.dtd">
+<!DOCTYPE Repository PUBLIC "-//The Apache Software Foundation//DTD Jackrabbit 2.0//EN"
+        "http://jackrabbit.apache.org/dtd/repository-2.0.dtd">
 
 <Repository>
 
-    <!--
-    ***************************************************** NOTE *****************************************************
-    Using this configuration is recommended only if you plan to store small binaries in your repository.
-    Otherwise, until MySQL provides BLOB streaming (http://bugs.mysql.com/bug.php?id=15089), you should use the
-    'filesystem-mysql' configuration.
-    Please refer to http://wiki.jfrog.org/confluence/display/RTF/Running+Artifactory+on+MySQL for more information.
-    ****************************************************************************************************************
-    -->
+    <!-- MySQL Datasource -->
+    <DataSources>
+        <DataSource name="ds">
+            <!-- Leave this on "mysql" -->
+            <param name="databaseType" value="mysql"/>
+            <param name="driver" value="com.mysql.jdbc.Driver"/>
+            <param name="url"
+                   value="jdbc:mysql://localhost:3306/artifactory?useUnicode=true&amp;characterEncoding=UTF-8"/>
+            <param name="user" value="artifactory_user"/>
+            <param name="password" value="password"/>
+            <!--<param name="validationQuery" value=""/>-->
+            <!-- Unlimited when not specified -->
+            <!--<param name="maxPoolSize" value="80"/>-->
+        </DataSource>
+    </DataSources>
 
     <!--
         virtual file system where the repository stores global state
         (e.g. registered namespaces, custom node types, etc.)
     -->
 
-    <!-- MySQL Filesystem -->
+    <!-- MySQL File System -->
     <FileSystem class="org.apache.jackrabbit.core.fs.db.DbFileSystem">
-        <param name="driver" value="com.mysql.jdbc.Driver"/>
-        <param name="url" value="jdbc:mysql://localhost:3306/artifactory?useUnicode=true&amp;characterEncoding=UTF-8"/>
-        <param name="user" value="artifactory_user"/>
-        <param name="password" value="password"/>
-        <!-- Leave this on "mysql" -->
-        <param name="schema" value="mysql"/>
+        <param name="dataSourceName" value="ds"/>
         <param name="schemaObjectPrefix" value="rep_"/>
+        <!--<param name="schema" value=""/>-->
     </FileSystem>
 
     <!-- http://wiki.apache.org/jackrabbit/DataStore -->
 
     <!-- MySQL Datastore -->
     <DataStore class="org.artifactory.jcr.jackrabbit.ArtifactoryDbDataStoreImpl">
-        <param name="url" value="jdbc:mysql://localhost:3306/artifactory?useUnicode=true&amp;characterEncoding=UTF-8"/>
-        <param name="tablePrefix" value=""/>
-        <param name="user" value="artifactory_user"/>
-        <param name="password" value="password"/>
-        <param name="databaseType" value="mysql"/>
-        <param name="driver" value="com.mysql.jdbc.Driver"/>
+        <param name="dataSourceName" value="ds"/>
+        <param name="schemaObjectPrefix" value="ds_"/>
+        <!--<param name="tablePrefix" value=""/>-->
+
         <param name="minRecordLength" value="512"/>
-        <param name="maxConnections" value="30"/>
         <!-- Whether to use a cache blobs temporarily on the file system for faster reads -->
         <param name="cacheBlobs" value="true"/>
         <!-- The maximum size of the blobs cache in gigabytes (g), megabytes (m) or kilobytes (k) -->
@@ -96,12 +96,8 @@
         -->
 
         <!-- MySQL Persistence Manager -->
-        <PersistenceManager
-                class="org.apache.jackrabbit.core.persistence.bundle.MySqlPersistenceManager">
-            <param name="url"
-                   value="jdbc:mysql://localhost:3306/artifactory?useUnicode=true&amp;characterEncoding=UTF-8"/>
-            <param name="user" value="artifactory_user"/>
-            <param name="password" value="password"/>
+        <PersistenceManager class="org.apache.jackrabbit.core.persistence.pool.MySqlPersistenceManager">
+            <param name="dataSourceName" value="ds"/>
             <param name="schemaObjectPrefix" value="${wsp.name}_"/>
             <param name="bundleCacheSize" value="16"/>
             <param name="errorHandling" value="IGN_MISSING_BLOBS"/>
@@ -195,8 +191,6 @@
             <param name="extractorBackLogSize" value="500"/>
             <!-- Indexing configuration -->
             <param name="indexingConfiguration" value="${rep.home}/index/index_config.xml"/>
-            <!-- Custom text extractor -->
-            <param name="textFilterClasses" value="org.artifactory.jcr.extractor.ArtifactoryTextExtractor"/>
             <!-- Workspace inconsistency handler -->
             <param name="onWorkspaceInconsistency" value="lenient"/>
         </SearchIndex>

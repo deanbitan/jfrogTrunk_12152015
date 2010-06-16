@@ -45,12 +45,12 @@ import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
-import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordStrengthComponentPanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.CryptoHelper;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
@@ -313,7 +313,7 @@ public class ProfilePanel extends TitledActionPanel {
         FieldSetBorder border = new FieldSetBorder("settingsBorder");
         add(border);
 
-        border.add(new SyntaxHighlighter("settingsDeclaration", sb.toString(), xml));
+        border.add(WicketUtils.getSyntaxHighlighter("settingsDeclaration", sb.toString(), xml));
         return border;
     }
 

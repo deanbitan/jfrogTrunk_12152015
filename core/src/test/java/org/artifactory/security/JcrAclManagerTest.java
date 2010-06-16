@@ -26,7 +26,7 @@ import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.PermissionTargetInfo;
 import org.artifactory.cache.BaseCache;
 import org.artifactory.jcr.JcrService;
-import org.easymock.classextension.EasyMock;
+import org.easymock.EasyMock;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;

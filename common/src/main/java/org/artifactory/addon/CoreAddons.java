@@ -29,11 +29,4 @@ public interface CoreAddons extends AddonFactory {
      */
     boolean isNewAdminAccountAllowed();
 
-    /**
-     * Validates the given server ID
-     *
-     * @param serverId Server ID to validate
-     * @return True if the server ID is valid. False if not
-     */
-    boolean isServerIdValid(String serverId);
 }

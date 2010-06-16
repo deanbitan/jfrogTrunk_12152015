@@ -121,6 +121,15 @@ LinksColumn.prototype.hide = function() {
     LinksColumn.connection = null;
 };
 
+LinksColumn.hideCurrent = function() {
+    if (LinksColumn.current) {
+        try {
+            LinksColumn.current.hide();
+        } catch (e) {
+        }
+    }
+};
+
 LinksColumn.onkeyup = function (e) {
     var event = e ? e : window.event;
     if (event.keyCode == 27 && LinksColumn.current) {

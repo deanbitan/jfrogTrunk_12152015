@@ -18,10 +18,8 @@
 
 package org.artifactory.jcr;
 
-import org.apache.commons.pool.ObjectPool;
 import org.apache.jackrabbit.api.XASession;
-import org.apache.jackrabbit.core.SessionListener;
-import org.apache.jackrabbit.core.XASessionImpl;
+import org.apache.lucene.util.CloseableThreadLocal;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.lock.InternalLockManager;
 import org.artifactory.jcr.lock.SessionLockManager;
@@ -36,13 +34,15 @@ import org.xml.sax.SAXException;
 
 import javax.jcr.Credentials;
 import javax.jcr.Item;
-import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.ValueFactory;
 import javax.jcr.Workspace;
+import javax.jcr.retention.RetentionManager;
+import javax.jcr.security.AccessControlManager;
 import javax.transaction.xa.XAResource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,11 +57,9 @@ public class JcrSession implements XASession {
 
     private final XASession session;
     private final SessionResourceManager sessionResourceManager;
-    private ObjectPool pool;
 
-    public JcrSession(XASession session, ObjectPool pool) {
+    public JcrSession(XASession session) {
         this.session = session;
-        this.pool = pool;
         sessionResourceManager = new SessionResourceManagerImpl();
         sessionResourceManager.getOrCreateResource(SessionLockManager.class);
     }
@@ -106,20 +104,18 @@ public class JcrSession implements XASession {
         }
     }
 
+    @Deprecated
     public Node getNodeByUUID(String uuid) {
         try {
-            return session.getNodeByUUID(uuid);
+            return session.getNodeByIdentifier(uuid);
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException(e);
         }
     }
 
-    public boolean nodeUUIDExists(String uuid) {
+    public boolean nodeExists(String absPath) {
         try {
-            session.getNodeByUUID(uuid);
-            return true;
-        } catch (ItemNotFoundException e) {
-            return false;
+            return session.nodeExists(absPath);
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException(e);
         }
@@ -197,8 +193,12 @@ public class JcrSession implements XASession {
         }
     }
 
-    public void checkPermission(String absPath, String actions) throws AccessControlException, RepositoryException {
-        session.checkPermission(absPath, actions);
+    public void checkPermission(String absPath, String actions) throws AccessControlException {
+        try {
+            session.checkPermission(absPath, actions);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
     }
 
     public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) {
@@ -209,19 +209,30 @@ public class JcrSession implements XASession {
         }
     }
 
-    public void importXML(String parentAbsPath, InputStream in, int uuidBehavior)
-            throws IOException, RepositoryException {
-        session.importXML(parentAbsPath, in, uuidBehavior);
+    public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException {
+        try {
+            session.importXML(parentAbsPath, in, uuidBehavior);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
     }
 
     public void exportSystemView(String absPath, ContentHandler contentHandler,
-            boolean skipBinary, boolean noRecurse) throws SAXException, RepositoryException {
-        session.exportSystemView(absPath, contentHandler, skipBinary, noRecurse);
+            boolean skipBinary, boolean noRecurse) throws SAXException {
+        try {
+            session.exportSystemView(absPath, contentHandler, skipBinary, noRecurse);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
     }
 
-    public void exportSystemView(String absPath, OutputStream out, boolean skipBinary,
-            boolean noRecurse) throws IOException, RepositoryException {
-        session.exportSystemView(absPath, out, skipBinary, noRecurse);
+    public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse)
+            throws IOException {
+        try {
+            session.exportSystemView(absPath, out, skipBinary, noRecurse);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
     }
 
     public void exportDocumentView(String absPath, ContentHandler contentHandler,
@@ -233,9 +244,13 @@ public class JcrSession implements XASession {
         }
     }
 
-    public void exportDocumentView(String absPath, OutputStream out, boolean skipBinary,
-            boolean noRecurse) throws IOException, RepositoryException {
-        session.exportDocumentView(absPath, out, skipBinary, noRecurse);
+    public void exportDocumentView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse)
+            throws IOException {
+        try {
+            session.exportDocumentView(absPath, out, skipBinary, noRecurse);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
     }
 
     public void setNamespacePrefix(String prefix, String uri) {
@@ -271,13 +286,26 @@ public class JcrSession implements XASession {
     }
 
     public void logout() {
-        //Return ourselves to the pool
         try {
-            refresh(false);
-            pool.invalidateObject(this);
-            pool.returnObject(this);
-        } catch (Exception e) {
-            log.warn("Failed to return jcr session to pool.", e);
+            // Verify no pending changes
+            validateSessionCleaness();
+            session.logout();
+        } finally {
+            // If no lock manager clean Lucene resources
+            if (LockingAdvice.getLockManager() == null) {
+                CloseableThreadLocal.closeAllThreadLocal();
+            }
+        }
+    }
+
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    private void validateSessionCleaness() {
+        SessionResourceManager resourceManager = getSessionResourceManager();
+        if (resourceManager != null && resourceManager.hasPendingResources()) {
+            IllegalStateException e =
+                    new IllegalStateException("Tried to return a session with unprocessed pending resources (" +
+                            resourceManager.getClass().getName() + ".");
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -285,18 +313,20 @@ public class JcrSession implements XASession {
         return session != null && session.isLive();
     }
 
+    @SuppressWarnings({"deprecation"})
+    @Deprecated
     public void addLockToken(String lt) {
-        try {
-            session.addLockToken(lt);
-        } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException(e);
-        }
+        session.addLockToken(lt);
     }
 
+    @SuppressWarnings({"deprecation"})
+    @Deprecated
     public String[] getLockTokens() {
         return session.getLockTokens();
     }
 
+    @SuppressWarnings({"deprecation"})
+    @Deprecated
     public void removeLockToken(String lt) {
         session.removeLockToken(lt);
     }
@@ -305,8 +335,76 @@ public class JcrSession implements XASession {
         return session.getXAResource();
     }
 
-    public void addListener(SessionListener listener) {
-        ((XASessionImpl) session).addListener(listener);
+    public Node getNodeByIdentifier(String id) {
+        try {
+            return session.getNodeByIdentifier(id);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
+    public Node getNode(String absPath) {
+        try {
+            return session.getNode(absPath);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
+    public Property getProperty(String absPath) {
+        try {
+            return session.getProperty(absPath);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
+    public boolean propertyExists(String absPath) {
+        try {
+            return session.propertyExists(absPath);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
+    public void removeItem(String absPath) {
+        try {
+            session.removeItem(absPath);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
+    public boolean hasPermission(String absPath, String actions) {
+        try {
+            return session.hasPermission(absPath, actions);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
+    public boolean hasCapability(String methodName, Object target, Object[] arguments) {
+        try {
+            return session.hasCapability(methodName, target, arguments);
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
+    public AccessControlManager getAccessControlManager() {
+        try {
+            return session.getAccessControlManager();
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
+    }
+
+    public RetentionManager getRetentionManager() {
+        try {
+            return session.getRetentionManager();
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException(e);
+        }
     }
 
     /*@Override

@@ -18,7 +18,6 @@
 
 package org.artifactory.descriptor.addon;
 
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
 
 import javax.xml.bind.annotation.XmlType;
@@ -26,31 +25,16 @@ import javax.xml.bind.annotation.XmlType;
 /**
  * The descriptor of the mail server configuration
  */
-@XmlType(name = "AddonsType", propOrder = {"serverId", "showAddonsInfo", "showAddonsInfoCookie"},
+@XmlType(name = "AddonsType", propOrder = {"showAddonsInfo", "showAddonsInfoCookie"},
         namespace = Descriptor.NS)
 public class AddonSettings implements Descriptor {
 
-    /**
-     * An ID to uniquely validate this artifactory server instance
-     */
-    private String serverId;
     private boolean showAddonsInfo;
     private String showAddonsInfoCookie;
 
     public AddonSettings() {
         showAddonsInfo = true;
         showAddonsInfoCookie = System.currentTimeMillis() + "";
-    }
-
-    public String getServerId() {
-        return serverId;
-    }
-
-    public void setServerId(String serverId) {
-        if (StringUtils.isNotBlank(serverId)) {
-            serverId = serverId.trim();
-        }
-        this.serverId = serverId;
     }
 
     public boolean isShowAddonsInfo() {

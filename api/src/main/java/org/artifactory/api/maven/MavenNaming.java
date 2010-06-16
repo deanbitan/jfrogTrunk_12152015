@@ -46,7 +46,7 @@ public class MavenNaming {
 
     // Matcher for unique snapshot names of the form artifactId-version-date.time-buildNumber.type
     // for example: artifactory-1.0-20081214.090217-4.pom
-    // groups: 1: artifactId-version, 2. artifactId 3. base version (without the snapshoti part) 4. date.time-buildNumber
+    // groups: 1: artifactId-version, 2. artifactId 3. base version (without the snapshot part) 4. date.time-buildNumber
     // 5. date.time 6. buildNumber
     private static final Pattern UNIQUE_SNAPSHOT_NAME_PATTERN =
             Pattern.compile("^((.+)-(.+))-(([0-9]{8}.[0-9]{6})-([0-9]+))[\\.-].+$");
@@ -287,7 +287,9 @@ public class MavenNaming {
      *
      * @param uniqueVersion A file name representing a valid unique snapshot version.
      * @return The base build number of the unique snapshot version
+     * @deprecated The base version detection is not accurate and will not work if the version contains dashes
      */
+    @Deprecated
     public static String getUniqueSnapshotVersionBaseVersion(String uniqueVersion) {
         Matcher matcher = matchUniqueSnapshotVersion(uniqueVersion);
         return matcher.group(3);

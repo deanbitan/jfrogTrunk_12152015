@@ -965,7 +965,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     private boolean isPartialPathIncluded(PermissionTarget aclPermissionTarget, String path) {
         List<String> includesList = aclPermissionTarget.getIncludes();
         for (String includes : includesList) {
-            if (includes.contains(path)) {
+            if (includes.startsWith(path)) {
                 return true;
             }
         }

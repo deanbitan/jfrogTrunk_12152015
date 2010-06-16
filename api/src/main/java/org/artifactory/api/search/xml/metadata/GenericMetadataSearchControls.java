@@ -19,15 +19,11 @@
 package org.artifactory.api.search.xml.metadata;
 
 import org.artifactory.api.search.SearchControlsBase;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author Fred Simon
  */
 public class GenericMetadataSearchControls<T> extends SearchControlsBase {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(GenericMetadataSearchControls.class);
 
     public enum Operation {
         EQ, GT, LT, GTE, LTE

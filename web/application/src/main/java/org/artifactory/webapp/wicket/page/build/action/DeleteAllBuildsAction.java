@@ -39,8 +39,6 @@ import org.slf4j.LoggerFactory;
  * @author Noam Y. Tenne
  */
 public class DeleteAllBuildsAction extends ItemAction {
-
-    @SuppressWarnings({"UnusedDeclaration"})
     private static final Logger log = LoggerFactory.getLogger(DeleteAllBuildsAction.class);
 
     private static String ACTION_NAME = "Delete All Builds";

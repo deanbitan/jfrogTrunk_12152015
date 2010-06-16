@@ -19,7 +19,7 @@
 package org.artifactory.update.security.v2;
 
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class RepoPathAclConverterTest extends SimpleUserConverterTest {
         String fileMetadata = "/security/v2/security.xml";
         Document doc = convertXml(fileMetadata, new RepoPathAclConverter());
 
-        log.debug(XmlConverterUtils.outputString(doc));
+        log.debug(XmlUtils.outputString(doc));
 
         Element root = doc.getRootElement();
 

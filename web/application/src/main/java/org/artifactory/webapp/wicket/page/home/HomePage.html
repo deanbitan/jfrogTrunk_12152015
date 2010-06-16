@@ -15,12 +15,12 @@
                     <span>You are logged-in as</span>
                     <a wicket:id="profileLink"/>
                     (<a wicket:id="logoutLink"/>).
-                    <div class="status-label">
-                        <span wicket:id="lastLogin"/>
-                    </div>
-                    <!--<div class="status-label">-->
-                    <!--<span wicket:id="lastAccess"/>-->
-                    <!--</div>-->
+
+                    <wicket:enclosure child="lastLogin">
+                        <div class="status-label">
+                            <span wicket:id="lastLogin"></span>
+                        </div>
+                    </wicket:enclosure>
                 </div>
             </div>
         </wicket:enclosure>

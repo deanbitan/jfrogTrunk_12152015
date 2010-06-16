@@ -20,6 +20,8 @@ package org.artifactory.engine;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.fs.ChecksumInfo;
 import org.artifactory.api.fs.ChecksumsInfo;
 import org.artifactory.api.fs.FileInfoImpl;
@@ -78,9 +80,18 @@ public class UploadServiceImpl implements InternalUploadService {
     @Autowired
     private InternalSearchService searchService;
 
+    @Autowired
+    private AddonsManager addonsManager;
+
     public void process(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException,
             RepoRejectionException {
         log.debug("Request: {}", request);
+
+        String intercept = addonsManager.interceptRequest();
+        if (StringUtils.isNotBlank(intercept)) {
+            response.sendError(HttpStatus.SC_FORBIDDEN, intercept, log);
+            return;
+        }
 
         String repoKey = request.getRepoKey();
         if (repoKey == null) {
@@ -172,7 +183,7 @@ public class UploadServiceImpl implements InternalUploadService {
             if (NamingUtils.isJarVariant(repoPath.getPath())) {
                 boolean indexJar = true;
                 if (request instanceof InternalArtifactoryRequest) {
-                    indexJar = ((InternalArtifactoryRequest) request).isSkipJarIndexing();
+                    indexJar = !((InternalArtifactoryRequest) request).isSkipJarIndexing();
                 }
                 if (indexJar) {
                     searchService.asyncIndex(repoPath);

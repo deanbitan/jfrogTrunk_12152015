@@ -39,6 +39,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 
 /**
@@ -72,7 +73,7 @@ public class SystemResource {
     StorageService storageService;
 
     @GET
-    @Produces("application/xml")
+    @Produces(MediaType.APPLICATION_XML)
     public SystemInfo getSystemInfo() throws IOException {
         SystemInfo systemInfo = new SystemInfo();
         systemInfo.artifactoryVersion = centralConfigService.getVersionInfo();

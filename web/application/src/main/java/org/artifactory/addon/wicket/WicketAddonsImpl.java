@@ -47,6 +47,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
+import org.artifactory.addon.OssAddonsManager;
 import org.artifactory.addon.wicket.disabledaddon.AddonNeededBehavior;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonHelpBubble;
@@ -83,8 +84,11 @@ import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
+import org.artifactory.descriptor.security.SecurityDescriptor;
+import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupPopulatorStrategies;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.webapp.actionable.ActionableItem;
@@ -106,14 +110,17 @@ import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.advanced.AdvancedCentralConfigPage;
 import org.artifactory.webapp.wicket.page.config.advanced.AdvancedSecurityConfigPage;
 import org.artifactory.webapp.wicket.page.config.advanced.MaintenancePage;
+import org.artifactory.webapp.wicket.page.config.advanced.SystemInfoPage;
 import org.artifactory.webapp.wicket.page.config.general.BaseCustomizingPanel;
 import org.artifactory.webapp.wicket.page.config.general.CustomizingPanel;
 import org.artifactory.webapp.wicket.page.config.general.GeneralConfigPage;
+import org.artifactory.webapp.wicket.page.config.license.LicensePage;
 import org.artifactory.webapp.wicket.page.config.mail.MailConfigPage;
 import org.artifactory.webapp.wicket.page.config.proxy.ProxyConfigPage;
 import org.artifactory.webapp.wicket.page.config.repos.RepositoryConfigPage;
 import org.artifactory.webapp.wicket.page.config.security.LdapGroupListPanel;
 import org.artifactory.webapp.wicket.page.config.security.LdapsListPage;
+import org.artifactory.webapp.wicket.page.config.security.LdapsListPanel;
 import org.artifactory.webapp.wicket.page.config.security.general.SecurityGeneralConfigPage;
 import org.artifactory.webapp.wicket.page.config.services.BackupsListPage;
 import org.artifactory.webapp.wicket.page.config.services.IndexerConfigPage;
@@ -129,7 +136,6 @@ import org.artifactory.webapp.wicket.page.security.group.GroupsPage;
 import org.artifactory.webapp.wicket.page.security.user.UsersPage;
 import org.artifactory.webapp.wicket.panel.export.ExportResultsPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
-import org.artifactory.webapp.wicket.util.validation.ServerIdValidator;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
@@ -197,6 +203,9 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         adminConfiguration.addChild(propertiesAddon.getPropertySetsPage("Property Sets"));
         adminConfiguration.addChild(new MenuNode("Proxies", ProxyConfigPage.class));
         adminConfiguration.addChild(new MenuNode("Mail", MailConfigPage.class));
+        if (!(addonsManager instanceof OssAddonsManager)) {
+            adminConfiguration.addChild(new MenuNode("License", LicensePage.class));
+        }
         return adminConfiguration;
     }
 
@@ -211,24 +220,6 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public HelpBubble getUrlBaseHelpBubble(String id) {
-        return new SchemaHelpBubble(id);
-    }
-
-    public Label getServerIdLabel(String id) {
-        return new Label(id, "Server ID");
-    }
-
-    public Label getServerIdWarningLabel(String id) {
-        return new Label(id, "Requires Restart");
-    }
-
-    public TextField getServerIdTextField(String id) {
-        TextField serverIdTextField = new TextField(id);
-        serverIdTextField.add(new ServerIdValidator());
-        return serverIdTextField;
-    }
-
-    public HelpBubble getServerIdHelpBubble(String id) {
         return new SchemaHelpBubble(id);
     }
 
@@ -288,10 +279,6 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         container.add(wikiLink);
     }
 
-    public boolean isServerIdValid(String serverId) {
-        return addonsManager.isServerIdValid(serverId);
-    }
-
     public SaveSearchResultsPanel getSaveSearchResultsPanel(String wicketId, IModel model,
             LimitlessCapableSearcher limitlessCapableSearcher) {
         SaveSearchResultsPanel panel = new SaveSearchResultsPanel(wicketId, model);
@@ -303,7 +290,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return new BuildSearchResultsPanel(requestingAddon, build);
     }
 
-    public FileInfo getBuildFileBeanInfo(String buildName, long buildNumber, BuildFileBean bean) {
+    public FileInfo getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean) {
         return null;
     }
 
@@ -396,7 +383,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return new DisabledBuildsTab(item);
     }
 
-    public ITab getModuleInfoTab(String buildName, long buildNumber, final Module module) {
+    public ITab getModuleInfoTab(String buildName, String buildNumber, final Module module) {
         return new DisabledPublishedTab();
     }
 
@@ -440,6 +427,30 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return warningLabel;
     }
 
+    public WebMarkupContainer getLdapListPanel(String wicketId) {
+        return new LdapsListPanel(wicketId);
+    }
+
+    public void saveLdapSetting(MutableCentralConfigDescriptor configDescriptor, LdapSetting ldapSetting) {
+        SecurityDescriptor securityDescriptor = configDescriptor.getSecurity();
+        if (ldapSetting.isEnabled()) {
+            List<LdapSetting> ldapSettings = securityDescriptor.getLdapSettings();
+            for (LdapSetting setting : ldapSettings) {
+                if (!ldapSetting.equals(setting)) {
+                    setting.setEnabled(false);
+                }
+            }
+        }
+        LdapSetting setting = securityDescriptor.getLdapSettings(ldapSetting.getKey());
+        if (setting != null) {
+            List<LdapSetting> ldapSettings = securityDescriptor.getLdapSettings();
+            int indexOfLdapSetting = ldapSettings.indexOf(ldapSetting);
+            if (indexOfLdapSetting != -1) {
+                ldapSettings.set(indexOfLdapSetting, ldapSetting);
+            }
+        }
+    }
+
     public Set<FileInfo> getArtifactFileInfo(Build build) {
         return Sets.newHashSet();
     }
@@ -448,13 +459,13 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return Sets.newHashSet();
     }
 
-    public List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(String buildName, long buildNumber,
+    public List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(String buildName, String buildNumber,
             List<Artifact> artifacts) {
         return Lists.newArrayList();
     }
 
     public List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(String buildName,
-            long buildNumber,
+            String buildNumber,
             List<ModuleDependencyActionableItem> dependencies) {
         return Lists.newArrayList();
     }
@@ -465,6 +476,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     public MenuNode getAdvancedMenuNode() {
         MenuNode advancedConfiguration = new MenuNode("Advanced");
+        advancedConfiguration.addChild(new MenuNode("System Info", SystemInfoPage.class));
         advancedConfiguration.addChild(new MenuNode("System Logs", SystemLogsPage.class));
         advancedConfiguration.addChild(new MenuNode("Maintenance", MaintenancePage.class));
         advancedConfiguration.addChild(new MenuNode("Config Descriptor", AdvancedCentralConfigPage.class));
@@ -514,7 +526,8 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     public String getVersionInfo() {
         VersionInfo versionInfo = getCentralConfig().getVersionInfo();
-        return format("Artifactory %s (rev. %s)", versionInfo.getVersion(), versionInfo.getRevision());
+        String product = addonsManager.getProductName();
+        return format("%s %s (rev. %s)", product, versionInfo.getVersion(), versionInfo.getRevision());
     }
 
     public boolean isDefault() {

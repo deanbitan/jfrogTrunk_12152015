@@ -220,7 +220,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         //Try to get it from the caches
         RepoResource res = getFailedOrMissedResource(path);
         if (res == null) {
-            res = internalGetInfo(repoPath);
+            res = internalGetInfo(repoPath, context);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug(this + ": " + res + " cached as not found at '" + path + "'.");
@@ -235,13 +235,13 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return res;
     }
 
-    private RepoResource internalGetInfo(RepoPath repoPath) {
+    private RepoResource internalGetInfo(RepoPath repoPath, RequestContext context) {
         String path = repoPath.getPath();
         RepoResource cachedResource = null;
         // first try to get it from the local cache repository
         if (isStoreArtifactsLocally() && localCacheRepo != null) {
             try {
-                cachedResource = localCacheRepo.getInfo(new NullRequestContext(path));
+                cachedResource = localCacheRepo.getInfo(context);
             } catch (FileExpectedException e) {
                 // rethrow using the remote repo path
                 throw new FileExpectedException(repoPath);
@@ -348,14 +348,15 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return status;
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(RepoResource res) throws IOException, RepositoryException,
+    public ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, RepoResource res)
+            throws IOException, RepositoryException,
             RepoRejectionException {
         String path = res.getRepoPath().getPath();
         if (isStoreArtifactsLocally()) {
             try {
                 //Reflect the fact that we return a locally cached resource
                 res.setResponseRepoPath(new RepoPath(localCacheRepo.getKey(), path));
-                ResourceStreamHandle handle = getRepositoryService().downloadAndSave(this, res);
+                ResourceStreamHandle handle = getRepositoryService().downloadAndSave(requestContext, this, res);
                 log.debug("Retrieving info from cache for '{}' from '{}'.", path, localCacheRepo);
                 return handle;
             } catch (IOException e) {
@@ -363,7 +364,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 //the local cache - fallback to using it, else rethrow the exception
                 if (res.isExpired()) {
                     ResourceStreamHandle result =
-                            getRepositoryService().unexpireAndRetrieveIfExists(localCacheRepo, path);
+                            getRepositoryService().unexpireAndRetrieveIfExists(requestContext, localCacheRepo, path);
                     if (result != null) {
                         return result;
                     }
@@ -376,8 +377,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
     }
 
-    public ResourceStreamHandle downloadAndSave(RepoResource remoteResource, RepoResource cachedResource)
-            throws IOException, RepositoryException, RepoRejectionException {
+    public ResourceStreamHandle downloadAndSave(RequestContext requestContext, RepoResource remoteResource,
+            RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectionException {
         RepoPath remoteRepoPath = remoteResource.getRepoPath();
         String relativePath = remoteRepoPath.getPath();
         //Retrieve remotely only if locally cached artifact not found or is found but expired and is older than remote one
@@ -419,7 +420,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                         handle.close();
                     }
                     //Notify concurrent download waiters
-                    notifyConcurrentWaiters(cachedResource, relativePath);
+                    notifyConcurrentWaiters(requestContext, cachedResource, relativePath);
                 }
             } else {
                 //We will not see the stored result here yet since it is saved in its own tx - return a direct handle
@@ -438,7 +439,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
 
         //Return the cached result (the newly downloaded or already cached resource)
-        return localCacheRepo.getResourceStreamHandle(cachedResource);
+        return localCacheRepo.getResourceStreamHandle(requestContext, cachedResource);
     }
 
     private void unexpire(RepoResource cachedResource) {
@@ -507,8 +508,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
     }
 
-    private void notifyConcurrentWaiters(RepoResource resource, String relPath) throws IOException, RepositoryException,
-            RepoRejectionException {
+    private void notifyConcurrentWaiters(RequestContext requestContext, RepoResource resource, String relPath)
+            throws IOException, RepositoryException, RepoRejectionException {
         DownloadEntry currentDownload = inTransit.remove(relPath);
         if (currentDownload != null) {
             //Put it low enough in case it is incremented by multiple late waiters
@@ -517,7 +518,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     "waiters.", new Object[]{relPath, this, handlesCount});
             //Add a new handle entries since the new resource is visible to this tx only
             for (int i = 0; i < handlesCount; i++) {
-                ResourceStreamHandle extHandle = localCacheRepo.getResourceStreamHandle(resource);
+                ResourceStreamHandle extHandle = localCacheRepo.getResourceStreamHandle(requestContext, resource);
                 currentDownload.handles.add(extHandle);
                 //if waiters do not pick up the handles prepared (timed out waiting, exception,
                 //interrupted...) so we keep track on their references

@@ -42,6 +42,8 @@ public class DeployableUnit implements Serializable {
         this.repoPath = repoPath;
         String relPath = repoPath.getPath();
 
+        // TODO: why aren't we using MavenArtifactInfo.fromRepoPath(repoPath)?
+
         // split the following format:
         // /group/id/artifactId/version
         String[] pathElements = relPath.split("\\/");
@@ -71,5 +73,28 @@ public class DeployableUnit implements Serializable {
 
     public MavenArtifactInfo getMavenInfo() {
         return mavenInfo;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DeployableUnit that = (DeployableUnit) o;
+
+        if (!repoPath.equals(that.repoPath)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return repoPath.hashCode();
     }
 }

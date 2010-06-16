@@ -101,21 +101,21 @@ public abstract class ArchiveIndexer {
                 node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_ENTRY, archiveIndex, PropertyType.STRING);
                 //Mark the files as indexed
                 node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, true);
-                node.save();
-                log.info("The content of the archive: '{}' was indexed successfully", file.getName());
-                log.debug("Indexed the classes: {}", archiveIndex);
+                node.getSession().save();
+                log.info("The content of the archive: '{}' was indexed successfully.", file.getName());
+                log.debug("Indexed the classes: {}.", archiveIndex);
             } catch (RepositoryException e) {
                 log.error("Unable to set archive index property on '{}': {}", node.toString(), e.getMessage());
-                log.debug("Unable to set archive index property on '{}'", e);
+                log.debug("Unable to set archive index property on '{}'.", e);
             }
         } else {
             try {
                 node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, "failed");
-                node.save();
-                log.info("Marking the indexed property of '{}' as 'failed'", node.toString());
+                node.getSession().save();
+                log.info("Marking the indexed property of '{}' as 'failed'.", node.toString());
             } catch (RepositoryException e) {
                 log.error("Unable to set archive indexed property on '{}': {}", node.toString(), e.getMessage());
-                log.debug("Unable to set archive indexed property on '{}'", e);
+                log.debug("Unable to set archive indexed property on '{}'.", e);
             }
         }
     }
@@ -138,7 +138,7 @@ public abstract class ArchiveIndexer {
                     markArchiveForIndexing(archiveNode, force);
                 } else {
                     markArchivesForIndexing(archiveNode, force);
-                    archiveNode.save();
+                    archiveNode.getSession().save();
                 }
             }
         }

@@ -19,7 +19,6 @@
 package org.artifactory.spring;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.WebstartAddon;
@@ -52,6 +51,7 @@ import org.slf4j.Logger;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -61,14 +61,12 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -343,7 +341,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         return bean.getClass().getInterfaces()[0].getName();
     }
 
-    @SuppressWarnings({"unchecked"})
     private void orderReloadableBeans(Set<Class<? extends ReloadableBean>> beansLeftToInit,
             Class<? extends ReloadableBean> beanClass) {
         if (!beansLeftToInit.contains(beanClass)) {
@@ -351,7 +348,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             return;
         }
         ReloadableBean initializingBean = beanForType(beanClass);
-        Class<? extends ReloadableBean> targetClass = AopUtils.getTargetClass(initializingBean);
+        Class<?> targetClass = AopUtils.getTargetClass(initializingBean);
         Reloadable annotation;
         if (targetClass.isAnnotationPresent(Reloadable.class)) {
             annotation = targetClass.getAnnotation(Reloadable.class);
@@ -385,32 +382,38 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         return ready;
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings("unchecked")
     public <T> T beanForType(Class<T> type) {
         //No sych needed. Synch is done on write, so in the worst case we might end up with
         //a bean with the same value, which is fine
         T bean = (T) beansForType.get(type);
         if (bean == null) {
-            //Find the bean
-            Iterator iter = getBeansOfType(type).values().iterator();
-            if (!iter.hasNext()) {
+            Map<String, T> beans = getBeansOfType(type);
+            if (beans.isEmpty()) {
                 throw new RuntimeException("Could not find bean of type '" + type.getName() + "'.");
             }
-            bean = (T) iter.next();
+
+            bean = beans.values().iterator().next(); // default to the first bean encountered
+            if (beans.size() > 1) {
+                // prefer beans marked as primary
+                for (Map.Entry<String, T> beanEntry : beans.entrySet()) {
+                    BeanDefinition beanDefinition = getBeanFactory().getBeanDefinition(beanEntry.getKey());
+                    if (beanDefinition != null && beanDefinition.isPrimary()) {
+                        bean = beanEntry.getValue();
+                    }
+                }
+            }
         }
         beansForType.put(type, bean);
         return bean;
     }
 
-    @SuppressWarnings({"unchecked"})
     public <T> Map<String, T> beansForType(Class<T> type) {
-        Map<String, T> result = getBeansOfType(type);
-        return result;
+        return getBeansOfType(type);
     }
 
-    @SuppressWarnings({"unchecked"})
     public <T> T beanForType(String name, Class<T> type) {
-        return (T) getBean(name);
+        return getBean(name, type);
     }
 
     public JcrService getJcrService() {
@@ -440,6 +443,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         settings.setExportVersion(backupVersion);
         toggleImportExportRelatedTasks(false);
         try {
+            importEtcDirectory(settings);
             getCentralConfig().importFrom(settings);
             getSecurityService().importFrom(settings);
 
@@ -523,7 +527,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             if (status.isError() && settings.isFailFast()) {
                 return;
             }
-            exportSystemProperties(exportSettings);
+            exportEtcDirectory(exportSettings);
             if (status.isError() && settings.isFailFast()) {
                 return;
             }
@@ -614,18 +618,33 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
     }
 
-    private void exportSystemProperties(ExportSettings settings) {
-        MultiStatusHolder status = settings.getStatusHolder();
-        FileOutputStream targetOutputStream = null;
+    private void exportEtcDirectory(ExportSettings settings) {
         try {
-            File dumpTargetFile = new File(settings.getBaseDir(),
-                    ArtifactoryHome.ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
-            targetOutputStream = new FileOutputStream(dumpTargetFile);
-            ArtifactoryHome.get().getArtifactoryProperties().store(targetOutputStream);
+            File targetBackupDir = new File(settings.getBaseDir(), "etc");
+            FileUtils.copyDirectory(artifactoryHome.getEtcDir(), targetBackupDir);
         } catch (IOException e) {
-            status.setError("Failed to dump artifactory.system.properties file", e, log);
-        } finally {
-            IOUtils.closeQuietly(targetOutputStream);
+            settings.getStatusHolder().setError(
+                    "Failed to export etc directory: " + artifactoryHome.getEtcDir().getAbsolutePath(), e, log);
+        }
+    }
+
+    private void importEtcDirectory(ImportSettings settings) {
+        File sourceBackupDir = new File(settings.getBaseDir(), "etc");
+        if (!sourceBackupDir.exists()) {
+            // older versions didn't export the etc directory
+            log.info("Skipping etc directory import. File doesn't exist: " + sourceBackupDir.getAbsolutePath());
+            return;
+        }
+        try {
+            // copy the etc directory from the backup dir
+            FileUtils.copyDirectory(sourceBackupDir, artifactoryHome.getEtcDir());
+            // re-initialize the mime types mapping
+            artifactoryHome.initAndLoadMimeTypes();
+            // refresh the addons manager
+            beanForType(AddonsManager.class).refresh();
+        } catch (Exception e) {
+            settings.getStatusHolder().setError(
+                    "Failed to import etc directory: " + sourceBackupDir.getAbsolutePath(), e, log);
         }
     }
 

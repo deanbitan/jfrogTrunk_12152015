@@ -18,9 +18,11 @@
 
 package org.artifactory.repo;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.FileExpectedException;
+import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
@@ -61,8 +63,17 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         RepoResource repoResource = super.getInfo(context);
         if (repoResource.isFound()) {
             //Check for expiry
-            boolean expired = isExpired(repoResource);
-            if (expired) {
+
+            boolean forceDownloadIfNewer = false;
+            ArtifactoryRequest request = context.getRequest();
+            if (request != null) {
+                String forcePropValue = request.getParameter(ArtifactoryRequest.FORCE_DOWNLOAD_IF_NEWER);
+                if (StringUtils.isNotBlank(forcePropValue)) {
+                    forceDownloadIfNewer = Boolean.valueOf(forcePropValue);
+                }
+            }
+
+            if (forceDownloadIfNewer || isExpired(repoResource)) {
                 log.debug("Returning expired resource {} ", context.getResourcePath());
                 repoResource = new ExpiredRepoResource(repoResource);
             } else {

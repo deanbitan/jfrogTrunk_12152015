@@ -96,7 +96,9 @@ public class RepoXmlConverter {
                         log.info("Converting datastore class from '{}' to '{}'", classValue, DB_DATASTORE_CLASS);
                     } else if (isDefault && !FILE_DATASTORE_CLASS.equals(classValue) &&
                             !DB_DATASTORE_CLASS.equals(classValue)) {
-                        throw new IllegalStateException("Unrecognized datastore class: " + classValue);
+                        throw new IllegalStateException("Unsupported datastore class: '" + classValue +
+                                "'. Could not complete the update. Please use an export/backup of your system and " +
+                                "import it into a new installation of Artifactory via the UI or the artadmin tool.");
                     }
                 }
             }

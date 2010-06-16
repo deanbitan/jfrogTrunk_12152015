@@ -37,8 +37,8 @@ import java.io.File;
 public class NamingUtils {
     public static final String METADATA_PREFIX = ":";
 
-    public static MimeType getContentType(File file) {
-        return getContentType(file.getName());
+    public static MimeType getMimeType(File file) {
+        return getMimeType(file.getName());
     }
 
     /**
@@ -46,13 +46,13 @@ public class NamingUtils {
      * @return The content type for the path. Will return default content type if not mapped.
      */
     @Nonnull
-    public static MimeType getContentType(String path) {
+    public static MimeType getMimeType(String path) {
         String extension = PathUtils.getExtension(path);
-        return getContentTypeByExtension(extension);
+        return getMimeTypeByExtension(extension);
     }
 
     @Nonnull
-    public static MimeType getContentTypeByExtension(String extension) {
+    public static MimeType getMimeTypeByExtension(String extension) {
         MimeType result = null;
         if (extension != null) {
             result = ArtifactoryHome.get().getMimeTypes().getByExtension(extension);
@@ -62,22 +62,22 @@ public class NamingUtils {
     }
 
     public static String getMimeTypeByPathAsString(String path) {
-        MimeType ct = getContentType(path);
+        MimeType ct = getMimeType(path);
         return ct.getType();
     }
 
     public static boolean isChecksum(String path) {
-        MimeType ct = getContentType(path);
+        MimeType ct = getMimeType(path);
         return MimeType.checksum.equalsIgnoreCase(ct.getType());
     }
 
     public static boolean isJarVariant(String path) {
-        MimeType ct = getContentType(path);
+        MimeType ct = getMimeType(path);
         return MimeType.javaArchive.equalsIgnoreCase(ct.getType());
     }
 
     public static boolean isPom(String path) {
-        MimeType ct = NamingUtils.getContentType(path);
+        MimeType ct = NamingUtils.getMimeType(path);
         return "application/x-maven-pom+xml".equalsIgnoreCase(ct.getType());
     }
 
@@ -275,7 +275,7 @@ public class NamingUtils {
      * @return True if the filename represents a viewable file (ie, text based)
      */
     public static boolean isViewable(String fileName) {
-        MimeType contentType = NamingUtils.getContentType(fileName);
+        MimeType contentType = NamingUtils.getMimeType(fileName);
         return contentType.isViewable();
     }
 }

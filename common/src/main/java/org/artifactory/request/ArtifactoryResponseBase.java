@@ -96,9 +96,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     public void sendError(int statusCode, String reason, Logger logger) throws IOException {
         String msg = makeDebugMessage(statusCode, reason);
         if (statusCode == HttpStatus.SC_NOT_FOUND || statusCode == HttpStatus.SC_NOT_MODIFIED) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(msg);
-            }
+            logger.debug(msg);
         } else {
             LoggingUtils.warnOrDebug(logger, msg);
         }

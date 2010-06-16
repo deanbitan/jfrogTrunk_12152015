@@ -28,7 +28,7 @@ import org.artifactory.util.AlreadyExistsException;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlType;
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -44,11 +44,11 @@ public class SecurityDescriptor implements Descriptor {
 
     @XmlElementWrapper(name = "ldapSettings")
     @XmlElement(name = "ldapSetting", required = false)
-    private List<LdapSetting> ldapSettings;
+    private List<LdapSetting> ldapSettings = Lists.newArrayList();
 
     @XmlElementWrapper(name = "ldapGroupSettings")
-    @XmlElement(name = "ldapGroupSetting")
-    private List<LdapGroupSetting> ldapGroupSettings;
+    @XmlElement(name = "ldapGroupSetting", required = false)
+    private List<LdapGroupSetting> ldapGroupSettings = Lists.newArrayList();
 
     @XmlElement(name = "passwordSettings", required = false)
     private PasswordSettings passwordSettings = new PasswordSettings();
@@ -69,7 +69,11 @@ public class SecurityDescriptor implements Descriptor {
     }
 
     public void setLdapSettings(List<LdapSetting> ldapSettings) {
-        this.ldapSettings = ldapSettings;
+        if (ldapSettings != null) {
+            this.ldapSettings = ldapSettings;
+        } else {
+            this.ldapSettings = Lists.newArrayList();
+        }
     }
 
     public List<LdapGroupSetting> getLdapGroupSettings() {
@@ -77,23 +81,16 @@ public class SecurityDescriptor implements Descriptor {
     }
 
     public void setLdapGroupSettings(List<LdapGroupSetting> ldapGroupSettings) {
-        this.ldapGroupSettings = ldapGroupSettings;
+        if (ldapGroupSettings != null) {
+            this.ldapGroupSettings = ldapGroupSettings;
+        } else {
+            this.ldapGroupSettings = Lists.newArrayList();
+        }
     }
 
     public void addLdap(LdapSetting ldapSetting) {
-        if (ldapSettings == null) {
-            ldapSettings = new ArrayList<LdapSetting>();
-        }
-
         if (ldapSettings.contains(ldapSetting)) {
             throw new AlreadyExistsException("The LDAP configuration " + ldapSetting.getKey() + " already exists");
-        }
-        if (ldapSetting.isEnabled()) {
-            for (LdapSetting existingLdapSettings : ldapSettings) {
-                if (existingLdapSettings.isEnabled()) {
-                    existingLdapSettings.setEnabled(false);
-                }
-            }
         }
         ldapSettings.add(ldapSetting);
     }
@@ -105,14 +102,6 @@ public class SecurityDescriptor implements Descriptor {
      * @param ldapSetting The LDAP setting that is updated.
      */
     public void ldapSettingChanged(LdapSetting ldapSetting) {
-        if (ldapSetting.isEnabled()) {
-            List<LdapSetting> ldapSettings = getLdapSettings();
-            for (LdapSetting setting : ldapSettings) {
-                if (!ldapSetting.equals(setting)) {
-                    setting.setEnabled(false);
-                }
-            }
-        }
         LdapSetting setting = getLdapSettings(ldapSetting.getKey());
         if (setting != null) {
             int indexOfLdapSetting = ldapSettings.indexOf(ldapSetting);
@@ -131,9 +120,6 @@ public class SecurityDescriptor implements Descriptor {
     }
 
     public void addLdapGroup(LdapGroupSetting ldapGroupSetting) {
-        if (ldapGroupSettings == null) {
-            ldapGroupSettings = Lists.newArrayList();
-        }
         if (ldapGroupSettings.contains(ldapGroupSetting)) {
             throw new AlreadyExistsException(
                     "The LDAP configuration " + ldapGroupSetting.getName() + " already exists");
@@ -146,25 +132,37 @@ public class SecurityDescriptor implements Descriptor {
         if (groupSettings != null) {
             ldapGroupSettings.remove(groupSettings);
         }
-        if (ldapGroupSettings.isEmpty()) {
-            ldapGroupSettings = null;
-        }
         return groupSettings;
     }
 
+    /**
+     * In case an LDAP settings was removed, all LDAP groups with reference to the LDAP settings need to be
+     * removed.
+     *
+     * @param ldapSettingKey The key of the LDAP settings being removed
+     */
+    public void removeLdapGroupsWithLdapSettingsKey(String ldapSettingKey) {
+        List<LdapGroupSetting> settings = getLdapGroupSettings();
+        Iterator<LdapGroupSetting> ldapGroupSettingIterator = settings.iterator();
+        while (ldapGroupSettingIterator.hasNext()) {
+            LdapGroupSetting setting = ldapGroupSettingIterator.next();
+            if (setting.getEnabledLdap().equals(ldapSettingKey)) {
+                ldapGroupSettingIterator.remove();
+            }
+        }
+    }
+
     private LdapGroupSetting getLdapGroupSettings(String name) {
-        if (ldapGroupSettings != null) {
-            for (LdapGroupSetting ldapGroupSetting : ldapGroupSettings) {
-                if (ldapGroupSetting.getName().equals(name)) {
-                    return ldapGroupSetting;
-                }
+        for (LdapGroupSetting ldapGroupSetting : ldapGroupSettings) {
+            if (ldapGroupSetting.getName().equals(name)) {
+                return ldapGroupSetting;
             }
         }
         return null;
     }
 
     private void setLdapGroupSettings(LdapGroupSetting ldapGroupSetting) {
-        if (ldapGroupSettings != null && !ldapGroupSettings.isEmpty()) {
+        if (!ldapGroupSettings.isEmpty()) {
             int indexOfLdapGroupSetting = ldapGroupSettings.indexOf(ldapGroupSetting);
             if (indexOfLdapGroupSetting != -1) {
                 ldapGroupSettings.set(indexOfLdapGroupSetting, ldapGroupSetting);
@@ -179,21 +177,15 @@ public class SecurityDescriptor implements Descriptor {
         }
 
         ldapSettings.remove(ldapSetting);
-
-        // set list to null if empty
-        if (ldapSettings.isEmpty()) {
-            ldapSettings = null;
-        }
+        removeLdapGroupsWithLdapSettingsKey(ldapKey);
 
         return ldapSetting;
     }
 
-    private LdapSetting getLdapSettings(String ldapKey) {
-        if (ldapSettings != null) {
-            for (LdapSetting ldap : ldapSettings) {
-                if (ldap.getKey().equals(ldapKey)) {
-                    return ldap;
-                }
+    public LdapSetting getLdapSettings(String ldapKey) {
+        for (LdapSetting ldap : ldapSettings) {
+            if (ldap.getKey().equals(ldapKey)) {
+                return ldap;
             }
         }
         return null;
@@ -203,31 +195,33 @@ public class SecurityDescriptor implements Descriptor {
         return getLdapSettings(key) != null;
     }
 
-    public LdapSetting getEnabledLdapSettings() {
-        if (ldapSettings != null) {
-            for (LdapSetting ldap : ldapSettings) {
-                if (ldap.isEnabled()) {
-                    return ldap;
-                }
+    public List<LdapSetting> getEnabledLdapSettings() {
+        List<LdapSetting> result = Lists.newArrayList();
+        for (LdapSetting ldap : ldapSettings) {
+            if (ldap.isEnabled()) {
+                result.add(ldap);
             }
         }
-        return null;
+        return result;
     }
 
     public List<LdapGroupSetting> getEnabledLdapGroupSettings() {
         List<LdapGroupSetting> result = Lists.newArrayList();
-        if (ldapGroupSettings != null) {
-            for (LdapGroupSetting groupSetting : ldapGroupSettings) {
-                if (groupSetting.isEnabled()) {
-                    result.add(groupSetting);
-                }
+        for (LdapGroupSetting groupSetting : ldapGroupSettings) {
+            if (groupSetting.isEnabled()) {
+                result.add(groupSetting);
             }
         }
         return result;
     }
 
     public boolean isLdapEnabled() {
-        return getEnabledLdapSettings() != null;
+        for (LdapSetting ldapSetting : ldapSettings) {
+            if (ldapSetting.isEnabled()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public PasswordSettings getPasswordSettings() {

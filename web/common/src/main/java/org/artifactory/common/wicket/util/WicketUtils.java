@@ -19,6 +19,7 @@
 package org.artifactory.common.wicket.util;
 
 import org.apache.wicket.Application;
+import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.RequestCycle;
@@ -31,6 +32,11 @@ import org.apache.wicket.util.io.Streams;
 import org.apache.wicket.util.lang.Packages;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.common.wicket.behavior.CssClass;
+import org.artifactory.common.wicket.component.TextContentPanel;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -122,6 +128,25 @@ public class WicketUtils {
             throw new RuntimeException(String.format("Can't find resource \"%s.%s\"", scope.getName(), file), e);
         } catch (IOException e) {
             throw new RuntimeException(String.format("Can't read resource \"%s.%s\"", scope.getName(), file), e);
+        }
+    }
+
+    /**
+     * Returns a syntax highlighter. If the size of the string exceeds the size limit defined in the system properties,
+     * than a simple text content panel will be returned
+     *
+     * @param componentId ID to assign to the returned component
+     * @param toDisplay   String to display
+     * @param syntaxType  Type of syntax to use
+     * @return Text displaying component
+     */
+    public static Component getSyntaxHighlighter(String componentId, String toDisplay, Syntax syntaxType) {
+        if (ConstantValues.uiSyntaxColoringMaxTextSizeBytes.getLong() >= toDisplay.getBytes().length) {
+            return new SyntaxHighlighter(componentId, toDisplay, syntaxType);
+        } else {
+            TextContentPanel contentPanel = new TextContentPanel(componentId);
+            contentPanel.add(new CssClass("lines"));
+            return contentPanel.setContent(toDisplay);
         }
     }
 }

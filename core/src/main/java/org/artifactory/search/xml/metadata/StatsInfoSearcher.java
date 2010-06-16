@@ -31,11 +31,9 @@ import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.lock.LockingHelper;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.search.SearcherBase;
 import org.joda.time.format.ISODateTimeFormat;
-import org.slf4j.Logger;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.query.QueryResult;
@@ -50,8 +48,6 @@ import java.util.List;
  */
 public class StatsInfoSearcher
         extends SearcherBase<GenericMetadataSearchControls<StatsInfo>, GenericMetadataSearchResult<StatsInfo>> {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(StatsInfoSearcher.class);
 
     @Override
     public SearchResults<GenericMetadataSearchResult<StatsInfo>> doSearch(

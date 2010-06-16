@@ -19,6 +19,7 @@
 package org.artifactory.descriptor.security;
 
 import org.artifactory.descriptor.security.ldap.LdapSetting;
+import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -36,7 +37,7 @@ public class SecurityDescriptorTest {
 
         assertTrue(security.isAnonAccessEnabled(),
                 "Annon access should be enabled by default");
-        assertNull(security.getLdapSettings(), "LDAP settings list should be null");
+        assertNotNull(security.getLdapSettings(), "LDAP settings list should not be null");
         assertNotNull(security.getPasswordSettings(), "Password settings list should not be null");
     }
 
@@ -81,8 +82,8 @@ public class SecurityDescriptorTest {
         security.addLdap(ldap);
 
         security.removeLdap("ldap1");
-        assertNull(security.getLdapSettings(),
-                "If no ldap configured the ldap settings list should be null (not just empty)");
+        assertEquals(security.getLdapSettings().size(), 0,
+                "If no ldap configured the ldap settings list should be empty");
     }
 
     public void addTwoEnabledLdaps() {
@@ -90,13 +91,38 @@ public class SecurityDescriptorTest {
         LdapSetting ldap = new LdapSetting();
         ldap.setKey("ldap1");
         security.addLdap(ldap);
-        assertEquals(security.getEnabledLdapSettings(), ldap);
+        assertEquals(security.getEnabledLdapSettings().size(), 1);
+        assertEquals(security.getEnabledLdapSettings().get(0), ldap);
         LdapSetting ldap2 = new LdapSetting();
         ldap.setKey("ldap2");
         security.addLdap(ldap2);
-        assertEquals(security.getEnabledLdapSettings(), ldap2);
+        assertEquals(security.getEnabledLdapSettings().size(), 2);
+        assertEquals(security.getEnabledLdapSettings().get(0), ldap);
+        assertEquals(security.getEnabledLdapSettings().get(1), ldap2);
+        ldap.setEnabled(false);
+        assertEquals(security.getEnabledLdapSettings().size(), 1);
+        assertEquals(security.getEnabledLdapSettings().get(0), ldap2);
     }
 
+    public void removeLdapSetting() {
+        SecurityDescriptor securityDescriptor = new SecurityDescriptor();
+        LdapSetting ldap = new LdapSetting();
+        ldap.setKey("ldap1");
+        securityDescriptor.addLdap(ldap);
+        LdapGroupSetting ldapGroupSetting = new LdapGroupSetting();
+        ldapGroupSetting.setName("ldapgroup1");
+        ldapGroupSetting.setEnabledLdap("ldap1");
+        securityDescriptor.addLdapGroup(ldapGroupSetting);
+
+        assertEquals(securityDescriptor.getLdapSettings().size(), 1);
+        assertEquals(securityDescriptor.getLdapGroupSettings().size(), 1);
+
+        securityDescriptor.removeLdap("ldap1");
+
+        assertEquals(securityDescriptor.getLdapGroupSettings().size(), 0);
+        assertEquals(securityDescriptor.getLdapSettings().size(), 0);
+    }
+    /*
     public void switchEnabledLdap() {
         SecurityDescriptor security = new SecurityDescriptor();
         LdapSetting ldap = new LdapSetting();
@@ -125,4 +151,5 @@ public class SecurityDescriptorTest {
         assertTrue(ldap2.isEnabled(), "ldap2 should be enabled");
         assertFalse(ldap.isEnabled(), "ldap1 should be disabled");
     }
+    */
 }

@@ -31,7 +31,7 @@ public class AddonInfo implements Serializable {
     private String addonName;
     private String addonDisplayName;
     private String addonPath;
-    private AddonState addonState;
+    private AddonState addonState = AddonState.INACTIVATED;
     private Properties addonProperties;
 
     /**
@@ -85,6 +85,9 @@ public class AddonInfo implements Serializable {
      * @return Addon state
      */
     public AddonState getAddonState() {
+        if (addonState == null) {   // sanity
+            addonState = AddonState.INACTIVATED;
+        }
         return addonState;
     }
 

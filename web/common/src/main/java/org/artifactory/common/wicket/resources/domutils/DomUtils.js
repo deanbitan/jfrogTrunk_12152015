@@ -49,6 +49,8 @@ function cancel(e) {
 /*-- DOM Utils --*/
 
 var DomUtils = {
+    footerHeight: 0,
+
     addHoverStyle: function(obj) {
         DomUtils.addStyle(obj, 'hover');
     },
@@ -192,7 +194,7 @@ var DomUtils = {
     },
 
     bindHeight: function(node, getHeight, bind) {
-        var docHeight = document.documentElement.offsetHeight;
+        var docHeight = document.documentElement.offsetHeight - DomUtils.footerHeight;
         node.style.height = getHeight(docHeight) + 'px';
 
         if (bind) {

@@ -76,11 +76,15 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
     @SuppressWarnings({"unchecked"})
     public LdapUser getDnFromUserName(LdapSetting ldapSetting, String userName) {
         if (ldapSetting == null) {
-            log.warn("Cannot find user in LDAP: No LDAP settings defined.");
+            log.warn("Cannot find user '{}' in LDAP: No LDAP settings defined.", userName);
+            return null;
+        }
+        if (!ldapSetting.isEnabled()) {
+            log.warn("Cannot find user '{}' in LDAP: LDAP settings not enabled.", userName);
             return null;
         }
         if (ldapSetting.getSearch() == null || isBlank(ldapSetting.getSearch().getSearchFilter())) {
-            log.warn("Cannot find user in LDAP: No search filter defined.");
+            log.warn("Cannot find user '{}' in LDAP: No search filter defined.", userName);
             return null;
         }
         LdapTemplate ldapTemplate = createLdapTemplate(ldapSetting);

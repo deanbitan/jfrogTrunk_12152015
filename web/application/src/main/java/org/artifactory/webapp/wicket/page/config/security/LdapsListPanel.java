@@ -32,7 +32,6 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -60,10 +59,7 @@ public class LdapsListPanel extends ModalListPanel<LdapSetting> {
     protected List<LdapSetting> getList() {
         SecurityDescriptor security = mutableDescriptor.getSecurity();
         List<LdapSetting> ldaps = security.getLdapSettings();
-        if (ldaps != null) {
-            return ldaps;
-        }
-        return Collections.emptyList();
+        return ldaps;
     }
 
     @Override
@@ -75,17 +71,17 @@ public class LdapsListPanel extends ModalListPanel<LdapSetting> {
 
     @Override
     protected BaseModalPanel newCreateItemPanel() {
-        return new LdapCreateUpdatePanel(CreateUpdateAction.CREATE, new LdapSetting(), this);
+        return new LdapCreateUpdatePanel(CreateUpdateAction.CREATE, new LdapSetting());
     }
 
     @Override
     protected BaseModalPanel newUpdateItemPanel(LdapSetting ldapSetting) {
-        return new LdapCreateUpdatePanel(CreateUpdateAction.UPDATE, ldapSetting, this);
+        return new LdapCreateUpdatePanel(CreateUpdateAction.UPDATE, ldapSetting);
     }
 
     @Override
     protected String getDeleteConfirmationText(LdapSetting ldapSetting) {
-        return "Are you sure you wish to delete the ldap " + ldapSetting.getKey() + "?";
+        return "Are you sure you wish to delete the LDAP settings '" + ldapSetting.getKey() + "'?";
     }
 
     @Override
@@ -95,11 +91,7 @@ public class LdapsListPanel extends ModalListPanel<LdapSetting> {
         centralConfigService.saveEditedDescriptorAndReload(mutableDescriptor);
     }
 
-    MutableCentralConfigDescriptor getMutableDescriptor() {
-        return mutableDescriptor;
-    }
-
-    void setMutableDescriptor(MutableCentralConfigDescriptor mutableDescriptor) {
-        this.mutableDescriptor = mutableDescriptor;
+    public void refresh() {
+        mutableDescriptor = centralConfigService.getMutableDescriptor();
     }
 }

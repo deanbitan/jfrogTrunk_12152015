@@ -71,7 +71,7 @@ public class CentralConfigReader {
     private ArtifactoryConfigVersion verifyCurrentConfigVersion(String configXmlString) {
         if (!configXmlString.contains(Descriptor.NS)) {
             String msg = "The current Artifactory config schema namespace is '" + Descriptor.NS +
-                    "' \nThe provided config does not seem to be compliant with it.\n";
+                    "' \nThe provided config does not seem to be compliant with it.";
             if (log.isDebugEnabled()) {
                 log.debug(msg + "\n" + configXmlString);
             } else {
@@ -80,13 +80,13 @@ public class CentralConfigReader {
             ArtifactoryConfigVersion guessedConfigVersion = ArtifactoryConfigVersion.getConfigVersion(configXmlString);
             if (guessedConfigVersion == null) {
                 throw new RuntimeException(msg +
-                        "The auto discovery of Artifactory configuration version " +
+                        "\nThe auto discovery of Artifactory configuration version " +
                         "did not find any valid version for the artifactory.config.xml file.\n" +
                         "Please fix this file manually!");
 
             } else if (guessedConfigVersion == ArtifactoryConfigVersion.getCurrent()) {
                 throw new RuntimeException(msg +
-                        "The auto discovery of Artifactory configuration version found that the " +
+                        "\nThe auto discovery of Artifactory configuration version found that the " +
                         "artifactory.config.xml file is up to date but does not have the right schema.\n" +
                         "Please fix this file manually!");
             } else {

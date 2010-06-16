@@ -100,7 +100,7 @@ public class LocalRepoActionableItem extends RepoAwareActionableItemBase
             if (item.isDirectory()) {
                 child = new FolderActionableItem((FolderInfo) item.getItemInfo(), isCompactAllowed());
             } else {
-                MimeType mimeType = NamingUtils.getContentType(item.getPath());
+                MimeType mimeType = NamingUtils.getMimeType(item.getPath());
                 if (mimeType.isArchive()) {
                     child = new ZipFileActionableItem((FileInfo) item.getItemInfo(), compactAllowed);
                 } else {

@@ -75,26 +75,26 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         homeGroup.addChild(welcomePage);
         homeGroup.addChild(new MenuNode("Maven Settings", MavenSettingsPage.class));
 
-        MenuNode browseRepoPage = new MenuNode("Artifacts", BrowseRepoPage.class);
+        MenuNode browseRepoPage = new ArtifactsPageNode("Artifacts", BrowseRepoPage.class);
         root.addChild(browseRepoPage);
 
         MenuNode browseGroup = new OpenedMenuNode("Browse");
         browseRepoPage.addChild(browseGroup);
 
-        browseGroup.addChild(new MenuNode("Tree Browser", BrowseRepoPage.class));
-        browseGroup.addChild(new MenuNode("Simple Browser", SimpleBrowserRootPage.class));
+        browseGroup.addChild(new ArtifactsPageNode("Tree Browser", BrowseRepoPage.class));
+        browseGroup.addChild(new ArtifactsPageNode("Simple Browser", SimpleBrowserRootPage.class));
         SearchAddon searchAddon = addons.addonByType(SearchAddon.class);
         browseGroup.addChild(searchAddon.getBrowserSearchMenuNode());
-        browseGroup.addChild(new MenuNode("Builds", BuildBrowserRootPage.class));
+        browseGroup.addChild(new ArtifactsPageNode("Builds", BuildBrowserRootPage.class));
 
         MenuNode searchGroup = new OpenedMenuNode("Search");
         browseRepoPage.addChild(searchGroup);
-        searchGroup.addChild(new MenuNode("Quick Search", ArtifactSearchPage.class));
-        searchGroup.addChild(new MenuNode("Class Search", ArchiveSearchPage.class));
-        searchGroup.addChild(new MenuNode("GAVC Search", GavcSearchPage.class));
+        searchGroup.addChild(new ArtifactsPageNode("Quick Search", ArtifactSearchPage.class));
+        searchGroup.addChild(new ArtifactsPageNode("Class Search", ArchiveSearchPage.class));
+        searchGroup.addChild(new ArtifactsPageNode("GAVC Search", GavcSearchPage.class));
         PropertiesAddon propertiesAddon = addons.addonByType(PropertiesAddon.class);
         searchGroup.addChild(propertiesAddon.getPropertySearchMenuNode("Property Search"));
-        searchGroup.addChild(new MenuNode("POM/XML Search", MetadataSearchPage.class));
+        searchGroup.addChild(new ArtifactsPageNode("POM/XML Search", MetadataSearchPage.class));
 
         DeployArtifactPageNode deployPage = new DeployArtifactPageNode(DeployArtifactPage.class, "Deploy");
         root.addChild(deployPage);
@@ -137,6 +137,30 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
                 return false;
             }
 
+            if (getAddons().lockdown()) {
+                return false;
+            }
+
+            List<LocalRepoDescriptor> repoDescriptorList = getRepositoryService().getDeployableRepoDescriptors();
+            return repoDescriptorList != null && !repoDescriptorList.isEmpty();
+        }
+    }
+
+    private static class ArtifactsPageNode extends SecuredPageNode {
+        private ArtifactsPageNode(String name, Class<? extends Page> pageClass) {
+            super(pageClass, name);
+        }
+
+        @Override
+        public boolean isEnabled() {
+            if (getAddons().lockdown()) {
+                return false;
+            }
+            AuthorizationService authorizationService = getAuthorizationService();
+            if (authorizationService.isAnonAccessEnabled() || authorizationService.hasPermission(
+                    ArtifactoryPermission.READ)) {
+                return true;
+            }
             List<LocalRepoDescriptor> repoDescriptorList = getRepositoryService().getDeployableRepoDescriptors();
             return repoDescriptorList != null && !repoDescriptorList.isEmpty();
         }

@@ -27,6 +27,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
 /**
  * @author yoavl
@@ -40,7 +41,7 @@ public class StorageResource {
 
     @POST
     @Path("compress")
-    @Produces("application/xml")
+    @Produces(MediaType.APPLICATION_XML)
     public StatusHolder compress() {
         MultiStatusHolder statusHolder = new MultiStatusHolder();
         storageService.compress(statusHolder);
@@ -49,7 +50,7 @@ public class StorageResource {
 
     @GET
     @Path("size")
-    @Produces("text/plain")
+    @Produces(MediaType.TEXT_PLAIN)
     public String size() {
         return storageService.getStorageSize() + "";
     }

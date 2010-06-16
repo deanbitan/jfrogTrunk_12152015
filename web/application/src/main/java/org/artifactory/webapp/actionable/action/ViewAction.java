@@ -21,15 +21,14 @@ package org.artifactory.webapp.actionable.action;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
-import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.mime.MimeType;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 
@@ -57,7 +56,7 @@ public abstract class ViewAction extends RepoAwareItemAction {
 
     protected void showHighlightedSourceModal(RepoAwareItemEvent e, String content, String title, Syntax syntax) {
         final String id = e.getTargetComponents().getModalWindow().getContentId();
-        showModal(e, title, new SyntaxHighlighter(id, content, syntax));
+        showModal(e, title, WicketUtils.getSyntaxHighlighter(id, content, syntax));
     }
 
     protected void showPlainTextModal(RepoAwareItemEvent e, String content, String title, Syntax syntax) {
@@ -77,10 +76,6 @@ public abstract class ViewAction extends RepoAwareItemAction {
 
     protected MimeType getMimeType(RepoAwareItemEvent e) {
         ItemInfo itemInfo = e.getSource().getItemInfo();
-        if (itemInfo.isFolder()) {
-            return null;
-        }
-        String type = ((FileInfo) itemInfo).getMimeType();
-        return ArtifactoryHome.get().getMimeTypes().getByMime(type);
+        return NamingUtils.getMimeType(itemInfo.getName());
     }
 }

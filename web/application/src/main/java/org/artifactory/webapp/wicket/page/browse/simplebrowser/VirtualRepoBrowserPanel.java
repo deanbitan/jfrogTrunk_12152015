@@ -188,7 +188,7 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
                 this.path = UP.equals(path) ? path : path + "/";
             } else {
                 this.path = path;
-                MimeType ct = NamingUtils.getContentType(name);
+                MimeType ct = NamingUtils.getMimeType(name);
                 if (ct.isArchive()) {
                     cssClass = "jar";
                 } else if (name.equals(UP)) {

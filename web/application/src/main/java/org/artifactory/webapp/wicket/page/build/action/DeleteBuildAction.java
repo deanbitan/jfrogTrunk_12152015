@@ -90,7 +90,7 @@ public class DeleteBuildAction extends ItemAction {
         AjaxRequestTarget target = e.getTarget();
         BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
         String buildName = basicBuildInfo.getName();
-        long buildNumber = basicBuildInfo.getNumber();
+        String buildNumber = basicBuildInfo.getNumber();
 
         try {
             buildService.deleteBuild(basicBuildInfo);

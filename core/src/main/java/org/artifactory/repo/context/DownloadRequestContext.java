@@ -50,4 +50,8 @@ public class DownloadRequestContext implements RequestContext {
     public Properties getProperties() {
         return artifactoryRequest.getProperties();
     }
+
+    public ArtifactoryRequest getRequest() {
+        return artifactoryRequest;
+    }
 }

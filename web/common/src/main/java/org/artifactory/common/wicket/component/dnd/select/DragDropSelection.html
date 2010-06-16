@@ -5,8 +5,14 @@
     </div>
 
     <div class="sep">
-        <button disabled="disabled" class="add-link-disabled" wicket:id="addLink" type="button"></button>
-        <button disabled="disabled" class="remove-link-disabled" wicket:id="removeLink" type="button"></button>
+        <button disabled="disabled" class="add-all-link-disabled" wicket:id="addAllLink" type="button"
+                title="Add All Items"></button>
+        <button disabled="disabled" class="add-link-disabled" wicket:id="addLink" type="button"
+                title="Add Selected Items"></button>
+        <button disabled="disabled" class="remove-link-disabled" wicket:id="removeLink" type="button"
+                title="Remove All Items"></button>
+        <button disabled="disabled" class="remove-all-link-disabled" wicket:id="removeAllLink" type="button"
+                title="Remove Selected Items"></button>
     </div>
 
     <div class="selection-list target-list">
@@ -21,6 +27,6 @@
 
     <input wicket:id="selection" type="hidden"/>
     <script wicket:id="initScript" type="text/javascript">
-        new ${widgetClassName}('${panelId}','${sourceListId}','${targetListId}','${addLinkId}','${removeLinkId}','${textFieldId}');
+        new ${widgetClassName}('${panelId}','${sourceListId}','${targetListId}','${addLinkId}','${removeLinkId}','${addAllLinkId}','${removeAllLinkId}','${textFieldId}');
     </script>
 </wicket:panel>

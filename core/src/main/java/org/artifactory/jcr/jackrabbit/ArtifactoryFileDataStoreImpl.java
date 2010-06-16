@@ -20,13 +20,14 @@ package org.artifactory.jcr.jackrabbit;
 
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
+import org.apache.jackrabbit.core.util.db.DatabaseAware;
 
 import java.io.File;
 
 /**
  * @author freds
  */
-public class ArtifactoryFileDataStoreImpl extends ArtifactoryBaseDataStore {
+public class ArtifactoryFileDataStoreImpl extends ArtifactoryBaseDataStore implements DatabaseAware {
     private String fileStoreDir;
 
     private File binariesFolder;

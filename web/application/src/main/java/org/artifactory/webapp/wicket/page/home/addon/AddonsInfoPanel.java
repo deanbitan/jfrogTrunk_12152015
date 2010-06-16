@@ -32,7 +32,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.webapp.wicket.page.config.general.GeneralConfigPage;
+import org.artifactory.webapp.wicket.page.config.license.LicensePage;
 
 import java.util.Collection;
 import java.util.List;
@@ -61,13 +61,11 @@ public class AddonsInfoPanel extends TitledPanel {
      * @param enabledAddonNames   Name list of enabled addons
      */
     public AddonsInfoPanel(String id, final List<String> installedAddonNames,
-                           final Collection<String> enabledAddonNames) {
+            final Collection<String> enabledAddonNames) {
         super(id);
         add(new CssClass("addons-table"));
 
-        String currentServerId = centralConfigService.getDescriptor().getAddons().getServerId();
-        final boolean currentServerIdValid = addonsManager.isServerIdValid(currentServerId);
-        final boolean serverIdChanged = addonsManager.isServerIdChanged();
+        final boolean currentLicenseValid = addonsManager.isLicenseInstalled();
 
         MarkupContainer addonTable = new WebMarkupContainer("addonTable");
         boolean noAddons = installedAddonNames.isEmpty();
@@ -85,12 +83,8 @@ public class AddonsInfoPanel extends TitledPanel {
                 item.add(new Label("name", addonInfo.getAddonDisplayName()));
                 item.add(new Label("image", "").add(new CssClass("addon-" + addonInfo.getAddonName())));
 
-                if (enabledAddonNames.contains(addonName)) {
-                    item.add(new Label("status", "Enabled").add(new CssClass("addon-enabled")));
-                } else {
-                    item.add(new Label("status", "Disabled").add(new CssClass("addon-disabled")));
-                }
-
+                String addonState = addonInfo.getAddonState().getStateName();
+                item.add(new Label("status", addonState));
                 if (item.getIndex() % 2 == 0) {
                     item.add(new CssClass("even"));
                 }
@@ -99,29 +93,20 @@ public class AddonsInfoPanel extends TitledPanel {
         addonTable.add(listView);
         add(addonTable);
 
-        CharSequence generalConfigPage = WicketUtils.mountPathForPage(GeneralConfigPage.class);
-
         boolean noEnabledAddons = enabledAddonNames.isEmpty();
         add(new Label("addonsDisabled", "All add-ons are disabled")
-                .setVisible(!serverIdChanged && currentServerIdValid && !noAddons && noEnabledAddons));
-
-        add(new Label("requiresRestartValid", "Please restart Artifactory for the new server ID to take effect.")
-                .setVisible(admin && currentServerIdValid && serverIdChanged && !noAddons));
-
-        Label removedServerIdLabel = new Label("requiresRestartInvalid",
-                String.format("Your <a href='%s#serverId'>Server ID</a> is invalid. Please enter a valid one.",
-                        generalConfigPage));
-        removedServerIdLabel.setVisible(admin && !currentServerIdValid && serverIdChanged && !noAddons);
-        removedServerIdLabel.setEscapeModelStrings(false);
-        add(removedServerIdLabel);
+                .setVisible(currentLicenseValid && !noAddons && noEnabledAddons));
 
         add(new Label("noAddons", "No add-ons currently installed.").setVisible(noAddons));
-        Label noServerIdLabel = new Label("noServerId", String.format("Add-ons are currently disabled. To enable " +
-                "add-ons you need to enter your <a href='%s#serverId'>Server ID</a> first.", generalConfigPage));
-        noServerIdLabel.setVisible(admin && !currentServerIdValid && !serverIdChanged && !noAddons && noEnabledAddons);
-        noServerIdLabel.setEscapeModelStrings(false);
 
-        add(noServerIdLabel);
+        CharSequence licensePage = WicketUtils.mountPathForPage(LicensePage.class);
+        Label noLicenseKeyLabel = new Label("noLicenseKey", String.format("Add-ons are currently disabled. To enable " +
+                "add-ons you need to enter your <a href='%s'>License Key</a> first.", licensePage));
+        noLicenseKeyLabel.setVisible(
+                admin && !currentLicenseValid && !noAddons && noEnabledAddons);
+        noLicenseKeyLabel.setEscapeModelStrings(false);
+
+        add(noLicenseKeyLabel);
     }
 
     @Override

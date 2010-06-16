@@ -44,10 +44,6 @@ public class SpringConfigPaths {
         this.installedAddonPaths = ImmutableMap.copyOf(installedAddonPaths);
     }
 
-    public ImmutableList<String> getPaths() {
-        return paths;
-    }
-
     public ImmutableMap<String, AddonInfo> getInstalledAddonPaths() {
         return installedAddonPaths;
     }

@@ -21,6 +21,8 @@ package org.artifactory.webapp.wicket.page.base;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.markup.html.IHeaderContributor;
+import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
@@ -89,6 +91,13 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         add(revisionHeader);
 
         add(new FooterLabel("footer"));
+
+        String license = addons.getFooterMessage(authorizationService.isAdmin());
+        Label licenseLabel = new Label("license", license);
+        licenseLabel.setEscapeModelStrings(false);
+        add(licenseLabel);
+
+        add(new LicenseFooterLabel("licenseFooter"));
 
         add(new HeaderLogoPanel("logo"));
 
@@ -215,6 +224,12 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         @SpringBean
         private CentralConfigService centralConfig;
 
+        @SpringBean
+        private AuthorizationService authorizationService;
+
+        @SpringBean
+        private AddonsManager addons;
+
         public FooterLabel(String id) {
             super(id, "");
             setOutputMarkupId(true);
@@ -225,6 +240,35 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
             String footer = centralConfig.getDescriptor().getFooter();
             setModelObject(footer);
             super.onBeforeRender();
+        }
+    }
+
+    private static class LicenseFooterLabel extends Label implements IHeaderContributor {
+        @SpringBean
+        private AuthorizationService authorizationService;
+
+        @SpringBean
+        private AddonsManager addons;
+
+        public LicenseFooterLabel(String id) {
+            super(id, "");
+            setOutputMarkupId(true);
+            setEscapeModelStrings(false);
+
+            String message = null;
+            if (authorizationService.isAdmin() || isTrial()) {
+                message = addons.getLicenseFooterMessage();
+                setModelObject(message);
+            }
+            setVisible(StringUtils.isNotEmpty(message));
+        }
+
+        public void renderHead(IHeaderResponse response) {
+            response.renderJavascript("DomUtils.footerHeight = 18;", getMarkupId() + "js");
+        }
+
+        private boolean isTrial() {
+            return addons.isLicenseInstalled() && "Trial".equalsIgnoreCase(addons.getLicenseDetails()[2]);
         }
     }
 

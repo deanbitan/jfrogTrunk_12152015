@@ -18,38 +18,25 @@
 
 package org.artifactory.jcr;
 
-import org.apache.commons.pool.impl.StackObjectPool;
+import org.apache.jackrabbit.api.XASession;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.data.DataStore;
-import org.artifactory.common.ConstantValues;
+import org.apache.jackrabbit.core.security.SecurityConstants;
 import org.springframework.extensions.jcr.jackrabbit.JackrabbitSessionFactory;
 
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 
 /**
  * User: freds Date: Jul 21, 2008 Time: 7:10:02 PM
  */
 public class JcrSessionFactory extends JackrabbitSessionFactory {
 
-    private StackObjectPool sessionPool;
-
     @Override
     public void setRepository(final Repository repository) {
         super.setRepository(repository);
-
-        //Create the session pool
-        PoolableSessionFactory pooledSessionFactory = new PoolableSessionFactory(repository);
-        final int poolSize = ConstantValues.jcrSessionPoolMaxSize.getInt();
-        sessionPool = new StackObjectPool(pooledSessionFactory, poolSize, poolSize) {
-            @Override
-            public void close() throws Exception {
-                super.close();
-                ((RepositoryImpl) repository).shutdown();
-            }
-        };
-        pooledSessionFactory.setPool(sessionPool);
     }
 
     @Override
@@ -61,7 +48,6 @@ public class JcrSessionFactory extends JackrabbitSessionFactory {
         if (store != null) {
             store.close();
         }
-        sessionPool.close();
     }
 
     /**
@@ -103,8 +89,9 @@ public class JcrSessionFactory extends JackrabbitSessionFactory {
 
     private JcrSession newSession() {
         try {
-            JcrSession session = (JcrSession) sessionPool.borrowObject();
-            return session;
+            Session session = getRepository().login(new SimpleCredentials(SecurityConstants.ADMIN_ID, new char[]{}));
+            JcrSession jcrSession = new JcrSession((XASession) session);
+            return jcrSession;
         } catch (Exception e) {
             throw new RuntimeException("Failed to create jcr session.", e);
         }

@@ -197,6 +197,20 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         return handle;
     }
 
+    /**
+     * Executes an HTTP method using the repositories client
+     *
+     * @param method Method to execute
+     * @return Response code
+     * @throws IOException If the repository is offline or if any error occurs during the execution
+     */
+    public int executeMethod(HttpMethod method) throws IOException {
+        if (client == null) {
+            throw new IOException("Cannot execute a request when the repository is offline.");
+        }
+        return client.executeMethod(method);
+    }
+
     @Override
     protected RepoResource retrieveInfo(String relPath) {
         assert !isOffline() : "Should never be called in offline mode";

@@ -19,6 +19,7 @@
 package org.artifactory.rest.util;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.rest.constant.BuildRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
@@ -30,6 +31,8 @@ import org.joda.time.format.ISODateTimeFormat;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 /**
  * @author yoavl
@@ -51,9 +54,9 @@ public abstract class RestUtils {
      * @param request
      * @return build name
      */
-    public static String getBuildNameFromRequest(HttpServletRequest request) {
+    public static String getBuildNameFromRequest(HttpServletRequest request) throws UnsupportedEncodingException {
         String[] pathElements = getBuildRestUrlPathElements(request);
-        return pathElements[0];
+        return URLDecoder.decode(pathElements[0], "utf-8");
     }
 
     /**
@@ -63,17 +66,16 @@ public abstract class RestUtils {
      * @param request
      * @return build number
      */
-    public static long getBuildNumberFromRequest(HttpServletRequest request) {
+    public static String getBuildNumberFromRequest(HttpServletRequest request) throws UnsupportedEncodingException {
         String[] pathElements = getBuildRestUrlPathElements(request);
-        String buildNumber = pathElements[1];
-        return Long.parseLong(buildNumber);
+        return URLDecoder.decode(pathElements[1], "utf-8");
     }
 
     public static String toIsoDateString(long time) {
         return ISODateTimeFormat.dateTime().print(time);
     }
 
-    private static String[] getBuildRestUrlPathElements(HttpServletRequest request) {
+    public static String[] getBuildRestUrlPathElements(HttpServletRequest request) {
         StringBuffer url = request.getRequestURL();
         String sUrl = url.toString();
         String apiUrl = getRestApiUrl(request) + "/" + BuildRestConstants.PATH_ROOT;
@@ -108,4 +110,13 @@ public abstract class RestUtils {
         return sb.toString();
     }
 
+    public static RepoPath calcRepoPathFromRequestPath(String path) {
+        String repoKey = PathUtils.getFirstPathElements(path);
+        String relPath = PathUtils.getRelativePath(repoKey, path);
+        if (relPath.endsWith("/")) {
+            int index = relPath.length() - 1;
+            relPath = relPath.substring(0, index);
+        }
+        return new RepoPath(repoKey, relPath);
+    }
 }

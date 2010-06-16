@@ -49,16 +49,15 @@ public class NonUniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase 
 
         MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(repoPath);
         String pathBaseVersion = MavenNaming.getNonUniqueSnapshotBaseVersion(mavenInfo.getVersion());
-        String fileBaseVersion = MavenNaming.getUniqueSnapshotVersionBaseVersion(fileName);
-        if (!pathBaseVersion.equals(fileBaseVersion)) {
-            log.debug("File base version '{}' is not equals to the path base version '{}'. " +
-                    "Returning the original path.", fileBaseVersion, pathBaseVersion);
+        String timestampAndBuildNumber = MavenNaming.getUniqueSnapshotVersionTimestampAndBuildNumber(fileName);
+        if (!fileName.contains(pathBaseVersion + "-" + timestampAndBuildNumber)) {
+            log.debug("File '{}' version is not equals to the path base version '{}'. " +
+                    "Returning the original path.", fileName, pathBaseVersion);
             return path;
         }
 
         // replace the timestamp and build number part with 'SNAPSHOT' string
-        String adaptedFileName = fileName.replace(
-                MavenNaming.getUniqueSnapshotVersionTimestampAndBuildNumber(fileName), MavenNaming.SNAPSHOT);
+        String adaptedFileName = fileName.replace(timestampAndBuildNumber, MavenNaming.SNAPSHOT);
         String adaptedPath = FilenameUtils.getPath(path) + adaptedFileName;
         return adaptedPath;
     }

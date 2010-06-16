@@ -47,7 +47,7 @@ dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
             var superCreate = this._popupWidget.createOptions;
             this._popupWidget.createOptions = function() {
                 // call super
-                superCreate.apply(_this._popupWidget, arguments);
+                var result = superCreate.apply(_this._popupWidget, arguments);
 
                 // add css class to items
                 dojo.forEach(this.domNode.childNodes, function(item) {
@@ -60,6 +60,8 @@ dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
                 // add "Clear History" item
                 var clearItem = _this._createClearHistoryItem();
                 this.domNode.insertBefore(clearItem, this.nextButton);
+
+                return result;
             }
         }
 

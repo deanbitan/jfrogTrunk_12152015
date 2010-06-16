@@ -94,16 +94,19 @@ public class UsersTable extends ModalListPanel<UserModel> {
     protected void addColumns(List<IColumn> columns) {
         columns.add(new SelectAllCheckboxColumn<UserModel>("", "selected", null));
         columns.add(new UserColumn(new Model("User Name")));
-        columns.add(createExternalStatusColumn());
+        List<LdapSetting> ldapSettings = centralConfigService.getDescriptor().getSecurity().getEnabledLdapSettings();
+        for (LdapSetting ldapSetting : ldapSettings) {
+            columns.add(createExternalStatusColumn(ldapSetting));
+        }
         columns.add(new BooleanColumn(new Model("Admin"), "admin", "admin"));
         columns.add(new PropertyColumn(new Model("Last Login"), "lastLoginTimeMillis", "lastLoginString"));
         //columns.add(new PropertyColumn(new Model("Last Access"), "lastAccessTimeMillis", "lastAccessString"));
     }
 
-    private TooltipLabelColumn createExternalStatusColumn() {
-        final LdapSetting enabledLdapSettings =
-                centralConfigService.getDescriptor().getSecurity().getEnabledLdapSettings();
-        return new TooltipLabelColumn(new Model("External"), "status", "status", 0) {
+    private TooltipLabelColumn createExternalStatusColumn(final LdapSetting ldapSetting) {
+        final String ldapSettingKey = ldapSetting.getKey();
+        return new TooltipLabelColumn(new Model("External " + ldapSettingKey), "status", "statuses." + ldapSettingKey,
+                0) {
             @Override
             public void populateItem(Item item, String componentId, IModel model) {
                 item.add(new TooltipLabel(componentId, createLabelModel(model), 0) {
@@ -114,27 +117,27 @@ public class UsersTable extends ModalListPanel<UserModel> {
                     }
                 });
                 UserModel user = (UserModel) model.getObject();
-                if (user.getStatus().equals(UserModel.Status.NOT_LDAP_USER)) {
+                if (UserModel.Status.NOT_LDAP_USER.equals(user.getStatuses().get(ldapSettingKey))) {
                     log.debug("User {} is not an LDAP user", user.getUsername());
                     return;
                 }
-                if (enabledLdapSettings != null && (enabledLdapSettings.getSearch() == null ||
-                        StringUtils.isBlank(enabledLdapSettings.getSearch().getSearchFilter()))) {
+                if (ldapSetting != null && (ldapSetting.getSearch() == null ||
+                        StringUtils.isBlank(ldapSetting.getSearch().getSearchFilter()))) {
                     item.add(new CssClass("WarnColumn"));
                     item.add(new CssClass("warn"));
-                    user.setStatus(UserModel.Status.NO_SEARCH_FILTER);
+                    user.getStatuses().put(ldapSettingKey, UserModel.Status.NO_SEARCH_FILTER);
                     return;
                 }
-                if (user.isDisableInternalPassword() && enabledLdapSettings != null) {
-                    LdapUser ldapUser = ldapService.getDnFromUserName(enabledLdapSettings, user.getUsername());
+                if (user.isDisableInternalPassword() && ldapSetting != null) {
+                    LdapUser ldapUser = ldapService.getDnFromUserName(ldapSetting, user.getUsername());
                     if (ldapUser == null) {
                         item.add(new CssClass("WarnColumn"));
                         item.add(new CssClass("warn"));
-                        user.setStatus(UserModel.Status.INACTIVE_USER);
+                        user.getStatuses().put(ldapSettingKey, UserModel.Status.INACTIVE_USER);
                     } else {
                         item.add(new CssClass("BooleanColumn"));
                         item.add(new CssClass("true"));
-                        user.setStatus(UserModel.Status.ACTIVE_USER);
+                        user.getStatuses().put(ldapSettingKey, UserModel.Status.ACTIVE_USER);
                     }
                 }
             }
@@ -158,7 +161,7 @@ public class UsersTable extends ModalListPanel<UserModel> {
 
     @Override
     protected String getDeleteConfirmationText(UserModel user) {
-        return "Are you sure you wish to delete the user " + user.getUsername() + "?";
+        return "Are you sure you wish to delete the user '" + user.getUsername() + "'?";
     }
 
     @Override
@@ -166,7 +169,7 @@ public class UsersTable extends ModalListPanel<UserModel> {
         String currentUsername = authorizationService.currentUsername();
         String selectedUsername = user.getUsername();
         if (currentUsername.equals(selectedUsername)) {
-            error("Error: Action cancelled. You are logged-in as the user you have selected for removal.");
+            error("Action cancelled. You are logged-in as the user you have selected for removal.");
             return;
         }
         userGroupService.deleteUser(selectedUsername);

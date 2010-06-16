@@ -31,12 +31,13 @@
             }
 
             var height = modalHeight - offset;
-            height = Math.max(height, 100);
+            height = Math.max(height, 120);
 
             dojo.query('#${repoListId} ul').forEach(function(ul) {
                 ul.style.height = height + 'px';
             });
-            dojo.query('#${repoListId} .sep')[0].style.marginTop = (height / 2) + 'px';
+            var marginTop = Math.max(0, (height - 100) / 2);
+            dojo.query('#${repoListId} .sep')[0].style.marginTop = marginTop + 'px';
         }
     };
 })();

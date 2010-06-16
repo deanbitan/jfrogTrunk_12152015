@@ -246,10 +246,10 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     }
 
     public VirtualRepoItem getVirtualRepoItem(RepoPath repoPath) {
-        Set<LocalRepo> localAndCahcedRepos = getResolvedLocalAndCachedRepos();
+        Set<LocalRepo> localAndCachedRepos = getResolvedLocalAndCachedRepos();
         //Add paths from all children virtual repositories
         VirtualRepoItem item = null;
-        for (LocalRepo repo : localAndCahcedRepos) {
+        for (LocalRepo repo : localAndCachedRepos) {
             if (repo.itemExists(repoPath.getPath())) {
                 JcrFsItem fsItem = repo.getLocalJcrFsItem(repoPath.getPath());
                 if (item == null) {
@@ -271,9 +271,9 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     public Set<String> getChildrenNamesDeeply(RepoPath folderPath) {
         String path = folderPath.getPath();
-        Set<LocalRepo> localAndCahcedRepos = getResolvedLocalAndCachedRepos();
+        Set<LocalRepo> localAndCachedRepos = getResolvedLocalAndCachedRepos();
         Set<String> children = Sets.newHashSet();
-        for (LocalRepo repo : localAndCahcedRepos) {
+        for (LocalRepo repo : localAndCachedRepos) {
             if (!repo.itemExists(path)) {
                 continue;
             }
@@ -286,7 +286,10 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
             List<JcrFsItem> items = dir.getItems();
 
             for (JcrFsItem item : items) {
-                children.add(item.getName());
+                if (!MavenNaming.NEXUS_INDEX_DIR.equals(item.getName()) ||
+                        MavenNaming.isIndex(item.getPath())) {  // don't include the index dir in the listing
+                    children.add(item.getName());
+                }
             }
         }
         return children;
@@ -517,9 +520,9 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return downloadStrategy.getInfo(context);
     }
 
-    public ResourceStreamHandle getResourceStreamHandle(RepoResource res) throws IOException, RepositoryException,
-            RepoRejectionException {
-        return storageMixin.getResourceStreamHandle(res);
+    public ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, RepoResource res)
+            throws IOException, RepositoryException, RepoRejectionException {
+        return storageMixin.getResourceStreamHandle(requestContext, res);
     }
 
     public String getChecksum(String checksumFilePath, RepoResource res) throws IOException {

@@ -18,6 +18,7 @@
 
 package org.artifactory.addon.wicket;
 
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.artifactory.addon.AddonFactory;
 import org.artifactory.api.common.MultiStatusHolder;
@@ -26,6 +27,8 @@ import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
+import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupPopulatorStrategies;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.webapp.wicket.page.config.security.LdapGroupListPanel;
@@ -40,6 +43,9 @@ import java.util.Set;
  */
 public interface LdapGroupWebAddon extends AddonFactory {
 
+    /**
+     * The realm of LDAP groups.
+     */
     String REALM = "ldap";
 
     /**
@@ -104,4 +110,23 @@ public interface LdapGroupWebAddon extends AddonFactory {
      * @return The warning label
      */
     Label getLdapActiveWarning(String wicketId);
+
+    /**
+     * Get the LDAP lists defined in the system, in the powerpack version of Artifactory the panel is re-orderable
+     * such that a certain order can be defined as to which LDAP will be queried first, moreover, the powerpack version
+     * allows for <b>multiple enabled</b> LDAP definitions.
+     *
+     * @param wicketId The wicket ID of the panel.
+     * @return The current defined LDAP settings panel.
+     */
+    WebMarkupContainer getLdapListPanel(String wicketId);
+
+    /**
+     * Save the LDAP configurations, in the powerpack version of Artifactory several <b>multiple enabled</b> LDAP
+     * definitions will be saved.
+     *
+     * @param configDescriptor The config descriptor to be saved.
+     * @param ldapSetting      The LDAP setting that was added/modified.
+     */
+    void saveLdapSetting(MutableCentralConfigDescriptor configDescriptor, LdapSetting ldapSetting);
 }

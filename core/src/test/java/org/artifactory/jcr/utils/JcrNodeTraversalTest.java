@@ -32,13 +32,13 @@ import java.util.Arrays;
 public class JcrNodeTraversalTest extends RepositoryTestBase {
 
     public void print() throws RepositoryException {
-        Session session = getRepository().login();
+        Session session = login();
         JcrUtils.preorder(session.getRootNode());
         session.logout();
     }
 
     public void printExcludeSystem() throws RepositoryException {
-        Session session = getRepository().login();
+        Session session = login();
         JcrUtils.preorder(session.getRootNode(), Arrays.asList("jcr:system"));
         session.logout();
     }

@@ -25,7 +25,7 @@ import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
-import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.webapp.actionable.FileActionable;
 
 import static org.artifactory.common.wicket.component.label.highlighter.Syntax.xml;
@@ -73,7 +73,7 @@ public class PomViewTabPanel extends Panel {
 
         FieldSetBorder border = new FieldSetBorder("mavenDependencyBorder");
         add(border);
-        border.add(new SyntaxHighlighter("mavenDependencyDeclaration", sb.toString(), xml));
+        border.add(WicketUtils.getSyntaxHighlighter("mavenDependencyDeclaration", sb.toString(), xml));
     }
 
     /**
@@ -92,7 +92,7 @@ public class PomViewTabPanel extends Panel {
 
         FieldSetBorder border = new FieldSetBorder("ivyDependencyBorder");
         add(border);
-        border.add(new SyntaxHighlighter("ivyDependencyDeclaration", sb.toString(), xml));
+        border.add(WicketUtils.getSyntaxHighlighter("ivyDependencyDeclaration", sb.toString(), xml));
     }
 
     /**
@@ -105,6 +105,6 @@ public class PomViewTabPanel extends Panel {
         add(border);
 
         String content = repoService.getTextFileContent(fileInfo);
-        border.add(new SyntaxHighlighter("pomContent", content, xml));
+        border.add(WicketUtils.getSyntaxHighlighter("pomContent", content, xml));
     }
 }

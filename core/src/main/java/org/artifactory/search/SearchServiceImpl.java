@@ -19,9 +19,14 @@
 package org.artifactory.search;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import org.apache.commons.lang.StringUtils;
+import org.apache.jackrabbit.util.ISO8601;
 import org.artifactory.api.build.BasicBuildInfo;
+import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchControls;
@@ -53,8 +58,11 @@ import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.Repo;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.search.archive.ArchiveIndexer;
 import org.artifactory.search.archive.ArchiveSearcher;
 import org.artifactory.search.build.BuildSearcher;
@@ -67,6 +75,7 @@ import org.artifactory.search.xml.metadata.MetadataSearcher;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.util.PathMatcher;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.springframework.beans.BeansException;
@@ -81,16 +90,21 @@ import javax.jcr.Session;
 import javax.jcr.query.QueryResult;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author Frederic Simon
  * @author Yoav Landman
  */
 @Service
-@Reloadable(beanClass = InternalSearchService.class,
-        initAfter = {InternalRepositoryService.class})
+@Reloadable(beanClass = InternalSearchService.class, initAfter = {InternalRepositoryService.class})
 public class SearchServiceImpl implements InternalSearchService {
 
     private static final Logger log = LoggerFactory.getLogger(SearchServiceImpl.class);
@@ -103,6 +117,9 @@ public class SearchServiceImpl implements InternalSearchService {
 
     @Autowired
     private AuthorizationService authService;
+
+    @Autowired
+    private CachedThreadPoolTaskExecutor executor;
 
     private InternalArtifactoryContext context;
 
@@ -193,7 +210,8 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
-    public List<Pair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(Calendar from, Calendar to) {
+    public List<Pair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(Calendar from, Calendar to,
+            List<String> reposToSearch) {
         if (from == null && to == null) {
             return Collections.emptyList();
         } else if (from == null) {
@@ -205,15 +223,17 @@ public class SearchServiceImpl implements InternalSearchService {
 
         try {
             // all artifactory files that were created or modified after input date
-            String queryStr =
-                    "/jcr:root/repositories//element(*, " + JcrTypes.NT_ARTIFACTORY_FILE + ") " +
-                            "[(@" + JcrTypes.PROP_ARTIFACTORY_CREATED + " > " + from.getTimeInMillis() +
-                            " or @" + JcrTypes.PROP_ARTIFACTORY_LAST_MODIFIED + " > " + from.getTimeInMillis() + " ) " +
-                            "and " +
-                            "(@" + JcrTypes.PROP_ARTIFACTORY_CREATED + " <= " + to.getTimeInMillis() +
-                            " or @" + JcrTypes.PROP_ARTIFACTORY_LAST_MODIFIED + " <= " + to.getTimeInMillis() + " )]";
+            StringBuilder builder = new StringBuilder("/");
+            addReposToQueryBuilder(reposToSearch, builder);
+            builder.append("/element(*, ").append(JcrTypes.NT_ARTIFACTORY_FILE).append(") [(@").
+                    append(JcrTypes.PROP_ARTIFACTORY_CREATED).append(" > xs:dateTime('").append(ISO8601.format(from)).
+                    append("') or @").append(JcrTypes.PROP_ARTIFACTORY_LAST_MODIFIED).append(" > xs:dateTime('").
+                    append(ISO8601.format(from)).append("') ) and (@").append(JcrTypes.PROP_ARTIFACTORY_CREATED).
+                    append(" <= xs:dateTime('").append(ISO8601.format(to)).append("') or @").
+                    append(JcrTypes.PROP_ARTIFACTORY_LAST_MODIFIED).append(" <= xs:dateTime('").
+                    append(ISO8601.format(to)).append("') )]");
 
-            QueryResult resultXpath = jcrService.executeQuery(JcrQuerySpec.xpath(queryStr).noLimit());
+            QueryResult resultXpath = jcrService.executeQuery(JcrQuerySpec.xpath(builder.toString()).noLimit());
             NodeIterator nodeIterator = resultXpath.getNodes();
             List<Pair<RepoPath, Calendar>> result = Lists.newArrayList();
             while (nodeIterator.hasNext()) {
@@ -224,6 +244,10 @@ public class SearchServiceImpl implements InternalSearchService {
                     modified = fileNode.getProperty(JcrTypes.PROP_ARTIFACTORY_LAST_MODIFIED).getValue().getDate();
                 }
                 RepoPath repoPath = JcrPath.get().getRepoPath(fileNode.getPath());
+                if (!isRangeResultValid(repoPath, reposToSearch)) {
+                    continue;
+                }
+
                 result.add(new Pair<RepoPath, Calendar>(repoPath, modified));
             }
             return result;
@@ -265,6 +289,52 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
+    public Set<String> searchArtifactsByPattern(String pattern)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        if (StringUtils.isBlank(pattern)) {
+            throw new IllegalArgumentException("Unable to search for an empty pattern");
+        }
+
+        pattern = pattern.trim();
+        if (!pattern.contains(":")) {
+            throw new IllegalArgumentException("Pattern must be formatted like [repo-key]:[pattern/to/search/for]");
+        }
+
+        if (pattern.contains("**")) {
+            throw new IllegalArgumentException("Pattern cannot contain the '**' wildcard");
+        }
+
+        String[] patternTokens = StringUtils.split(pattern, ":", 2);
+        String repoKey = patternTokens[0];
+
+        final Repo repo = repoService.repositoryByKey(repoKey);
+
+        if ((repo == null) || (patternTokens.length == 1) || (StringUtils.isBlank(patternTokens[1]))) {
+            return Sets.newHashSet();
+        }
+
+        final String innerPattern = StringUtils.replace(patternTokens[1], "\\", "/");
+
+        final RepoPath repoPath = new RepoPath(repoKey, "");
+
+        Callable<Set<String>> callable = new Callable<Set<String>>() {
+
+            public Set<String> call() throws Exception {
+                Set<String> pathsToReturn = Sets.newHashSet();
+                List<String> patternFragments = Lists.newArrayList(StringUtils.split(innerPattern, "/"));
+                if (repo.isLocal() && (repo.isReal() || repo.isCache())) {
+                    collectLocalRepoItemsRecursively(patternFragments, pathsToReturn, repoPath);
+                } else if (!repo.isLocal() && !repo.isReal()) {
+                    collectVirtualRepoItemsRecursively(patternFragments, pathsToReturn, repoPath);
+                }
+                return pathsToReturn;
+            }
+        };
+
+        Future<Set<String>> future = executor.submit(callable);
+        return future.get(ConstantValues.searchPatternTimeoutSecs.getLong(), TimeUnit.SECONDS);
+    }
+
     private boolean shouldReturnEmptyResults(SearchControls controls) {
         return checkUnauthorized() || controls.isEmpty();
     }
@@ -279,8 +349,8 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     public void init() {
-        if (ConstantValues.forceArchiveIndexing.getBoolean()) {
-            log.info(ConstantValues.forceArchiveIndexing.getPropertyName() +
+        if (ConstantValues.searchForceArchiveIndexing.getBoolean()) {
+            log.info(ConstantValues.searchForceArchiveIndexing.getPropertyName() +
                     " is on: forcing archive indexes recalculation.");
             markArchivesForIndexing(true);
         }
@@ -300,6 +370,10 @@ public class SearchServiceImpl implements InternalSearchService {
         //so we just mark and index on init
         SearchVersion originalVersion = source.getVersion().getSubConfigElementVersion(SearchVersion.class);
         originalVersion.convert(this);
+    }
+
+    public void transactionalIndexMarkedArchives() {
+        indexMarkedArchives();
     }
 
     public void markArchivesForIndexing(boolean force) {
@@ -373,7 +447,7 @@ public class SearchServiceImpl implements InternalSearchService {
     public void index(RepoPath archiveRepoPath) {
         if (!NamingUtils.isJarVariant(archiveRepoPath.getPath())) {
             log.trace("Not indexing non jar variant path '{}' - with mime type '{}'.", archiveRepoPath,
-                    NamingUtils.getContentType(archiveRepoPath.getPath()));
+                    NamingUtils.getMimeType(archiveRepoPath.getPath()));
             return;
         }
 
@@ -401,5 +475,133 @@ public class SearchServiceImpl implements InternalSearchService {
      */
     private InternalSearchService getAdvisedMe() {
         return context.beanForType(InternalSearchService.class);
+    }
+
+    /**
+     * Recursively collect items matching a given pattern from a local repo
+     *
+     * @param patternFragments Accepted pattern fragments
+     * @param pathsToReturn    Result path aggregator
+     * @param repoPath         Repo path to search at
+     */
+    private void collectLocalRepoItemsRecursively(List<String> patternFragments, Set<String> pathsToReturn,
+            RepoPath repoPath) {
+
+        ItemInfo itemInfo = repoService.getItemInfo(repoPath);
+
+        if (!patternFragments.isEmpty()) {
+
+            if (itemInfo.isFolder()) {
+
+                String firstFragment = patternFragments.get(0);
+                if (StringUtils.isBlank(firstFragment)) {
+                    return;
+                }
+
+                for (String childName : repoService.getChildrenNames(repoPath)) {
+
+                    if (patternMatches(firstFragment, childName)) {
+
+                        List<String> fragmentsToPass = Lists.newArrayList(patternFragments);
+                        fragmentsToPass.remove(0);
+                        collectLocalRepoItemsRecursively(fragmentsToPass, pathsToReturn,
+                                new RepoPath(repoPath, childName));
+                    }
+                }
+            }
+        } else if (!itemInfo.isFolder()) {
+            pathsToReturn.add(repoPath.getPath());
+        }
+    }
+
+    /**
+     * Recursively collect items matching a given pattern from a virtual repo
+     *
+     * @param patternFragments Accepted pattern fragments
+     * @param pathsToReturn    Result path aggregator
+     * @param repoPath         Repo path to search at
+     */
+    private void collectVirtualRepoItemsRecursively(List<String> patternFragments, Set<String> pathsToReturn,
+            RepoPath repoPath) {
+
+        VirtualRepoItem itemInfo = repoService.getVirtualRepoItem(repoPath);
+
+        if (!patternFragments.isEmpty()) {
+
+            if (itemInfo.isFolder()) {
+
+                String firstFragment = patternFragments.get(0);
+                if (StringUtils.isBlank(firstFragment)) {
+                    return;
+                }
+
+                for (VirtualRepoItem child : repoService.getVirtualRepoItems(repoPath)) {
+
+                    if (patternMatches(firstFragment, child.getName())) {
+
+                        List<String> fragmentsToPass = Lists.newArrayList(patternFragments);
+                        fragmentsToPass.remove(0);
+                        collectVirtualRepoItemsRecursively(fragmentsToPass, pathsToReturn,
+                                new RepoPath(repoPath, child.getName()));
+                    }
+                }
+            }
+        } else if (!itemInfo.isFolder()) {
+
+            pathsToReturn.add(repoPath.getPath());
+        }
+    }
+
+    /**
+     * Checks if the given repo-relative path matches any of the given accepted patterns
+     *
+     * @param includePattern Accepted pattern
+     * @param path           Repo-relative path to check
+     * @return True if the path matches any of the patterns
+     */
+    private boolean patternMatches(String includePattern, String path) {
+        return PathMatcher.matches(path, Lists.newArrayList(includePattern), PathMatcher.getDefaultExcludes());
+    }
+
+    /**
+     * Appends the provided repo keys to the query builder
+     *
+     * @param repoKeys     Keys of specific repositories to search within
+     * @param queryBuilder Query string builder
+     */
+    private void addReposToQueryBuilder(List<String> repoKeys, StringBuilder queryBuilder) {
+        if ((repoKeys != null) && (!repoKeys.isEmpty())) {
+            queryBuilder.append("jcr:root").append(JcrPath.get().getRepoJcrRootPath()).append("/").
+                    append(". [");
+
+            Iterator<String> iterator = repoKeys.iterator();
+            while (iterator.hasNext()) {
+                queryBuilder.append("fn:name() = '").append(iterator.next()).append("'");
+                if (iterator.hasNext()) {
+                    queryBuilder.append(" or ");
+                }
+            }
+
+            queryBuilder.append("]/");
+        }
+    }
+
+    /**
+     * Indicates whether the range query result repo path is valid
+     *
+     * @param repoPath      Repo path of query result
+     * @param reposToSearch Lists of repositories to search within
+     * @return True if the repo path is valid and comes from a local repo
+     */
+    private boolean isRangeResultValid(RepoPath repoPath, List<String> reposToSearch) {
+        if (repoPath == null) {
+            return false;
+        }
+        if ((reposToSearch != null) && !reposToSearch.isEmpty()) {
+            return true;
+        }
+
+        LocalRepo localRepo = repoService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
+        return (localRepo != null) && (!NamingUtils.isChecksum(repoPath.getPath()));
     }
 }

@@ -22,9 +22,11 @@ import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.Lock;
+import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.jfrog.build.api.Build;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -53,7 +55,7 @@ public interface BuildService extends ImportableExportable {
      * @param buildStarted Build started
      * @return Build JSON if parsing succeeded. Empty string if not
      */
-    String getBuildAsJson(String buildName, long buildNumber, String buildStarted);
+    String getBuildAsJson(String buildName, String buildNumber, String buildStarted);
 
     /**
      * Removes all the builds of the given name
@@ -78,7 +80,7 @@ public interface BuildService extends ImportableExportable {
      * @return Build if found. Null if not
      */
     @Lock(transactional = true)
-    Build getBuild(String buildName, long buildNumber, String buildStarted);
+    Build getBuild(String buildName, String buildNumber, String buildStarted);
 
     /**
      * Returns the latest build for the given name and number
@@ -88,7 +90,7 @@ public interface BuildService extends ImportableExportable {
      * @return Latest build if found. Null if not
      */
     @Lock(transactional = true)
-    Build getLatestBuildByNameAndNumber(String buildName, long buildNumber);
+    Build getLatestBuildByNameAndNumber(String buildName, String buildNumber);
 
     /**
      * Locates builds that are named as the given name
@@ -97,6 +99,15 @@ public interface BuildService extends ImportableExportable {
      * @return Set of builds with the given name
      */
     Set<BasicBuildInfo> searchBuildsByName(String buildName);
+
+    /**
+     * Locates builds that are named and numbered as the given name and number
+     *
+     * @param buildName   Name of builds to locate
+     * @param buildNumber Number of builds to locate
+     * @return Set of builds with the given name
+     */
+    Set<BasicBuildInfo> searchBuildsByNameAndNumber(String buildName, String buildNumber);
 
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);
@@ -110,4 +121,20 @@ public interface BuildService extends ImportableExportable {
      * @return URL if exists, form of blank string if not
      */
     String getBuildCiServerUrl(BasicBuildInfo basicBuildInfo) throws IOException;
+
+    /**
+     * Moves or copies build artifacts and\or dependencies
+     *
+     * @param move           True if the items should be moved. False if they should be copied
+     * @param basicBuildInfo Basic info of the selected build
+     * @param targetRepoKey  Key of target repository to move to
+     * @param artifacts      True if the build artifacts should be moved\copied
+     * @param dependencies   True if the build dependencies should be moved\copied
+     * @param scopes         Scopes of dependencies to copy (agnostic if null or empty)
+     * @param dryRun         True if the action should run dry (simulate)
+     * @return Result of action
+     */
+    @Lock(transactional = true)
+    MoveCopyResult moveOrCopyBuildItems(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
+            boolean artifacts, boolean dependencies, List<String> scopes, boolean dryRun);
 }

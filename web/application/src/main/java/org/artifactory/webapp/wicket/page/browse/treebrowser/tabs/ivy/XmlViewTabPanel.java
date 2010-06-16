@@ -31,7 +31,7 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
-import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.ivy.IvyService;
 import org.artifactory.webapp.actionable.FileActionable;
 
@@ -59,7 +59,7 @@ public class XmlViewTabPanel extends Panel {
         }
         TitledBorder xmlBorder = xmlType.getTabBorder();
         add(xmlBorder);
-        xmlBorder.add(new SyntaxHighlighter("content", getContent(repoItem), Syntax.xml));
+        xmlBorder.add(WicketUtils.getSyntaxHighlighter("content", getContent(repoItem), Syntax.xml));
     }
 
     private void addDependencySection(FileActionable item) {
@@ -74,7 +74,7 @@ public class XmlViewTabPanel extends Panel {
             buildModuleContent(sb, descriptor);
         }
         String content = sb.toString();
-        moduleBorder.add(new SyntaxHighlighter("moduleContent", content, Syntax.xml));
+        moduleBorder.add(WicketUtils.getSyntaxHighlighter("moduleContent", content, Syntax.xml));
         add(moduleBorder);
     }
 

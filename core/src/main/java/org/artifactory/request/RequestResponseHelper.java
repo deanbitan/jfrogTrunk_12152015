@@ -105,7 +105,7 @@ public final class RequestResponseHelper {
     public void sendNotModifiedResponse(ArtifactoryResponse response, RepoResource res) throws IOException {
         log.debug("{}: Sending NOT-MODIFIED response", res.toString());
         updateResponseFromRepoResource(response, res);
-        response.sendError(HttpStatus.SC_NOT_MODIFIED, null, log);
+        response.setStatus(HttpStatus.SC_NOT_MODIFIED);
     }
 
     /**

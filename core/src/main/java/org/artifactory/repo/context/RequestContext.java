@@ -19,6 +19,7 @@
 package org.artifactory.repo.context;
 
 import org.artifactory.api.md.Properties;
+import org.artifactory.api.request.ArtifactoryRequest;
 
 /**
  * Request context that might be passed to the repository when requesting for info.
@@ -33,4 +34,6 @@ public interface RequestContext {
     String getServletContextUrl();
 
     Properties getProperties();
+
+    ArtifactoryRequest getRequest();
 }

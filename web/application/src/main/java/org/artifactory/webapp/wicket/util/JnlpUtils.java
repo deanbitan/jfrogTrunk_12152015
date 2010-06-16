@@ -21,7 +21,7 @@ package org.artifactory.webapp.wicket.util;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
@@ -52,7 +52,7 @@ public class JnlpUtils {
 
     public static boolean isJavaFxApplet(String jnlpContent) {
         try {
-            Document document = XmlConverterUtils.parse(jnlpContent);
+            Document document = XmlUtils.parse(jnlpContent);
             Element root = document.getRootElement();
             Element appletDesc = root.getChild("applet-desc");
             if (appletDesc != null) {
@@ -96,7 +96,7 @@ public class JnlpUtils {
         private final String scriptSnippet;
 
         private AppletInfo(String jnlpContent, String jnlpHref) {
-            Document document = XmlConverterUtils.parse(jnlpContent);
+            Document document = XmlUtils.parse(jnlpContent);
             Element root = document.getRootElement();
             Element appletDesc = root.getChild("applet-desc");
             appletName = appletDesc.getAttributeValue("name");

@@ -17,36 +17,47 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<!DOCTYPE Repository PUBLIC "-//The Apache Software Foundation//DTD Jackrabbit 1.6//EN"
-        "http://jackrabbit.apache.org/dtd/repository-1.6.dtd">
+<!DOCTYPE Repository PUBLIC "-//The Apache Software Foundation//DTD Jackrabbit 2.0//EN"
+        "http://jackrabbit.apache.org/dtd/repository-2.0.dtd">
 
 <Repository>
+
+    <!-- PostgreSQL Datasource -->
+    <DataSources>
+        <DataSource name="ds">
+            <!-- Leave this on "postgresql" -->
+            <param name="databaseType" value="postgresql"/>
+            <param name="driver" value="org.postgresql.Driver"/>
+            <param name="url" value="jdbc:postgresql://localhost:5432/artifactory"/>
+            <param name="user" value="artifactory_user"/>
+            <param name="password" value="password"/>
+            <!--<param name="validationQuery" value=""/>-->
+            <!-- Unlimited when not specified -->
+            <!--<param name="maxPoolSize" value="80"/>-->
+        </DataSource>
+    </DataSources>
+
     <!--
         virtual file system where the repository stores global state
         (e.g. registered namespaces, custom node types, etc.)
     -->
 
-    <!-- PostgreSQL Filesystem -->
+    <!-- PostgreSQL File System -->
     <FileSystem class="org.apache.jackrabbit.core.fs.db.DbFileSystem">
-        <param name="driver" value="org.postgresql.Driver"/>
-        <param name="url" value="jdbc:postgresql://localhost:5432/artifactory"/>
-        <param name="user" value="artifactory_user"/>
-        <param name="password" value="password"/>
-        <param name="schema" value="postgresql"/>
+        <param name="dataSourceName" value="ds"/>
+        <param name="schemaObjectPrefix" value="rep_"/>
+        <!--<param name="schema" value=""/>-->
     </FileSystem>
 
     <!-- http://wiki.apache.org/jackrabbit/DataStore -->
 
     <!-- PostgreSQL Datastore -->
     <DataStore class="org.artifactory.jcr.jackrabbit.ArtifactoryDbDataStoreImpl">
-        <param name="url" value="jdbc:postgresql://localhost:5432/artifactory"/>
-        <param name="tablePrefix" value=""/>
-        <param name="user" value="artifactory_user"/>
-        <param name="password" value="password"/>
-        <param name="databaseType" value="postgresql"/>
-        <param name="driver" value="org.postgresql.Driver"/>
+        <param name="dataSourceName" value="ds"/>
+        <param name="schemaObjectPrefix" value="ds_"/>
+        <!--<param name="tablePrefix" value=""/>-->
+
         <param name="minRecordLength" value="512"/>
-        <param name="maxConnections" value="15"/>
         <!-- Whether to use a cache blobs temporarily on the file system for faster reads -->
         <param name="cacheBlobs" value="true"/>
         <!-- The maximum size of the blobs cache in gigabytes (g), megabytes (m) or kilobytes (k) -->
@@ -84,10 +95,8 @@
         -->
 
         <!-- PostgreSQL Persistence Manager -->
-        <PersistenceManager class="org.apache.jackrabbit.core.persistence.bundle.PostgreSQLPersistenceManager">
-            <param name="url" value="jdbc:postgresql://localhost:5432/artifactory"/>
-            <param name="user" value="artifactory_user"/>
-            <param name="password" value="password"/>
+        <PersistenceManager class="org.apache.jackrabbit.core.persistence.pool.PostgreSQLPersistenceManager">
+            <param name="dataSourceName" value="ds"/>
             <param name="schemaObjectPrefix" value="${wsp.name}_"/>
             <param name="bundleCacheSize" value="16"/>
             <param name="errorHandling" value="IGN_MISSING_BLOBS"/>
@@ -181,8 +190,6 @@
             <param name="extractorBackLogSize" value="500"/>
             <!-- Indexing configuration -->
             <param name="indexingConfiguration" value="${rep.home}/index/index_config.xml"/>
-            <!-- Custom text extractor -->
-            <param name="textFilterClasses" value="org.artifactory.jcr.extractor.ArtifactoryTextExtractor"/>
             <!-- Workspace inconsistency handler -->
             <param name="onWorkspaceInconsistency" value="lenient"/>
         </SearchIndex>

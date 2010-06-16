@@ -28,11 +28,13 @@ public class CompoundVersionDetails {
     private final ArtifactoryVersion version;
     private final String versionName;
     private final String revision;
+    private final long timestamp;
 
-    public CompoundVersionDetails(ArtifactoryVersion version, String versionName, String revision) {
+    public CompoundVersionDetails(ArtifactoryVersion version, String versionName, String revision, long timestamp) {
         this.version = version;
         this.versionName = versionName;
         this.revision = revision;
+        this.timestamp = timestamp;
     }
 
     /**
@@ -54,6 +56,13 @@ public class CompoundVersionDetails {
      */
     public String getRevision() {
         return revision;
+    }
+
+    /**
+     * @return Artifactory release timestamp
+     */
+    public long getTimestamp() {
+        return timestamp;
     }
 
     public boolean isCurrent() {

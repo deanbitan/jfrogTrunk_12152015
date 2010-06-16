@@ -33,6 +33,8 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
     // set this flag to true if Artifactory should mark uploaded artifacts with trusted checksums mark
     private boolean trustServerChecksums;
 
+    private boolean forceDownloadIfNewer;
+
     public InternalArtifactoryRequest(RepoPath repoPath) {
         setRepoPath(repoPath);
     }
@@ -110,9 +112,20 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         return trustServerChecksums;
     }
 
+    public boolean isForceDownloadIfNewer() {
+        return forceDownloadIfNewer;
+    }
+
+    public void setForceDownloadIfNewer(boolean forceDownloadIfNewer) {
+        this.forceDownloadIfNewer = forceDownloadIfNewer;
+    }
+
     public String getParameter(String name) {
         if (SKIP_JAR_INDEXING.equals(name)) {
             return String.valueOf(skipJarIndexing);
+        }
+        if (FORCE_DOWNLOAD_IF_NEWER.equals(name)) {
+            return String.valueOf(forceDownloadIfNewer);
         }
         return null;
     }

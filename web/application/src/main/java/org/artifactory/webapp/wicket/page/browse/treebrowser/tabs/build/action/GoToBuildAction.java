@@ -53,7 +53,7 @@ public class GoToBuildAction extends ItemAction {
     public void onAction(ItemEvent e) {
         PageParameters pageParameters = new PageParameters();
         pageParameters.put(BuildBrowserConstants.BUILD_NAME, basicBuildInfo.getName());
-        pageParameters.put(BuildBrowserConstants.BUILD_NUMBER, Long.toString(basicBuildInfo.getNumber()));
+        pageParameters.put(BuildBrowserConstants.BUILD_NUMBER, basicBuildInfo.getNumber());
         pageParameters.put(BuildBrowserConstants.BUILD_STARTED, basicBuildInfo.getStarted());
         pageParameters.put(BuildBrowserConstants.MODULE_ID, moduleId);
         RequestCycle.get().setResponsePage(BuildBrowserRootPage.class, pageParameters);

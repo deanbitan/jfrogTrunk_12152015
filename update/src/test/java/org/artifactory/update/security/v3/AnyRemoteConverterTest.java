@@ -20,7 +20,7 @@ package org.artifactory.update.security.v3;
 
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.security.SecurityConverterTest;
-import org.artifactory.version.XmlConverterUtils;
+import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
@@ -45,7 +45,7 @@ public class AnyRemoteConverterTest extends SecurityConverterTest {
         String fileMetadata = "/security/v3/security.xml";
         Document doc = convertXml(fileMetadata, new AnyRemoteConverter());
 
-        log.debug(XmlConverterUtils.outputString(doc));
+        log.debug(XmlUtils.outputString(doc));
 
         Element root = doc.getRootElement();
         Element aclsElement = root.getChild("acls");
@@ -69,7 +69,7 @@ public class AnyRemoteConverterTest extends SecurityConverterTest {
         String fileMetadata = "/security/v3/security-no-anything-permissions.xml";
         Document doc = convertXml(fileMetadata, new AnyRemoteConverter());
 
-        log.debug(XmlConverterUtils.outputString(doc));
+        log.debug(XmlUtils.outputString(doc));
 
         Element root = doc.getRootElement();
         Element aclsElement = root.getChild("acls");

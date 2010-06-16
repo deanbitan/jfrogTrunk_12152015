@@ -60,17 +60,15 @@ public abstract class XmlSearcherBase<T extends MetadataSearchResult> extends Se
         }
         queryBuilder.append(xPath);
 
-        if (StringUtils.isNotBlank(metadataValue)) {
-            /**
-             * If no manual attribute was defined. then we are looking at a standard XML node, otherwise we are looking
-             * for the property directly on the last specified node if the xpath
-             */
-            if (indexOfAt == -1) {
-                queryBuilder.append("/element(*, ").append(JcrConstants.NT_UNSTRUCTURED).append(") ");
-            }
-
-            addFuncExp(queryBuilder, attributeName, metadataValue);
+        /**
+         * If no manual attribute was defined. then we are looking at a standard XML node, otherwise we are looking
+         * for the property directly on the last specified node if the xpath
+         */
+        if (indexOfAt == -1) {
+            queryBuilder.append("/element(*, ").append(JcrConstants.NT_UNSTRUCTURED).append(") ");
         }
+
+        addFuncExp(queryBuilder, attributeName, metadataValue);
 
         QueryResult queryResult = performQuery(controls.isLimitSearchResults(), queryBuilder.toString());
         return filterAndReturnResults(controls, queryResult);
@@ -103,11 +101,15 @@ public abstract class XmlSearcherBase<T extends MetadataSearchResult> extends Se
      */
     protected void addFuncExp(StringBuilder queryBuilder, String attributeName, String valueToSearchFor) {
         queryBuilder.append("[");
-        if (inputContainsWildCard(valueToSearchFor)) {
-            queryBuilder.append("jcr:contains(@").append(attributeName).append(", '").append(valueToSearchFor).
-                    append("')");
+        if (StringUtils.isNotBlank(valueToSearchFor)) {
+            if (inputContainsWildCard(valueToSearchFor)) {
+                queryBuilder.append("jcr:contains(@").append(attributeName).append(", '").append(valueToSearchFor).
+                        append("')");
+            } else {
+                queryBuilder.append("@").append(attributeName).append(" = '").append(valueToSearchFor).append("'");
+            }
         } else {
-            queryBuilder.append("@").append(attributeName).append(" = '").append(valueToSearchFor).append("'");
+            queryBuilder.append("@").append(attributeName);
         }
         queryBuilder.append("]");
     }

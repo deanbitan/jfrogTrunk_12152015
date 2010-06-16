@@ -6,7 +6,12 @@
                 DomUtils.bindHeight(tabPanel, function(docHeight) {
                     return Math.max(50, docHeight - 335);
                 });
-            }
+                if (Tab.onResize) {
+                    Tab.onResize();
+                }
+            },
+
+            onResize: null
         };
         dojo.connect(window, 'onresize', Tab.fixHeight);
     </script>

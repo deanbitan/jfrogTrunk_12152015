@@ -23,7 +23,6 @@ dojo.require('dojo.parser');
 
 dojo.declare('artifactory.Tooltip', dijit.Tooltip, {
     postCreate: function() {
-        //alert(dijit._masterTT)
         if (!dijit._masterTT) {
             dijit._masterTT = new dijit._MasterTooltip();
         }

@@ -19,6 +19,7 @@
 package org.artifactory.search.deployable;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO9075;
 import org.artifactory.api.fs.DeployableUnit;
@@ -35,8 +36,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.QueryResult;
-import javax.jcr.query.RowIterator;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Holds the deployable unit search logic
@@ -63,11 +63,9 @@ public class DeployableUnitSearcher extends SearcherBase<DeployableUnitSearchCon
                 append(") [jcr:contains(@").append(JcrTypes.PROP_ARTIFACTORY_NAME).append(", '*.pom')]");
 
         QueryResult queryResult = performQuery(controls.isLimitSearchResults(), queryBuilder.toString());
-        List<DeployableUnitSearchResult> results = Lists.newArrayList();
-        RowIterator rows = queryResult.getRows();
-
+        Set<DeployableUnitSearchResult> results = Sets.newHashSet();
+        NodeIterator nodeIterator = queryResult.getNodes();
         try {
-            NodeIterator nodeIterator = queryResult.getNodes();
             while (nodeIterator.hasNext()) {
                 Node node = nodeIterator.nextNode();
                 // this is the parent node of the pom files - the version folder
@@ -79,6 +77,6 @@ public class DeployableUnitSearcher extends SearcherBase<DeployableUnitSearchCon
         } catch (RepositoryException re) {
             handleNotFoundException(re);
         }
-        return new SearchResults<DeployableUnitSearchResult>(results, rows.getSize());
+        return new SearchResults<DeployableUnitSearchResult>(Lists.newArrayList(results), nodeIterator.getSize());
     }
 }

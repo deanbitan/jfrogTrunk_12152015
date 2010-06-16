@@ -65,11 +65,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import java.io.*;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -239,7 +235,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         info.setCreatedBy(getAuthorizationService().currentUsername());
         info.setModifiedBy(getAuthorizationService().currentUsername());
         info.setSize(file.length());
-        MimeType ct = NamingUtils.getContentType(file.getName());
+        MimeType ct = NamingUtils.getMimeType(file.getName());
         String actualMimeType = ct.getType();
         info.setMimeType(actualMimeType);
     }
@@ -511,7 +507,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         Node resourceNode = getJcrRepoService().getOrCreateNode(node, JCR_CONTENT, NT_RESOURCE);
         String name = getName();
         FileInfo info = getInfo();
-        MimeType ct = NamingUtils.getContentType(name);
+        MimeType ct = NamingUtils.getMimeType(name);
         info.setMimeType(ct.getType());
         /**
          * If it is an XML document save the XML in memory since marking does not always work on the remote stream, and

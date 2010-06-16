@@ -87,7 +87,7 @@ public class MetadataReaderImpl implements MetadataReader {
         }
         MimeType type = null;
         if (extension != null) {
-            type = NamingUtils.getContentTypeByExtension(extension);
+            type = NamingUtils.getMimeTypeByExtension(extension);
         }
         if (type == null || !type.isXml()) {
             //Sanity check

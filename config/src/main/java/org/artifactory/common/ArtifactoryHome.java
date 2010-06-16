@@ -47,11 +47,13 @@ public class ArtifactoryHome {
     public static final String ARTIFACTORY_CONFIG_BOOTSTRAP_FILE = "artifactory.config.bootstrap.xml";
     public static final String ARTIFACTORY_SYSTEM_PROPERTIES_FILE = "artifactory.system.properties";
     public static final String ARTIFACTORY_PROPERTIES_FILE = "artifactory.properties";
+    public static final String ARTIFACTORY_JCR_CONFIG_DIR_DEFAULT = "repo/default";
     public static final String ARTIFACTORY_JCR_FILE = "repo.xml";
     public static final String LOGBACK_CONFIG_FILE_NAME = "logback.xml";
     public static final String MIME_TYPES_FILE_NAME = "mimetypes.xml";
 
-    private static final InheritableThreadLocal<ArtifactoryHome> current = new InheritableThreadLocal<ArtifactoryHome>();
+    private static final InheritableThreadLocal<ArtifactoryHome> current =
+            new InheritableThreadLocal<ArtifactoryHome>();
 
     private CompoundVersionDetails runningVersion;
     private CompoundVersionDetails originalStorageVersion;
@@ -381,20 +383,29 @@ public class ArtifactoryHome {
         artifactorySystemProperties.loadArtifactorySystemProperties(systemPropertiesFile, artifactoryPropertiesFile);
     }
 
-    private void initAndLoadMimeTypes() {
+    public void initAndLoadMimeTypes() {
         File mimeTypesFile = new File(etcDir, MIME_TYPES_FILE_NAME);
         if (!mimeTypesFile.exists()) {
             // Copy default mime types configuration file
             try {
                 URL configUrl = ArtifactoryHome.class.getResource("/META-INF/default/" + MIME_TYPES_FILE_NAME);
                 FileUtils.copyURLToFile(configUrl, mimeTypesFile);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 // we might not have the logger configuration yet - use System.err
-                System.err.printf("Could not create default %s into %s\n", MIME_TYPES_FILE_NAME, mimeTypesFile);
+                System.err.printf("Could not copy default %s into %s\n", MIME_TYPES_FILE_NAME, mimeTypesFile);
                 e.printStackTrace();
             }
         }
-        mimeTypes = new MimeTypesReader().read(mimeTypesFile);
+
+        if (!mimeTypesFile.exists()) {
+            throw new RuntimeException(
+                    "Couldn't start Artifactory. Mime types file is missing: " + mimeTypesFile.getAbsolutePath());
+        }
+        try {
+            mimeTypes = new MimeTypesReader().read(mimeTypesFile);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse mime types file from: " + mimeTypesFile.getAbsolutePath(), e);
+        }
     }
 
     private static void checkWritableDirectory(File dir) {

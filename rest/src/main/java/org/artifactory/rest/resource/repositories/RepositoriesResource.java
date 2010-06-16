@@ -45,7 +45,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -119,13 +118,13 @@ public class RepositoriesResource {
     @Consumes("application/x-www-form-urlencoded")
     public void importRepositories(
             //The base path to import from (may contain a single repo or multiple repos with named sub folders
-            @FormParam(RepositoriesRestConstants.PATH) String path,
+            @QueryParam(RepositoriesRestConstants.PATH) String path,
             //Empty/null repo -> all
-            @FormParam(RepositoriesRestConstants.TARGET_REPO) String targetRepo,
+            @QueryParam(RepositoriesRestConstants.TARGET_REPO) String targetRepo,
             //Include metadata - default 1
-            @FormParam(RepositoriesRestConstants.INCLUDE_METADATA) String includeMetadata,
+            @QueryParam(RepositoriesRestConstants.INCLUDE_METADATA) String includeMetadata,
             //Verbose - default 0
-            @FormParam(RepositoriesRestConstants.VERBOSE) String verbose) throws IOException {
+            @QueryParam(RepositoriesRestConstants.VERBOSE) String verbose) throws IOException {
         StreamStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
         String repoNameToImport = targetRepo;
         if (StringUtils.isBlank(repoNameToImport)) {
