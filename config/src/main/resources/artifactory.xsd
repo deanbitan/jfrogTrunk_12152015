@@ -1240,7 +1240,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="name" type="xs:ID">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        A unique name identifying the proprty set.
+                        A unique name identifying the property set.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

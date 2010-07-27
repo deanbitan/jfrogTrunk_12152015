@@ -19,7 +19,7 @@
 package org.artifactory.security.ldap;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.security.LdapService;
 import org.artifactory.api.security.LdapUser;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
@@ -49,8 +49,8 @@ import static org.apache.commons.lang.StringUtils.isBlank;
 public class LdapServiceImpl extends AbstractLdapService implements LdapService {
     private static final Logger log = LoggerFactory.getLogger(LdapServiceImpl.class);
 
-    public StatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
-        StatusHolder status = new StatusHolder();
+    public MultiStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
+        MultiStatusHolder status = new MultiStatusHolder();
         try {
             LdapContextSource securityContext =
                     ArtifactoryLdapAuthenticator.createSecurityContext(ldapSetting);
@@ -59,6 +59,12 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(username, password);
             authenticator.authenticate(authentication);
+            LdapUser ldapUser = getDnFromUserName(ldapSetting, username);
+            if (ldapUser == null) {
+                status.setWarning(
+                        "LDAP user search failed, LDAP queries concerning users and groups may not be available",
+                        log);
+            }
             status.setStatus("Successfully connected and authenticated the test user", log);
         } catch (Exception e) {
             SearchPattern pattern = ldapSetting.getSearch();

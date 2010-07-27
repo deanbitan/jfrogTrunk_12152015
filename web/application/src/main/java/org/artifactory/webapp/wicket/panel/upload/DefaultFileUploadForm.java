@@ -22,6 +22,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.lang.Bytes;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.wicket.behavior.SubmitOnceBehavior;
 import org.artifactory.common.wicket.panel.upload.FileUploadForm;
 import org.artifactory.common.wicket.panel.upload.UploadListener;
 
@@ -37,6 +38,8 @@ public class DefaultFileUploadForm extends FileUploadForm {
 
     public DefaultFileUploadForm(String name, UploadListener listener) {
         super(name, ContextHelper.get().getArtifactoryHome().getTmpUploadsDir().getAbsolutePath(), listener);
+        add(new SubmitOnceBehavior());
+
         //Set maximum upload size
         int uploadMaxSizeMb = centralConfig.getDescriptor().getFileUploadMaxSizeMb();
         if (uploadMaxSizeMb > 0) {

@@ -22,10 +22,10 @@ package org.artifactory.webapp.servlet;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.md.Properties;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.HttpUtils;
@@ -104,7 +104,7 @@ public class RequestUtils {
         //Support repository-level metadata requests
         repoPrefix = NamingUtils.stripMetadataFromPath(repoPrefix);
         //Strip any matrix params
-        int paramsIdx = repoPrefix.indexOf(ArtifactoryRequest.MATRIX_PARAMS_SEP);
+        int paramsIdx = repoPrefix.indexOf(Properties.MATRIX_PARAMS_SEP);
         if (paramsIdx > 0) {
             repoPrefix = repoPrefix.substring(0, paramsIdx);
         }

@@ -112,6 +112,8 @@ public interface BuildService extends ImportableExportable {
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);
 
+    Set<String> findScopes(Build build);
+
     void importFrom(ImportSettings settings);
 
     /**
@@ -137,4 +139,12 @@ public interface BuildService extends ImportableExportable {
     @Lock(transactional = true)
     MoveCopyResult moveOrCopyBuildItems(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
             boolean artifacts, boolean dependencies, List<String> scopes, boolean dryRun);
+
+    /**
+     * Renames the JCR structure and content of build info objects
+     *
+     * @param from Name to replace
+     * @param to   Replacement build name
+     */
+    void renameBuilds(String from, String to);
 }

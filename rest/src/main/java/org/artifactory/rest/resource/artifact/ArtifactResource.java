@@ -39,12 +39,14 @@ import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.rest.artifact.FileList;
+import org.artifactory.api.rest.artifact.ItemLastModified;
 import org.artifactory.api.rest.artifact.ItemMetadata;
 import org.artifactory.api.rest.artifact.ItemMetadataNames;
 import org.artifactory.api.rest.artifact.ItemProperties;
 import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
 import org.artifactory.api.rest.artifact.RestFileInfo;
 import org.artifactory.api.rest.artifact.RestFolderInfo;
+import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -54,6 +56,7 @@ import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.util.DoesNotExistException;
 import org.artifactory.util.HttpUtils;
+import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -72,6 +75,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -93,6 +97,9 @@ public class ArtifactResource {
     @Context
     private HttpServletResponse response;
 
+    @Context
+    private HttpHeaders requestHeaders;
+
     @Autowired
     private AddonsManager addonsManager;
 
@@ -101,25 +108,29 @@ public class ArtifactResource {
 
     @GET
     @Path("{path: .+}")
-    @Produces({MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_METADATA_NAMES, MT_ITEM_PROPERTIES, MT_ITEM_METADATA,
-            MT_FILE_LIST})
+    @Produces({MediaType.APPLICATION_JSON, MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_METADATA_NAMES, MT_ITEM_PROPERTIES,
+            MT_ITEM_METADATA, MT_FILE_LIST, MT_ITEM_LAST_MODIFIED})
     public Object getStorageInfo(@PathParam("path") String path,
             @QueryParam("mdns") String mdns,
             @QueryParam("md") StringList md,
             @QueryParam("list") String list,
             @QueryParam("deep") int deep,
-            @QueryParam("properties") StringList properties) throws IOException {
+            @QueryParam("properties") StringList properties,
+            @QueryParam("lastModified") String lastModified) throws IOException {
 
         //Divert to file list request if the list param is mentioned
         if (list != null) {
             return Response.ok(getFileList(path, deep), MT_FILE_LIST).build();
         }
 
-        String accept = request.getHeader(HttpHeaders.ACCEPT);
-        boolean acceptAny = MediaType.WILDCARD.equals(accept) || StringUtils.isBlank(accept);
+        if (lastModified != null) {
+            return getLastModified(path);
+        }
+
+        List<MediaType> acceptableMediaTypes = requestHeaders.getAcceptableMediaTypes();
         if (isItemMetadataNameRequest(mdns, md, properties)) {
             //get all metadata names on requested path
-            if (acceptAny || MT_ITEM_METADATA_NAMES.equals(accept)) {
+            if (matches(acceptableMediaTypes, MT_ITEM_METADATA_NAMES)) {
                 ItemMetadataNames res = getItemMetadataNames(path, mdns);
                 return Response.ok(res, MT_ITEM_METADATA_NAMES).build();
             } else {
@@ -127,7 +138,7 @@ public class ArtifactResource {
             }
         } else if (isItemMetadataRequest(mdns, md)) {
             //get metadata storage info on requested specific metadata - DEPRECATED
-            if (acceptAny || MT_ITEM_METADATA.equals(accept)) {
+            if (matches(acceptableMediaTypes, MT_ITEM_METADATA)) {
                 ItemMetadata res = getItemMetadata(path, md);
                 return Response.ok(res, MT_ITEM_METADATA).build();
             } else {
@@ -135,7 +146,7 @@ public class ArtifactResource {
             }
         } else if (properties != null && !properties.isEmpty()) {
             // get property storage info on the requested specific property
-            if (acceptAny || MT_ITEM_PROPERTIES.equals(accept)) {
+            if (matches(acceptableMediaTypes, MT_ITEM_PROPERTIES)) {
                 ItemProperties res = getItemProperties(path, properties);
                 return Response.ok(res, MT_ITEM_PROPERTIES).build();
             } else {
@@ -143,8 +154,19 @@ public class ArtifactResource {
             }
         } else {
             //get folderInfo or FileInfo on requested path
-            return processStorageInfoRequest(acceptAny, accept, path);
+            return processStorageInfoRequest(acceptableMediaTypes, path);
         }
+    }
+
+    private boolean matches(List<MediaType> acceptableMediaTypes, String mediaType) {
+        MediaType mt = MediaType.valueOf(mediaType);
+        for (MediaType amt : acceptableMediaTypes) {
+            // accept any compatible media type and if the user specified application/json
+            if (mt.isCompatible(amt) || MediaType.APPLICATION_JSON_TYPE.equals(amt)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -169,6 +191,33 @@ public class ArtifactResource {
         } catch (Exception e) {
             response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "An error occurred while retrieving file list: " +
                     e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the highest last modified value of the given file or folder (recursively)
+     *
+     * @param path Repo path to search in
+     * @return Latest modified item
+     */
+    private Response getLastModified(String path) throws IOException {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        try {
+            ItemInfo itemInfo = restAddon.getLastModified(path);
+            String uri = RestUtils.buildStorageInfoUri(request, itemInfo.getRepoKey(), itemInfo.getRelPath());
+            ItemLastModified itemLastModified = new ItemLastModified(uri,
+                    DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").print(itemInfo.getLastModified()));
+
+            return Response.ok(itemLastModified, MT_ITEM_LAST_MODIFIED).
+                    lastModified(new Date(itemInfo.getLastModified())).build();
+        } catch (IllegalArgumentException iae) {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+        } catch (ItemNotFoundRuntimeException infre) {
+            response.sendError(HttpStatus.SC_NOT_FOUND, infre.getMessage());
+        } catch (AuthorizationException ae) {
+            response.sendError(HttpStatus.SC_UNAUTHORIZED, ae.getMessage());
         }
 
         return null;
@@ -256,7 +305,7 @@ public class ArtifactResource {
         return null;
     }
 
-    private Response processStorageInfoRequest(boolean acceptAny, String accept, String requestPath)
+    private Response processStorageInfoRequest(List<MediaType> acceptableMediaTypes, String requestPath)
             throws IOException {
         RepoPath repoPath = RestUtils.calcRepoPathFromRequestPath(requestPath);
         String repoKey = repoPath.getRepoKey();
@@ -286,14 +335,14 @@ public class ArtifactResource {
         // from a virtual repository
         storageInfoRest.repo = repoKey;
         if (itemInfo.isFolder()) {
-            if (acceptAny || MT_FOLDER_INFO.equals(accept)) {
+            if (matches(acceptableMediaTypes, MT_FOLDER_INFO)) {
                 return Response.ok(storageInfoRest, MT_FOLDER_INFO).build();
             } else {
                 return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
 
             }
         } else {
-            if (acceptAny || MT_FILE_INFO.equals(accept)) {
+            if (matches(acceptableMediaTypes, MT_FILE_INFO)) {
                 return Response.ok(storageInfoRest, MT_FILE_INFO).build();
             } else {
                 return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();

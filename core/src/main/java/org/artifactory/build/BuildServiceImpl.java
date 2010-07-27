@@ -18,6 +18,7 @@
 
 package org.artifactory.build;
 
+import com.gc.iotools.stream.is.InputStreamFromOutputStream;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.XStream;
@@ -28,6 +29,7 @@ import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
+import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.ImportableExportableBuild;
 import org.artifactory.api.cache.ArtifactoryCache;
@@ -59,16 +61,20 @@ import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.fs.FileInfoProxy;
 import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.version.CompoundVersionDetails;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
+import org.jfrog.build.api.Dependency;
 import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,13 +86,12 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
@@ -112,6 +117,9 @@ public class BuildServiceImpl implements InternalBuildService {
     private static final String EXPORTABLE_BUILD_VERSION = "v1";
 
     @Autowired
+    private AddonsManager addonsManager;
+
+    @Autowired
     private AuthorizationService authorizationService;
 
     @Autowired
@@ -124,10 +132,10 @@ public class BuildServiceImpl implements InternalBuildService {
     private JcrService jcrService;
 
     @Autowired
-    private InternalSearchService searchService;
+    private MetadataDefinitionService metadataDefinitionService;
 
     @Autowired
-    private MetadataDefinitionService metadataDefinitionService;
+    private InternalSearchService searchService;
 
     /**
      * Keep a cache for each type of checksums because we can get requests for different types of checksum for the same
@@ -154,10 +162,11 @@ public class BuildServiceImpl implements InternalBuildService {
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
-    public void addBuild(Build build) {
+    public void addBuild(final Build build) {
         String buildName = build.getName();
         String escapedBuildName = escapeAndGetJcrCompatibleString(buildName);
         String buildNumber = build.getNumber();
+        String escapedBuildNumber = escapeAndGetJcrCompatibleString(buildNumber);
         String started = build.getStarted();
         String escapedStarted = escapeAndGetJcrCompatibleString(started);
         String currentUser = authorizationService.currentUsername();
@@ -172,24 +181,27 @@ public class BuildServiceImpl implements InternalBuildService {
         Set<String> dependencyChecksums = Sets.newHashSet();
         collectModuleChecksums(build.getModules(), artifactChecksums, dependencyChecksums);
 
-        Node buildNumberNode = createBuildNumberNode(escapedBuildName, buildNumber);
+        Node buildNumberNode = createBuildNumberNode(escapedBuildName, escapedBuildNumber);
 
-        //TODO: [by ys] stream the generated json directly to jcr
-        ByteArrayOutputStream buildOutputStream = new ByteArrayOutputStream();
-        ByteArrayInputStream buildInputStream = null;
+        InputStreamFromOutputStream stream = null;
         try {
-            JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(buildOutputStream);
-            jsonGenerator.writeObject(build);
-            buildInputStream = new ByteArrayInputStream(buildOutputStream.toByteArray());
-            jcrService.setStream(buildNumberNode, escapedStarted, buildInputStream, BuildRestConstants.MT_BUILD_INFO,
-                    currentUser, false);
+            stream = new InputStreamFromOutputStream() {
+
+                @Override
+                protected Object produce(OutputStream outputStream) throws Exception {
+                    JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream);
+                    jsonGenerator.writeObject(build);
+                    return null;
+                }
+            };
+            jcrService.setStream(buildNumberNode, escapedStarted, stream, BuildRestConstants.MT_BUILD_INFO, currentUser,
+                    false);
         } catch (Exception e) {
             String errorMessage = String.format("An error occurred while writing JSON data to the node of build name " +
-                    "'%s', number '%s', started at '%s'.", escapedBuildName, buildNumber, started);
+                    "'%s', number '%s', started at '%s'.", buildName, buildNumber, started);
             throw new RuntimeException(errorMessage, e);
         } finally {
-            IOUtils.closeQuietly(buildOutputStream);
-            IOUtils.closeQuietly(buildInputStream);
+            IOUtils.closeQuietly(stream);
         }
 
         Node buildStartedNode = jcrService.getOrCreateUnstructuredNode(buildNumberNode, escapedStarted);
@@ -198,7 +210,7 @@ public class BuildServiceImpl implements InternalBuildService {
             saveBuildFileChecksums(buildStartedNode, artifactChecksums, dependencyChecksums);
         } catch (Exception e) {
             String errorMessage = String.format("An error occurred while saving checksum properties on the node of " +
-                    "build name '%s', number '%s', started at '%s'.", escapedBuildName, buildNumber, started);
+                    "build name '%s', number '%s', started at '%s'.", buildName, buildNumber, started);
             throw new RuntimeException(errorMessage, e);
         }
         log.debug("Added info for build '{}' #{}", buildName, buildNumber);
@@ -307,7 +319,8 @@ public class BuildServiceImpl implements InternalBuildService {
 
                 while (buildNumberNodes.hasNext()) {
                     Node buildNumberNode = buildNumberNodes.nextNode();
-                    String buildNumber = buildNumberNode.getName();
+                    String escapedBuildNumber = buildNumberNode.getName();
+                    String buildNumber = unEscapeAndGetJcrCompatibleString(escapedBuildNumber);
 
                     NodeIterator buildStartedNodes = buildNumberNode.getNodes();
 
@@ -410,7 +423,8 @@ public class BuildServiceImpl implements InternalBuildService {
 
                 while (buildNumberNodes.hasNext()) {
                     Node buildNumberNode = buildNumberNodes.nextNode();
-                    String buildNumber = buildNumberNode.getName();
+                    String escapedBuildNumber = buildNumberNode.getName();
+                    String buildNumber = unEscapeAndGetJcrCompatibleString(escapedBuildNumber);
 
                     NodeIterator buildStartedNodes = buildNumberNode.getNodes();
 
@@ -484,7 +498,7 @@ public class BuildServiceImpl implements InternalBuildService {
         MultiStatusHolder multiStatusHolder = settings.getStatusHolder();
 
         String buildName = escapeAndGetJcrCompatibleString(build.getBuildName());
-        String buildNumber = build.getBuildNumber();
+        String buildNumber = escapeAndGetJcrCompatibleString(build.getBuildNumber());
         String buildStarted = escapeAndGetJcrCompatibleString(build.getBuildStarted());
 
         multiStatusHolder.setDebug(
@@ -521,6 +535,22 @@ public class BuildServiceImpl implements InternalBuildService {
         saveBuildFileChecksums(buildStartedNode, build.getArtifactChecksums(), build.getDependencyChecksums());
         multiStatusHolder.setDebug(
                 String.format("Finished import of build: %s:%s:%s", buildName, buildNumber, buildStarted), log);
+    }
+
+    public Set<String> findScopes(Build build) {
+        final Set<String> scopes = Sets.newHashSet();
+        if (build.getModules() != null) {
+            for (Module module : build.getModules()) {
+                if (module.getDependencies() != null) {
+                    for (Dependency dependency : module.getDependencies()) {
+                        if (dependency.getScopes() != null) {
+                            scopes.addAll(dependency.getScopes());
+                        }
+                    }
+                }
+            }
+        }
+        return scopes;
     }
 
     public String getBuildCiServerUrl(BasicBuildInfo basicBuildInfo) throws IOException {
@@ -568,6 +598,32 @@ public class BuildServiceImpl implements InternalBuildService {
         BuildItemMoveCopyHelper itemMoveCopyHelper = new BuildItemMoveCopyHelper();
         return itemMoveCopyHelper.moveOrCopy(move, basicBuildInfo, targetRepoKey, artifacts, dependencies, scopes,
                 dryRun);
+    }
+
+    public void renameBuilds(String from, String to) {
+        Set<BasicBuildInfo> buildsToRename = searchBuildsByName(from);
+        if (buildsToRename.isEmpty()) {
+            log.error("Could not find builds by the name '{}'. No builds were renamed.", from);
+            return;
+        }
+
+        for (BasicBuildInfo buildToRename : buildsToRename) {
+            try {
+                getTransactionalMe().renameBuildContent(buildToRename, to);
+                log.info("Renamed build number '{}' that started at '{}' from '{}' to '{}'.", new String[]{
+                        buildToRename.getNumber(), buildToRename.getStarted(), buildToRename.getName(), to});
+            } catch (Exception e) {
+                log.error("Failed to rename build: '{}' #{} that started at {}.", new String[]{buildToRename.getName(),
+                        buildToRename.getNumber(), buildToRename.getStarted()});
+            }
+        }
+
+        try {
+            getTransactionalMe().renameBuildNode(from, to);
+            log.info("Renamed build node from '{}' to '{}'.", from, to);
+        } catch (Exception e) {
+            log.error("Failed to rename JCR build node from '{}' to '{}'.", from, to);
+        }
     }
 
     private String escapeAndGetJcrCompatibleString(String toEscape) {
@@ -744,14 +800,14 @@ public class BuildServiceImpl implements InternalBuildService {
     /**
      * Gets or creates the build node hierarchy with the given name and number
      *
-     * @param escapedBuildName Escaped name of build
-     * @param buildNumber      Number of build
+     * @param escapedBuildName   Escaped name of build
+     * @param escapedBuildNumber Escaped number of build
      * @return The build number node
      */
-    private Node createBuildNumberNode(String escapedBuildName, String buildNumber) {
+    private Node createBuildNumberNode(String escapedBuildName, String escapedBuildNumber) {
         Node buildsNode = getOrCreateBuildsRootNode();
         Node buildNameNode = jcrService.getOrCreateUnstructuredNode(buildsNode, escapedBuildName);
-        return jcrService.getOrCreateUnstructuredNode(buildNameNode, buildNumber);
+        return jcrService.getOrCreateUnstructuredNode(buildNameNode, escapedBuildNumber);
     }
 
     /**
@@ -776,30 +832,40 @@ public class BuildServiceImpl implements InternalBuildService {
      * @return Build absolute JCR path
      */
     private String getBuildPathFromParams(String buildName, String buildNumber, String buildStarted) {
-        return new StringBuilder().append(JcrPath.get().
-                getBuildsJcrPath(escapeAndGetJcrCompatibleString(buildName))).append("/").append(buildNumber).
-                append("/").append(escapeAndGetJcrCompatibleString(buildStarted)).toString();
+        StringBuilder builder = new StringBuilder().append(
+                JcrPath.get().getBuildsJcrPath(escapeAndGetJcrCompatibleString(buildName)));
+
+        if (StringUtils.isNotBlank(buildNumber)) {
+            String escapedNumber = escapeAndGetJcrCompatibleString(buildNumber);
+            builder.append("/").append(escapedNumber);
+        }
+
+        if (StringUtils.isNotBlank(buildStarted)) {
+            String escapedStarted = escapeAndGetJcrCompatibleString(buildStarted);
+            builder.append("/").append(escapedStarted);
+        }
+        return builder.toString();
     }
 
     /**
      * Get the build at the given JCR path
      *
-     * @param buildPathPath Absolute JCR path
+     * @param buildPath Absolute JCR path
      * @return Build object if found. Null if not
      */
-    private Build getBuild(String buildPathPath) {
+    private Build getBuild(String buildPath) {
         InputStream buildInputStream = null;
         Build build = null;
         try {
-            if (StringUtils.isNotBlank(buildPathPath)) {
-                buildInputStream = jcrService.getStream(buildPathPath);
+            if (StringUtils.isNotBlank(buildPath) && jcrService.itemNodeExists(buildPath)) {
+                buildInputStream = jcrService.getStream(buildPath);
                 JsonParser parser = JacksonFactory.createJsonParser(buildInputStream);
                 ObjectMapper mapper = new ObjectMapper();
                 build = mapper.readValue(parser, Build.class);
             }
         } catch (Exception e) {
-            log.error("Unable to parse build object from the data of '{}': '{}'", buildPathPath, e.getMessage());
-            log.debug("Unable to parse build object from the data of '" + buildPathPath + "'.", e);
+            log.error("Unable to parse build object from the data of '{}': '{}'", buildPath, e.getMessage());
+            log.debug("Unable to parse build object from the data of '" + buildPath + "'.", e);
             build = null;
         } finally {
             IOUtils.closeQuietly(buildInputStream);
@@ -912,7 +978,7 @@ public class BuildServiceImpl implements InternalBuildService {
         ImportableExportableBuild exportedBuild = new ImportableExportableBuild();
         exportedBuild.setVersion(EXPORTABLE_BUILD_VERSION);
         exportedBuild.setBuildName(unEscapeAndGetJcrCompatibleString(buildName));
-        exportedBuild.setBuildNumber(buildNumber);
+        exportedBuild.setBuildNumber(unEscapeAndGetJcrCompatibleString(buildNumber));
         exportedBuild.setBuildStarted(unEscapeAndGetJcrCompatibleString(buildStarted));
 
         String jsonString = jcrService.getString(buildStartedNode.getPath());
@@ -1017,5 +1083,110 @@ public class BuildServiceImpl implements InternalBuildService {
      */
     private InternalBuildService getTransactionalMe() {
         return ContextHelper.get().beanForType(InternalBuildService.class);
+    }
+
+    public void renameBuildNode(String from, String to) throws RepositoryException {
+        String oldNamePath = getBuildPathFromParams(from, null, null);
+
+        Node oldNameNode = jcrService.getNode(oldNamePath);
+        if (oldNameNode == null) {
+            log.error("Could not find a build tree node by the name '{}'. Build node was not renamed.", from);
+            return;
+        }
+
+        String newNamePath = getBuildPathFromParams(to, null, null);
+        Node newNameNode = jcrService.getOrCreateUnstructuredNode(newNamePath);
+
+        NodeIterator oldNumberNodesIterator = oldNameNode.getNodes();
+        while (oldNumberNodesIterator.hasNext()) {
+            Node oldNumberNode = oldNumberNodesIterator.nextNode();
+
+            Node newNumberNode = jcrService.getOrCreateUnstructuredNode(newNameNode, oldNumberNode.getName());
+
+            NodeIterator oldStartedNodesIterator = oldNumberNode.getNodes();
+            while (oldStartedNodesIterator.hasNext()) {
+                Node oldStartedNode = oldStartedNodesIterator.nextNode();
+                oldStartedNode.getSession().move(oldStartedNode.getPath(), newNumberNode.getPath() + "/" +
+                        oldStartedNode.getName());
+            }
+            if (!oldNumberNode.hasNodes()) {
+                oldNumberNode.remove();
+            }
+        }
+        if (!oldNameNode.hasNodes()) {
+            oldNameNode.remove();
+        }
+    }
+
+    public void renameBuildContent(BasicBuildInfo basicBuildInfo, String to) throws RepositoryException, IOException {
+        String buildName = basicBuildInfo.getName();
+        String buildNumber = basicBuildInfo.getNumber();
+        String buildStarted = basicBuildInfo.getStarted();
+
+        String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
+        Node buildNode = jcrService.getNode(buildPath);
+        if (buildNode == null) {
+            log.error("Could not find build to rename at path: {}", buildPath);
+            return;
+        }
+
+        Set<String> artifactChecksums = getChecksumPropertyValue(buildNode, PROP_BUILD_ARTIFACT_CHECKSUMS);
+        Set<String> dependencyChecksums = getChecksumPropertyValue(buildNode, PROP_BUILD_DEPENDENCY_CHECKSUMS);
+
+        InputStream jsonStream = JcrHelper.getRawStringStream(buildNode);
+        JsonParser parser = JacksonFactory.createJsonParser(jsonStream);
+        final JsonNode rootNode = parser.readValueAsTree();
+        ((ObjectNode) rootNode).put("name", to);
+
+        InputStreamFromOutputStream stream = null;
+        try {
+            stream = new InputStreamFromOutputStream() {
+
+                @Override
+                protected Object produce(OutputStream outputStream) throws Exception {
+                    JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream);
+                    jsonGenerator.writeTree(rootNode);
+                    return null;
+                }
+            };
+            jcrService.setStream(buildNode.getParent(), buildNode.getName(), stream, BuildRestConstants.MT_BUILD_INFO,
+                    authorizationService.currentUsername(), false);
+        } catch (Exception e) {
+            log.error("An error occurred while writing JSON data to the node of build name '{}', number '{}', " +
+                    "started at '{}'.", new String[]{buildName, buildNumber, buildStarted});
+            return;
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
+
+        try {
+            saveBuildFileChecksums(buildNode, artifactChecksums, dependencyChecksums);
+        } catch (Exception e) {
+            log.error("An error occurred while saving checksum properties on the node of build name '{}', number " +
+                    "'{}', started at '{}'.", new String[]{buildName, buildNumber, buildStarted});
+        }
+    }
+
+    /**
+     * Returns the value of the build node checksum property
+     *
+     * @param buildNode    Build node to extract from
+     * @param propertyName Name of checksum property
+     * @return Property values
+     */
+    private Set<String> getChecksumPropertyValue(Node buildNode, String propertyName) throws RepositoryException {
+        Set<String> checksums = Sets.newHashSet();
+        if (buildNode.hasProperty(propertyName)) {
+            Value[] checksumValues = buildNode.getProperty(propertyName).getValues();
+            if (checksumValues != null) {
+                for (Value checksumValue : checksumValues) {
+                    String checksum = checksumValue.getString();
+                    if (StringUtils.isNotBlank(checksum)) {
+                        checksums.add(checksum);
+                    }
+                }
+            }
+        }
+        return checksums;
     }
 }

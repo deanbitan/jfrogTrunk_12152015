@@ -55,6 +55,16 @@ var DomUtils = {
         DomUtils.addStyle(obj, 'hover');
     },
 
+    submitOnce: function (form) {
+        var disableButton = function(button) {
+            if (button.type == 'submit') {
+                button.disabled = true;
+            }
+        };
+        dojo.forEach(form.getElementsByTagName('button'), disableButton);
+        dojo.forEach(form.getElementsByTagName('input'), disableButton);
+    },
+
     removeHoverStyle: function(obj) {
         DomUtils.removeStyle(obj, 'hover');
     },

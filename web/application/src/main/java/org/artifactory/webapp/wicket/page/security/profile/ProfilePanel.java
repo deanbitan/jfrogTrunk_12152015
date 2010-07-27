@@ -50,6 +50,7 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordStrengthComponentPanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.CryptoHelper;
@@ -249,31 +250,16 @@ public class ProfilePanel extends TitledActionPanel {
     }
 
     private void unlockProfile(UserInfo userInfo) {
-        unlockForm.visitChildren(new IVisitor() {
-            public Object component(Component component) {
-                component.setEnabled(false);
-                return CONTINUE_TRAVERSAL;
-            }
-        });
+        unlockForm.visitChildren(new SetEnableVisitor(false));
 
-        profileForm.visitChildren(new IVisitor() {
-            public Object component(Component component) {
-                component.setEnabled(true);
-                return CONTINUE_TRAVERSAL;
-            }
-        });
+        profileForm.visitChildren(new SetEnableVisitor(true));
 
-        getButtonsContainer().visitChildren(new IVisitor() {
-            public Object component(Component component) {
-                component.setEnabled(true);
-                return CONTINUE_TRAVERSAL;
-            }
-        });
+        getButtonsContainer().visitChildren(new SetEnableVisitor(true));
 
         // generate a new KeyPair and update the user profile
         regenerateKeyPair(userInfo);
 
-        // display the encryptd password
+        // display the encrypted password
         if (securityService.isPasswordEncryptionEnabled()) {
             displayEncryptedPassword(userInfo);
         }

@@ -18,10 +18,13 @@
 
 package org.artifactory.webapp.wicket.panel.tabbed;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
+import org.apache.wicket.protocol.http.WebRequest;
 import org.artifactory.common.wicket.util.CookieUtils;
+import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledBaseTab;
 
 import java.util.List;
 
@@ -65,16 +68,23 @@ public class PersistentTabbedPanel extends StyledTabbedPanel {
     @SuppressWarnings({"unchecked"})
     private int getLastTabIndex() {
         List<ITab> tabs = getTabs();
-        String lastTabName = CookieUtils.getCookie(COOKIE_NAME);
-        if (lastTabName != null) {
-            for (int i = 0; i < tabs.size(); i++) {
-                ITab tab = tabs.get(i);
-                String tabName = tab.getTitle().getObject().toString();
-                if (tabName.equals(lastTabName) && !(tab instanceof DisabledAddonTab)) {
-                    return i;
-                }
-            }
+
+        /**
+         * If a parameter of a tab title to select was included in the request, give it priority over the
+         * last-selected-tab cookie
+         */
+        String defaultSelectionTabTitle = getDefaultSelectionTabTitle();
+        int indexToReturn = getTabIndexByTitle(defaultSelectionTabTitle, tabs);
+        if (indexToReturn != -1) {
+            CookieUtils.setCookie(COOKIE_NAME, defaultSelectionTabTitle);
+            return indexToReturn;
         }
+
+        indexToReturn = getTabIndexByTitle(CookieUtils.getCookie(COOKIE_NAME), tabs);
+        if (indexToReturn != -1) {
+            return indexToReturn;
+        }
+
         return UNSET;
     }
 
@@ -85,5 +95,29 @@ public class PersistentTabbedPanel extends StyledTabbedPanel {
         // store last tab name in a cookie
         ITab tab = (ITab) getTabs().get(getSelectedTab());
         CookieUtils.setCookie(COOKIE_NAME, tab.getTitle().getObject().toString());
+    }
+
+    /**
+     * Retrieves the default selection tab title from the web request.
+     *
+     * @return Default selection tab title. May be null if not included in request
+     */
+    private String getDefaultSelectionTabTitle() {
+        WebRequest request = (WebRequest) RequestCycle.get().getRequest();
+        return request.getParameter("selectTab");
+    }
+
+    private int getTabIndexByTitle(String tabTitle, List<ITab> tabs) {
+        if (StringUtils.isNotBlank(tabTitle)) {
+            for (int i = 0; i < tabs.size(); i++) {
+                ITab tab = tabs.get(i);
+                String tabName = tab.getTitle().getObject().toString();
+                if (tabName.equals(tabTitle) && !(tab instanceof DisabledBaseTab)) {
+                    return i;
+                }
+            }
+        }
+
+        return UNSET;
     }
 }

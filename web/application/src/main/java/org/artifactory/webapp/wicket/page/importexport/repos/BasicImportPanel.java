@@ -153,7 +153,7 @@ public abstract class BasicImportPanel extends TitledPanel {
                     errorImportFeedback(status);
                 } finally {
                     if (!importSettings.isIndexMarkedArchives()) {
-                        searchService.indexMarkedArchives();
+                        searchService.asyncIndexMarkedArchives();
                     }
                     cleanupResources();
                 }

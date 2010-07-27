@@ -77,6 +77,7 @@ import javax.ws.rs.ext.Provider;
         BuildRestConstants.MT_BUILDS_BY_NAME,
         BuildRestConstants.MT_BUILD,
         BuildRestConstants.MT_BUILD_INFO,
+        BuildRestConstants.MT_COPY_MOVE_RESULT,
         RepositoriesRestConstants.MT_REPOSITORY_DETAILS_LIST,
         RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIGURATION,
         ArtifactRestConstants.MT_FOLDER_INFO,
@@ -94,7 +95,8 @@ import javax.ws.rs.ext.Provider;
         SystemRestConstants.MT_VERSION_RESULT,
         ArtifactRestConstants.MT_COPY_MOVE_RESULT,
         SearchRestConstants.MT_PATTERN_SEARCH_RESULT,
-        ArtifactRestConstants.MT_FILE_LIST
+        ArtifactRestConstants.MT_FILE_LIST,
+        ArtifactRestConstants.MT_ITEM_LAST_MODIFIED
 })
 public class JsonProvider extends JacksonJsonProvider implements ContextResolver<ObjectMapper> {
 

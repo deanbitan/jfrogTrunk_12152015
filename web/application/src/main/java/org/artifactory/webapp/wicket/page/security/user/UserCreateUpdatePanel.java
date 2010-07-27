@@ -37,7 +37,6 @@ import org.apache.wicket.util.time.Duration;
 import org.apache.wicket.validation.validator.EmailAddressValidator;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.CoreAddons;
 import org.artifactory.addon.wicket.LdapGroupWebAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
@@ -183,7 +182,6 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
             }
         });
         adminCheckbox.setLabel(new Model("Admin"));
-        adminCheckbox.setEnabled(addons.addonByType(CoreAddons.class).isNewAdminAccountAllowed());
         border.add(adminCheckbox);
 
         //Can update profile

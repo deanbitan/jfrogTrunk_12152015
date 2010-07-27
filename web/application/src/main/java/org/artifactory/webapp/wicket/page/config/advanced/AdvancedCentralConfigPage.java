@@ -73,7 +73,7 @@ public class AdvancedCentralConfigPage extends AuthenticatedPage {
                         info("Central configuration successfully saved.");
                     } catch (Exception e) {
                         log.debug("Error while manually saving the central configuration.", e);
-                        error("An error has occured while saving the central configuration (" + e.getMessage() +
+                        error("An error has occurred while saving the central configuration (" + e.getMessage() +
                                 "). Please verify the validity of your input.");
                     }
                 }

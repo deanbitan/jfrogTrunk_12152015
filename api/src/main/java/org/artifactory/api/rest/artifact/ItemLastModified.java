@@ -18,28 +18,39 @@
 
 package org.artifactory.api.rest.artifact;
 
+import java.io.Serializable;
+
 /**
- * @author Eli Givoni
+ * Represents the latest modified item in a request base
+ *
+ * @author Noam Y. Tenne
  */
-public class RestFileInfo extends RestBaseStorageInfo {
+public class ItemLastModified implements Serializable {
 
-    public String downloadUri;
-    public String remoteUrl;
-    public String mimeType;
-    public long size;
-    public Checksums checksums;
-    public Checksums originalChecksums;
+    private String uri;
+    private String lastModified;
 
-    public static class Checksums {
-        public String sha1;
-        public String md5;
+    public ItemLastModified() {
+    }
 
-        public Checksums(String sha1, String md5) {
-            this.sha1 = sha1;
-            this.md5 = md5;
-        }
+    public ItemLastModified(String uri, String lastModified) {
+        this.uri = uri;
+        this.lastModified = lastModified;
+    }
 
-        private Checksums() {
-        }
+    public String getUri() {
+        return uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+
+    public String getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(String lastModified) {
+        this.lastModified = lastModified;
     }
 }

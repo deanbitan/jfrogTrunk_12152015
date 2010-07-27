@@ -38,11 +38,11 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn;
-import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
 import org.artifactory.webapp.wicket.page.build.actionable.BuildActionableItem;
 import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
+import org.artifactory.webapp.wicket.page.build.panel.compare.BuildForNameListSorter;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
 
@@ -105,8 +105,7 @@ public class BuildsForNamePanel extends TitledPanel {
 
         columns.add(new ActionsColumn(""));
         columns.add(new BuildNumberColumn());
-        columns.add(new FormattedDateColumn(new Model("Time Built"), "startedDate", "started", centralConfigService,
-                Build.STARTED_FORMAT));
+        columns.add(new BuildDateColumn());
 
         BuildsDataProvider dataProvider = new BuildsDataProvider(buildsByName);
 
@@ -131,7 +130,7 @@ public class BuildsForNamePanel extends TitledPanel {
         }
 
         public Iterator iterator(int first, int count) {
-            ListPropertySorter.sort(buildList, getSort());
+            BuildForNameListSorter.sort(buildList, getSort());
             List<BuildActionableItem> listToReturn = getActionableItems(buildList.subList(first, first + count));
             return listToReturn.iterator();
         }
@@ -161,6 +160,14 @@ public class BuildsForNamePanel extends TitledPanel {
         }
     }
 
+    private void drillDown(BuildActionableItem build) {
+        PageParameters pageParameters = new PageParameters();
+        pageParameters.put(BUILD_NAME, buildName);
+        pageParameters.put(BUILD_NUMBER, build.getBuildNumber());
+        pageParameters.put(BUILD_STARTED, build.getStarted());
+        setResponsePage(BuildBrowserRootPage.class, pageParameters);
+    }
+
     private class BuildNumberColumn extends AbstractColumn {
         public BuildNumberColumn() {
             super(new Model("Build Number"), "number");
@@ -179,13 +186,23 @@ public class BuildsForNamePanel extends TitledPanel {
                 }
             });
         }
+    }
 
-        private void drillDown(BuildActionableItem build) {
-            PageParameters pageParameters = new PageParameters();
-            pageParameters.put(BUILD_NAME, buildName);
-            pageParameters.put(BUILD_NUMBER, build.getBuildNumber());
-            pageParameters.put(BUILD_STARTED, build.getStarted());
-            setResponsePage(BuildBrowserRootPage.class, pageParameters);
+    private class BuildDateColumn extends FormattedDateColumn {
+        public BuildDateColumn() {
+            super(new Model("Time Built"), "startedDate", "started", centralConfigService, Build.STARTED_FORMAT);
+        }
+
+        @Override
+        public void populateItem(final Item item, String componentId, IModel model) {
+            super.populateItem(item, componentId, model);
+            item.add(new AjaxEventBehavior("onclick") {
+                @Override
+                protected void onEvent(AjaxRequestTarget target) {
+                    final BuildActionableItem build = (BuildActionableItem) item.getParent().getParent().getModelObject();
+                    drillDown(build);
+                }
+            });
         }
     }
 }

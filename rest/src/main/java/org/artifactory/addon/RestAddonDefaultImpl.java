@@ -18,6 +18,7 @@
 
 package org.artifactory.addon;
 
+import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.rest.common.list.StringList;
@@ -69,6 +70,18 @@ public class RestAddonDefaultImpl implements RestAddon {
 
     public Response replicate(String path, int progress, int mark, int deleteExisting, SyncResource.Overwrite overwrite,
             HttpServletResponse httpResponse) {
+        throw new MissingRestAddonException();
+    }
+
+    public void renameBuilds(String from, String to) {
+        throw new MissingRestAddonException();
+    }
+
+    public void renameBuildsAsync(String from, String to) {
+        throw new MissingRestAddonException();
+    }
+
+    public ItemInfo getLastModified(String pathToSearch) {
         throw new MissingRestAddonException();
     }
 }

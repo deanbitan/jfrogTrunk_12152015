@@ -240,7 +240,8 @@ public class UploadServiceImpl implements InternalUploadService {
         try {
             checksum = IOUtils.toString(request.getInputStream(), "UTF-8");
         } catch (IOException e) {
-            response.sendError(SC_CONFLICT, "Failed to read checksum from file: " + e.getMessage(), log);
+            response.sendError(SC_CONFLICT, "Failed to read checksum from file: " + e.getMessage() +
+                    " for path " + checksumPath, log);
             return;
         }
 
@@ -262,8 +263,8 @@ public class UploadServiceImpl implements InternalUploadService {
         if (checksum.equalsIgnoreCase(checksumInfo.getActual())) {
             response.sendOk();
         } else {
-            String message = String.format("Checksum error: received '%s' but actual is '%s'",
-                    checksum, checksumInfo.getActual());
+            String message = String.format("Checksum error for '%s': received '%s' but actual is '%s'",
+                    checksumPath, checksum, checksumInfo.getActual());
             ChecksumPolicy checksumPolicy = repo.getChecksumPolicy();
             if (checksumPolicy instanceof LocalRepoChecksumPolicy &&
                     ((LocalRepoChecksumPolicy) checksumPolicy).getPolicyType().equals(SERVER)) {

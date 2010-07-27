@@ -19,16 +19,14 @@
 package org.artifactory.repo;
 
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.InternalArtifactoryRequest;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.request.InternalArtifactoryResponse;
-import org.artifactory.schedule.quartz.QuartzCommand;
-import org.quartz.JobDataMap;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
@@ -37,16 +35,12 @@ import java.io.IOException;
  *
  * @author Yossi Shaul
  */
-public class EagerResourcesFetchingJob extends QuartzCommand {
-    private static final Logger log = LoggerFactory.getLogger(EagerResourcesFetchingJob.class);
+@Component
+public class EagerResourcesDownloader {
+    private static final Logger log = LoggerFactory.getLogger(EagerResourcesDownloader.class);
 
-    static final String PARAM_REPO_PATH = "repoPath";
-
-    @Override
-    protected void onExecute(JobExecutionContext callbackContext) throws JobExecutionException {
-        JobDataMap jobData = callbackContext.getJobDetail().getJobDataMap();
-        RepoPath eagerRepoPath = (RepoPath) jobData.get(PARAM_REPO_PATH);
-
+    @Async(transactional = true)
+    public void downloadAsync(RepoPath eagerRepoPath) {
         InternalArtifactoryRequest internalRequest = new InternalArtifactoryRequest(eagerRepoPath);
         InternalArtifactoryResponse internalResponse = new InternalArtifactoryResponse();
         DownloadService downloadService = ContextHelper.get().beanForType(DownloadService.class);

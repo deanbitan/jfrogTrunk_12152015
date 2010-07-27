@@ -30,6 +30,7 @@ import org.apache.commons.httpclient.util.DateUtil;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.md.Properties;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.request.ArtifactoryRequest;
@@ -131,7 +132,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             if (cachedResource.isFound()) {
                 if (cachedResource.isExpired()) {
                     //Send HEAD
-                    RepoResource resource = retrieveInfo(relPath);
+                    RepoResource resource = retrieveInfo(relPath, null);
                     if (resource.isFound()) {
                         if (cachedResource.getLastModified() > resource.getLastModified()) {
                             return new NullResourceStreamHandle();
@@ -143,13 +144,15 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             }
         }
         //Do GET
-        return downloadResource(relPath);
+        return downloadResource(relPath, null);
     }
 
-    public ResourceStreamHandle downloadResource(final String relPath) throws IOException {
+    public ResourceStreamHandle downloadResource(final String relPath, Properties requestProperties)
+            throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
         RepoType repoType = getType();
-        final String fullUrl = getUrl() + "/" + pathConvert(repoType, relPath);
+        final String fullUrl = getUrl() + "/" + pathConvert(repoType, relPath) +
+                Properties.encodeForRequest(requestProperties);
         if (log.isDebugEnabled()) {
             log.debug("Retrieving " + relPath + " from remote repository '" + getKey() + "' URL '" + fullUrl + "'.");
         }
@@ -212,14 +215,16 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     @Override
-    protected RepoResource retrieveInfo(String relPath) {
+    protected RepoResource retrieveInfo(String relPath, Properties requestProperties) {
         assert !isOffline() : "Should never be called in offline mode";
         RepoType repoType = getType();
         RepoPath repoPath = new RepoPath(this.getKey(), relPath);
         String fullUrl = getUrl() + "/" + pathConvert(repoType, relPath);
-        log.debug("{}: Checking last modified time for {}", this, fullUrl);
-        HeadMethod method = new HeadMethod(fullUrl);
+        HeadMethod method = null;
         try {
+            fullUrl += Properties.encodeForRequest(requestProperties);
+            log.debug("{}: Checking last modified time for {}", this, fullUrl);
+            method = new HeadMethod(fullUrl);
             updateMethod(method);
             client.executeMethod(method);
             if (method.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
@@ -254,7 +259,9 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             throw new RuntimeException("Failed retrieving resource from " + fullUrl + ": " + e.getMessage(), e);
         } finally {
             //Released the connection back to the connection manager
-            method.releaseConnection();
+            if (method != null) {
+                method.releaseConnection();
+            }
         }
     }
 

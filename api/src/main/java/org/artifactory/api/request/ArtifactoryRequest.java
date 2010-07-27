@@ -34,8 +34,6 @@ public interface ArtifactoryRequest {
 
     String ARTIFACTORY_ORIGINATED = "X-Artifactory-Originated";
 
-    String MATRIX_PARAMS_SEP = ";";
-
     String SKIP_JAR_INDEXING = "skipJarIndexing";
 
     String FORCE_DOWNLOAD_IF_NEWER = "forceDownloadIfNewer";

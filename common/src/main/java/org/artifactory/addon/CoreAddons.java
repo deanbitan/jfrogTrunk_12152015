@@ -27,6 +27,6 @@ public interface CoreAddons extends AddonFactory {
     /**
      * @return True if creation of new admin accounts is allowed.
      */
-    boolean isNewAdminAccountAllowed();
+    boolean isCreateDefaultAdminAccountAllowed();
 
 }

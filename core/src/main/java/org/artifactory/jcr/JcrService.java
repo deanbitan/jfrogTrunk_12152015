@@ -65,11 +65,18 @@ public interface JcrService extends ReloadableBean {
     @Transactional
     int delete(String absPath);
 
-    @Async(transactional = false, delayUntilAfterCommit = true)
+    /**
+     * Empty the trash. Asynchronous and non-transactional method.
+     */
+    @Async(transactional = false)
     void emptyTrash();
 
-    @Async(transactional = false)
-    void deleteFromTrash(String sessionFolderName);
+
+    /**
+     * Empty the trash after the current TX is committed.
+     */
+    @Async(transactional = false, delayUntilAfterCommit = true)
+    void emptyTrashAfterCommit();
 
     /**
      * Returns the node at the given path

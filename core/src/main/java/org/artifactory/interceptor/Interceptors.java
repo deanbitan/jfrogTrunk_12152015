@@ -50,7 +50,7 @@ public abstract class Interceptors<T extends Interceptor> implements Iterable<T>
 
     @SuppressWarnings({"unchecked"})
     protected Interceptors() {
-        //Get all the interceptors that match the parameterized type of this chain
+        //Get all the interceptors that match the parametrized type of this chain
         this.interceptorInterface =
                 (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }

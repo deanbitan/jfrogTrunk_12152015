@@ -206,19 +206,22 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * @throws AbortWithWebErrorCodeException If the build was not found
      */
     private Build getBuild(String buildName, String buildNumber, String buildStarted) {
+        boolean buildStartedSupplied = StringUtils.isNotBlank(buildStarted);
         try {
             Build build;
-            if (StringUtils.isNotBlank(buildStarted)) {
+            if (buildStartedSupplied) {
                 build = buildService.getBuild(buildName, buildNumber, buildStarted);
             } else {
                 //Take the latest build of the specified number
                 build = buildService.getLatestBuildByNameAndNumber(buildName, buildNumber);
             }
             if (build == null) {
-                String errorMessage =
-                        new StringBuilder().append("Could not find build '").append(buildName).append("' #")
-                                .append(buildNumber).toString();
-                throwNotFoundError(errorMessage);
+                StringBuilder builder = new StringBuilder().append("Could not find build '").append(buildName).
+                        append("' #").append(buildNumber);
+                if (buildStartedSupplied) {
+                    builder.append(" that started at ").append(buildStarted);
+                }
+                throwNotFoundError(builder.toString());
             }
             return build;
         } catch (RepositoryRuntimeException e) {

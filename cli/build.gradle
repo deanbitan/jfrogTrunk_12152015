@@ -1,3 +1,6 @@
+test {
+  enabled = false
+}
 dependencies {
   compile group: 'commons-io', name: 'commons-io', version: '1.4'
   compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'

@@ -18,6 +18,8 @@
 
 package org.artifactory.repo.service;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -56,12 +58,13 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -192,8 +195,16 @@ public class DeployServiceImpl implements DeployService {
                     return !NamingUtils.isSystem(file.getAbsolutePath());
                 }
             };
-            Collection<File> archiveContent = FileUtils.listFiles(
-                    extractFolder, deployableFilesFilter, DirectoryFileFilter.DIRECTORY);
+            List<File> archiveContent = Lists.newArrayList(FileUtils.listFiles(
+                    extractFolder, deployableFilesFilter, DirectoryFileFilter.DIRECTORY));
+            Collections.sort(archiveContent);
+            // filter out the maven-metadata.xmls
+            Iterable<File> mavenMetadataFiles = Iterables.filter(archiveContent, new Predicate<File>() {
+                public boolean apply(@Nullable File input) {
+                    return input.getName().endsWith("maven-metadata.xml");
+                }
+            });
+            Iterables.removeAll(archiveContent, Lists.newArrayList(mavenMetadataFiles));
             List<File> deployFailedList = Lists.newArrayList();
             for (File file : archiveContent) {
                 String parentPath = extractFolder.getAbsolutePath();
@@ -244,7 +255,7 @@ public class DeployServiceImpl implements DeployService {
                 status.setError("Deployment of archive: " + bundleName + " has failed: no valid artifacts found", log);
             }
             //Trigger indexing for marked files
-            searchService.indexMarkedArchives();
+            searchService.asyncIndexMarkedArchives();
         } catch (Exception e) {
             status.setError(e.getMessage(), e, log);
         } finally {

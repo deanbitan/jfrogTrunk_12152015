@@ -29,11 +29,11 @@ import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.build.BuildInfo;
 import org.artifactory.api.rest.build.Builds;
 import org.artifactory.api.rest.build.BuildsByName;
-import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.rest.constant.BuildRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.ArtifactoryPermission;
+import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.rest.common.list.StringList;
@@ -190,7 +190,7 @@ public class BuildResource {
     public void addBuild(Build build) throws Exception {
         log.info("Adding build '{} #{}'", build.getName(), build.getNumber());
 
-        if (!authorizationService.hasPermission(ArtifactoryPermission.DEPLOY)) {
+        if (authorizationService.isAnonymous() || !authorizationService.hasPermission(ArtifactoryPermission.DEPLOY)) {
             response.sendError(HttpStatus.SC_UNAUTHORIZED);
             return;
         }
@@ -212,7 +212,7 @@ public class BuildResource {
      */
     @POST
     @Path("/{action}/{name}/{buildNumber}")
-    @Produces({ArtifactRestConstants.MT_COPY_MOVE_RESULT})
+    @Produces({BuildRestConstants.MT_COPY_MOVE_RESULT})
     public MoveCopyResult moveBuildItems(@QueryParam("started") String started,
             @QueryParam("to") String to,
             @QueryParam("arts") @DefaultValue("1") int arts,
@@ -220,6 +220,34 @@ public class BuildResource {
             @QueryParam("scopes") StringList scopes,
             @QueryParam("dry") int dry) throws IOException {
         return moveOrCopy(started, to, arts, deps, scopes, dry);
+    }
+
+    /**
+     * Renames structure, content and properties of build info objects
+     *
+     * @param to Replacement build name
+     */
+    @POST
+    @Path("/rename/{buildName}")
+    public String renameBuild(@QueryParam("to") String to) throws IOException {
+        String[] pathElements = RestUtils.getBuildRestUrlPathElements(request);
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        try {
+            String from = URLDecoder.decode(pathElements[1], "UTF-8");
+            restAddon.renameBuilds(from, to);
+
+            response.setStatus(HttpStatus.SC_OK);
+
+            return String.format("Build renaming of '%s' to '%s' was successfully started.\n", from, to);
+        } catch (AuthorizationException ae) {
+            response.sendError(HttpStatus.SC_UNAUTHORIZED, ae.getMessage());
+        } catch (IllegalArgumentException iae) {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+        } catch (DoesNotExistException dnne) {
+            response.sendError(HttpStatus.SC_NOT_FOUND, dnne.getMessage());
+        }
+
+        return null;
     }
 
     /**

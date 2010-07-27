@@ -42,7 +42,6 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
-import org.artifactory.repo.context.NullRequestContext;
 import org.artifactory.repo.context.RequestContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.resource.RepoResource;
@@ -153,9 +152,9 @@ public class VirtualRepoDownloadStrategy {
             if (MavenNaming.isMavenMetadata(path)) {
                 result = processMavenMetadata(context, repoPath, repositories);
             } else if (MavenNaming.isSnapshot(path)) {
-                result = processSnapshot(repoPath, repositories);
+                result = processSnapshot(context, repoPath, repositories);
             } else {
-                result = processStandard(repoPath, repositories);
+                result = processStandard(context, repoPath, repositories);
             }
             return result;
         } catch (IOException e) {
@@ -205,10 +204,12 @@ public class VirtualRepoDownloadStrategy {
      * resource that is found is returned. The order of searching is: local repos, cache repos and remote repos (unless
      * request originated from another Artifactory).
      *
+     * @param context      Original download request context
      * @param repoPath     The repository path of the resource to find
      * @param repositories List of repositories to look in (doesn't include virtual repos)
      */
-    private RepoResource processStandard(RepoPath repoPath, List<RealRepo> repositories) throws IOException {
+    private RepoResource processStandard(RequestContext context, RepoPath repoPath, List<RealRepo> repositories)
+            throws IOException {
         //For metadata checksums, first check the merged metadata cache
         String path = repoPath.getPath();
         //Locate the resource matching the request
@@ -220,7 +221,7 @@ public class VirtualRepoDownloadStrategy {
             if (!repo.isHandleReleases() && !NamingUtils.isChecksum(path)) {
                 continue;
             }
-            RepoResource res = repo.getInfo(new NullRequestContext(path));
+            RepoResource res = repo.getInfo(context);
             // release all read locks acquired by the repo during the getInfo
             LockingHelper.getSessionLockManager().unlockAllReadLocks(repo.getKey());
             if (res.isFound()) {
@@ -246,7 +247,8 @@ public class VirtualRepoDownloadStrategy {
     /**
      * Iterate over the repos and return the latest resource found (content or just head information) on the response.
      */
-    private RepoResource processSnapshot(RepoPath repoPath, List<RealRepo> repositories) throws IOException {
+    private RepoResource processSnapshot(RequestContext context, RepoPath repoPath, List<RealRepo> repositories)
+            throws IOException {
         String resourcePath = repoPath.getPath();
         //Find the latest in all repositories
         RepoResource latestRes = null;
@@ -263,7 +265,7 @@ public class VirtualRepoDownloadStrategy {
                 continue;
             }
 
-            final RepoResource res = repo.getInfo(new NullRequestContext(resourcePath));
+            final RepoResource res = repo.getInfo(context);
             if (res.isFound()) {
                 if (repo.isLocal()) {
                     if (foundInLocalRepo) {
@@ -423,7 +425,7 @@ public class VirtualRepoDownloadStrategy {
             String key = childVirtualRepo.getKey();
             if (visitedVirtualRepositories.containsKey(key)) {
                 //Avoid infinite loop - stop if already processed virtual repo is encountered
-                log.warn("Repositories list assembly has been truncated to avoid recursive loop " +
+                log.debug("Repositories list assembly has been truncated to avoid recursive loop " +
                         "on the virtual repo '{}'. Already processed virtual repositories: {}.",
                         key, visitedVirtualRepositories.keySet());
                 return;

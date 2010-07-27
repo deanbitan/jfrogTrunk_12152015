@@ -125,7 +125,7 @@ public class RepoIndexManager {
                 tempIndex = File.createTempFile(MavenNaming.NEXUS_INDEX_GZ, null);
                 IOUtils.copy(remoteIndexHandle.getInputStream(), new FileOutputStream(tempIndex));
 
-                remotePropertiesHandle = remoteRepo.downloadResource(MavenNaming.NEXUS_INDEX_PROPERTIES_PATH);
+                remotePropertiesHandle = remoteRepo.downloadResource(MavenNaming.NEXUS_INDEX_PROPERTIES_PATH, null);
                 tempProperties = File.createTempFile(MavenNaming.NEXUS_INDEX_PROPERTIES, null);
                 IOUtils.copy(remotePropertiesHandle.getInputStream(), new FileOutputStream(tempProperties));
 

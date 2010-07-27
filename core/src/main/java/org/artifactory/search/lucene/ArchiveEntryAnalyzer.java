@@ -32,7 +32,7 @@ import java.io.Reader;
  *
  * @author Noam Y. Tenne
  */
-public class ArchiveEntryAnalyzer extends Analyzer<Tokenizer> {
+public class ArchiveEntryAnalyzer extends Analyzer {
 
     @Override
     public TokenStream tokenStream(String fieldName, Reader reader) {
@@ -41,7 +41,7 @@ public class ArchiveEntryAnalyzer extends Analyzer<Tokenizer> {
 
     @Override
     public TokenStream reusableTokenStream(String fieldName, Reader reader) throws IOException {
-        Tokenizer tokenizer = getPreviousTokenStream();
+        Tokenizer tokenizer = (Tokenizer) getPreviousTokenStream();
         if (tokenizer == null) {
             tokenizer = new ArchiveEntryTokenizer(reader);
             setPreviousTokenStream(tokenizer);

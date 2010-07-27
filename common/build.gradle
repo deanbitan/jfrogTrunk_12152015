@@ -29,4 +29,6 @@ dependencies {
   compile project(':open:config')
   compile project(':open:api')
 
+  testCompile project(path: ':open:config', configuration: 'basicConfigTest')
+
 }

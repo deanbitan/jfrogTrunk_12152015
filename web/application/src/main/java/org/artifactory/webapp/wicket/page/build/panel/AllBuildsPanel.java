@@ -100,8 +100,7 @@ public class AllBuildsPanel extends TitledPanel {
         List<IColumn> columns = Lists.newArrayList();
         columns.add(new ActionsColumn(""));
         columns.add(new BuildNameColumn());
-        columns.add(new FormattedDateColumn(new Model("Last Built"), "startedDate", "started", centralConfigService,
-                Build.STARTED_FORMAT));
+        columns.add(new BuildDateColumn());
         BuildsDataProvider dataProvider = new BuildsDataProvider(latestBuildsByName);
         add(new SortableTable("builds", columns, dataProvider, 200));
     }
@@ -154,6 +153,12 @@ public class AllBuildsPanel extends TitledPanel {
         }
     }
 
+    private void drillDown(String buildName) {
+        PageParameters pageParameters = new PageParameters();
+        pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildName);
+        setResponsePage(BuildBrowserRootPage.class, pageParameters);
+    }
+
     private class BuildNameColumn extends AbstractColumn {
         public BuildNameColumn() {
             super(new Model("Build Name"), "name");
@@ -172,11 +177,24 @@ public class AllBuildsPanel extends TitledPanel {
                 }
             });
         }
+    }
 
-        private void drillDown(String buildName) {
-            PageParameters pageParameters = new PageParameters();
-            pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildName);
-            setResponsePage(BuildBrowserRootPage.class, pageParameters);
+    private class BuildDateColumn extends FormattedDateColumn {
+        public BuildDateColumn() {
+            super(new Model("Last Built"), "startedDate", "started", centralConfigService, Build.STARTED_FORMAT);
+        }
+
+        @Override
+        public void populateItem(final Item item, String componentId, IModel model) {
+            super.populateItem(item, componentId, model);
+            item.add(new AjaxEventBehavior("onclick") {
+                @Override
+                protected void onEvent(AjaxRequestTarget target) {
+                    LatestBuildByNameActionableItem info = (LatestBuildByNameActionableItem) item.getParent().getParent().getModelObject();
+                    final String buildName = info.getName();
+                    drillDown(buildName);
+                }
+            });
         }
     }
 }

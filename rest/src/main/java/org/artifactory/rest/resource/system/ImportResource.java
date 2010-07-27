@@ -70,7 +70,7 @@ public class ImportResource {
             holder.setError("Received uncaught exception", e, log);
         } finally {
             SearchService searchService = ContextHelper.get().beanForType(SearchService.class);
-            searchService.indexMarkedArchives();
+            searchService.asyncIndexMarkedArchives();
         }
         return Response.ok().build();
     }

@@ -71,7 +71,6 @@ public class PatternSearchResource {
                     "This search resource is available to authenticated users only.");
             return null;
         }
-
         try {
             return search(pattern);
         } catch (IllegalArgumentException iae) {
@@ -98,8 +97,8 @@ public class PatternSearchResource {
         return null;
     }
 
-    private PatternResultFileSet search(String pattern)
-            throws ExecutionException, TimeoutException, InterruptedException {
+    private PatternResultFileSet search(String pattern) throws ExecutionException, TimeoutException,
+            InterruptedException {
         Set<String> matchingArtifacts = restAddon.searchArtifactsByPattern(pattern);
 
         String[] patternTokens = StringUtils.split(pattern, ":", 2);

@@ -36,7 +36,7 @@ import java.util.List;
  */
 public interface InternalSearchService extends SearchService, ReloadableBean {
 
-    @Async(transactional = true, delayUntilAfterCommit = true)
+    @Lock(transactional = true)
     void transactionalIndexMarkedArchives();
 
     void markArchivesForIndexing(boolean force);

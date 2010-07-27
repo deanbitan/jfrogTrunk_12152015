@@ -30,6 +30,7 @@ public interface ArtifactRestConstants {
     String MT_ITEM_PROPERTIES = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemProperties+json";
     String MT_COPY_MOVE_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".CopyOrMoveResult+json";
     String MT_FILE_LIST = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".FileList+json";
+    String MT_ITEM_LAST_MODIFIED = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemLastModified+json";
 
     String PARAM_METADATA_NAMES_PREFIX = "mdns";
 

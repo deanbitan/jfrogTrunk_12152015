@@ -27,9 +27,6 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-
 public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryRequestBase.class);
 
@@ -175,42 +172,14 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
     }
 
     private String processMatrixParamsIfExist(String fragment) {
-        int matrixParamStart = fragment.indexOf(MATRIX_PARAMS_SEP);
+        int matrixParamStart = fragment.indexOf(Properties.MATRIX_PARAMS_SEP);
         if (matrixParamStart > 0) {
-            processMatrixParams(fragment.substring(matrixParamStart));
+            Properties.processMatrixParams(this.properties, fragment.substring(matrixParamStart));
             //Return the clean fragment
             return fragment.substring(0, matrixParamStart);
         } else {
             return fragment;
         }
-    }
-
-    private void processMatrixParams(String matrixParams) {
-        int matrixParamStart = 0;
-        do {
-            int matrixParamEnd = matrixParams.indexOf(MATRIX_PARAMS_SEP, matrixParamStart + 1);
-            if (matrixParamEnd < 0) {
-                matrixParamEnd = matrixParams.length();
-            }
-            String param = matrixParams.substring(matrixParamStart + 1, matrixParamEnd);
-            int equals = param.indexOf('=');
-            if (equals > 0) {
-                String key = param.substring(0, equals);
-                String value = param.substring(equals + 1);
-                // url-decode the value
-                try {
-                    value = URLDecoder.decode(value, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    log.warn("Encoding not supported: {}. Using original value", e.getMessage());
-                }
-                this.properties.put(key, value);
-            } else if (equals == 0) {
-                //No key declared, ignore
-            } else if (param.length() > 0) {
-                this.properties.put(param, "");
-            }
-            matrixParamStart = matrixParamEnd;
-        } while (matrixParamStart > 0 && matrixParamStart < matrixParams.length());
     }
 
     @Override

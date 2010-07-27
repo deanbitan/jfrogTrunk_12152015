@@ -15,14 +15,16 @@
         </div>
 
         <div class="field-sep">
-            <span>
-                <input wicket:id="artifacts" type="checkbox" class="text"/>
-                <span wicket:id="artifacts.help"></span>
-            </span>
-            <span style="padding-left: 15px;">
-                <input wicket:id="dependencies" type="checkbox" class="text"/>
-                <span wicket:id="dependencies.help"></span>
-            </span>
+            <input wicket:id="artifacts" type="checkbox" class="text"/>
+            <span wicket:id="artifacts.help"></span>
+        </div>
+        <div class="field">
+            <input wicket:id="dependencies" type="checkbox" class="text"/>
+            <span wicket:id="dependencies.help"></span>
+        </div>
+
+        <div wicket:id="scopesContainer" class="field build-scopes small-checkbox">
+            <input wicket:id="scopeCheckbox" type="checkbox"/>
         </div>
     </form>
 </wicket:extend>

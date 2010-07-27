@@ -55,8 +55,8 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.common.wicket.application.AddWicketPathListener;
 import org.artifactory.common.wicket.application.NoLocaleResourceStreamLocator;
-import org.artifactory.common.wicket.application.SetPathMarkupIdOnBeforeRenderListener;
 import org.artifactory.common.wicket.component.panel.sidemenu.SiteMapAware;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
@@ -452,7 +452,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
         //QA settings
         if (modes.contains(ConstantValues.qa)) {
-            addComponentOnBeforeRenderListener(new SetPathMarkupIdOnBeforeRenderListener());
+            addComponentInstantiationListener(new AddWicketPathListener());
         }
     }
 

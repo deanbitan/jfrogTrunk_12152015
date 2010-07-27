@@ -133,13 +133,48 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
     }
 
     protected static class SetMetadataMessage {
+        final long threadId;
         final String metadataName;
-        final String xmlContent;
         // TODO: [by fs] support Metadata object
+        final String xmlContent;
 
         private SetMetadataMessage(String metadataName, String xmlContent) {
+            if (metadataName == null) {
+                throw new IllegalArgumentException("Cannot create a metadata message with no name!");
+            }
+            // TODO: [by fs] Visible immediately to all threads waiting to move the queue to SessionRessource
+            this.threadId = 1;
+            //this.threadId = Thread.currentThread().getId();
             this.metadataName = metadataName;
             this.xmlContent = xmlContent;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            SetMetadataMessage that = (SetMetadataMessage) o;
+
+            if (threadId != that.threadId) {
+                return false;
+            }
+            if (!metadataName.equals(that.metadataName)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (threadId ^ (threadId >>> 32));
+            result = 31 * result + metadataName.hashCode();
+            return result;
         }
     }
 
@@ -957,9 +992,10 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      */
     public String getXmlMetadata(String metadataName) throws RepositoryException {
         if (metadataToSave != null && !metadataToSave.isEmpty()) {
+            SetMetadataMessage toFind = new SetMetadataMessage(metadataName, null);
             String result = null;
             for (SetMetadataMessage message : metadataToSave) {
-                if (message.metadataName.equals(metadataName)) {
+                if (toFind.equals(message)) {
                     result = message.xmlContent;
                 }
             }

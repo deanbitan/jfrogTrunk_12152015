@@ -19,6 +19,7 @@
 package org.artifactory.search.archive;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.Closeables;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
@@ -28,9 +29,6 @@ import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrZipFile;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.search.InternalSearchService;
-import org.artifactory.spring.InternalArtifactoryContext;
-import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.LoggingUtils;
 import org.slf4j.Logger;
 
@@ -85,14 +83,7 @@ public abstract class ArchiveIndexer {
         } catch (Exception e) {
             LoggingUtils.warnOrDebug(log, "Could not index '" + file.getRepoPath() + "'", e);
         } finally {
-            if (jar != null) {
-                try {
-                    jar.close();
-                }
-                catch (Exception e) {
-                    log.warn("Could not close jar file '" + file.getRepoPath() + "' properly.", e);
-                }
-            }
+            Closeables.closeQuietly(jar);
         }
 
         Node node = file.getNode();
@@ -171,10 +162,7 @@ public abstract class ArchiveIndexer {
     /**
      * Scans the database for all files marked for indexing, and passes them on to the indexer
      */
-    public static void indexMarkedArchives() {
-        //Find all files marked for indexing
-        InternalArtifactoryContext context = InternalContextHelper.get();
-        JcrSession usession = context.getJcrService().getUnmanagedSession();
+    public static List<RepoPath> searchMarkedArchives(JcrSession session) {
         List<RepoPath> archiveRepoPaths = Lists.newArrayList();
         try {
             /*RowIterator rowIterator = GQL.execute(
@@ -183,7 +171,7 @@ public abstract class ArchiveIndexer {
             String queryStr = "/jcr:root" + JcrPath.get().getRepoJcrRootPath() + "//element(*, " +
                     JcrTypes.NT_ARTIFACTORY_FILE + ")[@" + JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED +
                     "= false()]";
-            QueryManager queryManager = usession.getWorkspace().getQueryManager();
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
             Query query = queryManager.createQuery(queryStr, Query.XPATH);
             QueryResult queryResult = query.execute();
             NodeIterator nodes = queryResult.getNodes();
@@ -200,12 +188,7 @@ public abstract class ArchiveIndexer {
             }
         } catch (Exception e) {
             throw new RepositoryRuntimeException("Could not index marked archives", e);
-        } finally {
-            usession.logout();
         }
-        //Schedule the files for indexing
-        InternalSearchService searchService = context.beanForType(InternalSearchService.class);
-        log.debug("Scheduling indexing for marked archives.");
-        searchService.index(archiveRepoPaths);
+        return archiveRepoPaths;
     }
 }

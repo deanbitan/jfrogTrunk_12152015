@@ -41,6 +41,8 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.fs.ChecksumInfo;
+import org.artifactory.api.fs.ChecksumsInfo;
 import org.artifactory.api.fs.DeployableUnit;
 import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FolderInfo;
@@ -55,6 +57,7 @@ import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.DirectoryItem;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.VirtualRepoItem;
+import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoAccessException;
 import org.artifactory.api.repo.exception.RepoRejectionException;
@@ -541,18 +544,16 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @SuppressWarnings({"unchecked"})
     public List<String> getChildrenNames(RepoPath repoPath) {
-        final String repoKey = repoPath.getRepoKey();
-        final LocalRepo repo = globalVirtualRepo.localOrCachedRepositoryByKey(repoKey);
+        String repoKey = repoPath.getRepoKey();
+        LocalRepo repo = globalVirtualRepo.localOrCachedRepositoryByKey(repoKey);
         if (repo == null) {
             throw new RepositoryRuntimeException(
                     "Tried to get children of a non exiting local repository '" + repoKey + "'.");
         }
-        String path = repoPath.getPath();
-        List<String> childrenNames = repo.getChildrenNames(path);
+        List<String> childrenNames = repo.getChildrenNames(repoPath.getPath());
         List<String> authorizedChildrenNames = new ArrayList(childrenNames.size());
         for (String childName : childrenNames) {
-            RepoPath childRepoPath =
-                    new RepoPath(repoPath.getRepoKey(), repoPath.getPath() + "/" + childName);
+            RepoPath childRepoPath = new RepoPath(repoPath, childName);
             boolean childReader = authService.canImplicitlyReadParentPath(childRepoPath);
             if (childReader) {
                 //Its enough that we have a single reader to say we have children
@@ -762,12 +763,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return statusHolder;
     }
 
-    /**
-     * Throws exception if the item does not exist
-     *
-     * @param repoPath
-     * @return
-     */
     public ItemInfo getItemInfo(RepoPath repoPath) {
         LocalRepo localRepo = getLocalRepository(repoPath);
         JcrFsItem item = localRepo.getJcrFsItem(repoPath);
@@ -775,6 +770,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             return item.getInfo();
         }
         throw new ItemNotFoundRuntimeException("Item " + repoPath + " does not exists");
+    }
+
+    public FileInfo getFileInfo(RepoPath repoPath) {
+        ItemInfo itemInfo = getItemInfo(repoPath);
+        if (itemInfo instanceof FileInfo) {
+            return (FileInfo) itemInfo;
+        } else {
+            throw new FileExpectedException(repoPath);
+        }
     }
 
     public boolean exists(RepoPath repoPath) {
@@ -884,8 +888,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             return;
         }
 
-        fsItem.setXmlMetadataLater(metadataName, metadataContent);
-        getTransactionalMe().updateDirtyState(repoPath);
+        if (fsItem.isMutable()) {
+            fsItem.setXmlMetadata(metadataName, metadataContent);
+        } else {
+            fsItem.setXmlMetadataLater(metadataName, metadataContent);
+            getTransactionalMe().updateDirtyState(repoPath);
+        }
     }
 
     public void setXmlMetadata(RepoPath repoPath, String metadataName, String metadataContent) {
@@ -1571,6 +1579,57 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         } finally {
             IOUtils.closeQuietly(zin);
         }
+    }
+
+    public ItemInfo getLastModified(RepoPath pathToSearch) {
+        if (pathToSearch == null) {
+            throw new IllegalArgumentException("Repo path cannot be null.");
+        }
+        if (!exists(pathToSearch)) {
+            throw new ItemNotFoundRuntimeException("Could not find item: " + pathToSearch.getId());
+        }
+
+        ItemInfo itemLastModified = collectLastModifiedRecursively(pathToSearch);
+        return itemLastModified;
+    }
+
+    public void fixChecksums(RepoPath fileRepoPath) {
+        LocalRepo localRepo = getLocalRepository(fileRepoPath);
+        JcrFile file = localRepo.getLockedJcrFile(fileRepoPath, false);
+        if (file == null) {
+            throw new ItemNotFoundRuntimeException("File " + fileRepoPath + " does not exists");
+        }
+        FileInfo fileInfo = file.getInfo();
+        ChecksumsInfo checksumsInfo = new ChecksumsInfo(fileInfo.getChecksumsInfo());   // work on a copy
+        for (ChecksumInfo checksumInfo : checksumsInfo.getChecksums()) {
+            if (!checksumInfo.checksumsMatch()) {
+                // replace inconsistent checksum with a trusted one
+                fileInfo.addChecksumInfo(new ChecksumInfo(
+                        checksumInfo.getType(), ChecksumInfo.TRUSTED_FILE_MARKER, checksumInfo.getActual()));
+            }
+        }
+    }
+
+    /**
+     * Returns the latest modified item of the given file or folder (recursively)
+     *
+     * @param pathToSearch Repo path to search in
+     * @return Latest modified item
+     */
+    private ItemInfo collectLastModifiedRecursively(RepoPath pathToSearch) {
+        ItemInfo latestItem = getItemInfo(pathToSearch);
+
+        if (latestItem.isFolder()) {
+            List<DirectoryItem> directoryItems = getDirectoryItems(pathToSearch, false);
+            for (DirectoryItem directoryItem : directoryItems) {
+                ItemInfo itemInfo = collectLastModifiedRecursively(directoryItem.getItemInfo().getRepoPath());
+                if (itemInfo.getLastModified() > latestItem.getLastModified()) {
+                    latestItem = itemInfo;
+                }
+            }
+        }
+
+        return latestItem;
     }
 
     private String importAsync(String repoKey, ImportSettings settings, boolean deleteExistingRepo, boolean wait) {

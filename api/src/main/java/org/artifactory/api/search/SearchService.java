@@ -96,7 +96,7 @@ public interface SearchService {
     SearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls);
 
     @Async(delayUntilAfterCommit = true)
-    void indexMarkedArchives();
+    void asyncIndexMarkedArchives();
 
     //TODO: [by yl] Move all these methods to the InternalBuildService!
 
@@ -116,6 +116,6 @@ public interface SearchService {
      * @param pattern Pattern to search for
      * @return Set of matching artifact paths relative to the repo
      */
-    Set<String> searchArtifactsByPattern(String pattern)
-            throws ExecutionException, InterruptedException, TimeoutException;
+    Set<String> searchArtifactsByPattern(String pattern) throws ExecutionException, InterruptedException,
+            TimeoutException;
 }

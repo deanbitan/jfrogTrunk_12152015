@@ -30,6 +30,8 @@ import org.artifactory.spring.ReloadableBean;
 import org.jfrog.build.api.Build;
 
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
@@ -96,4 +98,22 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      */
     @Lock(transactional = true)
     Node getOrCreateBuildsRootNode();
+
+    /**
+     * Renames the JSON content within a build
+     *
+     * @param basicBuildInfo Build to rename
+     * @param to             Replacement build name
+     */
+    @Lock(transactional = true)
+    void renameBuildContent(BasicBuildInfo basicBuildInfo, String to) throws RepositoryException, IOException;
+
+    /**
+     * Renames the build JCR tree node
+     *
+     * @param from Name to replace
+     * @param to   Replacement build name
+     */
+    @Lock(transactional = true)
+    void renameBuildNode(String from, String to) throws RepositoryException;
 }

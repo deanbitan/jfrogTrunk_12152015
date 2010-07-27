@@ -18,12 +18,13 @@
 
 package org.artifactory.storage;
 
+import org.artifactory.api.storage.StorageUnit;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 
 /**
- * Test the {@link org.artifactory.storage.StorageUnit} enum
+ * Test the {@link org.artifactory.api.storage.StorageUnit} enum
  *
  * @author Tomer Cohen
  */

@@ -65,7 +65,7 @@ public abstract class LogbackContextHelper {
             //Set the artifactory.home so that tokens in the logback config file are extracted
             lc.putProperty(ArtifactoryHome.SYS_PROP, artifactoryHome.getHomeDir().getAbsolutePath());
             configurator.doConfigure(artifactoryHome.getLogbackConfig());
-            StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
+            StatusPrinter.printIfErrorsOccured(lc);
         } catch (JoranException je) {
             StatusPrinter.print(lc);
         }

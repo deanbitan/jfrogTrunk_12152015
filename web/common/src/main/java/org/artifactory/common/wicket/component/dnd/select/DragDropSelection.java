@@ -56,7 +56,6 @@ public class DragDropSelection<T> extends FormComponentPanel {
     private IChoiceRenderer renderer;
     private List<T> unselectedItems;
 
-    @SuppressWarnings({"unchecked"})
     public DragDropSelection(final String id) {
         this(id, Collections.<T>emptyList());
     }

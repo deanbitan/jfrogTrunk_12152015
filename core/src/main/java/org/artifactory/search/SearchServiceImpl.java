@@ -52,6 +52,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrService;
+import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFsItem;
@@ -289,8 +290,8 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
-    public Set<String> searchArtifactsByPattern(String pattern)
-            throws ExecutionException, InterruptedException, TimeoutException {
+    public Set<String> searchArtifactsByPattern(String pattern) throws ExecutionException, InterruptedException,
+            TimeoutException {
         if (StringUtils.isBlank(pattern)) {
             throw new IllegalArgumentException("Unable to search for an empty pattern");
         }
@@ -355,7 +356,7 @@ public class SearchServiceImpl implements InternalSearchService {
             markArchivesForIndexing(true);
         }
         //Index archives marked for indexing (might have left overs from abrupt shutdown after deploy)
-        getAdvisedMe().indexMarkedArchives();
+        getAdvisedMe().asyncIndexMarkedArchives();
     }
 
     public void reload(CentralConfigDescriptor oldDescriptor) {
@@ -373,7 +374,11 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     public void transactionalIndexMarkedArchives() {
-        indexMarkedArchives();
+        JcrSession session = jcrService.getManagedSession();
+        List<RepoPath> archiveRepoPaths = ArchiveIndexer.searchMarkedArchives(session);
+        //Schedule the files for indexing
+        log.debug("Scheduling indexing for marked archives.");
+        index(archiveRepoPaths);
     }
 
     public void markArchivesForIndexing(boolean force) {
@@ -429,8 +434,17 @@ public class SearchServiceImpl implements InternalSearchService {
     /**
      * Indexes all the archives that were marked
      */
-    public void indexMarkedArchives() {
-        ArchiveIndexer.indexMarkedArchives();
+    public void asyncIndexMarkedArchives() {
+        JcrSession session = jcrService.getUnmanagedSession();
+        try {
+            List<RepoPath> archiveRepoPaths = ArchiveIndexer.searchMarkedArchives(session);
+            //Schedule the files for indexing
+            log.debug("Scheduling indexing for marked archives.");
+            getAdvisedMe().index(archiveRepoPaths);
+        } finally {
+            session.save();
+            session.logout();
+        }
     }
 
     /**
@@ -547,7 +561,6 @@ public class SearchServiceImpl implements InternalSearchService {
                 }
             }
         } else if (!itemInfo.isFolder()) {
-
             pathsToReturn.add(repoPath.getPath());
         }
     }

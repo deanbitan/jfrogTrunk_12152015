@@ -110,6 +110,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 import static org.apache.jackrabbit.JcrConstants.*;
 import static org.artifactory.jcr.JcrTypes.*;
@@ -160,6 +161,8 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     private JcrSessionFactory sessionFactory;
 
     private static final ThreadLocal<JcrSession> UNMANAGED_SESSION_HOLDER = new ThreadLocal<JcrSession>();
+
+    private Semaphore emptyTrashSemaphore = new Semaphore(1);
 
     public javax.jcr.Repository getRepository() {
         return getManagedSession().getRepository();
@@ -341,39 +344,58 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     }
 
     public void emptyTrash() {
-        JcrSession session = getUnmanagedSession();
-        try {
-            Node trashNode = (Node) session.getItem(JcrPath.get().getTrashJcrRootPath());
-            NodeIterator trashChildren = trashNode.getNodes();
-            while (trashChildren.hasNext()) {
-                Node trashChild = trashChildren.nextNode();
-                deleteFromTrash(trashChild.getName());
+        // allow only one thread to empty the trash
+        if (emptyTrashSemaphore.tryAcquire()) {
+            int deletedItemsCount;
+            try {
+                do {
+                    deletedItemsCount = 0;
+                    log.debug("Starting to empty the trash directory.");
+                    JcrSession session = getUnmanagedSession();
+                    try {
+                        Node trashNode = getTrashNode(session);
+                        NodeIterator trashChildren = trashNode.getNodes();
+                        while (trashChildren.hasNext()) {
+                            Node trashChild = trashChildren.nextNode();
+                            deletedItemsCount += deleteFromTrash(trashChild, session);
+                        }
+                        log.debug("Done emptying the trash. {} item(s) were deleted.", deletedItemsCount);
+                    } finally {
+                        session.logout();
+                    }
+                    // continue running only if previous run deleted some nodes (if no item were deleted it might got
+                    // corrupted so we don't want to keep iterating forever)
+                } while (deletedItemsCount > 0);
+            } catch (Exception e) {
+                //Fail gracefully
+                log.error("Could not empty trash.", e);
+            } finally {
+                emptyTrashSemaphore.release();
             }
-        } catch (Exception e) {
-            //Fail gracefully
-            log.error("Could not empty trash.", e);
-        } finally {
-            session.logout();
+        } else {
+            log.debug("Empty trash is already in progress");
         }
     }
 
-    public void deleteFromTrash(String sessionFolderName) {
-        if (StringUtils.isBlank(sessionFolderName)) {
-            log.info("Received blank folder name as trash removal target. Ignoring.");
-            return;
-        }
-        String sessionFolderPath = JcrPath.get().getTrashJcrRootPath() + "/" + sessionFolderName;
-        JcrSession session = getUnmanagedSession();
+    public void emptyTrashAfterCommit() {
+        emptyTrash();   // called after TX commit; just delegate to empty trash
+    }
+
+    private Node getTrashNode(JcrSession session) {
+        return (Node) session.getItem(JcrPath.get().getTrashJcrRootPath());
+    }
+
+    private int deleteFromTrash(Node trashNode, JcrSession session) {
+        String folderName = null;
         try {
-            int deletedItems = delete(sessionFolderPath, session);
-            if (deletedItems > 0) {
-                log.debug("Emptied " + deletedItems + " nodes from trash folder " + sessionFolderName + ".");
-            }
+            folderName = trashNode.getName();
+            log.debug("Emptying nodes from trash folder '{}'.", folderName);
+            int deletedItems = delete(trashNode.getPath(), session);
+            return deletedItems;
         } catch (Exception e) {
             //Fail gracefully
-            LoggingUtils.warnOrDebug(log, "Could not empty trash folder " + sessionFolderName + ".", e);
-        } finally {
-            session.logout();
+            LoggingUtils.warnOrDebug(log, "Could not empty trash folder " + folderName + ".", e);
+            return 0;
         }
     }
 
@@ -1060,13 +1082,15 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
 
     private int deleteNodeRecursively(Node node) throws RepositoryException {
         int count = 0;
-        NodeIterator nodes = node.getNodes();
-        while (nodes.hasNext()) {
-            Node child = (Node) nodes.next();
-            count += deleteNodeRecursively(child);
+        String nodeType = node.getPrimaryNodeType().getName();
+        if (!NT_ARTIFACTORY_FILE.equals(nodeType)) { // delete files directly, no need to check children
+            NodeIterator nodes = node.getNodes();
+            while (nodes.hasNext()) {
+                Node child = (Node) nodes.next();
+                count += deleteNodeRecursively(child);
+            }
         }
         //Only delete known or unstructured node types (may be containers of nodes of other types)
-        String nodeType = node.getPrimaryNodeType().getName();
         if (NT_ARTIFACTORY_FILE.equals(nodeType) || NT_ARTIFACTORY_FOLDER.equals(nodeType) ||
                 "nt:unstructured".equals(nodeType)) {
             //Remove myself

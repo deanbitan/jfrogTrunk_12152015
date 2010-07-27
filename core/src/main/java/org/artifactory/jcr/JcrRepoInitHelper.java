@@ -161,8 +161,8 @@ abstract class JcrRepoInitHelper {
 
     protected static void initializeTrash(JcrServiceImpl jcrService) {
         jcrService.getOrCreateUnstructuredNode(JcrPath.get().getTrashJcrRootPath());
-        //Empty whatever is left in the trash
-        InternalContextHelper.get().getJcrService().emptyTrash();
+        //Empty whatever is left in the trash after initialization is complete
+        InternalContextHelper.get().getJcrService().emptyTrashAfterCommit();
     }
 
 

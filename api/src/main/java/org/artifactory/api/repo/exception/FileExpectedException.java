@@ -20,6 +20,9 @@ package org.artifactory.api.repo.exception;
 
 import org.artifactory.api.repo.RepoPath;
 
+/**
+ * This exception is thrown whenever a folder exists in the repository path but a file is expected.
+ */
 public class FileExpectedException extends RuntimeException {
     private final RepoPath repoPath;
     private static final String MESSAGE_PREFIX = "Expected a file but found a folder, at: ";

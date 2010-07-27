@@ -32,7 +32,6 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
 
     private final HttpServletRequest httpRequest;
 
-    @SuppressWarnings({"deprecation"})
     public HttpArtifactoryRequest(HttpServletRequest httpRequest) {
         this.httpRequest = httpRequest;
         String servletPath = RequestUtils.getServletPathFromRequest(httpRequest);

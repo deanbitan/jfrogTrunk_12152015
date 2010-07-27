@@ -42,6 +42,7 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.BaseTitledLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.panel.defaultsubmit.DefaultSubmit;
+import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 
 import java.util.ArrayList;
@@ -154,12 +155,7 @@ public class SaveSearchResultsPanel extends FieldSetPanel {
 
     public void setAllEnable(final boolean enabled) {
         setEnabled(enabled);
-        visitChildren(new IVisitor() {
-            public Object component(Component component) {
-                component.setEnabled(enabled);
-                return CONTINUE_TRAVERSAL;
-            }
-        });
+        visitChildren(new SetEnableVisitor(enabled));
     }
 
     public class UpdateStateBehavior extends AjaxFormComponentUpdatingBehavior {

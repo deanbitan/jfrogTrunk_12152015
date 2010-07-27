@@ -19,7 +19,7 @@ goto :end
 
 :next
 
-%_JAVACMD% -Dartadmin.logs.dir="%LOGS_DIR%" -cp "%CLASSPATH%" org.artifactory.cli.main.ArtAdmin %*
+%_JAVACMD% -Dlogback.configurationFile=logback-cli.xml -Dartadmin.logs.dir="%LOGS_DIR%" -cp "%CLASSPATH%" org.artifactory.cli.main.ArtAdmin %*
 echo on
 
 @endlocal

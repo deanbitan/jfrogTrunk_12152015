@@ -16,7 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.storage;
+package org.artifactory.api.storage;
 
 import java.text.DecimalFormat;
 

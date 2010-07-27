@@ -54,7 +54,7 @@ public class Trashman implements SessionResource {
 
     public void afterCompletion(boolean commit) {
         if (sessionFolderName != null && commit && hasPendingResources()) {
-            InternalContextHelper.get().getJcrService().deleteFromTrash(sessionFolderName);
+            InternalContextHelper.get().getJcrService().emptyTrash();
         }
         //Reset internal state
         sessionFolderName = null;

@@ -18,4 +18,5 @@ dependencies {
   compile project(':open:config')
   testCompile 'org.easymock:easymockclassextension:2.5.2'
   testCompile project(path: ':open:config')
+  testCompile project(path: ':open:config', configuration: 'basicConfigTest')
 }

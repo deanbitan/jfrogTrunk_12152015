@@ -47,9 +47,11 @@ import static org.artifactory.descriptor.repo.SnapshotVersionBehavior.*;
  * @author Yossi Shaul
  */
 public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescriptor> {
+    private TextField maxUniqueSnapshots;
+    private DropDownChoice snapshotVersionDropDown;
 
     public LocalRepoPanel(CreateUpdateAction action, LocalRepoDescriptor repoDescriptor,
-                          CachingDescriptorHelper cachingDescriptorHelper) {
+            CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor, cachingDescriptorHelper);
         setWidth(610);
         add(new CssClass("local-repo-config"));
@@ -83,7 +85,15 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         basicSettings.add(new StyledCheckbox("handleReleases"));
         basicSettings.add(new SchemaHelpBubble("handleReleases.help"));
 
-        basicSettings.add(new StyledCheckbox("handleSnapshots"));
+        StyledCheckbox handleSnapshots = new StyledCheckbox("handleSnapshots");
+        handleSnapshots.add(new AjaxFormComponentUpdatingBehavior("onclick") {
+            @Override
+            protected void onUpdate(AjaxRequestTarget target) {
+                target.addComponent(maxUniqueSnapshots);
+                target.addComponent(snapshotVersionDropDown);
+            }
+        });
+        basicSettings.add(handleSnapshots);
         basicSettings.add(new SchemaHelpBubble("handleSnapshots.help"));
 
         basicSettings.add(new StyledCheckbox("blackedOut"));
@@ -97,14 +107,19 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         form.add(advancedSettings);
 
         // maxUniqueSnapshots
-        final TextField maxUniqueSnapshots = new MaxUniqueSnapshotsTextField("maxUniqueSnapshots");
+        maxUniqueSnapshots = new MaxUniqueSnapshotsTextField("maxUniqueSnapshots");
         advancedSettings.add(maxUniqueSnapshots);
         advancedSettings.add(new SchemaHelpBubble("maxUniqueSnapshots.help"));
 
         // snapshotVersionBehavior
         SnapshotVersionBehavior[] versions = SnapshotVersionBehavior.values();
-        final DropDownChoice snapshotVersionDropDown =
-                new DropDownChoice("snapshotVersionBehavior", Arrays.asList(versions));
+        snapshotVersionDropDown = new DropDownChoice("snapshotVersionBehavior", Arrays.asList(versions)) {
+            @Override
+            public boolean isEnabled() {
+                return getRepoDescriptor().isHandleSnapshots();
+            }
+        };
+
         snapshotVersionDropDown.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
@@ -148,7 +163,7 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
             SnapshotVersionBehavior snapshotVersionBehavior = descriptor.getSnapshotVersionBehavior();
             boolean isUnique = UNIQUE.equals(snapshotVersionBehavior);
             boolean isDeployer = DEPLOYER.equals(snapshotVersionBehavior);
-            return (isUnique || isDeployer);
+            return (descriptor.isHandleSnapshots() && (isUnique || isDeployer));
         }
     }
 

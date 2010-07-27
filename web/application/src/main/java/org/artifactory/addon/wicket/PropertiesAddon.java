@@ -28,6 +28,7 @@ import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.md.Properties;
 import org.artifactory.api.repo.RepoPath;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
+import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 
@@ -105,4 +106,22 @@ public interface PropertiesAddon extends AddonFactory {
      * @return Map of repo paths with their corresponding properties
      */
     Map<RepoPath, Properties> getProperties(Set<RepoPath> repoPaths, String... mandatoryKeys);
+
+    /**
+     * Deletes the property from the item.
+     *
+     * @param repoPath The item repo path
+     * @param property Property name to delete
+     */
+    void deleteProperty(RepoPath repoPath, String property);
+
+    /**
+     * Adds (and stores) a property to the item at the repo path.
+     *
+     * @param repoPath    The item repo path
+     * @param propertySet Property set to add - can be null
+     * @param property    Property to add
+     * @param values      Property values (if null, will not add the property)
+     */
+    void addProperty(RepoPath repoPath, PropertySet propertySet, Property property, String... values);
 }

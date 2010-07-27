@@ -161,7 +161,7 @@ public class RepositoriesResource {
             statusHolder.setError("Unable to import repository", e, log);
         } finally {
             if (!importSettings.isIndexMarkedArchives()) {
-                searchService.indexMarkedArchives();
+                searchService.asyncIndexMarkedArchives();
             }
         }
         StringBuilder builder = new StringBuilder();

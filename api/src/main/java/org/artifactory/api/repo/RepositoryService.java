@@ -129,8 +129,19 @@ public interface RepositoryService extends ImportableExportable {
     @Lock(transactional = false)
     void importRepo(String repoKey, ImportSettings settings);
 
+    /**
+     * @param repoPath Repository path of the item
+     * @return Folder or file info. Throws exception if the path doesn't exist.
+     */
     @Lock(transactional = true)
     ItemInfo getItemInfo(RepoPath repoPath);
+
+    /**
+     * @param repoPath Repository path of the file
+     * @return The file info. Throws exception if the path doesn't exist or it doesn't point to a file.
+     */
+    @Lock(transactional = true)
+    FileInfo getFileInfo(RepoPath repoPath);
 
     /**
      * Returns the available metadata names which are not internal
@@ -453,4 +464,21 @@ public interface RepositoryService extends ImportableExportable {
      */
     @Lock(transactional = true)
     ZipEntriesTree zipEntriesToTree(RepoPath zipPath) throws IOException;
+
+    /**
+     * Returns the latest modified item of the given file or folder (recursively)
+     *
+     * @param pathToSearch Repo path to search in
+     * @return Latest modified item
+     */
+    @Lock(transactional = true)
+    ItemInfo getLastModified(RepoPath pathToSearch);
+
+    /**
+     * Fixes ant inconsistencies with the files checksums.
+     *
+     * @param fileRepoPath Repository path of the file
+     */
+    @Lock(transactional = true)
+    void fixChecksums(RepoPath fileRepoPath);
 }

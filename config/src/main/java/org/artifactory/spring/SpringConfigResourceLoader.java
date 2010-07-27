@@ -42,7 +42,7 @@ import java.util.TreeMap;
 /**
  * This class acts as a resource locator for the spring configuration files. It recieves a request for the resources
  * paths and returns it (if found). It will first check if a path is specified in the ConstantsValue class, and if it
- * cannot find it there, (not specified, bad path, non-existant file, etc') it will try to find it in the resources
+ * cannot find it there, (not specified, bad path, non-existent file, etc.) it will try to find it in the resources
  * folder (META-INF/spring).
  *
  * @author Noam Tenne

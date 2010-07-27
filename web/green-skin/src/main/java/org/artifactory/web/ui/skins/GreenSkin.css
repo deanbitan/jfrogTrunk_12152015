@@ -67,6 +67,10 @@ h4 {
     margin: 0;
 }
 
+h5, h6 {
+    font-size: 13px;
+}
+
 hr {
     margin: 20px 0;
     clear: both;
@@ -260,6 +264,11 @@ span.label-gray {
     font-weight: bold;
 }
 
+.small {
+    font-size: 11px;
+    font-weight: normal;
+}
+
 input[disabled='disabled'][type='text'], input[disabled='disabled'][type='password'], span.textbox-disabled {
     background-color: #f7f7f7;
 }
@@ -271,6 +280,7 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
 .item-link {
     color: blue;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .item-link:hover, .item-link:focus {
@@ -288,18 +298,28 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
     width: 100%;
 }
 
-/*-- LinksColumn --*/
+/*-- ActionsPanel --*/
 
 .actions ul {
     padding: 0;
     margin: 0;
+    white-space: nowrap;
 }
 
 .actions li {
     list-style: none;
-    padding: 0;
-    margin: 5px 0 0 0;
+    padding: 0 10px 0 0;
+    display: inline;
+    margin: 0;
 }
+
+.actions li a {
+    display: inline-block;
+    margin-top: 5px;
+    min-width: 110px;
+}
+
+/*-- LinksColumn --*/
 
 .actions a {
     text-decoration: none;
@@ -1736,6 +1756,8 @@ div.footer {
     text-align: center;
     position: relative;
     padding-bottom: 3px;
+    height: 17px;
+    overflow: hidden;
 }
 
 div.footer span {
@@ -5364,31 +5386,6 @@ td.warn span {
     left: 7px;
 }
 
-.ldap-list-panel .list-panel .table-wrapper {
-    height: 250px;
-}
-
-.IE .ldap-list-panel .list-panel .table-wrapper {
-    height: 251px;
-}
-
-.Safari .ldap-list-panel .list-panel .table-wrapper {
-    height: 253px;
-}
-
-.ldap-list-panel  .list-panel-buttons .buttons-bottom {
-    background: url("images/buttons/on-dark-bg/dark-bg/darkbg-bottom.gif") bottom no-repeat;
-    height: 252px;
-}
-
-.IE .ldap-list-panel .list-panel-buttons .buttons-bottom {
-    height: 253px;
-}
-
-.Safari .ldap-list-panel .list-panel-buttons .buttons-bottom {
-    height: 255px;
-}
-
 /*-- ArtifactoryUpdatesPanel --*/
 
 .news-title {
@@ -5568,4 +5565,10 @@ table.data-table {
     width: 100%;
     height: 200px;
     font-family: "Courier New", Courier, monospace;
+}
+
+/*-- BuildSearchResultsPanel --*/
+
+.build-scopes {
+    padding-left: 24px;
 }

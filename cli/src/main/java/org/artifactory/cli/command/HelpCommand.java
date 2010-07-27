@@ -76,8 +76,7 @@ public class HelpCommand extends BaseCommand {
         usage.append("Artifactory Command Line Interface");
 
         try {
-            CompoundVersionDetails version = new ArtifactoryHome(new ArtifactoryHome.SystemOutLog())
-                    .getRunningVersionDetails();
+            CompoundVersionDetails version = new ArtifactoryHome(new NullLog()).getRunningVersionDetails();
             usage.append(", version ").append(version.getVersionName());
             usage.append(" (rev. ").append(version.getRevision()).append(")");
         } catch (Exception e) {
@@ -111,5 +110,11 @@ public class HelpCommand extends BaseCommand {
         }
 
         return true;
+    }
+
+    public static class NullLog implements ArtifactoryHome.SimpleLog {
+        public void log(String message) {
+            // ignore
+        }
     }
 }

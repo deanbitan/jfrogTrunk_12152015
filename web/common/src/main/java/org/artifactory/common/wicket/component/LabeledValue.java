@@ -23,9 +23,6 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.common.wicket.behavior.CssClass;
 
-/**
- * Created by IntelliJ IDEA. User: yoav
- */
 public class LabeledValue extends Panel {
 
     public LabeledValue(String id, String label) {

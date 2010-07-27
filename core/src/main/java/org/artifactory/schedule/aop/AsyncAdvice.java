@@ -34,6 +34,7 @@ import org.artifactory.tx.SessionResource;
 import org.slf4j.Logger;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +69,9 @@ public class AsyncAdvice implements MethodInterceptor {
             }
         }
 
+        //noinspection ThrowableInstanceNeverThrown
+        TraceableMethodInvocation traceableInvocation =
+                new TraceableMethodInvocation(invocation, Thread.currentThread().getName());
         if (delayExecutionUntilCommit && inTransaction) {
             boolean shared = annotation.shared();
             //Schedule task submission for session save()
@@ -78,12 +82,12 @@ public class AsyncAdvice implements MethodInterceptor {
             JcrSession session = jcrService.getManagedSession();
             MethodCallbackSessionResource sessionCallbacks =
                     session.getOrCreateResource(MethodCallbackSessionResource.class);
-            sessionCallbacks.addInvocation(invocation, shared);
+            sessionCallbacks.addInvocation(traceableInvocation, shared);
             //No future
             return null;
         } else {
             //Submit immediately
-            Future<?> future = submit(invocation);
+            Future<?> future = submit(traceableInvocation);
             return future;
         }
     }
@@ -103,7 +107,15 @@ public class AsyncAdvice implements MethodInterceptor {
                     }
                     invoke(invocation, result);
                 } catch (Throwable throwable) {
-                    log.error("Could not execute async method: '" + invocation.getMethod() + "'.", throwable);
+                    Throwable loggedThrowable;
+                    if (invocation instanceof TraceableMethodInvocation) {
+                        Throwable original = ((TraceableMethodInvocation) invocation).getThrowable();
+                        original.initCause(throwable);
+                        loggedThrowable = original;
+                    } else {
+                        loggedThrowable = throwable;
+                    }
+                    log.error("Could not execute async method: '" + invocation.getMethod() + "'.", loggedThrowable);
                 }
             }
         }, result[0]);
@@ -134,7 +146,7 @@ public class AsyncAdvice implements MethodInterceptor {
         final List<MethodInvocation> invocations = new ArrayList<MethodInvocation>();
         final CompoundInvocation sharedInvocations = new CompoundInvocation();
 
-        public void addInvocation(MethodInvocation invocation, boolean shared) {
+        public void addInvocation(TraceableMethodInvocation invocation, boolean shared) {
             if (shared) {
                 sharedInvocations.add(invocation);
             } else {
@@ -168,6 +180,42 @@ public class AsyncAdvice implements MethodInterceptor {
         }
 
         public void onSessionSave() {
+        }
+    }
+
+    private static class TraceableMethodInvocation implements MethodInvocation {
+
+        private final MethodInvocation wrapped;
+        private final Throwable throwable;
+
+        public TraceableMethodInvocation(MethodInvocation wrapped, String threadName) {
+            this.wrapped = wrapped;
+            String msg = "[" + threadName + "] async call to '" + wrapped.getMethod() + "' completed with error.";
+            this.throwable = new Throwable(msg);
+        }
+
+        public Throwable getThrowable() {
+            return throwable;
+        }
+
+        public Method getMethod() {
+            return wrapped.getMethod();
+        }
+
+        public Object[] getArguments() {
+            return wrapped.getArguments();
+        }
+
+        public Object proceed() throws Throwable {
+            return wrapped.proceed();
+        }
+
+        public Object getThis() {
+            return wrapped.getThis();
+        }
+
+        public AccessibleObject getStaticPart() {
+            return wrapped.getStaticPart();
         }
     }
 }

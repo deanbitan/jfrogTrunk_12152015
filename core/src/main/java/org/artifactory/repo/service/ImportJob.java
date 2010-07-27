@@ -82,7 +82,7 @@ public class ImportJob extends QuartzCommand {
             if (settings.isIndexMarkedArchives()) {
                 InternalSearchService internalSearchService =
                         InternalContextHelper.get().beanForType(InternalSearchService.class);
-                internalSearchService.indexMarkedArchives();
+                internalSearchService.asyncIndexMarkedArchives();
             }
         } catch (RuntimeException e) {
             if (status != null) {

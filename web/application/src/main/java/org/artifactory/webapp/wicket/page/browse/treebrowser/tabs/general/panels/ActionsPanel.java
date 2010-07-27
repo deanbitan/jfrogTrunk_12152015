@@ -18,16 +18,14 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels;
 
-import org.apache.wicket.markup.html.list.ListItem;
-import org.apache.wicket.markup.html.list.ListView;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.markup.repeater.RepeatingView;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.wicket.actionable.link.ActionLink;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -36,6 +34,8 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 public class ActionsPanel extends Panel {
+    private static final int LINK_ROWS = 2;
+
     public ActionsPanel(String id, ActionableItem repoItem) {
         super(id);
         addActions(repoItem);
@@ -43,29 +43,41 @@ public class ActionsPanel extends Panel {
 
     private void addActions(final ActionableItem repoItem) {
         Set<ItemAction> actions = repoItem.getActions();
-        final List<ItemAction> actionList = new ArrayList<ItemAction>(actions.size());
-        //Filter enabled actions
+        final int rowCount = Math.min(LINK_ROWS, actions.size());
+
+        // add border
+        FieldSetBorder actionBorder = new FieldSetBorder("actionBorder");
+        add(actionBorder);
+
+        // add rowsView
+        final RepeatingView rowsView = new RepeatingView("rows");
+        actionBorder.add(rowsView);
+
+        // add rows
+        RepeatingView[] rowsArray = new RepeatingView[rowCount];
+        for (int i = 0; i < rowCount; i++) {
+            final WebMarkupContainer rowContainer = new WebMarkupContainer(String.valueOf(i));
+            rowsView.add(rowContainer);
+
+            final RepeatingView rowView = new RepeatingView("action");
+            rowContainer.add(rowView);
+            rowsArray[i] = rowView;
+        }
+
+        // filter enabled actions and add them to rows
+        int i = 0;
         for (ItemAction action : actions) {
             if (action.isEnabled()) {
-                actionList.add(action);
+                final RepeatingView rowView = rowsArray[i % rowCount];
+                final WebMarkupContainer li = new WebMarkupContainer(String.valueOf(i));
+                rowView.add(li);
+
+                li.add(new ActionLink("link", action, repoItem));
+                i++;
             }
         }
 
-        FieldSetBorder actionBorder = new FieldSetBorder("actionBorder") {
-            @Override
-            public boolean isVisible() {
-                return super.isVisible() && !actionList.isEmpty();
-            }
-        };
-        add(actionBorder);
-
-        actionBorder.add(new ListView("action", actionList) {
-            @Override
-            protected void populateItem(ListItem item) {
-                ItemAction action = (ItemAction) item.getModelObject();
-                item.add(new ActionLink("link", action, repoItem));
-            }
-        });
+        actionBorder.setVisible(i > 0);
     }
 
 }

@@ -18,6 +18,8 @@
 
 package org.artifactory.addon;
 
+import org.artifactory.api.fs.ItemInfo;
+import org.artifactory.api.repo.Async;
 import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.rest.common.list.StringList;
@@ -70,8 +72,8 @@ public interface RestAddon extends AddonFactory {
      * @param pattern Pattern to search for
      * @return Set of matching artifact paths relative to the repo
      */
-    Set<String> searchArtifactsByPattern(String pattern)
-            throws ExecutionException, TimeoutException, InterruptedException;
+    Set<String> searchArtifactsByPattern(String pattern) throws ExecutionException, TimeoutException,
+            InterruptedException;
 
     /**
      * Moves or copies build artifacts and\or dependencies
@@ -114,4 +116,29 @@ public interface RestAddon extends AddonFactory {
      */
     Response replicate(String path, int progress, int mark, int deleteExisting, SyncResource.Overwrite overwrite,
             HttpServletResponse httpResponse) throws IOException;
+
+    /**
+     * Renames structure, content and properties of build info objects. The actual rename is done asynchronously.
+     *
+     * @param from Name to replace
+     * @param to   Replacement build name
+     */
+    void renameBuilds(String from, String to);
+
+    /**
+     * Renames structure, content and properties of build info objects in an asynchronous manner.
+     *
+     * @param from Name to replace
+     * @param to   Replacement build name
+     */
+    @Async
+    void renameBuildsAsync(String from, String to);
+
+    /**
+     * Returns the latest modified item of the given file or folder (recursively)
+     *
+     * @param pathToSearch Repo path to search in
+     * @return Latest modified item
+     */
+    ItemInfo getLastModified(String pathToSearch);
 }

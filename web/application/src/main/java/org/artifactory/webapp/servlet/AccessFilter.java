@@ -138,7 +138,7 @@ public class AccessFilter extends DelayedFilterBase {
             authFilter.doFilter(request, response, chain);
         }
         catch (ServletException e) {
-            log.error("Authentication error occured ", e);
+            log.error("Authentication error occurred ", e);
         } finally {
             Authentication newAuthentication = securityContext.getAuthentication();
             if (newAuthentication != null && newAuthentication.isAuthenticated()) {

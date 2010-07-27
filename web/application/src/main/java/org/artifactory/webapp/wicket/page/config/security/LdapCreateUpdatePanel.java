@@ -27,8 +27,9 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.LdapGroupWebAddon;
+import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.StatusEntry;
 import org.artifactory.api.common.StatusEntryLevel;
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.wicket.WicketProperty;
@@ -51,6 +52,8 @@ import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 /**
  * Ldaps configuration panel.
@@ -213,15 +216,17 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                             "to test the LDAP settings");
                     return;
                 }
-
-                StatusHolder status = securityService.testLdapConnection(ldapSetting, testUsername, testPassword);
-
+                MultiStatusHolder status = securityService.testLdapConnection(ldapSetting, testUsername, testPassword);
                 if (status.isError()) {
                     error(status.getStatusMsg());
-                } else if (status.getStatusEntry().getLevel().equals(StatusEntryLevel.WARNING)) {
-                    warn(status.getStatusEntry().getMessage());
-                } else {
-                    info(status.getStatusMsg());
+                }
+                List<StatusEntry> warnings = status.getEntries(StatusEntryLevel.WARNING);
+                for (StatusEntry warning : warnings) {
+                    warn(warning.getMessage());
+                }
+                List<StatusEntry> infos = status.getEntries(StatusEntryLevel.INFO);
+                for (StatusEntry info : infos) {
+                    info(info.getMessage());
                 }
                 AjaxUtils.refreshFeedback(target);
             }

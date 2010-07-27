@@ -103,10 +103,14 @@ public abstract class RestUtils {
     }
 
     public static String buildStorageInfoUri(HttpServletRequest request, SearchResultBase result) {
+        return buildStorageInfoUri(request, result.getRepoKey(), result.getRelativePath());
+    }
+
+    public static String buildStorageInfoUri(HttpServletRequest request, String repoKey, String relativePath) {
         String servletContextUrl = HttpUtils.getServletContextUrl(request);
         StringBuilder sb = new StringBuilder(servletContextUrl);
         sb.append("/").append(RestConstants.PATH_API).append("/").append(ArtifactRestConstants.PATH_ROOT);
-        sb.append("/").append(result.getRepoKey()).append("/").append(result.getRelativePath());
+        sb.append("/").append(repoKey).append("/").append(relativePath);
         return sb.toString();
     }
 

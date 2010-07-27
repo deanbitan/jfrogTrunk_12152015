@@ -128,7 +128,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         checkForExternalConfiguration();
         checkOcmFolders();
         CoreAddons coreAddon = addons.addonByType(CoreAddons.class);
-        if (coreAddon.isNewAdminAccountAllowed() && !adminUserExists()) {
+        if (coreAddon.isCreateDefaultAdminAccountAllowed() && !adminUserExists()) {
             createDefaultAdminUser();
         }
         createDefaultAnonymousUser();
@@ -349,12 +349,6 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     public boolean createUser(UserInfo user) {
-        if (user.isAdmin()) {
-            CoreAddons coreAddon = addons.addonByType(CoreAddons.class);
-            if (!coreAddon.isNewAdminAccountAllowed()) {
-                return false;
-            }
-        }
         user.setUsername(user.getUsername().toLowerCase());
         boolean userCreated = userGroupManager.createUser(new SimpleUser(user));
         if (userCreated) {
@@ -1086,7 +1080,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     private void createDefaultAnonymousUser() {
         UserInfoBuilder builder = new UserInfoBuilder(UserInfo.ANONYMOUS);
-        builder.password(DigestUtils.md5Hex("")).email(null).updatableProfile(true);
+        builder.password(DigestUtils.md5Hex("")).email(null).updatableProfile(false);
         UserInfo anonUser = builder.build();
         boolean createdAnonymousUser = createUser(anonUser);
 
@@ -1166,7 +1160,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         InternalContextHelper.get().beanForType(CacheService.class).getCache(ArtifactoryCache.authentication).clear();
     }
 
-    public StatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
+    public MultiStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
         return ldapService.testLdapConnection(ldapSetting, username, password);
     }
 

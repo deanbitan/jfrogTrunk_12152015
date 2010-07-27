@@ -82,9 +82,11 @@ import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
+import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
@@ -149,7 +151,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.lang.String.format;
-import static org.apache.wicket.Component.IVisitor;
 import static org.artifactory.addon.wicket.Addon.*;
 
 /**
@@ -294,6 +295,10 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return null;
     }
 
+    public void renameBuildNameProperty(String from,
+            String to) {
+    }
+
     public String getSearchLimitDisclaimer() {
         return StringUtils.EMPTY;
     }
@@ -329,6 +334,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     public Map<RepoPath, Properties> getProperties(Set<RepoPath> repoPaths, String... mandatoryKeys) {
         return Maps.newHashMap();
+    }
+
+    public void deleteProperty(RepoPath repoPath, String property) {
+    }
+
+    public void addProperty(RepoPath repoPath, PropertySet propertySet, Property property, String... values) {
     }
 
     public WebMarkupContainer getKeyPairContainer(String wicketId, String virtualRepoKey, boolean isCreate) {
@@ -455,7 +466,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return Sets.newHashSet();
     }
 
-    public Set<FileInfo> getDependencyFileInfo(Build build) {
+    public Set<FileInfo> getDependencyFileInfo(Build build, Set<String> scopes) {
         return Sets.newHashSet();
     }
 
@@ -534,7 +545,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return true;
     }
 
-    public boolean isNewAdminAccountAllowed() {
+    public boolean isCreateDefaultAdminAccountAllowed() {
         return true;
     }
 
@@ -678,13 +689,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     private static void disableAll(MarkupContainer container) {
         container.setEnabled(false);
-        container.visitChildren(new DisableVisitor());
+        container.visitChildren(new SetEnableVisitor(false));
     }
 
-    private static class DisableVisitor implements IVisitor {
-        public Object component(Component component) {
-            component.setEnabled(false);
-            return CONTINUE_TRAVERSAL;
-        }
-    }
 }

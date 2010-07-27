@@ -245,7 +245,7 @@ public class ImportSystemPanel extends TitledPanel {
                         }
                     }
                     status.reset();
-                    searchService.indexMarkedArchives();
+                    searchService.asyncIndexMarkedArchives();
                 }
             }
         };

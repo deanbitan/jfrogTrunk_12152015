@@ -64,7 +64,8 @@ public enum ArtifactoryVersion {
     v221("2.2.1", 10024),
     v222("2.2.2", 10427),
     v223("2.2.3", 10588),
-    v224("2.2.4", Integer.MAX_VALUE);
+    v224("2.2.4", 11256),
+    v225("2.2.5", Integer.MAX_VALUE);
 
     public static ArtifactoryVersion getCurrent() {
         ArtifactoryVersion[] versions = ArtifactoryVersion.values();

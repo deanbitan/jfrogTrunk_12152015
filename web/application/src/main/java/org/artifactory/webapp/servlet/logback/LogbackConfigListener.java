@@ -51,8 +51,6 @@ public class LogbackConfigListener implements ServletContextListener {
             throw new IllegalStateException("Artifactory home not initialized");
         }
 
-        BootstrapLogger.info("Logging configuration started.");
-
         //Install the juli to slf4j bridge (disabled dur to RTFACT-1283)
         //SLF4JBridgeHandler.install();
 
@@ -77,8 +75,6 @@ public class LogbackConfigListener implements ServletContextListener {
         configWatchDog = new LogbackConfigWatchDog(context);
         configureWatchdog(servletContext);
         configWatchDog.start();
-
-        BootstrapLogger.info("Logging configuration completed.");
     }
 
     public void contextDestroyed(ServletContextEvent sce) {

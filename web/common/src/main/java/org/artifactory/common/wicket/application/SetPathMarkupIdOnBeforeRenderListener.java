@@ -30,7 +30,7 @@ public class SetPathMarkupIdOnBeforeRenderListener implements IComponentOnBefore
     public void onBeforeRender(Component component) {
         String markupId = component.getMarkupId(false);
         if (markupId == null) {
-            String id = generateMarkupId(component);
+            String id = getPath(component);
             if (id != null) {
                 component.setMarkupId(id);
                 component.setOutputMarkupId(true);
@@ -38,18 +38,18 @@ public class SetPathMarkupIdOnBeforeRenderListener implements IComponentOnBefore
         }
     }
 
-    protected String generateMarkupId(Component component) {
-        String id = component.getPageRelativePath();
-        if (StringUtils.isEmpty(id)) {
+    protected String getPath(Component component) {
+        String path = component.getPageRelativePath();
+        if (StringUtils.isEmpty(path)) {
             return null;
         }
 
         // escape some noncompliant characters
-        id = Strings.replaceAll(id, "_", "__").toString();
-        id = id.replace('.', '_');
-        id = id.replace('-', '_');
-        id = id.replace(' ', '_');
-        id = id.replace(':', '_');
-        return id;
+        path = Strings.replaceAll(path, "_", "__").toString();
+        path = path.replace('.', '_');
+        path = path.replace('-', '_');
+        path = path.replace(' ', '_');
+        path = path.replace(':', '_');
+        return path;
     }
 }

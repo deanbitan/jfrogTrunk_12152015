@@ -193,7 +193,7 @@ public class MailConfigPanel extends TitledPanel {
                     } catch (EmailException e) {
                         String message = e.getMessage();
                         if (message == null) {
-                            message = "An error has occured while sending an e-mail.";
+                            message = "An error has occurred while sending an e-mail.";
                         }
                         log.error(message, e);
                         CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);

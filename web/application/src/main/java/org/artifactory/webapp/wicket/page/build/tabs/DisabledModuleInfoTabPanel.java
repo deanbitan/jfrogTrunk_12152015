@@ -18,9 +18,9 @@
 
 package org.artifactory.webapp.wicket.page.build.tabs;
 
-import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.artifactory.common.wicket.behavior.CssClass;
+import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.webapp.wicket.page.build.tabs.list.DisabledModuleArtifactsListPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.list.DisabledModuleDependenciesListPanel;
 
@@ -44,12 +44,7 @@ public class DisabledModuleInfoTabPanel extends BaseModuleInfoTabPanel {
         addDependenciesTable();
 
         setEnabled(false);
-        visitChildren(new IVisitor() {
-            public Object component(Component component) {
-                component.setEnabled(false);
-                return CONTINUE_TRAVERSAL;
-            }
-        });
+        visitChildren(new SetEnableVisitor(false));
     }
 
     @Override

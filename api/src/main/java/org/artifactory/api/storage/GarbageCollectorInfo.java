@@ -60,11 +60,11 @@ public class GarbageCollectorInfo {
         if (nbElementsClean > 0) {
             cleanResult = "Deletion execution:      " + (endOfGC - cleanUpStartTime) + "ms\n" +
                     "Initial element count:   " + initialCount + "\n" +
-                    "Initial size:            " + initialSize + " bytes\n" +
                     "Bereaved nodes:          " + nbBereavedNodes + "\n" +
                     "Elements cleaned:        " + nbElementsClean + "\n" +
-                    "Total size cleaned:      " + totalSizeCleaned + "\n" +
-                    "Current total size:      " + dataStoreSize;
+                    "Initial size:            " + StorageUnit.toReadableString(initialSize) + "\n" +
+                    "Total size cleaned:      " + StorageUnit.toReadableString(totalSizeCleaned) + "\n" +
+                    "Current total size:      " + StorageUnit.toReadableString(dataStoreSize);
         } else {
             cleanResult = "Total element count:   " + initialCount + "\n" +
                     "Bereaved nodes:          " + nbBereavedNodes + "\n" +

@@ -92,10 +92,11 @@ public interface BuildAddon extends AddonFactory {
     /**
      * Returns a list of build-dependency file info objects
      *
-     * @param build Build to extract artifacts from
+     * @param build  Build to extract artifacts from
+     * @param scopes Scopes to add. null = add all dependencies.
      * @return Dependency file info list
      */
-    Set<FileInfo> getDependencyFileInfo(Build build);
+    Set<FileInfo> getDependencyFileInfo(Build build, Set<String> scopes);
 
     /**
      * Returns a list of build-artifact actionable items
@@ -137,4 +138,13 @@ public interface BuildAddon extends AddonFactory {
      * @return file info
      */
     FileInfo getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean);
+
+    /**
+     * Searches for artifacts with build name properties that contain 'from' as a value and renames them to 'to'
+     *
+     * @param from Build name property value to search for
+     * @param to   Replacement build name
+     */
+    @Lock(transactional = true)
+    void renameBuildNameProperty(String from, String to);
 }

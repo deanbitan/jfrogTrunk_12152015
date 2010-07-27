@@ -120,11 +120,14 @@ if [ -L ${ARTIFACTORY_HOME}/logs ]; then
 else
     echo -n "creating..."
     artLogFolder=/var/log/artifactory
+    logsOK=false
     if [ ! -d "$artLogFolder" ]; then
         mkdir -p $artLogFolder && \
         logsOK=true
+    else
+        logsOK=true
     fi
-    if [ $logsOK = true ]; then
+    if $logsOK; then
         if [ -d ${ARTIFACTORY_HOME}/logs ]; then
             mv ${ARTIFACTORY_HOME}/logs ${ARTIFACTORY_HOME}/logs.orig
         fi

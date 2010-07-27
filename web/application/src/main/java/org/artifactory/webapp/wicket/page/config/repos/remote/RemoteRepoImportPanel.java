@@ -169,7 +169,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
                     target.addComponent(repoTable);
                     resizeAndCenterCurrent(target);
                 } catch (Exception e) {
-                    error("An error occured while locating shared repositories: " + e.getMessage());
+                    error("An error occurred while locating shared repositories: " + e.getMessage());
                 } finally {
                     AjaxUtils.refreshFeedback(target);
                 }
@@ -361,7 +361,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
         columns.add(new SelectAllCheckboxColumn<ImportableRemoteRepo>("", "selected", null) {
             @Override
             protected void onUpdate(FormComponent checkbox, ImportableRemoteRepo rowObject, boolean value,
-                                    AjaxRequestTarget target) {
+                    AjaxRequestTarget target) {
                 super.onUpdate(checkbox, rowObject, value, target);
                 //On each update, refresh import button to customize the warning messages of the call decorator
                 target.addComponent(importButton);

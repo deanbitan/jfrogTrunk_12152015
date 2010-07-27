@@ -23,22 +23,32 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.SetMultimap;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.Info;
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * A map of stringified keys and values, used for storing arbitrary key-value metdata on repository items.
+ * A map of stringified keys and values, used for storing arbitrary key-value metadata on repository items.
  *
  * @author Yoav Landman
  */
 @XStreamAlias(Properties.ROOT)
 public class Properties implements Info {
 
+    private static final Logger log = LoggerFactory.getLogger(Properties.class);
+
     public static final String ROOT = "properties";
+
+    public static final String MATRIX_PARAMS_SEP = ";";
 
     /**
      * A mandatory property is stored as key+=val
@@ -157,5 +167,73 @@ public class Properties implements Info {
     @Override
     public String toString() {
         return props.toString();
+    }
+
+    /**
+     * Extracts the matrix params from the given strings and adds them to the properties object.<br>
+     * Note that the matrix params string must begin with matrix params, and any params found are omitted, so only the
+     * rest of the path (if exists) will remain in the string.
+     *
+     * @param propertyCollection Property collection to append to. Cannot be null
+     * @param matrixParams       Matrix params to process. Cannot be null
+     */
+    public static void processMatrixParams(Properties propertyCollection, String matrixParams) {
+        int matrixParamStart = 0;
+        do {
+            int matrixParamEnd = matrixParams.indexOf(MATRIX_PARAMS_SEP, matrixParamStart + 1);
+            if (matrixParamEnd < 0) {
+                matrixParamEnd = matrixParams.length();
+            }
+            String param = matrixParams.substring(matrixParamStart + 1, matrixParamEnd);
+            int equals = param.indexOf('=');
+            if (equals > 0) {
+                String key = param.substring(0, equals);
+                String value = param.substring(equals + 1);
+                // url-decode the value
+                try {
+                    value = URLDecoder.decode(value, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    log.warn("Encoding not supported: {}. Using original value", e.getMessage());
+                }
+                propertyCollection.put(key, value);
+            } else if (equals == 0) {
+                //No key declared, ignore
+            } else if (param.length() > 0) {
+                propertyCollection.put(param, "");
+            }
+            matrixParamStart = matrixParamEnd;
+        } while (matrixParamStart > 0 && matrixParamStart < matrixParams.length());
+    }
+
+    /**
+     * Encodes the given properties ready to attach to an HTTP request
+     *
+     * @param requestProperties Properties to encode. Can be null
+     * @return HTTP request ready property chain
+     */
+    public static String encodeForRequest(Properties requestProperties) throws UnsupportedEncodingException {
+        StringBuilder requestPropertyBuilder = new StringBuilder();
+        if (requestProperties != null) {
+            for (Map.Entry<String, String> requestPropertyEntry : requestProperties.entries()) {
+                requestPropertyBuilder.append(Properties.MATRIX_PARAMS_SEP);
+
+                String key = requestPropertyEntry.getKey();
+                boolean isMandatory = false;
+                if (key.endsWith(Properties.MANDATORY_SUFFIX)) {
+                    key = key.substring(0, key.length() - 1);
+                    isMandatory = true;
+                }
+                requestPropertyBuilder.append(URLEncoder.encode(key, "utf-8"));
+                if (isMandatory) {
+                    requestPropertyBuilder.append("+");
+                }
+                String value = requestPropertyEntry.getValue();
+                if (StringUtils.isNotBlank(value)) {
+                    requestPropertyBuilder.append("=").append(URLEncoder.encode(value, "utf-8"));
+                }
+            }
+        }
+
+        return requestPropertyBuilder.toString();
     }
 }

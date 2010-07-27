@@ -121,9 +121,12 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
             // get the parent path which should contains the maven-metadata
             RepoPath parentRepoPath = repoPath.getParent();
             RepositoryService repoService = ContextHelper.get().getRepositoryService();
+            String mavenMetadataStr = null;
             if (repoService.exists(parentRepoPath) &&
                     repoService.hasMetadata(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME)) {
-                String mavenMetadataStr = repoService.getXmlMetadata(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME);
+                mavenMetadataStr = repoService.getXmlMetadata(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME);
+            }
+            if (mavenMetadataStr != null) {
                 Metadata metadata = MavenModelUtils.toMavenMetadata(mavenMetadataStr);
                 Versioning versioning = metadata.getVersioning();
                 if (versioning != null) {
