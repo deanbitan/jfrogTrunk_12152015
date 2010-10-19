@@ -32,16 +32,16 @@ import java.util.List;
 /**
  * @author Yoav Aharoni
  */
-public abstract class SingleSelectionTable<T> extends SortableTable {
+public abstract class SingleSelectionTable<T> extends SortableTable<T> {
     private T selection;
 
-    protected SingleSelectionTable(String id, List<IColumn> columns,
-            ISortableDataProvider dataProvider, int rowsPerPage) {
+    protected SingleSelectionTable(String id, List<IColumn<T>> columns,
+                                   ISortableDataProvider<T> dataProvider, int rowsPerPage) {
         super(id, columns, dataProvider, rowsPerPage);
     }
 
-    protected SingleSelectionTable(String id, IColumn[] columns, ISortableDataProvider dataProvider,
-            int rowsPerPage) {
+    protected SingleSelectionTable(String id, IColumn<T>[] columns, ISortableDataProvider<T> dataProvider,
+                                   int rowsPerPage) {
         super(id, columns, dataProvider, rowsPerPage);
     }
 
@@ -55,7 +55,7 @@ public abstract class SingleSelectionTable<T> extends SortableTable {
     }
 
     @Override
-    protected Item newRowItem(String id, int index, IModel model) {
+    protected Item newRowItem(String id, int index, IModel<T> model) {
         Item rowItem = super.newRowItem(id, index, model);
         if (model.getObject().equals(selection)) {
             rowItem.add(new CssClass("selected"));
@@ -64,8 +64,8 @@ public abstract class SingleSelectionTable<T> extends SortableTable {
     }
 
     @Override
-    protected Item newCellItem(String id, int index, final IModel model) {
-        Item cellItem = super.newCellItem(id, index, model);
+    protected Item<T> newCellItem(final String id, final int index, final IModel<T> model) {
+        Item<T> cellItem = super.newCellItem(id, index, model);
         if (model.getObject() instanceof PropertyColumn) {
             cellItem.add(new SelectRowBehavior());
         }
@@ -84,7 +84,7 @@ public abstract class SingleSelectionTable<T> extends SortableTable {
         @Override
         @SuppressWarnings({"unchecked"})
         protected void onEvent(final AjaxRequestTarget target) {
-            T rowObject = (T) getComponent().getParent().getParent().getModelObject();
+            T rowObject = (T) getComponent().getParent().getParent().getDefaultModelObject();
             selection = rowObject;
 
             onRowSelected(rowObject, target);

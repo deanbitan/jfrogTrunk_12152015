@@ -19,7 +19,7 @@
 package org.artifactory.webapp.actionable.event;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.action.RepoAwareItemAction;
 

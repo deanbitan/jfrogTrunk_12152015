@@ -11,6 +11,6 @@ sourceSets {
 }
 dependencies {
   compile project(':open:web:common')
-  compile group: 'org.apache.wicket', name: 'wicket', version: '1.3.7'
+  compile group: 'org.apache.wicket', name: 'wicket', version: '1.4.10'
 
 }

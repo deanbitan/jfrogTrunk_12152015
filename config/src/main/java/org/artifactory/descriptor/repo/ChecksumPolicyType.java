@@ -28,8 +28,18 @@ import javax.xml.bind.annotation.XmlEnumValue;
  */
 @XmlEnum(String.class)
 public enum ChecksumPolicyType {
-    @XmlEnumValue("fail")FAIL,
-    @XmlEnumValue("generate-if-absent")GEN_IF_ABSENT,
-    @XmlEnumValue("ignore-and-generate")IGNORE_AND_GEN,
-    @XmlEnumValue("pass-thru")PASS_THRU
+    @XmlEnumValue("generate-if-absent")GEN_IF_ABSENT("generate-if-absent"),
+    @XmlEnumValue("fail")FAIL("fail"),
+    @XmlEnumValue("ignore-and-generate")IGNORE_AND_GEN("ignore-and-generate"),
+    @XmlEnumValue("pass-thru")PASS_THRU("pass-thru");
+
+    String message;
+
+    ChecksumPolicyType(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
 }

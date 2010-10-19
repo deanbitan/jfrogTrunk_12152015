@@ -24,7 +24,7 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.artifactory.common.wicket.util.CookieUtils;
-import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledBaseTab;
+import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledTab;
 
 import java.util.List;
 
@@ -38,6 +38,7 @@ public class PersistentTabbedPanel extends StyledTabbedPanel {
     private static final int UNSET = -1;
 
     private int lastTabIndex;
+    public static final String SELECT_TAB_PARAM = "selectTab";
 
     public PersistentTabbedPanel(String id, List<ITab> tabs) {
         super(id, tabs);
@@ -93,8 +94,8 @@ public class PersistentTabbedPanel extends StyledTabbedPanel {
         super.onAjaxUpdate(target);
 
         // store last tab name in a cookie
-        ITab tab = (ITab) getTabs().get(getSelectedTab());
-        CookieUtils.setCookie(COOKIE_NAME, tab.getTitle().getObject().toString());
+        ITab tab = getTabs().get(getSelectedTab());
+        CookieUtils.setCookie(COOKIE_NAME, tab.getTitle().getObject());
     }
 
     /**
@@ -104,15 +105,15 @@ public class PersistentTabbedPanel extends StyledTabbedPanel {
      */
     private String getDefaultSelectionTabTitle() {
         WebRequest request = (WebRequest) RequestCycle.get().getRequest();
-        return request.getParameter("selectTab");
+        return request.getParameter(SELECT_TAB_PARAM);
     }
 
     private int getTabIndexByTitle(String tabTitle, List<ITab> tabs) {
         if (StringUtils.isNotBlank(tabTitle)) {
             for (int i = 0; i < tabs.size(); i++) {
                 ITab tab = tabs.get(i);
-                String tabName = tab.getTitle().getObject().toString();
-                if (tabName.equals(tabTitle) && !(tab instanceof DisabledBaseTab)) {
+                String tabName = tab.getTitle().getObject();
+                if (tabName.equals(tabTitle) && !(tab instanceof DisabledTab)) {
                     return i;
                 }
             }

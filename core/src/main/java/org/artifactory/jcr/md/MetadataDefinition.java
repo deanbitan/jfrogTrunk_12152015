@@ -18,9 +18,9 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.common.Info;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
+import org.artifactory.common.Info;
 import org.artifactory.search.SearcherBase;
 
 /**
@@ -42,7 +42,7 @@ public class MetadataDefinition<T> implements Info {
     private final boolean internal;
 
     public MetadataDefinition(XmlMetadataProvider<T> xmlProvider,
-                              MetadataPersistenceHandler<T> persistenceHandler, boolean internal) {
+            MetadataPersistenceHandler<T> persistenceHandler, boolean internal) {
         this.xmlProvider = xmlProvider;
         this.persistenceHandler = persistenceHandler;
         this.internal = internal;

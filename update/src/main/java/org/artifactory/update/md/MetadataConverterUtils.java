@@ -18,7 +18,8 @@
 
 package org.artifactory.update.md;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -30,7 +31,7 @@ import java.util.List;
  * @author freds
  * @date Nov 11, 2008
  */
-public class MetadataConverterUtils {
+public abstract class MetadataConverterUtils {
     private static final String CREATED_BY = "createdBy";
     private static final String MODIFIED_BY = "modifiedBy";
     private static final String REPO_PATH = "repoPath";
@@ -41,6 +42,10 @@ public class MetadataConverterUtils {
     private static final String REL_PATH = "relPath";
 
     private static final String[] EXTENSION_FIELDS = {"lastUpdated", MODIFIED_BY, CREATED_BY, "sha1", "md5"};
+
+    private MetadataConverterUtils() {
+        // utility class
+    }
 
     public static List<Element> extractExtensionFields(Element rootElement) {
         String modifiedBy = rootElement.getChildText(MODIFIED_BY);
@@ -70,7 +75,7 @@ public class MetadataConverterUtils {
     public static RepoPath extractRepoPath(Element rootElement) {
         String repoKey = rootElement.getChildText(REPO_KEY);
         String relPath = rootElement.getChildText(REL_PATH);
-        RepoPath repoPath = new RepoPath(repoKey, relPath);
+        RepoPath repoPath = new RepoPathImpl(repoKey, relPath);
         rootElement.removeChild(REPO_KEY);
         rootElement.removeChild(REL_PATH);
         return repoPath;

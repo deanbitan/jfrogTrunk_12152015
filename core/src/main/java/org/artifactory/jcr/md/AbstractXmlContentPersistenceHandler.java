@@ -20,9 +20,10 @@ package org.artifactory.jcr.md;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.artifactory.api.fs.MetadataInfo;
+import org.artifactory.api.fs.MetadataInfoImpl;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrTypes;
+import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.repo.jcr.JcrHelper;
 
@@ -86,7 +87,7 @@ public abstract class AbstractXmlContentPersistenceHandler<T> extends AbstractMe
             return null;
         }
         String metadataName = getMetadataName();
-        MetadataInfo mdi = new MetadataInfo(metadataAware.getRepoPath(), metadataName);
+        MetadataInfo mdi = new MetadataInfoImpl(metadataAware.getRepoPath(), metadataName);
         try {
             Calendar created = metadataNode.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getDate();
             mdi.setCreated(created.getTimeInMillis());

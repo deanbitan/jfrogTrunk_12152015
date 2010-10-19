@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action;
 
 import org.apache.wicket.RequestCycle;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.action.ShowInTreeAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;

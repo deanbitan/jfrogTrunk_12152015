@@ -22,12 +22,14 @@ package org.artifactory.webapp.servlet;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.md.Properties;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
@@ -48,7 +50,7 @@ import static org.apache.commons.lang.StringUtils.EMPTY;
 /**
  * User: freds Date: Aug 13, 2008 Time: 10:56:25 AM
  */
-public class RequestUtils {
+public abstract class RequestUtils {
     private static final Logger log = LoggerFactory.getLogger(RequestUtils.class);
 
     private static final Set<String> NON_UI_PATH_PREFIXES = new HashSet<String>();
@@ -57,12 +59,10 @@ public class RequestUtils {
     public static final String WEBAPP_URL_PATH_PREFIX = "webapp";
     private static boolean USE_PATH_INFO = false;
     private static final String DEFAULT_ENCODING = "utf-8";
-    private static final Set<String> WEBDAV_METHODS = new HashSet<String>() {{
-        add("propfind");
-        add("mkcol");
-        add("delete");
-        add("options");
-    }};
+
+    private RequestUtils() {
+        // utility class
+    }
 
     public static void setNonUiPathPrefixes(Collection<String> uriPathPrefixes) {
         NON_UI_PATH_PREFIXES.clear();
@@ -87,7 +87,8 @@ public class RequestUtils {
         return contextPrefix;
     }
 
-    protected static boolean isRepoRequest(String servletPath) {
+    public static boolean isRepoRequest(HttpServletRequest request) {
+        String servletPath = getServletPathFromRequest(request);
         String pathPrefix = PathUtils.getPathFirstPart(servletPath);
         if (pathPrefix == null || pathPrefix.length() == 0) {
             return false;
@@ -118,7 +119,10 @@ public class RequestUtils {
     }
 
     public static boolean isWebdavRequest(HttpServletRequest request) {
-        if (WEBDAV_METHODS.contains(request.getMethod().toLowerCase(Locale.ENGLISH))) {
+        if (!isRepoRequest(request)) {
+            return false;
+        }
+        if (WebdavService.WEBDAV_METHODS.contains(request.getMethod().toLowerCase(Locale.ENGLISH))) {
             return true;
         }
         String wagonProvider = request.getHeader("X-wagon-provider");
@@ -136,6 +140,11 @@ public class RequestUtils {
         return isUiPathPrefix(pathPrefix);
     }
 
+    public static boolean isWicketRequest(HttpServletRequest request) {
+        String queryString = request.getQueryString();
+        return queryString != null && queryString.startsWith("wicket");
+    }
+
     public static boolean isUiPathPrefix(String pathPrefix) {
         if (UI_PATH_PREFIXES.contains(pathPrefix)) {
             return true;
@@ -146,9 +155,8 @@ public class RequestUtils {
         return false;
     }
 
-    public static boolean isWicketRequest(HttpServletRequest request) {
-        String queryString = request.getQueryString();
-        return queryString != null && queryString.startsWith("wicket");
+    public static boolean isReservedName(String pathPrefix) {
+        return UI_PATH_PREFIXES.contains(pathPrefix) || NON_UI_PATH_PREFIXES.contains(pathPrefix);
     }
 
     public static boolean isAuthHeaderPresent(HttpServletRequest request) {
@@ -234,6 +242,18 @@ public class RequestUtils {
                 .getAttribute(org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REPOSITORY_PATH);
     }
 
+    /**
+     * Calculates a repoPath based on the given servlet path (path after the context root, including the repo prefix).
+     */
+    public static RepoPath calculateRepoPath(String requestPath) {
+        String repoKey = PathUtils.getPathFirstPart(requestPath);
+        int startIdx = repoKey.length() + 2;
+        int endIdx = (requestPath.endsWith("/") ? requestPath.length() - 1 : requestPath.length());
+        String path = startIdx < endIdx ? requestPath.substring(startIdx, endIdx) : "";
+        return new RepoPathImpl(repoKey, path);
+    }
+
+
     public static void removeRepoPath(WebRequest request, boolean storeAsRemoved) {
         HttpServletRequest httpServletRequest = request.getHttpServletRequest();
         RepoPath removedRepoPath = getRepoPath(request);
@@ -246,8 +266,8 @@ public class RequestUtils {
     }
 
     /**
-     * Extract the username out of the request, by checking the the header for the {@code Authorization} and then
-     * if it starts with {@code Basic} get it as a base 64 token and decode it.
+     * Extract the username out of the request, by checking the the header for the {@code Authorization} and then if it
+     * starts with {@code Basic} get it as a base 64 token and decode it.
      *
      * @param request The request to examine
      * @return The extracted username

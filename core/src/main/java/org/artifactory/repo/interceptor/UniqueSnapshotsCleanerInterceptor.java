@@ -19,9 +19,10 @@
 package org.artifactory.repo.interceptor;
 
 import com.google.common.collect.TreeMultimap;
-import org.artifactory.api.common.StatusHolder;
-import org.artifactory.api.fs.FileInfo;
+import org.artifactory.api.fs.InternalFileInfo;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
@@ -30,7 +31,6 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.resource.FileResource;
-import org.artifactory.resource.RepoResource;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
 
@@ -40,7 +40,7 @@ import java.util.SortedSet;
 /**
  * @author yoav
  */
-public class UniqueSnapshotsCleanerInterceptor implements RepoInterceptor {
+public class UniqueSnapshotsCleanerInterceptor extends StorageInterceptorAdapter {
     private static final Logger log = LoggerFactory.getLogger(UniqueSnapshotsCleanerInterceptor.class);
 
     /**
@@ -49,7 +49,8 @@ public class UniqueSnapshotsCleanerInterceptor implements RepoInterceptor {
      * @param fsItem
      * @param statusHolder
      */
-    public void onCreate(JcrFsItem fsItem, StatusHolder statusHolder) {
+    @Override
+    public void afterCreate(JcrFsItem fsItem, MutableStatusHolder statusHolder) {
         StoringRepo repo = fsItem.getRepo();
         if (!(repo instanceof LocalRepo) || fsItem.isDirectory()) {
             return;
@@ -57,7 +58,7 @@ public class UniqueSnapshotsCleanerInterceptor implements RepoInterceptor {
         //If the resource has no size specified, this will update the size
         //(this can happen if we established the resource based on a HEAD request that failed to
         //return the content-length).
-        RepoResource res = new FileResource((FileInfo) fsItem.getInfo());
+        RepoResource res = new FileResource((InternalFileInfo) fsItem.getInfo());
         String path = res.getRepoPath().getPath();
         JcrFile file = (JcrFile) fsItem;
         if (!MavenNaming.isUniqueSnapshot(path)) {
@@ -87,15 +88,5 @@ public class UniqueSnapshotsCleanerInterceptor implements RepoInterceptor {
                 }
             }
         }
-    }
-
-    public void onDelete(JcrFsItem fsItem, StatusHolder statusHolder) {
-        //Nothing
-    }
-
-    public void onMove(JcrFsItem sourceItem, JcrFsItem targetItem, StatusHolder statusHolder) {
-    }
-
-    public void onCopy(JcrFsItem sourceItem, JcrFsItem targetItem, StatusHolder statusHolder) {
     }
 }

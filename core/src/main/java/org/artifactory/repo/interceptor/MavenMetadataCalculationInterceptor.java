@@ -18,23 +18,23 @@
 
 package org.artifactory.repo.interceptor;
 
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.context.ArtifactoryContext;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.jcr.StoringRepo;
-import org.artifactory.spring.InternalArtifactoryContext;
-import org.artifactory.spring.InternalContextHelper;
 
 /**
  * Interceptor which handles maven metadata calculation upon creation and removal
  *
  * @author Noam Tenne
  */
-public class MavenMetadataCalculationInterceptor implements RepoInterceptor {
+public class MavenMetadataCalculationInterceptor extends StorageInterceptorAdapter {
 
     /**
      * If the newly created item is a pom file, this method will calculate the maven metadata of it's parent folder
@@ -42,9 +42,10 @@ public class MavenMetadataCalculationInterceptor implements RepoInterceptor {
      * @param fsItem       Newly created item
      * @param statusHolder StatusHolder
      */
-    public void onCreate(JcrFsItem fsItem, StatusHolder statusHolder) {
+    @Override
+    public void afterCreate(JcrFsItem fsItem, MutableStatusHolder statusHolder) {
         if (shouldRecalculateOnCreate(fsItem)) {
-            InternalArtifactoryContext context = InternalContextHelper.get();
+            ArtifactoryContext context = ContextHelper.get();
             RepositoryService repositoryService = context.getRepositoryService();
 
             // calculate maven metadata on the grandparent folder (the artifact id node)
@@ -73,15 +74,6 @@ public class MavenMetadataCalculationInterceptor implements RepoInterceptor {
         return true;
     }
 
-    public void onDelete(JcrFsItem fsItem, StatusHolder statusHolder) {
-    }
-
-    public void onMove(JcrFsItem sourceItem, JcrFsItem targetItem, StatusHolder statusHolder) {
-    }
-
-    public void onCopy(JcrFsItem sourceItem, JcrFsItem targetItem, StatusHolder statusHolder) {
-    }
-
     /**
      * Checks that the given storing repo is a non-cache local repo, since it is the only kind that metadata calculation
      * can be performed on.
@@ -96,5 +88,4 @@ public class MavenMetadataCalculationInterceptor implements RepoInterceptor {
     private boolean isPomFile(JcrFsItem fsItem) {
         return fsItem.isFile() && MavenNaming.isPom(fsItem.getRepoPath().getPath());
     }
-
 }

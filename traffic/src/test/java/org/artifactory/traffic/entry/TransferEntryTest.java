@@ -18,7 +18,8 @@
 
 package org.artifactory.traffic.entry;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.traffic.TrafficAction;
 import org.testng.annotations.Test;
 
@@ -37,7 +38,7 @@ public class TransferEntryTest {
      * Expression
      */
     public void uploadEntryToString() {
-        RepoPath repoPath = new RepoPath("libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom");
+        RepoPath repoPath = new RepoPathImpl("libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom");
         int contentLength = 632;
         UploadEntry uploadEntry = new UploadEntry(repoPath.getId(), contentLength, 10);
 
@@ -64,7 +65,7 @@ public class TransferEntryTest {
         assertEquals(uploadEntry.getDuration(), 10, "Duration should be equal");
         assertEquals(uploadEntry.getAction(), TrafficAction.UPLOAD, "Action should be equal");
         assertEquals(uploadEntry.getRepoPath(),
-                new RepoPath("libs-releases-local", "antlr/antlr/2.7.7/antlr-2.7.7.pom").getId(),
+                new RepoPathImpl("libs-releases-local", "antlr/antlr/2.7.7/antlr-2.7.7.pom").getId(),
                 "Entry repo paths should be equal");
         assertEquals(uploadEntry.getContentLength(), 456, "Entry content lengths should be equal");
     }

@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.dijit-all"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.dijit-all"] = true;
 console.warn("dijit-all may include much more code than your application actually requires. We strongly recommend that you investigate a custom build or the web build tool");
 dojo.provide("dijit.dijit-all");
 
@@ -26,7 +17,10 @@ dojo.require("dijit.Dialog");
 dojo.require("dijit.DialogUnderlay");
 dojo.require("dijit.TooltipDialog");
 
+// Editor
 dojo.require("dijit.Editor");
+dojo.require("dijit._editor.plugins.FontChoice");
+dojo.require("dijit._editor.plugins.LinkDialog");
 
 dojo.require("dijit.Menu");
 dojo.require("dijit.MenuItem");
@@ -54,7 +48,7 @@ dojo.require("dijit.form.ToggleButton");
 dojo.require("dijit.form.CheckBox");
 dojo.require("dijit.form.RadioButton");
 
-// Textbox widgets
+// TextBox widgets
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.form.ValidationTextBox");
 dojo.require("dijit.form.CurrencyTextBox");
@@ -66,6 +60,7 @@ dojo.require("dijit.form.NumberTextBox");
 dojo.require("dijit.form.ComboBox");
 dojo.require("dijit.form.FilteringSelect");
 dojo.require("dijit.form.MultiSelect");
+dojo.require("dijit.form.Select");
 
 // Slider widgets
 dojo.require("dijit.form.HorizontalSlider");
@@ -88,5 +83,3 @@ dojo.require("dijit.layout.LinkPane");
 dojo.require("dijit.layout.SplitContainer"); //deprecated
 dojo.require("dijit.layout.StackContainer");
 dojo.require("dijit.layout.TabContainer");
-
-}

@@ -74,7 +74,7 @@ public class SortedRepoDragDropSelection<T> extends IconSortedDragDropSelection<
 
     @Override
     protected String getSortValue(ListItem item) {
-        Object modelObject = item.getModelObject();
+        Object modelObject = item.getDefaultModelObject();
 
         /**
          * Implement a special sorting order if the list items are repo descriptors

@@ -15,16 +15,15 @@ import org.apache.commons.io.IOUtils;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.TempFileStreamHandle;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.context.NullRequestContext;
 import org.artifactory.repo.index.creator.JcrJarFileContentsIndexCreator;
 import org.artifactory.repo.index.creator.JcrMavenArchetypeArtifactInfoIndexCreator;
 import org.artifactory.repo.index.creator.JcrMavenPluginArtifactInfoIndexCreator;
@@ -32,7 +31,8 @@ import org.artifactory.repo.index.creator.JcrMinimalArtifactInfoIndexCreator;
 import org.artifactory.repo.index.locator.MetadataLocator;
 import org.artifactory.repo.index.locator.PomLocator;
 import org.artifactory.repo.jcr.StoringRepo;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.request.NullRequestContext;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.util.FileUtils;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.slf4j.Logger;
@@ -270,7 +270,7 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
                 handle.close();
             }
             //We can release the lock on the zip file (or expanding the repo root will block)
-            LockingHelper.removeLockEntry(new RepoPath(repo.getKey(), MavenNaming.NEXUS_INDEX_GZ_PATH));
+            LockingHelper.removeLockEntry(new RepoPathImpl(repo.getKey(), MavenNaming.NEXUS_INDEX_GZ_PATH));
             //Remember the extracted index
             extractedRepoIndexes.put(repo, indexDir);
         }

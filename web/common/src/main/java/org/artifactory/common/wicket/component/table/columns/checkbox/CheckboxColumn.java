@@ -37,7 +37,7 @@ public class CheckboxColumn<T> extends AbstractColumn {
     private String expression;
 
     public CheckboxColumn(String title, String expression, String sortProperty) {
-        super(new Model(title), sortProperty);
+        super(new Model<String>(title), sortProperty);
         this.expression = expression;
     }
 
@@ -48,7 +48,7 @@ public class CheckboxColumn<T> extends AbstractColumn {
         cellItem.add(new CssClass("CheckboxColumn"));
         cellItem.add(panel);
 
-        IModel model = newPropertyModel(rowObject);
+        IModel<Boolean> model = newPropertyModel(rowObject);
         FormComponent checkBox = newCheckBox(CHECKBOX_ID, model, rowObject);
         panel.add(checkBox);
 
@@ -56,12 +56,12 @@ public class CheckboxColumn<T> extends AbstractColumn {
         checkBox.setEnabled(enabled);
     }
 
-    protected FormComponent newCheckBox(String id, IModel model, T rowObject) {
+    protected FormComponent newCheckBox(String id, IModel<Boolean> model, T rowObject) {
         return new CheckBox(id, model);
     }
 
-    protected IModel newPropertyModel(T rowObject) {
-        return new PropertyModel(rowObject, expression);
+    protected IModel<Boolean> newPropertyModel(T rowObject) {
+        return new PropertyModel<Boolean>(rowObject, expression);
     }
 
     protected boolean isEnabled(T rowObject) {

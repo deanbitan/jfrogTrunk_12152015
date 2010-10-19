@@ -18,11 +18,11 @@
 
 package org.artifactory.engine;
 
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.request.DownloadService;
 import org.artifactory.repo.Repo;
-import org.artifactory.repo.context.RequestContext;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.request.RequestContext;
 import org.artifactory.spring.ReloadableBean;
 
 /**

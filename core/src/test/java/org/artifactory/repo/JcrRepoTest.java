@@ -18,10 +18,10 @@
 
 package org.artifactory.repo;
 
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.repo.jcr.JcrLocalRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -54,7 +54,7 @@ public class JcrRepoTest extends ArtifactoryHomeBoundTest {
         lrd.setKey("libs");
         JcrLocalRepo jcrLocalRepo = new JcrLocalRepo(irs, lrd, null);
         ReflectionTestUtils.setField(jcrLocalRepo, "anonAccessEnabled", false);
-        RepoPath path = new RepoPath("libs", "jfrog/settings/jfrog-settings-sources.zip");
+        RepoPath path = new RepoPathImpl("libs", "jfrog/settings/jfrog-settings-sources.zip");
         EasyMock.expect(authService.canRead(path)).andReturn(false);
         EasyMock.expect(authService.currentUsername()).andReturn("testUser");
         EasyMock.replay(authService);

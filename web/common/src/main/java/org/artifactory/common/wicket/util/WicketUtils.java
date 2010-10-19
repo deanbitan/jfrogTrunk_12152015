@@ -48,7 +48,10 @@ import java.util.Map;
 /**
  * @author yoavl
  */
-public class WicketUtils {
+public abstract class WicketUtils {
+    private WicketUtils() {
+        // utility class
+    }
 
     /**
      * Get the bookmarkable path of a page that has been mounted

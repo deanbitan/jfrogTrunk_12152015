@@ -19,7 +19,6 @@
 package org.artifactory.api.search;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.fs.ItemInfo;
 
 import java.io.File;
 
@@ -27,13 +26,13 @@ import java.io.File;
  * @author Yoav Landman
  */
 public abstract class SearchResultBase implements SearchResult {
-    public final ItemInfo itemInfo;
+    public final org.artifactory.fs.ItemInfo itemInfo;
 
-    public SearchResultBase(ItemInfo itemInfo) {
+    public SearchResultBase(org.artifactory.fs.ItemInfo itemInfo) {
         this.itemInfo = itemInfo;
     }
 
-    public ItemInfo getItemInfo() {
+    public org.artifactory.fs.ItemInfo getItemInfo() {
         return itemInfo;
     }
 

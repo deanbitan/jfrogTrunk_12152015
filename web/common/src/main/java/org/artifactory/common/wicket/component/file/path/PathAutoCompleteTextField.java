@@ -21,14 +21,14 @@ package org.artifactory.common.wicket.component.file.path;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.util.convert.IConverter;
-import org.apache.wicket.util.file.File;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.autocomplete.ImprovedAutoCompleteTextField;
 
+import java.io.File;
 import java.util.Iterator;
 
-public class PathAutoCompleteTextField extends ImprovedAutoCompleteTextField {
-
+@SuppressWarnings({"UnusedDeclaration"})
+public class PathAutoCompleteTextField extends ImprovedAutoCompleteTextField<File> {
     private PathMask mask = PathMask.ALL;
     private PathHelper pathHelper;
     private PathAutoCompleteConverter converter;
@@ -37,7 +37,7 @@ public class PathAutoCompleteTextField extends ImprovedAutoCompleteTextField {
         this(id, null, new PathHelper());
     }
 
-    public PathAutoCompleteTextField(String id, IModel model) {
+    public PathAutoCompleteTextField(String id, IModel<File> model) {
         this(id, model, new PathHelper());
     }
 
@@ -45,11 +45,11 @@ public class PathAutoCompleteTextField extends ImprovedAutoCompleteTextField {
         this(id, null, root);
     }
 
-    public PathAutoCompleteTextField(String id, IModel model, String root) {
+    public PathAutoCompleteTextField(String id, IModel<File> model, String root) {
         this(id, model, new PathHelper(root));
     }
 
-    protected PathAutoCompleteTextField(String id, IModel model, PathHelper pathHelper) {
+    protected PathAutoCompleteTextField(String id, IModel<File> model, PathHelper pathHelper) {
         super(id, model, File.class, new PathAutoCompleteRenderer(pathHelper), DEFAULT_SETTINGS);
 
         this.pathHelper = pathHelper;
@@ -68,15 +68,15 @@ public class PathAutoCompleteTextField extends ImprovedAutoCompleteTextField {
     }
 
     public String getRoot() {
-        return pathHelper.getRoot();
+        return pathHelper.getWorkingDirectoryPath();
     }
 
     public void setRoot(String root) {
-        pathHelper.setRoot(root);
+        pathHelper.setWorkingDirectoryPath(root);
     }
 
     @Override
-    protected Iterator getChoices(String input) {
+    protected Iterator<File> getChoices(String input) {
         return pathHelper.getFiles(input, mask).iterator();
     }
 

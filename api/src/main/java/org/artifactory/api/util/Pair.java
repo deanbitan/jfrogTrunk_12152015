@@ -18,17 +18,20 @@
 
 package org.artifactory.api.util;
 
-import java.io.Serializable;
-
 /**
- * Generic pair class
+ * A pair class, holds two objects.
  *
  * @author Noam Tenne
+ * @author Yossi Shaul
  */
-public class Pair<X extends Serializable, Y extends Serializable> implements Serializable {
+public class Pair<X, Y> {
 
     private X first;
     private Y second;
+
+    public Pair() {
+        // empty constructor required for inherit class serialization
+    }
 
     public Pair(X first, Y second) {
         this.first = first;
@@ -41,6 +44,10 @@ public class Pair<X extends Serializable, Y extends Serializable> implements Ser
 
     public Y getSecond() {
         return second;
+    }
+
+    public boolean isNotNull() {
+        return first != null && second != null;
     }
 
     @Override

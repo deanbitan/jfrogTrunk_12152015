@@ -35,7 +35,7 @@ public class PathAutoCompleteConverter implements IConverter {
         if (StringUtils.isEmpty(value)) {
             return null;
         }
-        return pathHelper.getAbsuloteFile(value);
+        return pathHelper.getAbsoluteFile(value);
     }
 
     public String convertToString(Object value, Locale locale) {

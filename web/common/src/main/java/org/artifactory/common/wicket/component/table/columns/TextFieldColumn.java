@@ -30,13 +30,16 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.table.columns.panel.textfield.TextFieldPanel;
 
 /**
+ * A {@link AbstractColumn} that displays a text field in column. For editable text fields one should override
+ * {@link TextFieldColumn#newTextField(String, org.apache.wicket.model.IModel, T)}.
+ *
  * @author Yoav Aharoni
  */
 public class TextFieldColumn<T> extends AbstractColumn {
     private String expression;
 
     public TextFieldColumn(String title, String expression, String sortProperty) {
-        super(new Model(title), sortProperty);
+        super(new Model<String>(title), sortProperty);
         this.expression = expression;
     }
 
@@ -52,7 +55,6 @@ public class TextFieldColumn<T> extends AbstractColumn {
         panel.add(textField);
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
     protected FormComponent newTextField(String id, IModel model, T rowObject) {
         return new TextField(id, model);
     }

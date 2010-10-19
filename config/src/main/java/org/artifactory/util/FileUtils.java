@@ -18,20 +18,28 @@
 
 package org.artifactory.util;
 
+import com.google.common.collect.Lists;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
  * User: freds Date: Jun 25, 2008 Time: 12:11:46 AM
  */
-public class FileUtils {
+public abstract class FileUtils {
     private static final Logger log = LoggerFactory.getLogger(FileUtils.class);
     private static final Random intGenerator = new Random(System.currentTimeMillis());
+
+    private FileUtils() {
+        // utility class
+    }
 
     public static String getDecodedFileUrl(File file) {
         return "file:" + file.toURI().getPath();
@@ -47,14 +55,15 @@ public class FileUtils {
     public static void switchFiles(File oldFile, File newdFile) {
         String exceptionMsg = "Cannot switch files '" + oldFile.getAbsolutePath() + "' to '" +
                 newdFile.getAbsolutePath() + "'. '";
-        if (!oldFile.exists() || !oldFile.isFile()) {
+        if (!oldFile.isFile()) {
             throw new IllegalArgumentException(exceptionMsg + oldFile.getAbsolutePath() + "' is not a file.");
         }
         if (!newdFile.exists()) {
             // Just rename the new file to the old name
             oldFile.renameTo(newdFile);
+            return;
         }
-        if (newdFile.exists() && !newdFile.isFile()) {
+        if (!newdFile.isFile()) {
             //renameTo() of open files does not work on windows (http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6213298)
             throw new IllegalArgumentException(exceptionMsg + newdFile.getAbsolutePath() + "' is not a file.");
         }
@@ -199,5 +208,49 @@ public class FileUtils {
         } catch (IOException e) {
             throw new RuntimeException("Couldn't read text file from " + file.getAbsolutePath(), e);
         }
+    }
+
+    /**
+     * Writes the content to the given file while maintaining a rolling file policy.<br>
+     * The file's last-modified timestamp will be appended to each file that is rolled.<br>
+     * The amount of rolled files to retain can be defined in {@link org.artifactory.common.ConstantValues.fileRollerMaxFilesToRetain}
+     *
+     * @param content    Content to write to the file
+     * @param targetFile Target file
+     */
+    public static void writeContentToRollingFile(String content, File targetFile) throws IOException {
+        if (!targetFile.exists()) {
+
+            targetFile.createNewFile();
+        } else {
+            File parentDir = targetFile.getParentFile();
+
+            final String fileNameWithNoExtension = PathUtils.stripExtension(targetFile.getName());
+            final String fileExtension = PathUtils.getExtension(targetFile.getName());
+            String newTargetFileName = fileNameWithNoExtension + "." + targetFile.lastModified() + "." + fileExtension;
+            org.apache.commons.io.FileUtils.copyFile(targetFile, new File(parentDir, newTargetFileName));
+
+            List<File> existingFileList = Lists.newArrayList(parentDir.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.startsWith(fileNameWithNoExtension) && name.endsWith(fileExtension);
+                }
+            }));
+            Collections.sort(existingFileList);
+
+            int maxFiles = ConstantValues.fileRollerMaxFilesToRetain.getInt();
+            if (maxFiles < 0) {
+                log.warn("A negative integer value '{}' was provided for '{}'. Ignoring and falling back to '{}'.",
+                        new Object[]{maxFiles, ConstantValues.fileRollerMaxFilesToRetain.getPropertyName(),
+                                ConstantValues.fileRollerMaxFilesToRetain.getDefValue()});
+                maxFiles = Integer.parseInt(ConstantValues.fileRollerMaxFilesToRetain.getDefValue());
+            }
+
+            while (existingFileList.size() > maxFiles) {
+                File toRemove = existingFileList.remove(0);
+                org.apache.commons.io.FileUtils.deleteQuietly(toRemove);
+            }
+        }
+
+        org.apache.commons.io.FileUtils.writeStringToFile(targetFile, content);
     }
 }

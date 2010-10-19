@@ -52,7 +52,7 @@ public class HistoryComboBox extends ComboBox {
     }
 
     public void addHistory() {
-        addHistory(getModelObjectAsString());
+        addHistory(getDefaultModelObjectAsString());
     }
 
     public void addHistory(String value) {

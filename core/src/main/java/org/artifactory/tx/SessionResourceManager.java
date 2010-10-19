@@ -18,6 +18,8 @@
 
 package org.artifactory.tx;
 
+import java.util.List;
+
 /**
  * @author freds
  * @date Sep 22, 2008
@@ -25,11 +27,14 @@ package org.artifactory.tx;
 public interface SessionResourceManager extends SessionResource {
 
     /**
-     * Gets or creates by reflection a new session attached managed resource
+     * Gets or creates by reflection a new session attached managed resource.
      *
-     * @param resourceClass
-     * @param <T>
-     * @return
+     * @param resourceClass The class of the resource to create
      */
     <T extends SessionResource> T getOrCreateResource(Class<T> resourceClass);
+
+    /**
+     * @return A list of {@link SessionResource} with pending job. Useful for debugging.
+     */
+    List<SessionResource> pendingResources();
 }

@@ -31,7 +31,7 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.links.TitledPageLink;
 import org.artifactory.common.wicket.util.WicketUtils;
@@ -91,7 +91,7 @@ public class WelcomeBorder extends TitledBorder {
         add(countLabel);
         try {
             ArtifactCount count = repoService.getArtifactCount();
-            countLabel.setModelObject(count.getCount());
+            countLabel.setDefaultModelObject(count.getCount());
         } catch (RepositoryRuntimeException e) {
             countLabel.setVisible(false);
             log.warn("Failed to retrieve artifacts count: " + e.getMessage());
@@ -108,7 +108,7 @@ public class WelcomeBorder extends TitledBorder {
     }
 
     private void addLastLoginLabel() {
-        Pair<String, Long> lastLoginInfo = null;
+        SerializablePair<String, Long> lastLoginInfo = null;
         boolean authenticated = authorizationService.isAuthenticated();
         boolean anonymousLoggedIn = authorizationService.isAnonymous();
 
@@ -120,7 +120,7 @@ public class WelcomeBorder extends TitledBorder {
                 lastLoginInfo = ArtifactoryWebSession.get().getLastLoginInfo();
             }
         }
-        final boolean loginInfoValid = (lastLoginInfo != null);
+        final boolean loginInfoValid = lastLoginInfo != null && lastLoginInfo.isNotNull();
 
         Label lastLogin = new Label("lastLogin", new Model());
         lastLogin.setVisible(loginInfoValid);
@@ -129,13 +129,14 @@ public class WelcomeBorder extends TitledBorder {
             Date date = new Date(lastLoginInfo.getSecond());
             String clientIp = lastLoginInfo.getFirst();
             PrettyTime prettyTime = new PrettyTime();
-            lastLogin.setModelObject("Last logged in: " + prettyTime.format(date) + " (" + date.toString() + "), from " + clientIp + ".");
+            lastLogin.setDefaultModelObject("Last logged in: " + prettyTime.format(
+                    date) + " (" + date.toString() + "), from " + clientIp + ".");
         }
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
     private void addLastAccessLabel() {
-        Pair<String, Long> lastAccessInfo = null;
+        SerializablePair<String, Long> lastAccessInfo = null;
         boolean authenticated = authorizationService.isAuthenticated();
         boolean anonymousLoggedIn = authorizationService.isAnonymous();
 
@@ -160,8 +161,9 @@ public class WelcomeBorder extends TitledBorder {
             Date date = new Date(lastAccessInfo.getSecond());
             String clientIp = lastAccessInfo.getFirst();
             PrettyTime prettyTime = new PrettyTime();
-            lastAccess.setModelObject("Last access in: " + prettyTime.format(date) + " (" + date.toString() + "), from "
-                    + clientIp + ".");
+            lastAccess.setDefaultModelObject(
+                    "Last access in: " + prettyTime.format(date) + " (" + date.toString() + "), from "
+                            + clientIp + ".");
         }
     }
 

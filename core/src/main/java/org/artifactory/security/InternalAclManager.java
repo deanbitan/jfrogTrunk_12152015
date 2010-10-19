@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public interface InternalAclManager extends ReloadableBean, AclManager {
     /**

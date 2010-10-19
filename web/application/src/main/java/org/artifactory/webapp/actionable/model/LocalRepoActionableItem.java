@@ -18,19 +18,22 @@
 
 package org.artifactory.webapp.actionable.model;
 
+import com.google.common.collect.Lists;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.ArtifactCount;
-import org.artifactory.api.repo.DirectoryItem;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.FolderInfo;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.mime.MimeType;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
@@ -41,12 +44,11 @@ import org.artifactory.webapp.actionable.action.ZapAction;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class LocalRepoActionableItem extends RepoAwareActionableItemBase
         implements HierarchicActionableItem {
@@ -57,7 +59,7 @@ public class LocalRepoActionableItem extends RepoAwareActionableItemBase
     private boolean compactAllowed;
 
     public LocalRepoActionableItem(LocalRepoDescriptor repo) {
-        super(new RepoPath(repo.getKey(), ""));
+        super(new RepoPathImpl(repo.getKey(), ""));
         Set<ItemAction> actions = getActions();
         deleteAction = new RepoDeleteAction();
         actions.add(deleteAction);
@@ -68,7 +70,7 @@ public class LocalRepoActionableItem extends RepoAwareActionableItemBase
 
         AddonsManager addonsManager = getAddonsProvider();
         WatchAddon watchAddon = addonsManager.addonByType(WatchAddon.class);
-        watchAction = watchAddon.getWatchAction(new RepoPath(repo.getKey(), ""));
+        watchAction = watchAddon.getWatchAction(new RepoPathImpl(repo.getKey(), ""));
         actions.add(watchAction);
     }
 
@@ -93,18 +95,26 @@ public class LocalRepoActionableItem extends RepoAwareActionableItemBase
     }
 
     public List<ActionableItem> getChildren(AuthorizationService authService) {
-        List<DirectoryItem> items = getRepoService().getDirectoryItems(getRepoPath(), false);
-        List<ActionableItem> result = new ArrayList<ActionableItem>(items.size());
-        for (DirectoryItem item : items) {
+        RepositoryService repoService = getRepoService();
+        List<ItemInfo> items = repoService.getChildren(getRepoPath());
+        List<ActionableItem> result = Lists.newArrayListWithExpectedSize(items.size());
+
+        for (ItemInfo pathItems : items) {
+
+            RepoPath repoPath = pathItems.getRepoPath();
+            if (!repoService.isLocalRepoPathAccepted(repoPath) && !authService.canAnnotate(repoPath)) {
+                continue;
+            }
+
             RepoAwareActionableItem child;
-            if (item.isDirectory()) {
-                child = new FolderActionableItem((FolderInfo) item.getItemInfo(), isCompactAllowed());
+            if (pathItems.isFolder()) {
+                child = new FolderActionableItem((FolderInfo) pathItems, isCompactAllowed());
             } else {
-                MimeType mimeType = NamingUtils.getMimeType(item.getPath());
+                MimeType mimeType = NamingUtils.getMimeType(pathItems.getRelPath());
                 if (mimeType.isArchive()) {
-                    child = new ZipFileActionableItem((FileInfo) item.getItemInfo(), compactAllowed);
+                    child = new ZipFileActionableItem((FileInfo) pathItems, compactAllowed);
                 } else {
-                    child = new FileActionableItem((FileInfo) item.getItemInfo());
+                    child = new FileActionableItem((FileInfo) pathItems);
                 }
             }
             result.add(child);
@@ -120,9 +130,9 @@ public class LocalRepoActionableItem extends RepoAwareActionableItemBase
     public void filterActions(AuthorizationService authService) {
         String key = getRepoPath().getRepoKey();
         boolean isAnonymous = authService.isAnonymous();
-        boolean deployer = authService.canDeploy(RepoPath.secureRepoPathForRepo(key));
-        boolean canDelete = authService.canDelete(RepoPath.secureRepoPathForRepo(key));
-        boolean canRead = authService.canRead(RepoPath.secureRepoPathForRepo(key));
+        boolean deployer = authService.canDeploy(RepoPathImpl.secureRepoPathForRepo(key));
+        boolean canDelete = authService.canDelete(RepoPathImpl.secureRepoPathForRepo(key));
+        boolean canRead = authService.canRead(RepoPathImpl.secureRepoPathForRepo(key));
 
         if (!canDelete) {
             deleteAction.setEnabled(false);

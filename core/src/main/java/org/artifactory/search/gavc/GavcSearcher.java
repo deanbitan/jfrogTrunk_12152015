@@ -22,13 +22,13 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
 import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.ArtifactResource;
 import org.artifactory.search.SearcherBase;
 
@@ -105,7 +105,7 @@ public class GavcSearcher extends SearcherBase<GavcSearchControls, GavcSearchRes
         while (nodes.hasNext() && (!controls.isLimitSearchResults() || (results.size() < getMaxResults()))) {
             Node artifactNode = nodes.nextNode();
             RepoPath repoPath = JcrPath.get().getRepoPath(artifactNode.getPath());
-            if ((repoPath == null) || (!controls.isSpecificRepoSearch() && !isResultRepoPathValid(repoPath))) {
+            if ((repoPath == null) || !isResultRepoPathValid(repoPath)) {
                 continue;
             }
 

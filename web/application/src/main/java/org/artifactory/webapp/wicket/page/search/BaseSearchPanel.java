@@ -34,7 +34,6 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
@@ -261,9 +260,6 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
 
         if (searchResultList.isEmpty()) {
             onNoResults();
-        } else {
-            //Session.get().info(format("Found %s Artifacts Matching '%s'", searchResults.size(),
-            // HtmlUtils.htmlEscape(searchControls.getSearch())));
         }
 
         getSaveSearchResultsPanel().updateState();
@@ -311,15 +307,7 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         }
 
         public ArtifactNameColumn(String columnName) {
-            this(columnName, RESULT_NAME_PROPERTY);
-        }
-
-        public ArtifactNameColumn(String columnName, String propertyExpression) {
-            this(new Model(columnName), propertyExpression);
-        }
-
-        public ArtifactNameColumn(IModel displayModel, String propertyExpression) {
-            super(displayModel, propertyExpression);
+            super(columnName, RESULT_NAME_PROPERTY, RESULT_NAME_PROPERTY);
         }
 
         @SuppressWarnings({"unchecked"})
@@ -327,7 +315,7 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         public void populateItem(Item cellItem, String componentId, IModel model) {
             final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
             ActionableSearchResult<SearchResult> result =
-                    (ActionableSearchResult<SearchResult>) cellItem.getParent().getParent().getModelObject();
+                    (ActionableSearchResult<SearchResult>) cellItem.getParent().getParent().getDefaultModelObject();
             String href = hrefPrefix + "/" + result.getSearchResult().getRepoKey() + "/" +
                     result.getSearchResult().getRelativePath();
             String name = result.getSearchResult().getName();

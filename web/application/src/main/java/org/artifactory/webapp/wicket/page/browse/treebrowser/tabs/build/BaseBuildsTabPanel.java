@@ -21,7 +21,6 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build;
 import com.google.common.collect.Lists;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
@@ -30,16 +29,14 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
-import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn;
 import org.artifactory.common.wicket.component.table.masterdetail.MasterDetailEntry;
 import org.artifactory.common.wicket.component.table.masterdetail.MasterDetailTable;
-import org.artifactory.common.wicket.util.ListPropertySorter;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
@@ -49,7 +46,6 @@ import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionab
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
 
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -108,28 +104,26 @@ public abstract class BaseBuildsTabPanel extends Panel {
         FieldSetBorder artifactsBorder = new FieldSetBorder("artifactBorder");
         add(artifactsBorder);
 
-        List<IColumn> buildColumns = Lists.newArrayList();
-        buildColumns.add(new ActionsColumn(""));
-        buildColumns.add(new PropertyColumn(new Model("Build Name"), "basicBuildInfo.name", "basicBuildInfo.name"));
-        buildColumns.add(
-                new PropertyColumn(new Model("Build Number"), "basicBuildInfo.number", "basicBuildInfo.number"));
-        buildColumns.add(new FormattedDateColumn(new Model("Build Started"), "basicBuildInfo.startedDate",
-                "basicBuildInfo.started", centralConfigService, Build.STARTED_FORMAT));
-        buildColumns.add(new PropertyColumn(new Model("Module ID"), "moduleId"));
+        List<IColumn> artifactColumns = Lists.newArrayList();
+        artifactColumns.add(new ItemActionsColumn());
+        artifactColumns.add(new PropertyColumn(new Model<String>("Build Name"), "master.name", "master.name"));
+        artifactColumns.add(new PropertyColumn(new Model<String>("Build Number"), "master.number", "master.number"));
+        artifactColumns.add(new FormattedDateColumn(new Model<String>("Build Started"), "master.startedDate",
+                "master.started", centralConfigService, Build.STARTED_FORMAT));
+        artifactColumns.add(new PropertyColumn(new Model<String>("Module ID"), "detail.moduleId", "detail.moduleId"));
 
-        artifactsBorder.add(
-                new SortableTable("artifactBuilds", buildColumns, new ArtifactsDataProvider(getArtifactBuilds()), 10));
+        artifactsBorder.add(new ProducedByTable("artifactBuilds", artifactColumns));
 
         // add dependencies border
         FieldSetBorder dependenciesBorder = new FieldSetBorder("dependencyBorder");
         add(dependenciesBorder);
 
         List<IColumn> dependencyColumns = Lists.newArrayList();
-        dependencyColumns.add(new DependencyActionsColumn());
-        dependencyColumns.add(new PropertyColumn(new Model("Build Name"), "master.name", "master.name"));
-        dependencyColumns.add(new PropertyColumn(new Model("Build Number"), "master.number", "master.number"));
-        dependencyColumns.add(new PropertyColumn(new Model("Module ID"), "detail.moduleId", "detail.moduleId"));
-        dependencyColumns.add(new PropertyColumn(new Model("Scope"), "detail.scope", "detail.scope"));
+        dependencyColumns.add(new ItemActionsColumn());
+        dependencyColumns.add(new PropertyColumn(new Model<String>("Build Name"), "master.name", "master.name"));
+        dependencyColumns.add(new PropertyColumn(new Model<String>("Build Number"), "master.number", "master.number"));
+        dependencyColumns.add(new PropertyColumn(new Model<String>("Module ID"), "detail.moduleId", "detail.moduleId"));
+        dependencyColumns.add(new PropertyColumn(new Model<String>("Scope"), "detail.scope", "detail.scope"));
 
         dependenciesBorder.add(new UsedByTable("dependencyBuilds", dependencyColumns));
     }
@@ -151,10 +145,10 @@ public abstract class BaseBuildsTabPanel extends Panel {
     /**
      * Returns the list of artifact build actionable items to display
      *
-     * @param builds Basic build infos to create actionable items from
+     * @param basicInfo Basic build info to create actionable items from
      * @return Artifact build actionable item list
      */
-    protected abstract List<BuildTabActionableItem> getArtifactActionableItems(List<BasicBuildInfo> builds);
+    protected abstract List<BuildTabActionableItem> getArtifactActionableItems(BasicBuildInfo basicInfo);
 
     /**
      * Returns the list of dependency build actionable items to display
@@ -164,9 +158,26 @@ public abstract class BaseBuildsTabPanel extends Panel {
      */
     protected abstract List<BuildDependencyActionableItem> getDependencyActionableItems(BasicBuildInfo basicInfo);
 
+    private class ProducedByTable extends MasterDetailTable<BasicBuildInfo, BuildTabActionableItem> {
+        public ProducedByTable(String id, List<IColumn> columns) {
+            super(id, columns, BaseBuildsTabPanel.this.getArtifactBuilds(), "master.startedDate", 10);
+        }
+
+        @Override
+        protected String getMasterLabel(BasicBuildInfo masterObject) {
+            return String.format("%s, Build #%s", masterObject.getName(), masterObject.getNumber());
+        }
+
+        @Override
+        protected List<BuildTabActionableItem> getDetails(BasicBuildInfo masterObject) {
+            return getArtifactActionableItems(masterObject);
+        }
+    }
+
     private class UsedByTable extends MasterDetailTable<BasicBuildInfo, BuildDependencyActionableItem> {
         public UsedByTable(String id, List<IColumn> columns) {
-            super(id, columns, BaseBuildsTabPanel.this.getDependencyBuilds(), 10);
+            super(id, columns, BaseBuildsTabPanel.this.getDependencyBuilds(), "master.name", 10);
+
         }
 
         @Override
@@ -180,8 +191,8 @@ public abstract class BaseBuildsTabPanel extends Panel {
         }
     }
 
-    private static class DependencyActionsColumn extends ActionsColumn {
-        public DependencyActionsColumn() {
+    private static class ItemActionsColumn extends ActionsColumn {
+        public ItemActionsColumn() {
             super("");
         }
 
@@ -189,37 +200,6 @@ public abstract class BaseBuildsTabPanel extends Panel {
         @Override
         protected ActionableItem getRowObject(IModel rowModel) {
             return ((MasterDetailEntry<BasicBuildInfo, BuildTabActionableItem>) rowModel.getObject()).getDetail();
-        }
-    }
-
-
-    /**
-     * The artifacts table data provider
-     */
-    private class ArtifactsDataProvider extends SortableDataProvider {
-        List<BasicBuildInfo> builds;
-
-        public ArtifactsDataProvider(List<BasicBuildInfo> builds) {
-            setSort("buildStarted", false);
-            this.builds = builds;
-        }
-
-        protected List<BuildTabActionableItem> getActionableItems(List<BasicBuildInfo> builds) {
-            return getArtifactActionableItems(builds);
-        }
-
-        public Iterator iterator(int first, int count) {
-            ListPropertySorter.sort(builds, getSort());
-            List<BuildTabActionableItem> listToReturn = getActionableItems(builds.subList(first, first + count));
-            return listToReturn.iterator();
-        }
-
-        public int size() {
-            return builds.size();
-        }
-
-        public IModel model(Object object) {
-            return new Model((BuildTabActionableItem) object);
         }
     }
 }

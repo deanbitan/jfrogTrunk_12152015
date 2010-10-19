@@ -30,9 +30,11 @@
         <property name="delegate" ref="authenticationManager"/>
     </bean>
 
-    <bean class="org.artifactory.webapp.servlet.authentication.BasicArtifactoryAuthenticationFilter"/>
+    <!-- register artifactory authentication filters -->
+    <bean class="org.artifactory.webapp.servlet.authentication.ArtifactoryBasicAuthenticationFilter"/>
     <bean class="org.artifactory.webapp.servlet.authentication.ArtifactoryRememberMeFilter"/>
 
+    <!-- create the spring basic authentication filter (will be used as a delegate) -->
     <bean id="basicAuthenticationFilter"
           class="org.springframework.security.web.authentication.www.BasicAuthenticationFilter">
         <property name="authenticationManager" ref="passwordDecryptingManager"/>
@@ -47,15 +49,15 @@
         <property name="realmName" value="Artifactory Realm"/>
     </bean>
 
-    <!-- list authentication providers. will be added to the authentication manager in the order defined here -->
+    <!-- create authentication providers -->
+    <bean id="ldapAuthenticationProvider" class="org.artifactory.security.ldap.ArtifactoryLdapAuthenticationProvider"/>
+    <bean id="crowdAuthenticationProviderAdapter"
+          class="org.artifactory.security.crowd.CrowdAuthenticationProviderAdapter"/>
 
-    <!-- LDAP provider first - auth provider will be auto-wired by annotation -->
-    <bean id="ldapAuthenticationProvider" class="org.artifactory.security.ldap.ArtifactoryLdapAuthenticationProvider">
-    </bean>
-
-    <!-- Dao provider second -->
+    <!-- authentication providers order is important. keep internal provider after ldap and sso -->
     <security:authentication-manager alias="authenticationManager">
         <security:authentication-provider ref="ldapAuthenticationProvider"/>
+        <security:authentication-provider ref="crowdAuthenticationProviderAdapter"/>
         <security:authentication-provider user-service-ref="userDetailsService">
             <security:password-encoder hash="md5"/>
         </security:authentication-provider>

@@ -33,11 +33,7 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.model.CompoundPropertyModel;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.model.ResourceModel;
+import org.apache.wicket.model.*;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.artifact.ArtifactInfo;
 import org.artifactory.api.artifact.UnitInfo;
@@ -45,11 +41,12 @@ import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.DeployService;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
+import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
@@ -70,17 +67,14 @@ import org.artifactory.util.FileUtils;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.StringInputStream;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.MetadataPanel;
 import org.artifactory.webapp.wicket.page.deploy.DeployArtifactPage;
 import org.artifactory.webapp.wicket.page.deploy.step1.UploadArtifactPanel;
+import org.artifactory.webapp.wicket.panel.tabbed.PersistentTabbedPanel;
 import org.artifactory.webapp.wicket.util.validation.DeployTargetPathValidator;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.util.List;
 
@@ -116,7 +110,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             model.repos = getRepos();
             model.targetRepo = getPersistentTargetRepo();
 
-            setModel(new CompoundPropertyModel(model));
+            setDefaultModel(new CompoundPropertyModel(model));
 
             add(new Label("file.name"));
             addPathField();
@@ -293,7 +287,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                         MavenModelUtils.mavenModelToArtifactInfo(MavenModelUtils.toMavenModel(model.mavenArtifactInfo))
                                 .getPath();
                 String pomPath = PathUtils.stripExtension(path) + ".pom";
-                return repoService.exists(new RepoPath(repo.getKey(), pomPath));
+                return repoService.exists(new RepoPathImpl(repo.getKey(), pomPath));
             } catch (RepositoryRuntimeException e) {
                 cleanupResources();
                 throw e;
@@ -360,7 +354,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                boolean isMavenArtifact = Boolean.parseBoolean(get("isMavenArtifact").getModelObjectAsString());
+                boolean isMavenArtifact = Boolean.parseBoolean(get("isMavenArtifact").getDefaultModelObjectAsString());
                 if (!isMavenArtifact) {
                     model.deployPom = false;
                 }
@@ -390,8 +384,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                     InputStream pomInputStream = IOUtils.toInputStream(model.pomXml);
                     model.mavenArtifactInfo = MavenModelUtils.mavenModelToArtifactInfo(pomInputStream);
                     model.mavenArtifactInfo.setType(PathUtils.getExtension(model.getTargetPathFieldValue()));
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     error("Failed to parse input pom");
                     AjaxUtils.refreshFeedback();
                 }
@@ -452,7 +445,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 try {
                     //Make sure not to override a good pom.
-                    boolean deployPom = model.deployPom && model.isMavenArtifact && !isPomExists(model.targetRepo);
+                    boolean deployPom = model.deployPom && model.isMavenArtifact;
                     if (deployPom) {
                         if (isPomArtifact()) {
                             deployPom();
@@ -478,7 +471,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                     finish(target);
                 } catch (Exception e) {
                     Throwable cause = ExceptionUtils.getRootCause(e);
-                    if (cause instanceof BadPomException) {
+                    if ((cause instanceof BadPomException) || (cause instanceof RepoRejectException)) {
                         log.warn("Failed to deploy artifact: {}", e.getMessage());
                     } else {
                         log.warn("Failed to deploy artifact.", e);
@@ -508,13 +501,13 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 }
             }
 
-            private void deployFileAndPom() throws IOException, RepoRejectionException {
+            private void deployFileAndPom() throws IOException, RepoRejectException {
                 deployService.validatePom(model.pomXml, model.getTargetPathFieldValue(),
                         model.targetRepo.isSuppressPomConsistencyChecks());
                 deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, model.pomXml, true, false);
             }
 
-            private void deployFile() throws RepoRejectionException {
+            private void deployFile() throws RepoRejectException {
                 deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file);
             }
 
@@ -534,7 +527,14 @@ public class DeployArtifactPanel extends TitledActionPanel {
                     // if a checksum file is deployed, link to the target file
                     artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
                 }
-                String repoPathId = new RepoPath(repoKey, artifactPath).getId();
+
+                String metadataName = null;
+                if (NamingUtils.isMetadata(artifactPath)) {
+                    SerializablePair<String, String> nameAndParent = NamingUtils.getMetadataNameAndParent(artifactPath);
+                    metadataName = nameAndParent.getFirst();
+                    artifactPath = nameAndParent.getSecond();
+                }
+                String repoPathId = new RepoPathImpl(repoKey, artifactPath).getId();
 
                 String encodedPathId;
                 try {
@@ -545,8 +545,18 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 }
 
                 //Using request parameters instead of wicket's page parameters. See RTFACT-2843
-                urlBuilder.append(WicketUtils.mountPathForPage(BrowseRepoPage.class)).append("?pathId=").
-                        append(encodedPathId);
+                urlBuilder.append(WicketUtils.mountPathForPage(BrowseRepoPage.class)).append("?").
+                        append(BrowseRepoPage.PATH_ID_PARAM).append("=").append(encodedPathId);
+                if (StringUtils.isNotBlank(metadataName)) {
+                    urlBuilder.append("&").append(PersistentTabbedPanel.SELECT_TAB_PARAM).append("=Metadata");
+
+                    try {
+                        urlBuilder.append("&").append(MetadataPanel.SELECT_METADATA_PARAM).append("=").
+                                append(URLEncoder.encode(metadataName, "utf-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        log.warn("Unable to link to tree item metadata '" + metadataName + "'.", e);
+                    }
+                }
                 return urlBuilder.toString();
             }
 
@@ -581,7 +591,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
     }
 
-    private class DeployModel implements Serializable {
+    private static class DeployModel implements Serializable {
         private List<LocalRepoDescriptor> repos;
         private File file;
         private LocalRepoDescriptor targetRepo;
@@ -594,8 +604,8 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
         /**
          * Do not use this method to retrieve the actual value of the field, since this method determines the value of
-         * the field (based on the model) before returning value.<br>
-         * To simply return the value of the field use org.artifactory.webapp.wicket.page.deploy.step2.DeployArtifactPanel.DeployModel#getTargetPathFieldValue()
+         * the field (based on the model) before returning value.<br> To simply return the value of the field use
+         * org.artifactory.webapp.wicket.page.deploy.step2.DeployArtifactPanel.DeployModel#getTargetPathFieldValue()
          *
          * @return Target path
          */

@@ -44,7 +44,7 @@ public class HistoryComboBoxBehavior extends TemplateBehavior {
         assertTagName(tag, "select");
         tag.put("dojoType", "artifactory.HistoryComboBox");
         tag.put("cookie", getCookieName());
-        tag.put("value", component.getModelObjectAsString());
+        tag.put("value", component.getDefaultModelObjectAsString());
     }
 
     @Override

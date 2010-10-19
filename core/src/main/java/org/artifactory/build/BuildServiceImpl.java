@@ -30,6 +30,7 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.ImportableExportableBuild;
 import org.artifactory.api.cache.ArtifactoryCache;
@@ -39,13 +40,8 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.ChecksumsInfo;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.jackson.JacksonFactory;
-import org.artifactory.api.md.Properties;
-import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.jackson.JacksonReader;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.constant.BuildRestConstants;
@@ -54,23 +50,27 @@ import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.build.cache.ChecksumPair;
 import org.artifactory.build.cache.MissingChecksumCallable;
 import org.artifactory.cache.InternalCacheService;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
+import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.fs.FileInfoProxy;
-import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
-import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.version.CompoundVersionDetails;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonStreamContext;
 import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
@@ -92,6 +92,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
@@ -131,12 +133,6 @@ public class BuildServiceImpl implements InternalBuildService {
     @Autowired
     private JcrService jcrService;
 
-    @Autowired
-    private MetadataDefinitionService metadataDefinitionService;
-
-    @Autowired
-    private InternalSearchService searchService;
-
     /**
      * Keep a cache for each type of checksums because we can get requests for different types of checksum for the same
      * item
@@ -166,7 +162,6 @@ public class BuildServiceImpl implements InternalBuildService {
         String buildName = build.getName();
         String escapedBuildName = escapeAndGetJcrCompatibleString(buildName);
         String buildNumber = build.getNumber();
-        String escapedBuildNumber = escapeAndGetJcrCompatibleString(buildNumber);
         String started = build.getStarted();
         String escapedStarted = escapeAndGetJcrCompatibleString(started);
         String currentUser = authorizationService.currentUsername();
@@ -181,7 +176,7 @@ public class BuildServiceImpl implements InternalBuildService {
         Set<String> dependencyChecksums = Sets.newHashSet();
         collectModuleChecksums(build.getModules(), artifactChecksums, dependencyChecksums);
 
-        Node buildNumberNode = createBuildNumberNode(escapedBuildName, escapedBuildNumber);
+        Node buildNumberNode = createAndGetNumberNode(escapedBuildName, buildNumber, started);
 
         InputStreamFromOutputStream stream = null;
         try {
@@ -214,6 +209,9 @@ public class BuildServiceImpl implements InternalBuildService {
             throw new RuntimeException(errorMessage, e);
         }
         log.debug("Added info for build '{}' #{}", buildName, buildNumber);
+
+        LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
+        licensesAddon.performOnBuildArtifacts(build);
     }
 
     public Node getOrCreateBuildsRootNode() {
@@ -249,9 +247,12 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     public void deleteBuild(BasicBuildInfo basicBuildInfo) {
-        String buildPath = getBuildPathFromParams(basicBuildInfo.getName(), basicBuildInfo.getNumber(),
-                basicBuildInfo.getStarted());
-        jcrService.delete(buildPath);
+        String buildName = basicBuildInfo.getName();
+        jcrService.delete(getBuildPathFromParams(buildName, basicBuildInfo.getNumber(), basicBuildInfo.getStarted()));
+        Set<BasicBuildInfo> remainingBuilds = searchBuildsByName(buildName);
+        if (remainingBuilds.isEmpty()) {
+            deleteBuild(buildName);
+        }
     }
 
     public Build getLatestBuildByNameAndNumber(String buildName, String buildNumber) {
@@ -503,7 +504,7 @@ public class BuildServiceImpl implements InternalBuildService {
 
         multiStatusHolder.setDebug(
                 String.format("Beginning import of build: %s:%s:%s", buildName, buildNumber, buildStarted), log);
-        Node buildNumberNode = createBuildNumberNode(buildName, buildNumber);
+        Node buildNumberNode = createAndGetNumberNode(buildName, build.getBuildNumber(), build.getBuildStarted());
 
         InputStream buildInputStream = null;
         try {
@@ -567,17 +568,19 @@ public class BuildServiceImpl implements InternalBuildService {
                     throw new IOException("Expected data stream to start with an object.");
                 }
 
-                while (parser.nextToken() != JsonToken.END_OBJECT) {
-                    String fieldName = parser.getCurrentName();
-
-                    parser.nextToken();
-                    if ("url".equals(fieldName)) {
-                        String url = parser.getText();
-                        //The parser may take null literally
-                        if (StringUtils.isBlank(url) || "null".equals(url)) {
-                            return null;
+                while (parser.nextToken() != null) {
+                    JsonStreamContext context = parser.getParsingContext();
+                    String fieldName = context.getCurrentName();
+                    if ("url".equals(fieldName) && context.getParent().inRoot()) {
+                        JsonToken urlValueToken = parser.nextToken();
+                        if (urlValueToken != null) {
+                            String url = parser.getText();
+                            //The parser may take null literally
+                            if (StringUtils.isBlank(url) || "null".equals(url)) {
+                                return null;
+                            }
+                            return url;
                         }
-                        return url;
                     }
                 }
             }
@@ -798,16 +801,45 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     /**
-     * Gets or creates the build node hierarchy with the given name and number
+     * Create the required tree structure up to the number node level and return it
      *
-     * @param escapedBuildName   Escaped name of build
-     * @param escapedBuildNumber Escaped number of build
-     * @return The build number node
+     * @param escapedBuildName Jcr-escaped build name
+     * @param buildNumber      Original build number
+     * @param buildStarted     Original build started
+     * @return Build number level node
      */
-    private Node createBuildNumberNode(String escapedBuildName, String escapedBuildNumber) {
+    private Node createAndGetNumberNode(String escapedBuildName, String buildNumber,
+            String buildStarted) {
         Node buildsNode = getOrCreateBuildsRootNode();
         Node buildNameNode = jcrService.getOrCreateUnstructuredNode(buildsNode, escapedBuildName);
-        return jcrService.getOrCreateUnstructuredNode(buildNameNode, escapedBuildNumber);
+
+        Calendar newStartDate = Calendar.getInstance();
+        try {
+            newStartDate.setTime(new SimpleDateFormat(Build.STARTED_FORMAT).parse(buildStarted));
+        } catch (ParseException e) {
+            throw new IllegalStateException("Could not parse given build start date.", e);
+        }
+
+        try {
+            boolean isLatest = true;
+            if (buildNameNode.hasProperty(PROP_BUILD_LATEST_START_TIME)) {
+                Property property = buildNameNode.getProperty(PROP_BUILD_LATEST_START_TIME);
+                Calendar existingStartDate = property.getDate();
+                if (existingStartDate != null) {
+                    isLatest = existingStartDate.before(newStartDate);
+                }
+            }
+
+            if (isLatest) {
+                buildNameNode.setProperty(PROP_BUILD_LATEST_NUMBER, buildNumber);
+                buildNameNode.setProperty(PROP_BUILD_LATEST_START_TIME, newStartDate);
+            }
+        } catch (RepositoryException e) {
+            throw new RepositoryRuntimeException("Could not update the start date property of the build name node: " +
+                    escapedBuildName);
+        }
+
+        return jcrService.getOrCreateUnstructuredNode(buildNameNode, escapeAndGetJcrCompatibleString(buildNumber));
     }
 
     /**
@@ -859,9 +891,7 @@ public class BuildServiceImpl implements InternalBuildService {
         try {
             if (StringUtils.isNotBlank(buildPath) && jcrService.itemNodeExists(buildPath)) {
                 buildInputStream = jcrService.getStream(buildPath);
-                JsonParser parser = JacksonFactory.createJsonParser(buildInputStream);
-                ObjectMapper mapper = new ObjectMapper();
-                build = mapper.readValue(parser, Build.class);
+                build = JacksonReader.streamAsClass(buildInputStream, Build.class);
             }
         } catch (Exception e) {
             log.error("Unable to parse build object from the data of '{}': '{}'", buildPath, e.getMessage());
@@ -897,7 +927,7 @@ public class BuildServiceImpl implements InternalBuildService {
      * @param buildNumber      Build number to search for
      * @return The file info of a result that best matches the given build name and number
      */
-    private FileInfo matchResultBuildNameAndNumber(Set<RepoPath> searchResults,
+    private org.artifactory.fs.FileInfo matchResultBuildNameAndNumber(Set<RepoPath> searchResults,
             Map<RepoPath, Properties> resultProperties, String buildName, String buildNumber) {
         Map<RepoPath, Properties> matchingBuildNames = Maps.newHashMap();
 
@@ -924,7 +954,7 @@ public class BuildServiceImpl implements InternalBuildService {
      * @param buildNumber      Build number to search for
      * @return The file info of a result that best matches the given build number
      */
-    private FileInfo matchResultBuildNumber(Map<RepoPath, Properties> resultProperties,
+    private org.artifactory.fs.FileInfo matchResultBuildNumber(Map<RepoPath, Properties> resultProperties,
             Map<RepoPath, Properties> matchingPaths, String buildNumber) {
         RepoPath selectedPath = matchingPaths.keySet().iterator().next();
 
@@ -946,11 +976,11 @@ public class BuildServiceImpl implements InternalBuildService {
      * @param searchResults Search results to search within
      * @return Latest modified search result file info. Null if no results were given
      */
-    private FileInfo getLatestItem(Set<RepoPath> searchResults) {
-        FileInfo latestItem = null;
+    private org.artifactory.fs.FileInfo getLatestItem(Set<RepoPath> searchResults) {
+        org.artifactory.fs.FileInfo latestItem = null;
 
         for (RepoPath result : searchResults) {
-            FileInfo fileInfo = new FileInfoProxy(result);
+            org.artifactory.fs.FileInfo fileInfo = new FileInfoProxy(result);
             if ((latestItem == null) || (latestItem.getLastModified() < fileInfo.getLastModified())) {
                 latestItem = fileInfo;
             }
@@ -1134,8 +1164,7 @@ public class BuildServiceImpl implements InternalBuildService {
         Set<String> dependencyChecksums = getChecksumPropertyValue(buildNode, PROP_BUILD_DEPENDENCY_CHECKSUMS);
 
         InputStream jsonStream = JcrHelper.getRawStringStream(buildNode);
-        JsonParser parser = JacksonFactory.createJsonParser(jsonStream);
-        final JsonNode rootNode = parser.readValueAsTree();
+        final JsonNode rootNode = JacksonReader.streamAsTree(jsonStream);
         ((ObjectNode) rootNode).put("name", to);
 
         InputStreamFromOutputStream stream = null;

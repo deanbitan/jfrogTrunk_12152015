@@ -19,8 +19,10 @@
 package org.artifactory.api.fs;
 
 import com.google.common.collect.Sets;
-import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
@@ -35,10 +37,11 @@ import static org.testng.Assert.assertFalse;
 public class FileInfoImplTest extends ArtifactoryHomeBoundTest {
 
     public void differentChecksumNotIdentical() {
-        RepoPath path = new RepoPath("repo", "test.jar");
+        RepoPath path = new RepoPathImpl("repo", "test.jar");
 
         FileInfoImpl fileInfo1 = new FileInfoImpl(path);
-        fileInfo1.setChecksums(Sets.newHashSet(new ChecksumInfo(ChecksumType.sha1, null, "764736473")));
+        fileInfo1.setChecksums(
+                Sets.newHashSet(new org.artifactory.checksum.ChecksumInfo(ChecksumType.sha1, null, "764736473")));
 
         FileInfoImpl fileInfo2 = new FileInfoImpl(path);
         fileInfo2.setChecksums(Sets.newHashSet(new ChecksumInfo(ChecksumType.sha1, "originalchecksum", "764736473")));

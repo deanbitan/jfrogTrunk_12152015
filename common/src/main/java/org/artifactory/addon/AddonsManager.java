@@ -30,7 +30,7 @@ public interface AddonsManager {
 
     void refresh();
 
-    <T extends AddonFactory> T addonByType(Class<T> type);
+    <T extends Addon> T addonByType(Class<T> type);
 
     List<String> getInstalledAddonNames();
 
@@ -57,7 +57,7 @@ public interface AddonsManager {
      * @param addonName Name of addon to inquire for
      * @return True if the given addon is activated
      */
-    <T extends AddonFactory> boolean isAddonActivated(String addonName);
+    <T extends Addon> boolean isAddonActivated(String addonName);
 
     /**
      * Installs a new Artifactory license key

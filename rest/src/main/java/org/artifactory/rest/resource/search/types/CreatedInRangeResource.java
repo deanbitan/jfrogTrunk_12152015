@@ -19,7 +19,6 @@
 
 package org.artifactory.rest.resource.search.types;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
@@ -27,7 +26,8 @@ import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.CreatedInRangeRestSearchResult;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.util.HttpUtils;
@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
@@ -73,12 +74,13 @@ public class CreatedInRangeResource {
      * artifact that is in within the time range.
      *
      * @param from          The time to start the search. Exclusive (eg, >). If empty will start from 1st Jan 1970
-     * @param to            The time to end search. Inclusive (eg, <=), If empty, will not use current time as the limit
+     * @param to            The time to end search. Inclusive (eg, <=), If empty, will not use current time as the
+     *                      limit
      * @param reposToSearch Lists of repositories to search within
      * @return CreatedInRangeRestSearchResult Json representation of the modified artifacts whiting the time range
      */
     @GET
-    @Produces({SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT})
+    @Produces({SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT, MediaType.APPLICATION_JSON})
     public CreatedInRangeRestSearchResult get(@QueryParam(PARAM_IN_RANGE_FROM) Long from,
             @QueryParam(PARAM_IN_RANGE_TO) Long to,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
@@ -101,7 +103,7 @@ public class CreatedInRangeResource {
             toCal = Calendar.getInstance();
             toCal.setTimeInMillis(to);
         }
-        List<Pair<RepoPath, Calendar>> results;
+        List<SerializablePair<RepoPath, Calendar>> results;
         try {
             results = searchService.searchArtifactsCreatedOrModifiedInRange(fromCal, toCal, reposToSearch);
         } catch (RepositoryRuntimeException e) {
@@ -111,7 +113,7 @@ public class CreatedInRangeResource {
 
         if (!results.isEmpty()) {
             CreatedInRangeRestSearchResult rangeRestSearchResult = new CreatedInRangeRestSearchResult();
-            for (Pair<RepoPath, Calendar> result : results) {
+            for (SerializablePair<RepoPath, Calendar> result : results) {
                 String uri = buildStorageUri(result);
                 String time = RestUtils.toIsoDateString(result.getSecond().getTimeInMillis());
                 CreatedInRangeRestSearchResult.CreatedEntry entry =
@@ -125,7 +127,7 @@ public class CreatedInRangeResource {
         return null;
     }
 
-    private String buildStorageUri(Pair<RepoPath, Calendar> result) {
+    private String buildStorageUri(SerializablePair<RepoPath, Calendar> result) {
         RepoPath repoPath = result.getFirst();
         String servletContextUrl = HttpUtils.getServletContextUrl(request);
         StringBuilder sb = new StringBuilder(servletContextUrl);

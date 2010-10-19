@@ -18,23 +18,32 @@
 
 package org.artifactory.maven;
 
+import com.google.common.collect.Sets;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.jcr.fs.FolderTreeNode;
+import org.artifactory.jcr.lock.LockingHelper;
+import org.artifactory.jcr.lock.aop.LockingAdvice;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.maven.versioning.MavenMetadataVersionComparator;
+import org.artifactory.maven.versioning.VersionNameMavenMetadataVersionComparator;
+import org.artifactory.repo.RepoPath;
 import org.slf4j.Logger;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TreeSet;
 
 /**
  * Calculates maven metadata recursively for folder in a local non-cache repository. Plugins metadata is calculated for
@@ -52,7 +61,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
      * @param status Status holder.
      * @return true if some pom are maven plugin type, false if no maven plugin pom exists under the folder
      */
-    public boolean calculate(RepoPath folder, StatusHolder status) {
+    public boolean calculate(RepoPath folder, BasicStatusHolder status) {
         log.debug("Calculating maven metadata recursively on '{}'", folder);
         FolderTreeNode folders = getJcrService().getFolderTreeNode(folder, status);
         if (folders != null) {
@@ -63,7 +72,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         return false;
     }
 
-    private void calculateAndSet(RepoPath repoPath, FolderTreeNode folder, StatusHolder status) {
+    private void calculateAndSet(RepoPath repoPath, FolderTreeNode folder, BasicStatusHolder status) {
         String nodePath = repoPath.getPath();
         boolean containsMetadataInfo;
         if (MavenNaming.isSnapshot(nodePath)) {
@@ -83,20 +92,21 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         }
 
         if (!containsMetadataInfo) {
+            // note: this will also remove plugins metadata. not sure it should
             removeMetadataIfExist(repoPath, status);
         }
 
         // Recursive call to calculate and set
         for (FolderTreeNode childFolder : folder.folders) {
-            calculateAndSet(new RepoPath(repoPath, childFolder.name), childFolder, status);
+            calculateAndSet(new RepoPathImpl(repoPath, childFolder.name), childFolder, status);
         }
     }
 
-    private boolean createSnapshotsMetadata(RepoPath repoPath, FolderTreeNode folder, StatusHolder status) {
+    private boolean createSnapshotsMetadata(RepoPath repoPath, FolderTreeNode folder, BasicStatusHolder status) {
         if (folder.poms.length == 0) {
             return false;
         }
-        RepoPath firstPom = new RepoPath(repoPath, folder.poms[0]);
+        RepoPath firstPom = new RepoPathImpl(repoPath, folder.poms[0]);
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(firstPom);
         Metadata metadata = new Metadata();
         metadata.setGroupId(artifactInfo.getGroupId());
@@ -127,12 +137,12 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
     }
 
     private void createVersionsMetadata(RepoPath repoPath,
-            List<FolderTreeNode> subFoldersContainingPoms, StatusHolder status) {
+            List<FolderTreeNode> versionNodes, BasicStatusHolder status) {
         // get artifact info from the first pom
-        FolderTreeNode firstSubFolder = subFoldersContainingPoms.get(0);
-        RepoPath firstSubRepoPath = new RepoPath(repoPath, firstSubFolder.name);
+        FolderTreeNode firstSubFolder = versionNodes.get(0);
+        RepoPath firstSubRepoPath = new RepoPathImpl(repoPath, firstSubFolder.name);
         String samplePom = firstSubFolder.poms[0];
-        RepoPath samplePomRepoPath = new RepoPath(firstSubRepoPath, samplePom);
+        RepoPath samplePomRepoPath = new RepoPathImpl(firstSubRepoPath, samplePom);
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(samplePomRepoPath);
         Metadata metadata = new Metadata();
         metadata.setGroupId(artifactInfo.getGroupId());
@@ -142,25 +152,44 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         metadata.setVersioning(versioning);
         versioning.setLastUpdatedTimestamp(new Date());
 
-        // add the different versions and set the release and latest versions
-        Calendar latest = null, release = null;
-        for (FolderTreeNode pomFilesContainer : subFoldersContainingPoms) {
-            String version = pomFilesContainer.name;
-            versioning.addVersion(version);
-            // latest is the the folder with the latest creation date
-            if (latest == null || latest.before(pomFilesContainer.created)) {
-                latest = pomFilesContainer.created;
-                versioning.setLatest(version);
-            }
-            // release is the latest non-snapshot version
-            if (!MavenNaming.isSnapshot(version) &&
-                    (release == null || release.before(pomFilesContainer.created))) {
-                release = pomFilesContainer.created;
-                versioning.setRelease(version);
+        MavenMetadataVersionComparator comparator = createVersionComparator();
+        TreeSet<FolderTreeNode> sortedVersions = Sets.newTreeSet(comparator);
+        sortedVersions.addAll(versionNodes);
+
+        // add the versions to the versioning section
+        for (FolderTreeNode version : sortedVersions) {
+            versioning.addVersion(version.name);
+        }
+
+        // latest is simply the last (be it snapshot or release version)
+        String latestVersion = sortedVersions.last().name;
+        versioning.setLatest(latestVersion);
+
+        // release is the latest non snapshot version
+        for (FolderTreeNode versionNode : sortedVersions) {
+            if (!MavenNaming.isSnapshot(versionNode.name)) {
+                versioning.setRelease(versionNode.name);
             }
         }
 
         saveMetadata(repoPath, metadata, status);
+    }
+
+    private MavenMetadataVersionComparator createVersionComparator() {
+        String comparatorFqn = ConstantValues.mvnMetadataVersionsComparator.getString();
+        if (StringUtils.isBlank(comparatorFqn)) {
+            // return the default comparator
+            return VersionNameMavenMetadataVersionComparator.get();
+        }
+
+        try {
+            Class<?> comparatorClass = Class.forName(comparatorFqn);
+            return (MavenMetadataVersionComparator) comparatorClass.newInstance();
+        } catch (Exception e) {
+            log.warn("Failed to create custom maven metadata version comparator '{}': {}", comparatorFqn,
+                    e.getMessage());
+            return VersionNameMavenMetadataVersionComparator.get();
+        }
     }
 
     private String getLatestUniqueSnapshotPom(String[] poms) {
@@ -190,10 +219,16 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         return result;
     }
 
-    private void removeMetadataIfExist(RepoPath repoPath, StatusHolder status) {
+    private void removeMetadataIfExist(RepoPath repoPath, BasicStatusHolder status) {
         try {
-            // Write lock auto upgrade supported LockingHelper.releaseReadLock(repoPath);
-            getRepositoryService().removeMetadata(repoPath, MavenNaming.MAVEN_METADATA_NAME);
+            if (getRepositoryService().hasMetadata(repoPath, MavenNaming.MAVEN_METADATA_NAME)) {
+                // Write lock auto upgrade supported LockingHelper.releaseReadLock(repoPath);
+                getRepositoryService().removeMetadata(repoPath, MavenNaming.MAVEN_METADATA_NAME);
+                if (!TransactionSynchronizationManager.isSynchronizationActive() &&
+                        LockingAdvice.getLockManager() != null) {
+                    LockingHelper.removeLockEntry(repoPath);
+                }
+            }
         } catch (Exception e) {
             status.setError("Error while removing metadata of folder " + repoPath + ".", e, log);
         }

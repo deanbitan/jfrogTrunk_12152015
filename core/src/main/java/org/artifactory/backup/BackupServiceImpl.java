@@ -22,7 +22,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.context.ContextHelper;
@@ -30,6 +29,7 @@ import org.artifactory.api.mail.MailService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
@@ -64,7 +64,7 @@ import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 @Service
 @Reloadable(beanClass = InternalBackupService.class, initAfter = {InternalRepositoryService.class, TaskService.class})
@@ -197,6 +197,7 @@ public class BackupServiceImpl implements InternalBackupService {
         settings.setRepositories(backedupRepos);
         settings.setCreateArchive(createArchive);
         settings.setIncremental(incremental);
+        settings.addCallback(new SystemBackupPauseCallback());
         context.exportTo(settings);
 
         return status;

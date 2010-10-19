@@ -18,7 +18,7 @@
 
 package org.artifactory.api.repo.exception;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 public class FolderExpectedException extends RuntimeException {
     private final RepoPath repoPath;

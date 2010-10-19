@@ -18,8 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.build.actionable;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.ShowInTreeAction;
 import org.artifactory.webapp.wicket.util.ItemCssClass;

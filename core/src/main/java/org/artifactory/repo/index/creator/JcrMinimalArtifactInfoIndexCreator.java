@@ -11,7 +11,7 @@
 package org.artifactory.repo.index.creator;
 
 import org.apache.maven.model.Model;
-import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrZipFile;
 import org.artifactory.log.LoggerFactory;

@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit._editor.plugins.AlwaysShowToolbar"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit._editor.plugins.AlwaysShowToolbar"] = true;
 dojo.provide("dijit._editor.plugins.AlwaysShowToolbar");
 
 dojo.declare("dijit._editor.plugins.AlwaysShowToolbar", dijit._editor._Plugin,
@@ -99,7 +90,7 @@ dojo.declare("dijit._editor.plugins.AlwaysShowToolbar", dijit._editor._Plugin,
 
 		var isIE6 = dojo.isIE < 7;
 		if(!this._handleScroll){ return; }
-		var tdn = this.editor.toolbar.domNode;
+		var tdn = this.editor.header;
 		var db = dojo.body;
 
 		if(!this._scrollSetUp){
@@ -180,9 +171,7 @@ dojo.declare("dijit._editor.plugins.AlwaysShowToolbar", dijit._editor._Plugin,
 //		clearInterval(this.scrollInterval);
 
 		if(dojo.isIE < 7){
-			dojo.removeClass(this.editor.toolbar.domNode, 'dijitIEFixedToolbar');
+			dojo.removeClass(this.editor.header, 'dijitIEFixedToolbar');
 		}
 	}
 });
-
-}

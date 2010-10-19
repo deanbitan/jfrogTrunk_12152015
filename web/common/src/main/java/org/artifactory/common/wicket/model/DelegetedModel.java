@@ -24,19 +24,20 @@ import org.apache.wicket.model.IModel;
 /**
  * @author Yoav Aharoni
  */
-public class DelegetedModel implements IModel {
+public class DelegetedModel<T> implements IModel<T> {
     private Component component;
 
     public DelegetedModel(Component component) {
         this.component = component;
     }
 
-    public Object getObject() {
-        return component.getModelObject();
+    @SuppressWarnings({"unchecked"})
+    public T getObject() {
+        return (T) component.getDefaultModelObject();
     }
 
-    public void setObject(Object object) {
-        component.setModelObject(object);
+    public void setObject(T object) {
+        component.setDefaultModelObject(object);
     }
 
     public void detach() {

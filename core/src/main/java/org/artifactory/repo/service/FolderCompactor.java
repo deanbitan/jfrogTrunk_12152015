@@ -20,12 +20,13 @@ package org.artifactory.repo.service;
 
 import com.google.common.collect.Lists;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -115,7 +116,7 @@ public class FolderCompactor {
 
         //If we have 1 child stop at it if it's a folder
         LocalRepo repository = repositoryService.getLocalRepository(parentRepoPath);
-        RepoPath childRepoPath = RepoPath.childRepoPath(parentRepoPath, children.get(0));
+        RepoPath childRepoPath = RepoPathImpl.childRepoPath(parentRepoPath, children.get(0));
         JcrFsItem next = repository.getJcrFsItem(childRepoPath);
 
         if (next.isDirectory()) {

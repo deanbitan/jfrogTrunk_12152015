@@ -31,7 +31,6 @@ import org.apache.wicket.markup.html.form.RadioGroup;
 import org.apache.wicket.markup.parser.XmlTag;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.util.lang.Objects;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.DelegateEventBehavior;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
@@ -41,9 +40,11 @@ import org.artifactory.common.wicket.model.Titled;
 /**
  *
  */
-public class StyledRadio extends LabeledWebMarkupContainer implements Titled {
+public class StyledRadio<T> extends LabeledWebMarkupContainer implements Titled {
     private Radio radio;
     private Component button;
+
+    private RadioGroup<T> group;
 
     public StyledRadio(String id) {
         super(id);
@@ -56,10 +57,10 @@ public class StyledRadio extends LabeledWebMarkupContainer implements Titled {
     }
 
     protected void init() {
-        add(ResourcePackage.forJavaScript(StyledRadio.class));
-        add(new CssClass("styled-checkbox"));
+        super.add(ResourcePackage.forJavaScript(StyledRadio.class));
+        super.add(new CssClass("styled-checkbox"));
 
-        radio = new Radio("radio", new DelegetedModel(this));
+        radio = new Radio<T>("radio", new DelegetedModel<T>(this));
         radio.setOutputMarkupId(true);
         add(radio);
 
@@ -67,8 +68,20 @@ public class StyledRadio extends LabeledWebMarkupContainer implements Titled {
         add(button);
     }
 
+    public StyledRadio setGroup(RadioGroup<T> group) {
+        this.group = group;
+        return this;
+    }
+
     @Override
-    public Component add(IBehavior behavior) {
+    public Component add(final IBehavior... behaviors) {
+        for (IBehavior behavior : behaviors) {
+            internalAdd(behavior);
+        }
+        return this;
+    }
+
+    private Component internalAdd(IBehavior behavior) {
         if (AjaxEventBehavior.class.isAssignableFrom(behavior.getClass())) {
             AjaxEventBehavior ajaxEventBehavior = (AjaxEventBehavior) behavior;
             button.add(new DelegateEventBehavior(ajaxEventBehavior.getEvent(), radio));
@@ -79,26 +92,31 @@ public class StyledRadio extends LabeledWebMarkupContainer implements Titled {
         return super.add(behavior);
     }
 
-    @SuppressWarnings({"MethodOnlyUsedFromInnerClass"})
-    private boolean isChecked() {
-        RadioGroup group = (RadioGroup) findParent(RadioGroup.class);
+    @SuppressWarnings("unchecked")
+    protected RadioGroup<T> getGroup() {
+        RadioGroup<T> group = this.group;
         if (group == null) {
-            throw new WicketRuntimeException(
-                    "Radio component ["
-                            + getPath()
-                            +
-                            "] cannot find its parent RadioGroup. All Radio components must be a child of or below in the hierarchy of a RadioGroup component.");
+            group = findParent(RadioGroup.class);
+            if (group == null) {
+                throw new WicketRuntimeException(
+                        "Radio component [" +
+                                getPath() +
+                                "] cannot find its parent RadioGroup. All Radio components must be a child of or below in the hierarchy of a RadioGroup component.");
+            }
         }
+        return group;
+    }
 
+    private boolean isChecked() {
+        final RadioGroup<T> group = getGroup();
         if (group.hasRawInput()) {
             String rawInput = group.getRawInput();
             if (rawInput != null && rawInput.equals(radio.getValue())) {
                 return true;
             }
-        } else if (Objects.equal(group.getModelObject(), getModelObject())) {
+        } else if (group.getModelComparator().compare(group, getDefaultModelObject())) {
             return true;
         }
-
         return false;
     }
 

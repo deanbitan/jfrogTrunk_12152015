@@ -86,11 +86,20 @@ public class BaseModalPanel<E extends Serializable> extends Panel implements Tit
 
     @SuppressWarnings({"unchecked"})
     public E getPanelModelObject() {
-        return (E) getModelObject();
+        return (E) getDefaultModelObject();
     }
 
     public void setPanelModelObject(E object) {
-        setModelObject(object);
+        setDefaultModelObject(object);
+    }
+
+    @SuppressWarnings({"unchecked"})
+    public IModel<E> getPanelModel() {
+        return (IModel<E>) getDefaultModel();
+    }
+
+    public void setPanelModel(IModel<E> object) {
+        setDefaultModel(object);
     }
 
     public StringResourceModel getResourceModel(String key) {

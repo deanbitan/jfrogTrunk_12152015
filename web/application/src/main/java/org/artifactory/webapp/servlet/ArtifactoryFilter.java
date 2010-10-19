@@ -82,5 +82,6 @@ public class ArtifactoryFilter implements Filter {
     }
 
     public void destroy() {
+        unbind();
     }
 }

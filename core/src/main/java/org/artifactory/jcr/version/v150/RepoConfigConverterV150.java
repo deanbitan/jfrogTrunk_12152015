@@ -80,7 +80,8 @@ public class RepoConfigConverterV150 extends RepoConfigConverterBase {
     private void convertRepoConfigs(Map<File, Boolean> repoConfigFileMap) {
         RepoXmlConverter repoXmlConverter = new RepoXmlConverter();
 
-        for (File repoConfigFile : repoConfigFileMap.keySet()) {
+        for (Map.Entry<File, Boolean> repoConfigEntry : repoConfigFileMap.entrySet()) {
+            File repoConfigFile = repoConfigEntry.getKey();
             if (!repoConfigFile.isFile()) {
                 log.warn("repo.xml file at '{}' is either non-existing or not a file. Skipped by the converter.");
                 continue;
@@ -90,7 +91,7 @@ public class RepoConfigConverterV150 extends RepoConfigConverterBase {
             try {
                 repoConfigInputStream = FileUtils.openInputStream(repoConfigFile);
                 Document document = XmlUtils.parse(repoConfigInputStream);
-                repoXmlConverter.convert(document, repoConfigFileMap.get(repoConfigFile));
+                repoXmlConverter.convert(document, repoConfigEntry.getValue());
                 String updatedConfig = XmlUtils.outputString(document);
                 FileUtils.writeStringToFile(repoConfigFile, updatedConfig, "utf-8");
             } catch (IOException e) {

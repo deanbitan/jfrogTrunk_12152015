@@ -18,8 +18,8 @@
 
 package org.artifactory.repo.service;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.request.InternalArtifactoryRequest;
+import org.artifactory.repo.RepoPath;
 
 import java.io.File;
 import java.io.FileInputStream;

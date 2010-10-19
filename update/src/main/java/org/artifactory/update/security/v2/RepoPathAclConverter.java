@@ -19,10 +19,11 @@
 package org.artifactory.update.security.v2;
 
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.PermissionTargetInfo;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -81,7 +82,7 @@ public class RepoPathAclConverter implements XmlConverter {
 
     private void convertIdentifierToPermissionTarget(Element acl) {
         String identifier = Text.unescape(acl.getChildText(IDENTIFIER));
-        RepoPath repoPath = new RepoPath(identifier);
+        RepoPath repoPath = new RepoPathImpl(identifier);
         acl.removeChild(IDENTIFIER);
         Element permissionTarget = new Element("permissionTarget");
 

@@ -18,7 +18,6 @@
 
 package org.artifactory.repo;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 
 /**

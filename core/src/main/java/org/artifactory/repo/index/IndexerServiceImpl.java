@@ -22,7 +22,6 @@ import org.apache.lucene.store.FSDirectory;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
@@ -35,6 +34,7 @@ import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.schedule.quartz.QuartzTask;
@@ -61,7 +61,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 @Service
 @Reloadable(beanClass = InternalIndexerService.class, initAfter = {TaskService.class, InternalRepositoryService.class})

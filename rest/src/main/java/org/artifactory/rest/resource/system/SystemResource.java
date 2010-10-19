@@ -84,11 +84,6 @@ public class SystemResource {
         return systemInfo;
     }
 
-    @Path(SystemRestConstants.PATH_IMPORT)
-    public ImportResource getImportResource() {
-        return new ImportResource(httpResponse, repoService);
-    }
-
     @Path(SystemRestConstants.PATH_EXPORT)
     public ExportResource getExportResource() {
         return new ExportResource(httpResponse, repoService);

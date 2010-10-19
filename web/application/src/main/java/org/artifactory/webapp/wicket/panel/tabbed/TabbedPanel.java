@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public abstract class TabbedPanel extends Panel {
 

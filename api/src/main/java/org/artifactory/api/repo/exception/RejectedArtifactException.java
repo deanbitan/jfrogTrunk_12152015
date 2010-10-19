@@ -18,15 +18,15 @@
 
 package org.artifactory.api.repo.exception;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.repo.RepoPath;
 
 /**
  * An exception thrown when is rejected for deployment
  *
  * @author Noam Y. Tenne
  */
-public abstract class RejectedArtifactException extends RepoRejectionException {
+public abstract class RejectedArtifactException extends RepoRejectException {
 
     protected RepoDescriptor rejectingRepo;
     protected RepoPath rejectedArtifact;

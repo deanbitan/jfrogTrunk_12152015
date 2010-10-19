@@ -19,7 +19,9 @@
 package org.artifactory.api.fs;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
+import org.artifactory.checksum.ChecksumsInfo;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -35,7 +37,7 @@ public class ChecksumsInfoTest {
         ChecksumInfo checksum = new ChecksumInfo(ChecksumType.sha1, "1", "2");
         orig.addChecksumInfo(checksum);
 
-        ChecksumsInfo copy = new ChecksumsInfo(orig);
+        ChecksumsInfo copy = new org.artifactory.checksum.ChecksumsInfo(orig);
 
         assertTrue(EqualsBuilder.reflectionEquals(orig, copy), "Orig and copy differ");
         assertTrue(orig.isIdentical(copy), "Orig and copy differ");

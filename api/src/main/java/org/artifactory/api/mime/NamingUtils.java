@@ -20,7 +20,7 @@ package org.artifactory.api.mime;
 
 import org.apache.commons.io.FilenameUtils;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.mime.MimeType;
 import org.artifactory.util.PathUtils;
@@ -34,8 +34,12 @@ import java.io.File;
  * @author freds
  * @author yoavl
  */
-public class NamingUtils {
+public abstract class NamingUtils {
     public static final String METADATA_PREFIX = ":";
+
+    private NamingUtils() {
+        // utility class
+    }
 
     public static MimeType getMimeType(File file) {
         return getMimeType(file.getName());
@@ -81,7 +85,16 @@ public class NamingUtils {
         return "application/x-maven-pom+xml".equalsIgnoreCase(ct.getType());
     }
 
-    public static Pair<String, String> getMetadataNameAndParent(String path) {
+    /**
+     * @param path Files path
+     * @return True if the file syntax is xml
+     */
+    public static boolean isXml(String path) {
+        MimeType ct = NamingUtils.getMimeType(path);
+        return "xml".equalsIgnoreCase(ct.getSyntax());
+    }
+
+    public static SerializablePair<String, String> getMetadataNameAndParent(String path) {
         int mdPrefixIdx = path.lastIndexOf(METADATA_PREFIX);
         String name = null;
         String parent = null;
@@ -96,7 +109,7 @@ public class NamingUtils {
                 parent = file.getParent();
             }
         }
-        return new Pair<String, String>(name, parent);
+        return new SerializablePair<String, String>(name, parent);
     }
 
     public static boolean isMetadata(String path) {

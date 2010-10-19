@@ -62,8 +62,7 @@ public class SystemLogsViewPanel extends Panel {
     /**
      * Link object for downloading the system log file
      */
-    private DownloadLink downloadLink =
-            new DownloadLink("systemLogsLink", systemLogFile);
+    private DownloadLink downloadLink = new DownloadLink("systemLogsLink", systemLogFile);
 
     /**
      * Label to represent the download link caption
@@ -122,17 +121,18 @@ public class SystemLogsViewPanel extends Panel {
      * Adds a combo box with log file choices
      */
     private void addLogComboBox() {
-        final DropDownChoice logsDropDownChoice = new DropDownChoice("logs", new Model(LOGS.get(0)), LOGS) {
+        final DropDownChoice logsDropDownChoice =
+                new DropDownChoice<String>("logs", new Model<String>(LOGS.get(0)), LOGS) {
 
-            @Override
-            protected boolean wantOnSelectionChangedNotifications() {
-                return true;
-            }
-        };
+                    @Override
+                    protected boolean wantOnSelectionChangedNotifications() {
+                        return true;
+                    }
+                };
         /**
          * Add behavior for when the combo box selection is changed
          */
-        logsDropDownChoice.add(new AjaxFormComponentUpdatingBehavior("onChange") {
+        logsDropDownChoice.add(new AjaxFormComponentUpdatingBehavior("onchange") {
 
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
@@ -199,7 +199,7 @@ public class SystemLogsViewPanel extends Panel {
         add(contentLabel);
         contentLabel.setOutputMarkupId(true);
         contentLabel.setEscapeModelStrings(false);
-        contentLabel.setModelObject(readLogAndUpdateSize(false));
+        contentLabel.setDefaultModelObject(readLogAndUpdateSize(false));
 
         HtmlTemplate initScript = new HtmlTemplate("initScript");
         initScript.setParameter("logDivId", new PropertyModel(contentLabel, "markupId"));
@@ -260,19 +260,19 @@ public class SystemLogsViewPanel extends Panel {
      */
     private void setLogInfo() {
         if (!systemLogFile.exists()) {
-            sizeLabel.setModelObject("");
-            linkLabel.setModelObject("");
-            lastUpdateLabel.setModelObject("");
+            sizeLabel.setDefaultModelObject("");
+            linkLabel.setDefaultModelObject("");
+            lastUpdateLabel.setDefaultModelObject("");
         } else {
-            sizeLabel.setModelObject("(" + FileUtils.byteCountToDisplaySize(systemLogFile.length()) + ")");
-            linkLabel.setModelObject("Download");
+            sizeLabel.setDefaultModelObject("(" + FileUtils.byteCountToDisplaySize(systemLogFile.length()) + ")");
+            linkLabel.setDefaultModelObject("Download");
             StringBuilder sb = new StringBuilder();
             Date logLastModified = new Date(systemLogFile.lastModified());
             Date viewLastUpdate = new Date(System.currentTimeMillis());
             sb.append("File last modified: ").append(logLastModified).append(". ");
             sb.append("View last updated: ").append(viewLastUpdate).append(".");
-            lastUpdateLabel.setModelObject(sb.toString());
-            downloadLink.setModel(new Model(systemLogFile));
+            lastUpdateLabel.setDefaultModelObject(sb.toString());
+            downloadLink.setDefaultModel(new Model<File>(systemLogFile));
         }
     }
 }

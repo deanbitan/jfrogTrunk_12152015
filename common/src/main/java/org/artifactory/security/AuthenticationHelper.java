@@ -30,6 +30,9 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
  */
 
 public abstract class AuthenticationHelper {
+    private AuthenticationHelper() {
+        // utility class
+    }
 
     public static Authentication getAuthentication() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -41,6 +44,9 @@ public abstract class AuthenticationHelper {
     }
 
     public static String getRemoteAddress(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
         Object details = authentication.getDetails();
         String address = null;
         if (details instanceof WebAuthenticationDetails) {

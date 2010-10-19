@@ -81,7 +81,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
 
         border.add(new RequiredTextField("host"));
 
-        RequiredTextField portField = new RequiredTextField("port");
+        RequiredTextField<Integer> portField = new RequiredTextField<Integer>("port");
         portField.add(new PortNumberValidator());
         border.add(portField);
 
@@ -147,7 +147,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
 
     private class SystemDefaultCheckbox extends StyledCheckbox {
         private SystemDefaultCheckbox(final boolean checked) {
-            super("sysCheckbox", new Model(checked));
+            super("sysCheckbox", new Model<Boolean>(checked));
             setOutputMarkupId(true);
 
             add(new AjaxFormComponentUpdatingBehavior("onclick") {

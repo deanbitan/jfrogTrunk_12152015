@@ -18,10 +18,13 @@
 
 package org.artifactory.mime;
 
+import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.util.Set;
 
 import static org.testng.Assert.*;
@@ -31,30 +34,29 @@ import static org.testng.Assert.*;
  *
  * @author Yossi Shaul
  */
+@Test
 public class MimeTypesReaderTest {
     private MimeTypes mimeTypes;
 
     @BeforeClass
     public void setup() {
         MimeTypesReader reader = new MimeTypesReader();
-        mimeTypes = reader.read(ResourceUtils.getResourceAsFile("/META-INF/default/mimetypes-test.xml"));
+        mimeTypes = reader.read(ResourceUtils.getResourceAsFile("/org/artifactory/mime/mimetypes-test.xml"));
         assertNotNull(mimeTypes, "Should not return null");
         assertEquals(mimeTypes.getMimeTypes().size(), 5, "Unexpected count of mime types");
     }
 
-    @Test
     public void checkArchiveMime() throws Exception {
         MimeType archive = mimeTypes.getByMime(MimeType.javaArchive);
         assertNotNull(archive, "Couldn't find application/java-archive mime");
         assertEquals(archive.getExtensions().size(), 5, "Unexpected file extensions count");
         assertFalse(archive.isViewable(), "Should not be viewable");
-        assertFalse(archive.isXml(), "Should be marked as xml");
+        assertFalse(archive.isIndex(), "Should be marked as indexed");
         assertFalse(archive.isArchive(), "Should be marked as archive");
         assertNull(archive.getSyntax(), "No syntax configured for this type");
         assertNull(archive.getCss(), "No css class configured for this type");
     }
 
-    @Test
     public void trimmedFileExtensions() throws Exception {
         // the file extensions list is usually with spaces that should be trimmed
         MimeType archive = mimeTypes.getByMime(MimeType.javaArchive);
@@ -62,4 +64,25 @@ public class MimeTypesReaderTest {
         assertTrue(extensions.contains("war"), "war extension not found in: " + extensions);
         assertTrue(extensions.contains("jar"), "jar extension not found in: " + extensions);
     }
+
+    public void readConvertVersion1() {
+        File versionsDirectory = ResourceUtils.getResourceAsFile("/org/artifactory/mime/version/mimetypes-v1.xml");
+        MimeTypes result = new MimeTypesReader().read(versionsDirectory);
+        assertFalse(result.getByExtension("xml").isIndex());
+        assertTrue(result.getByExtension("pom").isIndex());
+        assertTrue(result.getByExtension("ivy").isIndex());
+    }
+
+    public void versionsRead() {
+        File versionsDirectory = ResourceUtils.getResourceAsFile(
+                "/org/artifactory/mime/version/mimetypes-v1.xml").getParentFile();
+        File[] mimeTypeFiles = versionsDirectory.listFiles((FileFilter) new SuffixFileFilter("xml"));
+        assertTrue(mimeTypeFiles.length > 0, "Couldn't find mime types files under "
+                + versionsDirectory.getAbsolutePath());
+        for (File mimeTypeFile : mimeTypeFiles) {
+            MimeTypesReader reader = new MimeTypesReader();
+            reader.read(mimeTypeFile);  // will throw an exception on error
+        }
+    }
+
 }

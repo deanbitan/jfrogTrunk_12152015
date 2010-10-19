@@ -45,8 +45,12 @@ import java.util.List;
  * @author yoavl
  * @date Mar 12, 2009
  */
-public class GarbageCollectorFactory {
+public abstract class GarbageCollectorFactory {
     private static final Logger log = LoggerFactory.getLogger(GarbageCollectorFactory.class);
+
+    private GarbageCollectorFactory() {
+        // utility class
+    }
 
     /**
      * Create a data store garbage collector for this repository.

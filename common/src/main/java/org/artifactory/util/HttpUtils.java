@@ -18,6 +18,7 @@
 
 package org.artifactory.util;
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
@@ -46,8 +47,7 @@ public abstract class HttpUtils {
         Method contextPathGetter = null;
         try {
             contextPathGetter = ServletContext.class.getMethod("getContextPath", new Class[0]);
-        }
-        catch (NoSuchMethodException e) {
+        } catch (NoSuchMethodException e) {
         } finally {
             /**
              * Indicate whether we are running v2.4 or v2.5 by checking if javax.servlet.ServletContext.getContextPath()
@@ -55,6 +55,10 @@ public abstract class HttpUtils {
              */
             SERVLET_24 = (contextPathGetter == null);
         }
+    }
+
+    private HttpUtils() {
+        // utility class
     }
 
     public static String getArtifactoryUserAgent() {
@@ -123,5 +127,13 @@ public abstract class HttpUtils {
         String contextUniqueName = PathUtils.trimLeadingSlashes(servletContext.getContextPath());
         contextUniqueName = StringUtils.capitalize(contextUniqueName);
         return contextUniqueName;
+    }
+
+    /**
+     * @param status The (http based) response code
+     * @return True if the code symbols a successful request cycle (i.e., in the 200-20x range)
+     */
+    public static boolean isSuccessfulResponseCode(int status) {
+        return HttpStatus.SC_OK <= status && status <= HttpStatus.SC_MULTI_STATUS;
     }
 }

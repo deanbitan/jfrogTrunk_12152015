@@ -19,7 +19,7 @@
 package org.artifactory.api.repo.exception;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class RepositoryRuntimeException extends RuntimeException {
 

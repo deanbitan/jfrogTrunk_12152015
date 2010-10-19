@@ -19,11 +19,12 @@
 package org.artifactory.repo;
 
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.io.checksum.Checksum;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
@@ -34,7 +35,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.InputStream;
-import java.lang.reflect.Method;
 
 /**
  * This class tests the behaviour of the allowsDownloadMethod and checks that it returns the proper results on different
@@ -53,7 +53,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
 
     HttpRepoDescriptor httpRepoDescriptor = new HttpRepoDescriptor();
     HttpRepo httpRepo = new HttpRepo(internalRepoService, httpRepoDescriptor, false, null);
-    RepoPath repoPath = new RepoPath("remote-repo-cache", "test/test/1.0/test-1.0.jar");
+    RepoPath repoPath = new RepoPathImpl("remote-repo-cache", "test/test/1.0/test-1.0.jar");
 
     public RemoteRepoBaseTest() {
     }
@@ -74,7 +74,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
      */
     @Test
     public void testDownloadWithNoCachePrefix() {
-        RepoPath repoPathNoPrefix = new RepoPath("remote-repo", "test/test/1.0/test-1.0.jar");
+        RepoPath repoPathNoPrefix = new RepoPathImpl("remote-repo", "test/test/1.0/test-1.0.jar");
         expectCanRead(true);
         createJcrCacheRepo(false);
         StatusHolder statusHolder = tryAllowsDownload(repoPathNoPrefix);
@@ -132,7 +132,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     }
 
     /**
-     * Verify reading of valid checksum file to test the {@link RemoteRepoBase#readAndFormatChecksum(java.io.InputStream)}
+     * Verify reading of valid checksum file to test the {@link Checksum#checksumStringFromStream(java.io.InputStream)}
      * method
      *
      * @throws Exception
@@ -143,7 +143,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     }
 
     /**
-     * Verify reading of a checksum file containing comments to test the {@link RemoteRepoBase#readAndFormatChecksum(java.io.InputStream)}
+     * Verify reading of a checksum file containing comments to test the {@link Checksum#checksumStringFromStream(java.io.InputStream)}
      * method
      *
      * @throws Exception
@@ -155,7 +155,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
 
     /**
      * Verify reading of a checksum file containing file description to test the {@link
-     * RemoteRepoBase#readAndFormatChecksum(java.io.InputStream)} method
+     * Checksum#checksumStringFromStream(java.io.InputStream)} method
      *
      * @throws Exception
      */
@@ -165,7 +165,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     }
 
     /**
-     * Verify reading of an empty checksum file to test the {@link RemoteRepoBase#readAndFormatChecksum(java.io.InputStream)}
+     * Verify reading of an empty checksum file to test the {@link Checksum#checksumStringFromStream(java.io.InputStream)}
      * method
      *
      * @throws Exception
@@ -176,8 +176,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     }
 
     /**
-     * Invoke the {@link RemoteRepoBase#readAndFormatChecksum(java.io.InputStream)} method and check the different
-     * values that are read from the given checksum are as expected
+     * Check the different values that are read from the given checksum are as expected
      *
      * @param checksumType  Type of checksum test file to read
      * @param expectedValue Expected checksum value
@@ -185,10 +184,8 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
      */
     private void invokeReadChecksum(String checksumType, String expectedValue) throws Exception {
         InputStream stream = getClass().getResourceAsStream("/org/artifactory/repo/test-" + checksumType + ".md5");
-        Method method = RemoteRepoBase.class.getDeclaredMethod("readAndFormatChecksum", InputStream.class);
-        method.setAccessible(true);
         try {
-            String checksum = (String) method.invoke(httpRepo, stream);
+            String checksum = Checksum.checksumStringFromStream(stream);
             Assert.assertEquals(expectedValue, checksum, "Incorrect checksum value returned.");
         } finally {
             IOUtils.closeQuietly(stream);

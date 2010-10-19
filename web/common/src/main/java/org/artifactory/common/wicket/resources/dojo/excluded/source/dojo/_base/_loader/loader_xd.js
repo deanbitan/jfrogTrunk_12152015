@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dojo._base._loader.loader_xd"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojo._base._loader.loader_xd"] = true;
 //Cross-domain resource loader.
 dojo.provide("dojo._base._loader.loader_xd");
 
@@ -718,6 +709,4 @@ dojo._xdNotifyLoaded = function(){
 	if(dojo._initFired && !dojo._loadNotifying){ 
 		dojo._callLoaded();
 	}
-}
-
 }

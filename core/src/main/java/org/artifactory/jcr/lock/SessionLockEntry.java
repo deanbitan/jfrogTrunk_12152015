@@ -18,11 +18,11 @@
 
 package org.artifactory.jcr.lock;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.concurrent.LockingException;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.springframework.core.JdkVersion;
@@ -194,6 +194,7 @@ class SessionLockEntry implements FsItemLockEntry {
 
     /**
      * Test the state of this entry for unsaved data.
+     *
      * @return true if the entry needs to be saved, false otherwise
      */
     boolean isUnsaved() {

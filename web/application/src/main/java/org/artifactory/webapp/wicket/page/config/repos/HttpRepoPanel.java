@@ -20,16 +20,12 @@ package org.artifactory.webapp.wicket.page.config.repos;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.markup.html.form.ChoiceRenderer;
-import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.form.PasswordTextField;
-import org.apache.wicket.markup.html.form.TextArea;
-import org.apache.wicket.markup.html.form.TextField;
+import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
-import org.apache.wicket.validation.validator.NumberValidator;
+import org.apache.wicket.validation.validator.MinimumValidator;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -62,7 +58,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     private boolean isStoreArtifactsLocally = false;
 
     public HttpRepoPanel(CreateUpdateAction action, HttpRepoDescriptor repoDescriptor,
-            CachingDescriptorHelper cachingDescriptorHelper) {
+                         CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor, cachingDescriptorHelper);
 
         MutableCentralConfigDescriptor mutableCentralConfigDescriptor =
@@ -92,8 +88,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     }
 
     private void addBasicSettings(CreateUpdateAction action,
-            MutableCentralConfigDescriptor mutableCentralConfigDescriptor,
-            CachingDescriptorHelper cachingDescriptorHelper) {
+                                  MutableCentralConfigDescriptor mutableCentralConfigDescriptor,
+                                  CachingDescriptorHelper cachingDescriptorHelper) {
         TitledBorder basicSettings = new TitledBorder("basicSettings");
         form.add(basicSettings);
 
@@ -102,7 +98,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         basicSettings.add(generalSettings);
 
         // url
-        TextField urlField = new TextField("url");
+        TextField<String> urlField = new TextField<String>("url");
         urlField.add(new UriValidator("http", "https"));
         urlField.setRequired(true);
         generalSettings.add(urlField);
@@ -110,15 +106,16 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
 
         // type
         List<RepoType> repoTypeList = getRemoteRepoTypeList();
-        basicSettings.add(new DropDownChoice("type", repoTypeList));
+        basicSettings.add(new DropDownChoice<RepoType>("type", repoTypeList));
         basicSettings.add(new SchemaHelpBubble("type.help"));
 
         // proxy
         List<ProxyDescriptor> proxies = mutableCentralConfigDescriptor.getProxies();
-        DropDownChoice proxiesDropDown = new DropDownChoice("proxy", proxies, new ChoiceRenderer("key", "key"));
+        DropDownChoice<ProxyDescriptor> proxiesDropDown = new DropDownChoice<ProxyDescriptor>("proxy", proxies,
+                new ChoiceRenderer<ProxyDescriptor>("key", "key"));
         ProxyDescriptor defaultProxyDescriptor = mutableCentralConfigDescriptor.getDefaultProxy();
         if (defaultProxyDescriptor != null && CreateUpdateAction.CREATE.equals(action)) {
-            proxiesDropDown.setModel(new Model(defaultProxyDescriptor));
+            proxiesDropDown.setDefaultModel(new Model<ProxyDescriptor>(defaultProxyDescriptor));
         }
         proxiesDropDown.setNullValid(true);
         basicSettings.add(proxiesDropDown);
@@ -126,7 +123,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
 
         // checksumPolicyType
         ChecksumPolicyType[] checksumPolicies = ChecksumPolicyType.values();
-        DropDownChoice checksumPoliciesDC = new DropDownChoice("checksumPolicyType", Arrays.asList(checksumPolicies));
+        DropDownChoice<ChecksumPolicyType> checksumPoliciesDC = new DropDownChoice<ChecksumPolicyType>(
+                "checksumPolicyType", Arrays.asList(checksumPolicies));
         checksumPoliciesDC.setChoiceRenderer(new ChecksumPolicyChoiceRenderer());
         basicSettings.add(checksumPoliciesDC);
         basicSettings.add(new SchemaHelpBubble("remoteRepoChecksumPolicyType.help", "checksumPolicyType"));
@@ -155,12 +153,13 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         form.add(advancedSettings);
 
         // maxUniqueSnapshots
-        advancedSettings.add(new TextField("maxUniqueSnapshots", Integer.class));
+        advancedSettings.add(new TextField<Integer>("maxUniqueSnapshots", Integer.class));
         advancedSettings.add(new SchemaHelpBubble("maxUniqueSnapshots.help"));
 
         // unusedArtifactsCleanupPeriodHours
-        final TextField unusedCleanupTextField = new TextField("unusedArtifactsCleanupPeriodHours", Integer.class);
-        unusedCleanupTextField.add(new NumberValidator.MinimumValidator(1));
+        final TextField<Integer> unusedCleanupTextField = new TextField<Integer>("unusedArtifactsCleanupPeriodHours",
+                Integer.class);
+        unusedCleanupTextField.add(new MinimumValidator<Integer>(1));
         unusedCleanupTextField.setOutputMarkupId(true);
         unusedCleanupTextField.setEnabled(entity.isUnusedArtifactsCleanupEnabled());
         advancedSettings.add(unusedCleanupTextField);
@@ -174,7 +173,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                 unusedCleanupTextField.setEnabled(unusedCleanupSelected);
 
                 if (!unusedCleanupSelected) {
-                    unusedCleanupTextField.setModelObject("0");
+                    unusedCleanupTextField.setDefaultModelObject("0");
                 }
                 target.addComponent(unusedCleanupTextField);
             }
@@ -192,7 +191,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         advancedSettings.add(new SchemaHelpBubble("hardFail.help"));
         flipLogic();
         StyledCheckbox checkbox = new StyledCheckbox("storeArtifactsLocally");
-        checkbox.setModel(new PropertyModel(this, "isStoreArtifactsLocally"));
+        checkbox.setDefaultModel(new PropertyModel(this, "isStoreArtifactsLocally"));
         advancedSettings.add(checkbox);
         advancedSettings.add(new SchemaHelpBubble("storeArtifactsLocally.help"));
 
@@ -211,21 +210,21 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         advancedSettings.add(new SchemaHelpBubble("password.help"));
 
         // localAddress
-        TextField localAddressField = new TextField("localAddress");
+        TextField<String> localAddressField = new TextField<String>("localAddress");
         localAddressField.add(new LocalAddressValidator());
         advancedSettings.add(localAddressField);
         advancedSettings.add(new SchemaHelpBubble("localAddress.help"));
 
-        advancedSettings.add(new TextField("socketTimeoutMillis", Integer.class));
+        advancedSettings.add(new TextField<Integer>("socketTimeoutMillis", Integer.class));
         advancedSettings.add(new SchemaHelpBubble("socketTimeoutMillis.help"));
 
-        advancedSettings.add(new TextField("retrievalCachePeriodSecs", Long.class));
+        advancedSettings.add(new TextField<Long>("retrievalCachePeriodSecs", Long.class));
         advancedSettings.add(new SchemaHelpBubble("retrievalCachePeriodSecs.help"));
 
-        advancedSettings.add(new TextField("failedRetrievalCachePeriodSecs", Long.class));
+        advancedSettings.add(new TextField<Long>("failedRetrievalCachePeriodSecs", Long.class));
         advancedSettings.add(new SchemaHelpBubble("failedRetrievalCachePeriodSecs.help"));
 
-        advancedSettings.add(new TextField("missedRetrievalCachePeriodSecs", Long.class));
+        advancedSettings.add(new TextField<Long>("missedRetrievalCachePeriodSecs", Long.class));
         advancedSettings.add(new SchemaHelpBubble("missedRetrievalCachePeriodSecs.help"));
 
         advancedSettings.add(new StyledCheckbox("synchronizeProperties"));
@@ -278,9 +277,9 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     case GEN_IF_ABSENT:
                         return "Generate if absent";
                     case IGNORE_AND_GEN:
-                        return "Ignore and return generated checksum";
+                        return "Ignore and generated";
                     case PASS_THRU:
-                        return "Return the remote checksum";
+                        return "Ignore and pass-through";
                     default:
                         return policy;
                 }
@@ -292,7 +291,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
 
     private static class HttpRepoGeneralSettingsPanel extends RepoGeneralSettingsPanel {
         public HttpRepoGeneralSettingsPanel(String id, boolean create,
-                CachingDescriptorHelper cachingDescriptorHelper) {
+                                            CachingDescriptorHelper cachingDescriptorHelper) {
             super(id, create, cachingDescriptorHelper);
         }
     }

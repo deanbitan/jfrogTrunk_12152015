@@ -20,11 +20,10 @@ package org.artifactory.addon.wicket;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.addon.AddonFactory;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.ItemInfo;
+import org.artifactory.addon.Addon;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
@@ -41,7 +40,7 @@ import java.util.Set;
  *
  * @author Noam Y. Tenne
  */
-public interface BuildAddon extends AddonFactory {
+public interface BuildAddon extends Addon {
 
     /**
      * Returns the builds tab panel
@@ -69,7 +68,7 @@ public interface BuildAddon extends AddonFactory {
      * @return Delete confirmation message
      */
     @Lock(transactional = true)
-    String getDeleteItemWarningMessage(ItemInfo item, String defaultMessage);
+    String getDeleteItemWarningMessage(org.artifactory.fs.ItemInfo item, String defaultMessage);
 
     /**
      * Returns a customized delete confirmation message that adds alerts in case any selected items are used by builds
@@ -127,7 +126,7 @@ public interface BuildAddon extends AddonFactory {
      * @param build           Build to use for results
      * @return Build save search results panel
      */
-    Panel getBuildSearchResultsPanel(Addon requestingAddon, Build build);
+    Panel getBuildSearchResultsPanel(AddonType requestingAddon, Build build);
 
     /**
      * Returns a file info object for a build file bean

@@ -19,13 +19,13 @@
 package org.artifactory.api.security;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 @XStreamAlias("acl")
 public class AclInfo implements Info {

@@ -19,9 +19,9 @@
 package org.artifactory.api.search;
 
 import com.google.common.collect.Lists;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FileInfoImpl;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.fs.FileInfo;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -43,7 +43,7 @@ public class SavedSearchResultsTest {
     public void addResultsWithDuplicates() {
         SavedSearchResults results = new SavedSearchResults("test", null);
 
-        FileInfoImpl fileInfo = new FileInfoImpl(new RepoPath("repo1", "a/b/c/d"));
+        FileInfoImpl fileInfo = new FileInfoImpl(new RepoPathImpl("repo1", "a/b/c/d"));
         results.add(fileInfo);
         assertTrue(results.contains(fileInfo), "Just added file info not found...");
 
@@ -54,8 +54,8 @@ public class SavedSearchResultsTest {
     }
 
     public void mergeResults() {
-        FileInfo sharedFileInfo = new FileInfoImpl(new RepoPath("repo1", "test1"));
-        FileInfo samePathDifferentRepoKey = new FileInfoImpl(new RepoPath("repo2", "test1"));
+        FileInfo sharedFileInfo = new FileInfoImpl(new RepoPathImpl("repo1", "test1"));
+        FileInfo samePathDifferentRepoKey = new FileInfoImpl(new RepoPathImpl("repo2", "test1"));
 
         SavedSearchResults results = new SavedSearchResults("test", null);
         results.add(sharedFileInfo);
@@ -65,15 +65,15 @@ public class SavedSearchResultsTest {
 
         results.merge(toMerge);
 
-        assertFalse(results.getResults().contains(sharedFileInfo));
-        assertTrue(results.getResults().contains(samePathDifferentRepoKey));
         assertEquals(results.size(), 1, "The shared path should not have been added (same relative path)");
+        assertTrue(results.contains(sharedFileInfo));
+        assertTrue(results.contains(samePathDifferentRepoKey));
     }
 
     public void subtractResults() {
-        FileInfo sharedFileInfo = new FileInfoImpl(new RepoPath("repo1", "test1"));
-        FileInfo notInSubtract = new FileInfoImpl(new RepoPath("repo1", "test2"));
-        FileInfo notInOriginal = new FileInfoImpl(new RepoPath("repo1", "test2/123"));
+        FileInfo sharedFileInfo = new FileInfoImpl(new RepoPathImpl("repo1", "test1"));
+        FileInfo notInSubtract = new FileInfoImpl(new RepoPathImpl("repo1", "test2"));
+        FileInfo notInOriginal = new FileInfoImpl(new RepoPathImpl("repo1", "test2/123"));
 
         SavedSearchResults results = new SavedSearchResults("test",
                 Lists.newArrayList(sharedFileInfo, notInSubtract));
@@ -85,6 +85,24 @@ public class SavedSearchResultsTest {
 
         assertFalse(results.getResults().contains(sharedFileInfo), "Shared item should have been removed");
         assertTrue(results.getResults().contains(notInSubtract));
+        assertEquals(results.size(), 1, "Only one item should remain: " + results);
+    }
+
+    public void intersectResults() {
+        FileInfo shared = new FileInfoImpl(new RepoPathImpl("repo1", "test1"));
+        FileInfo onlyInA = new FileInfoImpl(new RepoPathImpl("repo1", "test2"));
+        FileInfo onlyInB = new FileInfoImpl(new RepoPathImpl("repo1", "test2/123"));
+
+        SavedSearchResults results = new SavedSearchResults("A",
+                Lists.newArrayList(shared, onlyInA));
+
+        SavedSearchResults toIntersect = new SavedSearchResults("B",
+                Lists.newArrayList(shared, onlyInB));
+
+        results.intersect(toIntersect);
+
+        assertTrue(results.getResults().contains(shared), "Shared item should be the only one left");
+        assertTrue(results.contains(shared), "Shared item should be the only one left");
         assertEquals(results.size(), 1, "Only one item should remain: " + results);
     }
 

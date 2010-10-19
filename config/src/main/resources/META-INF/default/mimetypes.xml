@@ -24,12 +24,12 @@
         type - The mime entry unique name (mandatory)
         extensions - Comma separated list of file extensions mapped to this mime type (mandatory)
         viewable - True if this mime type can be viewed as text file
-        xml - True if this mime type is an xml and should be indexed for searching
+        index - True if this mime type should be indexed for searching (valid only for xml files)
         archive - True if this mime type is a browsable archive
         syntax - The UI highlighter syntax to for this mime type (only relevant if this is a viewable type)
         css - The css class of a display icon for this mime type
 -->
-<mimetypes version="1">
+<mimetypes version="2">
 
     <mimetype type="text/plain" extensions="txt, properties, mf" viewable="true" syntax="plain"/>
     <mimetype type="text/html" extensions="htm, html" viewable="true" syntax="xml"/>
@@ -42,7 +42,7 @@
     <mimetype type="text/x-c" extensions="c, cc, cpp" viewable="true" syntax="groovy"/>
 
     <mimetype type="application/xml-dtd" extensions="dtd" viewable="true"/>
-    <mimetype type="application/xml-schema" extensions="xsd" viewable="true" syntax="xml" xml="true" css="xml"/>
+    <mimetype type="application/xml-schema" extensions="xsd" viewable="true" syntax="xml" css="xml"/>
     <mimetype type="application/xml-external-parsed-entity" extensions="ent" viewable="true"/>
     <mimetype type="application/xhtml+xml" extensions="xhtml" viewable="true" syntax="xml"/>
 
@@ -61,10 +61,10 @@
         NOTE: The following mime types are required for a proper functioning of certain features in Artifactory 
          DO NOT change them unless you really know what you are doing
     -->
-    <mimetype type="application/xml" extensions="xml, xsl, xsi" viewable="true" syntax="xml" xml="true" css="xml"/>
-    <mimetype type="application/x-maven-pom+xml" extensions="pom" viewable="true" syntax="xml" xml="true" css="pom"/>
-    <mimetype type="application/x-ivy+xml" extensions="ivy" viewable="true" syntax="xml" xml="true" css="xml"/>
-    <mimetype type="application/x-java-jnlp-file" extensions="jnlp" viewable="true" syntax="xml" xml="true" css="jnlp"/>
+    <mimetype type="application/xml" extensions="xml, xsl, xsi" viewable="true" syntax="xml" css="xml"/>
+    <mimetype type="application/x-maven-pom+xml" extensions="pom" viewable="true" syntax="xml" index="true" css="pom"/>
+    <mimetype type="application/x-ivy+xml" extensions="ivy" viewable="true" syntax="xml" index="true" css="xml"/>
+    <mimetype type="application/x-java-jnlp-file" extensions="jnlp" viewable="true" syntax="xml" css="jnlp"/>
     <mimetype type="application/x-checksum" extensions="sha1, md5" viewable="true" syntax="plain"/>
     <mimetype type="application/java-archive" extensions="jar, war, ear, sar, har" archive="true" css="jar"/>
 

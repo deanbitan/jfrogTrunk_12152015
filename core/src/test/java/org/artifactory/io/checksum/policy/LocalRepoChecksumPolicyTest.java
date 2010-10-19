@@ -19,17 +19,18 @@
 package org.artifactory.io.checksum.policy;
 
 import com.google.common.collect.Sets;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.Set;
 
-import static org.artifactory.api.mime.ChecksumType.md5;
-import static org.artifactory.api.mime.ChecksumType.sha1;
+import static org.artifactory.checksum.ChecksumType.md5;
+import static org.artifactory.checksum.ChecksumType.sha1;
 import static org.testng.Assert.*;
 
 /**
@@ -79,7 +80,7 @@ public class LocalRepoChecksumPolicyTest extends ArtifactoryHomeBoundTest {
 
     public void checksumOfMetadata() {
         LocalRepoChecksumPolicy policy = new LocalRepoChecksumPolicy();
-        RepoPath metadataPath = new RepoPath("repo", "test/test/1.0/maven-metadata.xml");
+        RepoPath metadataPath = new RepoPathImpl("repo", "test/test/1.0/maven-metadata.xml");
         assertEquals(policy.getChecksum(sha1, checksums, metadataPath), "serversha1");
 
         policy.setPolicyType(LocalRepoChecksumPolicyType.SERVER);
@@ -88,7 +89,7 @@ public class LocalRepoChecksumPolicyTest extends ArtifactoryHomeBoundTest {
 
     public void checksumOfSnapshotMetadata() {
         LocalRepoChecksumPolicy policy = new LocalRepoChecksumPolicy();
-        RepoPath metadataPath = new RepoPath("repo", "test/test/1.0-SNAPSHOT/maven-metadata.xml");
+        RepoPath metadataPath = new RepoPathImpl("repo", "test/test/1.0-SNAPSHOT/maven-metadata.xml");
         assertEquals(policy.getChecksum(sha1, checksums, metadataPath), "serversha1");
 
         policy.setPolicyType(LocalRepoChecksumPolicyType.SERVER);

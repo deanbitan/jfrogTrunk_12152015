@@ -1,10 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
 /*=====
 // note:
 //		'djConfig' does not exist under 'dojo.*' so that it can be set before the
@@ -134,7 +127,9 @@ djConfig = {
 }
 =====*/
 
+//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 (function(){
+//>>excludeEnd("webkitMobile");
 	// firebug stubs
 
 	if(typeof this["loadFirebugConsole"] == "function"){
@@ -223,7 +218,7 @@ dojo.global = {
 =====*/
 	dojo.locale = d.config.locale;
 
-	var rev = "$Rev: 20973 $".match(/\d+/);
+	var rev = "$Rev: 22487 $".match(/\d+/);
 
 /*=====
 	dojo.version = function(){
@@ -247,7 +242,7 @@ dojo.global = {
 	}
 =====*/
 	dojo.version = {
-		major: 1, minor: 4, patch: 0, flag: "",
+		major: 1, minor: 5, patch: 0, flag: "",
 		revision: rev ? +rev[0] : NaN,
 		toString: function(){
 			with(d.version){
@@ -256,11 +251,13 @@ dojo.global = {
 		}
 	}
 
-		// Register with the OpenAjax hub
+	//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
+	// Register with the OpenAjax hub
 	if(typeof OpenAjax != "undefined"){
 		OpenAjax.hub.registerLibrary(dojo._scopeName, "http://dojotoolkit.org", d.version.toString());
 	}
-	
+	//>>excludeEnd("webkitMobile");
+
 	var extraNames, extraLen, empty = {};
 	for(var i in {toString: 1}){ extraNames = []; break; }
 	dojo._extraNames = extraNames = extraNames || ["hasOwnProperty", "valueOf", "isPrototypeOf",
@@ -283,7 +280,8 @@ dojo.global = {
 				target[name] = s;
 			}
 		}
-				// IE doesn't recognize some custom functions in for..in
+		//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
+		// IE doesn't recognize some custom functions in for..in
 		if(extraLen && source){
 			for(i = 0; i < extraLen; ++i){
 				name = extraNames[i];
@@ -293,7 +291,8 @@ dojo.global = {
 				}
 			}
 		}
-				return target; // Object
+		//>>excludeEnd("webkitMobile");
+		return target; // Object
 	}
 
 	dojo.mixin = function(/*Object*/obj, /*Object...*/props){
@@ -444,28 +443,17 @@ dojo.global = {
 		return !!d.getObject(name, false, obj); // Boolean
 	}
 
-
 	dojo["eval"] = function(/*String*/ scriptFragment){
 		//	summary:
-		//		Perform an evaluation in the global scope. Use this rather than
-		//		calling 'eval()' directly.
+		//		A legacy method created for use exclusively by internal Dojo methods. Do not use
+		//		this method directly, the behavior of this eval will differ from the normal
+		//		browser eval.
 		//	description:
 		//		Placed in a separate function to minimize size of trapped
 		//		exceptions. Calling eval() directly from some other scope may
 		//		complicate tracebacks on some platforms.
 		//	returns:
 		//		The result of the evaluation. Often `undefined`
-
-
-		// note:
-		//	 - JSC eval() takes an optional second argument which can be 'unsafe'.
-		//	 - Mozilla/SpiderMonkey eval() takes an optional second argument which is the
-		//  	 scope object for new symbols.
-
-		// FIXME: investigate Joseph Smarr's technique for IE:
-		//		http://josephsmarr.com/2007/01/31/fixing-eval-to-use-global-scope-in-ie/
-		//	see also:
-		// 		http://trac.dojotoolkit.org/ticket/744
 		return d.global.eval ? d.global.eval(scriptFragment) : eval(scriptFragment); 	// Object
 	}
 
@@ -511,5 +499,7 @@ dojo.global = {
 	//Real functions declared in dojo._firebug.firebug.
 	d.deprecated = d.experimental = function(){};
 
+//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 })();
+//>>excludeEnd("webkitMobile");
 // vim:ai:ts=4:noet

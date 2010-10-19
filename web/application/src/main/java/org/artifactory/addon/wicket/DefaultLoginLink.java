@@ -47,7 +47,7 @@ public class DefaultLoginLink extends TitledSubmitLink {
     }
 
     public void onSubmit() {
-        LoginInfo loginInfo = (LoginInfo) form.getModelObject();
+        LoginInfo loginInfo = (LoginInfo) form.getDefaultModelObject();
         String username = loginInfo.getUsername();
         String password = loginInfo.getPassword();
         boolean signedIn = AuthenticatedWebSession.get().signIn(username, password);

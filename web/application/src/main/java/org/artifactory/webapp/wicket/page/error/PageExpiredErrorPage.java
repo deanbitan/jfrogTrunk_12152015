@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.error;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class PageExpiredErrorPage extends BaseMessagePage {
     @Override

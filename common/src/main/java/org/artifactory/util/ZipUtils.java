@@ -44,7 +44,7 @@ import java.util.zip.ZipOutputStream;
  *
  * @author Noam Tenne
  */
-public class ZipUtils {
+public abstract class ZipUtils {
 
     private static final Logger log = LoggerFactory.getLogger(ZipUtils.class);
 

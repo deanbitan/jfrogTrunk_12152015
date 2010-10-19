@@ -31,7 +31,10 @@ import java.net.URL;
 /**
  * @author yoavl
  */
-public class ResourceUtils {
+public abstract class ResourceUtils {
+    private ResourceUtils() {
+        // utility class
+    }
 
     public static void copyResource(String resourcePath, File outputFile) throws IOException {
         copyResource(resourcePath, outputFile, null, null);

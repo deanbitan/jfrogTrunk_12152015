@@ -64,7 +64,7 @@ public class JnlpViewTabPanel extends Panel {
     public JnlpViewTabPanel(String id, final FileActionableItem fileItem) {
         super(id);
         this.fileItem = fileItem;
-        jnlpContent = repoService.getTextFileContent(fileItem.getFileInfo());
+        jnlpContent = repoService.getStringContent(fileItem.getFileInfo());
 
         add(new CssClass("jnlp-tab"));
         addJnlpContent();
@@ -99,7 +99,7 @@ public class JnlpViewTabPanel extends Panel {
                 select.add(new AjaxFormComponentUpdatingBehavior("onchange") {
                     @Override
                     protected void onUpdate(AjaxRequestTarget target) {
-                        RepoDescriptor repo = (VirtualRepoDescriptor) getComponent().getModelObject();
+                        RepoDescriptor repo = (VirtualRepoDescriptor) getComponent().getDefaultModelObject();
                         setRepository(repo);
                         target.addComponent(get("jnlpLinksBorder"));
                         target.addComponent(get("scriptSnippetBorder"));

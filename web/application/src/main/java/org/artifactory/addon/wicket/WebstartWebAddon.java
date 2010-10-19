@@ -19,7 +19,7 @@
 package org.artifactory.addon.wicket;
 
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.artifactory.addon.AddonFactory;
+import org.artifactory.addon.Addon;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 
 /**
@@ -27,7 +27,7 @@ import org.artifactory.common.wicket.model.sitemap.MenuNode;
  *
  * @author Yossi Shaul
  */
-public interface WebstartWebAddon extends AddonFactory {
+public interface WebstartWebAddon extends Addon {
     /**
      * @return KeyPair menu node for the site map.
      */

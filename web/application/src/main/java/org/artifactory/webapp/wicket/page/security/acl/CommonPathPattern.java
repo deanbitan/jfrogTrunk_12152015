@@ -21,7 +21,7 @@ package org.artifactory.webapp.wicket.page.security.acl;
 import org.artifactory.api.security.PermissionTargetInfo;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public enum CommonPathPattern {
 

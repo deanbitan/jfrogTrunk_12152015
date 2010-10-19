@@ -27,7 +27,8 @@ import java.net.URL;
 
 /**
  * Manually initialize and starts Jetty Web Server. NOTE: No logger here, since it needs to be initialized after.
- * Created by IntelliJ IDEA. User: yoavl
+ *
+ * @author Yoav Landman
  */
 public class Main {
     static {

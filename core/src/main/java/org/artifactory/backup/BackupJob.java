@@ -33,7 +33,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class BackupJob extends QuartzCommand {
 

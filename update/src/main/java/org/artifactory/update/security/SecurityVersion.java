@@ -66,10 +66,11 @@ public enum SecurityVersion implements SubConfigElementVersion {
             new LdapGroupSettingXmlConverter(), new LowercaseUsernameXmlConverter()),
     v7(ArtifactoryVersion.v220, ArtifactoryVersion.getCurrent(), null);
 
+    private static final String VERSION_ATT = "version=\"";
+
     private final VersionComparator comparator;
     private final XmlConverter[] xmlConverters;
     private final ConfigurationConverter<Session> configurationConverter;
-    private static final String VERSION_ATT = "version=\"";
 
     /**
      * Represents Artifactory security version. For each change in the security files new security version is created.
@@ -81,7 +82,7 @@ public enum SecurityVersion implements SubConfigElementVersion {
      *                               one
      */
     SecurityVersion(ArtifactoryVersion from, ArtifactoryVersion until,
-                    ConfigurationConverter<Session> configurationConverter, XmlConverter... xmlConverters) {
+            ConfigurationConverter<Session> configurationConverter, XmlConverter... xmlConverters) {
         this.configurationConverter = configurationConverter;
         this.comparator = new VersionComparator(this, from, until);
         this.xmlConverters = xmlConverters;
@@ -89,10 +90,6 @@ public enum SecurityVersion implements SubConfigElementVersion {
 
     public boolean isCurrent() {
         return comparator.isCurrent();
-    }
-
-    public boolean supports(ArtifactoryVersion version) {
-        return comparator.supports(version);
     }
 
     public VersionComparator getComparator() {
@@ -133,23 +130,6 @@ public enum SecurityVersion implements SubConfigElementVersion {
         for (ConfigurationConverter<Session> converter : converters) {
             converter.convert(rawSession);
         }
-    }
-
-    public static SecurityVersion getSecurityVersion(ArtifactoryVersion version) {
-        SecurityVersion result = null;
-        SecurityVersion[] securityVersions = values();
-        for (int i = securityVersions.length - 1; i >= 0; i--) {
-            SecurityVersion secVersion = securityVersions[i];
-            if (secVersion.supports(version)) {
-                result = secVersion;
-                break;
-            }
-        }
-        if (result == null || result == unsupported) {
-            throw new IllegalStateException("Reading security data from backup of Artifactory version "
-                    + version + " is not supported!");
-        }
-        return result;
     }
 
     public static SecurityVersion getCurrent() {

@@ -33,13 +33,13 @@ public class AjaxCheckboxColumn<T> extends StyledCheckboxColumn<T> {
     }
 
     @Override
-    protected FormComponent newCheckBox(String id, IModel model, final T rowObject) {
+    protected FormComponent newCheckBox(String id, IModel<Boolean> model, final T rowObject) {
         final FormComponent checkbox = super.newCheckBox(id, model, rowObject);
 
         checkbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                Boolean checked = (Boolean) checkbox.getModelObject();
+                Boolean checked = (Boolean) checkbox.getDefaultModelObject();
                 AjaxCheckboxColumn.this.onUpdate(checkbox, rowObject, checked, target);
             }
 
@@ -58,7 +58,7 @@ public class AjaxCheckboxColumn<T> extends StyledCheckboxColumn<T> {
     /**
      * Called when the checkbox is updated (checked/unchecked).
      *
-     * @param checkbox
+     * @param checkbox  The updated checkbox.
      * @param rowObject The affected row model.
      * @param value     True if the checkbox is checked.
      * @param target    The ajax target (the table container is added by default).

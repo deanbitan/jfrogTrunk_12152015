@@ -59,13 +59,14 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(username, password);
             authenticator.authenticate(authentication);
-            LdapUser ldapUser = getDnFromUserName(ldapSetting, username);
+            status.setStatus("Successfully connected and authenticated the test user.", log);
+            LdapTemplate ldapTemplate = createLdapTemplate(ldapSetting);
+            LdapUser ldapUser = getUserFromLdapSearch(ldapTemplate, username, ldapSetting);
             if (ldapUser == null) {
                 status.setWarning(
-                        "LDAP user search failed, LDAP queries concerning users and groups may not be available",
+                        "LDAP user search failed, LDAP queries concerning users and groups may not be available.",
                         log);
             }
-            status.setStatus("Successfully connected and authenticated the test user", log);
         } catch (Exception e) {
             SearchPattern pattern = ldapSetting.getSearch();
             if ((pattern != null && StringUtils.isNotBlank(pattern.getSearchFilter())) &&
@@ -98,8 +99,11 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
     }
 
     public DirContextOperations searchUserInLdap(LdapTemplate ldapTemplate, String userName, LdapSetting settings) {
-        FilterBasedLdapUserSearch ldapUserSearch = getFilterBasedLdapUserSearch(ldapTemplate, settings);
+        if (settings.getSearch() == null) {
+            return null;
+        }
         DirContextOperations contextOperations = null;
+        FilterBasedLdapUserSearch ldapUserSearch = getFilterBasedLdapUserSearch(ldapTemplate, settings);
         try {
             log.debug("Searching for user {}", userName);
             contextOperations = ldapUserSearch.searchForUser(userName);
@@ -115,7 +119,7 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
             log.debug("Failed to retrieve groups user '{}' via LDAP: {}", userName, e.getMessage());
         } catch (CommunicationException ce) {
             String message =
-                    String.format("Failed to retrieve groups for user '%s' via LDAP: communication error", userName);
+                    String.format("Failed to retrieve groups for user '%s' via LDAP: communication error.", userName);
             log.warn(message);
         } catch (Exception e) {
             String message = "Unexpected exception in LDAP query:";
@@ -136,6 +140,9 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
 
     private FilterBasedLdapUserSearch getFilterBasedLdapUserSearch(LdapTemplate ldapTemplate, LdapSetting settings) {
         SearchPattern pattern = settings.getSearch();
+        if (pattern == null) {
+
+        }
         if (isBlank(pattern.getSearchBase())) {
             log.debug("LDAP settings have no search base defined, using defaults.");
             pattern.setSearchBase(EMPTY);

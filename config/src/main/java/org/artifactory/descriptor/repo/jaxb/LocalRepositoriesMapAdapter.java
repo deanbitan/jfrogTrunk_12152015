@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class LocalRepositoriesMapAdapter extends
         XmlAdapter<LocalRepositoriesMapAdapter.Wrappper, OrderedMap<String, LocalRepoDescriptor>> {

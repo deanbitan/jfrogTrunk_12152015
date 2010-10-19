@@ -31,6 +31,7 @@ import org.apache.jackrabbit.core.util.db.ConnectionHelper;
 import org.apache.jackrabbit.core.util.db.DbUtility;
 import org.apache.jackrabbit.core.util.db.StreamWrapper;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -149,6 +150,10 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
      */
     protected ArtifactoryConnectionHelper conHelper;
 
+    private boolean slowdownScanning;
+    private long slowdownScanningMillis = ConstantValues.gcFileScanSleepMillis.getLong();
+    private long lastSlowdownScanning = 0;
+
     /**
      * {@inheritDoc}
      */
@@ -160,6 +165,8 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
             MessageDigest digest = getDigest();
             DigestInputStream dIn = new DigestInputStream(stream, digest);
             TrackingInputStream in = new TrackingInputStream(dIn);
+            //TODO: [by yl] For blob store - write a temp file directly to jcr and delete it from jcr if exists,
+            //instead of using a real temp file as medium between the input stream and the jcr stream
             tempFile = moveToTempFile(in);
 
             // Then create the new DB record
@@ -173,7 +180,6 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
             // Important: Only use putIfAbsent and never re-put the entry in it for concurrency control
             ArtifactoryDbDataRecord oldRecord = allEntries.putIfAbsent(id, dataRecord);
             if (oldRecord != null) {
-                //TODO: [by yl] Write a temp file only if already exists, otherwise take the length from after the insert
                 // Data record cannot be the new one created
                 long length = dataRecord.length;
                 dataRecord = null;
@@ -197,7 +203,6 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
             }
 
             // Now inserting dataRecord to the DB
-            //TODO: [by yl] here - use the stream and update the record length
             insertRecordInDb(dataRecord, now, tempFile);
             dataRecord.setFile(tempFile);
             // Data record successfully inserted
@@ -245,7 +250,7 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
                 conHelper.exec(updateDataSQL, wrapper, id);
             }
         } catch (Exception e) {
-            throw convert("Can not insert new record", e);
+            throw convert("Cannot insert new record", e);
         } finally {
             IOUtils.closeQuietly(fileStream);
             DbUtility.close(rs);
@@ -570,9 +575,12 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
             loadAllDbRecords();
             // Remove all entries in delete or error state
             Iterator<ArtifactoryDbDataRecord> recordIterator = getAllEntries().iterator();
+
+            long datastoreScanStartMillis = System.currentTimeMillis();
             while (recordIterator.hasNext()) {
+                slowDownIfLongScan(datastoreScanStartMillis);
                 ArtifactoryDbDataRecord record = recordIterator.next();
-                if (!validState(record) || !record.initGCState()) {
+                if (!validState(record) || !record.updateGcState()) {
                     recordIterator.remove();
                 }
             }
@@ -811,5 +819,50 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
             derbyShutdownUrl += ";shutdown=true";
         }
         return derbyShutdownUrl;
+    }
+
+    /**
+     * Called whenever a db record file is accessed.
+     *
+     * @param record             The record that was accessed (with the new access time)
+     * @param previousAccessTime The previous access time (in nano seconds) of this record
+     */
+    protected void accessed(ArtifactoryDbDataRecord record, long previousAccessTime) {
+
+    }
+
+    /**
+     * Determines if the the gc datastore scanning is taking too long, and sleeps accordingly
+     *
+     * @param start Scan start
+     */
+    private void slowDownIfLongScan(long start) {
+
+        //Start slowing down if the threshold has been reached
+        if (!slowdownScanning &&
+                ((System.currentTimeMillis() - start) > ConstantValues.gcScanStartSleepingThresholdMillis.getLong())) {
+            slowdownScanning = true;
+            log.debug("Slowing down datastore scanning.");
+        }
+
+        if (shouldGcDatastoreScanSleep()) {
+            try {
+                lastSlowdownScanning = System.currentTimeMillis();
+                Thread.sleep(slowdownScanningMillis);
+            } catch (InterruptedException e) {
+                log.debug("Interrupted while scanning datastore.");
+            }
+        }
+    }
+
+    /**
+     * Indicates whether the gc datastore scanner thread should sleep
+     *
+     * @return True if the thresholds have been reached
+     */
+    private boolean shouldGcDatastoreScanSleep() {
+        return slowdownScanning &&
+                ((lastSlowdownScanning == 0) || ((System.currentTimeMillis() - lastSlowdownScanning) >
+                        ConstantValues.gcFileScanSleepIterationMillis.getLong()));
     }
 }

@@ -20,12 +20,10 @@ package org.artifactory.webapp.wicket.page.search.archive;
 
 import org.apache.wicket.Page;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
@@ -33,6 +31,7 @@ import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
 import org.artifactory.common.wicket.component.table.groupable.column.GroupableColumn;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
@@ -75,6 +74,7 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
 
         form.add(new StyledCheckbox("allFileTypes", new PropertyModel(this, "searchAllTypes")));
         form.add(new HelpBubble("allFileTypesHelp", "Search through all types of files (including package names).\n" +
+                "Use the full file name including extension, e.g.: 'Driver.properties' or use wildcards.\n" +
                 "Please note: providing a search term which is too frequent in an archive, may yield\n" +
                 "too many results, which will not be displayed."));
 
@@ -119,12 +119,10 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
     @Override
     protected void addColumns(List<IColumn> columns) {
         columns.add(new ActionsColumn(""));
-
-        columns.add(new GroupableColumn(new Model("Entry Name"), "searchResult.entry", "searchResult.entryPath"));
+        columns.add(new GroupableColumn("Entry Name", "searchResult.entry", "searchResult.entryPath"));
         columns.add(new BaseSearchPanel.ArtifactNameColumn());
-        columns.add(
-                new PropertyColumn(new Model("Artifact Path"), "searchResult.relDirPath", "searchResult.relDirPath"));
-        columns.add(new PropertyColumn(new Model("Repository"), "searchResult.repoKey", "searchResult.repoKey"));
+        columns.add(new TitlePropertyColumn("Artifact Path", "searchResult.relDirPath", "searchResult.relDirPath"));
+        columns.add(new TitlePropertyColumn("Repository", "searchResult.repoKey", "searchResult.repoKey"));
     }
 
     @Override

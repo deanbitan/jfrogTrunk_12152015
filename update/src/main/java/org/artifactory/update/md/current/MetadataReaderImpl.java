@@ -20,13 +20,11 @@ package org.artifactory.update.md.current;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.md.MetadataReader;
-import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.mime.MimeType;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
@@ -42,7 +40,7 @@ import java.util.List;
 public class MetadataReaderImpl implements MetadataReader {
     private static final Logger log = LoggerFactory.getLogger(MetadataReaderImpl.class);
 
-    public List<MetadataEntry> getMetadataEntries(File file, ImportSettings settings, StatusHolder status) {
+    public List<MetadataEntry> getMetadataEntries(File file, ImportSettings settings, BasicStatusHolder status) {
         if (!file.isDirectory()) {
             status.setError("Expecting a directory but got file: " + file.getAbsolutePath(), log);
             return Collections.emptyList();
@@ -78,22 +76,11 @@ public class MetadataReaderImpl implements MetadataReader {
         return result;
     }
 
-    private boolean verify(StatusHolder status, String metadataFileName, File metadataFile, String extension) {
+    private boolean verify(BasicStatusHolder status, String metadataFileName, File metadataFile, String extension) {
         if (metadataFile.exists() && metadataFile.isDirectory()) {
             //Sanity chek
             status.setWarning("Skipping xml metadata import from '" + metadataFile.getAbsolutePath() +
                     "'. Expected a file but encountered a folder.", log);
-            return false;
-        }
-        MimeType type = null;
-        if (extension != null) {
-            type = NamingUtils.getMimeTypeByExtension(extension);
-        }
-        if (type == null || !type.isXml()) {
-            //Sanity check
-            status.setWarning("Skipping xml metadata import from '" + metadataFile.getAbsolutePath() +
-                    "'. Expected an XML file but encountered the extension " + extension +
-                    " which is not an XML type.", log);
             return false;
         }
         if (extension.length() + 1 >= metadataFileName.length()) {

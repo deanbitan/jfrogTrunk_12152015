@@ -28,7 +28,11 @@ import org.apache.wicket.feedback.IFeedback;
 /**
  * @author Yoav Aharoni
  */
-public class AjaxUtils {
+public abstract class AjaxUtils {
+    private AjaxUtils() {
+        // utility class
+    }
+
     public static void refreshFeedback() {
         refreshFeedback(getAjaxRequestTarget());
     }
@@ -58,6 +62,12 @@ public class AjaxUtils {
             return (AjaxRequestTarget) target;
         }
         return null;
+    }
+
+    public static void render(Component component, String markupId) {
+        final String componentId = component.getMarkupId();
+        AjaxRequestTarget.get().addComponent(component, markupId);
+        component.setMarkupId(componentId);
     }
 
 }

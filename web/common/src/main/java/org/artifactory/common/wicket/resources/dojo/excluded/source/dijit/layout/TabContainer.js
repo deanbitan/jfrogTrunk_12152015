@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.layout.TabContainer"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.layout.TabContainer"] = true;
 dojo.provide("dijit.layout.TabContainer");
 
 dojo.require("dijit.layout._TabContainerBase");
@@ -49,6 +40,8 @@ dojo.declare("dijit.layout.TabContainer",
 
 			return new TabController({
 				id: this.id + "_tablist",
+				dir: this.dir,
+				lang: this.lang,
 				tabPosition: this.tabPosition,
 				doLayout: this.doLayout,
 				containerId: this.id,
@@ -71,5 +64,3 @@ dojo.declare("dijit.layout.TabContainer",
 		}
 });
 
-
-}

@@ -18,12 +18,12 @@
 
 package org.artifactory.webapp.actionable;
 
-import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.fs.ItemInfo;
+import org.artifactory.repo.RepoPath;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public interface RepoAwareActionableItem extends ActionableItem {
 

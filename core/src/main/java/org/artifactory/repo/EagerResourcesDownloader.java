@@ -20,7 +20,6 @@ package org.artifactory.repo;
 
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.Async;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.InternalArtifactoryRequest;
 import org.artifactory.log.LoggerFactory;

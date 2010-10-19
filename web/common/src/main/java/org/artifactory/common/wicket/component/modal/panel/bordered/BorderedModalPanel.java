@@ -22,7 +22,6 @@ import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
-import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 
 import static java.lang.String.format;
@@ -31,8 +30,6 @@ import static java.lang.String.format;
  * @author Yoav Aharoni
  */
 public class BorderedModalPanel extends BaseModalPanel {
-    public static final String CONTENT_ID = ModalHandler.CONTENT_ID;
-
     public BorderedModalPanel(Component content) {
         MarkupContainer border = new TitledBorder("border");
         add(border);
@@ -42,7 +39,6 @@ public class BorderedModalPanel extends BaseModalPanel {
 
     @Override
     public void onShow(AjaxRequestTarget target) {
-        super.onShow(target);
         String markupId = get("border:content").getMarkupId();
         target.appendJavascript(format("ModalHandler.bindModalHeight(dojo.byId('%s'));", markupId));
     }

@@ -18,11 +18,11 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.search.SearcherBase;
@@ -89,7 +89,7 @@ public abstract class AbstractPersistenceHandler<T> implements MetadataPersisten
         return null;
     }
 
-    protected void fillItemInfoFromNode(Node node, ItemInfo itemInfo) {
+    protected void fillItemInfoFromNode(Node node, org.artifactory.fs.ItemInfo itemInfo) {
         checkArtifactoryName(node, itemInfo.getName());
         itemInfo.setCreated(getLongProperty(node, PROP_ARTIFACTORY_CREATED, getJcrCreated(node), false));
         itemInfo.setLastModified(

@@ -21,11 +21,11 @@ package org.artifactory.webapp.actionable.action;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 
-import javax.swing.AbstractAction;
+import javax.swing.*;
 import java.awt.event.ActionEvent;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public abstract class ItemAction extends AbstractAction {
     private String name;

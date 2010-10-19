@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class EntityResolvingContentHandler extends DefaultHandler {
     private static final Logger log = LoggerFactory.getLogger(EntityResolvingContentHandler.class);

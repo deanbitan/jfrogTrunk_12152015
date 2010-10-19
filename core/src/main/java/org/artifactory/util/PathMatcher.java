@@ -18,12 +18,12 @@
 
 package org.artifactory.util;
 
+import com.google.common.collect.Lists;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 import org.springframework.util.AntPathMatcher;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,28 +31,29 @@ import java.util.List;
  *
  * @author Yossi Shaul
  */
-public class PathMatcher {
+public abstract class PathMatcher {
     private static final Logger log = LoggerFactory.getLogger(PathMatcher.class);
 
-    private static AntPathMatcher antPathMatcher = new AntPathMatcher();
-    private static final List<String> DEFAULT_EXCLUDES = new ArrayList<String>(14) {
-        {
-            add("**/*~");
-            add("**/#*#");
-            add("**/.#*");
-            add("**/%*%");
-            add("**/._*");
-            add("**/CVS");
-            add("**/CVS/**");
-            add("**/.cvsignore");
-            add("**/SCCS");
-            add("**/SCCS/**");
-            add("**/vssver.scc");
-            add("**/.svn");
-            add("**/.svn/**");
-            add("**/.DS_Store");
-        }
-    };
+    private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
+    private static final List<String> DEFAULT_EXCLUDES = Lists.newArrayList(
+            "**/*~",
+            "**/#*#",
+            "**/.#*",
+            "**/%*%",
+            "**/._*",
+            "**/CVS",
+            "**/CVS/**",
+            "**/.cvsignore",
+            "**/SCCS",
+            "**/SCCS/**",
+            "**/vssver.scc",
+            "**/.svn",
+            "**/.svn/**",
+            "**/.DS_Store");
+
+    private PathMatcher() {
+        // utility class
+    }
 
     public static String cleanPath(File file) {
         String path = file.getAbsolutePath();
@@ -68,7 +69,7 @@ public class PathMatcher {
     }
 
     public static boolean matches(String path, List<String> includes, List<String> excludes) {
-        if (excludes != null && !excludes.isEmpty()) {
+        if (!Utils.isNullOrEmpty(excludes)) {
             for (String exclude : excludes) {
                 boolean match = antPathMatcher.match(exclude, path);
                 if (match) {
@@ -81,7 +82,7 @@ public class PathMatcher {
         if ("".equals(path) || "/".equals(path)) {
             return true;
         }
-        if (includes != null && !includes.isEmpty()) {
+        if (!Utils.isNullOrEmpty(includes)) {
             for (String include : includes) {
                 boolean match = antPathMatcher.match(include, path);
                 if (match) {
@@ -99,6 +100,6 @@ public class PathMatcher {
     }
 
     public static List<String> getDefaultExcludes() {
-        return new ArrayList<String>(DEFAULT_EXCLUDES);
+        return Lists.newArrayList(DEFAULT_EXCLUDES);
     }
 }

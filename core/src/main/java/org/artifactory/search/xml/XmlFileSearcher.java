@@ -21,13 +21,13 @@ package org.artifactory.search.xml;
 import com.google.common.collect.Lists;
 import org.apache.jackrabbit.JcrConstants;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.xml.XmlSearchResult;
 import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
+import org.artifactory.repo.RepoPath;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.query.QueryResult;
@@ -70,7 +70,7 @@ public class XmlFileSearcher extends XmlSearcherBase<XmlSearchResult> {
                 }
                 RepoPath repoPath = JcrPath.get().getRepoPath(path);
 
-                if ((repoPath == null) || (!controls.isSpecificRepoSearch() && !isResultRepoPathValid(repoPath))) {
+                if ((repoPath == null) || !isResultRepoPathValid(repoPath)) {
                     continue;
                 }
 

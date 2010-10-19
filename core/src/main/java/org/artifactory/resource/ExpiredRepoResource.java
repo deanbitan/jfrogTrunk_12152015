@@ -18,8 +18,8 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.api.fs.RepoResourceInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.fs.RepoResource;
+import org.artifactory.repo.RepoPath;
 
 public class ExpiredRepoResource implements RepoResource {
 

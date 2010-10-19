@@ -38,16 +38,16 @@ import java.util.List;
 /**
  * @author Yoav Aharoni
  */
-public class SortableTable extends DataTable {
-    private ISortableDataProvider dataProvider;
-
-    public SortableTable(String id, final List<IColumn> columns, ISortableDataProvider dataProvider, int rowsPerPage) {
+public class SortableTable<T> extends DataTable<T> {
+    @SuppressWarnings({"unchecked"})
+    public SortableTable(String id, final List<IColumn<T>> columns, ISortableDataProvider<T> dataProvider,
+            int rowsPerPage) {
         this(id, columns.toArray(new IColumn[columns.size()]), dataProvider, rowsPerPage);
     }
 
-    public SortableTable(String id, final IColumn[] columns, ISortableDataProvider dataProvider, int rowsPerPage) {
+    public SortableTable(String id, final IColumn<T>[] columns, ISortableDataProvider<T> dataProvider,
+            int rowsPerPage) {
         super(id, columns, dataProvider, rowsPerPage);
-        this.dataProvider = dataProvider;
         setOutputMarkupId(true);
         setVersioned(false);
         add(new CssClass("data-table"));
@@ -64,8 +64,8 @@ public class SortableTable extends DataTable {
         notifyColumnsAttached();
     }
 
-    public ISortableDataProvider getDataProvider() {
-        return dataProvider;
+    public ISortableDataProvider<T> getSortableDataProvider() {
+        return (ISortableDataProvider<T>) getDataProvider();
     }
 
     protected NavigationToolbarWithDropDown getDropDownNavToolbar() {
@@ -73,21 +73,20 @@ public class SortableTable extends DataTable {
     }
 
     protected AbstractToolbar newHeadersToolbar() {
-        return new AjaxGroupableHeadersToolbar(this, getDataProvider());
+        return new AjaxGroupableHeadersToolbar(this, getSortableDataProvider());
     }
 
-    @SuppressWarnings({"RefusedBequest"})
     @Override
-    protected Item newRowItem(String id, int index, IModel model) {
-        OddEvenItem rowItem = new OddEvenItem(id, index, model);
+    protected Item<T> newRowItem(String id, int index, IModel<T> model) {
+        OddEvenItem<T> rowItem = new OddEvenItem<T>(id, index, model);
         rowItem.add(new JavascriptEvent("onmouseover", "DomUtils.addHoverStyle(this);"));
         rowItem.add(new JavascriptEvent("onmouseout", "DomUtils.removeHoverStyle(this);"));
         return rowItem;
     }
 
     @Override
-    protected Item newCellItem(String id, int index, IModel model) {
-        Item item = super.newCellItem(id, index, model);
+    protected Item<T> newCellItem(final String id, final int index, final IModel<T> model) {
+        Item<T> item = super.newCellItem(id, index, model);
         if (index == 0) {
             item.add(new CssClass("first-cell"));
         } else if (index == getColumns().length - 1) {

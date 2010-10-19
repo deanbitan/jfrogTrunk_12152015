@@ -67,7 +67,7 @@ public class ModalHandler extends ModalWindow implements TitleModel {
     }
 
     @Override
-    public void setContent(Component component) {
+    public ModalWindow setContent(Component component) {
         // set content first
         super.setContent(component);
 
@@ -85,6 +85,7 @@ public class ModalHandler extends ModalWindow implements TitleModel {
             setInitialHeight(modalPanel.getInitialHeight());
             setResizable(modalPanel.isResizable());
         }
+        return this;
     }
 
     protected void onCloseButtonClicked(AjaxRequestTarget target) {
@@ -125,7 +126,7 @@ public class ModalHandler extends ModalWindow implements TitleModel {
         if (component instanceof HasModalHandler) {
             container = (HasModalHandler) component;
         } else {
-            container = (HasModalHandler) component.findParent(HasModalHandler.class);
+            container = component.findParent(HasModalHandler.class);
         }
 
         return container.getModalHandler();

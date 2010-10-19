@@ -24,7 +24,7 @@ import org.artifactory.webapp.actionable.event.ItemEvent;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public abstract class RepoAwareItemAction extends ItemAction {
 

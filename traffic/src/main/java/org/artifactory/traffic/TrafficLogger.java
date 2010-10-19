@@ -30,6 +30,10 @@ import org.slf4j.Logger;
 abstract class TrafficLogger {
     private static final Logger log = LoggerFactory.getLogger(TrafficLogger.class);
 
+    private TrafficLogger() {
+        // utility class
+    }
+
     /**
      * Log a completed xfer (upload/download) event
      *

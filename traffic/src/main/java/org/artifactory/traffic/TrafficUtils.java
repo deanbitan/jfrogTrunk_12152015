@@ -25,7 +25,10 @@ import java.util.Date;
  *
  * @author Noam Tenne
  */
-public class TrafficUtils {
+public abstract class TrafficUtils {
+    private TrafficUtils() {
+        // utility class
+    }
 
     /**
      * Performs a comparison that checks if the date to compare is equals or before the date we want to compare to

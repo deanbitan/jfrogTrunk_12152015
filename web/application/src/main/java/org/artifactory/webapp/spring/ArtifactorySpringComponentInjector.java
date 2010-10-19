@@ -38,7 +38,7 @@ public class ArtifactorySpringComponentInjector extends ComponentInjector {
     /**
      * Metadata key used to store application context holder in application's metadata
      */
-    private static MetaDataKey CONTEXT_KEY = new MetaDataKey(ApplicationContextHolder.class) {
+    private static MetaDataKey CONTEXT_KEY = new MetaDataKey<ApplicationContextHolder>() {
         private static final long serialVersionUID = 1L;
     };
 

@@ -28,18 +28,14 @@ import org.artifactory.common.wicket.component.table.groupable.cache.GroupSizeCa
 import org.artifactory.common.wicket.util.ListPropertySorter;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Yoav Aharoni
  */
-public class GroupableDataProvider<T extends Serializable> extends SortableDataProvider implements IGroupStateLocator {
+public class GroupableDataProvider<T extends Serializable> extends SortableDataProvider<T> implements IGroupStateLocator {
     private List<T> data;
-    private Map<String, IChoiceRenderer> groupRenederMap = new HashMap<String, IChoiceRenderer>();
+    private Map<String, IChoiceRenderer<T>> groupRenederMap = new HashMap<String, IChoiceRenderer<T>>();
     private GroupSizeCache groupSizeCache;
     private SortParam groupParam;
 
@@ -52,7 +48,7 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
         this.data = data;
     }
 
-    public Iterator iterator(int first, int count) {
+    public Iterator<T> iterator(int first, int count) {
         List<T> data = getData();
         ListPropertySorter.sort(data, getGroupParam(), getSort());
         List<T> list = data.subList(first, first + count);
@@ -64,8 +60,8 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
     }
 
     @SuppressWarnings({"unchecked"})
-    public IModel model(Object object) {
-        return new Model((T) object);
+    public IModel model(T object) {
+        return new Model<T>(object);
     }
 
     public SortParam getGroupParam() {
@@ -90,16 +86,16 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
         groupSizeCache = null;
     }
 
-    public final IChoiceRenderer getGroupReneder(String property) {
-        IChoiceRenderer choiceRenderer = groupRenederMap.get(property);
+    public final IChoiceRenderer<T> getGroupReneder(String property) {
+        IChoiceRenderer<T> choiceRenderer = groupRenederMap.get(property);
         if (choiceRenderer == null) {
-            choiceRenderer = new ChoiceRenderer(property, property);
+            choiceRenderer = new ChoiceRenderer<T>(property, property);
             groupRenederMap.put(property, choiceRenderer);
         }
         return choiceRenderer;
     }
 
-    public final void setGroupReneder(String property, IChoiceRenderer choiceRenderer) {
+    public final void setGroupReneder(String property, IChoiceRenderer<T> choiceRenderer) {
         groupRenederMap.put(property, choiceRenderer);
     }
 

@@ -72,7 +72,7 @@ public class HelpBubble extends Label {
 
     protected String getHtml() {
         Map<String, String> variables = new HashMap<String, String>();
-        variables.put("message", getModelObjectAsString().replaceAll("\n", "<br/>"));
+        variables.put("message", getDefaultModelObjectAsString().replaceAll("\n", "<br/>"));
         variables.put("enabled", String.valueOf(isEnabled()));
         variables.put("id", getMarkupId());
 

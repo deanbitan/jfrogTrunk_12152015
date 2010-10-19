@@ -34,7 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class GlobalRepoActionableItem extends ActionableItemBase implements HierarchicActionableItem {
 

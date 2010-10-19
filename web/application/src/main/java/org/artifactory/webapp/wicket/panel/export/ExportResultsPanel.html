@@ -1,7 +1,6 @@
 <wicket:extend>
     <form wicket:id="exportForm" class="import-export-form">
-
-        <div class="field field-sep">
+        <div class="field">
             <label>Export to Path</label>
 
             <div class="value">
@@ -22,6 +21,10 @@
         <div class="field field-sep">
             <input wicket:id="createArchive" type="checkbox"/>
             <span wicket:id="createArchiveHelp"></span>
+        </div>
+        <div class="field field-sep">
+            <input wicket:id="verbose" type="checkbox"/>
+            <span wicket:id="verboseHelp"></span>
         </div>
 
         <div class="buttons">

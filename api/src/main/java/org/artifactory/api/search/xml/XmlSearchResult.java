@@ -18,7 +18,6 @@
 
 package org.artifactory.api.search.xml;
 
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 
 /**
@@ -34,7 +33,7 @@ public class XmlSearchResult extends MetadataSearchResult {
      * @param itemInfo     Item info
      * @param metadataName Metadata name
      */
-    public XmlSearchResult(ItemInfo itemInfo, String metadataName) {
+    public XmlSearchResult(org.artifactory.fs.ItemInfo itemInfo, String metadataName) {
         super(itemInfo, metadataName, null);
     }
 

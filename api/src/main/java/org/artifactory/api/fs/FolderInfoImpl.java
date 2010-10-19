@@ -19,13 +19,14 @@
 package org.artifactory.api.fs;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.fs.FolderInfo;
+import org.artifactory.repo.RepoPath;
 
 /**
  * @author yoavl
  */
 @XStreamAlias(FolderInfo.ROOT)
-public class FolderInfoImpl extends ItemInfoImpl implements FolderInfo {
+public class FolderInfoImpl extends ItemInfoImpl implements InternalFolderInfo {
 
     private FolderAdditionalInfo additionalInfo;
 
@@ -34,7 +35,7 @@ public class FolderInfoImpl extends ItemInfoImpl implements FolderInfo {
         additionalInfo = new FolderAdditionalInfo();
     }
 
-    public FolderInfoImpl(FolderInfo info) {
+    public FolderInfoImpl(InternalFolderInfo info) {
         super(info);
         additionalInfo = new FolderAdditionalInfo(info.getAdditionalInfo());
     }
@@ -45,7 +46,7 @@ public class FolderInfoImpl extends ItemInfoImpl implements FolderInfo {
      * @param info
      */
     protected FolderInfoImpl(FolderInfoImpl info) {
-        this(((FolderInfo) info));
+        this(((InternalFolderInfo) info));
     }
 
     /**
@@ -67,7 +68,7 @@ public class FolderInfoImpl extends ItemInfoImpl implements FolderInfo {
     }
 
     @Override
-    public boolean isIdentical(ItemInfo info) {
+    public boolean isIdentical(org.artifactory.fs.ItemInfo info) {
         return super.isIdentical(info);
     }
 

@@ -26,15 +26,17 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
+import org.artifactory.addon.wicket.LicensesWebAddon;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.RenderJavaScript;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.webapp.wicket.page.build.tabs.BuildEnvironmentTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildGeneralInfoTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildInfoJsonTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.PublishedModulesTabPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
-import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledBaseTab;
+import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledTab;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.Module;
 
@@ -116,6 +118,11 @@ public class BuildTabbedPanel extends TitledPanel {
             tabList.add(tab);
         }
 
+        tabList.add(getEnvironmentTab("Environment", hasDeployOnLocal));
+
+        LicensesWebAddon licensesAddon = addonsManager.addonByType(LicensesWebAddon.class);
+        tabList.add(licensesAddon.getLicensesInfoTab("Licenses", build, hasDeployOnLocal));
+
         tabList.add(getJsonTab("Build Info JSON", hasDeployOnLocal));
 
         StyledTabbedPanel tabbedPanel = new StyledTabbedPanel("tabbedPanel", tabList);
@@ -152,6 +159,26 @@ public class BuildTabbedPanel extends TitledPanel {
     }
 
     /**
+     * Returns the environment tab
+     *
+     * @param title   Title to give to the tab
+     * @param enabled Indicates the state of the tab
+     * @return Environment tab
+     */
+    private ITab getEnvironmentTab(String title, boolean enabled) {
+        if (enabled) {
+            return new BaseTab(title) {
+                @Override
+                public Panel getPanel(String panelId) {
+                    return new BuildEnvironmentTabPanel(panelId, build);
+                }
+            };
+        } else {
+            return getDisabledTab(title);
+        }
+    }
+
+    /**
      * Returns the info JSON tab
      *
      * @param title   Title to give to the tab
@@ -178,6 +205,6 @@ public class BuildTabbedPanel extends TitledPanel {
      * @return Disabled tab
      */
     private ITab getDisabledTab(String title) {
-        return new DisabledBaseTab(title);
+        return new DisabledTab(title);
     }
 }

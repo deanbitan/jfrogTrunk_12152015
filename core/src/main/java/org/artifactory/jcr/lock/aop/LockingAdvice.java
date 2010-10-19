@@ -55,7 +55,7 @@ public class LockingAdvice implements MethodInterceptor {
         }
         //If already inside a transaction, do not add one (no Tx interceptor nesting)
         if (initTx && isInJcrTransaction()) {
-            log.debug("Tx already active on {} - no need starting a new one.", invocation.getMethod());
+            log.trace("Tx already active on {} - no need starting a new one.", invocation.getMethod());
             initTx = false;
         }
         InternalLockManager currentLockManager;

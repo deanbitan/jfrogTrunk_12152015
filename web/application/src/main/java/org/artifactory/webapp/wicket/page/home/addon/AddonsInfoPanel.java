@@ -61,7 +61,7 @@ public class AddonsInfoPanel extends TitledPanel {
      * @param enabledAddonNames   Name list of enabled addons
      */
     public AddonsInfoPanel(String id, final List<String> installedAddonNames,
-            final Collection<String> enabledAddonNames) {
+                           final Collection<String> enabledAddonNames) {
         super(id);
         add(new CssClass("addons-table"));
 
@@ -77,7 +77,7 @@ public class AddonsInfoPanel extends TitledPanel {
         Component listView = new ListView("addonItem", installedAddonNames) {
             @Override
             protected void populateItem(ListItem item) {
-                final String addonName = item.getModelObjectAsString();
+                final String addonName = item.getDefaultModelObjectAsString();
                 AddonInfo addonInfo = addonsManager.getAddonInfoByName(addonName);
 
                 item.add(new Label("name", addonInfo.getAddonDisplayName()));

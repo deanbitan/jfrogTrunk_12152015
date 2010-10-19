@@ -18,16 +18,16 @@
 
 package org.artifactory.jcr;
 
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 
 import javax.jcr.Node;
@@ -48,7 +48,7 @@ public interface JcrRepoService {
     void saveXmlHierarchy(Node xmlNode, InputStream in) throws RepositoryException, IOException;
 
     @Lock(transactional = true)
-    JcrFile importFile(JcrFolder parentFolder, File file, ImportSettings settings) throws RepoRejectionException;
+    JcrFile importFile(JcrFolder parentFolder, File file, ImportSettings settings) throws RepoRejectException;
 
     @Lock(transactional = true)
     RepoPath importFolder(LocalRepo repo, RepoPath jcrFolder, ImportSettings settings);
@@ -109,5 +109,5 @@ public interface JcrRepoService {
     String getNodeTypeName(RepoPath repoPath);
 
     @Lock(transactional = true)
-    void writeMetadataEntries(JcrFsItem fsItem, StatusHolder status, File folder, boolean incremental);
+    void writeMetadataEntries(JcrFsItem fsItem, BasicStatusHolder status, File folder, boolean incremental);
 }

@@ -24,7 +24,7 @@ import org.artifactory.webapp.actionable.model.HierarchicActionableItem;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class ActionableItemTreeNode<T extends ActionableItem> extends DefaultMutableTreeNode {
 

@@ -20,12 +20,12 @@ package org.artifactory.search;
 
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.deployable.DeployableUnitSearchControls;
 import org.artifactory.api.search.deployable.DeployableUnitSearchResult;
 import org.artifactory.jcr.fs.JcrFile;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.spring.ReloadableBean;
 
 import javax.jcr.RepositoryException;

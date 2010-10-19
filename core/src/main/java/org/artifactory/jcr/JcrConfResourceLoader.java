@@ -22,9 +22,9 @@ import org.apache.commons.io.IOUtils;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.io.StringResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.util.ResourceUtils;
 import org.slf4j.Logger;
 

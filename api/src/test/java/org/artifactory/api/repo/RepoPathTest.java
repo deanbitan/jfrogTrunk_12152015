@@ -18,6 +18,7 @@
 
 package org.artifactory.api.repo;
 
+import org.artifactory.repo.RepoPath;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -31,40 +32,40 @@ import static org.testng.Assert.*;
 public class RepoPathTest {
 
     public void getParentRepoPathWithParent() {
-        RepoPath child = new RepoPath("repo", "a/b/c");
+        RepoPath child = new RepoPathImpl("repo", "a/b/c");
         RepoPath parent = child.getParent();
-        assertEquals(parent, new RepoPath("repo", "/a/b"));
+        assertEquals(parent, new RepoPathImpl("repo", "/a/b"));
     }
 
     public void getParentRepoPathLastParent() {
-        RepoPath child = new RepoPath("repo", "a/");
+        RepoPath child = new RepoPathImpl("repo", "a/");
         RepoPath parent = child.getParent();
-        assertEquals(parent, new RepoPath("repo", ""));
+        assertEquals(parent, new RepoPathImpl("repo", ""));
     }
 
     public void getParentRepoPathForRoot() {
-        RepoPath child = new RepoPath("repo", "/");
+        RepoPath child = new RepoPathImpl("repo", "/");
         RepoPath parent = child.getParent();
         assertNull(parent);
     }
 
     public void getParentRepoPathWithNoParent() {
-        RepoPath child = new RepoPath("repo", "");
+        RepoPath child = new RepoPathImpl("repo", "");
         RepoPath parent = child.getParent();
         assertNull(parent);
     }
 
     public void repoRootPath() {
-        RepoPath repoPath = RepoPath.repoRootPath("repokey");
+        RepoPath repoPath = RepoPathImpl.repoRootPath("repokey");
         assertEquals(repoPath.getRepoKey(), "repokey");
         assertEquals("", repoPath.getPath(), "Repository root path should be an empty string");
         assertTrue(repoPath.isRoot());
     }
 
     public void rootPath() {
-        assertFalse(new RepoPath("1", "2").isRoot());
-        assertTrue(new RepoPath("1", "").isRoot());
-        assertTrue(new RepoPath("1", "     ").isRoot());
-        assertTrue(new RepoPath("1", null).isRoot());
+        assertFalse(new RepoPathImpl("1", "2").isRoot());
+        assertTrue(new RepoPathImpl("1", "").isRoot());
+        assertTrue(new RepoPathImpl("1", "     ").isRoot());
+        assertTrue(new RepoPathImpl("1", null).isRoot());
     }
 }

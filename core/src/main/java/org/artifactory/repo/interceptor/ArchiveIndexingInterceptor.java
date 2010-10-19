@@ -18,7 +18,7 @@
 
 package org.artifactory.repo.interceptor;
 
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.search.InternalSearchService;
@@ -30,7 +30,7 @@ import org.artifactory.spring.InternalContextHelper;
  *
  * @author Noam Tenne
  */
-public class ArchiveIndexingInterceptor implements RepoInterceptor {
+public class ArchiveIndexingInterceptor extends StorageInterceptorAdapter {
 
     /**
      * If the newly created item is a file, this method will mark it up for content indexing.
@@ -38,26 +38,12 @@ public class ArchiveIndexingInterceptor implements RepoInterceptor {
      * @param fsItem       Newly created item
      * @param statusHolder StatusHolder
      */
-    public void onCreate(JcrFsItem fsItem, StatusHolder statusHolder) {
+    @Override
+    public void afterCreate(JcrFsItem fsItem, MutableStatusHolder statusHolder) {
         if (fsItem.isFile()) {
             InternalArtifactoryContext context = InternalContextHelper.get();
             InternalSearchService searchService = context.beanForType(InternalSearchService.class);
             searchService.markArchiveForIndexing((JcrFile) fsItem, true);
         }
-    }
-
-    /**
-     * No implementation needed
-     *
-     * @param fsItem       Deleted item
-     * @param statusHolder StatusHolder
-     */
-    public void onDelete(JcrFsItem fsItem, StatusHolder statusHolder) {
-    }
-
-    public void onMove(JcrFsItem sourceItem, JcrFsItem targetItem, StatusHolder statusHolder) {
-    }
-
-    public void onCopy(JcrFsItem sourceItem, JcrFsItem targetItem, StatusHolder statusHolder) {
     }
 }

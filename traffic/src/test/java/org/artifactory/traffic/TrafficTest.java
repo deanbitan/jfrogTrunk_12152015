@@ -24,7 +24,7 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.joran.spi.JoranException;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.traffic.entry.DownloadEntry;
 import org.testng.Assert;
@@ -59,6 +59,6 @@ public class TrafficTest {
 
     @Test
     public void testTrafficLog() {
-        TrafficLogger.logTransferEntry(new DownloadEntry(new RepoPath("moo", "moo").getId(), 1L, 0L));
+        TrafficLogger.logTransferEntry(new DownloadEntry(new RepoPathImpl("moo", "moo").getId(), 1L, 0L));
     }
 }

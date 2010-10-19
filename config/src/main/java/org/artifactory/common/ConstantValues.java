@@ -30,21 +30,20 @@ public enum ConstantValues {
     test("runMode.test", FALSE), //Use and set only in specific itests - has serious performance implications
     qa("runMode.qa", FALSE),
     dev("runMode.dev", FALSE),
-    artifactoryVersion("version", null),
-    artifactoryRevision("revision", null),
-    artifactoryTimestamp("timestamp", null),
+    artifactoryVersion("version"),
+    artifactoryRevision("revision"),
+    artifactoryTimestamp("timestamp"),
     disabledAddons("addons.disabled", ""),
-    springConfigDir("spring.configDir", null),
-    jcrConfigDir("jcr.configDir", null),
+    springConfigDir("spring.configDir"),
+    jcrConfigDir("jcr.configDir"),
     jcrFixConsistency("jcr.fixConsistency", FALSE),
     jcrAutoRemoveMissingBinaries("jcr.autoRemoveMissingBinaries", TRUE),
-    jcrSessionPoolMaxSize("jcr.session.pool.maxSize", 30),
     versioningQueryIntervalSecs("versioningQueryIntervalSecs", Seconds.MINUTE * 12),
     logsViewRefreshRateSecs("logs.viewRefreshRateSecs", 10),
     locksTimeoutSecs("locks.timeoutSecs", 120),
     locksDebugTimeouts("locks.debugTimeouts", FALSE),
     taskCompletionLockTimeoutRetries("task.completionLockTimeoutRetries", 100),
-    substituteRepoKeys("repo.key.subst.", null),
+    substituteRepoKeys("repo.key.subst."),
     repoCleanupIntervalHours("repo.cleanup.intervalHours", 1),
     repoConcurrentDownloadSyncTimeoutSecs("repo.concurrentDownloadSyncTimeoutSecs", Seconds.MINUTE * 15),
     artifactoryRequestsToGlobalCanRetrieveRemoteArtifacts(
@@ -58,10 +57,11 @@ public enum ConstantValues {
     searchForceArchiveIndexing("search.content.forceArchiveIndexing", FALSE),
     searchPatternTimeoutSecs("search.pattern.timeoutSecs", 30),
     gcIntervalSecs("gc.intervalSecs", Seconds.HOUR * 6),
-    gcBatchDeleteMaxSize("gc.batchDeleteMaxSize", 30),
     gcSleepBetweenNodesMillis("gc.sleepBetweenNodesMillis", 20),
     gcScanStartSleepingThresholdMillis("gc.scanStartSleepingThresholdMillis", 20000),
     gcScanSleepBetweenIterationsMillis("gc.scanSleepBetweenIterationsMillis", 200),
+    gcFileScanSleepIterationMillis("gc.fileScanSleepIterationMillis", 1000),
+    gcFileScanSleepMillis("gc.fileScanSleepMillis", 250),
     trafficCollectionActive("traffic.collectionActive", FALSE),
     trafficCollectionIntervalSecs("traffic.collectionIntervalSecs", Seconds.MINUTE),
     trafficEntriesRetentionSecs("traffic.trafficEntriesRetentionSecs", Seconds.HOUR * 2),
@@ -69,19 +69,27 @@ public enum ConstantValues {
     userLastAccessUpdatesResolutionSecs("security.userLastAccessUpdatesResolutionSecs", Seconds.MINUTE),
     mvnCentralHostPattern("mvn.central.hostPattern", ".maven.org"),
     mvnCentralIndexerMaxQueryIntervalSecs("mvn.central.indexerMaxQueryIntervalSecs", Seconds.DAY),
-    applicationContextClass("applicationContextClass", null),
-    xmlAdditionalMimeTypeExtensions("xmlAdditionalMimeTypeExtensions", null),
+    mvnMetadataVersionsComparator("mvn.metadataVersionsComparatorFqn"),
     buildMaxFoldersToScanForDeletionWarnings("build.maxFoldersToScanForDeletionWarnings", 2),
     missingBuildChecksumCacheIdeTimeSecs("build.checksum.cache.idleTimeSecs", Seconds.MINUTE * 5),
     artifactoryUpdatesRefreshIntervalSecs("updates.refreshIntervalSecs", Seconds.HOUR * 4),
     artifactoryUpdatesUrl("updates.url", "http://service.jfrog.org/artifactory/updates"),
     uiSyntaxColoringMaxTextSizeBytes("ui.syntaxColoringMaxTextSizeBytes", 512000),
-    artifactoryLicenseDir("licenseDir", null);
+    pluginScriptsRefreshIntervalSecs("plugin.scripts.refreshIntervalSecs", Integer.MAX_VALUE),
+    uiChroot("ui.chroot"),
+    artifactoryLicenseDir("licenseDir"),
+    fileRollerMaxFilesToRetain("file.roller.maxFileToRetain", 10),
+    backupFileExportSleepIterationMillis("backup.fileExportSleepIterationMillis", 2000),
+    backupFileExportSleepMillis("backup.fileExportSleepMillis", 250);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 
     private final String propertyName;
     private final String defValue;
+
+    ConstantValues(String propertyName) {
+        this(propertyName, null);
+    }
 
     ConstantValues(String propertyName, Object defValue) {
         this.propertyName = SYS_PROP_PREFIX + propertyName;

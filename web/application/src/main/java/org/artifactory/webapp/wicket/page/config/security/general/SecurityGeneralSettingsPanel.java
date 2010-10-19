@@ -23,8 +23,8 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.common.wicket.component.CancelLink;
@@ -34,10 +34,8 @@ import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.security.EncryptionPolicy;
-import org.artifactory.descriptor.security.PasswordSettings;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
-import org.artifactory.webapp.wicket.page.config.SchemaHelpModel;
 
 import java.util.Arrays;
 
@@ -51,56 +49,58 @@ class SecurityGeneralConfigPanel extends TitledActionPanel {
     @SpringBean
     private CentralConfigService centralConfigService;
 
-    private StyledCheckbox annonAccess;
-    private DropDownChoice encryptionPoliciesDC;
-
     public SecurityGeneralConfigPanel(String id) {
         super(id);
         setOutputMarkupId(true);
 
-        Form form = new Form("form");
-        add(form);
-
         MutableCentralConfigDescriptor centralConfig = centralConfigService.getMutableDescriptor();
         SecurityDescriptor securityDescriptor = centralConfig.getSecurity();
+        CompoundPropertyModel<SecurityDescriptor> securityModel =
+                new CompoundPropertyModel<SecurityDescriptor>(securityDescriptor);
+        Form<SecurityDescriptor> form = new Form<SecurityDescriptor>("form", securityModel);
+        add(form);
 
-        addAnnonymousAccessField(form, securityDescriptor);
+        addAnonymousAccessField(form);
 
-        addEncryptionPolicyDropDown(form, securityDescriptor);
+        addHideUnauthorizedResourcesField(form);
+
+        addEncryptionPolicyDropDown(form);
 
         addDefaultButton(createSaveButton(form));
         addButton(new CancelLink(form));
     }
 
-    private void addEncryptionPolicyDropDown(Form form, SecurityDescriptor securityDescriptor) {
-        PasswordSettings passwordSettings = securityDescriptor.getPasswordSettings();
+    private void addAnonymousAccessField(Form form) {
+        StyledCheckbox anonAccess = new StyledCheckbox("anonAccessEnabled");
+        anonAccess.setLabel(new Model<String>("Allow Anonymous Access"));
+        form.add(anonAccess);
+        form.add(new SchemaHelpBubble("anonAccessEnabled.help"));
+    }
+
+    private void addHideUnauthorizedResourcesField(Form form) {
+        StyledCheckbox anonAccess = new StyledCheckbox("hideUnauthorizedResources");
+        anonAccess.setLabel(new Model<String>("Hide Existence of Unauthorized Resource"));
+        form.add(anonAccess);
+        form.add(new SchemaHelpBubble("hideUnauthorizedResources.help"));
+    }
+
+    private void addEncryptionPolicyDropDown(Form form) {
         EncryptionPolicy[] encryptionPolicies = EncryptionPolicy.values();
-        encryptionPoliciesDC = new DropDownChoice("encryptionPolicyType",
-                new PropertyModel(passwordSettings, "encryptionPolicy"),
+        DropDownChoice<EncryptionPolicy> encryptionPoliciesDC = new DropDownChoice<EncryptionPolicy>(
+                "passwordSettings.encryptionPolicy",
                 Arrays.asList(encryptionPolicies));
         encryptionPoliciesDC.setChoiceRenderer(new EncryptionPolicyChoiceRenderer());
         form.add(encryptionPoliciesDC);
-        form.add(new SchemaHelpBubble("encryptionPolicyType.help",
-                new SchemaHelpModel(passwordSettings, "encryptionPolicy")));
+        form.add(new SchemaHelpBubble("passwordSettings.encryptionPolicy.help", "passwordSettings.encryptionPolicy"));
     }
 
-    private void addAnnonymousAccessField(Form form, SecurityDescriptor securityDescriptor) {
-        annonAccess = new StyledCheckbox("anonAccessEnabled", new Model(securityDescriptor.isAnonAccessEnabled()));
-        annonAccess.setLabel(new Model("Allow Anonymous Access"));
-        form.add(annonAccess);
-        form.add(new SchemaHelpBubble("anonAccessEnabled.help",
-                new SchemaHelpModel(securityDescriptor, "anonAccessEnabled")));
-    }
-
-    private TitledAjaxSubmitLink createSaveButton(Form form) {
-        return new TitledAjaxSubmitLink("save", "Save", form) {
+    private TitledAjaxSubmitLink createSaveButton(Form<SecurityDescriptor> form) {
+        return new TitledAjaxSubmitLink<SecurityDescriptor>("save", "Save", form) {
             @Override
-            protected void onSubmit(AjaxRequestTarget target, Form form) {
+            protected void onSubmit(AjaxRequestTarget target, Form<SecurityDescriptor> form) {
                 MutableCentralConfigDescriptor centralConfig = centralConfigService.getMutableDescriptor();
-                SecurityDescriptor securityDescriptor = centralConfig.getSecurity();
-                securityDescriptor.setAnonAccessEnabled(annonAccess.isChecked());
-                PasswordSettings passwordSettings = securityDescriptor.getPasswordSettings();
-                passwordSettings.setEncryptionPolicy((EncryptionPolicy) encryptionPoliciesDC.getModelObject());
+                SecurityDescriptor editedDescriptor = form.getModelObject();
+                centralConfig.setSecurity(editedDescriptor);
                 centralConfigService.saveEditedDescriptorAndReload(centralConfig);
                 info("Security settings successfully updated.");
                 AjaxUtils.refreshFeedback(target);
@@ -113,10 +113,10 @@ class SecurityGeneralConfigPanel extends TitledActionPanel {
         return "";
     }
 
-    private static class EncryptionPolicyChoiceRenderer extends ChoiceRenderer {
+    private static class EncryptionPolicyChoiceRenderer extends ChoiceRenderer<EncryptionPolicy> {
         @Override
-        public Object getDisplayValue(Object object) {
-            return WordUtils.capitalizeFully(object.toString());
+        public String getDisplayValue(EncryptionPolicy policy) {
+            return WordUtils.capitalizeFully(policy.toString());
         }
     }
 }

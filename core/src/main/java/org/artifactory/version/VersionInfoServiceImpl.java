@@ -130,7 +130,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
         if (versioning == null) {
             synchronized (this) {
                 if (getVersioningFromCache() == null && !taskService.hasTaskOfType(VersioningRetrieverJob.class)) {
-                    // get the version asynchronouosly from the remote server
+                    // get the version asynchronously from the remote server
                     QuartzTask versioningRetriever = new QuartzTask(VersioningRetrieverJob.class, 0);
                     versioningRetriever.addAttribute(VersioningRetrieverJob.ATTR_HEADERS, headersMap);
                     versioningRetriever.setSingleton(true);

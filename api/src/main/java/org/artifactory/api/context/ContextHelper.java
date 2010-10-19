@@ -19,7 +19,7 @@
 package org.artifactory.api.context;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class ContextHelper {
     public static ArtifactoryContext get() {

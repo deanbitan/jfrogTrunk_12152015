@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class RemoteRepositoriesMapAdapter extends
         XmlAdapter<RemoteRepositoriesMapAdapter.Wrappper, OrderedMap<String, RemoteRepoDescriptor>> {

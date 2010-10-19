@@ -76,6 +76,6 @@ public class IconDragDropSelection<T> extends DragDropSelection<T> {
     }
 
     protected String getCssClass(ListItem item) {
-        return ItemCssClass.getRepoCssClass(item.getModelObject());
+        return ItemCssClass.getRepoCssClass(item.getDefaultModelObject());
     }
 }

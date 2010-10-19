@@ -18,7 +18,6 @@
 
 package org.artifactory.repo;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.jcr.fs.JcrFile;

@@ -19,8 +19,8 @@
 package org.artifactory.api.md.watch;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.common.Info;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.common.Info;
+import org.artifactory.repo.RepoPath;
 
 import java.util.Set;
 import java.util.TreeSet;

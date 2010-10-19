@@ -67,6 +67,7 @@ import org.artifactory.version.CompoundVersionDetails;
 import org.artifactory.webapp.spring.ArtifactorySpringComponentInjector;
 import org.artifactory.webapp.wicket.application.sitemap.ArtifactorySiteMapBuilder;
 import org.artifactory.webapp.wicket.page.base.BasePage;
+import org.artifactory.webapp.wicket.page.browse.listing.ArtifactListPage;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.SimpleRepoBrowserPage;
 import org.artifactory.webapp.wicket.page.error.AccessDeniedPage;
 import org.artifactory.webapp.wicket.page.error.InternalErrorPage;
@@ -93,7 +94,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class ArtifactoryApplication extends AuthenticatedWebApplication implements SiteMapAware {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryApplication.class);
@@ -191,7 +192,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         IAuthorizationStrategy authorizationStrategy = getSecuritySettings().getAuthorizationStrategy();
         if (!(authorizationStrategy instanceof CompoundAuthorizationStrategy)) {
             throw new IllegalStateException(
-                    "Unexpected autorization strategy: " + authorizationStrategy.getClass());
+                    "Unexpected authorization strategy: " + authorizationStrategy.getClass());
         }
         return (CompoundAuthorizationStrategy) authorizationStrategy;
     }
@@ -220,7 +221,6 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         return DEVELOPMENT.equals(getConfigurationType());
     }
 
-
     @Override
     protected IRequestCycleProcessor newRequestCycleProcessor() {
         return new IgnoreAjaxUnfoundComponentRequestCycleProcessor();
@@ -241,7 +241,6 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     protected Class<? extends WebPage> getSignInPageClass() {
         return LoginPage.class;
     }
-
 
     @Override
     protected WebRequest newWebRequest(HttpServletRequest servletRequest) {
@@ -358,6 +357,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         annotatedMountList.mount(ArtifactoryApplication.get());
 
         mountPage(SimpleRepoBrowserPage.PATH, SimpleRepoBrowserPage.class);
+        mountPage(ArtifactListPage.PATH, ArtifactListPage.class);
 
         // mount services
         mountPage("/service/logout", LogoutService.class);

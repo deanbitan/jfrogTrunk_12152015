@@ -44,7 +44,7 @@ import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.api.security.UserInfoBuilder;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -69,7 +69,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
     private static final Logger log = LoggerFactory.getLogger(UserCreateUpdatePanel.class);
@@ -131,7 +131,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
             protected void onError(AjaxRequestTarget target, RuntimeException e) {
                 super.onError(target, e);
                 String password = getFormComponent().getRawInput();
-                passwordField.setModelObject(password);
+                passwordField.setDefaultModelObject(password);
                 target.addComponent(strength);
             }
 
@@ -153,7 +153,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                     // no need to validate passwords if internal passwords are disabled
                     return;
                 }
-                if (!create && !StringUtils.hasText(passwordField.getModelObjectAsString())) {
+                if (!create && !StringUtils.hasText(passwordField.getDefaultModelObjectAsString())) {
                     return;
                 }
                 super.validate(form);
@@ -176,7 +176,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 if (adminCheckbox.isChecked()) {
-                    updatableProfileCheckbox.setModelObject(Boolean.TRUE);
+                    updatableProfileCheckbox.setDefaultModelObject(Boolean.TRUE);
                 }
                 target.addComponent(updatableProfileCheckbox);
             }
@@ -322,7 +322,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
     }
 
     private void addLastLoginLabel(TitledBorder border) {
-        Pair<String, Long> lastLoginInfo = null;
+        SerializablePair<String, Long> lastLoginInfo = null;
 
         //If user exists
         if (!isCreate()) {
@@ -335,15 +335,16 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
             Date date = new Date(lastLoginInfo.getSecond());
             String clientIp = lastLoginInfo.getFirst();
             PrettyTime prettyTime = new PrettyTime();
-            lastLogin.setModelObject("Last logged in: " + prettyTime.format(date) + " (" + date.toString() + "), from "
-                    + clientIp + ".");
+            lastLogin.setDefaultModelObject(
+                    "Last logged in: " + prettyTime.format(date) + " (" + date.toString() + "), from "
+                            + clientIp + ".");
         } else {
-            lastLogin.setModelObject("Last logged in: " + "Never.");
+            lastLogin.setDefaultModelObject("Last logged in: " + "Never.");
         }
     }
 
     private void addLastAccessLabel(TitledBorder border) {
-        Pair<String, Long> lastAccessInfo = null;
+        SerializablePair<String, Long> lastAccessInfo = null;
 
         //If user exists
         if (!isCreate()) {
@@ -362,8 +363,9 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
             Date date = new Date(lastAccessInfo.getSecond());
             String clientIp = lastAccessInfo.getFirst();
             PrettyTime prettyTime = new PrettyTime();
-            lastAccess.setModelObject("Last access in: " + prettyTime.format(date) + " (" + date.toString() + "), from "
-                    + clientIp + ".");
+            lastAccess.setDefaultModelObject(
+                    "Last access in: " + prettyTime.format(date) + " (" + date.toString() + "), from "
+                            + clientIp + ".");
         }
     }
 }

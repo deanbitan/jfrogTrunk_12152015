@@ -22,6 +22,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
         version="2.4">
+
     <display-name>artifactory-webapp</display-name>
 
     <!-- We do not enforce serializable session entries -->
@@ -59,7 +60,7 @@
         </init-param>
         <init-param>
             <param-name>UiPathPrefixes</param-name>
-            <param-value>webapp,favicon.ico</param-value>
+            <param-value>webapp,favicon.ico,list</param-value>
         </init-param>
         <init-param>
             <param-name>usePathInfo</param-name>
@@ -176,5 +177,9 @@
         <servlet-name>Jersey Web Application</servlet-name>
         <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
+
+    <welcome-file-list>
+        <welcome-file>TC7-49422</welcome-file>
+    </welcome-file-list>
 
 </web-app>

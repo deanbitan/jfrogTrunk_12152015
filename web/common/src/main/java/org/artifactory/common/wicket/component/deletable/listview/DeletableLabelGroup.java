@@ -24,7 +24,7 @@ import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.markup.repeater.data.DataView;
-import org.apache.wicket.markup.repeater.data.DefaultDataProvider;
+import org.apache.wicket.markup.repeater.data.IDataProvider;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.artifactory.api.security.UserInfo;
@@ -66,7 +66,7 @@ public class DeletableLabelGroup<T> extends Panel {
             @SuppressWarnings({"unchecked"})
             @Override
             protected void populateItem(Item item) {
-                final T value = (T) item.getModelObject();
+                final T value = (T) item.getDefaultModelObject();
                 String itemText = getDisplayValue(value);
                 item.add(newLabel(value, itemText));
             }
@@ -136,14 +136,14 @@ public class DeletableLabelGroup<T> extends Panel {
 
     @SuppressWarnings({"unchecked"})
     public Collection<T> getData() {
-        Collection<T> data = (Collection<T>) getModelObject();
+        Collection<T> data = (Collection<T>) getDefaultModelObject();
         if (data == null) {
             return Collections.emptyList();
         }
         return data;
     }
 
-    private class LabelsDataProvider extends DefaultDataProvider {
+    private class LabelsDataProvider implements IDataProvider {
         public Iterator iterator(int first, int count) {
             // no paging anyway...
             return getData().iterator();
@@ -155,6 +155,10 @@ public class DeletableLabelGroup<T> extends Panel {
 
         public IModel model(Object object) {
             return new Model((Serializable) object);
+        }
+
+
+        public void detach() {
         }
     }
 

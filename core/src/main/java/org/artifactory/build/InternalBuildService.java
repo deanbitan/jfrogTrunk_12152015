@@ -22,10 +22,10 @@ import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.build.ImportableExportableBuild;
 import org.artifactory.api.config.ImportSettings;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.md.Properties;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.spring.ReloadableBean;
 import org.jfrog.build.api.Build;
 

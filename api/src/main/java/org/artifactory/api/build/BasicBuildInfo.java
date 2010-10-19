@@ -36,6 +36,10 @@ public class BasicBuildInfo implements Serializable {
     private String number;
     private String started;
 
+    public BasicBuildInfo(String name, String number, Date started) {
+        this(name, number, new SimpleDateFormat(Build.STARTED_FORMAT).format(started));
+    }
+
     /**
      * Main constructor
      *

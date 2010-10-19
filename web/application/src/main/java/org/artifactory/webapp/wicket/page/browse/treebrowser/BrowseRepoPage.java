@@ -20,7 +20,8 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
 import java.io.Serializable;
@@ -28,14 +29,15 @@ import java.io.Serializable;
 public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
 
     private String lastTabName;
+    public static final String PATH_ID_PARAM = "pathId";
 
     public BrowseRepoPage() {
         //Using request parameters instead of wicket's page parameters. See RTFACT-2843
         RepoPath repoPath = null;
-        String pathId = getRequest().getParameter("pathId");
+        String pathId = getRequest().getParameter(PATH_ID_PARAM);
         if (StringUtils.isNotBlank(pathId)) {
             try {
-                repoPath = new RepoPath(pathId);
+                repoPath = new RepoPathImpl(pathId);
             } catch (Exception e) {
                 error("Unable to find path " + pathId);
             }

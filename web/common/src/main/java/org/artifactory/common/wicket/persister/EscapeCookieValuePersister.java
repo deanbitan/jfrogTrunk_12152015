@@ -37,7 +37,7 @@ public class EscapeCookieValuePersister extends CookieValuePersister {
         Object loadedInput = component.getConvertedInput();
 
         //If the input we have entered has changed after conversion, make sure to fix slashes
-        if (prevInput != loadedInput && loadedInput != null) {
+        if (prevInput != loadedInput && loadedInput instanceof String) {
             component.setConvertedInput(loadedInput.toString().replaceAll("\\\\\\\\", "\\\\"));
             component.updateModel();
         }

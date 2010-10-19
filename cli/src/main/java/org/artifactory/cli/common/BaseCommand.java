@@ -19,9 +19,9 @@
 package org.artifactory.cli.common;
 
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
 import org.artifactory.cli.main.CliOption;
 import org.artifactory.cli.main.CommandDefinition;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 

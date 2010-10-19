@@ -57,7 +57,7 @@ import java.util.List;
  */
 public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSearchPanel<T> {
 
-    private MetadataSearchControls searchControls;
+    private MetadataSearchControls<MetadataSearchResult> searchControls;
     private StyledCheckbox metaDataSearchCheckBox;
     private List<String> xmlTypes;
     private List<String> metaDataNames;
@@ -75,7 +75,7 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
     @Override
     protected void addSearchComponents(Form form) {
         add(new CssClass("metadata-panel"));
-        searchControls = new MetadataSearchControls();
+        searchControls = new MetadataSearchControls<MetadataSearchResult>();
         xmlTypes = Lists.newArrayList("*.pom", "*ivy*.xml");
         searchControls.setMetadataName(xmlTypes.get(0));
         typesChoices =
@@ -85,8 +85,8 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
         typesChoices.setRequired(true);
         typesChoices.setOutputMarkupId(true);
         form.add(typesChoices);
-        metaDataSearchCheckBox = new StyledCheckbox("metaDataSearch", new Model());
-        metaDataSearchCheckBox.setLabel(new Model("Metadata Search"));
+        metaDataSearchCheckBox = new StyledCheckbox("metaDataSearch", new Model<Boolean>());
+        metaDataSearchCheckBox.setLabel(new Model<String>("Metadata Search"));
         metaDataSearchCheckBox.setPersistent(true);
         form.add(metaDataSearchCheckBox);
         metaDataSearchCheckBox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
@@ -97,7 +97,7 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
                 } else {
                     metaDataNames = xmlTypes;
                 }
-                target.addComponent(typesChoices, typesChoices.getAjaxTargetMarkupId());
+                target.addComponent(metaDataSearchCheckBox.getParent());
             }
         });
 
@@ -105,14 +105,16 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
         form.add(new HelpBubble("xmlName.help", new ResourceModel("xmlName.help")));
         form.add(new HelpBubble("metadataName.help", new ResourceModel("metadataName.help")));
 
-        TextArea xPathTextArea = new TextArea("xPathTextArea", new PropertyModel(searchControls, "path"));
+        TextArea xPathTextArea = new TextArea<String>("xPathTextArea",
+                new PropertyModel<String>(searchControls, "path"));
         form.add(xPathTextArea);
         xPathTextArea.setRequired(true);
         xPathTextArea.setOutputMarkupId(true);
         xPathTextArea.setPersistent(true);
         form.add(new HelpBubble("xpath.help", new ResourceModel("xpath.help")));
 
-        TextField metadataValueField = new TextField("metadataValueField", new PropertyModel(searchControls, "value"));
+        TextField metadataValueField = new TextField<String>("metadataValueField",
+                new PropertyModel<String>(searchControls, "value"));
         form.add(metadataValueField);
         metadataValueField.setOutputMarkupId(true);
         metadataValueField.setPersistent(true);
@@ -140,21 +142,23 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
         columns.add(new ActionsColumn(""));
 
         columns.add(new BaseSearchPanel.ArtifactNameColumn("Metadata Container"));
-        columns.add(new PropertyColumn(new Model("Path"), "searchResult.relDirPath", "searchResult.relDirPath"));
-        columns.add(new PropertyColumn(new Model("Repository"), "searchResult.repoKey", "searchResult.repoKey"));
+        columns.add(new PropertyColumn<String>(new Model<String>("Path"), "searchResult.relDirPath",
+                "searchResult.relDirPath"));
+        columns.add(new PropertyColumn<String>(new Model<String>("Repository"), "searchResult.repoKey",
+                "searchResult.repoKey"));
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     protected SearchResults<T> searchArtifacts() {
-        //noinspection unchecked
         return search(metaDataSearchCheckBox.isChecked(), searchControls);
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     protected SearchResults<T> performLimitlessArtifactSearch() {
-        MetadataSearchControls controlsCopy = new MetadataSearchControls(searchControls);
+        MetadataSearchControls controlsCopy = new MetadataSearchControls<MetadataSearchResult>(searchControls);
         controlsCopy.setLimitSearchResults(false);
-        //noinspection unchecked
         return search(metaDataSearchCheckBox.isChecked(), controlsCopy);
     }
 

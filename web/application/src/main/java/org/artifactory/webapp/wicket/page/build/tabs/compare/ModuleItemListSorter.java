@@ -32,7 +32,10 @@ import java.util.List;
  *
  * @author Noam Y. Tenne
  */
-public class ModuleItemListSorter {
+public abstract class ModuleItemListSorter {
+    private ModuleItemListSorter() {
+        // utility class
+    }
 
     /**
      * Sorts the given list of published modules

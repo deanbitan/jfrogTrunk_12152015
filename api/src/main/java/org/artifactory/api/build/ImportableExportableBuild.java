@@ -21,8 +21,8 @@ package org.artifactory.api.build;
 import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.ChecksumsInfo;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumsInfo;
 
 import java.io.Serializable;
 import java.util.Set;

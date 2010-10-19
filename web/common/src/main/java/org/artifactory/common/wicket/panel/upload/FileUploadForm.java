@@ -19,12 +19,14 @@
 package org.artifactory.common.wicket.panel.upload;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.extensions.ajax.markup.html.form.upload.UploadProgressBar;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
+import org.apache.wicket.model.Model;
 
 import java.io.File;
 
@@ -50,7 +52,7 @@ public class FileUploadForm extends Form {
         //Set this form to multipart mode (always needed for uploads!)
         setMultiPart(true);
         //Add one file input field
-        add(fileUploadField = new FileUploadField("fileInput"));
+        add(fileUploadField = new FileUploadField("fileInput", new Model<FileUpload>()));
         // Add the progress bar
         add(new UploadProgressBar("progress", this));
     }
@@ -60,7 +62,8 @@ public class FileUploadForm extends Form {
         final FileUpload upload = fileUploadField.getFileUpload();
         if (upload != null) {
             //Create a new file
-            uploadedFile = new File(tempUploadsDir, upload.getClientFileName());
+            final String clientFileName = FilenameUtils.getName(upload.getClientFileName());
+            uploadedFile = new File(tempUploadsDir, clientFileName);
             //Check new file, delete if it already existed
             if (!removeFile(uploadedFile)) {
                 error("File " + uploadedFile + " already exists and cannot be deleted !!");

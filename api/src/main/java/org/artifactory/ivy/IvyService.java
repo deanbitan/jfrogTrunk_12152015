@@ -20,7 +20,7 @@ package org.artifactory.ivy;
 
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 import java.io.File;
 

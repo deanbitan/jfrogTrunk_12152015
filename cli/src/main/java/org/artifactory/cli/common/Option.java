@@ -18,11 +18,12 @@
 
 package org.artifactory.cli.common;
 
+import java.io.Serializable;
+
 /**
  * @author freds
- * @date Sep 1, 2008
  */
-public interface Option extends Param {
+public interface Option extends Param, Serializable {
     String OPTION_PREFIX = "--";
 
     String argValue();

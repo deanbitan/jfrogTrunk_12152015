@@ -27,6 +27,7 @@ import org.apache.wicket.authorization.strategies.role.Roles;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.proxy.IProxyTargetLocator;
 import org.apache.wicket.proxy.LazyInitProxyFactory;
+import org.artifactory.UiAuthenticationDetails;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.SavedSearchResults;
@@ -34,7 +35,7 @@ import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserInfo;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
@@ -51,6 +52,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,16 +60,17 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class ArtifactoryWebSession extends AuthenticatedWebSession {
+
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryWebSession.class);
 
     private AuthenticationManager authenticationManager;
     private Authentication authentication;
     private Roles roles;
     private Map<String, SavedSearchResults> results;
-    private Pair<String, Long> lastLoginInfo;
+    private SerializablePair<String, Long> lastLoginInfo;
 
     public static ArtifactoryWebSession get() {
         return (ArtifactoryWebSession) Session.get();
@@ -81,17 +84,11 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
 
     @Override
     public boolean authenticate(final String username, final String password) {
-        if (authentication != null && authentication.isAuthenticated() &&
-                ("" + authentication.getPrincipal()).equals(username)) {
-            return true;
-        }
-
-        roles = null;
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(username, password);
-        WebRequest webRequest = WicketUtils.getWebRequest();
-        HttpServletRequest servletRequest = webRequest.getHttpServletRequest();
-        WebAuthenticationDetails details = new HttpAuthenticationDetails(servletRequest);
+        HttpServletRequest servletRequest = WicketUtils.getWebRequest().getHttpServletRequest();
+        HttpServletResponse servletResponse = WicketUtils.getWebResponse().getHttpServletResponse();
+        WebAuthenticationDetails details = new UiAuthenticationDetails(servletRequest, servletResponse);
         authenticationToken.setDetails(details);
         boolean authenticated;
         try {
@@ -104,7 +101,7 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
             authenticated = false;
             AccessLogger.loginDenied(authenticationToken);
             if (log.isDebugEnabled()) {
-                log.debug("Fail to authenticate " + username + "/" + DigestUtils.md5Hex(password), e);
+                log.debug("Failed to authenticate " + username + "/" + DigestUtils.md5Hex(password), e);
             }
         }
         return authenticated;
@@ -151,17 +148,15 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
                 HttpServletRequest httpServletRequest = request.getHttpServletRequest();
                 RequestUtils.setAuthentication(httpServletRequest, authentication, true);
 
-                ArtifactoryContext context = ContextHelper.get();
-                SecurityService securityService = context.beanForType(SecurityService.class);
-
                 Object principal = authentication.getPrincipal();
                 if (principal != null) {
-
                     String username = principal.toString();
                     if (StringUtils.isNotBlank(username) && (!username.equals(UserInfo.ANONYMOUS))) {
 
                         //Save the user's last login info in the web session so we can display it in the welcome page
-                        Pair<String, Long> lastLoginInfo = securityService.getUserLastLoginInfo(username);
+                        ArtifactoryContext context = ContextHelper.get();
+                        SecurityService securityService = context.beanForType(SecurityService.class);
+                        SerializablePair<String, Long> lastLoginInfo = securityService.getUserLastLoginInfo(username);
                         ArtifactoryWebSession.get().setLastLoginInfo(lastLoginInfo);
 
                         //Update the user's current login info in the database
@@ -224,11 +219,11 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
         return results != null && !results.isEmpty();
     }
 
-    public Pair<String, Long> getLastLoginInfo() {
+    public SerializablePair<String, Long> getLastLoginInfo() {
         return lastLoginInfo;
     }
 
-    public void setLastLoginInfo(Pair<String, Long> lastLoginInfo) {
+    public void setLastLoginInfo(SerializablePair<String, Long> lastLoginInfo) {
         this.lastLoginInfo = lastLoginInfo;
     }
 
@@ -249,6 +244,13 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
         //Add the authentication to the request thread
         SecurityContext securityContext = SecurityContextHolder.getContext();
         securityContext.setAuthentication(authentication);
+    }
+
+    /**
+     * Call this method when external authentication is performed (eg, cookie, token).
+     */
+    public void markSignedIn() {
+        super.signIn(true);
     }
 
     private static class SecurityServiceLocator implements IProxyTargetLocator {

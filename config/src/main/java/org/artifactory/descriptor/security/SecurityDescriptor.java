@@ -22,9 +22,11 @@ import com.google.common.collect.Lists;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
+import org.artifactory.descriptor.security.sso.CrowdSettings;
 import org.artifactory.descriptor.security.sso.HttpSsoSettings;
 import org.artifactory.util.AlreadyExistsException;
 
+import javax.annotation.Nonnull;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlType;
@@ -34,13 +36,18 @@ import java.util.List;
 /**
  * @author Yossi Shaul
  */
-@XmlType(name = "SecurityType",
-        propOrder = {"anonAccessEnabled", "passwordSettings", "ldapSettings", "ldapGroupSettings", "httpSsoSettings"},
-        namespace = Descriptor.NS)
+@XmlType(name = "SecurityType", propOrder = {"anonAccessEnabled", "hideUnauthorizedResources", "passwordSettings",
+        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings"}, namespace = Descriptor.NS)
 public class SecurityDescriptor implements Descriptor {
 
     @XmlElement(defaultValue = "true")
     private boolean anonAccessEnabled = true;
+
+    /**
+     * This flag controls whether we reveal the cause when user requests a resource she is not authorize to view.
+     */
+    @XmlElement(defaultValue = "false", required = false)
+    private boolean hideUnauthorizedResources = false;
 
     @XmlElementWrapper(name = "ldapSettings")
     @XmlElement(name = "ldapSetting", required = false)
@@ -56,12 +63,31 @@ public class SecurityDescriptor implements Descriptor {
     @XmlElement(name = "httpSsoSettings", required = false)
     private HttpSsoSettings httpSsoSettings;
 
+    @XmlElement(name = "crowdSettings", required = false)
+    private CrowdSettings crowdSettings;
+
     public boolean isAnonAccessEnabled() {
         return anonAccessEnabled;
     }
 
     public void setAnonAccessEnabled(boolean anonAccessEnabled) {
         this.anonAccessEnabled = anonAccessEnabled;
+    }
+
+    /**
+     * This flag controls whether we reveal the cause when user requests a resource she is not authorize to view.
+     */
+    public boolean isHideUnauthorizedResources() {
+        return hideUnauthorizedResources;
+    }
+
+    /**
+     * This flag controls whether we reveal the cause when user requests a resource she is not authorize to view.
+     *
+     * @param hideUnauthorizedResources If true hide security reason (return 404)
+     */
+    public void setHideUnauthorizedResources(boolean hideUnauthorizedResources) {
+        this.hideUnauthorizedResources = hideUnauthorizedResources;
     }
 
     public List<LdapSetting> getLdapSettings() {
@@ -224,6 +250,7 @@ public class SecurityDescriptor implements Descriptor {
         return false;
     }
 
+    @Nonnull
     public PasswordSettings getPasswordSettings() {
         return passwordSettings;
     }
@@ -234,5 +261,13 @@ public class SecurityDescriptor implements Descriptor {
 
     public void setHttpSsoSettings(HttpSsoSettings httpSsoSettings) {
         this.httpSsoSettings = httpSsoSettings;
+    }
+
+    public CrowdSettings getCrowdSettings() {
+        return crowdSettings;
+    }
+
+    public void setCrowdSettings(CrowdSettings crowdSettings) {
+        this.crowdSettings = crowdSettings;
     }
 }

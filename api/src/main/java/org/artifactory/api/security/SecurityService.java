@@ -22,7 +22,7 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 
 import java.util.Date;
@@ -82,7 +82,7 @@ public interface SecurityService extends ImportableExportable {
      * @param username User to retrieve password reset info about
      * @return Pair<Date, String> - Pair containing key generation time and client ip (respectively)
      */
-    Pair<Date, String> getPasswordResetKeyInfo(String username);
+    SerializablePair<Date, String> getPasswordResetKeyInfo(String username);
 
     /**
      * Returns the given user's last login information
@@ -90,7 +90,7 @@ public interface SecurityService extends ImportableExportable {
      * @param username Logged in user's name
      * @return Pair<String, Long> - Containing the client IP and last logged in time millis
      */
-    Pair<String, Long> getUserLastLoginInfo(String username);
+    SerializablePair<String, Long> getUserLastLoginInfo(String username);
 
     /**
      * Updates the user last login information
@@ -108,7 +108,7 @@ public interface SecurityService extends ImportableExportable {
      * @param username Name of user that performed an action
      * @return Pair<String, Long> - Containing the client IP and last access in time millis
      */
-    Pair<String, Long> getUserLastAccessInfo(String username);
+    SerializablePair<String, Long> getUserLastAccessInfo(String username);
 
     /**
      * Updates the user last access information
@@ -134,12 +134,12 @@ public interface SecurityService extends ImportableExportable {
      *
      * @return Remote user request variable
      */
-    String getRemoteUserRequestVariable();
+    String getHttpSsoRemoteUserRequestVariable();
 
     /**
      * Indicates if artifactory shouldn't automatically create a user object in the DB for an SSO authenticated user
      *
      * @return True if user should be created in memory. False if user should be created in the DB
      */
-    boolean isNoAutoUserCreation();
+    boolean isNoHttpSsoAutoUserCreation();
 }

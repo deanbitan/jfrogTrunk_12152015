@@ -40,7 +40,7 @@ import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import java.io.IOException;
 
 /**
- * Artifactory license management panel.
+ * Artifactory license key management panel.
  *
  * @author Yossi Shaul
  */

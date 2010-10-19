@@ -18,24 +18,31 @@
 
 package org.artifactory.jcr.jackrabbit;
 
+import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.core.data.db.TempFileInputStream;
 import org.apache.jackrabbit.core.util.db.DatabaseAware;
 import org.apache.jackrabbit.core.util.db.DbUtility;
+import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
+import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.artifactory.jcr.jackrabbit.ArtifactoryDbDataRecord.NOT_ACCESSED;
 
 /**
  * @author freds
@@ -58,13 +65,25 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
     // Max cache size in bytes parsed from cacheMaxSize
     private long maxCacheSize = -1;
 
-    // Used by the GC to accumulate cache files found, -1 at init time, then 0 before scan and real value after scan
-    // -1 will generate a full folder list to mark the cached files (markAccessed)
-    private long totalCacheSize = -1;
-    private int nbCachedFile = 0;
-
     boolean slowdownScanning;
     long slowdownScanningMillis = ConstantValues.gcScanSleepBetweenIterationsMillis.getLong();
+    /**
+     * This LRU cache holds all the files cached in the filesystem and removes files whenever it reaches the max size.
+     */
+    private FilesLRUCache filesystemLRUCache;
+
+    @Override
+    public void init(String homeDir) throws DataStoreException {
+        initRootStoreDir(homeDir);
+        initMaxCacheSize();
+        filesystemLRUCache = new FilesLRUCache(maxCacheSize);
+        super.init(homeDir);
+    }
+
+    @Override
+    protected void accessed(ArtifactoryDbDataRecord record, long previousAccessTime) {
+        filesystemLRUCache.replace(record, previousAccessTime);
+    }
 
     /**
      * {@inheritDoc}
@@ -79,14 +98,15 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
         return record.guardedActionOnFile(new Callable<File>() {
             public File call() throws Exception {
                 final File result = getFile(identifier);
-                if (result.exists() && result.length() == expectedLength) {
-                    return result;
-                }
                 if (result.exists()) {
-                    if (!result.delete()) {
-                        throw new DataStoreException("Could not delete file before writing blobs into it");
+                    if (result.length() == expectedLength) {
+                        return result;
+                    } else if (!result.delete()) {
+                        throw new DataStoreException("Failed to delete file before writing blobs into it: "
+                                + result.getAbsolutePath());
                     }
                 }
+
                 ResultSet rs = null;
                 try {
                     // SELECT LENGTH, DATA FROM DATASTORE WHERE ID = ?
@@ -115,68 +135,17 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
 
     @Override
     public long scanDataStore(long startScanNanos) {
-        boolean firstScan = (totalCacheSize == -1);
-        // Reinit the value before scan
-        totalCacheSize = 0;
-        nbCachedFile = 0;
         long result = super.scanDataStore(startScanNanos);
-        if (cacheBlobs) {
-            if (firstScan) {
-                scanAllCachedFiles();
-                // For first scan, putting the start scan in the future remove the protection of accessed during scan
-                startScanNanos = Long.MAX_VALUE;
-            }
-            log.debug(
-                    "The cache of the data store contains " + nbCachedFile +
-                            " files for a total of " + totalCacheSize + " bytes");
-            if (totalCacheSize > maxCacheSize) {
-                log.info("The cache folder contains " + nbCachedFile + " files for a total of " + totalCacheSize +
-                        " bytes which is above the maximum " + maxCacheSize + " allowed. Deleting cached files.");
-                int nbCachedFileBefore = nbCachedFile;
-                long totalCacheSizeBefore = totalCacheSize;
-                // We need to cleanup cache files until we get below max
-                List<ArtifactoryDbDataRecord> cached = getLruOrderedCachedRecord();
-                for (ArtifactoryDbDataRecord record : cached) {
-                    if (record.deleteFile(startScanNanos)) {
-                        totalCacheSize -= record.length;
-                        nbCachedFile--;
-                        if (totalCacheSize <= maxCacheSize) {
-                            break;
-                        }
-                    }
-                }
-                log.info("GC deleted " + (nbCachedFileBefore - nbCachedFile) + " cached files to save " +
-                        (totalCacheSizeBefore - totalCacheSize) + " bytes");
-            }
+
+        if (cacheBlobs && !filesystemLRUCache.initialized) {
+            // initialize cache files LRU cache if blob cache is enabled
+            scanAllCachedFiles();
         }
         return result;
     }
 
-    private List<ArtifactoryDbDataRecord> getLruOrderedCachedRecord() {
-        List<ArtifactoryDbDataRecord> cached = new ArrayList<ArtifactoryDbDataRecord>(nbCachedFile);
-        for (ArtifactoryDbDataRecord record : getAllEntries()) {
-            if (record.getLastAccessTime() != Long.MIN_VALUE) {
-                cached.add(record);
-            }
-        }
-        Collections.sort(cached, new Comparator<ArtifactoryDbDataRecord>() {
-            public int compare(ArtifactoryDbDataRecord o1, ArtifactoryDbDataRecord o2) {
-                long diffTime = o1.getLastAccessTime() - o2.getLastAccessTime();
-                if (diffTime > 0) {
-                    return 1;
-                } else if (diffTime < 0) {
-                    return -1;
-                }
-                return 0;
-            }
-        });
-        return cached;
-    }
-
     private void scanAllCachedFiles() {
         log.info("Starting scanning all cached files present in " + cacheFolder.getAbsolutePath());
-        totalCacheSize = 0;
-        nbCachedFile = 0;
         //find . -type f -printf %f:%s\\n
         long start = System.currentTimeMillis();
 
@@ -206,14 +175,14 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
                                 log.warn("Cached file " + file.getAbsolutePath() +
                                         " does not have the correct length! Deleting it");
                                 // Putting the start scan in the future remove the protection of accessed during scan
-                                record.deleteFile(Long.MAX_VALUE);
+                                record.deleteCacheFile(Long.MAX_VALUE);
                             } else {
+                                // mark the record as accessed, this action will also update the lru cache
                                 record.markAccessed();
-                                totalCacheSize += record.length;
-                                nbCachedFile++;
-                                if (nbCachedFile % 500 == 0) {
-                                    log.info("Scanned " + nbCachedFile + " cached files in " +
-                                            (System.currentTimeMillis() - start) + "ms");
+                                if (filesystemLRUCache.cachedFilesCount.get() % 500 == 0) {
+                                    log.info(
+                                            "Scanned " + filesystemLRUCache.cachedFilesCount.get() + " cached files in " +
+                                                    (System.currentTimeMillis() - start) + "ms");
                                 }
                             }
                         }
@@ -221,26 +190,14 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
                 }
             }
         }
-        log.info("Finished scanning " + nbCachedFile + " cached files in " +
-                (System.currentTimeMillis() - start) + "ms");
+        filesystemLRUCache.initialized();
+        log.info("Finished scanning {} cached files in {} ms",
+                filesystemLRUCache.cachedFilesCount.get(), (System.currentTimeMillis() - start));
     }
 
     @Override
     protected boolean validState(ArtifactoryDbDataRecord record) {
-        if (cacheBlobs && (record.getLastAccessTime() != Long.MIN_VALUE)) {
-            // If it was accessed it has a cache file
-            totalCacheSize += record.length;
-            nbCachedFile++;
-        }
         return true;
-    }
-
-    @Override
-    public void init(String homeDir) throws DataStoreException {
-        // TODO: Log an info at the end here about the state/variable of the Data Store
-        initRootStoreDir(homeDir);
-        initMaxCacheSize();
-        super.init(homeDir);
     }
 
     private void slowDownIfLongScan(long start) {
@@ -277,7 +234,6 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
             // No limit here since NO files should be there
             maxCacheSize = -1;
             throw new DataStoreException("DB Data Store with no cache files is not supported yet!");
-            //return;
         }
         String maxSize = getBlobsCacheMaxSize();
         if (maxSize == null || maxSize.length() < 2) {
@@ -338,4 +294,135 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
         this.blobsCacheDir = blobsCacheDir;
     }
 
+    public static class FilesLRUCache {
+        /**
+         * Maximum cache size in bytes. The cache can still grow above this number, but it will trigger a cleanup.
+         */
+        private final long maxCacheSize;
+        /**
+         * A concurrent sorted map that holds all the records with cached files by last access time.
+         */
+        private ConcurrentSkipListMap/*<Long, ArtifactoryDbDataRecord>*/ cachedRecords;
+        /**
+         * Total size in bytes of the cached files.
+         */
+        private AtomicLong cachedFilesSize = new AtomicLong(0);
+        /**
+         * Count of the cached files.
+         */
+        private AtomicLong cachedFilesCount = new AtomicLong(0);
+        /**
+         * Cache cleanup semaphore. Allows only one thread to do a cleanup.
+         */
+        private Semaphore cleanLock = new Semaphore(1);
+        /**
+         * The cache is not initialized until all the cached records are scanned (short time after startup).
+         */
+        private boolean initialized;
+
+        private FilesLRUCache(long maxCacheSize) {
+            this.maxCacheSize = maxCacheSize;
+            cachedRecords = new ConcurrentSkipListMap();
+        }
+
+        public void put(ArtifactoryDbDataRecord record) {
+            if (record.getLastAccessTime() == NOT_ACCESSED) {
+                return;
+            }
+            cachedRecords.put(record.getLastAccessTime(), record);
+            cachedFilesSize.getAndAdd(record.length);
+            cachedFilesCount.incrementAndGet();
+            clean();
+        }
+
+        public void remove(long accessTime) {
+            ArtifactoryDbDataRecord removed = (ArtifactoryDbDataRecord) cachedRecords.remove(accessTime);
+            if (removed != null) {
+                cachedFilesSize.getAndAdd(-removed.length);
+                cachedFilesCount.decrementAndGet();
+            }
+        }
+
+        /**
+         * Called when the record last access time was modified. In such a case the record should be removed and
+         * re-added because the last access time is the key of the lru cache. This is not atomic but it's ok for
+         * the needs of this cache (the cache files deletion are protected elsewhere).
+         *
+         * @param record             The record for whom the last access time was changed
+         * @param previousAccessTime The previous access time of this record (in nanoseconds)
+         */
+        public void replace(ArtifactoryDbDataRecord record, long previousAccessTime) {
+            if (previousAccessTime != NOT_ACCESSED) {
+                remove(previousAccessTime);
+            }
+            put(record);
+        }
+
+        public void initialized() {
+            this.initialized = true;
+            clean();
+        }
+
+        private void clean() {
+            if (!initialized) {
+                // don't attempt to clean until fully initialized
+                return;
+            }
+            if (cachedFilesSize.get() <= maxCacheSize) {
+                return;
+            }
+
+            // try to acquire the lock to do the clean. Only one cleanup is allowed. The lock will be released by
+            // the cleaning thread
+            if (!cleanLock.tryAcquire()) {
+                // someone is already cleaning
+                return;
+            }
+
+            InternalArtifactoryContext context = InternalContextHelper.get();
+            CachedThreadPoolTaskExecutor executor = context.beanForType(CachedThreadPoolTaskExecutor.class);
+
+            executor.submit(new Callable<Object>() {
+                public Object call() throws Exception {
+                    try {
+                        // give a chance for open streams to close (also we don;t wan't to run this too often)
+                        Thread.sleep(500);
+                        long scanStartTime = System.nanoTime();
+                        log.debug("The cache folder contains {} files for a total of {} which is above the " +
+                                "maximum {} allowed. Deleting cached files.",
+                                new Object[]{cachedFilesCount,
+                                        StorageUnit.toReadableString(cachedFilesSize.get()),
+                                        StorageUnit.toReadableString(maxCacheSize)});
+                        long nbCachedFileBefore = cachedFilesCount.get();
+                        long totalCacheSizeBefore = cachedFilesSize.get();
+                        // We need to cleanup cache files until we get below a certain threshold
+                        long lowerCacheSizeThreshold = (long) (maxCacheSize * 0.9);   // 10% below max
+                        // iterate while there are more elements and the cache size is higher than the threshold
+                        Iterator iterator = cachedRecords.entrySet().iterator();
+                        while (cachedFilesSize.get() > lowerCacheSizeThreshold && iterator.hasNext()) {
+                            Map.Entry oldest = (Map.Entry) iterator.next();
+                            ArtifactoryDbDataRecord oldestRecord = (ArtifactoryDbDataRecord) oldest.getValue();
+                            // attempt deletion only if the entry access time is older than the scan start time
+                            if (oldestRecord.getLastAccessTime() < scanStartTime) {
+                                log.trace("Attempting to delete cache file of record: {}",
+                                        oldestRecord.getIdentifier());
+                                if (oldestRecord.deleteCacheFile(scanStartTime)) {
+                                    // remove only if file successfully deleted (the logic to allow/restrict deletion
+                                    // is encapsulated in the record object)
+                                    remove((Long) oldest.getKey());
+                                }
+                            }
+                        }
+                        log.debug("GC deleted {} cached files to save {}",
+                                (nbCachedFileBefore - cachedFilesCount.get()),
+                                StorageUnit.toReadableString(totalCacheSizeBefore - cachedFilesSize.get()));
+                        return null;
+                    } finally {
+                        // release the clean lock
+                        cleanLock.release();
+                    }
+                }
+            });
+        }
+    }
 }

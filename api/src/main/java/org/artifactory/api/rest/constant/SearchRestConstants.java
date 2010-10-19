@@ -33,6 +33,7 @@ public interface SearchRestConstants {
     String PATH_USAGE_SINCE = "usage";
     String PATH_CREATED_IN_RANGE = "creation";
     String PATH_PATTERN = "pattern";
+    String PATH_LICENSE = "license";
 
     //Common query params
     String PARAM_REPO_TO_SEARCH = "repos";
@@ -60,6 +61,15 @@ public interface SearchRestConstants {
     //Pattern of artifacts to search for
     String PARAM_PATTERN = "pattern";
 
+    //Licenses query params
+    String UNAPPROVED_PARAM = "unapproved";
+    String UNKNOWN_PARAM = "unknown";
+    String NOT_FOUND_PARAM = "notfound";
+    String NEUTRAL_PARAM = "neutral";
+    String APPROVED_PARAM = "approved";
+    String AUTOFIND_PARAM = "autofind";
+    String REPOS_PARAM = "repos";
+
     //Media types
     String MT_ARTIFACT_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactSearchResult+json";
     String MT_ARCHIVE_ENTRY_SEARCH_RESULT =
@@ -71,6 +81,7 @@ public interface SearchRestConstants {
     String MT_CREATED_IN_RANGE_SEARCH_RESULT =
             RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactCreationResult+json";
     String MT_PATTERN_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".PatternResultFileSet+json";
+    String MT_LICENSE_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".LicenseResult+json";
 
     String NOT_FOUND = "No results found.";
 }

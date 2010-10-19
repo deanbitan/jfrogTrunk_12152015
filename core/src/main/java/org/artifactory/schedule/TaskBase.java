@@ -34,7 +34,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public abstract class TaskBase implements Task {
     private static final Logger log = LoggerFactory.getLogger(TaskBase.class);
@@ -92,7 +92,7 @@ public abstract class TaskBase implements Task {
      *
      * @param wait
      */
-    void stop(boolean wait, boolean pause, boolean cancel) {
+    void stop(boolean pause, boolean cancel, boolean wait, long pauseTime) {
         if (pause & cancel) {
             throw new IllegalArgumentException("Please decide whether you wish to pause or to cancel!");
         }
@@ -117,6 +117,15 @@ public abstract class TaskBase implements Task {
                     resumeBarriersCount++;
                     log.trace("resumeBarriersCount++ to {} after pause on {}", resumeBarriersCount, this);
                     guardedTransitionToState(TaskState.PAUSING, wait, null);
+                    if (pauseTime > 0) {
+                        try {
+                            Thread.sleep(pauseTime);
+                        } catch (InterruptedException e) {
+                            log.trace("Timed pause interrupted {}", this);
+                        } finally {
+                            resume();
+                        }
+                    }
                 } else {
                     Callable<Object> callback = null;
                     if (cancel) {
@@ -295,7 +304,9 @@ public abstract class TaskBase implements Task {
         try {
             if (state == TaskState.STOPPED) {
                 //Do nothing
-            } else if (state == TaskState.PAUSED || state == TaskState.STOPPING || state == TaskState.PAUSING) {
+                return;
+            }
+            if (state == TaskState.PAUSED || state == TaskState.STOPPING || state == TaskState.PAUSING) {
                 guardedSetState(TaskState.STOPPED);
             } else if (state != TaskState.CANCELED) {
                 if (isSingleExecution()) {
@@ -386,14 +397,14 @@ public abstract class TaskBase implements Task {
                 throw new LockingException("Locking an already locked task state: " +
                         this + " active lock(s) already active!");
             }
-            boolean sucess = stateSync.tryLock() ||
+            boolean success = stateSync.tryLock() ||
                     stateSync.tryLock(getStateLockTimeOut(), TimeUnit.SECONDS);
-            if (!sucess) {
+            if (!success) {
                 throw new LockingException(
                         "Could not acquire state lock in " + getStateLockTimeOut());
             }
         } catch (InterruptedException e) {
-            log.warn("Interrpted while trying to lock {}.", this);
+            log.warn("Interrupted while trying to lock {}.", this);
         }
     }
 

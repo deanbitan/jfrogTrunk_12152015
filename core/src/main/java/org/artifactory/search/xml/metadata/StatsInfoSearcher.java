@@ -21,7 +21,6 @@ package org.artifactory.search.xml.metadata;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
@@ -32,6 +31,7 @@ import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.search.SearcherBase;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -149,7 +149,7 @@ public class StatsInfoSearcher
                 continue; // probably deleted
             }
             LocalRepo localRepo = getRepoService().localOrCachedRepositoryByKey(repoPath.getRepoKey());
-            if (!controls.isSpecificRepoSearch() && !isRepoPathValid(repoPath, localRepo)) {
+            if (!isRepoPathValid(repoPath, localRepo)) {
                 continue;
             }
 

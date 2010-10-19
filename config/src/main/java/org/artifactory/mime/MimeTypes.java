@@ -35,6 +35,9 @@ import java.util.Set;
  */
 @XStreamAlias("mimetypes")
 public class MimeTypes implements Serializable {
+    /**
+     * The xml version (controlled by the converters only)
+     */
     @XStreamAsAttribute
     private String version;
 

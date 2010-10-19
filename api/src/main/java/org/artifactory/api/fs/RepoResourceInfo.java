@@ -18,7 +18,8 @@
 
 package org.artifactory.api.fs;
 
-import org.artifactory.api.common.Info;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.common.Info;
 
 import java.util.Set;
 
@@ -45,5 +46,5 @@ public interface RepoResourceInfo extends Info {
 
     Set<ChecksumInfo> getChecksums();
 
-    void setChecksums(Set<ChecksumInfo> checksums);
+    void setChecksums(Set<org.artifactory.checksum.ChecksumInfo> checksums);
 }

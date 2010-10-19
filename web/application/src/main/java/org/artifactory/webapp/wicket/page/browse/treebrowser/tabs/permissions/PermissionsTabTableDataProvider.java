@@ -18,12 +18,12 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.permissions;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.AceInfo;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.GroupInfo;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.security.acl.AceInfoRow;
 import org.artifactory.webapp.wicket.page.security.acl.BaseSortableAceInfoRowDataProvider;
 

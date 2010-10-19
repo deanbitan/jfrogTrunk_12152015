@@ -23,7 +23,7 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public interface TabViewedActionableItem extends ActionableItem {
     void addTabs(List<ITab> tabs);

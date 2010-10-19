@@ -39,8 +39,12 @@ import java.util.List;
 /**
  * @author Yoav Landman
  */
-public class HttpClientUtils {
+public abstract class HttpClientUtils {
     private static final Logger log = LoggerFactory.getLogger(HttpClientUtils.class);
+
+    private HttpClientUtils() {
+        // utility class
+    }
 
     public static void configureUserAgent(HttpClient client) {
         String userAgent = HttpUtils.getArtifactoryUserAgent();

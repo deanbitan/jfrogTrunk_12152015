@@ -19,8 +19,8 @@
 package org.artifactory.io;
 
 import org.apache.commons.io.IOUtils;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.slf4j.Logger;
 
 import java.io.BufferedInputStream;
@@ -30,7 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class TempFileStreamHandle implements ResourceStreamHandle {
     private static final Logger log = LoggerFactory.getLogger(NonClosingInputStream.class);

@@ -19,11 +19,10 @@
 package org.artifactory.jcr;
 
 import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.storage.GarbageCollectorInfo;
@@ -31,6 +30,7 @@ import org.artifactory.io.checksum.Checksum;
 import org.artifactory.jcr.fs.FolderTreeNode;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.spring.ReloadableBean;
 import org.artifactory.tx.SessionResource;
@@ -44,7 +44,7 @@ import java.io.InputStream;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: freds Date: Jun 2, 2008 Time: 4:56:26 PM
+ * @author Frederic Simon
  */
 public interface JcrService extends ReloadableBean {
 
@@ -205,7 +205,7 @@ public interface JcrService extends ReloadableBean {
     void reCreateJcrRepository() throws Exception;
 
     void setStream(Node parent, String nodeName, InputStream value, String mimeType, String userId,
-            boolean saveXmlHierarchy);
+                   boolean saveXmlHierarchy);
 
     /**
      * Get an input stream of the binary stored on the specified node.
@@ -222,13 +222,13 @@ public interface JcrService extends ReloadableBean {
     void saveChecksums(JcrFsItem fsItem, String metadataName, Checksum[] checksums);
 
     /**
-     * Extract in pure JCR the tree of folder (with their name) and pom file names.
-     * This method will recursively populate the whole tree.
+     * Extract in pure JCR the tree of folder (with their name) and pom file names. This method will recursively
+     * populate the whole tree.
      *
      * @param folder The original folder epo path to start from
      * @param status The status holder containing all error and message during tree building
      * @return the fully populated tree node for the above folder or null on error
      */
     @Transactional
-    FolderTreeNode getFolderTreeNode(RepoPath folder, StatusHolder status);
+    FolderTreeNode getFolderTreeNode(RepoPath folder, BasicStatusHolder status);
 }

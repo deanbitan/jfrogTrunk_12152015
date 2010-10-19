@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.form.NumberSpinner"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.form.NumberSpinner"] = true;
 dojo.provide("dijit.form.NumberSpinner");
 
 dojo.require("dijit.form._Spinner");
@@ -21,7 +12,7 @@ dojo.declare("dijit.form.NumberSpinner",
 	// description:
 	//		A `dijit.form.NumberTextBox` extension to provide keyboard accessible value selection
 	//		as well as icons for spinning direction. When using the keyboard, the typematic rules
-	//		apply, meaning holding the key will gradually increarease or decrease the value and
+	//		apply, meaning holding the key will gradually increase or decrease the value and
 	// 		accelerate.
 	//
 	// example:
@@ -57,16 +48,13 @@ dojo.declare("dijit.form.NumberSpinner",
 
 	_onKeyPress: function(e){
 		if((e.charOrCode == dojo.keys.HOME || e.charOrCode == dojo.keys.END) && !(e.ctrlKey || e.altKey || e.metaKey)
-		&& typeof this.attr('value') != 'undefined' /* gibberish, so HOME and END are default editing keys*/){
+		&& typeof this.get('value') != 'undefined' /* gibberish, so HOME and END are default editing keys*/){
 			var value = this.constraints[(e.charOrCode == dojo.keys.HOME ? "min" : "max")];
-			if(value){
-				this._setValueAttr(value,true);
+			if(typeof value == "number"){
+				this._setValueAttr(value, false);
 			}
 			// eat home or end key whether we change the value or not
 			dojo.stopEvent(e);
 		}
 	}
-
 });
-
-}

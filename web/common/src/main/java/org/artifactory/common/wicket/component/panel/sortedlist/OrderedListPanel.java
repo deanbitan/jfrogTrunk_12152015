@@ -63,7 +63,7 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
     private static final Logger log = LoggerFactory.getLogger(OrderedListPanel.class);
 
     protected OrderedListPanel(String id, List<T> list) {
-        this(id, new Model((Serializable) list));
+        this(id, new Model<Serializable>((Serializable) list));
     }
 
     protected OrderedListPanel(String id, IModel listModel) {
@@ -188,7 +188,7 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
         item.add(new AttributeModifier("dndType", true, new DndTypeModel()));
         item.add(new CssClass("dojoDndItem"));
 
-        T itemObject = (T) item.getModelObject();
+        T itemObject = (T) item.getDefaultModelObject();
         item.add(new Label("name", getItemDisplayValue(itemObject)));
 
         LinksColumnPanel linksPanel = new LinksColumnPanel("actions");
@@ -201,7 +201,7 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
 
     @SuppressWarnings({"unchecked"})
     public List<T> getList() {
-        return (List<T>) getModelObject();
+        return (List<T>) getDefaultModelObject();
     }
 
     protected void onOrderChanged(AjaxRequestTarget target) {
@@ -210,6 +210,7 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
 
     public void refresh(AjaxRequestTarget target) {
         target.addComponent(get("items"));
+        target.addComponent(get("title"));
         target.addComponent(get("listIndices"));
         target.addComponent(get("moveDownLink"));
         target.addComponent(get("moveUpLink"));
@@ -246,7 +247,7 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
             for (int index : indices) {
                 newList.add(choices.get(index));
             }
-            OrderedListPanel.this.setModelObject(newList);
+            OrderedListPanel.this.setDefaultModelObject(newList);
         }
 
         /**

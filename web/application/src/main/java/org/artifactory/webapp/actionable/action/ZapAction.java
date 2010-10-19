@@ -21,7 +21,7 @@ package org.artifactory.webapp.actionable.action;
 import org.apache.wicket.Page;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 
 /**

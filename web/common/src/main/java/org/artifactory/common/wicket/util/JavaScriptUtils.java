@@ -29,7 +29,11 @@ import java.io.Writer;
 /**
  * @author Yoav Aharoni
  */
-public class JavaScriptUtils {
+public abstract class JavaScriptUtils {
+    private JavaScriptUtils() {
+        // utility class
+    }
+
     public static String jsFunctionCall(String functionName, Object... parameters) {
         return functionName + "(" + jsParams(parameters) + ")";
     }

@@ -36,8 +36,12 @@ import static org.artifactory.common.wicket.util.JavaScriptUtils.jsParam;
 /**
  * @author Yoav Aharoni
  */
-public class JnlpUtils {
+public abstract class JnlpUtils {
     private static final Logger log = LoggerFactory.getLogger(JnlpUtils.class);
+
+    private JnlpUtils() {
+        // utility class
+    }
 
     public static List<VirtualRepoDescriptor> filterNonWebstartRepos(
             Iterable<VirtualRepoDescriptor> virtualRepoContainigMe) {

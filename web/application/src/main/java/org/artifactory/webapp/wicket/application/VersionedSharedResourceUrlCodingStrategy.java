@@ -84,7 +84,7 @@ public class VersionedSharedResourceUrlCodingStrategy implements IRequestTargetU
         return requestTarget instanceof ISharedResourceRequestTarget;
     }
 
-    public boolean matches(String path) {
+    public boolean matches(String path, boolean caseSensitive) {
         return path.startsWith(getMountPath());
     }
 

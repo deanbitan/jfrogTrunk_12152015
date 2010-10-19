@@ -37,7 +37,7 @@ public class EditProfileLink extends TitledPageLink {
 
     public EditProfileLink(String id) {
         super(id, null, ProfilePage.class);
-        setModelObject(authorizationService.currentUsername());
+        setDefaultModelObject(authorizationService.currentUsername());
     }
 
     @Override

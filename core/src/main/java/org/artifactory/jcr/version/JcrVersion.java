@@ -26,6 +26,7 @@ import org.artifactory.jcr.version.v150.JcrMetadataConverter;
 import org.artifactory.jcr.version.v150.RepoConfigConverterV150;
 import org.artifactory.jcr.version.v160.MetadataNamePropertyConverter;
 import org.artifactory.jcr.version.v210.RepoConfigConverterV210;
+import org.artifactory.jcr.version.v211.LatestBuildPropertyConverter;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.CompoundVersionDetails;
@@ -60,7 +61,8 @@ public enum JcrVersion implements SubConfigElementVersion {
             null),
     v160(ArtifactoryVersion.v220, ArtifactoryVersion.v221, null, null, new MetadataNamePropertyConverter()),
     v161(ArtifactoryVersion.v222, ArtifactoryVersion.v223, new RepoConfigConverterV210(), null, null),
-    v210(ArtifactoryVersion.v224, ArtifactoryVersion.getCurrent(), null, null, null);
+    v210(ArtifactoryVersion.v224, ArtifactoryVersion.v225, null, null, new LatestBuildPropertyConverter()),
+    v211(ArtifactoryVersion.v230, ArtifactoryVersion.getCurrent(), null, null, null);
 
     private static final Logger log = LoggerFactory.getLogger(JcrVersion.class);
 

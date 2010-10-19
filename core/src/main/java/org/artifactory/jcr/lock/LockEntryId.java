@@ -18,7 +18,7 @@
 
 package org.artifactory.jcr.lock;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 /**
  * An immutable lock holder - holds a RWLock per a certain repo fsItem. RW-locks are managed (shared) per storing repo

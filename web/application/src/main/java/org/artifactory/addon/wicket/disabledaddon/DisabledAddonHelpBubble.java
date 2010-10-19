@@ -18,14 +18,14 @@
 
 package org.artifactory.addon.wicket.disabledaddon;
 
-import org.artifactory.addon.wicket.Addon;
+import org.artifactory.addon.wicket.AddonType;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 
 /**
  * @author Yoav Aharoni
  */
 public class DisabledAddonHelpBubble extends HelpBubble {
-    public DisabledAddonHelpBubble(String id, Addon addon) {
+    public DisabledAddonHelpBubble(String id, AddonType addon) {
         super(id, new DisabledAddonMessageModel(addon));
     }
 }

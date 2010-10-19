@@ -19,8 +19,8 @@
 package org.artifactory.api.rest.artifact;
 
 import com.google.common.collect.Lists;
-import org.artifactory.api.common.StatusEntry;
-import org.artifactory.api.common.StatusEntryLevel;
+import org.artifactory.common.StatusEntry;
+import org.artifactory.common.StatusEntryLevel;
 
 import java.util.List;
 

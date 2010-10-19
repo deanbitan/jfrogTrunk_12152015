@@ -1,1 +1,13 @@
-({"set":"Ange","text":"Beskrivning:","insertImageTitle":"Bildegenskaper","url":"URL-adress:","createLinkTitle":"Länkegenskaper","newWindow":"New Window","topWindow":"Topmost Window","target":"Target:","parentWindow":"Parent Window","currentWindow":"Current Window"})
+({
+	createLinkTitle: "Länkegenskaper",
+	insertImageTitle: "Bildegenskaper",
+	url: "URL-adress:",
+	text: "Beskrivning:",
+	target: "Mål:",
+	set: "Ange",
+	currentWindow: "aktuellt fönster",
+	parentWindow: "överordnat fönster",
+	topWindow: "översta fönstret",
+	newWindow: "nytt fönster"
+})
+

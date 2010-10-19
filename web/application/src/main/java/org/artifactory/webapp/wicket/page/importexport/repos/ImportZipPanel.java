@@ -26,12 +26,13 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.panel.upload.UploadListener;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
@@ -63,6 +64,7 @@ public class ImportZipPanel extends BasicImportPanel implements UploadListener {
         //Add upload form with ajax progress bar
         uploadForm = new DefaultFileUploadForm("uploadForm", this);
         uploadForm.add(new HelpBubble("uploadHelp", getUploadHelpText()));
+        addVerboseCheckbox(uploadForm);
         add(uploadForm);
 
         getImportForm().setVisible(false);
@@ -179,7 +181,7 @@ public class ImportZipPanel extends BasicImportPanel implements UploadListener {
 
         //Report the uploaded file to the traffic logger
         if ((uploadedFile != null) && (uploadedFile.exists())) {
-            RepoPath repoPath = new RepoPath(getTargetRepoKey(), "");
+            RepoPath repoPath = new RepoPathImpl(getTargetRepoKey(), "");
             UploadEntry uploadEntry = new UploadEntry(repoPath.getId(), uploadedFile.length(), 0);
             trafficService.handleTrafficEntry(uploadEntry);
         }

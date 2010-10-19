@@ -110,7 +110,7 @@ public class BaseSettings implements Serializable {
 
     public void setFailFast(boolean failFast) {
         this.failFast = failFast;
-        statusHolder.setFailFast(failFast);
+        statusHolder.setFastFail(failFast);
     }
 
     public boolean isFailIfEmpty() {

@@ -18,7 +18,6 @@
 
 package org.artifactory.api.search.xml.metadata;
 
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.search.SearchResultBase;
 
@@ -35,7 +34,7 @@ public abstract class GenericMetadataSearchResult<T> extends SearchResultBase {
      * @param itemInfo     Item info
      * @param metadataName Metadata name
      */
-    public GenericMetadataSearchResult(ItemInfo itemInfo, T metadataObject) {
+    public GenericMetadataSearchResult(org.artifactory.fs.ItemInfo itemInfo, T metadataObject) {
         super(itemInfo);
         this.metadataObject = metadataObject;
     }

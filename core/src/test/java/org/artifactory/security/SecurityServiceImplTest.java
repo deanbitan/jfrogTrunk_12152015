@@ -18,7 +18,7 @@
 
 package org.artifactory.security;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.AceInfo;
 import org.artifactory.api.security.AclInfo;
 import org.artifactory.api.security.ArtifactoryPermission;
@@ -30,6 +30,7 @@ import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -117,7 +118,7 @@ public class SecurityServiceImplTest {
         assertFalse(service.isAnonymous());// sanity
         assertTrue(service.isAdmin());// sanity
 
-        RepoPath path = new RepoPath("someRepo", "blabla");
+        RepoPath path = new RepoPathImpl("someRepo", "blabla");
         boolean canRead = service.canRead(path);
         assertTrue(canRead);
         boolean canDeploy = service.canDeploy(path);
@@ -128,7 +129,7 @@ public class SecurityServiceImplTest {
     public void userReadAndDeployPermissions() {
         Authentication authentication = setSimpleUserAuthentication();
 
-        RepoPath securedPath = new RepoPath("securedRepo", "blabla");
+        RepoPath securedPath = new RepoPathImpl("securedRepo", "blabla");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(securedPath.getRepoKey()))
                 .andReturn(localRepoMock).anyTimes();
         replay(repositoryServiceMock);
@@ -150,7 +151,7 @@ public class SecurityServiceImplTest {
         verify(internalAclManagerMock, repositoryServiceMock);
         reset(internalAclManagerMock, repositoryServiceMock);
 
-        RepoPath allowedReadPath = new RepoPath("testRepo1", "blabla");
+        RepoPath allowedReadPath = new RepoPathImpl("testRepo1", "blabla");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
                 .andReturn(localRepoMock).anyTimes();
         replay(repositoryServiceMock);
@@ -184,7 +185,7 @@ public class SecurityServiceImplTest {
         // user with admin role on permission target 'target1'
         Authentication authentication = setSimpleUserAuthentication("yossis");
 
-        RepoPath allowedReadPath = new RepoPath("testRepo1", "blabla");
+        RepoPath allowedReadPath = new RepoPathImpl("testRepo1", "blabla");
 
         // can read the specified path
         expectGetAllAclsCall(authentication);
@@ -224,7 +225,7 @@ public class SecurityServiceImplTest {
     public void groupPermissions() {
         Authentication authentication = setSimpleUserAuthentication("userwithnopermissions");
 
-        RepoPath allowedReadPath = new RepoPath("testRepo1", "**");
+        RepoPath allowedReadPath = new RepoPathImpl("testRepo1", "**");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
                 .andReturn(localRepoMock).anyTimes();
         replay(repositoryServiceMock);
@@ -251,7 +252,7 @@ public class SecurityServiceImplTest {
     public void userWithPermissionsToAGroupWithTheSameName() {
         setSimpleUserAuthentication(userAndGroupSharedName, userAndGroupSharedName);
 
-        RepoPath testRepo1Path = new RepoPath("testRepo1", "**");
+        RepoPath testRepo1Path = new RepoPathImpl("testRepo1", "**");
         expectGetAllAclsCallWithAnyArray();
         replay(internalAclManagerMock);
         boolean canRead = service.canRead(testRepo1Path);
@@ -259,7 +260,7 @@ public class SecurityServiceImplTest {
         verify(internalAclManagerMock);
         reset(internalAclManagerMock);
 
-        RepoPath testRepo2Path = new RepoPath("testRepo2", "**");
+        RepoPath testRepo2Path = new RepoPathImpl("testRepo2", "**");
         expectGetAllAclsCallWithAnyArray();
         replay(internalAclManagerMock);
         canRead = service.canRead(testRepo2Path);
@@ -275,7 +276,7 @@ public class SecurityServiceImplTest {
         // and not the user with the same name permissions
         setSimpleUserAuthentication("auser", userAndGroupSharedName);
 
-        RepoPath testRepo1Path = new RepoPath("testRepo1", "**");
+        RepoPath testRepo1Path = new RepoPathImpl("testRepo1", "**");
         expectGetAllAclsCallWithAnyArray();
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo1"))
                 .andReturn(localRepoMock).anyTimes();
@@ -285,7 +286,7 @@ public class SecurityServiceImplTest {
         verify(internalAclManagerMock, repositoryServiceMock);
         reset(internalAclManagerMock, repositoryServiceMock);
 
-        RepoPath testRepo2Path = new RepoPath("testRepo2", "**");
+        RepoPath testRepo2Path = new RepoPathImpl("testRepo2", "**");
         expectGetAllAclsCallWithAnyArray();
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2"))
                 .andReturn(localRepoMock).anyTimes();
@@ -300,7 +301,7 @@ public class SecurityServiceImplTest {
         SimpleUser user = createNonAdminUser("yossis");
         UserInfo userInfo = user.getDescriptor();
 
-        RepoPath testRepo1Path = new RepoPath("testRepo1", "any/path");
+        RepoPath testRepo1Path = new RepoPathImpl("testRepo1", "any/path");
 
         expectGetAllAclsCallWithAnyArray();
         replay(internalAclManagerMock);
@@ -331,7 +332,7 @@ public class SecurityServiceImplTest {
         verify(internalAclManagerMock);
         reset(internalAclManagerMock, repositoryServiceMock);
 
-        RepoPath testRepo2Path = new RepoPath("testRepo2", "**");
+        RepoPath testRepo2Path = new RepoPathImpl("testRepo2", "**");
 
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
@@ -353,7 +354,7 @@ public class SecurityServiceImplTest {
         SimpleUser anon = createNonAdminUser(UserInfo.ANONYMOUS);
         UserInfo anonUserInfo = anon.getDescriptor();
 
-        RepoPath testMultiRepo = new RepoPath("multi1", "**");
+        RepoPath testMultiRepo = new RepoPathImpl("multi1", "**");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("multi1")).andReturn(cacheRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
         replay(repositoryServiceMock);
@@ -367,7 +368,7 @@ public class SecurityServiceImplTest {
     public void hasPermissionForGroupInfo() {
         GroupInfo groupInfo = new GroupInfo("deployGroup");
 
-        RepoPath testRepo1Path = new RepoPath("testRepo1", "any/path");
+        RepoPath testRepo1Path = new RepoPathImpl("testRepo1", "any/path");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo1"))
                 .andReturn(localRepoMock).anyTimes();
         replay(repositoryServiceMock);
@@ -400,7 +401,7 @@ public class SecurityServiceImplTest {
         verify(internalAclManagerMock);
         reset(internalAclManagerMock, repositoryServiceMock);
 
-        RepoPath testRepo2Path = new RepoPath("testRepo2", "some/path");
+        RepoPath testRepo2Path = new RepoPathImpl("testRepo2", "some/path");
 
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2"))
                 .andReturn(localRepoMock).anyTimes();
@@ -414,7 +415,7 @@ public class SecurityServiceImplTest {
 
         GroupInfo anyRepoGroupRead = new GroupInfo("anyRepoReadersGroup");
 
-        RepoPath somePath = new RepoPath("blabla", "some/path");
+        RepoPath somePath = new RepoPathImpl("blabla", "some/path");
 
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("blabla")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
@@ -433,7 +434,7 @@ public class SecurityServiceImplTest {
 
         GroupInfo multiRepoGroupRead = new GroupInfo("multiRepoReadersGroup");
 
-        RepoPath multiPath = new RepoPath("multi1", "some/path");
+        RepoPath multiPath = new RepoPathImpl("multi1", "some/path");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("multi1")).andReturn(localRepoMock).anyTimes();
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("multi2")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
@@ -443,7 +444,7 @@ public class SecurityServiceImplTest {
         verify(internalAclManagerMock, repositoryServiceMock);
         reset(internalAclManagerMock);
 
-        RepoPath multiPath2 = new RepoPath("multi2", "some/path");
+        RepoPath multiPath2 = new RepoPathImpl("multi2", "some/path");
         expectGetAllAclsCallWithAnyArray();
         replay(internalAclManagerMock);
         canRead = service.canRead(multiRepoGroupRead, multiPath2);
@@ -521,7 +522,7 @@ public class SecurityServiceImplTest {
         Authentication authentication = setSimpleUserAuthentication();
 
         // can read the specified path
-        RepoPath securedPath = new RepoPath("repo1-cache", "blabla");
+        RepoPath securedPath = new RepoPathImpl("repo1-cache", "blabla");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(securedPath.getRepoKey()))
                 .andReturn(cacheRepoMock).anyTimes();
         ArtifactorySid[] sids = {new ArtifactorySid(authentication.getName())};
@@ -534,7 +535,7 @@ public class SecurityServiceImplTest {
         Authentication authentication = setSimpleUserAuthentication();
 
         // can read the specified path
-        RepoPath securedPath = new RepoPath("local-repo", "mama");
+        RepoPath securedPath = new RepoPathImpl("local-repo", "mama");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(securedPath.getRepoKey()))
                 .andReturn(localRepoMock).anyTimes();
         ArtifactorySid[] sids = {new ArtifactorySid(authentication.getName())};
@@ -559,7 +560,7 @@ public class SecurityServiceImplTest {
         verify(internalAclManagerMock, repositoryServiceMock);
         reset(internalAclManagerMock, repositoryServiceMock);
 
-        RepoPath allowedReadPath = new RepoPath("testRepo1", "blabla");
+        RepoPath allowedReadPath = new RepoPathImpl("testRepo1", "blabla");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
                 .andReturn(localRepoMock).anyTimes();
         replay(repositoryServiceMock);

@@ -174,7 +174,7 @@ public class BuildsForNamePanel extends TitledPanel {
         }
 
         public void populateItem(final Item cellItem, String componentId, IModel rowModel) {
-            final BuildActionableItem build = (BuildActionableItem) cellItem.getParent().getParent().getModelObject();
+            final BuildActionableItem build = (BuildActionableItem) cellItem.getParent().getParent().getDefaultModelObject();
             final String buildNumber = build.getBuildNumber();
             Component link = new Label(componentId, buildNumber);
             link.add(new CssClass("item-link"));
@@ -199,7 +199,7 @@ public class BuildsForNamePanel extends TitledPanel {
             item.add(new AjaxEventBehavior("onclick") {
                 @Override
                 protected void onEvent(AjaxRequestTarget target) {
-                    final BuildActionableItem build = (BuildActionableItem) item.getParent().getParent().getModelObject();
+                    final BuildActionableItem build = (BuildActionableItem) item.getParent().getParent().getDefaultModelObject();
                     drillDown(build);
                 }
             });

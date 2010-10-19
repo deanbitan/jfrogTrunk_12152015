@@ -21,31 +21,30 @@ package org.artifactory.repo.jcr;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.cache.ArtifactoryCache;
 import org.artifactory.api.cache.Cache;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusHolder;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.ChecksumsInfo;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderInfo;
-import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.fs.MetadataInfo;
+import org.artifactory.api.fs.InternalFileInfo;
+import org.artifactory.api.fs.InternalFolderInfo;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.md.Properties;
-import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.cache.InternalCacheService;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
+import org.artifactory.checksum.ChecksumsInfo;
+import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.exception.CancelException;
 import org.artifactory.exception.IllegalNameException;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.StringResourceStreamHandle;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
-import org.artifactory.io.checksum.policy.ChecksumPolicyException;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.JcrService;
@@ -62,12 +61,15 @@ import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.jcr.md.MetadataPersistenceHandler;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.context.RequestContext;
-import org.artifactory.repo.interceptor.RepoInterceptors;
+import org.artifactory.md.MetadataInfo;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.request.RequestContext;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.MetadataResource;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalArtifactoryContext;
@@ -92,12 +94,12 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
     private final JcrFileCreator jcrFileCreator = new JcrFileCreator();
     private final JcrFolderCreator jcrFolderCreator = new JcrFolderCreator();
-    private MetadataDefinition<FileInfo> fileInfoMd;
-    private MetadataDefinition<FolderInfo> folderInfoMd;
+    private MetadataDefinition<InternalFileInfo> fileInfoMd;
+    private MetadataDefinition<InternalFolderInfo> folderInfoMd;
     private String repoRootPath;
     private Map<RepoPath, MonitoringReadWriteLock> locks;
     private Map<RepoPath, JcrFsItem> fsItemCache;
-    private RepoInterceptors interceptors;
+    private StorageInterceptors interceptors;
     private JcrRepoService jcrRepoService;
     private JcrService jcrService;
     private InternalTrafficService trafficService;
@@ -118,11 +120,11 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         InternalArtifactoryContext context = InternalContextHelper.get();
 
         this.mdDefService = context.beanForType(MetadataDefinitionService.class);
-        this.fileInfoMd = mdDefService.getMetadataDefinition(FileInfo.class);
-        this.folderInfoMd = mdDefService.getMetadataDefinition(FolderInfo.class);
+        this.fileInfoMd = mdDefService.getMetadataDefinition(InternalFileInfo.class);
+        this.folderInfoMd = mdDefService.getMetadataDefinition(InternalFolderInfo.class);
 
         // TODO: should select the interceptors depending on the repo type
-        this.interceptors = context.beanForType(RepoInterceptors.class);
+        this.interceptors = context.beanForType(StorageInterceptors.class);
         this.jcrRepoService = context.getJcrRepoService();
         this.jcrService = context.getJcrService();
         this.trafficService = context.beanForType(InternalTrafficService.class);
@@ -183,11 +185,11 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return delegator.isCache();
     }
 
-    public MetadataDefinition<FileInfo> getFileInfoMd() {
+    public MetadataDefinition<InternalFileInfo> getFileInfoMd() {
         return fileInfoMd;
     }
 
-    public MetadataDefinition<FolderInfo> getFolderInfoMd() {
+    public MetadataDefinition<InternalFolderInfo> getFolderInfoMd() {
         return folderInfoMd;
     }
 
@@ -235,7 +237,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
      * {@inheritDoc}
      */
     public JcrFsItem getLocalJcrFsItem(String relPath) {
-        RepoPath repoPath = new RepoPath(getKey(), relPath);
+        RepoPath repoPath = new RepoPathImpl(getKey(), relPath);
         return getJcrFsItem(repoPath);
     }
 
@@ -254,12 +256,12 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     public JcrFile getLocalJcrFile(String relPath) throws FileExpectedException {
-        RepoPath repoPath = new RepoPath(getKey(), relPath);
+        RepoPath repoPath = new RepoPathImpl(getKey(), relPath);
         return getJcrFile(repoPath);
     }
 
     public JcrFile getJcrFile(String relPath) throws FileExpectedException {
-        RepoPath repoPath = new RepoPath(getKey(), relPath);
+        RepoPath repoPath = new RepoPathImpl(getKey(), relPath);
         return getJcrFile(repoPath);
     }
 
@@ -272,7 +274,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     public JcrFolder getLocalJcrFolder(String relPath) throws FolderExpectedException {
-        RepoPath repoPath = new RepoPath(getKey(), relPath);
+        RepoPath repoPath = new RepoPathImpl(getKey(), relPath);
         return getJcrFolder(repoPath);
     }
 
@@ -285,7 +287,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     public JcrFsItem getLockedJcrFsItem(String relPath) {
-        RepoPath repoPath = new RepoPath(getKey(), relPath);
+        RepoPath repoPath = new RepoPathImpl(getKey(), relPath);
         return getLockedJcrFsItem(repoPath);
     }
 
@@ -300,7 +302,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     public JcrFile getLockedJcrFile(String relPath, boolean createIfMissing) throws FileExpectedException {
-        RepoPath repoPath = new RepoPath(getKey(), relPath);
+        RepoPath repoPath = new RepoPathImpl(getKey(), relPath);
         return getLockedJcrFile(repoPath, createIfMissing);
     }
 
@@ -311,7 +313,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     public JcrFolder getLockedJcrFolder(String relPath, boolean createIfMissing) throws FolderExpectedException {
-        RepoPath repoPath = new RepoPath(getKey(), relPath);
+        RepoPath repoPath = new RepoPathImpl(getKey(), relPath);
         return getLockedJcrFolder(repoPath, createIfMissing);
     }
 
@@ -323,7 +325,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
     public RepoResource getInfo(RequestContext context) throws FileExpectedException {
         final String path = context.getResourcePath();
-        RepoPath repoPath = new RepoPath(getKey(), path);
+        RepoPath repoPath = new RepoPathImpl(getKey(), path);
         JcrFsItem<?> item = getPathItem(repoPath);
         if (item == null) {
             return new UnfoundRepoResource(repoPath, "File not found.");
@@ -369,10 +371,10 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                             "File '" + repoPath + "' was found, but mandatory properties do not match.");
                 }
             }
-            localRes = new FileResource((FileInfo) item.getInfo(), exactMatch);
+            localRes = new FileResource((InternalFileInfo) item.getInfo(), exactMatch);
         }
         //Release the read lock early
-        RepoPath lockedRepoPath = RepoPath.getLockingTargetRepoPath(repoPath);
+        RepoPath lockedRepoPath = RepoPathImpl.getLockingTargetRepoPath(repoPath);
         LockingHelper.releaseReadLock(lockedRepoPath);
         return localRes;
     }
@@ -485,12 +487,12 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
      * @param properties A set of keyval metadata to attach to the (file) resource as part of this storage process
      */
     public RepoResource saveResource(RepoResource res, final InputStream in, Properties properties)
-            throws IOException, RepoRejectionException {
-        RepoPath repoPath = new RepoPath(getKey(), res.getRepoPath().getPath());
+            throws IOException, RepoRejectException {
+        RepoPath repoPath = new RepoPathImpl(getKey(), res.getRepoPath().getPath());
         try {
             if (res.isMetadata()) {
                 //If we are dealing with metadata set it on the containing fsitem
-                RepoPath metadataContainerRepoPath = RepoPath.getLockingTargetRepoPath(repoPath);
+                RepoPath metadataContainerRepoPath = RepoPathImpl.getLockingTargetRepoPath(repoPath);
                 // Write lock auto upgrade supported LockingHelper.releaseReadLock(metadataContainerRepoPath);
                 JcrFsItem jcrFsItem = getLockedJcrFsItem(metadataContainerRepoPath);
                 if (jcrFsItem == null) {
@@ -523,7 +525,17 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                 }
 
                 //Write lock auto upgrade supported LockingHelper.releaseReadLock(repoPath);
+
                 JcrFile jcrFile = getLockedJcrFile(repoPath, true);
+
+                //Test if beforeCreate caused cancellation
+                BasicStatusHolder statusHolder = new BasicStatusHolder();
+                interceptors.beforeCreate(jcrFile, statusHolder);
+                CancelException cancelException = statusHolder.getCancelException();
+                if (cancelException != null) {
+                    LockingHelper.removeLockEntry(repoPath);
+                    throw new RepoRejectException(cancelException);
+                }
                 if (!itemExists(parentPath.getPath())) {
                     JcrFolder jcrFolder = getLockedJcrFolder(parentPath, true);
                     jcrFolder.mkdirs();
@@ -590,10 +602,10 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             }
             return res;
         } catch (Exception e) {
-            // throw back ChecksumPolicyException if it is the cause
-            Throwable checksumCause = ExceptionUtils.getCauseOfTypes(e, ChecksumPolicyException.class);
-            if (checksumCause != null) {
-                throw (ChecksumPolicyException) checksumCause;
+            // throw back any RepoRejectException (ChecksumPolicyException or wrapped CancelException)
+            Throwable rejectException = ExceptionUtils.getCauseOfTypes(e, RepoRejectException.class);
+            if (rejectException != null) {
+                throw (RepoRejectException) rejectException;
             }
             //Unwrap any IOException and throw it
             Throwable ioCause = ExceptionUtils.getCauseOfTypes(e, IOException.class);
@@ -613,7 +625,8 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
      * @param newChecksumsToCompare      Checksums info of newly deployed file
      * @return True if the checksums are different
      */
-    private boolean checksumsDiffer(ChecksumsInfo existingChecksumsToCompare, ChecksumsInfo newChecksumsToCompare) {
+    private boolean checksumsDiffer(
+            ChecksumsInfo existingChecksumsToCompare, ChecksumsInfo newChecksumsToCompare) {
         for (ChecksumType checksumType : ChecksumType.values()) {
             ChecksumInfo existingChecksum = existingChecksumsToCompare.getChecksumInfo(checksumType);
             ChecksumInfo newChecksum = newChecksumsToCompare.getChecksumInfo(checksumType);
@@ -639,7 +652,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             //For non metadata, never protect folders
             if (!metadata) {
                 // Should not acquire a FsItem here!
-                RepoPath repoPath = new RepoPath(getKey(), path);
+                RepoPath repoPath = new RepoPathImpl(getKey(), path);
                 protect &= jcrService.isFile(repoPath);
             }
         }
@@ -681,27 +694,27 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     public void onCreate(JcrFsItem fsItem) {
-        StatusHolder holder = new MultiStatusHolder();
+        MutableStatusHolder holder = new MultiStatusHolder();
         // update the item info as late as possible, just before calling the on create interceptors (normally the update
         // is called after the tx commit but it is too late for the interceptors)
         if (fsItem.isFile()) {
             JcrFile jcrFile = (JcrFile) fsItem;
             getFileInfoMd().getPersistenceHandler().update(jcrFile, jcrFile.getInfo());
         }
-        interceptors.onCreate(fsItem, holder);
+        interceptors.afterCreate(fsItem, holder);
         // TODO: Check the statusHolder
         RepoPath repoPath = fsItem.getRepoPath();
         AccessLogger.deployed(repoPath);
     }
 
     public void onDelete(JcrFsItem fsItem) {
-        interceptors.onDelete(fsItem, new StatusHolder());
+        interceptors.afterDelete(fsItem, new BasicStatusHolder());
         AccessLogger.deleted(fsItem.getRepoPath());
     }
 
     public void setDescriptor(T descriptor) {
         repoRootPath = JcrPath.get().getRepoJcrPath(getKey());
-        rootRepoPath = new RepoPath(getKey(), "");
+        rootRepoPath = new RepoPathImpl(getKey(), "");
     }
 
     public T getDescriptor() {
@@ -716,7 +729,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     protected final void assertRepoPath(RepoPath repoPath) {
         if (!getKey().equals(repoPath.getRepoKey())) {
             throw new IllegalArgumentException(
-                    "Trying to retrieve resource " + repoPath + " from local repo " + getKey());
+                    "Trying to retrieve resource '" + repoPath + "' from local repo '" + getKey() + "'.");
         }
     }
 
@@ -883,7 +896,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
         JcrFsItemLocator(RepoPath repoPath, boolean acquireReadLock, boolean createIfEmpty) {
             //If we are dealing with metadata return the containing fsitem
-            this.repoPath = RepoPath.getLockingTargetRepoPath(repoPath);
+            this.repoPath = RepoPathImpl.getLockingTargetRepoPath(repoPath);
             this.node = null;
             this.acquireReadLock = acquireReadLock;
             this.createIfEmpty = createIfEmpty;
@@ -960,7 +973,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         }
     }
 
-    private static interface FsItemCreator<T extends JcrFsItem<? extends ItemInfo>> {
+    private static interface FsItemCreator<T extends JcrFsItem<? extends org.artifactory.fs.ItemInfo>> {
         public RuntimeException checkItemType(JcrFsItem item);
 
         public T newFsItem(RepoPath repoPath, StoringRepo repo);

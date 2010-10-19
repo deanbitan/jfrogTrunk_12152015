@@ -23,7 +23,6 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.persistence.IValuePersister;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -51,6 +50,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public abstract class TreeBrowsePanel extends TitledPanel implements ActionableItemsProvider, ItemActionListener {
+    private static final IValuePersister COMPACT_PERSISTER = new CompactPersister();
 
     /**
      * Wicket container for the tabs panel
@@ -74,7 +74,6 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
 
     @SpringBean
     private AuthorizationService authService;
-    private static final IValuePersister COMPACT_PERSISTER = new CompactPersister();
 
     public TreeBrowsePanel(String id) {
         this(id, null);
@@ -101,7 +100,7 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
         final CompactFoldersCheckbox compactCheckbox = new CompactFoldersCheckbox("compactCheckbox");
         add(compactCheckbox);
 
-        tree = new ActionableItemsTree("tree", this, defaultSelection, compactCheckbox.isCompactAllowed());
+        tree = new ActionableItemsTree("tree", this, defaultSelection, compactCheckbox.getModelObject());
         add(tree);
         add(new TreeKeyEventHandler("keyEventHandler", tree));
     }
@@ -179,7 +178,7 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
      */
     private class CompactFoldersCheckbox extends StyledCheckbox {
         private CompactFoldersCheckbox(String id) {
-            super(id, new Model(false));
+            super(id, new Model<Boolean>(false));
 
             setPersistent(true);
             COMPACT_PERSISTER.load(this);
@@ -187,7 +186,7 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {
                     COMPACT_PERSISTER.save(CompactFoldersCheckbox.this);
-                    tree.setCompactAllowed(isCompactAllowed());
+                    tree.setCompactAllowed(getModelObject());
                     target.addComponent(tree);
                     target.addComponent(tree.refreshDisplayPanel());
                     tree.adjustLayout(target);
@@ -196,14 +195,11 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
 
         }
 
-        public Boolean isCompactAllowed() {
-            return (Boolean) getModelObject();
-        }
     }
 
     private static class CompactPersister extends EscapeCookieValuePersister {
         @Override
-        protected String getName(FormComponent component) {
+        protected String getSaveKey(String key) {
             return "browseRepoPanel.compactCheckbox";
         }
     }

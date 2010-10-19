@@ -22,7 +22,7 @@ import org.apache.wicket.application.ReloadingClassLoader;
 import org.apache.wicket.protocol.http.ReloadingWicketFilter;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class ArtifactoryReloadingFilter extends ReloadingWicketFilter {
 

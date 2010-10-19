@@ -24,22 +24,22 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels.ActionsPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels.ChecksumsPanel;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels.DependencyDeclarationPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels.DistributionManagementPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels.GeneralInfoPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels.VirtualRepoListPanel;
 
-
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class GeneralTabPanel extends Panel {
 
@@ -50,6 +50,7 @@ public class GeneralTabPanel extends Panel {
 
     public GeneralTabPanel(String id, RepoAwareActionableItem repoItem) {
         super(id);
+        setOutputMarkupId(true);
         this.repoItem = repoItem;
 
         add(new GeneralInfoPanel("generalInfoPanel", repoItem));
@@ -63,6 +64,17 @@ public class GeneralTabPanel extends Panel {
         add(checksumInfo());
 
         add(new ActionsPanel("actionsPanel", repoItem));
+
+        WebMarkupContainer markupContainer = new WebMarkupContainer("dependencyDeclarationPanel");
+        add(markupContainer);
+
+        org.artifactory.fs.ItemInfo itemInfo = repoItem.getItemInfo();
+        if (!itemInfo.isFolder()) {
+            MavenArtifactInfo artifactInfo = repositoryService.getMavenArtifactInfo(itemInfo);
+            if (artifactInfo.isValid()) {
+                this.replace(new DependencyDeclarationPanel(markupContainer.getId(), artifactInfo));
+            }
+        }
 
         add(new VirtualRepoListPanel("virtualRepoList", repoItem));
         addMessage();
@@ -80,7 +92,7 @@ public class GeneralTabPanel extends Panel {
         RepoPath repoPath = repoItem.getRepoPath();
 
         // display warning for unaccepted file
-        boolean accepted = repositoryService.isRepoPathAccepted(repoPath);
+        boolean accepted = repositoryService.isLocalRepoPathAccepted(repoPath);
         if (!accepted) {
             Label message = new Label(messages.newChildId(), getString("repo.unaccepted", null));
             message.add(new CssClass("warn"));
@@ -88,7 +100,7 @@ public class GeneralTabPanel extends Panel {
         }
 
         // display warning for unhandled file
-        boolean handled = repositoryService.isRepoPathHandled(repoPath);
+        boolean handled = repositoryService.isLocalRepoPathHandled(repoPath);
         if (!handled) {
             Label message = new Label(messages.newChildId(), getString("repo.unhandled", null));
             message.add(new CssClass("warn"));
@@ -109,7 +121,7 @@ public class GeneralTabPanel extends Panel {
         if (repoItem.getItemInfo().isFolder()) {
             return new WebMarkupContainer("checksums");
         } else {
-            return new ChecksumsPanel("checksums", (FileInfo) repoItem.getItemInfo());
+            return new ChecksumsPanel("checksums", (org.artifactory.fs.FileInfo) repoItem.getItemInfo());
         }
     }
 }

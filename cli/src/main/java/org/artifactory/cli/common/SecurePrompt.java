@@ -27,7 +27,10 @@ import java.util.Arrays;
  *
  * @author Noam Tenne
  */
-public class SecurePrompt {
+public abstract class SecurePrompt {
+    private SecurePrompt() {
+        // utility class
+    }
 
     /**
      * Sends a prompt message to the console with masked input, and secure it (the input)

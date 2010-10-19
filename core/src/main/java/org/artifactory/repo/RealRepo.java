@@ -18,12 +18,12 @@
 
 package org.artifactory.repo;
 
-import org.artifactory.api.common.StatusHolder;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.common.BasicStatusHolder;
+import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public interface RealRepo<T extends RealRepoDescriptor> extends Repo<T> {
 
@@ -39,7 +39,7 @@ public interface RealRepo<T extends RealRepoDescriptor> extends Repo<T> {
 
     int getMaxUniqueSnapshots();
 
-    StatusHolder assertValidPath(RepoPath repoPath);
+    BasicStatusHolder assertValidPath(RepoPath repoPath);
 
     boolean accepts(RepoPath repoPath);
 

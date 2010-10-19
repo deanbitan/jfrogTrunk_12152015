@@ -18,6 +18,8 @@
 
 package org.artifactory.schedule.aop;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -37,7 +39,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 /**
@@ -46,15 +52,18 @@ import java.util.concurrent.Future;
 public class AsyncAdvice implements MethodInterceptor {
     private static final Logger log = LoggerFactory.getLogger(AsyncAdvice.class);
 
+    private static Set<MethodInvocation> pendingInvocations = Collections.synchronizedSet(
+            new HashSet<MethodInvocation>());
+
     public AsyncAdvice() {
         log.debug("Creating async advice interceptor");
     }
 
-    public Object invoke(final MethodInvocation invocation) throws Throwable {
+    public Future<?> invoke(final MethodInvocation invocation) throws Throwable {
         Method method = invocation.getMethod();
         if (method.getAnnotation(Lock.class) != null) {
             throw new RuntimeException("The @Async annotation cannot be used with the @Lock annotation. " +
-                    "Use @Async#transactional=true instead: " + invocation.getMethod());
+                    "Use @Async#transactional=true instead: " + method);
         }
         Async annotation = method.getAnnotation(Async.class);
         boolean delayExecutionUntilCommit = annotation.delayUntilAfterCommit();
@@ -62,50 +71,61 @@ public class AsyncAdvice implements MethodInterceptor {
         boolean inTransaction = LockingAdvice.isInJcrTransaction();
         if (!inTransaction && delayExecutionUntilCommit) {
             if (failIfNotScheduledFromTransaction) {
-                throw new IllegalStateException(
-                        "Async invocation scheduled for after commit, cannot be scheduled outside a transaction.");
+                throw new IllegalStateException("Async invocation scheduled for after commit, " +
+                        "cannot be scheduled outside a transaction: " + method);
             } else {
-                log.debug("Async invocation scheduled for after commit, but not scheduled inside a transaction.");
+                log.debug("Async invocation scheduled for after commit, but not scheduled inside a transaction: {}",
+                        method);
             }
         }
 
         //noinspection ThrowableInstanceNeverThrown
         TraceableMethodInvocation traceableInvocation =
                 new TraceableMethodInvocation(invocation, Thread.currentThread().getName());
-        if (delayExecutionUntilCommit && inTransaction) {
-            boolean shared = annotation.shared();
-            //Schedule task submission for session save()
-            InternalArtifactoryContext context = InternalContextHelper.get();
-            JcrService jcrService = context.getJcrService();
-            //Mark the thread as async so that we don't open tx that are part this session, but another session after
-            //commit
-            JcrSession session = jcrService.getManagedSession();
-            MethodCallbackSessionResource sessionCallbacks =
-                    session.getOrCreateResource(MethodCallbackSessionResource.class);
-            sessionCallbacks.addInvocation(traceableInvocation, shared);
-            //No future
-            return null;
-        } else {
-            //Submit immediately
-            Future<?> future = submit(traceableInvocation);
-            return future;
+        log.trace("Adding: {}", traceableInvocation);
+        pendingInvocations.add(traceableInvocation);
+        try {
+            if (delayExecutionUntilCommit && inTransaction) {
+                //Schedule task submission for session save()
+                JcrService jcrService = InternalContextHelper.get().getJcrService();
+                JcrSession session = jcrService.getManagedSession();
+                MethodCallbackSessionResource sessionCallbacks =
+                        session.getOrCreateResource(MethodCallbackSessionResource.class);
+                sessionCallbacks.setAdvice(this);
+                sessionCallbacks.addInvocation(traceableInvocation, annotation.shared());
+                //No future
+                return null;
+            } else {
+                //Submit immediately
+                Future<?> future = submit(traceableInvocation);
+                return future;
+            }
+        } catch (Exception e) {
+            // making sure to remove the invocation from the pending/executing
+            removeInvocation(traceableInvocation);
+            throw e;
         }
     }
 
-    private static Future<?> submit(final MethodInvocation invocation) {
-        final InternalArtifactoryContext context = InternalContextHelper.get();
+    private Future<?> submit(final MethodInvocation invocation) {
+        InternalArtifactoryContext context = InternalContextHelper.get();
         CachedThreadPoolTaskExecutor executor = context.beanForType(CachedThreadPoolTaskExecutor.class);
-        final Object[] result = new Object[1];
-        Future<?> future = executor.submit(new Runnable() {
-            public void run() {
+        Future<?> future = executor.submit(new Callable<Object>() {
+            public Object call() {
                 try {
                     if (TransactionSynchronizationManager.isSynchronizationActive()) {
                         //Sanity check we should never have a tx sync on an existing pooled thread
                         throw new IllegalStateException(
-                                "An async invocation (" + invocation.getMethod() +
-                                        ") should not be associated with an existing transaction.");
+                                "An async invocation (" + invocation.getMethod() + ") " +
+                                        "should not be associated with an existing transaction.");
                     }
-                    invoke(invocation, result);
+                    Object result = doInvoke(invocation);
+                    // if the result is not of type Future don't bother returning it (unless you are fond of ClassCastExceptions)
+                    if (result instanceof Future) {
+                        return ((Future) result).get();
+                    } else {
+                        return null;
+                    }
                 } catch (Throwable throwable) {
                     Throwable loggedThrowable;
                     if (invocation instanceof TraceableMethodInvocation) {
@@ -115,36 +135,94 @@ public class AsyncAdvice implements MethodInterceptor {
                     } else {
                         loggedThrowable = throwable;
                     }
-                    log.error("Could not execute async method: '" + invocation.getMethod() + "'.", loggedThrowable);
+                    Method method;
+                    if (invocation instanceof CompoundInvocation) {
+                        method = ((CompoundInvocation) invocation).getLatestMethod();
+                    } else {
+                        method = invocation.getMethod();
+                    }
+                    log.error("Could not execute async method: '" + method + "'.", loggedThrowable);
+                    return null;
                 }
             }
-        }, result[0]);
-        return future;
+        });
+
+        // only return the future result if the method returns a Future object
+        if (!(invocation instanceof CompoundInvocation) &&
+                Future.class.isAssignableFrom(invocation.getMethod().getReturnType())) {
+            return future;
+        } else {
+            return null;
+        }
     }
 
-    private static void invoke(MethodInvocation invocation, Object[] result) throws Throwable {
+    Object doInvoke(MethodInvocation invocation) throws Throwable {
         if (invocation instanceof CompoundInvocation) {
             invocation.proceed();
-            return;
+            return null;    // multiple invocations -> no single return type
         }
-        Async annotation = invocation.getMethod().getAnnotation(Async.class);
-        if (annotation == null) {
-            throw new IllegalArgumentException(
-                    "An async invocation (" + invocation.getMethod() +
-                            ") should be used with an @Async annotated invocation.");
+        try {
+            Async annotation = invocation.getMethod().getAnnotation(Async.class);
+            if (annotation == null) {
+                throw new IllegalArgumentException(
+                        "An async invocation (" + invocation.getMethod() +
+                                ") should be used with an @Async annotated invocation.");
+            }
+            if (annotation.transactional()) {
+                //Wrap in a transaction
+                log.trace("Invoking {} in transaction", invocation);
+                return new LockingAdvice().invoke(invocation, true);
+            } else {
+                log.trace("Invoking {} ", invocation);
+                return invocation.proceed();
+            }
+        } finally {
+            // remove the invocations here (called from the Compound also)
+            removeInvocation(invocation);
         }
-        if (annotation.transactional()) {
-            //Wrap in a transaction
-            result[0] = new LockingAdvice().invoke(invocation, true);
-        } else {
-            result[0] = invocation.proceed();
+    }
+
+    private void removeInvocation(MethodInvocation invocation) {
+        log.trace("Removing: {}", invocation);
+        pendingInvocations.remove(invocation);
+    }
+
+    public ImmutableSet<MethodInvocation> getCurrentInvocations() {
+        return ImmutableSet.copyOf(pendingInvocations);
+    }
+
+    /**
+     * @param method The method to check if pending execution (usually the interface method, not the implementation!)
+     * @return True if there is an pending (or running) async call to the given method
+     */
+    public boolean isPending(Method method) {
+        // iterate on a copy to avoid ConcurrentModificationException
+        for (MethodInvocation invocation : getCurrentInvocations()) {
+            if (invocation instanceof CompoundInvocation) {
+                ImmutableList<MethodInvocation> invocations = ((CompoundInvocation) invocation).getInvocations();
+                for (MethodInvocation methodInvocation : invocations) {
+                    if (method.equals(methodInvocation.getMethod())) {
+                        return true;
+                    }
+                }
+            } else {
+                if (method.equals(invocation.getMethod())) {
+                    return true;
+                }
+            }
         }
+        return false;
     }
 
     public static class MethodCallbackSessionResource implements SessionResource {
-
+        AsyncAdvice advice;
         final List<MethodInvocation> invocations = new ArrayList<MethodInvocation>();
         final CompoundInvocation sharedInvocations = new CompoundInvocation();
+
+        public void setAdvice(AsyncAdvice advice) {
+            this.advice = advice;
+            sharedInvocations.setAdvice(advice);
+        }
 
         public void addInvocation(TraceableMethodInvocation invocation, boolean shared) {
             if (shared) {
@@ -158,7 +236,7 @@ public class AsyncAdvice implements MethodInterceptor {
             if (commit) {
                 //Submit the shared ones first
                 if (!sharedInvocations.isEmpty()) {
-                    submit(sharedInvocations);
+                    advice.submit(sharedInvocations);
                 }
                 if (!invocations.isEmpty()) {
                     //Clear the invocations for this session and submit them for async execution
@@ -166,7 +244,7 @@ public class AsyncAdvice implements MethodInterceptor {
                     //Reset internal state
                     invocations.clear();
                     for (MethodInvocation invocation : tmpInvocations) {
-                        submit(invocation);
+                        advice.submit(invocation);
                     }
                 }
             } else {
@@ -216,6 +294,11 @@ public class AsyncAdvice implements MethodInterceptor {
 
         public AccessibleObject getStaticPart() {
             return wrapped.getStaticPart();
+        }
+
+        @Override
+        public String toString() {
+            return wrapped.toString();
         }
     }
 }

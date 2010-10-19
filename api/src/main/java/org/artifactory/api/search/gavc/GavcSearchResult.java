@@ -18,7 +18,6 @@
 
 package org.artifactory.api.search.gavc;
 
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 
@@ -31,7 +30,7 @@ public class GavcSearchResult extends ArtifactSearchResult {
 
     private MavenArtifactInfo artifact;
 
-    public GavcSearchResult(ItemInfo itemInfo, MavenArtifactInfo artifact) {
+    public GavcSearchResult(org.artifactory.fs.ItemInfo itemInfo, MavenArtifactInfo artifact) {
         super(itemInfo);
         this.artifact = artifact;
     }

@@ -1,1 +1,13 @@
-({"set":"הגדרה","text":"תיאור:","insertImageTitle":"תכונות תמונה","url":"URL:‏","createLinkTitle":"תכונות קישור","newWindow":"New Window","topWindow":"Topmost Window","target":"Target:","parentWindow":"Parent Window","currentWindow":"Current Window"})
+({
+	createLinkTitle: "תכונות קישור",
+	insertImageTitle: "תכונות תמונה",
+	url: "URL:‏",
+	text: "תיאור:",
+	target: "יעד:",
+	set: "הגדרה",
+	currentWindow: "חלון נוכחי ",
+	parentWindow: "חלון אב",
+	topWindow: "חלון עליון ",
+	newWindow: "חלון חדש"
+})
+

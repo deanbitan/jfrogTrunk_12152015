@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dojo.dnd.Moveable"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojo.dnd.Moveable"] = true;
 dojo.provide("dojo.dnd.Moveable");
 
 dojo.require("dojo.dnd.Mover");
@@ -144,14 +135,14 @@ dojo.declare("dojo.dnd.Moveable", null, {
 		dojo.removeClass(dojo.body(), "dojoMove");
 		dojo.removeClass(this.node, "dojoMoveItem");
 	},
-	onFirstMove: function(/* dojo.dnd.Mover */ mover){
+	onFirstMove: function(/* dojo.dnd.Mover */ mover, /* Event */ e){
 		// summary:
 		//		called during the very first move notification;
 		//		can be used to initialize coordinates, can be overwritten.
 		
 		// default implementation does nothing
 	},
-	onMove: function(/* dojo.dnd.Mover */ mover, /* Object */ leftTop){
+	onMove: function(/* dojo.dnd.Mover */ mover, /* Object */ leftTop, /* Event */ e){
 		// summary:
 		//		called during every move notification;
 		//		should actually move the node; can be overwritten.
@@ -174,5 +165,3 @@ dojo.declare("dojo.dnd.Moveable", null, {
 		// default implementation does nothing
 	}
 });
-
-}

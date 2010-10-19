@@ -18,11 +18,10 @@
 
 package org.artifactory.repo;
 
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.jcr.md.MetadataAware;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.PathMatcher;
@@ -84,8 +83,8 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
 
         String toCheck = path;
         //For artifactory metadata the pattern apply to the object it represents
-        if (path.endsWith(ItemInfo.METADATA_FOLDER)) {
-            toCheck = path.substring(0, path.length() - ItemInfo.METADATA_FOLDER.length() - 1);
+        if (path.endsWith(MetadataAware.METADATA_FOLDER)) {
+            toCheck = path.substring(0, path.length() - MetadataAware.METADATA_FOLDER.length() - 1);
         } else if (NamingUtils.isMetadata(path)) {
             toCheck = NamingUtils.getMetadataParentPath(path);
         }

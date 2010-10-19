@@ -27,7 +27,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class TransferProgressReportingInputStream extends FileInputStream {
 

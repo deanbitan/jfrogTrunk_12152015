@@ -45,7 +45,7 @@ import java.security.spec.X509EncodedKeySpec;
  *
  * @author Yossi Shaul
  */
-public class CryptoHelper {
+public abstract class CryptoHelper {
     static final String ASYM_ALGORITHM = "RSA";
     private static final String UTF8 = "UTF-8";
 
@@ -59,6 +59,10 @@ public class CryptoHelper {
     // since maven 2.1.0 the curly braces are treated as special characters and hence needs to be escaped
     // but still, maven sends the password with the escape characters. go figure...
     private static final String ENCRYPTION_PREFIX_ESCAPED = "\\{DESede\\}";
+
+    private CryptoHelper() {
+        // utility class
+    }
 
     public static KeyPair generateKeyPair() {
         try {

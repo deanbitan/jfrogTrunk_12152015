@@ -31,9 +31,6 @@ public class MetadataSearchControls<T> extends SearchControlsBase {
     private String value;
     private Class<? extends T> metadataObjectClass;
 
-    /**
-     * Default constructor
-     */
     public MetadataSearchControls() {
     }
 
@@ -42,12 +39,11 @@ public class MetadataSearchControls<T> extends SearchControlsBase {
      *
      * @param metadataSearchControls Controls to copy
      */
-    public MetadataSearchControls(MetadataSearchControls metadataSearchControls) {
+    public MetadataSearchControls(MetadataSearchControls<T> metadataSearchControls) {
         this.metadataName = metadataSearchControls.metadataName;
         this.path = metadataSearchControls.path;
         this.value = metadataSearchControls.value;
         this.selectedRepoForSearch = metadataSearchControls.selectedRepoForSearch;
-        //noinspection unchecked
         this.metadataObjectClass = metadataSearchControls.metadataObjectClass;
         setLimitSearchResults(metadataSearchControls.isLimitSearchResults());
     }

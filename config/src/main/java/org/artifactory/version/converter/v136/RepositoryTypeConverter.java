@@ -57,8 +57,7 @@ public class RepositoryTypeConverter implements XmlConverter {
                     repoElem.removeChild("type", ns);
                     //Try to place it first after the decription if exists, else after the key
                     Element sibling = repoElem.getChild("description", ns);
-                    if (sibling != null) {
-                    } else {
+                    if (sibling == null) {
                         sibling = repoElem.getChild("key", ns);
                     }
                     if (sibling != null) {

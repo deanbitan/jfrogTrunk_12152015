@@ -22,7 +22,7 @@ import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 @XmlEnum(String.class)
 public enum SnapshotVersionBehavior {

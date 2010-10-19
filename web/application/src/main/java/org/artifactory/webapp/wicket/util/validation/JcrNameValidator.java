@@ -24,7 +24,7 @@ import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class JcrNameValidator extends DefautlMessageStringValidator {
 

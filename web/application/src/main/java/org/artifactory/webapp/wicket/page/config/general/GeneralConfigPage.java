@@ -63,9 +63,9 @@ public class GeneralConfigPage extends AuthenticatedPage {
 
     public GeneralConfigPage() {
         MutableCentralConfigDescriptor descriptor = centralConfigService.getMutableDescriptor();
-        setModel(new CompoundPropertyModel(descriptor));
+        setDefaultModel(new CompoundPropertyModel(descriptor));
 
-        Form form = new Form("form", getModel());
+        Form form = new Form("form", getDefaultModel());
         add(form);
 
         form.add(new AddonSettingsPanel("addonsSettingsPanel"));
@@ -73,7 +73,7 @@ public class GeneralConfigPage extends AuthenticatedPage {
 
         // lnf panel
         WebApplicationAddon applicationAddon = addonsManager.addonByType(WebApplicationAddon.class);
-        lookAndFeelPanel = applicationAddon.getCustomizingPanel("customizingPanel", getModel());
+        lookAndFeelPanel = applicationAddon.getCustomizingPanel("customizingPanel", getDefaultModel());
         form.add(lookAndFeelPanel);
 
         // buttons
@@ -87,7 +87,7 @@ public class GeneralConfigPage extends AuthenticatedPage {
     }
 
     private MutableCentralConfigDescriptor getDescriptor() {
-        return (MutableCentralConfigDescriptor) getModelObject();
+        return (MutableCentralConfigDescriptor) getDefaultModelObject();
     }
 
     private class SaveLink extends TitledAjaxSubmitLink {
@@ -123,7 +123,7 @@ public class GeneralConfigPage extends AuthenticatedPage {
             centralConfigService.saveEditedDescriptorAndReload(descriptor);
 
             // update page model
-            GeneralConfigPage.this.setModelObject(centralConfigService.getMutableDescriptor());
+            GeneralConfigPage.this.setDefaultModelObject(centralConfigService.getMutableDescriptor());
 
             // refresh ui
             final Page page = getPage();

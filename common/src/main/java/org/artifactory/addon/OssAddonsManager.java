@@ -31,7 +31,7 @@ import java.util.List;
 @Component
 public class OssAddonsManager implements AddonsManager {
 
-    public <T extends AddonFactory> T addonByType(Class<T> type) {
+    public <T extends Addon> T addonByType(Class<T> type) {
         return ContextHelper.get().beanForType(type);
     }
 

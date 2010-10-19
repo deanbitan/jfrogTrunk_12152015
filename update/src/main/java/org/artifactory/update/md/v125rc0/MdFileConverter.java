@@ -18,7 +18,7 @@
 
 package org.artifactory.update.md.v125rc0;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataConverterUtils;
 import org.artifactory.update.md.MetadataType;

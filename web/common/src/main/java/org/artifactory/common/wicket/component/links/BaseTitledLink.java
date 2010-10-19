@@ -27,6 +27,7 @@ import org.apache.wicket.markup.parser.XmlTag;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.util.string.Strings;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.model.Titled;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
@@ -39,6 +40,7 @@ import java.util.MissingResourceException;
 public class BaseTitledLink extends AbstractLink implements Titled {
     private static final Logger LOG = LoggerFactory.getLogger(BaseTitledLink.class);
     private boolean wasOpenCloseTag;
+    private boolean styled;
 
     public BaseTitledLink(String id) {
         this(id, id);
@@ -50,12 +52,27 @@ public class BaseTitledLink extends AbstractLink implements Titled {
 
     public BaseTitledLink(String id, String title) {
         super(id);
-        setModel(new Model(title));
+        setDefaultModel(new Model<String>(title));
     }
 
     protected void addOnClickOpenScript(ComponentTag tag) {
         if (isEnabled() && !tag.getName().equalsIgnoreCase("a")) {
-            tag.put("onclick", "window.location.href='" + getURL() + "';");
+            tag.put("onclick", getOpenScript());
+        }
+    }
+
+    protected String getOpenScript() {
+        return "window.location.href='" + getURL() + "';";
+    }
+
+    public boolean isStyled() {
+        return styled;
+    }
+
+    public void setStyled(boolean styled) {
+        this.styled = styled;
+        if (styled) {
+            add(new CssClass("styled"));
         }
     }
 
@@ -98,14 +115,14 @@ public class BaseTitledLink extends AbstractLink implements Titled {
 
     public String getTitle() {
         try {
-            if (getModelObjectAsString() == null) {
+            if (getDefaultModelObjectAsString() == null) {
                 LOG.error(getClass().getSimpleName()
                         + " title model is null, using id instead.");
 
                 return "??" + getId() + "??";
             }
 
-            return getModelObjectAsString();
+            return getDefaultModelObjectAsString();
 
         } catch (MissingResourceException e) {
             LOG.error(getClass().getSimpleName()
@@ -116,11 +133,11 @@ public class BaseTitledLink extends AbstractLink implements Titled {
     }
 
     protected String getInnerHtml(ComponentTag tag) {
-        if ("button".equalsIgnoreCase(tag.getName())) {
+        if (styled || "button".equalsIgnoreCase(tag.getName())) {
             return "<span class='button-center'><span class='button-left'><span class='button-right'>"
                     + getTitle() + "</span></span></span>";
         }
-        return getModelObjectAsString();
+        return getDefaultModelObjectAsString();
     }
 
     protected String getCssClass(ComponentTag tag) {

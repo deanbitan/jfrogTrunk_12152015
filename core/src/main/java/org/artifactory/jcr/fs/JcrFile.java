@@ -23,27 +23,26 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.config.ExportCallback;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.ChecksumsInfo;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FileInfoImpl;
-import org.artifactory.api.fs.ItemInfo;
+import org.artifactory.api.fs.InternalFileInfo;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.stat.StatsInfo;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
+import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumInputStream;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.ChecksumPolicyException;
+import org.artifactory.ivy.IvyNaming;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.jackrabbit.DataStoreRecordNotFoundException;
 import org.artifactory.jcr.lock.LockingHelper;
@@ -53,6 +52,7 @@ import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.mime.MimeType;
 import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.RealRepoBase;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.util.ExceptionUtils;
@@ -75,7 +75,7 @@ import static org.apache.jackrabbit.JcrConstants.*;
 /**
  * @author yoavl
  */
-public class JcrFile extends JcrFsItem<FileInfo> {
+public class JcrFile extends JcrFsItem<InternalFileInfo> {
     private static final Logger log = LoggerFactory.getLogger(JcrFile.class);
 
     private BlockingQueue<StatsInfo> downloads = null;
@@ -90,8 +90,8 @@ public class JcrFile extends JcrFsItem<FileInfo> {
     }
 
     /**
-     * Constructor used when reading JCR content and creating JCR file item from it.
-     * Will not create anything in JCR but will read the JCR content of the node.
+     * Constructor used when reading JCR content and creating JCR file item from it. Will not create anything in JCR but
+     * will read the JCR content of the node.
      *
      * @param fileNode  the JCR node this file represent
      * @param repo
@@ -106,19 +106,19 @@ public class JcrFile extends JcrFsItem<FileInfo> {
     }
 
     @Override
-    protected FileInfo createInfo(RepoPath repoPath) {
+    protected InternalFileInfo createInfo(RepoPath repoPath) {
         return new FileInfoImpl(repoPath);
     }
 
     @Override
-    protected MetadataPersistenceHandler<FileInfo> getInfoPersistenceHandler() {
+    protected MetadataPersistenceHandler<InternalFileInfo> getInfoPersistenceHandler() {
         return getRepoGeneric().getFileInfoMd().getPersistenceHandler();
     }
 
     /**
      * fill the data file from stream
      */
-    public void fillData(InputStream in) throws RepoRejectionException {
+    public void fillData(InputStream in) throws RepoRejectException {
         fillData(System.currentTimeMillis(), in);
     }
 
@@ -132,13 +132,13 @@ public class JcrFile extends JcrFsItem<FileInfo> {
      * @throws org.artifactory.concurrent.LockingException
      *                                    if the JCrFile is immutable or not locked for this thread
      */
-    public void fillData(long lastModified, InputStream is) throws RepoRejectionException {
+    public void fillData(long lastModified, InputStream is) throws RepoRejectException {
         checkMutable("fillData");
         try {
             getOrCreateFileNode(getParentNode(), getName());
             setModifiedInfoFields(lastModified, System.currentTimeMillis());
             setResourceNode(is);
-        } catch (RepoRejectionException rre) {
+        } catch (RepoRejectException rre) {
             throw rre;
         } catch (Exception e) {
             throw new RepositoryRuntimeException(
@@ -168,7 +168,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
      * @throws IOException                if the stream cannot be read or closed
      */
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    public void importFrom(File file, ImportSettings settings) throws IOException, RepoRejectionException {
+    public void importFrom(File file, ImportSettings settings) throws IOException, RepoRejectException {
         MultiStatusHolder status = settings.getStatusHolder();
         try {
             if (!file.isFile()) {
@@ -374,10 +374,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         File targetFile = new File(settings.getBaseDir(), getRelativePath());
         try {
             //Invoke the callback if exists
-            if (settings.hasCallback()) {
-                ExportCallback callback = settings.getCallback();
-                callback.callback(getRepoPath());
-            }
+            settings.executeCallbacks(getRepoPath());
 
             if (!targetFile.getParentFile().exists()) {
                 FileUtils.forceMkdir(targetFile.getParentFile());
@@ -389,8 +386,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
                 exportMetadata(targetFile, status, settings.isIncremental());
             }
             if (settings.isM2Compatible()) {
-                writeChecksums(targetFile.getParentFile(), getInfo().getChecksumsInfo(), targetFile.getName(),
-                        getLastModified());
+                writeChecksums(targetFile, getInfo().getChecksumsInfo(), getLastModified());
             }
             //If a file export fails, we collect the error but not fail the whole export
         } catch (FileNotFoundException e) {
@@ -431,18 +427,6 @@ public class JcrFile extends JcrFsItem<FileInfo> {
 
         if (getLastModified() >= 0) {
             targetFile.setLastModified(getLastModified());
-        }
-    }
-
-    private void writeChecksums(File targetPath, ChecksumsInfo checksumsInfo, String fileName, long modified)
-            throws IOException {
-        File sha1 = new File(targetPath, fileName + ".sha1");
-        File md5 = new File(targetPath, fileName + ".md5");
-        FileUtils.writeStringToFile(sha1, checksumsInfo.getSha1(), "utf-8");
-        FileUtils.writeStringToFile(md5, checksumsInfo.getMd5(), "utf-8");
-        if (modified > 0) {
-            sha1.setLastModified(modified);
-            md5.setLastModified(modified);
         }
     }
 
@@ -495,7 +479,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
      * Do not import metadata,index folders and checksums
      */
     public static boolean isStorable(String name) {
-        return !name.endsWith(ItemInfo.METADATA_FOLDER) && !NamingUtils.isChecksum(name);
+        return !name.endsWith(METADATA_FOLDER) && !NamingUtils.isChecksum(name);
     }
 
     /**
@@ -506,7 +490,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         Node node = getNode();
         Node resourceNode = getJcrRepoService().getOrCreateNode(node, JCR_CONTENT, NT_RESOURCE);
         String name = getName();
-        FileInfo info = getInfo();
+        org.artifactory.fs.FileInfo info = getInfo();
         MimeType ct = NamingUtils.getMimeType(name);
         info.setMimeType(ct.getType());
         /**
@@ -515,14 +499,14 @@ public class JcrFile extends JcrFsItem<FileInfo> {
          * Process the XML stream only if it's a real repo. Virtual repos don't needed the XML parsing and also may fall
          * On POM consistency checks
          */
-        if (ct.isXml() && (getRepo().isReal())) {
+        if (getRepo().isReal() && (ct.isIndex() || IvyNaming.isIvyFileName(name))) {
             in = processXmlStream(node, resourceNode, name, in);
         }
         try {
             fillJcrData(resourceNode, in);
         } finally {
             //Make sure the replaced stream is closed (original stream is taken care of by caller)
-            if (ct.isXml()) {
+            if (ct.isIndex() || IvyNaming.isIvyFileName(name)) {
                 IOUtils.closeQuietly(in);
             }
         }
@@ -579,7 +563,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         //org.apache.jackrabbit.core.value.BLOBInTempFile.BLOBInTempFile will close the stream
         resourceNode.setProperty(JCR_DATA, resourceInputStream);
 
-        FileInfo info = getInfo();
+        org.artifactory.fs.FileInfo info = getInfo();
         // set the actual checksums on the file extra info
         setFileActualChecksums(info, checksums);
 
@@ -595,7 +579,7 @@ public class JcrFile extends JcrFsItem<FileInfo> {
         info.setSize(JcrHelper.getLength(resourceNode));
     }
 
-    private void setFileActualChecksums(FileInfo info, Checksum[] checksums) {
+    private void setFileActualChecksums(org.artifactory.fs.FileInfo info, Checksum[] checksums) {
         ChecksumsInfo checksumsInfo = info.getChecksumsInfo();
         for (Checksum checksum : checksums) {
             ChecksumType checksumType = checksum.getType();
@@ -614,7 +598,8 @@ public class JcrFile extends JcrFsItem<FileInfo> {
             } else {
                 log.debug(checksumType + " checksum info not found for '" + info.getRepoPath().getPath() +
                         ". Creating one with empty original checksum.");
-                ChecksumInfo missingChecksumInfo = new ChecksumInfo(checksumType, null, calculatedChecksum);
+                ChecksumInfo
+                        missingChecksumInfo = new ChecksumInfo(checksumType, null, calculatedChecksum);
                 checksumsInfo.addChecksumInfo(missingChecksumInfo);
             }
         }

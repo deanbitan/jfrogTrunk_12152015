@@ -20,6 +20,7 @@ package org.artifactory.common.property;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.log.BootstrapLogger;
 
@@ -37,7 +38,7 @@ import java.util.Properties;
 public class ArtifactorySystemProperties {
 
     /**
-     * The combine properties of System, artifactory.system.properties file and artifactory.properties file. All System
+     * The combined properties of System, artifactory.system.properties file and artifactory.properties file. All system
      * properties starting with 'artifactory.' will be included.
      */
     private Properties artifactoryProperties = new Properties();
@@ -69,6 +70,8 @@ public class ArtifactorySystemProperties {
                     put("artifactory.jcr.configPath", new SamePropertyMapper("artifactory.jcr.configDir")).
                     put("artifactory.spring.configPath", new SamePropertyMapper("artifactory.spring.configDir")).
                     put("artifactory.lockTimeoutSecs", new SamePropertyMapper("artifactory.locks.timeoutSecs")).
+                    put("artifactory.xmlAdditionalMimeTypeExtensions", new NullPropertyMapper()).
+                    put("artifactory.jcr.session.pool.maxSize", new NullPropertyMapper()).
                     build();
 
     public String getProperty(String key, String defaultValue) {
@@ -156,6 +159,19 @@ public class ArtifactorySystemProperties {
 
         //Test for deprecated properties and warn
         handleDeprecatedProps();
+
+        validateConstants();
+    }
+
+    private void validateConstants() {
+        String chrootPropertyName = ConstantValues.uiChroot.getPropertyName();
+        String chroot = (String) artifactoryProperties.get(chrootPropertyName);
+        if (StringUtils.isNotBlank(chroot)) {
+            if (!new File(chroot).exists()) {
+                artifactoryProperties.remove(chrootPropertyName);
+                BootstrapLogger.error("Selected chroot '" + chroot + "' does not exist. Ignoring property value!");
+            }
+        }
     }
 
     private void handleDeprecatedProps() {

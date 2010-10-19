@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dojo._base.json"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojo._base.json"] = true;
 dojo.provide("dojo._base.json");
 
 dojo.fromJson = function(/*String*/ json){
@@ -14,7 +5,8 @@ dojo.fromJson = function(/*String*/ json){
 	// 		Parses a [JSON](http://json.org) string to return a JavaScript object.
 	// description:
 	// 		Throws for invalid JSON strings, but it does not use a strict JSON parser. It
-	// 		delegates to eval().
+	// 		delegates to eval().  The content passed to this method must therefore come
+	//		from a trusted source.
 	// json: 
 	//		a string literal of a JSON item, for instance:
 	//			`'{ "foo": [ "bar", 1, { "baz": "thud" } ] }'`
@@ -148,6 +140,4 @@ dojo.toJson = function(/*Object*/ it, /*Boolean?*/ prettyPrint, /*String?*/ _ind
 		output.push(newLine + nextIndent + keyStr + ":" + sep + val);
 	}
 	return "{" + output.join("," + sep) + newLine + _indentStr + "}"; // String
-}
-
 }

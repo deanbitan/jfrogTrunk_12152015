@@ -19,12 +19,12 @@
 package org.artifactory.io;
 
 import org.apache.commons.io.IOUtils;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.resource.ResourceStreamHandle;
 
 import java.io.InputStream;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class SimpleResourceStreamHandle implements ResourceStreamHandle {
     private final InputStream is;

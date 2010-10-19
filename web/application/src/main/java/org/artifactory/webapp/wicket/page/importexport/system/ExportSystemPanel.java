@@ -27,10 +27,10 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.util.time.Duration;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
@@ -69,6 +69,9 @@ public class ExportSystemPanel extends TitledPanel {
 
     @WicketProperty
     private boolean excludeContent;
+
+    @WicketProperty
+    private boolean verbose;
 
     public ExportSystemPanel(String string) {
         super(string);
@@ -115,7 +118,7 @@ public class ExportSystemPanel extends TitledPanel {
                 boolean excludeMDSelected = excludeMetadataCheckbox.isChecked();
                 boolean excludeContentSelected = excludeContentCheckbox.isChecked();
                 if (excludeMDSelected != excludeContentSelected) {
-                    excludeMetadataCheckbox.setModelObject(excludeContentSelected);
+                    excludeMetadataCheckbox.setDefaultModelObject(excludeContentSelected);
                 }
 
                 excludeMetadataCheckbox.setEnabled(!excludeContentSelected);
@@ -130,7 +133,16 @@ public class ExportSystemPanel extends TitledPanel {
                 "Exclude repository content from the export.\n" + "(Export only settings)"));
 
         //Create a zip archive (slow!)
-        exportForm.add(new StyledCheckbox("createArchive", new PropertyModel(this, "createArchive")));
+        exportForm.add(new StyledCheckbox("createArchive", new PropertyModel<Boolean>(this, "createArchive")));
+
+        StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose"));
+        verboseCheckbox.setRequired(false);
+        exportForm.add(verboseCheckbox);
+        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+        exportForm.add(
+                new HelpBubble("verboseHelp", "Lowers the log level to debug and redirects the output from the " +
+                        "standard log to the import-export log." + "\nHint: You can monitor the log in the <a href=\"" +
+                        systemLogsPage + "\">'System Logs'</a> page."));
 
         final MultiStatusHolder status = new MultiStatusHolder();
         TitledAjaxSubmitLink exportButton = new TitledAjaxSubmitLink("export", "Export", exportForm) {
@@ -143,7 +155,7 @@ public class ExportSystemPanel extends TitledPanel {
                     ExportSettings settings = new ExportSettings(exportToPath, status);
                     settings.setCreateArchive(createArchive);
                     settings.setFailFast(false);
-                    settings.setVerbose(false);
+                    settings.setVerbose(verbose);
                     settings.setFailIfEmpty(true);
                     settings.setIncludeMetadata(!excludeMetadata);
                     settings.setM2Compatible(m2Compatible);
@@ -181,7 +193,7 @@ public class ExportSystemPanel extends TitledPanel {
             @Override
             protected void onPostProcessTarget(AjaxRequestTarget target) {
                 super.onPostProcessTarget(target);
-                statusLabel.setModel(new PropertyModel(status, "status"));
+                statusLabel.setDefaultModel(new PropertyModel(status, "status"));
             }
         });
         //exportForm.add(statusLabel);

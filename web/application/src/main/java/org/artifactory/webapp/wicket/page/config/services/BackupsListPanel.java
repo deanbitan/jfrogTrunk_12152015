@@ -20,14 +20,13 @@ package org.artifactory.webapp.wicket.page.config.services;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
+import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 
@@ -60,9 +59,9 @@ public class BackupsListPanel extends ModalListPanel<BackupDescriptor> {
 
     @Override
     protected void addColumns(List<IColumn> columns) {
-        columns.add(new PropertyColumn(new Model("Backup Key"), "key", "key"));
-        columns.add(new PropertyColumn(new Model("Cron Expression"), "cronExp"));
-        columns.add(new BooleanColumn(new Model("Enabled"), "enabled", "enabled"));
+        columns.add(new TitlePropertyColumn("Backup Key", "key", "key"));
+        columns.add(new TitlePropertyColumn("Cron Expression", "cronExp"));
+        columns.add(new BooleanColumn("Enabled", "enabled", "enabled"));
     }
 
     @Override

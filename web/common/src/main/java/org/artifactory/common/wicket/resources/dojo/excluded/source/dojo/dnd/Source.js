@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dojo.dnd.Source"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojo.dnd.Source"] = true;
 dojo.provide("dojo.dnd.Source");
 
 dojo.require("dojo.dnd.Selector");
@@ -205,6 +196,15 @@ dojo.declare("dojo.dnd.Source", dojo.dnd.Selector, {
 		if(this.isDragging && this.targetState == "Disabled"){ return; }
 		dojo.dnd.Source.superclass.onMouseMove.call(this, e);
 		var m = dojo.dnd.manager();
+		if(!this.isDragging){
+			if(this.mouseDown && this.isSource &&
+					(Math.abs(e.pageX - this._lastX) > this.delay || Math.abs(e.pageY - this._lastY) > this.delay)){
+				var nodes = this.getSelectedNodes();
+				if(nodes.length){
+					m.startDrag(this, nodes, this.copyState(dojo.isCopyKey(e), true));
+				}
+			}
+		}
 		if(this.isDragging){
 			// calculate before/after
 			var before = false;
@@ -221,14 +221,6 @@ dojo.declare("dojo.dnd.Source", dojo.dnd.Selector, {
 			if(this.current != this.targetAnchor || before != this.before){
 				this._markTargetAnchor(before);
 				m.canDrop(!this.current || m.source != this || !(this.current.id in this.selection));
-			}
-		}else{
-			if(this.mouseDown && this.isSource &&
-					(Math.abs(e.pageX - this._lastX) > this.delay || Math.abs(e.pageY - this._lastY) > this.delay)){
-				var nodes = this.getSelectedNodes();
-				if(nodes.length){
-					m.startDrag(this, nodes, this.copyState(dojo.isCopyKey(e), true));
-				}
 			}
 		}
 	},
@@ -544,5 +536,3 @@ dojo.declare("dojo.dnd.AutoSource", dojo.dnd.Source, {
 		return new dojo.dnd.AutoSource(node, params);
 	}
 });
-
-}

@@ -18,21 +18,21 @@
 
 package org.artifactory.repo;
 
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.exception.FileExpectedException;
-import org.artifactory.api.repo.exception.RepoRejectionException;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.DescriptorAware;
 import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.repo.context.RequestContext;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.request.RequestContext;
+import org.artifactory.resource.ResourceStreamHandle;
 
 import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.Serializable;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Serializable {
     String getKey();
@@ -73,5 +73,5 @@ public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Seri
     String getChecksum(String checksumPath, RepoResource res) throws IOException;
 
     ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, RepoResource res) throws IOException,
-            FileExpectedException, RepositoryException, RepoRejectionException;
+            FileExpectedException, RepositoryException, RepoRejectException;
 }

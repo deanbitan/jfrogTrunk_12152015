@@ -19,12 +19,12 @@
 package org.artifactory.jcr.md;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FileInfoImpl;
-import org.artifactory.api.fs.MetadataInfo;
-import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.fs.InternalFileInfo;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
+import org.artifactory.md.MetadataInfo;
+import org.artifactory.repo.RepoPath;
 
 import javax.jcr.Node;
 
@@ -33,9 +33,9 @@ import static org.artifactory.repo.jcr.JcrHelper.*;
 /**
  * @author freds
  */
-public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<FileInfo> {
+public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<InternalFileInfo> {
 
-    public FileInfoPersistenceHandler(XmlMetadataProvider<FileInfo> xmlProvider) {
+    public FileInfoPersistenceHandler(XmlMetadataProvider<InternalFileInfo> xmlProvider) {
         super(xmlProvider);
     }
 
@@ -43,7 +43,7 @@ public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<FileI
         return metadataAware.isFile();
     }
 
-    public FileInfo read(MetadataAware metadataAware) {
+    public InternalFileInfo read(MetadataAware metadataAware) {
         RepoPath repoPath = metadataAware.getRepoPath();
         Node node = metadataAware.getNode();
         FileInfoImpl fileInfo = new FileInfoImpl(repoPath);
@@ -63,7 +63,7 @@ public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<FileI
         return fileInfo;
     }
 
-    public void update(MetadataAware metadataAware, FileInfo fileInfo) {
+    public void update(MetadataAware metadataAware, InternalFileInfo fileInfo) {
         Node node = metadataAware.getNode();
         setPropertiesInNodeFromInfo(node, fileInfo);
 
@@ -94,7 +94,7 @@ public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<FileI
                 "Done on file " + metadataAware);
     }
 
-    public FileInfo copy(FileInfo original) {
+    public InternalFileInfo copy(InternalFileInfo original) {
         return new FileInfoImpl(original);
     }
 

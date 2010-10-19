@@ -50,8 +50,8 @@ public class ArtifactoryRememberMeFilter implements ArtifactoryAuthenticationFil
         rememberMeDelegateFilter.init(filterConfig);
     }
 
-    public boolean validAuthentication(ServletRequest request, Authentication authentication) {
-        return !(authentication == null || !authentication.isAuthenticated());
+    public boolean requiresReauthentication(ServletRequest request, Authentication authentication) {
+        return false;
     }
 
     public boolean acceptFilter(ServletRequest request) {

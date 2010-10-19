@@ -40,8 +40,12 @@ import static org.apache.jackrabbit.JcrConstants.*;
  * @author freds
  * @date Jan 12, 2009
  */
-public class JcrHelper {
+public abstract class JcrHelper {
     private static final Logger log = LoggerFactory.getLogger(JcrHelper.class);
+
+    private JcrHelper() {
+        // utility class
+    }
 
     public static String getAbsolutePath(Node node) {
         try {

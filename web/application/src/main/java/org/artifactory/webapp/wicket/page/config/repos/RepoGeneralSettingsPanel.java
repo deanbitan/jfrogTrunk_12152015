@@ -23,6 +23,7 @@ import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
+import org.artifactory.webapp.wicket.util.validation.ReservedPathPrefixValidator;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
 
@@ -39,6 +40,7 @@ public class RepoGeneralSettingsPanel extends Panel {
             repoKeyField.add(new JcrNameValidator("Invalid repository key '%s'."));
             repoKeyField.add(new XsdNCNameValidator("Invalid repository key '%s'."));
             repoKeyField.add(new UniqueXmlIdValidator(cachingDescriptorHelper.getModelMutableDescriptor()));
+            repoKeyField.add(new ReservedPathPrefixValidator());
         }
 
         add(repoKeyField);

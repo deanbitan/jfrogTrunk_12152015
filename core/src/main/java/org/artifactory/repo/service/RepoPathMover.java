@@ -19,12 +19,12 @@
 package org.artifactory.repo.service;
 
 import org.artifactory.api.common.MoveMultiStatusHolder;
-import org.artifactory.api.common.StatusHolder;
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.Request;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.MutableStatusHolder;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.JcrService;
@@ -35,8 +35,9 @@ import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataPersistenceHandler;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoRepoPath;
-import org.artifactory.repo.interceptor.RepoInterceptors;
+import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,7 +70,7 @@ public class RepoPathMover {
     private AuthorizationService authorizationService;
 
     @Autowired
-    private RepoInterceptors repoInterceptors;
+    private StorageInterceptors storageInterceptors;
 
     @Request(aggregateEventsByTimeWindow = true)
     public MoveMultiStatusHolder moveOrCopy(MoverConfig moverConfig) {
@@ -90,7 +91,7 @@ public class RepoPathMover {
             // when using repo key, we move to the target repository to the same hierarchy, in such a case the
             // target repo path is the parent of the source path (think of it as regular file system copy/move)
             String targetRepoKey = moverConfig.getTargetLocalRepoKey();
-            targetLocalRepoPath = new RepoPath(targetRepoKey, fromRepoPath.getPath());
+            targetLocalRepoPath = new RepoPathImpl(targetRepoKey, fromRepoPath.getPath());
         }
 
         if (fromRepoPath.equals(targetLocalRepoPath)) {
@@ -113,7 +114,7 @@ public class RepoPathMover {
         if (targetFsItem != null && targetFsItem.isDirectory() && moverConfig.getTargetLocalRepoKey() == null) {
             String adjustedPath = targetLocalRepoPath.getPath() + "/" + fsItemToMove.getName();
             targetRrp = new RepoRepoPath<LocalRepo>(targetLocalRepo,
-                    new RepoPath(targetLocalRepo.getKey(), adjustedPath));
+                    new RepoPathImpl(targetLocalRepo.getKey(), adjustedPath));
 
         }
 
@@ -153,8 +154,18 @@ public class RepoPathMover {
         if (source.isDirectory()) {
             JcrFolder sourceFolder = (JcrFolder) source;
             JcrFolder targetFolder = null;
+            RepoPath targetRepoPath = targetRrp.getRepoPath();
             if (canMove(sourceFolder, targetRrp, status, isCopy)) {
                 if (!dryRun) {
+                    StatusEntry lastError = status.getLastError();
+                    if (isCopy) {
+                        storageInterceptors.beforeCopy(sourceFolder, targetRepoPath, status);
+                    } else {
+                        storageInterceptors.beforeMove(sourceFolder, targetRepoPath, status);
+                    }
+                    if (status.getCancelException(lastError) != null) {
+                        return;
+                    }
                     targetFolder = shallowCopyDirectory(sourceFolder, targetRrp, dryRun, status);
                 }
             } else if (!contains(targetRrp) ||
@@ -171,7 +182,7 @@ public class RepoPathMover {
             for (JcrFsItem child : children) {
                 // update the cached object with the child's repo path.
                 targetRrp = new RepoRepoPath<LocalRepo>(targetRrp.getRepo(),
-                        new RepoPath(originalRepoPath, child.getName()));
+                        new RepoPathImpl(originalRepoPath, child.getName()));
                 // recursive call with the child
                 moveRecursive(child, targetRrp, status, dryRun, isSearchResult, isCopy);
             }
@@ -181,15 +192,15 @@ public class RepoPathMover {
              * - If not copying (no source removal when copying)
              * - If not containing any children and items have been moved (children have actually been moved)
              */
-            if (!isSearchResult && !isCopy && (sourceFolder.list().length == 0) && (status.getMovedCount() != 0)) {
+            if (!isSearchResult && !isCopy && sourceFolder.list().length == 0 && status.getMovedCount() != 0) {
                 // folder is empty remove it immediately
                 // we don't use folder.delete() as it will move to trash and will fire additional events
-                repoInterceptors.onMove(sourceFolder, targetFolder, status);
+                storageInterceptors.afterMove(sourceFolder, targetFolder, status);
                 sourceFolder.bruteForceDelete();
             }
 
             //If not containing any children and items have been moved (children have actually been moved)
-            if ((targetFolder != null) && (targetFolder.list().length == 0) && (children.size() != 0)) {
+            if (targetFolder != null && targetFolder.list().length == 0 && children.size() != 0) {
                 // folder is empty remove it immediately
                 // we don't use folder.delete() as it will move to trash and will fire additional events
                 targetFolder.bruteForceDelete();
@@ -208,7 +219,7 @@ public class RepoPathMover {
 
     private void updateLastModifiedBy(RepoPath path) {
         if (repositoryService.exists(path)) {
-            ItemInfo itemInfo = repositoryService.getItemInfo(path);
+            org.artifactory.fs.ItemInfo itemInfo = repositoryService.getItemInfo(path);
             itemInfo.setModifiedBy(authorizationService.currentUsername());
         }
     }
@@ -225,7 +236,7 @@ public class RepoPathMover {
             existingTargetFile.bruteForceDelete();
         } else {
             // make sure parent directories exist
-            RepoPath targetParentRepoPath = new RepoPath(targetRepo.getKey(),
+            RepoPath targetParentRepoPath = new RepoPathImpl(targetRepo.getKey(),
                     targetRrp.getRepoPath().getParent().getPath());
             new JcrFolder(targetParentRepoPath, targetRepo).mkdirs();
         }
@@ -238,13 +249,23 @@ public class RepoPathMover {
         if (isCopy) {
             //Important - do, otherwise target folders aren't found by the workspace yet
             jcrService.getManagedSession().save();
+            StatusEntry lastError = status.getLastError();
+            storageInterceptors.beforeCopy(sourceFile, targetRepoPath, status);
+            if (status.getCancelException(lastError) != null) {
+                return;
+            }
             log.debug("Copying file {} to {}", sourceAbsPath, targetAbsPath);
             jcrService.copy(sourceAbsPath, targetAbsPath);
-            repoInterceptors.onCopy(sourceFile, targetJcrFile, status);
+            storageInterceptors.afterCopy(sourceFile, targetJcrFile, status);
         } else {
+            StatusEntry lastError = status.getLastError();
+            storageInterceptors.beforeMove(sourceFile, targetRepoPath, status);
+            if (status.getCancelException(lastError) != null) {
+                return;
+            }
             log.debug("Moving file from {} to {}", sourceAbsPath, targetAbsPath);
             jcrService.move(sourceAbsPath, targetAbsPath);
-            repoInterceptors.onMove(sourceFile, targetJcrFile, status);
+            storageInterceptors.afterMove(sourceFile, targetJcrFile, status);
             // mark the moved source file as deleted and remove it from the cache
             sourceFile.setDeleted(true);
             sourceFile.updateCache();
@@ -258,7 +279,7 @@ public class RepoPathMover {
             boolean dryRun, MoveMultiStatusHolder status) {
         assertNotDryRun(dryRun);
         LocalRepo targetRepo = targetRrp.getRepo();
-        RepoPath targetRepoPath = new RepoPath(targetRepo.getKey(), targetRrp.getRepoPath().getPath());
+        RepoPath targetRepoPath = new RepoPathImpl(targetRepo.getKey(), targetRrp.getRepoPath().getPath());
         JcrFolder targetFolder = (JcrFolder) targetRepo.getLockedJcrFsItem(targetRepoPath);
         if (targetFolder == null) {
             // create target folder
@@ -298,7 +319,7 @@ public class RepoPathMover {
 
         LocalRepo targetLocalRepo = targetRrp.getRepo();
         JcrFsItem fsItem = targetLocalRepo.getJcrFsItem(
-                new RepoPath(targetLocalRepo.getKey(), targetRrp.getRepoPath().getPath()));
+                new RepoPathImpl(targetLocalRepo.getKey(), targetRrp.getRepoPath().getPath()));
         //JcrFsItem fsItem = getLockedTargetFsItem(targetLocalRepo, rootFolderToMove);
         if (fsItem == null) {
             log.debug("Target item doesn't exist. Skipping maven metadata recalculation.");
@@ -410,15 +431,15 @@ public class RepoPathMover {
     }
 
     /**
-     * Cleans the empty folders of the upper hierarchy, starting from the given folder. This method is only called
-     * after moving search results and only if a folder was the root of the move operation (which means that all the
+     * Cleans the empty folders of the upper hierarchy, starting from the given folder. This method is only called after
+     * moving search results and only if a folder was the root of the move operation (which means that all the
      * descendants were selected to move).
      *
      * @param sourceFolder Folder to start clean up at
-     * @param status       MoveMultiStatusHolder
+     * @param status       MutableStatusHolder
      * @return Parent of highest removed folder
      */
-    private JcrFolder cleanEmptyFolders(JcrFolder sourceFolder, StatusHolder status) {
+    private JcrFolder cleanEmptyFolders(JcrFolder sourceFolder, MutableStatusHolder status) {
         JcrFolder highestRemovedPath = sourceFolder;
         boolean emptyAndNotRoot = true;
         while (emptyAndNotRoot) {
@@ -426,7 +447,7 @@ public class RepoPathMover {
             emptyAndNotRoot = !isRoot && hasNoSiblings(highestRemovedPath.getAbsolutePath());
             if (emptyAndNotRoot) {
                 //Remove current folder, continue to the parent
-                repoInterceptors.onDelete(highestRemovedPath, status);
+                storageInterceptors.afterDelete(highestRemovedPath, status);
                 highestRemovedPath.bruteForceDelete();
                 highestRemovedPath = highestRemovedPath.getLockedParentFolder();
             }

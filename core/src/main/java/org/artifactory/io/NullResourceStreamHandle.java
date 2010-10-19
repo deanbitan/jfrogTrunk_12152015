@@ -18,12 +18,12 @@
 
 package org.artifactory.io;
 
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.resource.ResourceStreamHandle;
 
 import java.io.InputStream;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class NullResourceStreamHandle implements ResourceStreamHandle {
 

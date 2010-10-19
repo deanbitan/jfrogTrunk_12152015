@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 @Transactional
 public interface UserGroupManager extends UserDetailsService, ReloadableBean {
@@ -47,6 +47,8 @@ public interface UserGroupManager extends UserDetailsService, ReloadableBean {
      * @throws UsernameNotFoundException if user not found in the system
      */
     SimpleUser loadUserByUsername(String username) throws UsernameNotFoundException;
+
+    boolean userExists(String username);
 
     void removeGroup(String groupname);
 

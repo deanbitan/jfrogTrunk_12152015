@@ -20,8 +20,8 @@ package org.artifactory.webapp.wicket.application;
 
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.slf4j.Logger;
 import org.springframework.util.StringUtils;
@@ -29,7 +29,7 @@ import org.springframework.util.StringUtils;
 import java.util.StringTokenizer;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class RepoPathBrowsingWebRequest extends ServletWebRequest {
     private static final Logger log = LoggerFactory.getLogger(RepoPathBrowsingWebRequest.class);

@@ -18,11 +18,13 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.fs.MetadataInfo;
-import org.artifactory.api.md.Properties;
+import org.artifactory.api.fs.MetadataInfoImpl;
+import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.MetadataInfo;
+import org.artifactory.md.Properties;
 import org.slf4j.Logger;
 
 import javax.jcr.Node;
@@ -58,7 +60,7 @@ public class PropertiesPersistenceHandler extends AbstractMetadataPersistenceHan
     }
 
     public Properties read(MetadataAware metadataAware) {
-        Properties properties = new Properties();
+        Properties properties = new PropertiesImpl();
         Node propertiesNode = getPropertiesNode(metadataAware, false);
         if (propertiesNode == null) {
             return properties;
@@ -91,7 +93,7 @@ public class PropertiesPersistenceHandler extends AbstractMetadataPersistenceHan
     }
 
     private boolean ignoreProperty(String key) {
-        return key.startsWith("jcr:") || key.startsWith("artifactory:");
+        return key.startsWith("jcr:") || key.startsWith(JcrTypes.ARTIFACTORY_PREFIX);
     }
 
     public void update(MetadataAware metadataAware, Properties properties) {
@@ -140,7 +142,7 @@ public class PropertiesPersistenceHandler extends AbstractMetadataPersistenceHan
     }
 
     public Properties copy(Properties original) {
-        return new Properties(original);
+        return new PropertiesImpl(original);
     }
 
     public MetadataInfo getMetadataInfo(MetadataAware metadataAware) {
@@ -149,7 +151,7 @@ public class PropertiesPersistenceHandler extends AbstractMetadataPersistenceHan
             return null;
         }
         String metadataName = getMetadataName();
-        MetadataInfo mdi = new MetadataInfo(metadataAware.getRepoPath(), metadataName);
+        MetadataInfo mdi = new MetadataInfoImpl(metadataAware.getRepoPath(), metadataName);
         try {
             Calendar created = metadataNode.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getDate();
             mdi.setCreated(created.getTimeInMillis());

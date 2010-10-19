@@ -32,8 +32,12 @@ import java.util.List;
  * @author freds
  * @date Nov 9, 2008
  */
-public class XmlConverterUtils {
+public abstract class XmlConverterUtils {
     // ATTENTION: NO LOGGER IN HERE SINCE IT IS CALLED BY LOGGER CONVERTER => STACK OVERFLOW
+
+    private XmlConverterUtils() {
+        // utility class
+    }
 
     public static String convert(List<XmlConverter> converters, String in) {
         // If no converters nothing to do

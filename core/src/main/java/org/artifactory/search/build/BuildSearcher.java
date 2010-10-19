@@ -19,7 +19,6 @@
 package org.artifactory.search.build;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
@@ -29,7 +28,6 @@ import org.artifactory.api.build.BuildService;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchControls;
 import org.artifactory.api.search.SearchResults;
-import org.artifactory.api.util.Pair;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.log.LoggerFactory;
@@ -38,11 +36,10 @@ import org.slf4j.Logger;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.QueryResult;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -62,47 +59,29 @@ public class BuildSearcher extends SearcherBase {
      */
     public Set<BasicBuildInfo> getLatestBuildsByName() throws Exception {
 
-        Map<String, Pair<Calendar, String[]>> map = Maps.newHashMap();
-
         StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("/jcr:root").append(JcrPath.get().getBuildsJcrRootPath()).append("/*/*/element(*, ").
+        queryBuilder.append("/jcr:root").append(JcrPath.get().getBuildsJcrRootPath()).append("/element(*, ").
                 append(JcrConstants.NT_UNSTRUCTURED).append(")");
 
         QueryResult queryResult = getJcrService().executeQuery(JcrQuerySpec.xpath(queryBuilder.toString()).noLimit());
 
         NodeIterator nodes = queryResult.getNodes();
 
+        Set<BasicBuildInfo> buildsToReturn = Sets.newHashSet();
+
         while (nodes.hasNext()) {
             try {
                 Node node = nodes.nextNode();
+                String buildName = Text.unescapeIllegalJcrChars(node.getName());
 
-                String nodePath = node.getPath();
-                String[] splitPath = node.getPath().split("/");
-                if (splitPath.length < 5) {
-                    log.debug("Latest build by name search result '{}' path hierarchy does not contain sufficient info."
-                            , nodePath);
-                    continue;
-                }
-                Calendar buildCreated = node.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getDate();
+                Property latestNumber = node.getProperty(BuildService.PROP_BUILD_LATEST_NUMBER);
+                Property latestStartTime = node.getProperty(BuildService.PROP_BUILD_LATEST_START_TIME);
 
-                String buildName = splitPath[2];
-
-                if (!map.containsKey(buildName) || map.get(buildName).getFirst().before(buildCreated)) {
-
-                    map.put(buildName, new Pair<Calendar, String[]>(buildCreated, splitPath));
-                }
+                buildsToReturn.add(new BasicBuildInfo(buildName, latestNumber.getString(),
+                        latestStartTime.getDate().getTime()));
             } catch (RepositoryException re) {
                 handleNotFoundException(re);
             }
-        }
-
-        Set<BasicBuildInfo> buildsToReturn = Sets.newHashSet();
-        for (String buildName : map.keySet()) {
-            String[] splitPath = map.get(buildName).getSecond();
-            String decodedBuildName = Text.unescapeIllegalJcrChars(buildName);
-            String buildNumber = splitPath[3];
-            String decodedBuildStarted = Text.unescapeIllegalJcrChars(splitPath[4]);
-            buildsToReturn.add(new BasicBuildInfo(decodedBuildName, buildNumber, decodedBuildStarted));
         }
 
         return buildsToReturn;
@@ -216,9 +195,9 @@ public class BuildSearcher extends SearcherBase {
                 continue;
             }
             String decodedBuildName = Text.unescapeIllegalJcrChars(splitPath[2]);
-            String buildNumber = splitPath[3];
+            String decodedBuildNumber = Text.unescapeIllegalJcrChars(splitPath[3]);
             String decodedBuildStarted = Text.unescapeIllegalJcrChars(splitPath[4]);
-            results.add(new BasicBuildInfo(decodedBuildName, buildNumber, decodedBuildStarted));
+            results.add(new BasicBuildInfo(decodedBuildName, decodedBuildNumber, decodedBuildStarted));
         }
     }
 }

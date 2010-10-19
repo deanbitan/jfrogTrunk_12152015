@@ -23,7 +23,8 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import org.artifactory.api.md.Properties;
+import org.artifactory.api.md.PropertiesImpl;
+import org.artifactory.md.Properties;
 
 import java.util.Map;
 
@@ -40,7 +41,7 @@ import java.util.Map;
  */
 public class PropertiesConverter implements Converter {
     public boolean canConvert(Class type) {
-        return type.equals(Properties.class);
+        return type.equals(PropertiesImpl.class);
     }
 
     public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
@@ -61,7 +62,7 @@ public class PropertiesConverter implements Converter {
     }
 
     public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-        Properties map = new Properties();
+        Properties map = new PropertiesImpl();
         while (reader.hasMoreChildren()) {
             reader.moveDown();
             String key = reader.getNodeName();

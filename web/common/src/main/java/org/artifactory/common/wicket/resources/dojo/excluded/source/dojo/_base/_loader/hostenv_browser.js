@@ -1,10 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
 /*=====
 dojo.isBrowser = {
 	//	example:
@@ -72,14 +65,18 @@ dojo = {
 }
 =====*/
 
+//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 if(typeof window != 'undefined'){
+//>>excludeEnd("webkitMobile");
 	dojo.isBrowser = true;
 	dojo._name = "browser";
 
 
 	// attempt to figure out the path to dojo if it isn't set in the config
+//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 	(function(){
 		var d = dojo;
+//>>excludeEnd("webkitMobile");
 
 		// this is a scope protection closure. We set browser versions and grab
 		// the URL we were loaded from here.
@@ -138,7 +135,8 @@ if(typeof window != 'undefined'){
 			}
 		}
 
-				if(dua.indexOf("Gecko") >= 0 && !d.isKhtml && !d.isWebKit){ d.isMozilla = d.isMoz = tv; }
+		//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
+		if(dua.indexOf("Gecko") >= 0 && !d.isKhtml && !d.isWebKit){ d.isMozilla = d.isMoz = tv; }
 		if(d.isMoz){
 			//We really need to get away from this. Consider a sane isGecko approach for the future.
 			d.isFF = parseFloat(dua.split("Firefox/")[1] || dua.split("Minefield/")[1]) || undefined;
@@ -162,22 +160,28 @@ if(typeof window != 'undefined'){
 		if(dojo.isIE && window.location.protocol === "file:"){
 			dojo.config.ieForceActiveXXhr=true;
 		}
-		
+		//>>excludeEnd("webkitMobile");
+
 		d.isQuirks = document.compatMode == "BackCompat";
 
 		// TODO: is the HTML LANG attribute relevant?
 		d.locale = dojo.config.locale || (d.isIE ? n.userLanguage : n.language).toLowerCase();
 
 		// These are in order of decreasing likelihood; this will change in time.
-				d._XMLHTTP_PROGIDS = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'];
-		
+		//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
+		d._XMLHTTP_PROGIDS = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'];
+		//>>excludeEnd("webkitMobile");
+
 		d._xhrObj = function(){
 			// summary: 
 			//		does the work of portably generating a new XMLHTTPRequest object.
 			var http, last_e;
-						if(!dojo.isIE || !dojo.config.ieForceActiveXXhr){
-							try{ http = new XMLHttpRequest(); }catch(e){}
-						}
+			//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
+			if(!dojo.isIE || !dojo.config.ieForceActiveXXhr){
+			//>>excludeEnd("webkitMobile");
+				try{ http = new XMLHttpRequest(); }catch(e){}
+			//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
+			}
 			if(!http){
 				for(var i=0; i<3; ++i){
 					var progid = d._XMLHTTP_PROGIDS[i];
@@ -193,7 +197,8 @@ if(typeof window != 'undefined'){
 					}
 				}
 			}
-			
+			//>>excludeEnd("webkitMobile");
+
 			if(!http){
 				throw new Error("XMLHTTP not available: "+last_e);
 			}
@@ -207,7 +212,8 @@ if(typeof window != 'undefined'){
 			return (stat >= 200 && stat < 300) || 	// Boolean
 				stat == 304 || 						// allow any 2XX response code
 				stat == 1223 || 						// get it out of the cache
-				(!stat && (lp == "file:" || lp == "chrome:" || lp == "app:") ); // Internet Explorer mangled the status code OR we're Titanium requesting a local file
+				// Internet Explorer mangled the status code OR we're Titanium/browser chrome/chrome extension requesting a local file
+				(!stat && (lp == "file:" || lp == "chrome:" || lp == "chrome-extension:" || lp == "app:") );
 		}
 
 		//See if base tag is in use.
@@ -295,6 +301,7 @@ if(typeof window != 'undefined'){
 			while(mll.length){
 				(mll.pop())();
 			}
+			d = null;
 		};
 
 		var _onWindowUnloadAttached = 0;
@@ -358,11 +365,18 @@ if(typeof window != 'undefined'){
 			}
 		};
 
+//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 	})();
+//>>excludeEnd("webkitMobile");
 
 	//START DOMContentLoaded
 	dojo._initFired = false;
 	dojo._loadInit = function(e){
+		if(dojo._scrollIntervalId){
+			clearInterval(dojo._scrollIntervalId);
+			dojo._scrollIntervalId = 0;
+		}
+
 		if(!dojo._initFired){
 			dojo._initFired = true;
 
@@ -377,7 +391,7 @@ if(typeof window != 'undefined'){
 		}
 	}
 
-	if(!dojo.config.afterOnLoad){
+	if(!dojo.config.afterOnLoad){		
 		if(document.addEventListener){
 			//Standards. Hooray! Assumption here that if standards based,
 			//it knows about DOMContentLoaded. It is OK if it does not, the fall through
@@ -386,36 +400,49 @@ if(typeof window != 'undefined'){
 			window.addEventListener("load", dojo._loadInit, false);
 		}else if(window.attachEvent){
 			window.attachEvent("onload", dojo._loadInit);
+
+			//DOMContentLoaded approximation. Diego Perini found this MSDN article
+			//that indicates doScroll is available after DOM ready, so do a setTimeout
+			//to check when it is available.
+			//http://msdn.microsoft.com/en-us/library/ms531426.aspx
+			if(!dojo.config.skipIeDomLoaded && self === self.top){
+				dojo._scrollIntervalId = setInterval(function (){
+					try{
+						//When dojo is loaded into an iframe in an IE HTML Application 
+						//(HTA), such as in a selenium test, javascript in the iframe
+						//can't see anything outside of it, so self===self.top is true,
+						//but the iframe is not the top window and doScroll will be 
+						//available before document.body is set. Test document.body
+						//before trying the doScroll trick
+						if(document.body){
+							document.documentElement.doScroll("left");
+							dojo._loadInit();
+						}
+					}catch (e){}
+				}, 30);
+			}
 		}
 	}
 
-		if(dojo.isIE){
-		// 	for Internet Explorer. readyState will not be achieved on init
-		// 	call, but dojo doesn't need it however, we'll include it
-		// 	because we don't know if there are other functions added that
-		// 	might.  Note that this has changed because the build process
-		// 	strips all comments -- including conditional ones.
-		if(!dojo.config.afterOnLoad && !dojo.config.skipIeDomLoaded){
-			document.write('<scr'+'ipt defer src="//:" '
-				+ 'onreadystatechange="if(this.readyState==\'complete\'){' + dojo._scopeName + '._loadInit();}">'
-				+ '</scr'+'ipt>'
-			);
-		}
-
+	//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
+	if(dojo.isIE){
 		try{
-			document.namespaces.add("v","urn:schemas-microsoft-com:vml");
-			var vmlElems = ["*", "group", "roundrect", "oval", "shape", "rect", "imagedata"],
-				i = 0, l = 1, s = document.createStyleSheet();
-			if(dojo.isIE >= 8){
-				i = 1;
-				l = vmlElems.length;
-			}
-			for(; i < l; ++i){
-				s.addRule("v\\:" + vmlElems[i], "behavior:url(#default#VML); display:inline-block");
-			}
+			(function(){
+				document.namespaces.add("v", "urn:schemas-microsoft-com:vml");
+				var vmlElems = ["*", "group", "roundrect", "oval", "shape", "rect", "imagedata", "path", "textpath", "text"],
+					i = 0, l = 1, s = document.createStyleSheet();
+				if(dojo.isIE >= 8){
+					i = 1;
+					l = vmlElems.length;
+				}
+				for(; i < l; ++i){
+					s.addRule("v\\:" + vmlElems[i], "behavior:url(#default#VML); display:inline-block");
+				}
+			})();
 		}catch(e){}
 	}
-		//END DOMContentLoaded
+	//>>excludeEnd("webkitMobile");
+	//END DOMContentLoaded
 
 
 	/*
@@ -429,19 +456,23 @@ if(typeof window != 'undefined'){
 		dojo.unloaded();
 	});
 	*/
+//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 } //if (typeof window != 'undefined')
 
 //Register any module paths set up in djConfig. Need to do this
 //in the hostenvs since hostenv_browser can read djConfig from a
 //script tag's attribute.
 (function(){
+//>>excludeEnd("webkitMobile");
 	var mp = dojo.config["modulePaths"];
 	if(mp){
 		for(var param in mp){
 			dojo.registerModulePath(param, mp[param]);
 		}
 	}
+//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 })();
+//>>excludeEnd("webkitMobile");
 
 //Load debug code if necessary.
 if(dojo.config.isDebug){

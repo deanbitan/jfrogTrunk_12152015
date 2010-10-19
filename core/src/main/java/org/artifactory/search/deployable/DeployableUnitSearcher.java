@@ -23,12 +23,12 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO9075;
 import org.artifactory.api.fs.DeployableUnit;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.deployable.DeployableUnitSearchControls;
 import org.artifactory.api.search.deployable.DeployableUnitSearchResult;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.search.SearcherBase;
 import org.artifactory.util.PathUtils;
 

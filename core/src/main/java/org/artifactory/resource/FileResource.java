@@ -18,26 +18,27 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FileInfoImpl;
+import org.artifactory.api.fs.InternalFileInfo;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.mime.MimeType;
+import org.artifactory.repo.RepoPath;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class FileResource implements RepoResource {
 
-    private final FileInfo info;
+    private final InternalFileInfo info;
     private RepoPath responseRepoPath;
     private boolean exactQueryMatch;
 
-    public FileResource(FileInfo fileInfo) {
+    public FileResource(InternalFileInfo fileInfo) {
         this(fileInfo, true);
     }
 
-    public FileResource(FileInfo fileInfo, boolean exactQueryMatch) {
+    public FileResource(InternalFileInfo fileInfo, boolean exactQueryMatch) {
         this.info = new FileInfoImpl(fileInfo);
         this.exactQueryMatch = exactQueryMatch;
     }
@@ -58,7 +59,7 @@ public class FileResource implements RepoResource {
         this.responseRepoPath = responsePath;
     }
 
-    public FileInfo getInfo() {
+    public InternalFileInfo getInfo() {
         return info;
     }
 

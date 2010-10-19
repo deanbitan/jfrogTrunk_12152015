@@ -165,7 +165,7 @@ public class AllBuildsPanel extends TitledPanel {
         }
 
         public void populateItem(Item cellItem, String componentId, IModel rowModel) {
-            LatestBuildByNameActionableItem info = (LatestBuildByNameActionableItem) cellItem.getParent().getParent().getModelObject();
+            LatestBuildByNameActionableItem info = (LatestBuildByNameActionableItem) cellItem.getParent().getParent().getDefaultModelObject();
             final String buildName = info.getName();
             Component link = new Label(componentId, buildName);
             link.add(new CssClass("item-link"));
@@ -190,7 +190,7 @@ public class AllBuildsPanel extends TitledPanel {
             item.add(new AjaxEventBehavior("onclick") {
                 @Override
                 protected void onEvent(AjaxRequestTarget target) {
-                    LatestBuildByNameActionableItem info = (LatestBuildByNameActionableItem) item.getParent().getParent().getModelObject();
+                    LatestBuildByNameActionableItem info = (LatestBuildByNameActionableItem) item.getParent().getParent().getDefaultModelObject();
                     final String buildName = info.getName();
                     drillDown(buildName);
                 }

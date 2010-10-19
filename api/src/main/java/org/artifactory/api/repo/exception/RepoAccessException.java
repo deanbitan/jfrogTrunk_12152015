@@ -18,9 +18,9 @@
 
 package org.artifactory.api.repo.exception;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
-public class RepoAccessException extends RepoRejectionException {
+public class RepoAccessException extends RepoRejectException {
 
     private final RepoPath repoPath;
     private final String username;
@@ -37,5 +37,10 @@ public class RepoAccessException extends RepoRejectionException {
     public String getMessage() {
         return super.getMessage() + " Action '" + action + "' is unauthorized for user '" + username + "' on '" +
                 repoPath + "'.";
+    }
+
+    @Override
+    public int getErrorCode() {
+        return 403; // forbidden
     }
 }

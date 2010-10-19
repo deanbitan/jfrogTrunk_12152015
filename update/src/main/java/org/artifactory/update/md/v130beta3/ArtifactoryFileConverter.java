@@ -19,8 +19,8 @@
 package org.artifactory.update.md.v130beta3;
 
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.mime.MimeType;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataConverterUtils;
 import org.artifactory.update.md.MetadataType;

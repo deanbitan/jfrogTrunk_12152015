@@ -18,7 +18,7 @@
 
 package org.artifactory.api.security;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 /**
  * These are the usage of security data and logged in user methods.

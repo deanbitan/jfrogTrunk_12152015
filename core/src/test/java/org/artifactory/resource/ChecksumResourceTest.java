@@ -18,9 +18,10 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.mime.MimeType;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
@@ -35,13 +36,13 @@ import static org.testng.Assert.assertEquals;
 public class ChecksumResourceTest extends ArtifactoryHomeBoundTest {
 
     public void checksumResource() {
-        RepoPath fileRepoPath = new RepoPath("test", "test.jar");
+        RepoPath fileRepoPath = new RepoPathImpl("test", "test.jar");
         FileResource fileResource = new FileResource(fileRepoPath);
 
         ChecksumResource resource = new ChecksumResource(fileResource, ChecksumType.sha1, "456789");
 
-        assertEquals(resource.getRepoPath(), new RepoPath("test", "test.jar.sha1"));
-        assertEquals(resource.getResponseRepoPath(), new RepoPath("test", "test.jar.sha1"));
+        assertEquals(resource.getRepoPath(), new RepoPathImpl("test", "test.jar.sha1"));
+        assertEquals(resource.getResponseRepoPath(), new RepoPathImpl("test", "test.jar.sha1"));
         assertEquals(resource.getMimeType(), MimeType.checksum);
         assertEquals(resource.getSize(), "456789".length());
     }

@@ -141,7 +141,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
     }
 
     private void addIncludesPatternFields(StringResourceModel helpMessage,
-            final List<CommonPathPattern> includesExcludesSuggestions) {
+                                          final List<CommonPathPattern> includesExcludesSuggestions) {
         TextArea includesTa = new TextArea("includesPattern");
         includesTa.setEnabled(isSystemAdmin());
         includesTa.setOutputMarkupId(true);
@@ -152,18 +152,18 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
         Model include = new Model();
         DropDownChoice includesSuggest = new DropDownChoice("includesSuggest", include, includesExcludesSuggestions);
         if (!includesExcludesSuggestions.isEmpty()) {
-            includesSuggest.setModelObject(includesExcludesSuggestions.get(0));
+            includesSuggest.setDefaultModelObject(includesExcludesSuggestions.get(0));
         }
         includesSuggest.add(new UpdatePatternsBehavior(include, includesTa));
         if (parent.isCreate()) {
-            includesSuggest.setModelObject(CommonPathPattern.ANY);
+            includesSuggest.setDefaultModelObject(CommonPathPattern.ANY);
         }
         includesSuggest.setEnabled(isSystemAdmin());
         add(includesSuggest);
     }
 
     private void addExcludesPatternFields(StringResourceModel helpMessage,
-            final List<CommonPathPattern> includesExcludesSuggestions) {
+                                          final List<CommonPathPattern> includesExcludesSuggestions) {
         TextArea excludesTa = new TextArea("excludesPattern");
         excludesTa.setEnabled(isSystemAdmin());
         excludesTa.setOutputMarkupId(true);
@@ -175,7 +175,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
         Model exclude = new Model();
         DropDownChoice excludesSuggest = new DropDownChoice("excludesSuggest", exclude, includesExcludesSuggestions);
         if (!includesExcludesSuggestions.isEmpty()) {
-            excludesSuggest.setModelObject(includesExcludesSuggestions.get(0));
+            excludesSuggest.setDefaultModelObject(includesExcludesSuggestions.get(0));
         }
         excludesSuggest.add(new UpdatePatternsBehavior(exclude, excludesTa));
         excludesSuggest.setEnabled(isSystemAdmin());
@@ -196,12 +196,12 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
         protected void onUpdate(AjaxRequestTarget target) {
             CommonPathPattern commonPathPattern = (CommonPathPattern) comboBoxModel.getObject();
             String pattern = commonPathPattern.getPattern();
-            String existingPattern = textArea.getModelObjectAsString();
+            String existingPattern = textArea.getDefaultModelObjectAsString();
             if (CommonPathPattern.NONE.equals(commonPathPattern) ||
                     !StringUtils.hasText(existingPattern)) {
-                textArea.setModelObject(pattern);
+                textArea.setDefaultModelObject(pattern);
             } else {
-                textArea.setModelObject(existingPattern + ", " + pattern);
+                textArea.setDefaultModelObject(existingPattern + ", " + pattern);
             }
             target.addComponent(textArea);
         }
@@ -209,7 +209,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
 
     private class RepoDragDropSelection extends SortedRepoDragDropSelection<LocalRepoDescriptor> {
         private RepoDragDropSelection(String id, PermissionTargetCreateUpdatePanel.RepoKeysData repoKeysData,
-                List<LocalRepoDescriptor> repos) {
+                                      List<LocalRepoDescriptor> repos) {
             super(id, new PropertyModel(repoKeysData, "repoDescriptors"), repos);
         }
 
@@ -224,7 +224,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
             boolean anyLocal = repoKeysData.isAnyLocalRepository();
             boolean anyCache = repoKeysData.isAnyCachedRepository();
 
-            RealRepoDescriptor repo = (LocalRepoDescriptor) item.getModelObject();
+            RealRepoDescriptor repo = (LocalRepoDescriptor) item.getDefaultModelObject();
             boolean local = anyLocal && !repo.isCache();
             boolean cache = anyCache && repo.isCache();
             if (local || cache) {

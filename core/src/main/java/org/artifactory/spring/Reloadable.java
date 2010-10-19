@@ -35,6 +35,10 @@ import java.lang.annotation.Target;
 @Inherited
 @Documented
 public @interface Reloadable {
+
+    /**
+     * @return The class by which this bean will be identified for dependency management (initAfter()).
+     */
     Class<? extends ReloadableBean> beanClass();
 
     Class<? extends ReloadableBean>[] initAfter() default {};

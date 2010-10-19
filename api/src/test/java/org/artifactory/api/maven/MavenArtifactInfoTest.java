@@ -18,7 +18,8 @@
 
 package org.artifactory.api.maven;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
@@ -33,7 +34,7 @@ import static org.testng.Assert.*;
 public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
 
     public void fromSimplePath() {
-        RepoPath path = new RepoPath("repo", "/org/jfrog/artifactory-core/2.0/artifactory-core-2.0.pom");
+        RepoPath path = new RepoPathImpl("repo", "/org/jfrog/artifactory-core/2.0/artifactory-core-2.0.pom");
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
         assertTrue(artifactInfo.isValid());
         assertEquals(artifactInfo.getGroupId(), "org.jfrog");
@@ -45,7 +46,7 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
     }
 
     public void fromPathWithClassifier() {
-        RepoPath path = new RepoPath("repo", "/org/jfrog/artifactory-core/2.0/artifactory-core-2.0-sources.jar");
+        RepoPath path = new RepoPathImpl("repo", "/org/jfrog/artifactory-core/2.0/artifactory-core-2.0-sources.jar");
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
         assertTrue(artifactInfo.isValid());
         assertEquals(artifactInfo.getGroupId(), "org.jfrog");
@@ -58,7 +59,7 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
 
     public void fromPathNonUniqueSnapshotVersion() {
         // unique snapshot version is a version that includes the timestamp-buildnumber string in the version
-        RepoPath path = new RepoPath("repo", "com/core/5.4-SNAPSHOT/artifactory-core-5.4-SNAPSHOT-sources.jar");
+        RepoPath path = new RepoPathImpl("repo", "com/core/5.4-SNAPSHOT/artifactory-core-5.4-SNAPSHOT-sources.jar");
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
         assertTrue(artifactInfo.isValid());
         assertEquals(artifactInfo.getGroupId(), "com");
@@ -72,7 +73,7 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
     public void fromPathUniqueSnapshotVersion() {
         // unique snapshot version is a version that includes the SNAPSHOT string in the version and not the
         // timestamp-buildnumber
-        RepoPath path = new RepoPath("repo",
+        RepoPath path = new RepoPathImpl("repo",
                 "com/core/5.4-SNAPSHOT/artifactory-core-5.4-20081214.090217-4-sources.jar");
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
         assertTrue(artifactInfo.isValid());
@@ -87,7 +88,7 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
     public void fromPathUniqueMd5SnapshotVersion() {
         // non-unique snapshot version is a version that includes the SNAPSHOT string in the version and not the
         // timestamp-buildnumber
-        RepoPath path = new RepoPath("repo", "com/core/5.4-SNAPSHOT/core-5.4-20081214.090217-4-sources.jar.md5");
+        RepoPath path = new RepoPathImpl("repo", "com/core/5.4-SNAPSHOT/core-5.4-20081214.090217-4-sources.jar.md5");
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
         assertTrue(artifactInfo.isValid());
         assertEquals(artifactInfo.getGroupId(), "com");
@@ -99,7 +100,13 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
     }
 
     public void fromInvalidPath() {
-        RepoPath path = new RepoPath("repo", "com/5.4-SNAPSHOT");
+        RepoPath path = new RepoPathImpl("repo", "com/5.4-SNAPSHOT");
+        MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
+        assertFalse(artifactInfo.isValid());
+    }
+
+    public void fromPathWithNoGroupId() {
+        RepoPath path = new RepoPathImpl("repo", "com/5.4-SNAPSHOT/bob.jar");
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
         assertFalse(artifactInfo.isValid());
     }

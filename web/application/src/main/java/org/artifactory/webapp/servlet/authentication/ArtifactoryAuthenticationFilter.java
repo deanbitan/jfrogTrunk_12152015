@@ -29,7 +29,17 @@ import javax.servlet.ServletRequest;
  * @date Mar 10, 2009
  */
 public interface ArtifactoryAuthenticationFilter extends Filter, AuthenticationEntryPoint {
-    boolean validAuthentication(ServletRequest request, Authentication authentication);
+    /**
+     * Authentications might get expired for various reasons, depending on the authenticator. This method is called
+     * whenever the {@link AccessFiler} detects a valid authentication. The implementer should return true if it is
+     * the one "responsible" for this request or was the one authenticated this session and it determines that the
+     * authentication is not valid anymore (for example an expired cookie).
+     *
+     * @param request        The http request
+     * @param authentication A valid authenticated authentication
+     * @return True if the client should be re-authenticated
+     */
+    boolean requiresReauthentication(ServletRequest request, Authentication authentication);
 
     boolean acceptFilter(ServletRequest request);
 

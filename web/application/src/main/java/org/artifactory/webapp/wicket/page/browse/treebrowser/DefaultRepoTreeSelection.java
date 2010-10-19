@@ -18,7 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.actionable.tree.ActionableItemTreeNode;
@@ -80,6 +81,11 @@ public class DefaultRepoTreeSelection implements DefaultTreeSelection {
      * @return Tree path
      */
     private static String getTreePath(RepoPath repoPath) {
-        return repoPath.getRepoKey() + "/" + repoPath.getPath();
+        StringBuilder builder = new StringBuilder(repoPath.getRepoKey()).append("/");
+        String path = repoPath.getPath();
+        if (NamingUtils.isMetadata(path)) {
+            path = NamingUtils.getMetadataParentPath(path);
+        }
+        return builder.append(path).toString();
     }
 }

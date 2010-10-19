@@ -23,6 +23,9 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.SingleValueConverter;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.version.MimeTypesVersion;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,6 +39,7 @@ import java.io.InputStream;
  * @author Yossi Shaul
  */
 public class MimeTypesReader {
+    private static final Logger log = LoggerFactory.getLogger(MimeTypesReader.class);
 
     public MimeTypes read(File securityFile) {
         FileInputStream fis = null;
@@ -61,6 +65,13 @@ public class MimeTypesReader {
     }
 
     public MimeTypes read(String xmlContent) {
+        MimeTypesVersion mimeTypesVersion = MimeTypesVersion.findVersion(xmlContent);
+        if (!mimeTypesVersion.isCurrent()) {
+            log.info("Converting mimetypes.xml version from '{}' to '{}'", mimeTypesVersion,
+                    MimeTypesVersion.getCurrent());
+            xmlContent = mimeTypesVersion.convert(xmlContent);
+        }
+
         XStream xStream = new XStream();
         xStream.processAnnotations(new Class[]{MimeTypes.class, MimeType.class});
         xStream.registerLocalConverter(MimeType.class, "extensions", new StringToListAttributeConverter());
@@ -68,7 +79,7 @@ public class MimeTypesReader {
         return mimeTypes;
     }
 
-    private class StringToListAttributeConverter implements SingleValueConverter {
+    private static class StringToListAttributeConverter implements SingleValueConverter {
         /**
          * Converts a comma separated string to a list of strings.
          *

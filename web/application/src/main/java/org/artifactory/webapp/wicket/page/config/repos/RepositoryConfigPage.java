@@ -29,6 +29,8 @@ import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepositoryService;
@@ -80,6 +82,9 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
     @SpringBean
     private RepositoryService repositoryService;
+
+    @SpringBean
+    private AddonsManager addons;
 
     private MutableCentralConfigDescriptor mutableDescriptor;
     private CachingDescriptorHelper cachingDescriptorHelper;
@@ -152,7 +157,10 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
             @Override
             protected BaseModalPanel newCreateItemPanel() {
-                return new LocalRepoPanel(CREATE, new LocalRepoDescriptor(), cachingDescriptorHelper);
+                LocalRepoDescriptor repoDescriptor = new LocalRepoDescriptor();
+                LicensesAddon licensesAddon = addons.addonByType(LicensesAddon.class);
+                licensesAddon.addPropertySetToRepository(repoDescriptor);
+                return new LocalRepoPanel(CREATE, repoDescriptor, cachingDescriptorHelper);
             }
 
             @Override
@@ -240,7 +248,10 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
             @Override
             protected BaseModalPanel newCreateItemPanel() {
-                return new HttpRepoPanel(CREATE, new HttpRepoDescriptor(), cachingDescriptorHelper);
+                HttpRepoDescriptor repoDescriptor = new HttpRepoDescriptor();
+                LicensesAddon licensesAddon = addons.addonByType(LicensesAddon.class);
+                licensesAddon.addPropertySetToRepository(repoDescriptor);
+                return new HttpRepoPanel(CREATE, repoDescriptor, cachingDescriptorHelper);
             }
 
             @Override
@@ -434,7 +445,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
                 @Override
                 protected void onEvent(AjaxRequestTarget target) {
                     ModalHandler modalHandler = ModalHandler.getInstanceFor(RepoListPanel.this);
-                    T itemObject = (T) item.getModelObject();
+                    T itemObject = (T) item.getDefaultModelObject();
                     modalHandler.setModalPanel(newUpdateItemPanel(itemObject));
                     modalHandler.show(target);
                 }
@@ -467,7 +478,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
         @Override
         public String getTitle() {
-            return getString(getId() + ".title", getModel());
+            return getString(getId() + ".title", getDefaultModel());
         }
     }
 

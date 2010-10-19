@@ -19,7 +19,7 @@
 package org.artifactory.addon.wicket.disabledaddon;
 
 import org.apache.wicket.Component;
-import org.artifactory.addon.wicket.Addon;
+import org.artifactory.addon.wicket.AddonType;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 
 /**
@@ -28,9 +28,9 @@ import org.artifactory.common.wicket.model.sitemap.MenuNode;
  * @author Noam Tenne
  */
 public class DisabledAddonMenuNode extends MenuNode {
-    private Addon addon;
+    private AddonType addon;
 
-    public DisabledAddonMenuNode(String name, Addon addon) {
+    public DisabledAddonMenuNode(String name, AddonType addon) {
         super(name);
         this.addon = addon;
     }

@@ -18,15 +18,15 @@
 
 package org.artifactory.repo.snapshot;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 
 /**
- * Unit tests for {@link UniqueSnapshotVersionAdapter}.<p/>
- * Only the easy to unit test are here, the rest are in the integration tests.
+ * Unit tests for {@link UniqueSnapshotVersionAdapter}.<p/> Only the easy to unit test are here, the rest are in the
+ * integration tests.
  *
  * @author Yossi Shaul
  */
@@ -38,38 +38,39 @@ public class UniqueSnapshotVersionAdapterTest extends ArtifactoryHomeBoundTest {
 
     public void alreadyUniqueArtifact() {
         String uniqueVersionFile = "artifactId-2.5-20071014.090200-4.jar";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPath("local", SNAPSHOT_PATH + uniqueVersionFile));
+        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + uniqueVersionFile));
         assertEquals(result, SNAPSHOT_PATH + uniqueVersionFile, "Unique snapshots shouldn't be touched");
     }
 
     public void alreadyUniqueArtifactWithClassifier() {
         String uniqueVersionFile = "artifactId-2.5-20071014.090200-4-classifier.jar";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPath("local", SNAPSHOT_PATH + uniqueVersionFile));
+        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + uniqueVersionFile));
         assertEquals(result, SNAPSHOT_PATH + uniqueVersionFile, "Unique snapshots shouldn't be touched");
     }
 
     public void alreadyUniqueChecksumArtifact() {
         String uniqueVersionFile = "artifactId-2.5-20071014.090200-4.jar.sha1";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPath("local", SNAPSHOT_PATH + uniqueVersionFile));
+        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + uniqueVersionFile));
         assertEquals(result, SNAPSHOT_PATH + uniqueVersionFile);
     }
 
     public void nonUniqueArtifactWithDifferentVersion() {
         String nonUniqueVersionFile = "artifactId-1.5-SNAPSHOT.jar";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPath("local", SNAPSHOT_PATH + nonUniqueVersionFile));
+        String result =
+                uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + nonUniqueVersionFile));
         assertEquals(result, SNAPSHOT_PATH + nonUniqueVersionFile, "When passing file with version " +
                 "other than the snapshot version from the path, nothing should be affected");
     }
 
     public void artifactWithReleaseVersion() {
         String uniqueVersionFile = "artifactId-1.4.ivy";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPath("local", SNAPSHOT_PATH + uniqueVersionFile));
+        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + uniqueVersionFile));
         assertEquals(result, SNAPSHOT_PATH + uniqueVersionFile, "Files with release version should not be affected");
     }
 
     public void artifactWithNoMavenStructure() {
         String nonMavenFile = "blabla.xml";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPath("local", SNAPSHOT_PATH + nonMavenFile));
+        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + nonMavenFile));
         assertEquals(result, SNAPSHOT_PATH + nonMavenFile, "Non-maven structured files with release version " +
                 "should not be affected");
     }

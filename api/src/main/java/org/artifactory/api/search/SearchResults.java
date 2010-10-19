@@ -20,7 +20,7 @@ package org.artifactory.api.search;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 
 import java.util.List;
 

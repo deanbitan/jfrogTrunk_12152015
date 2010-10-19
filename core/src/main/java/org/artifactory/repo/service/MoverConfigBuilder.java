@@ -18,14 +18,15 @@
 
 package org.artifactory.repo.service;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.util.Builder;
+import org.artifactory.repo.RepoPath;
 
 /**
  * Repo path mover configuration object builder
  *
  * @author Noam Y. Tenne
  */
-public class MoverConfigBuilder {
+public class MoverConfigBuilder implements Builder<MoverConfig> {
     private RepoPath fromRepoPath;
     private String targetLocalRepoKey;
     private RepoPath targetLocalRepoPath;

@@ -19,7 +19,7 @@
 package org.artifactory.api.security;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 
 @XStreamAlias("ace")
 public class AceInfo implements Info {

@@ -29,11 +29,11 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.tree.ITreeState;
 import org.apache.wicket.model.Model;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.common.wicket.ajax.CancelDefaultDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
@@ -58,7 +58,7 @@ import java.util.Set;
 import static java.lang.String.format;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class ActionableItemsTree extends Tree implements ItemActionListener, Compactable {
     private static final Logger log = LoggerFactory.getLogger(ActionableItemsTree.class);
@@ -92,7 +92,7 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
         }
         ActionableItemTreeNode rootNode = new ActionableItemTreeNode(root);
         DefaultTreeModel treeModel = new DefaultTreeModel(rootNode);
-        setModel(new Model(treeModel));
+        setDefaultModel(new Model<DefaultTreeModel>(treeModel));
         List<? extends ActionableItem> children = this.itemsProvider.getChildren(root);
         setChildren(rootNode, children);
         getTreeState().expandNode(rootNode);
@@ -182,7 +182,7 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
     }
 
     private DefaultTreeModel getTreeModel() {
-        return (DefaultTreeModel) getModelObject();
+        return (DefaultTreeModel) getDefaultModelObject();
     }
 
     @Override
@@ -213,7 +213,7 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
     }
 
     protected void onContextMenu(Component item, AjaxRequestTarget target) {
-        ActionableItemTreeNode node = (ActionableItemTreeNode) item.getModelObject();
+        ActionableItemTreeNode node = (ActionableItemTreeNode) item.getDefaultModelObject();
 
         // check at least one action is enabled
         Set<ItemAction> actions = node.getUserObject().getContextMenuActions();
@@ -461,11 +461,11 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
 
     @SuppressWarnings({"unchecked"})
     public TreeNode getSelectedNode() {
-        Collection<TreeNode> selectedNodes = getTreeState().getSelectedNodes();
+        Collection<Object> selectedNodes = getTreeState().getSelectedNodes();
         if (selectedNodes.isEmpty()) {
             return null;
         }
-        return selectedNodes.iterator().next();
+        return (TreeNode) selectedNodes.iterator().next();
     }
 
     private static void setChildren(ActionableItemTreeNode node, List<? extends ActionableItem> children) {

@@ -26,7 +26,7 @@ import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import java.util.Locale;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public abstract class CreateUpdatePanel<E> extends BaseModalPanel {
 
@@ -47,7 +47,7 @@ public abstract class CreateUpdatePanel<E> extends BaseModalPanel {
         super.onModelChanged();
         //Notify the form
         CompoundPropertyModel model = new CompoundPropertyModel(entity);
-        form.setModel(model);
+        form.setDefaultModel(model);
     }
 
     @Override

@@ -23,7 +23,7 @@ import org.artifactory.descriptor.Descriptor;
 import javax.xml.bind.annotation.XmlType;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 @XmlType(name = "RemoteRepoTypeType", namespace = Descriptor.NS)
 public enum RepoType {

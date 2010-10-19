@@ -22,9 +22,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.WebstartAddon;
+import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.build.BuildService;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
@@ -34,6 +35,7 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.JcrService;
@@ -73,7 +75,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author yoavl
+ * @author Yoav Landman
  */
 public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContext
         implements InternalArtifactoryContext {
@@ -87,7 +89,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     private final ArtifactoryHome artifactoryHome;
     private final String contextId;
     private final SpringConfigPaths springConfigPaths;
-    private boolean ready;
+    private volatile boolean ready;
     private long started;
 
     public ArtifactoryApplicationContext(
@@ -289,7 +291,11 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                     try {
                         bean.destroy();
                     } catch (Exception e) {
-                        log.error("Exception while destroying {} ({}).", beanIfc, e.getMessage());
+                        if (log.isDebugEnabled() || Boolean.getBoolean(ConstantValues.test.getPropertyName())) {
+                            log.error("Exception while destroying bean '" + beanIfc + "'.", e);
+                        } else {
+                            log.error("Exception while destroying {} ({}).", beanIfc, e.getMessage());
+                        }
                     }
                     log.debug("Destroyed {}", beanIfc);
                 }
@@ -428,7 +434,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         MultiStatusHolder status = settings.getStatusHolder();
         status.setStatus("### Beginning full system import ###", log);
         // First sync status and settings
-        status.setFailFast(settings.isFailFast());
+        status.setFastFail(settings.isFailFast());
         status.setVerbose(settings.isVerbose());
         // First check the version of the folder imported
         ArtifactoryVersion backupVersion = BackupUtils.findVersion(settings.getBaseDir());
@@ -451,6 +457,9 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             WebstartAddon webstartAddon = addonsManager.addonByType(WebstartAddon.class);
             webstartAddon.importKeyStore(settings);
 
+            LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
+            licensesAddon.importLicenses(settings);
+
             BuildService buildService = beanForType(BuildService.class);
             buildService.importFrom(settings);
 
@@ -464,8 +473,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     }
 
     public void exportTo(ExportSettings settings) {
-        log.info("Beginning full system export...");
         MultiStatusHolder status = settings.getStatusHolder();
+        status.setStatus("Beginning full system export...", log);
         status.setStatus("Creating export directory", log);
         String timestamp;
         boolean incremental = settings.isIncremental();
@@ -522,6 +531,14 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             if (status.isError() && settings.isFailFast()) {
                 return;
             }
+
+            // licenses export
+            LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
+            licensesAddon.exportLicenses(exportSettings);
+            if (status.isError() && settings.isFailFast()) {
+                return;
+            }
+
             //artifactory.properties export
             exportArtifactoryProperties(exportSettings);
             if (status.isError() && settings.isFailFast()) {
@@ -552,7 +569,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
     }
 
-    private void moveTmpToBackupDir(StatusHolder status, String timestamp, File baseDir,
+    private void moveTmpToBackupDir(BasicStatusHolder status, String timestamp, File baseDir,
             File tmpExportDir) {
         //Delete any exiting final export dir
         File exportDir = new File(baseDir, timestamp);
@@ -569,7 +586,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         status.setCallback(exportDir);
     }
 
-    private void createArchive(StatusHolder status, String timestamp, File baseDir, File tmpExportDir) {
+    private void createArchive(BasicStatusHolder status, String timestamp, File baseDir, File tmpExportDir) {
         status.setStatus("Creating archive...", log);
 
         File tempArchiveFile = new File(baseDir, timestamp + ".tmp.zip");

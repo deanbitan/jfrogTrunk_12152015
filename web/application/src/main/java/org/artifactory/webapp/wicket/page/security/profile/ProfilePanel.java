@@ -64,7 +64,7 @@ import java.security.KeyPair;
 import static org.artifactory.common.wicket.component.label.highlighter.Syntax.xml;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class ProfilePanel extends TitledActionPanel {
     private static final Logger log = LoggerFactory.getLogger(ProfilePanel.class);
@@ -151,7 +151,7 @@ public class ProfilePanel extends TitledActionPanel {
             protected void onError(AjaxRequestTarget target, RuntimeException e) {
                 super.onError(target, e);
                 String password = getFormComponent().getRawInput();
-                newPassword.setModelObject(password);
+                newPassword.setDefaultModelObject(password);
                 target.addComponent(strength);
             }
 
@@ -197,7 +197,7 @@ public class ProfilePanel extends TitledActionPanel {
     }
 
     private ProfileModel getUserProfile() {
-        return (ProfileModel) getModelObject();
+        return (ProfileModel) getDefaultModelObject();
     }
 
     private TitledAjaxSubmitLink createUpdateProfileButton(final Form form) {
@@ -283,7 +283,7 @@ public class ProfilePanel extends TitledActionPanel {
         settingsSnippet.add(createSettingXml(userInfo, encryptedPassword));
         settingsSnippet.add(new Label("nonMavenPassword",
                 "Non-maven clients should use a non-escaped password: " + encryptedPassword));
-        encryptedPasswordLabel.setModelObject(encryptedPassword);
+        encryptedPasswordLabel.setDefaultModelObject(encryptedPassword);
         replace(settingsSnippet);
     }
 

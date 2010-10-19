@@ -95,7 +95,7 @@ public class RequestAdvice implements MethodInterceptor {
      */
     private String getRemoteAddress() {
         Authentication authentication = AuthenticationHelper.getAuthentication();
-        return AuthenticationHelper.getRemoteAddress(authentication);
+        return (authentication != null) ? AuthenticationHelper.getRemoteAddress(authentication) : null;
     }
 
     /**

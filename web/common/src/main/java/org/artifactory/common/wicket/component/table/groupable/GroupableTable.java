@@ -36,18 +36,20 @@ import org.artifactory.common.wicket.component.table.groupable.row.GroupRow;
 import org.artifactory.common.wicket.component.table.toolbar.emptyrow.EmptyRowToolbar;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * @author Yoav Aharoni
  */
-public class GroupableTable extends SortableTable {
+public class GroupableTable<T extends Serializable> extends SortableTable<T> {
 
-    public GroupableTable(String id, List<IColumn> columns, GroupableDataProvider dataProvider, int rowsPerPage) {
+    @SuppressWarnings({"unchecked"})
+    public GroupableTable(String id, List<IColumn<T>> columns, GroupableDataProvider<T> dataProvider, int rowsPerPage) {
         this(id, columns.toArray(new IColumn[columns.size()]), dataProvider, rowsPerPage);
     }
 
-    public GroupableTable(String id, IColumn[] columns, GroupableDataProvider dataProvider, int rowsPerPage) {
+    public GroupableTable(String id, IColumn<T>[] columns, GroupableDataProvider<T> dataProvider, int rowsPerPage) {
         super(id, addSpaceColumns(columns), dataProvider, rowsPerPage);
     }
 
@@ -65,12 +67,13 @@ public class GroupableTable extends SortableTable {
      * @param groupRowItem Group row item
      * @return true if expanded by default, else false
      */
-    public boolean isGroupExpanded(Item groupRowItem) {
+    @SuppressWarnings({"UnusedDeclaration"})
+    public boolean isGroupExpanded(Item<T> groupRowItem) {
         return false;
     }
 
-    protected Item newGroupRowItem(String id, int index, IModel model) {
-        Item item = new Item(id, index, model);
+    protected Item newGroupRowItem(String id, int index, IModel<T> model) {
+        Item<T> item = new Item<T>(id, index, model);
         item.add(new CssClass("group-header-row"));
         if (isGroupExpanded(item)) {
             item.add(new CssClass("group-expanded"));
@@ -80,8 +83,8 @@ public class GroupableTable extends SortableTable {
         return item;
     }
 
-    protected Item newGroupCellItem(String id, int index, IModel model) {
-        Item item = new Item(id, index, model);
+    protected Item newGroupCellItem(String id, int index, IModel<T> model) {
+        Item item = new Item<T>(id, index, model);
         String colspan = String.valueOf(getColumns().length);
         item.add(new SimpleAttributeModifier("colspan", colspan));
         item.add(new CssClass("first-cell last-cell"));
@@ -89,37 +92,37 @@ public class GroupableTable extends SortableTable {
         return item;
     }
 
-    protected void populateGroupItem(Item cellItem, String componentId, String property, IModel rowModel) {
-        IChoiceRenderer reneder = getDataProvider().getGroupReneder(property);
-        Object value = reneder.getDisplayValue(rowModel.getObject());
+    protected void populateGroupItem(Item cellItem, String componentId, String property, IModel<T> rowModel) {
+        IChoiceRenderer<T> renderer = getGroupableDataProvider().getGroupReneder(property);
+        Object value = renderer.getDisplayValue(rowModel.getObject());
         Item rowItem = (Item) cellItem.getParent();
-        int groupSize = getDataProvider().getGroupSize(rowItem.getIndex() + getCurrentPage() * getRowsPerPage());
+        int groupSize = getGroupableDataProvider().getGroupSize(rowItem.getIndex() + getCurrentPage() * getRowsPerPage());
         cellItem.add(new GroupRow(componentId, value, groupSize));
     }
 
-    @Override
-    public GroupableDataProvider getDataProvider() {
-        return (GroupableDataProvider) super.getDataProvider();
+    public GroupableDataProvider<T> getGroupableDataProvider() {
+        return (GroupableDataProvider<T>) super.getDataProvider();
     }
 
     private class CssModel extends AbstractReadOnlyModel {
         @Override
         public Object getObject() {
-            GroupableDataProvider provider = getDataProvider();
+            GroupableDataProvider provider = getGroupableDataProvider();
             boolean grouped = provider.getGroupParam() == null && provider.size() > 0;
             return grouped ? "groupable-table" : "groupable-table grouped";
         }
     }
 
-    private static IColumn[] addSpaceColumns(IColumn[] columns) {
-        columns = (IColumn[]) ArrayUtils.add(columns, 0, new SpaceColumn());
-        columns = (IColumn[]) ArrayUtils.add(columns, new SpaceColumn());
+    @SuppressWarnings({"unchecked"})
+    private static <T> IColumn<T>[] addSpaceColumns(IColumn<T>[] columns) {
+        columns = (IColumn<T>[]) ArrayUtils.add(columns, 0, new SpaceColumn<T>());
+        columns = (IColumn<T>[]) ArrayUtils.add(columns, new SpaceColumn<T>());
         return columns;
     }
 
-    private static class SpaceColumn extends AbstractColumn {
+    private static class SpaceColumn<T> extends AbstractColumn<T> {
         public SpaceColumn() {
-            super(new Model(""));
+            super(new Model<String>(""));
         }
 
         public void populateItem(Item cellItem, String componentId, IModel rowModel) {

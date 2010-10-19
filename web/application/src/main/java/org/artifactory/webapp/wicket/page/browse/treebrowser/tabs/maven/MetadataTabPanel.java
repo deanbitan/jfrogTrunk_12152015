@@ -18,37 +18,27 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven;
 
-import org.apache.wicket.Component;
-import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.IAjaxCallDecorator;
-import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.form.Form;
+import com.google.common.collect.Lists;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.PropertiesAddon;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
-import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.common.wicket.WicketProperty;
-import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
-import org.artifactory.common.wicket.component.LabeledValue;
-import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
-import org.artifactory.common.wicket.component.label.highlighter.Syntax;
-import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
-import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
-import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.webapp.wicket.actionable.tree.ActionableItemsTree;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.webapp.actionable.RepoAwareActionableItem;
+import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.slf4j.Logger;
 
 import java.util.List;
 
 /**
+ * General Metadata display tab panel. Holds both traditional metadata and properties info
+ *
  * @author Noam Tenne
  */
 public class MetadataTabPanel extends Panel {
@@ -56,84 +46,46 @@ public class MetadataTabPanel extends Panel {
     private static final Logger log = LoggerFactory.getLogger(MetadataTabPanel.class);
 
     @SpringBean
-    private RepositoryService repoService;
+    private AddonsManager addonsManager;
 
     @SpringBean
-    private AuthorizationService authorizationService;
+    private RepositoryService repoService;
 
-    private Component contentPanel = new SyntaxHighlighter("metadataContent").setSyntax(Syntax.xml);
-
-    private RepoPath repoPath;
-
-    @WicketProperty
-    private String metadataType;
-    private FieldSetBorder border;
-
-    public MetadataTabPanel(String id, RepoPath repoPath, List<String> metadataTypeList) {
+    public MetadataTabPanel(String id, RepoAwareActionableItem item, RepoPath canonicalRepoPath) {
         super(id);
-        this.repoPath = repoPath;
-        addComponents(metadataTypeList);
+        //Add properties panel
+        PropertiesAddon propertiesAddon = addonsManager.addonByType(PropertiesAddon.class);
+        ItemInfo info;
+        if (item instanceof FolderActionableItem) {
+            // take the last element if folder compacted compacted
+            info = ((FolderActionableItem) item).getFolderInfo();
+        } else {
+            info = item.getItemInfo();
+        }
+
+        add(propertiesAddon.getTreeItemPropertiesPanel("propertiesPanel", info));
+
+        List<String> metadataTypeList = getMetadataNames(canonicalRepoPath);
+        if (metadataTypeList.isEmpty()) {
+            add(new WebMarkupContainer("metadataPanel"));
+        } else {
+            MetadataPanel metadataPanel = new MetadataPanel("metadataPanel", canonicalRepoPath, metadataTypeList);
+            metadataPanel.add(new CollapsibleBehavior());
+            add(metadataPanel);
+        }
     }
 
-    private void addComponents(List<String> metadataTypeList) {
-        setOutputMarkupId(true);
-        Form form = new Form("form");
-
-        LabeledValue labeledValue = new LabeledValue("selectLabel", "Metadata Name:");
-        form.add(labeledValue);
-        final IModel metadataTypeModel = new PropertyModel(this, "metadataType");
-        final DropDownChoice metadataTypesDropDown =
-                new DropDownChoice("metadataTypes", metadataTypeModel, metadataTypeList);
-        metadataTypesDropDown.add(new AjaxFormComponentUpdatingBehavior("onchange") {
-            @Override
-            protected void onUpdate(AjaxRequestTarget target) {
-                setContent();
-                target.addComponent(border);
-            }
-        });
-        metadataTypesDropDown.setModelObject(metadataTypeList.get(0));
-        form.add(metadataTypesDropDown);
-
-        TitledAjaxSubmitLink removeButton = new TitledAjaxSubmitLink("remove", "Remove", form) {
-            @Override
-            protected void onSubmit(AjaxRequestTarget target, Form form) {
-                RepoPath metadataRepoPath =
-                        new RepoPath(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataType);
-                repoService.undeploy(metadataRepoPath);
-                MarkupContainer browsePanel = findParent(TreeBrowsePanel.class);
-                ActionableItemsTree tree = (ActionableItemsTree) browsePanel.get("tree");
-                target.addComponent(tree.refreshDisplayPanel());
-            }
-
-            @Override
-            protected IAjaxCallDecorator getAjaxCallDecorator() {
-                String message = "Are you sure you wish to delete '" + metadataType + "'?";
-                return new ConfirmationAjaxCallDecorator(message);
-            }
-        };
-        removeButton.setVisible(authorizationService.canAnnotate(repoPath));
-        form.add(removeButton);
-        add(form);
-
-        border = new FieldSetBorder("metadataBorder");
-        border.setOutputMarkupId(true);
-        add(border);
-        border.add(contentPanel);
-        setContent();
-    }
-
-    private void setContent() {
-        if (metadataType != null) {
-            try {
-                String xmlContent = repoService.getXmlMetadata(repoPath, metadataType);
-                border.replace(WicketUtils.getSyntaxHighlighter("metadataContent", xmlContent, Syntax.xml));
-            } catch (RepositoryRuntimeException rre) {
-                border.replace(WicketUtils.getSyntaxHighlighter("metadataContent",
-                        "Error while retrieving selected metadata. Please review the log for further details.",
-                        Syntax.plain));
-                log.error("Error while retrieving selected metadata '{}': {}", metadataType, rre.getMessage());
-                log.debug("Error while retrieving selected metadata '" + metadataType + "'.", rre);
-            }
+    /**
+     * @return a list of metadata type names that are associated with this item
+     */
+    private List<String> getMetadataNames(RepoPath canonicalRepoPath) {
+        try {
+            return repoService.getMetadataNames(canonicalRepoPath);
+        } catch (RepositoryRuntimeException rre) {
+            String repoPathId = canonicalRepoPath.getId();
+            log.error("Error while retrieving metadata names for '{}': {}", repoPathId, rre.getMessage());
+            log.debug("Error while retrieving metadata names for '" + repoPathId + "'.", rre);
+            return Lists.newArrayList();
         }
     }
 }

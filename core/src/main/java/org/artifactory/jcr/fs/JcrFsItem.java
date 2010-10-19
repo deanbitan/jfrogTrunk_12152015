@@ -21,18 +21,18 @@ package org.artifactory.jcr.fs;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ImportSettings;
-import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.fs.MetadataInfo;
+import org.artifactory.api.fs.InternalItemInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.md.MetadataReader;
-import org.artifactory.api.md.Properties;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrRepoService;
@@ -43,6 +43,10 @@ import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataPersistenceHandler;
 import org.artifactory.jcr.md.XmlMetadataProvider;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.MetadataInfo;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -65,11 +69,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -96,7 +96,7 @@ import static org.artifactory.jcr.JcrTypes.NODE_ARTIFACTORY_METADATA;
  * <p/>
  * ..............................art.stats/
  */
-public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comparable<File>, MetadataAware {
+public abstract class JcrFsItem<T extends InternalItemInfo> extends File implements Comparable<File>, MetadataAware {
     private static final Logger log = LoggerFactory.getLogger(JcrFsItem.class);
 
     private final String absPath;
@@ -340,6 +340,10 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
     @Override
     public boolean delete() {
         checkMutable("delete");
+        StorageInterceptors interceptors = InternalContextHelper.get().beanForType(StorageInterceptors.class);
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
+        statusHolder.setFastFail(true);
+        interceptors.beforeDelete(this, statusHolder);
         setDeleted(true);
         return getJcrRepoService().delete(this);
     }
@@ -706,7 +710,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      * Export all metadata as the real xml content (jcr:data, including comments etc.) into a
      * {item-name}.artifactory-metadata folder, where each metadata is named {metadata-name}.xml
      */
-    protected void exportMetadata(File targetPath, StatusHolder status, boolean incremental) {
+    protected void exportMetadata(File targetPath, BasicStatusHolder status, boolean incremental) {
         try {
             File metadataFolder = getMetadataContainerFolder(targetPath);
             try {
@@ -722,7 +726,26 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         }
     }
 
-    public void writeMetadataEntries(StatusHolder status, File metadataFolder, boolean incremental) {
+    /**
+     * Write the checksum files next to the file which they belong to.
+     *
+     * @param targetFile    The file the checksums belong to
+     * @param checksumsInfo The checksum info
+     * @param modified      Last modify date to use
+     * @throws IOException If failed to create the checksum files
+     */
+    protected void writeChecksums(File targetFile, ChecksumsInfo checksumsInfo, long modified)
+            throws IOException {
+        for (ChecksumInfo checksumInfo : checksumsInfo.getChecksums()) {
+            File checksumFile = new File(targetFile + checksumInfo.getType().ext());
+            FileUtils.writeStringToFile(checksumFile, checksumInfo.getActual(), "utf-8");
+            if (modified > 0) {
+                checksumFile.setLastModified(modified);
+            }
+        }
+    }
+
+    public void writeMetadataEntries(BasicStatusHolder status, File metadataFolder, boolean incremental) {
         File metadataFile;
         Set<MetadataDefinition<?>> metadataDefinitions;
         try {
@@ -767,7 +790,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         return false;
     }
 
-    protected void writeFile(StatusHolder status, File metadataFile, String xmlData, long modified) {
+    protected void writeFile(BasicStatusHolder status, File metadataFile, String xmlData, long modified) {
         if (StringUtils.isBlank(xmlData)) {
             return;
         }
@@ -784,7 +807,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         }
     }
 
-    protected void importMetadata(File sourcePath, StatusHolder status, ImportSettings settings) {
+    protected void importMetadata(File sourcePath, BasicStatusHolder status, ImportSettings settings) {
         try {
             File metadataFolder = getMetadataContainerFolder(sourcePath);
             if (!metadataFolder.exists()) {
@@ -840,7 +863,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
     }
 
     protected File getMetadataContainerFolder(File targetFile) {
-        return new File(targetFile.getParentFile(), targetFile.getName() + ItemInfo.METADATA_FOLDER);
+        return new File(targetFile.getParentFile(), targetFile.getName() + METADATA_FOLDER);
     }
 
     public void updateCache() {
@@ -863,7 +886,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
 
     public abstract JcrFsItem save(JcrFsItem originalFsItem);
 
-    private void updateTimestampsFromImport(ItemInfo importedInfo, ItemInfo info) {
+    private void updateTimestampsFromImport(InternalItemInfo importedInfo, InternalItemInfo info) {
         long created = importedInfo.getCreated();
         if (created <= 0) {
             created = System.currentTimeMillis();
@@ -1026,7 +1049,6 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      */
     public boolean hasMetadata(String metadataName) throws RepositoryException {
         if (metadataToSave != null && !metadataToSave.isEmpty()) {
-            String result = null;
             for (SetMetadataMessage message : metadataToSave) {
                 if (message.metadataName.equals(metadataName)) {
                     return true;
@@ -1054,7 +1076,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
         MetadataDefinition<T> definition = getRepoGeneric().getMetadataDefinition(mdClass);
         MetadataPersistenceHandler<T> mdph = definition.getPersistenceHandler();
         mdph.update(this, metadata);
-        if (Properties.class.equals(mdClass)) {
+        if (PropertiesImpl.class.equals(mdClass)) {
             if (!((Properties) metadata).isEmpty()) {
                 // only log the properties as metadata/annotate access (the rest are internal)
                 AccessLogger.annotated(getRepoPath(), "properties");
@@ -1112,7 +1134,7 @@ public abstract class JcrFsItem<T extends ItemInfo> extends File implements Comp
      * @param metadataName Name of metadata to locate
      * @return Metadata definition if found. Null if not
      */
-    private MetadataDefinition getMetadataDefinition(String metadataName) throws RepositoryException {
+    public MetadataDefinition getMetadataDefinition(String metadataName) throws RepositoryException {
         MetadataDefinition cachedDef = getRepoGeneric().getMetadataDefinition(metadataName, false);
         if ((cachedDef != null) && cachedDef.getPersistenceHandler().hasMetadata(this)) {
             return cachedDef;

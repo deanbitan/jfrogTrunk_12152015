@@ -52,7 +52,7 @@ import java.util.List;
  */
 class MasterDetailRowPanel<M extends Serializable, D extends Serializable> extends Panel {
     MasterDetailRowPanel(String id, M masterObject, MasterDetailTable<M, D> table) {
-        super(id, new Model(masterObject));
+        super(id, new Model<M>(masterObject));
 
         final boolean expanded = table.isMasterExpanded(masterObject);
         addMasterRow(table, masterObject, expanded);
@@ -113,7 +113,7 @@ class MasterDetailRowPanel<M extends Serializable, D extends Serializable> exten
     }
 
     private SortParam getSortParam(SortableTable table) {
-        final SingleSortState sortState = (SingleSortState) table.getDataProvider().getSortState();
+        final SingleSortState sortState = (SingleSortState) table.getSortableDataProvider().getSortState();
         if (sortState == null) {
             return null;
         }
@@ -127,7 +127,7 @@ class MasterDetailRowPanel<M extends Serializable, D extends Serializable> exten
 
         @Override
         protected void onEvent(AjaxRequestTarget target) {
-            final MasterDetailTable table = (MasterDetailTable) findParent(MasterDetailTable.class);
+            final MasterDetailTable table = findParent(MasterDetailTable.class);
             table.onMasterToggle(MasterDetailRowPanel.this, target);
         }
     }
@@ -160,7 +160,6 @@ class MasterDetailRowPanel<M extends Serializable, D extends Serializable> exten
         }
 
         @SuppressWarnings({"unchecked"})
-        @Override
         public IModel model(Object object) {
             return new Model(new MasterDetailEntry<M, D>(master, (D) object));
         }

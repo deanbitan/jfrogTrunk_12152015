@@ -18,7 +18,8 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.md.Properties;
+import org.artifactory.api.md.PropertiesImpl;
+import org.artifactory.md.Properties;
 
 /**
  * @author freds
@@ -26,7 +27,7 @@ import org.artifactory.api.md.Properties;
 public class PropertiesXmlProvider extends XStreamMetadataProvider<Properties> {
 
     public PropertiesXmlProvider() {
-        super(Properties.class);
+        super(PropertiesImpl.class);
     }
 
     public Properties fromXml(String xmlData) {

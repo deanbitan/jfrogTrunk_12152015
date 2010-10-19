@@ -20,16 +20,16 @@ package org.artifactory.jcr.md;
 
 import org.apache.commons.collections15.map.FastHashMap;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderInfo;
+import org.artifactory.api.fs.InternalFileInfo;
+import org.artifactory.api.fs.InternalFolderInfo;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.md.Properties;
 import org.artifactory.api.md.watch.Watchers;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.utils.JcrUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.logging.LoggingService;
+import org.artifactory.md.Properties;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
@@ -55,10 +55,10 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
     public void init() {
         // Internal metadata
         FolderInfoXmlProvider folderInfoXmlProvider = new FolderInfoXmlProvider();
-        createMetadataDefinition(FolderInfo.class, folderInfoXmlProvider,
+        createMetadataDefinition(InternalFolderInfo.class, folderInfoXmlProvider,
                 new FolderInfoPersistenceHandler(folderInfoXmlProvider), true);
         FileInfoXmlProvider fileInfoXmlProvider = new FileInfoXmlProvider();
-        createMetadataDefinition(FileInfo.class, fileInfoXmlProvider,
+        createMetadataDefinition(InternalFileInfo.class, fileInfoXmlProvider,
                 new FileInfoPersistenceHandler(fileInfoXmlProvider), true);
         WatchersXmlProvider watchersXmlProvider = new WatchersXmlProvider();
         createMetadataDefinition(Watchers.class, watchersXmlProvider,

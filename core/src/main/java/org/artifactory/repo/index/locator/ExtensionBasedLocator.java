@@ -18,8 +18,8 @@
 
 package org.artifactory.repo.index.locator;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.jcr.JcrPath;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.util.PathUtils;
 

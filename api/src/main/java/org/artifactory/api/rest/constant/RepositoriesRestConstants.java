@@ -29,6 +29,9 @@ public interface RepositoriesRestConstants {
     String PARAM_REPO_TYPE = "type";
 
     String MT_REPOSITORY_DETAILS_LIST = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".RepositoryDetailsList+json";
+    String MT_LOCAL_REPOSITORY_CONFIGURATION = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".LocalRepositoryConfiguration+json";
+    String MT_REMOTE_REPOSITORY_CONFIG = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".RemoteRepositoryConfiguration+json";
+    String MT_VIRTUAL_REPOSITORY_CONFIGURATION = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".VirtualRepositoryConfiguration+json";
     String MT_REMOTE_REPOSITORY_CONFIGURATION =
             RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".RepositoryConfiguration+json";
 
@@ -37,4 +40,5 @@ public interface RepositoriesRestConstants {
     String EXCLUDE_CONTENT = "content";
     String INCLUDE_METADATA = "metadata";
     String VERBOSE = "verbose";
+    String POSITION = "pos";
 }

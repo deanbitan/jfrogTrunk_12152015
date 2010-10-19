@@ -19,7 +19,7 @@
 package org.artifactory.update.md;
 
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.md.MetadataReader;
@@ -81,7 +81,7 @@ public enum MetadataVersion implements MetadataReader, SubConfigElementVersion {
      * @param converters A list of converters to use to convert the metadata from this version range to the next
      */
     MetadataVersion(ArtifactoryVersion from, ArtifactoryVersion until, MetadataReader delegate,
-            MetadataConverter... converters) {
+                    MetadataConverter... converters) {
         this.comparator = new VersionComparator(this, from, until);
         this.delegate = delegate;
         this.converters = converters;
@@ -99,7 +99,7 @@ public enum MetadataVersion implements MetadataReader, SubConfigElementVersion {
         return comparator;
     }
 
-    public List<MetadataEntry> getMetadataEntries(File file, ImportSettings settings, StatusHolder status) {
+    public List<MetadataEntry> getMetadataEntries(File file, ImportSettings settings, BasicStatusHolder status) {
         if (delegate == null) {
             throw new IllegalStateException("Metadata Import from version older than 1.2.2 is not supported!");
         }
@@ -116,42 +116,42 @@ public enum MetadataVersion implements MetadataReader, SubConfigElementVersion {
             throw new IllegalArgumentException(
                     "Cannot find metadata version of non existent file " + metadataFolder.getAbsolutePath());
         }
-        if (metadataFolder.isDirectory()) {
-            File[] mdFiles = metadataFolder.listFiles();
-            for (File mdFile : mdFiles) {
-                String mdFileName = mdFile.getName();
-                if (mdFileName.equalsIgnoreCase(FILE_MD_NAME_V130_BETA_3) ||
-                        mdFileName.equalsIgnoreCase(FOLDER_MD_NAME_V130_BETA_3)) {
-                    return v2;
-                }
-                if (mdFileName.equalsIgnoreCase(FILE_MD_NAME_V130_BETA_6) ||
-                        mdFileName.equalsIgnoreCase(FOLDER_MD_NAME_V130_BETA_6)) {
-                    // here we don't know if it's beta6 or rc1+ so we must read the xml and decide by the content
-                    // must improve this in the future.
-                    Document doc;
-                    try {
-                        doc = buildDocFromFile(mdFile);
-                    } catch (Exception e) {
-                        // log and try the next file
-                        log.warn("Failed to read file '" + mdFile + "' as xml", e);
-                        continue;
-                    }
-                    Element root = doc.getRootElement();
-                    Element extension = root.getChild("extension");
-                    if (extension != null) {
-                        return v3;
-                    } else {
-                        return v4;
-                    }
-                }
-            }
-            log.warn("Metadata folder " + metadataFolder.getAbsolutePath() +
-                    " does not contain any recognizable metadata files! Trying to use the latest metadata layout.");
-            return v4;
-        } else {
+        if (!metadataFolder.isDirectory()) {
             // For v125rc0 to v130beta2, the folder is actually a file
             return v1;
         }
+        File[] mdFiles = metadataFolder.listFiles();
+        for (File mdFile : mdFiles) {
+            String mdFileName = mdFile.getName();
+            if (mdFileName.equalsIgnoreCase(FILE_MD_NAME_V130_BETA_3) ||
+                    mdFileName.equalsIgnoreCase(FOLDER_MD_NAME_V130_BETA_3)) {
+                return v2;
+            }
+            if (mdFileName.equalsIgnoreCase(FILE_MD_NAME_V130_BETA_6) ||
+                    mdFileName.equalsIgnoreCase(FOLDER_MD_NAME_V130_BETA_6)) {
+                // here we don't know if it's beta6 or rc1+ so we must read the xml and decide by the content
+                // must improve this in the future.
+                Document doc;
+                try {
+                    doc = buildDocFromFile(mdFile);
+                } catch (Exception e) {
+                    // log and try the next file
+                    log.warn("Failed to read file '" + mdFile + "' as xml", e);
+                    continue;
+                }
+                Element root = doc.getRootElement();
+                Element extension = root.getChild("extension");
+                if (extension != null) {
+                    return v3;
+                } else {
+                    return v4;
+                }
+            }
+        }
+        log.warn("Metadata folder " + metadataFolder.getAbsolutePath() +
+                " does not contain any recognizable metadata files! Trying to use the latest metadata layout.");
+        return v4;
+
     }
 
     private static Document buildDocFromFile(File file) throws Exception {

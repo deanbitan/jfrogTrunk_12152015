@@ -24,14 +24,13 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WatchAddon;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.ivy.IvyNaming;
 import org.artifactory.mime.MimeType;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.FileActionable;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.CopyAction;
@@ -54,11 +53,11 @@ import static org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.ivy.Xml
 import static org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.ivy.XmlViewTabPanel.XmlTypes.IVY_XML;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class FileActionableItem extends RepoAwareActionableItemBase implements FileActionable {
 
-    private final FileInfo fileInfo;
+    private final org.artifactory.fs.FileInfo fileInfo;
     private ItemAction downloadAction;
     private ItemAction viewAction;
 
@@ -68,7 +67,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     private CopyAction copyAction;
     private ItemAction watchAction;
 
-    public FileActionableItem(FileInfo fileInfo) {
+    public FileActionableItem(org.artifactory.fs.FileInfo fileInfo) {
         super(fileInfo);
         this.fileInfo = fileInfo;
         Set<ItemAction> actions = getActions();
@@ -91,7 +90,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
         actions.add(watchAction);
     }
 
-    public FileInfo getFileInfo() {
+    public org.artifactory.fs.FileInfo getFileInfo() {
         return fileInfo;
     }
 
@@ -190,7 +189,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     }
 
     private boolean isXmlFile() {
-        return NamingUtils.getMimeType(getFileInfo().getName()).isXml();
+        return NamingUtils.isXml(getFileInfo().getName());
     }
 
     private boolean isIvyFile() {

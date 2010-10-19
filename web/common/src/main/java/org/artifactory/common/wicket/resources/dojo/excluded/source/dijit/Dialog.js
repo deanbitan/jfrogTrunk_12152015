@@ -1,25 +1,18 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.Dialog"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.Dialog"] = true;
 dojo.provide("dijit.Dialog");
 
 dojo.require("dojo.dnd.move");
 dojo.require("dojo.dnd.TimedMoveable");
 dojo.require("dojo.fx");
+dojo.require("dojo.window");
 
 dojo.require("dijit._Widget");
 dojo.require("dijit._Templated");
+dojo.require("dijit._CssStateMixin");
 dojo.require("dijit.form._FormMixin");
 dojo.require("dijit._DialogMixin");
 dojo.require("dijit.DialogUnderlay");
 dojo.require("dijit.layout.ContentPane");
-dojo.requireLocalization("dijit", "common", null, "ROOT,ar,ca,cs,da,de,el,es,fi,fr,he,hu,it,ja,ko,nb,nl,pl,pt,pt-pt,ru,sk,sl,sv,th,tr,zh,zh-tw");
+dojo.requireLocalization("dijit", "common");
 
 /*=====
 dijit._underlay = function(kwArgs){
@@ -35,7 +28,7 @@ dijit._underlay = function(kwArgs){
 
 dojo.declare(
 	"dijit._DialogBase",
-	[dijit._Templated, dijit.form._FormMixin, dijit._DialogMixin],
+	[dijit._Templated, dijit.form._FormMixin, dijit._DialogMixin, dijit._CssStateMixin],
 	{
 		// summary:
 		//		A modal dialog Widget
@@ -53,7 +46,13 @@ dojo.declare(
 		// |	dojo.body().appendChild(foo.domNode);
 		// |	foo.startup();
 
-		templateString: dojo.cache("dijit", "templates/Dialog.html", "<div class=\"dijitDialog\" tabindex=\"-1\" waiRole=\"dialog\" waiState=\"labelledby-${id}_title\">\r\n\t<div dojoAttachPoint=\"titleBar\" class=\"dijitDialogTitleBar\">\r\n\t<span dojoAttachPoint=\"titleNode\" class=\"dijitDialogTitle\" id=\"${id}_title\"></span>\r\n\t<span dojoAttachPoint=\"closeButtonNode\" class=\"dijitDialogCloseIcon\" dojoAttachEvent=\"onclick: onCancel, onmouseenter: _onCloseEnter, onmouseleave: _onCloseLeave\" title=\"${buttonCancel}\">\r\n\t\t<span dojoAttachPoint=\"closeText\" class=\"closeText\" title=\"${buttonCancel}\">x</span>\r\n\t</span>\r\n\t</div>\r\n\t\t<div dojoAttachPoint=\"containerNode\" class=\"dijitDialogPaneContent\"></div>\r\n</div>\r\n"),
+		templateString: dojo.cache("dijit", "templates/Dialog.html"),
+		
+		baseClass: "dijitDialog",
+		
+		cssStateNodes: {
+			closeButtonNode: "dijitDialogCloseIcon"
+		},
 
 		attributeMap: dojo.delegate(dijit._Widget.prototype.attributeMap, {
 			title: [
@@ -145,7 +144,12 @@ dojo.declare(
 			//		callback
 
 			// when href is specified we need to reposition the dialog after the data is loaded
+			// and find the focusable elements
 			this._position();
+			if(this.autofocus){
+				this._getFocusItems(this.domNode);
+				dijit.focus(this._firstFocusItem);
+			}
 			this.inherited(arguments);
 		},
 
@@ -191,13 +195,16 @@ dojo.declare(
 					if(!underlay){
 						underlay = dijit._underlay = new dijit.DialogUnderlay(this.underlayAttrs);
 					}else{
-						underlay.attr(this.underlayAttrs);
+						underlay.set(this.underlayAttrs);
 					}
 
-					var zIndex = 948 + dijit._dialogStack.length*2;
+					var ds = dijit._dialogStack,
+						zIndex = 948 + ds.length*2;
+					if(ds.length == 1){	// first dialog
+						underlay.show();
+					}
 					dojo.style(dijit._underlay.domNode, 'zIndex', zIndex);
 					dojo.style(this.domNode, 'zIndex', zIndex + 1);
-					underlay.show();
 				}),
 				onEnd: dojo.hitch(this, function(){
 					if(this.autofocus){
@@ -222,7 +229,7 @@ dojo.declare(
 						dijit._underlay.hide();
 					}else{
 						dojo.style(dijit._underlay.domNode, 'zIndex', 948 + ds.length*2);
-						dijit._underlay.attr(ds[ds.length-1].underlayAttrs);
+						dijit._underlay.set(ds[ds.length-1].underlayAttrs);
 					}
 
 					// Restore focus to wherever it was before this dialog was displayed
@@ -257,9 +264,13 @@ dojo.declare(
 				wasPlaying = true;
 				this._fadeOut.stop();
 			}
-			if(this.open || wasPlaying){
+			
+			// Hide the underlay, unless the underlay widget has already been destroyed
+			// because we are being called during page unload (when all widgets are destroyed)
+			if((this.open || wasPlaying) && !dijit._underlay._destroyed){
 				dijit._underlay.hide();
 			}
+
 			if(this._moveable){
 				this._moveable.destroy();
 			}
@@ -290,7 +301,7 @@ dojo.declare(
 			}
 
 			var mb = dojo.marginBox(this.domNode);
-			var viewport = dijit.getViewport();
+			var viewport = dojo.window.getBox();
 			if(mb.w >= viewport.w || mb.h >= viewport.h){
 				// Reduce size of dialog contents so that dialog fits in viewport
 
@@ -325,7 +336,7 @@ dojo.declare(
 			//		private
 			if(!dojo.hasClass(dojo.body(),"dojoMove")){
 				var node = this.domNode,
-					viewport = dijit.getViewport(),
+					viewport = dojo.window.getBox(),
 					p = this._relativePosition,
 					bb = p ? null : dojo._getBorderBox(node),
 					l = Math.floor(viewport.l + (p ? p.x : (viewport.w - bb.w) / 2)),
@@ -412,7 +423,7 @@ dojo.declare(
 			this._modalconnects.push(dojo.connect(window, "onresize", this, function(){
 				// IE gives spurious resize events and can actually get stuck
 				// in an infinite loop if we don't ignore them
-				var viewport = dijit.getViewport();
+				var viewport = dojo.window.getBox();
 				if(!this._oldViewport ||
 						viewport.h != this._oldViewport.h ||
 						viewport.w != this._oldViewport.w){
@@ -491,22 +502,6 @@ dojo.declare(
 				setTimeout(dojo.hitch(dijit,"focus",this._savedFocus), 25);
 			}
 			this.inherited(arguments);
-		},
-
-		_onCloseEnter: function(){
-			// summary:
-			//		Called when user hovers over close icon
-			// tags:
-			//		private
-			dojo.addClass(this.closeButtonNode, "dijitDialogCloseIcon-hover");
-		},
-
-		_onCloseLeave: function(){
-			// summary:
-			//		Called when user stops hovering over close icon
-			// tags:
-			//		private
-			dojo.removeClass(this.closeButtonNode, "dijitDialogCloseIcon-hover");
 		}
 	}
 );
@@ -522,5 +517,3 @@ dijit._dialogStack = [];
 
 // For back-compat.  TODO: remove in 2.0
 dojo.require("dijit.TooltipDialog");
-
-}

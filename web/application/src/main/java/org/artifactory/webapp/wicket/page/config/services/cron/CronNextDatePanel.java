@@ -58,14 +58,14 @@ public class CronNextDatePanel extends Panel {
         cronExpField.setOutputMarkupId(true);
         cronExpField.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             protected void onUpdate(AjaxRequestTarget target) {
-                nextRunLabel.setModelObject(getNextRunTime(cronExpField.getValue()));
+                nextRunLabel.setDefaultModelObject(getNextRunTime(cronExpField.getValue()));
                 target.addComponent(nextRunLabel);
             }
 
             @Override
             protected void onError(AjaxRequestTarget target, RuntimeException e) {
                 super.onError(target, e);
-                nextRunLabel.setModelObject(getNextRunTime(cronExpField.getValue()));
+                nextRunLabel.setDefaultModelObject(getNextRunTime(cronExpField.getValue()));
                 target.addComponent(nextRunLabel);
             }
 

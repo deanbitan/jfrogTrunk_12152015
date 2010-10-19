@@ -18,7 +18,8 @@
 
 package org.artifactory.api.fs;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.repo.RepoPath;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -32,7 +33,7 @@ import org.testng.annotations.Test;
 public class DeployableUnitTest {
 
     public void nodeConstructor() {
-        RepoPath repoPath = new RepoPath("libs-releases", "/org/artifactory/core/5.6");
+        RepoPath repoPath = new RepoPathImpl("libs-releases", "/org/artifactory/core/5.6");
         DeployableUnit du = new DeployableUnit(repoPath);
 
         Assert.assertEquals(du.getRepoPath(), repoPath, "Unexpected repo path");
@@ -47,7 +48,7 @@ public class DeployableUnitTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void invalidPath() {
-        RepoPath repoPath = new RepoPath("libs-releases", "/core/5.6");
+        RepoPath repoPath = new RepoPathImpl("libs-releases", "/core/5.6");
         new DeployableUnit(repoPath);
     }
 

@@ -18,14 +18,13 @@
 
 package org.artifactory.webapp.actionable;
 
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 /**
  * @author Eli Givoni
  */
 public interface FileActionable {
-    FileInfo getFileInfo();
+    org.artifactory.fs.FileInfo getFileInfo();
 
     RepoPath getRepoPath();
 }

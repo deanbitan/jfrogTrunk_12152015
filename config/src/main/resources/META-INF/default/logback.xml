@@ -99,7 +99,7 @@
         <level value="INFO"/>
         <appender-ref ref="ACCESS"/>
     </logger>
-    <logger name="org.artifactory.api.common.StatusHolder" additivity="false">
+    <logger name="org.artifactory.api.common.BasicStatusHolder" additivity="false">
         <level value="DEBUG"/>
         <appender-ref ref="IMPORT.EXPORT"/>
     </logger>
@@ -121,6 +121,9 @@
     </logger>
     <logger name="org.apache.jackrabbit.extractor.XMLTextExtractor">
         <level value="ERROR"/>
+    </logger>
+    <logger name="com.atlassian.crowd.integration.service.soap.client.ClientPropertiesImpl">
+        <level value="WARN"/>
     </logger>
 
     <logger name="org.apache.wicket">

@@ -24,6 +24,7 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.logging.version.v1.LogbackConfigSwapper;
 import org.artifactory.logging.version.v2.JackrabbitLoggerConverter;
 import org.artifactory.logging.version.v3.LineNumberLayoutLoggerConverter;
+import org.artifactory.logging.version.v4.PublicApiPackageChangeLoggerConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
@@ -45,7 +46,8 @@ public enum LoggingVersion implements SubConfigElementVersion {
     v1(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v208, new LogbackConfigSwapper()),
     v2(ArtifactoryVersion.v210, ArtifactoryVersion.v213, new JackrabbitLoggerConverter()),
     v3(ArtifactoryVersion.v220, ArtifactoryVersion.v221, new LineNumberLayoutLoggerConverter()),
-    v4(ArtifactoryVersion.v221, ArtifactoryVersion.getCurrent(), null);
+    v4(ArtifactoryVersion.v221, ArtifactoryVersion.v225, new PublicApiPackageChangeLoggerConverter()),
+    v5(ArtifactoryVersion.v230, ArtifactoryVersion.getCurrent(), null);
 
     public static final String LOGGING_CONVERSION_PERFORMED = "loggingConversionPerformed";
 
@@ -110,7 +112,11 @@ public enum LoggingVersion implements SubConfigElementVersion {
         File etcDir = artifactoryHome.getEtcDir();
         File logbackConfigFile = new File(etcDir, ArtifactoryHome.LOGBACK_CONFIG_FILE_NAME);
         if (logbackConfigFile.exists()) {
-            logbackConfigFile.renameTo(new File(etcDir, "logback.original.xml"));
+            File originalBackup = new File(etcDir, "logback.original.xml");
+            if (originalBackup.exists()) {
+                FileUtils.deleteQuietly(originalBackup);
+            }
+            logbackConfigFile.renameTo(originalBackup);
         }
 
         FileUtils.writeStringToFile(logbackConfigFile, result, "utf-8");

@@ -36,6 +36,7 @@ import java.util.List;
 @XmlType(name = "PropertySetType", propOrder = {"name", "visible", "properties"}, namespace = Descriptor.NS)
 public class PropertySet implements Descriptor {
 
+    public static final String ARTIFACTORY_RESERVED_PROP_SET = "artifactory";
     @XmlID
     @XmlElement(required = true)
     private String name;

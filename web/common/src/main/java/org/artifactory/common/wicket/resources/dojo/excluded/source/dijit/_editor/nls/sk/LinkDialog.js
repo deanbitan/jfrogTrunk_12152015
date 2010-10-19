@@ -1,1 +1,13 @@
-({"set":"Nastaviť","text":"Popis:","insertImageTitle":"Vlastnosti obrázku","url":"URL:","createLinkTitle":"Vlastnosti odkazu","newWindow":"New Window","topWindow":"Topmost Window","target":"Target:","parentWindow":"Parent Window","currentWindow":"Current Window"})
+({
+	createLinkTitle: "Pripojiť vlastnosti",
+	insertImageTitle: "Vlastnosti obrázka ",
+	url: "URL:",
+	text: "Opis:",
+	target: "Cieľ:",
+	set: "Nastaviť",
+	currentWindow: "Aktuálne okno ",
+	parentWindow: "Rodičovské okno ",
+	topWindow: "Najvrchnejšie okno ",
+	newWindow: "Nové okno "
+})
+

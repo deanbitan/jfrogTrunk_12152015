@@ -18,28 +18,37 @@
 
 package org.artifactory.common.wicket.component.table.columns;
 
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.PropertyModel;
 import org.artifactory.common.wicket.behavior.CssClass;
 
 /**
  * @author Yoav Aharoni
  */
-public class BooleanColumn extends PropertyColumn {
-    public BooleanColumn(IModel displayModel, String sortProperty, String propertyExpression) {
-        super(displayModel, sortProperty, propertyExpression);
+public class BooleanColumn extends TitlePropertyColumn<Boolean> {
+    public BooleanColumn(String title, String sortProperty, String propertyExpression) {
+        super(title, sortProperty, propertyExpression);
     }
 
-    public BooleanColumn(IModel displayModel, String propertyExpression) {
-        super(displayModel, propertyExpression);
+    // TODO: remove ctr
+
+    public BooleanColumn(IModel<String> displayModel, String sortProperty, String propertyExpression) {
+        super(displayModel.getObject(), sortProperty, propertyExpression);
+    }
+
+    // TODO: remove ctr
+
+    public BooleanColumn(IModel<String> displayModel, String propertyExpression) {
+        super(displayModel.getObject(), propertyExpression);
     }
 
     @Override
-    public void populateItem(Item item, String componentId, IModel model) {
-        IModel booleanModel = createLabelModel(model);
-        Boolean value = (Boolean) booleanModel.getObject();
+    public void populateItem(Item<ICellPopulator<Boolean>> item, String componentId, IModel<Boolean> model) {
+        PropertyModel<Boolean> booleanModel = new PropertyModel<Boolean>(model, getPropertyExpression());
+        Boolean value = booleanModel.getObject();
         Label label = new Label(componentId, "<span>" + value + "</span>");
         label.setEscapeModelStrings(false);
         item.add(label);

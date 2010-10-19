@@ -29,24 +29,30 @@ import org.apache.commons.httpclient.util.DateParseException;
 import org.apache.commons.httpclient.util.DateUtil;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.plugin.PluginsAddon;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.md.Properties;
+import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.request.ArtifactoryRequest;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.io.NullResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.context.NullRequestContext;
+import org.artifactory.md.Properties;
+import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
+import org.artifactory.addon.plugin.download.BeforeRemoteDownloadAction;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.request.NullRequestContext;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.MetadataResource;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
@@ -57,6 +63,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.Date;
 
 public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(HttpRepo.class);
@@ -151,8 +158,15 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
         RepoType repoType = getType();
-        final String fullUrl = getUrl() + "/" + pathConvert(repoType, relPath) +
-                Properties.encodeForRequest(requestProperties);
+        String fullPath = pathConvert(repoType, relPath) + PropertiesImpl.encodeForRequest(requestProperties);
+        final String fullUrl = getUrl() + "/" + fullPath;
+
+        AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
+        final PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
+
+        final RepoPathImpl repoPath = new RepoPathImpl(getKey(), fullPath);
+        pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, null, repoPath);
+
         if (log.isDebugEnabled()) {
             log.debug("Retrieving " + relPath + " from remote repository '" + getKey() + "' URL '" + fullUrl + "'.");
         }
@@ -176,7 +190,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             throw new RemoteRequestException(msg, statusCode);
         }
         //Found
-        log.info("{}: Downloading '{}'...", this, fullUrl);
+        log.info("{}: Downloading content from '{}'...", this, fullUrl);
 
         final InputStream is = method.getResponseBodyAsStream();
         //Create a handle and return it
@@ -195,6 +209,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 StatusLine statusLine = method.getStatusLine();
                 log.info(HttpRepo.this + ": Downloaded '{}' with return code: {}.", fullUrl,
                         statusLine != null ? statusLine.getStatusCode() : "unknown");
+                pluginAddon.execPluginActions(AfterRemoteDownloadAction.class, null, repoPath);
             }
         };
         return handle;
@@ -215,14 +230,16 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     @Override
-    protected RepoResource retrieveInfo(String relPath, Properties requestProperties) {
+    protected RepoResource retrieveInfo(String path, Properties requestProperties) {
         assert !isOffline() : "Should never be called in offline mode";
         RepoType repoType = getType();
-        RepoPath repoPath = new RepoPath(this.getKey(), relPath);
-        String fullUrl = getUrl() + "/" + pathConvert(repoType, relPath);
+        RepoPath repoPath = new RepoPathImpl(this.getKey(), path);
+
+        String fullUrl = getUrl() + "/" + pathConvert(repoType, path);
+
         HeadMethod method = null;
         try {
-            fullUrl += Properties.encodeForRequest(requestProperties);
+            fullUrl += PropertiesImpl.encodeForRequest(requestProperties);
             log.debug("{}: Checking last modified time for {}", this, fullUrl);
             method = new HeadMethod(fullUrl);
             updateMethod(method);
@@ -239,12 +256,15 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                     log.debug(this + ": Unable to find " + fullUrl + " because of [" +
                             method.getStatusCode() + "] = " + method.getStatusText());
                 }
+                // send back unfound resource with 404 status
                 return new UnfoundRepoResource(repoPath, method.getStatusText());
             }
             long lastModified = getLastModified(method);
+            log.debug("{}: Found last modified time '{}' for {}",
+                    new Object[]{this, new Date(lastModified).toString(), fullUrl});
             long size = getContentLength(method);
             RepoResource res;
-            if (NamingUtils.isMetadata(relPath)) {
+            if (NamingUtils.isMetadata(path)) {
                 res = new MetadataResource(repoPath);
             } else {
                 res = new FileResource(repoPath);
@@ -342,8 +362,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         String lastModifiedString = lastModifiedHeader.getValue();
         try {
             return DateUtil.parseDate(lastModifiedString).getTime();
-        }
-        catch (DateParseException e) {
+        } catch (DateParseException e) {
             log.warn("Unable to parse Last-Modified header : " + lastModifiedString);
             return System.currentTimeMillis();
         }

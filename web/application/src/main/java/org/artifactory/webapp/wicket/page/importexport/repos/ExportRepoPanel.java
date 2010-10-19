@@ -26,10 +26,10 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.repo.BackupService;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
@@ -74,6 +74,9 @@ public class ExportRepoPanel extends TitledPanel {
     @WicketProperty
     private boolean excludeMetadata;
 
+    @WicketProperty
+    private boolean verbose;
+
     public ExportRepoPanel(String string) {
         super(string);
         Form exportForm = new Form("exportForm");
@@ -88,15 +91,13 @@ public class ExportRepoPanel extends TitledPanel {
             String key = localRepo.getKey();
             repoKeys.add(key);
         }
-        DropDownChoice sourceRepoDdc =
-                new DropDownChoice("sourceRepo", sourceRepoModel, repoKeys);
+        DropDownChoice sourceRepoDdc = new DropDownChoice("sourceRepo", sourceRepoModel, repoKeys);
         //Needed because get getDefaultChoice does not update the actual selection object
-        sourceRepoDdc.setModelObject(ImportExportReposPage.ALL_REPOS);
+        sourceRepoDdc.setDefaultModelObject(ImportExportReposPage.ALL_REPOS);
         exportForm.add(sourceRepoDdc);
 
         PropertyModel pathModel = new PropertyModel(this, "exportToPath");
-        final PathAutoCompleteTextField exportToPathTf =
-                new PathAutoCompleteTextField("exportToPath", pathModel);
+        final PathAutoCompleteTextField exportToPathTf = new PathAutoCompleteTextField("exportToPath", pathModel);
         exportToPathTf.setMask(PathMask.FOLDERS);
         exportToPathTf.setRequired(true);
         exportForm.add(exportToPathTf);
@@ -111,13 +112,22 @@ public class ExportRepoPanel extends TitledPanel {
         browserButton.setMask(PathMask.FOLDERS);
         exportForm.add(browserButton);
 
-        exportForm.add(new StyledCheckbox("m2Compatible", new PropertyModel(this, "m2Compatible")));
+        exportForm.add(new StyledCheckbox("m2Compatible", new PropertyModel<Boolean>(this, "m2Compatible")));
         exportForm.add(new HelpBubble("m2CompatibleHelp",
                 "Include Maven 2 repository metadata and checksum files as part of the export"));
-        exportForm.add(new StyledCheckbox("excludeMetadata", new PropertyModel(this, "excludeMetadata")));
+
+        exportForm.add(new StyledCheckbox("excludeMetadata", new PropertyModel<Boolean>(this, "excludeMetadata")));
         exportForm.add(new HelpBubble("excludeMetadataHelp",
                 "Exclude Artifactory-specific metadata from the export.\n" +
                         "(Maven 2 metadata is unaffected by this setting)"));
+
+        StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose"));
+        verboseCheckbox.setRequired(false);
+        exportForm.add(verboseCheckbox);
+        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+        exportForm.add(new HelpBubble("verboseHelp", "Lowers the log level to debug and redirects the output from the "
+                + "standard log to the import-export log." +
+                "\nHint: You can monitor the log in the <a href=\"" + systemLogsPage + "\">'System Logs'</a> page."));
 
         TitledAjaxSubmitLink exportButton = new TitledAjaxSubmitLink("export", "Export", exportForm) {
             @Override
@@ -129,6 +139,7 @@ public class ExportRepoPanel extends TitledPanel {
                     ExportSettings exportSettings = new ExportSettings(exportToPath, status);
                     exportSettings.setIncludeMetadata(!excludeMetadata);
                     exportSettings.setM2Compatible(m2Compatible);
+                    exportSettings.setVerbose(verbose);
                     if (ImportExportReposPage.ALL_REPOS.equals(sourceRepoKey)) {
                         backupService.backupRepos(exportToPath, exportSettings);
                     } else {

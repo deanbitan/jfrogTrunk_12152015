@@ -18,12 +18,15 @@
 
 package org.artifactory.common;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.mime.MimeTypes;
 import org.artifactory.mime.MimeTypesReader;
+import org.artifactory.mime.version.MimeTypesVersion;
 import org.artifactory.version.ArtifactoryVersionReader;
 import org.artifactory.version.CompoundVersionDetails;
 import org.artifactory.version.ConfigVersion;
@@ -42,7 +45,7 @@ public class ArtifactoryHome {
     private static final String ENV_VAR = "ARTIFACTORY_HOME";
 
     public static final String ARTIFACTORY_CONFIG_FILE = "artifactory.config.xml";
-    public static final String ARTIFACTORY_STARTUP_CONFIG_FILE = "artifactory.config.startup.xml";
+    public static final String ARTIFACTORY_CONFIG_LATEST_FILE = "artifactory.config.latest.xml";
     public static final String ARTIFACTORY_CONFIG_IMPORT_FILE = "artifactory.config.import.xml";
     public static final String ARTIFACTORY_CONFIG_BOOTSTRAP_FILE = "artifactory.config.bootstrap.xml";
     public static final String ARTIFACTORY_SYSTEM_PROPERTIES_FILE = "artifactory.system.properties";
@@ -69,6 +72,7 @@ public class ArtifactoryHome {
     private File backupDir;
     private File workTmpDir;
     private File tmpUploadsDir;
+    private File pluginsDir;
     private File logoDir;
 
     /**
@@ -142,6 +146,10 @@ public class ArtifactoryHome {
         return tmpUploadsDir;
     }
 
+    public File getPluginsDir() {
+        return pluginsDir;
+    }
+
     public File getLogoDir() {
         return logoDir;
     }
@@ -168,6 +176,7 @@ public class ArtifactoryHome {
             File rootTmpDir = getOrCreateSubDir(dataDir, "tmp");
             workTmpDir = getOrCreateSubDir(rootTmpDir, "work");
             tmpUploadsDir = getOrCreateSubDir(rootTmpDir, "artifactory-uploads");
+            pluginsDir = getOrCreateSubDir(etcDir, "plugins");
             logoDir = getOrCreateSubDir(etcDir, "ui");
 
             //Manage the artifactory.system.properties file under etc dir
@@ -182,6 +191,21 @@ public class ArtifactoryHome {
             checkWritableDirectory(jettyWorkDir);
             checkWritableDirectory(workTmpDir);
             checkWritableDirectory(tmpUploadsDir);
+            checkWritableDirectory(pluginsDir);
+
+            try {
+                for (File rootTmpDirChild : rootTmpDir.listFiles()) {
+                    if (rootTmpDirChild.isDirectory()) {
+                        FileUtils.cleanDirectory(rootTmpDirChild);
+                    } else {
+                        FileUtils.deleteQuietly(rootTmpDirChild);
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println(ArtifactoryHome.class.getName() +
+                        " - Warning: unable to clean temporary directories. Cause: " + e.getMessage());
+            }
+
         } catch (Exception e) {
             throw new IllegalArgumentException(
                     "Could not initialize artifactory main directory due to: " + e.getMessage(), e);
@@ -289,6 +313,14 @@ public class ArtifactoryHome {
             }
         }
         return result;
+    }
+
+    public void renameInitialConfigFileIfExists() {
+        File initialConfigFile = new File(etcDir, ARTIFACTORY_CONFIG_FILE);
+        if (initialConfigFile.isFile()) {
+            org.artifactory.util.FileUtils.switchFiles(initialConfigFile,
+                    new File(etcDir, ARTIFACTORY_CONFIG_BOOTSTRAP_FILE));
+        }
     }
 
     public ArtifactorySystemProperties getArtifactoryProperties() {
@@ -402,7 +434,13 @@ public class ArtifactoryHome {
                     "Couldn't start Artifactory. Mime types file is missing: " + mimeTypesFile.getAbsolutePath());
         }
         try {
-            mimeTypes = new MimeTypesReader().read(mimeTypesFile);
+            String mimeTypesXml = Files.toString(mimeTypesFile, Charsets.UTF_8);
+            MimeTypesVersion mimeTypesVersion = MimeTypesVersion.findVersion(mimeTypesXml);
+            if (!mimeTypesVersion.isCurrent()) {
+                mimeTypesXml = mimeTypesVersion.convert(mimeTypesXml);
+                Files.write(mimeTypesXml, mimeTypesFile, Charsets.UTF_8);
+            }
+            mimeTypes = new MimeTypesReader().read(mimeTypesXml);
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse mime types file from: " + mimeTypesFile.getAbsolutePath(), e);
         }

@@ -41,6 +41,9 @@ import java.io.Writer;
  * @author Noam Tenne
  */
 public abstract class JacksonFactory {
+    private JacksonFactory() {
+        // utility class
+    }
 
     /**
      * Creates a JsonGenerator using the given output stream as a writer
@@ -71,7 +74,8 @@ public abstract class JacksonFactory {
     }
 
     /**
-     * Creates a JsonParser using the given input stream as a reader
+     * Creates a JsonParser using the given input stream as a reader.<BR>
+     * Please do not use this method directly for simple parsing tasks, instead use {@link JacksonReader}.
      *
      * @param inputStream Stream to read from
      * @return Json Parser
@@ -86,7 +90,8 @@ public abstract class JacksonFactory {
 
 
     /**
-     * Creates a JsonParser using the given byte[] as a reader
+     * Creates a JsonParser using the given byte[] as a reader.<BR>
+     * Please do not use this method directly for simple parsing tasks, instead use {@link JacksonReader}.
      *
      * @param input Input to read from
      * @return Json Parser
@@ -159,8 +164,14 @@ public abstract class JacksonFactory {
      * @param jsonParser  Parser to configure
      */
     private static void updateParser(JsonFactory jsonFactory, JsonParser jsonParser) {
+        AnnotationIntrospector primary = new JacksonAnnotationIntrospector();
+        AnnotationIntrospector secondary = new JaxbAnnotationIntrospector();
+        AnnotationIntrospector pair = new AnnotationIntrospector.Pair(primary, secondary);
+
         ObjectMapper mapper = new ObjectMapper(jsonFactory);
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.getSerializationConfig().setAnnotationIntrospector(pair);
+        mapper.getDeserializationConfig().setAnnotationIntrospector(pair);
+        mapper.getDeserializationConfig().disable(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES);
         jsonParser.setCodec(mapper);
     }
 }

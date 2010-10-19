@@ -73,30 +73,31 @@ public class MailConfigPanel extends TitledPanel {
     public MailConfigPanel(String id) {
         super(id);
         MailServerDescriptor descriptor = getMailServerDescriptor();
-        CompoundPropertyModel compoundPropertyModel = new CompoundPropertyModel(descriptor);
-        form = new Form("form", compoundPropertyModel);
+        CompoundPropertyModel<MailServerDescriptor> compoundPropertyModel =
+                new CompoundPropertyModel<MailServerDescriptor>(descriptor);
+        form = new Form<MailServerDescriptor>("form", compoundPropertyModel);
 
         addField("host", null, true, false, null, descriptor);
         final TextField portTextField = addField("port", null, true, true, new PortNumberValidator(), descriptor);
         addField("username", null, false, false, null, descriptor);
         PasswordTextField passwordTextField =
-                new PasswordTextField("password", new PropertyModel(descriptor, "password"));
+                new PasswordTextField("password", new PropertyModel<String>(descriptor, "password"));
         passwordTextField.setResetPassword(false);
         passwordTextField.setRequired(false);
         form.add(passwordTextField);
         addField("from", null, false, false, EmailAddressValidator.getInstance(), descriptor);
         addField("subjectPrefix", null, false, false, null, descriptor);
-        form.add(new StyledCheckbox("tls", new PropertyModel(descriptor, "tls")));
-        final StyledCheckbox sslCheckbox = new StyledCheckbox("ssl", new PropertyModel(descriptor, "ssl"));
+        form.add(new StyledCheckbox("tls", new PropertyModel<Boolean>(descriptor, "tls")));
+        final StyledCheckbox sslCheckbox = new StyledCheckbox("ssl", new PropertyModel<Boolean>(descriptor, "ssl"));
 
         //Add behavior that auto-switches the port to default SSL or normal values
         sslCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 if (sslCheckbox.isChecked()) {
-                    portTextField.setModelObject(465);
+                    portTextField.setDefaultModelObject(465);
                 } else {
-                    portTextField.setModelObject(25);
+                    portTextField.setDefaultModelObject(25);
                 }
                 target.addComponent(portTextField);
             }
@@ -110,7 +111,7 @@ public class MailConfigPanel extends TitledPanel {
         TitledBorder borderTest = new TitledBorder("testBorder");
         form.add(borderTest);
 
-        testRecipientTextField = new TextField("testRecipient", new Model());
+        testRecipientTextField = new TextField<String>("testRecipient", new Model<String>());
         testRecipientTextField.add(EmailAddressValidator.getInstance());
         borderTest.add(testRecipientTextField);
         borderTest.add(createSendTestButton(form));
@@ -133,7 +134,7 @@ public class MailConfigPanel extends TitledPanel {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 MutableCentralConfigDescriptor cc = centralConfigService.getMutableDescriptor();
-                cc.setMailServer(((MailServerDescriptor) form.getModelObject()));
+                cc.setMailServer(((MailServerDescriptor) form.getDefaultModelObject()));
                 centralConfigService.saveEditedDescriptorAndReload(cc);
                 info("Mail server settings successfully updated.");
                 AjaxUtils.refreshFeedback(target);
@@ -158,7 +159,7 @@ public class MailConfigPanel extends TitledPanel {
                     displayError(target, "Please specify a recipient for the test message.");
                     return;
                 }
-                MailServerDescriptor descriptor = (MailServerDescriptor) form.getModelObject();
+                MailServerDescriptor descriptor = (MailServerDescriptor) form.getDefaultModelObject();
                 MailServerConfiguration mailServerConfiguration = new MailServerConfiguration(descriptor);
                 if (!validateConfig(mailServerConfiguration)) {
                     displayError(target, "Sending a test message requires host and port properties, at least.");
@@ -246,7 +247,7 @@ public class MailConfigPanel extends TitledPanel {
         if (validator != null) {
             textField.add(validator);
         }
-        textField.setModel(new PropertyModel(descriptor, id));
+        textField.setDefaultModel(new PropertyModel(descriptor, id));
 
         form.add(textField);
         form.add(new SchemaHelpBubble(id + ".help"));

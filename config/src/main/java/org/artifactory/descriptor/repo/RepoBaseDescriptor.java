@@ -33,7 +33,7 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
     @XmlElement(required = true)
     private String key;
 
-    @XmlElement(defaultValue = "default description", required = false)
+    @XmlElement(required = false)
     private String description;
 
     @XmlElement(required = false)

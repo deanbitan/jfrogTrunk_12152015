@@ -28,7 +28,7 @@ import java.util.Collection;
  *
  * @author Yoav Aharoni
  */
-public class SelectedItemModel<T> implements IModel {
+public class SelectedItemModel<T> implements IModel<Boolean> {
     private Collection<T> items;
     private T item;
 
@@ -37,11 +37,11 @@ public class SelectedItemModel<T> implements IModel {
         this.item = item;
     }
 
-    public Object getObject() {
+    public Boolean getObject() {
         return items.contains(item);
     }
 
-    public void setObject(Object object) {
+    public void setObject(Boolean object) {
         if ((Boolean) object) {
             if (!items.contains(item)) {
                 items.add(item);

@@ -36,7 +36,10 @@ import java.util.List;
  *
  * @author Noam Tenne
  */
-public class TrafficStreamParser {
+public abstract class TrafficStreamParser {
+    private TrafficStreamParser() {
+        // utility class
+    }
 
     /**
      * Parses a stream of textual traffic entries, converts them to traffic entry objects, and returns a list of the

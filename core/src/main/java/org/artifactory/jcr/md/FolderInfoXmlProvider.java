@@ -18,23 +18,23 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.FolderInfoImpl;
+import org.artifactory.api.fs.InternalFolderInfo;
 
 /**
  * @author freds
  */
-public class FolderInfoXmlProvider extends XStreamMetadataProvider<FolderInfo> {
+public class FolderInfoXmlProvider extends XStreamMetadataProvider<InternalFolderInfo> {
 
     public FolderInfoXmlProvider() {
         super(FolderInfoImpl.class);
     }
 
-    public FolderInfo fromXml(String xmlData) {
-        return (FolderInfo) getXstream().fromXML(xmlData);
+    public InternalFolderInfo fromXml(String xmlData) {
+        return (InternalFolderInfo) getXstream().fromXML(xmlData);
     }
 
-    public String toXml(FolderInfo metadata) {
+    public String toXml(InternalFolderInfo metadata) {
         return getXstream().toXML(metadata);
     }
 }

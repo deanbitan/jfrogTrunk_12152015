@@ -19,7 +19,7 @@
 package org.artifactory.update.md.v125rc0;
 
 import org.apache.commons.io.FileUtils;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.md.MetadataReader;
@@ -46,7 +46,7 @@ public class MetadataReader125 implements MetadataReader {
     private final MetadataConverter fileConverter = new MdFileConverter();
     private final MetadataConverter statsConverter = new MdStatsConverter();
 
-    public List<MetadataEntry> getMetadataEntries(File file, ImportSettings settings, StatusHolder status) {
+    public List<MetadataEntry> getMetadataEntries(File file, ImportSettings settings, BasicStatusHolder status) {
         if (!file.isFile()) {
             status.setError("Expecting a file but got a directory: " + file.getAbsolutePath(), log);
             return Collections.emptyList();

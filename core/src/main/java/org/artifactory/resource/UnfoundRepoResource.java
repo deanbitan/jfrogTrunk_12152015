@@ -18,14 +18,21 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.api.repo.RepoPath;
+import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.repo.RepoPath;
 
 public class UnfoundRepoResource extends FileResource {
     private final String reason;
+    private final int statusCode;
 
     public UnfoundRepoResource(RepoPath repoPath, String reason) {
+        this(repoPath, reason, HttpStatus.SC_NOT_FOUND);
+    }
+
+    public UnfoundRepoResource(RepoPath repoPath, String reason, int statusCode) {
         super(repoPath);
         this.reason = reason;
+        this.statusCode = statusCode > 0 ? statusCode : HttpStatus.SC_NOT_FOUND;
     }
 
     @Override
@@ -35,5 +42,9 @@ public class UnfoundRepoResource extends FileResource {
 
     public String getReason() {
         return reason;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
     }
 }

@@ -24,7 +24,5 @@ package org.artifactory.version;
  * @author Noam Tenne
  */
 public interface SubConfigElementVersion {
-    int ordinal();
-
     VersionComparator getComparator();
 }

@@ -119,7 +119,7 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
     }
 
     private MutableCentralConfigDescriptor getDescriptor() {
-        return (MutableCentralConfigDescriptor) getModelObject();
+        return (MutableCentralConfigDescriptor) getDefaultModelObject();
     }
 
     private class ResetLink extends TitledAjaxLink {

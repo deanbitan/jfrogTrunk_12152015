@@ -19,10 +19,12 @@
 package org.artifactory.rest.resource.search;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.RestAddon;
+import org.artifactory.addon.rest.RestAddon;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.rest.resource.license.LicensesResource;
 import org.artifactory.rest.resource.search.types.ArchiveSearchResource;
 import org.artifactory.rest.resource.search.types.ArtifactSearchResource;
 import org.artifactory.rest.resource.search.types.CreatedInRangeResource;
@@ -64,6 +66,9 @@ public class SearchResource {
 
     @Autowired
     SearchService searchService;
+
+    @Autowired
+    RepositoryService repositoryService;
 
     @Autowired
     AddonsManager addonsManager;
@@ -142,6 +147,12 @@ public class SearchResource {
     public PatternSearchResource patternSearchQuery() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         return new PatternSearchResource(authorizationService, restAddon, request, response);
+    }
+
+    @Path(SearchRestConstants.PATH_LICENSE)
+    public LicensesResource licensesSearch() {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return new LicensesResource(restAddon, request, repositoryService, authorizationService);
     }
 
     /**

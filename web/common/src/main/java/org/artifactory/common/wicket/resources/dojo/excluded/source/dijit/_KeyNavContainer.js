@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit._KeyNavContainer"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit._KeyNavContainer"] = true;
 dojo.provide("dijit._KeyNavContainer");
 dojo.require("dijit._Container");
 
@@ -82,7 +73,9 @@ dojo.declare("dijit._KeyNavContainer",
 			// tags:
 			//		protected
 			var child = this._getFirstFocusableChild();
-			this.focusChild(child);
+			if(child){ // edge case: Menu could be empty or hidden
+				this.focusChild(child);
+			}
 		},
 
 		focusNext: function(){
@@ -131,14 +124,14 @@ dojo.declare("dijit._KeyNavContainer",
 			// tags:
 			//		private
 			
-			widget.attr("tabIndex", "-1");
+			widget.set("tabIndex", "-1");
 			
 			this.connect(widget, "_onFocus", function(){
 				// Set valid tabIndex so tabbing away from widget goes to right place, see #10272
-				widget.attr("tabIndex", this.tabIndex);
+				widget.set("tabIndex", this.tabIndex);
 			});
 			this.connect(widget, "_onBlur", function(){
-				widget.attr("tabIndex", "-1");
+				widget.set("tabIndex", "-1");
 			});
 		},
 
@@ -169,7 +162,7 @@ dojo.declare("dijit._KeyNavContainer",
 		},
 
 		_onBlur: function(evt){
-			// When focus is moved away the container, and it's descendant (popup) widgets,
+			// When focus is moved away the container, and its descendant (popup) widgets,
 			// then restore the container's tabIndex so that user can tab to it again.
 			// Note that using _onBlur() so that this doesn't happen when focus is shifted
 			// to one of my child widgets (typically a popup)
@@ -234,5 +227,3 @@ dojo.declare("dijit._KeyNavContainer",
 		}
 	}
 );
-
-}

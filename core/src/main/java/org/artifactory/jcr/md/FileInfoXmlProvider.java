@@ -18,23 +18,23 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FileInfoImpl;
+import org.artifactory.api.fs.InternalFileInfo;
 
 /**
  * @author freds
  */
-public class FileInfoXmlProvider extends XStreamMetadataProvider<FileInfo> {
+public class FileInfoXmlProvider extends XStreamMetadataProvider<InternalFileInfo> {
 
     public FileInfoXmlProvider() {
         super(FileInfoImpl.class);
     }
 
-    public FileInfo fromXml(String xmlData) {
-        return (FileInfo) getXstream().fromXML(xmlData);
+    public InternalFileInfo fromXml(String xmlData) {
+        return (InternalFileInfo) getXstream().fromXML(xmlData);
     }
 
-    public String toXml(FileInfo metadata) {
+    public String toXml(InternalFileInfo metadata) {
         return getXstream().toXML(metadata);
     }
 }

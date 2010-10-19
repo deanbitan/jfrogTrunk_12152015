@@ -20,6 +20,7 @@ package org.artifactory.api.request;
 
 import org.artifactory.api.repo.Request;
 import org.artifactory.api.repo.exception.FileExpectedException;
+import org.artifactory.request.ArtifactoryRequest;
 
 import java.io.IOException;
 

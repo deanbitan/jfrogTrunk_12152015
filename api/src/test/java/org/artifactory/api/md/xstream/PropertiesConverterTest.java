@@ -19,8 +19,9 @@
 package org.artifactory.api.md.xstream;
 
 import com.thoughtworks.xstream.XStream;
-import org.artifactory.api.md.Properties;
+import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.xstream.XStreamFactory;
+import org.artifactory.md.Properties;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -30,7 +31,7 @@ import org.testng.annotations.Test;
 public class PropertiesConverterTest {
     @Test
     public void testConversion() {
-        Properties properties = new Properties();
+        Properties properties = new PropertiesImpl();
         properties.put("a", "aye");
         properties.put("a", "aye2");
         properties.put("b", "bee");

@@ -20,9 +20,13 @@ package org.artifactory.ivy;
 
 import org.apache.commons.lang.StringUtils;
 
-public class IvyNaming {
+public abstract class IvyNaming {
 
     public static final String IVY_XML = "ivy.xml";
+
+    private IvyNaming() {
+        // utility class
+    }
 
     public static boolean isIvyFileName(String fileName) {
         if (StringUtils.isBlank(fileName)) {

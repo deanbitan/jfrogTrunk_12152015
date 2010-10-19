@@ -22,9 +22,8 @@ package org.artifactory.repo.index;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.io.NullResourceStreamHandle;
 import org.artifactory.io.TempFileStreamHandle;
 import org.artifactory.jcr.fs.JcrFile;
@@ -33,7 +32,9 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RemoteRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -115,19 +116,36 @@ public class RepoIndexManager {
 
                 //If we receive a non-modified response (with a null handle) - don't re-download the index
                 log.debug("Fetching remote index files for {}", indexedRepo);
-                remoteIndexHandle = remoteRepo.conditionalRetrieveResource(MavenNaming.NEXUS_INDEX_GZ_PATH);
-                if (remoteIndexHandle instanceof NullResourceStreamHandle) {
-                    log.debug("No need to fetch unmodified index for remote repository '{}'.", indexedRepo.getKey());
-                    indexStatus = IndexStatus.SKIP;
-                    return true;
+                try {
+                    remoteIndexHandle = remoteRepo.conditionalRetrieveResource(MavenNaming.NEXUS_INDEX_GZ_PATH);
+                    if (remoteIndexHandle instanceof NullResourceStreamHandle) {
+                        log.debug("No need to fetch unmodified index for remote repository '{}'.",
+                                indexedRepo.getKey());
+                        indexStatus = IndexStatus.SKIP;
+                        return true;
+                    }
+                    //Save into temp files
+                    tempIndex = File.createTempFile(MavenNaming.NEXUS_INDEX_GZ, null);
+                    IOUtils.copy(remoteIndexHandle.getInputStream(), new FileOutputStream(tempIndex));
+                } finally {
+                    /**
+                     * Close the handle directly after reading stream and before we start to download the properties
+                     * in case the target repo does not allow multiple simultaneous connections
+                     */
+                    if (remoteIndexHandle != null) {
+                        remoteIndexHandle.close();
+                    }
                 }
-                //Save into temp files
-                tempIndex = File.createTempFile(MavenNaming.NEXUS_INDEX_GZ, null);
-                IOUtils.copy(remoteIndexHandle.getInputStream(), new FileOutputStream(tempIndex));
 
-                remotePropertiesHandle = remoteRepo.downloadResource(MavenNaming.NEXUS_INDEX_PROPERTIES_PATH, null);
-                tempProperties = File.createTempFile(MavenNaming.NEXUS_INDEX_PROPERTIES, null);
-                IOUtils.copy(remotePropertiesHandle.getInputStream(), new FileOutputStream(tempProperties));
+                try {
+                    remotePropertiesHandle = remoteRepo.downloadResource(MavenNaming.NEXUS_INDEX_PROPERTIES_PATH, null);
+                    tempProperties = File.createTempFile(MavenNaming.NEXUS_INDEX_PROPERTIES, null);
+                    IOUtils.copy(remotePropertiesHandle.getInputStream(), new FileOutputStream(tempProperties));
+                } finally {
+                    if (remotePropertiesHandle != null) {
+                        remotePropertiesHandle.close();
+                    }
+                }
 
                 //Return the handle to the zip file (will be removed when the handle is closed)
                 indexHandle = new TempFileStreamHandle(tempIndex);
@@ -142,13 +160,6 @@ public class RepoIndexManager {
                 log.warn("Could not retrieve remote nexus index '" + MavenNaming.NEXUS_INDEX_GZ +
                         "' for repo '" + indexedRepo + "': " + e.getMessage());
                 return false;
-            } finally {
-                if (remoteIndexHandle != null) {
-                    remoteIndexHandle.close();
-                }
-                if (remotePropertiesHandle != null) {
-                    remotePropertiesHandle.close();
-                }
             }
         }
     }
@@ -196,17 +207,17 @@ public class RepoIndexManager {
             }
             //Create the new jcr files for index and properties
             //Create the index dir
-            RepoPath indexFolderRepoPath = new RepoPath(indexStorageRepo.getRootFolder().getRepoPath(),
+            RepoPath indexFolderRepoPath = new RepoPathImpl(indexStorageRepo.getRootFolder().getRepoPath(),
                     MavenNaming.NEXUS_INDEX_DIR);
             JcrFolder targetIndexDir = indexStorageRepo.getLockedJcrFolder(indexFolderRepoPath, true);
             targetIndexDir.mkdirs();
             InputStream indexInputStream = indexHandle.getInputStream();
             InputStream propertiesInputStream = propertiesHandle.getInputStream();
             //Copy to jcr, acquiring the lock as latest as possible
-            JcrFile indexFile = indexStorageRepo.getLockedJcrFile(new RepoPath(
+            JcrFile indexFile = indexStorageRepo.getLockedJcrFile(new RepoPathImpl(
                     targetIndexDir.getRepoPath(), MavenNaming.NEXUS_INDEX_GZ), true);
             indexFile.fillData(indexInputStream);
-            JcrFile propertiesFile = indexStorageRepo.getLockedJcrFile(new RepoPath(
+            JcrFile propertiesFile = indexStorageRepo.getLockedJcrFile(new RepoPathImpl(
                     targetIndexDir.getRepoPath(), MavenNaming.NEXUS_INDEX_PROPERTIES), true);
             propertiesFile.fillData(propertiesInputStream);
             log.info("Successfully saved index file '{}' and index info '{}'.",

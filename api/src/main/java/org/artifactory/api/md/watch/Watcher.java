@@ -19,7 +19,7 @@
 package org.artifactory.api.md.watch;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 
 import java.util.Date;
 
@@ -133,7 +133,8 @@ public class Watcher implements Info, Comparable {
     public int compareTo(Object o) {
         if (o instanceof Watcher) {
             Watcher other = (Watcher) o;
-            return (watchingSinceTime < other.watchingSinceTime ? -1 : (watchingSinceTime == other.watchingSinceTime ? 0 : 1));
+            return (watchingSinceTime < other.watchingSinceTime ? -1 :
+                    (watchingSinceTime == other.watchingSinceTime ? 0 : 1));
         }
         return 0;
     }

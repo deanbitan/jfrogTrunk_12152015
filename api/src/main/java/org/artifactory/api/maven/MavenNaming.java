@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 /**
  * @author yoavl
  */
-public class MavenNaming {
+public abstract class MavenNaming {
     //Uses lazy evaluation of the version (+?)
     //see: http://www.regular-expressions.info/reference.html
     //For testing, see: http://www.cis.upenn.edu/~matuszek/General/RegexTester/regex-tester.html
@@ -62,6 +62,10 @@ public class MavenNaming {
     public static final String NEXUS_INDEX_ZIP_PATH = NEXUS_INDEX_DIR + "/" + NEXUS_INDEX_ZIP;
     public static final String NEXUS_INDEX_GZ_PATH = NEXUS_INDEX_DIR + "/" + NEXUS_INDEX_GZ;
     public static final String NEXUS_INDEX_PROPERTIES_PATH = NEXUS_INDEX_DIR + "/" + NEXUS_INDEX_PROPERTIES;
+
+    private MavenNaming() {
+        // utility class
+    }
 
     /**
      * Returns a MavenArtifactInfo based on info that was managed to gather from the file name matcher
@@ -192,7 +196,7 @@ public class MavenNaming {
     }
 
     public static boolean isSnapshotMavenMetadata(String path) {
-        final Pair<String, String> nameAndParent = NamingUtils.getMetadataNameAndParent(path);
+        Pair<String, String> nameAndParent = NamingUtils.getMetadataNameAndParent(path);
         String name = nameAndParent.getFirst();
         String parent = nameAndParent.getSecond();
         return parent != null && parent.endsWith("-" + SNAPSHOT) && isMavenMetadataFileName(name);

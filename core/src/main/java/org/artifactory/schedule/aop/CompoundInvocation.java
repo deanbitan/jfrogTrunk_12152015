@@ -20,10 +20,9 @@ package org.artifactory.schedule.aop;
 
 import com.google.common.collect.ImmutableList;
 import org.aopalliance.intercept.MethodInvocation;
-import org.artifactory.api.repo.Async;
-import org.artifactory.jcr.lock.aop.LockingAdvice;
-import org.springframework.security.util.SimpleMethodInvocation;
 
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,41 +33,63 @@ import java.util.List;
  *
  * @author Yoav Landman
  */
-public class CompoundInvocation extends SimpleMethodInvocation {
+public class CompoundInvocation implements MethodInvocation {
 
-    List<MethodInvocation> invocations = new ArrayList<MethodInvocation>();
+    private List<MethodInvocation> invocations = new ArrayList<MethodInvocation>();
+    private MethodInvocation currentInvocation;
+    private AsyncAdvice advice;
 
-    public void add(MethodInvocation invocation) {
+    void setAdvice(AsyncAdvice advice) {
+        this.advice = advice;
+    }
+
+    void add(MethodInvocation invocation) {
         invocations.add(invocation);
     }
 
-    @Override
     public Object proceed() throws Throwable {
         List<MethodInvocation> tmpInvocations = ImmutableList.copyOf(invocations);
         invocations.clear();
         for (MethodInvocation invocation : tmpInvocations) {
-            //Wrap in tx if needed
-            Async annotation = invocation.getMethod().getAnnotation(Async.class);
-            if (annotation == null) {
-                throw new IllegalArgumentException(
-                        "An async invocation (" + invocation.getMethod() +
-                                ") should be used with an @Async annotated invocation.");
-            }
-            if (annotation.transactional()) {
-                //Wrap in a transaction
-                new LockingAdvice().invoke(invocation, true);
-            } else {
-                invocation.proceed();
-            }
+            currentInvocation = invocation;
+            advice.doInvoke(invocation);
         }
         return null;
     }
 
-    public boolean isEmpty() {
+    public ImmutableList<MethodInvocation> getInvocations() {
+        return ImmutableList.copyOf(invocations);
+    }
+
+    /**
+     * @return Returns the latest executed method (useful when something bad happens)
+     */
+    Method getLatestMethod() {
+        return currentInvocation != null ? currentInvocation.getMethod() : null;
+    }
+
+    boolean isEmpty() {
         return invocations.isEmpty();
     }
 
-    public void clear() {
+    void clear() {
         invocations.clear();
+        currentInvocation = null;
+    }
+
+    public Object getThis() {
+        throw new UnsupportedOperationException("Not supported in compound invocation");
+    }
+
+    public AccessibleObject getStaticPart() {
+        throw new UnsupportedOperationException("Not supported in compound invocation");
+    }
+
+    public Method getMethod() {
+        throw new UnsupportedOperationException("Not supported in compound invocation");
+    }
+
+    public Object[] getArguments() {
+        throw new UnsupportedOperationException("Not supported in compound invocation");
     }
 }

@@ -26,7 +26,7 @@ import org.apache.wicket.markup.html.form.IFormSubmittingComponent;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.model.IModel;
-import org.artifactory.addon.AddonFactory;
+import org.artifactory.addon.Addon;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
@@ -42,7 +42,7 @@ import java.util.Map;
  * @author Yossi Shaul
  * @author Tomer Cohen
  */
-public interface WebApplicationAddon extends AddonFactory {
+public interface WebApplicationAddon extends Addon {
     /**
      * @param wicketId The link's wicket id
      * @return An link to an external authentication page.
@@ -100,10 +100,10 @@ public interface WebApplicationAddon extends AddonFactory {
     /**
      * Returns an addon-customized security menu node
      *
-     * @param httpSsoAddon
+     * @param ssoAddon
      * @return Security menu node  @param webstartAddon
      */
-    MenuNode getSecurityMenuNode(WebstartWebAddon webstartAddon, HttpSsoAddon httpSsoAddon);
+    MenuNode getSecurityMenuNode(WebstartWebAddon webstartAddon, SsoAddon ssoAddon);
 
     /**
      * Returns an addon-customized services menu node
@@ -115,10 +115,11 @@ public interface WebApplicationAddon extends AddonFactory {
     /**
      * Returns an addon-customized configuration menu node
      *
-     * @param propertiesAddon A properties addon instance
+     * @param propertiesAddon  A properties addon instance
+     * @param licensesWebAddon
      * @return Configuration menu node
      */
-    MenuNode getConfigurationMenuNode(PropertiesAddon propertiesAddon);
+    MenuNode getConfigurationMenuNode(PropertiesAddon propertiesAddon, LicensesWebAddon licensesWebAddon);
 
     /**
      * Returns an addon-customized advanced menu node

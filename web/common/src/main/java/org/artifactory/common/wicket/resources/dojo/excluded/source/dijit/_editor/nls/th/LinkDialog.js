@@ -1,1 +1,13 @@
-({"set":"ตั้งค่า","text":"รายละเอียด","insertImageTitle":"คุณสมบัติอิมเมจ","url":"URL:","createLinkTitle":"คุณสมบัติลิงก์","newWindow":"New Window","topWindow":"Topmost Window","target":"Target:","parentWindow":"Parent Window","currentWindow":"Current Window"})
+({
+	createLinkTitle: "คุณสมบัติลิงก์",
+	insertImageTitle: "คุณสมบัติอิมเมจ",
+	url: "URL:",
+	text: "รายละเอียด",
+	target: "เป้าหมาย:",
+	set: "ตั้งค่า",
+	currentWindow: "หน้าต่างปัจจุบัน",
+	parentWindow: "หน้าต่างหลัก",
+	topWindow: "หน้าต่างบนสุด",
+	newWindow: "หน้าต่างใหม่"
+})
+

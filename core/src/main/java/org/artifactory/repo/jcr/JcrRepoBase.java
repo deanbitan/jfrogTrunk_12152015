@@ -19,25 +19,26 @@
 package org.artifactory.repo.jcr;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.util.CloseableThreadLocal;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderInfo;
-import org.artifactory.api.md.Properties;
+import org.artifactory.api.fs.InternalFileInfo;
+import org.artifactory.api.fs.InternalFolderInfo;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.ArchiveFileContent;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.jcr.JcrRepoService;
@@ -47,11 +48,13 @@ import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepoBase;
-import org.artifactory.repo.context.RequestContext;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.request.RequestContext;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.security.AccessLogger;
@@ -88,7 +91,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     }
 
     protected JcrRepoBase(InternalRepositoryService repositoryService, T descriptor,
-            StoringRepo<T> oldStoringRepo) {
+                          StoringRepo<T> oldStoringRepo) {
         super(repositoryService, descriptor);
         storageMixin = new StoringRepoMixin<T>(this, oldStoringRepo);
     }
@@ -116,7 +119,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     }
 
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
-        StatusHolder status = assertValidPath(repoPath);
+        BasicStatusHolder status = assertValidPath(repoPath);
         if (status.isError()) {
             return status;
         }
@@ -124,7 +127,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         boolean canRead = authService.canRead(repoPath);
         if (!canRead) {
             status.setError("Download request for repo:path '" + repoPath + "' is forbidden for user '" +
-                    authService.currentUsername() + "'.", log);
+                    authService.currentUsername() + "'.", HttpStatus.SC_FORBIDDEN, log);
             AccessLogger.downloadDenied(repoPath);
         }
         return status;
@@ -258,7 +261,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
                     JcrFile jcrFile = getLocalJcrFile(sourcesJarPath);
                     if (jcrFile == null) {
                         failureReason = "Source jar not found.";
-                    } else if (!getAuthorizationService().canRead(new RepoPath(getKey(), sourcesJarPath))) {
+                    } else if (!getAuthorizationService().canRead(new RepoPathImpl(getKey(), sourcesJarPath))) {
                         failureReason = "No read permissions for the source jar.";
                     } else {
                         List<String> alternativeExtensions = null;
@@ -293,7 +296,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         }
 
         if (content != null) {
-            return new ArchiveFileContent(content, new RepoPath(getKey(), sourceJarPath), sourceEntryPath);
+            return new ArchiveFileContent(content, new RepoPathImpl(getKey(), sourceJarPath), sourceEntryPath);
         } else {
             return ArchiveFileContent.contentNotFound(failureReason);
         }
@@ -332,7 +335,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     }
 
     public RepoResource saveResource(RepoResource res, final InputStream in, Properties keyvals) throws IOException,
-            RepoRejectionException {
+            RepoRejectException {
         return storageMixin.saveResource(res, in, keyvals);
     }
 
@@ -396,16 +399,16 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
 
     public RepoResource getInfo(RequestContext context) throws FileExpectedException {
         final String path = context.getResourcePath();
-        RepoPath repoPath = new RepoPath(getKey(), path);
+        RepoPath repoPath = new RepoPathImpl(getKey(), path);
         StatusHolder statusHolder = checkDownloadIsAllowed(repoPath);
         if (statusHolder.isError()) {
-            return new UnfoundRepoResource(repoPath, statusHolder.getStatusMsg());
+            return new UnfoundRepoResource(repoPath, statusHolder.getStatusMsg(), statusHolder.getStatusCode());
         }
         return storageMixin.getInfo(context);
     }
 
     public ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, final RepoResource res)
-            throws IOException, RepositoryException, RepoRejectionException {
+            throws IOException, RepositoryException, RepoRejectException {
         return storageMixin.getResourceStreamHandle(requestContext, res);
     }
 
@@ -440,11 +443,11 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         return storageMixin.getLockedJcrFolder(relPath, createIfMissing);
     }
 
-    public MetadataDefinition<FileInfo> getFileInfoMd() {
+    public MetadataDefinition<InternalFileInfo> getFileInfoMd() {
         return storageMixin.getFileInfoMd();
     }
 
-    public MetadataDefinition<FolderInfo> getFolderInfoMd() {
+    public MetadataDefinition<InternalFolderInfo> getFolderInfoMd() {
         return storageMixin.getFolderInfoMd();
     }
 

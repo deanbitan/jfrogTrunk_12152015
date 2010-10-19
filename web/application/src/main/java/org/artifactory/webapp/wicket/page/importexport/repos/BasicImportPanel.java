@@ -26,12 +26,14 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.SearchService;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
+import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
@@ -110,7 +112,7 @@ public abstract class BasicImportPanel extends TitledPanel {
             repoKeys.add(key);
         }
         DropDownChoice targetRepoDdc = new DropDownChoice("targetRepo", targetRepoModel, repoKeys);
-        targetRepoDdc.setModelObject(ImportExportReposPage.ALL_REPOS);
+        targetRepoDdc.setDefaultModelObject(ImportExportReposPage.ALL_REPOS);
         importForm.add(targetRepoDdc);
         final MultiStatusHolder status = new MultiStatusHolder();
         TitledAjaxSubmitLink importButton = new TitledAjaxSubmitLink("import", "Import", importForm) {
@@ -118,9 +120,20 @@ public abstract class BasicImportPanel extends TitledPanel {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 Session.get().cleanupFeedbackMessages();
                 onBeforeImport();
+
+                boolean importAllRepos = ImportExportReposPage.ALL_REPOS.equals(targetRepoKey);
                 File folder = importFromPath;
+                if (importAllRepos) {
+                    //If the user has by mistake selected the root backup dir: RTFACT-3480
+                    File repositoriesExportDir = new File(importFromPath, "repositories");
+                    if (repositoriesExportDir.isDirectory()) {
+                        folder = repositoriesExportDir;
+                    }
+                }
+
                 status.reset();
                 status.setVerbose(verbose);
+
                 ImportSettings importSettings = new ImportSettings(folder, status);
                 try {
                     importSettings.setFailIfEmpty(true);
@@ -128,7 +141,7 @@ public abstract class BasicImportPanel extends TitledPanel {
                     importSettings.setIncludeMetadata(!excludeMetadata);
                     importSettings.setTrustServerChecksums(trustServerChecksums);
                     //If we chose "All" import all local repositories, else import a single repo
-                    if (ImportExportReposPage.ALL_REPOS.equals(targetRepoKey)) {
+                    if (importAllRepos) {
                         //Do not activate archive indexing until all repositories were imported
                         repositoryService.importAll(importSettings);
                     } else {
@@ -179,6 +192,16 @@ public abstract class BasicImportPanel extends TitledPanel {
     protected void refreshImportPanel(Form form, AjaxRequestTarget target) {
         target.addComponent(form);
         AjaxUtils.refreshFeedback(target);
+    }
+
+    protected void addVerboseCheckbox(Form form) {
+        StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose"));
+        verboseCheckbox.setRequired(false);
+        form.add(verboseCheckbox);
+        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+        form.add(new HelpBubble("verboseHelp", "Lowers the log level to debug and redirects the output from the " +
+                "standard log to the import-export log." +
+                "\nHint: You can monitor the log in the <a href=\"" + systemLogsPage + "\">'System Logs'</a> page."));
     }
 
     protected abstract void onBeforeImport();

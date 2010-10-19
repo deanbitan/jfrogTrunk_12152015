@@ -40,13 +40,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.security.AclInfo;
-import org.artifactory.api.security.AclService;
-import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.GroupInfo;
-import org.artifactory.api.security.PermissionTargetInfo;
-import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
+import org.artifactory.api.security.*;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -108,7 +102,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
     private PermissionTargetAceInfoRowDataProvider usersDataProvider;
 
     public PermissionTargetCreateUpdatePanel(CreateUpdateAction action, PermissionTargetInfo target,
-            final Component targetsTable) {
+                                             final Component targetsTable) {
         super(action, target);
         add(new CssClass("permissions-panel"));
         setWidth(600);
@@ -376,7 +370,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
         SortableTable table = new SortableTable("recipients", columns, dataProvider, 15);
         //Recipients header
         Label recipientsHeader = new Label("recipientsHeader");
-        recipientsHeader.setModel(
+        recipientsHeader.setDefaultModel(
                 new Model("Permissions for \"" + permissionTarget.getName() + "\""));
 
         return table;

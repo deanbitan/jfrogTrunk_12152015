@@ -18,34 +18,33 @@
 
 package org.artifactory.repo.service;
 
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ExportSettings;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.repo.exception.RepoRejectionException;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.RealRepo;
-import org.artifactory.repo.RemoteRepo;
-import org.artifactory.repo.Repo;
-import org.artifactory.repo.RepoRepoPath;
-import org.artifactory.repo.context.RequestContext;
+import org.artifactory.repo.*;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.virtual.VirtualRepo;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.request.RequestContext;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.spring.ReloadableBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 /**
+ * A repository service to be used by the core
+ * <p/>
  * User: freds Date: Jul 31, 2008 Time: 5:50:18 PM
  */
 public interface InternalRepositoryService extends RepositoryService, ReloadableBean {
@@ -95,7 +94,7 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
 
     Repo nonCacheRepositoryByKey(String key);
 
-    StatusHolder assertValidPath(RealRepo repo, String path);
+    BasicStatusHolder assertValidPath(RealRepo repo, String path);
 
     /**
      * This will verify the permission to deploy to the path, and will not acquire any FsItem. ATTENTION: No read lock
@@ -106,22 +105,22 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * @return A status holder with info on error
      */
     @Transactional
-    void assertValidDeployPath(LocalRepo repo, String path) throws RepoRejectionException;
+    void assertValidDeployPath(LocalRepo repo, String path) throws RepoRejectException;
 
     @Lock(transactional = true)
     <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(RequestContext requestContext,
-            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException, RepoRejectionException;
+                                                                          RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException, RepoRejectException;
 
     @Lock(transactional = true)
     RepoResource unexpireIfExists(LocalRepo localCacheRepo, String path);
 
     @Lock(transactional = true)
     ResourceStreamHandle unexpireAndRetrieveIfExists(RequestContext requestContext, LocalRepo localCacheRepo,
-            String path) throws IOException, RepositoryException, RepoRejectionException;
+                                                     String path) throws IOException, RepositoryException, RepoRejectException;
 
     @Lock(transactional = true)
     ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, Repo repo, RepoResource res)
-            throws IOException, RepoRejectionException, RepositoryException;
+            throws IOException, RepoRejectException, RepositoryException;
 
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);
@@ -148,9 +147,8 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     void removeMarkForMavenMetadataRecalculation(RepoPath basePath);
 
     /**
-     * Asynchronous method called at the end of the transaction to acquire a write lock on the repo path
-     * and activate the automatic save.
-     * The write will be acquire only if the fs item is not already write locked.
+     * Asynchronous method called at the end of the transaction to acquire a write lock on the repo path and activate
+     * the automatic save. The write will be acquire only if the fs item is not already write locked.
      *
      * @param repoPath The RepoPath of the item with dirty state.
      */
@@ -164,4 +162,6 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
 
     @Lock(transactional = true)
     void setXmlMetadataLater(RepoPath repoPath, String metadataName, String metadataContent);
+
+    StatusHolder deploy(RepoPath repoPath, InputStream inputStream);
 }

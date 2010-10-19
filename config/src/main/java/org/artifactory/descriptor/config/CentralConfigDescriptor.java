@@ -31,11 +31,12 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.TimeZone;
 
 /**
- * Imutable interface for the central config,
+ * Immutable interface for the central config.
  *
  * @author Yossi Shaul
  */
@@ -60,6 +61,7 @@ public interface CentralConfigDescriptor extends Descriptor {
 
     String getServerName();
 
+    @Nonnull
     SecurityDescriptor getSecurity();
 
     /**

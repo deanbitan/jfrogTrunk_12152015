@@ -28,7 +28,7 @@ import org.apache.jackrabbit.core.persistence.bundle.ConnectionRecoveryManager;
 import org.apache.jackrabbit.core.persistence.pool.DerbyPersistenceManager;
 import org.apache.jackrabbit.core.util.db.ArtifactoryConnectionHelper;
 import org.apache.jackrabbit.core.util.db.ConnectionHelper;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
@@ -38,11 +38,7 @@ import org.slf4j.Logger;
 
 import javax.jcr.RepositoryException;
 import java.lang.reflect.Field;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 
@@ -64,7 +60,7 @@ public abstract class DerbyUtils {
 
     private static final String PREFIX_PROPERTY_NAME = "schemaObjectPrefix";
 
-    public static void compress(StatusHolder holder) {
+    public static void compress(BasicStatusHolder holder) {
         JcrSession usession = getUnmanagedSession();
         try {
             RepositoryImpl repository = (RepositoryImpl) usession.getRepository();
@@ -90,11 +86,10 @@ public abstract class DerbyUtils {
         }
     }
 
-
     /**
      * Compresses the datastore tables (holding the blobs) TODO: Move this method to the DataStore implementation
      */
-    private static void compressDataStore(RepositoryImpl repositoryImpl, StatusHolder holder) throws Exception {
+    private static void compressDataStore(RepositoryImpl repositoryImpl, BasicStatusHolder holder) throws Exception {
         log.info("Compressing datasource...");
         ExtendedDbDataStore dataStore = JcrUtils.getDataStore(repositoryImpl);
 
@@ -131,7 +126,7 @@ public abstract class DerbyUtils {
     /**
      * Compresses the workspace tables
      */
-    private static void compressWorkspace(RepositoryImpl repositoryImpl, StatusHolder holder) throws Exception {
+    private static void compressWorkspace(RepositoryImpl repositoryImpl, BasicStatusHolder holder) throws Exception {
         log.info("Compressing workspace...");
         RepositoryConfig repoConfig = repositoryImpl.getConfig();
         FileSystem fileSystem = repoConfig.getFileSystem();
@@ -200,7 +195,7 @@ public abstract class DerbyUtils {
      * @throws SQLException
      */
     private static void executeCall(Connection connection, String command, String schemaName, String tableName,
-            int paramLength) throws SQLException {
+                                    int paramLength) throws SQLException {
         CallableStatement cs = connection.prepareCall(command);
         cs.setString(1, schemaName);
         cs.setString(2, tableName);
@@ -255,10 +250,10 @@ public abstract class DerbyUtils {
     }
 
     /**
-     * Returns a hashmap with all the databases WorkspaceInfo objects
+     * Returns a map with all the databases WorkspaceInfo objects
      *
      * @param repositoryImpl Jackrabbit repository object
-     * @return HashMap - Map of WorkspaceInfo objects
+     * @return A map of WorkspaceInfo objects
      * @throws NoSuchFieldException
      * @throws IllegalAccessException
      */

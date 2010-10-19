@@ -18,6 +18,6 @@
 
 <!-- Tomcat context config -->
 <Context>
-    <!-- Turn off session serializaron to the filesystem -->
+    <!-- Turn off session serialization to the filesystem -->
     <Manager className="org.apache.catalina.session.StandardManager"/>
 </Context> 

@@ -35,11 +35,11 @@ public class TitleLabel extends Label {
                 return titled.getTitle();
             }
         });
-
+        setOutputMarkupId(true);
     }
 
     @Override
     public boolean isVisible() {
-        return super.isVisible() && !isEmpty(getModelObjectAsString());
+        return super.isVisible() && !isEmpty(getDefaultModelObjectAsString());
     }
 }

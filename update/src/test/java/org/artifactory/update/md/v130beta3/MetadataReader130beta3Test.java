@@ -19,16 +19,16 @@
 package org.artifactory.update.md.v130beta3;
 
 import com.thoughtworks.xstream.XStream;
-import org.artifactory.api.common.StatusHolder;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.FileInfo;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.fs.FileInfoImpl;
-import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.FolderInfoImpl;
 import org.artifactory.api.md.MetadataEntry;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.api.xstream.XStreamFactory;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.FolderInfo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.update.md.MetadataReaderBaseTest;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
@@ -58,7 +58,7 @@ public class MetadataReader130beta3Test extends MetadataReaderBaseTest {
     public void readFolderMetadata() {
         MetadataReader130beta3 reader = new MetadataReader130beta3();
         File folderMetadataDirectory = getMetadataDirectory("/metadata/v130beta3/0.1.23.artifactory-metadata");
-        StatusHolder status = new StatusHolder();
+        BasicStatusHolder status = new BasicStatusHolder();
         List<MetadataEntry> entries = reader.getMetadataEntries(folderMetadataDirectory, null, status);
         assertFalse(status.isError());
         assertNotNull(entries);
@@ -76,14 +76,14 @@ public class MetadataReader130beta3Test extends MetadataReaderBaseTest {
         MetadataReader130beta3 reader = new MetadataReader130beta3();
         File fileMetadataDirectory = getMetadataDirectory(
                 "/metadata/v130beta3/jsch-0.1.23.pom.artifactory-metadata");
-        StatusHolder status = new StatusHolder();
+        BasicStatusHolder status = new BasicStatusHolder();
         List<MetadataEntry> entries = reader.getMetadataEntries(fileMetadataDirectory, null, status);
         assertFalse(status.isError());
         assertNotNull(entries);
         assertEquals(entries.size(), 2, "Two matadata entries are expected - file and stats");
 
-        MetadataEntry fileInfoEntry = getMetadataByName(entries, FileInfo.ROOT);
-        FileInfo fileInfo = (FileInfo) xstream.fromXML(fileInfoEntry.getXmlContent());
+        MetadataEntry fileInfoEntry = getMetadataByName(entries, org.artifactory.fs.FileInfo.ROOT);
+        org.artifactory.fs.FileInfo fileInfo = (FileInfo) xstream.fromXML(fileInfoEntry.getXmlContent());
         Set<ChecksumInfo> checksums = fileInfo.getChecksums();
         Assert.assertNotNull(checksums);
         Assert.assertEquals(checksums.size(), 2);

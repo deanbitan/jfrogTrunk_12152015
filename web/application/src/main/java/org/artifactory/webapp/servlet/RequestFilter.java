@@ -54,7 +54,7 @@ public class RequestFilter extends DelayedFilterBase {
         chain.doFilter(req, responseWrapper);
         String servletPath = RequestUtils.getServletPathFromRequest(request);
         String method = request.getMethod();
-        int contentLength = 0;
+        long contentLength = 0;
         if ("get".equalsIgnoreCase(method)) {
             contentLength = responseWrapper.getContentLength();
         }
@@ -84,7 +84,7 @@ public class RequestFilter extends DelayedFilterBase {
      */
     private static class CapturingHttpServletResponseWrapper extends HttpServletResponseWrapper {
         private int status;
-        private int contentLength;
+        private long contentLength;
 
         private String CONTENT_LENGTH_HEADER = "Content-Length";
 
@@ -102,7 +102,7 @@ public class RequestFilter extends DelayedFilterBase {
             return status;
         }
 
-        public int getContentLength() {
+        public long getContentLength() {
             return contentLength;
         }
 
@@ -168,7 +168,7 @@ public class RequestFilter extends DelayedFilterBase {
 
         private void captureString(String name, String value) {
             if (name.equals(CONTENT_LENGTH_HEADER) && StringUtils.isNumeric(value)) {
-                contentLength = Integer.parseInt(value);
+                contentLength = Long.parseLong(value);
             }
         }
 

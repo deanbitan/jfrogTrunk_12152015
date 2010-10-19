@@ -24,8 +24,6 @@ import org.apache.ivy.core.module.id.ModuleRevisionId;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
@@ -33,6 +31,7 @@ import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.ivy.IvyService;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.FileActionable;
 
 
@@ -92,8 +91,8 @@ public class XmlViewTabPanel extends Panel {
 
 
     private String getContent(FileActionable item) {
-        FileInfo info = item.getFileInfo();
-        return repoService.getTextFileContent(info);
+        org.artifactory.fs.FileInfo info = item.getFileInfo();
+        return repoService.getStringContent(info);
     }
 
     public enum XmlTypes {

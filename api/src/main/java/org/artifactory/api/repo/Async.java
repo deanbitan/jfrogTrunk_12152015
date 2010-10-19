@@ -26,8 +26,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Schedule asynchronous invocation of a method. When combined with the @Lock annotation, make sure to place this
- * annotation first.
+ * Schedule asynchronous invocation of a method. Cannot be combined with the @Lock annotation. If the method returns
+ * a value it must be of type {@link java.util.concurrent.Future}.
  *
  * @author Yoav Landman
  */
@@ -36,15 +36,24 @@ import java.lang.annotation.Target;
 @Inherited
 @Documented
 public @interface Async {
-    boolean delayUntilAfterCommit() default false;
-
-    boolean failIfNotScheduledFromTransaction() default false;
-
+    /**
+     * Transactional will execute the async in a transaction.
+     */
     boolean transactional() default false;
+
+    /**
+     * Delay the execution until the current transaction (if any) commits successfully.
+     */
+    boolean delayUntilAfterCommit() default false;
 
     /**
      * Share the thread with other aysnc callbacks registered on the current thread - only applicable if
      * 'delayUntilAfterCommit' is true.
      */
     boolean shared() default true;
+
+    /**
+     * Don't execute if calling thread is not in a transaction.
+     */
+    boolean failIfNotScheduledFromTransaction() default false;
 }

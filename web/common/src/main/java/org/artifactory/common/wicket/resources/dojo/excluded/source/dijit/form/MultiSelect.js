@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.form.MultiSelect"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.form.MultiSelect"] = true;
 dojo.provide("dijit.form.MultiSelect");
 
 dojo.require("dijit.form._FormWidget");
@@ -22,7 +13,7 @@ dojo.declare("dijit.form.MultiSelect", dijit.form._FormValueWidget, {
 	//		set the size via style="..." or CSS class names instead.
 	size: 7,
 
-	templateString: "<select multiple='true' ${nameAttrSetting} dojoAttachPoint='containerNode,focusNode' dojoAttachEvent='onchange: _onChange'></select>",
+	templateString: "<select multiple='true' ${!nameAttrSetting} dojoAttachPoint='containerNode,focusNode' dojoAttachEvent='onchange: _onChange'></select>",
 
 	attributeMap: dojo.delegate(dijit.form._FormWidget.prototype.attributeMap, {
 		size: "focusNode"
@@ -97,11 +88,11 @@ dojo.declare("dijit.form.MultiSelect", dijit.form._FormValueWidget, {
 		dojo.query("option",this.containerNode).forEach(function(n){
 			n.selected = !n.selected;
 		});
-		this._handleOnChange(this.attr('value'), onChange == true);
+		this._handleOnChange(this.get('value'), onChange == true);
 	},
 
 	_onChange: function(/*Event*/ e){
-		this._handleOnChange(this.attr('value'), true);
+		this._handleOnChange(this.get('value'), true);
 	},
 
 	// for layout widgets:
@@ -115,5 +106,3 @@ dojo.declare("dijit.form.MultiSelect", dijit.form._FormValueWidget, {
 		this._onChange();
 	}
 });
-
-}

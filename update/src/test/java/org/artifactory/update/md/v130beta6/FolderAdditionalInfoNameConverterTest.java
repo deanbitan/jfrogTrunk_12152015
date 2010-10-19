@@ -19,7 +19,8 @@
 package org.artifactory.update.md.v130beta6;
 
 import org.artifactory.api.fs.FolderAdditionalInfo;
-import org.artifactory.api.fs.FolderInfo;
+import org.artifactory.api.fs.InternalFolderInfo;
+import org.artifactory.fs.FolderInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverterTest;
 import org.artifactory.util.ResourceUtils;
@@ -47,7 +48,7 @@ public class FolderAdditionalInfoNameConverterTest extends MetadataConverterTest
 
         // the result is intermediate so it might not be compatible with latest FolderInfo
         // but for now it is a good test to test the resulting FolderInfo
-        FolderInfo folderInfo = (FolderInfo) xstream.fromXML(result);
+        InternalFolderInfo folderInfo = (InternalFolderInfo) xstream.fromXML(result);
         FolderAdditionalInfo additionalInfo = folderInfo.getAdditionalInfo();
         Assert.assertNotNull(additionalInfo);
 

@@ -22,7 +22,7 @@ import org.apache.jackrabbit.ocm.mapper.impl.annotation.Field;
 import org.apache.jackrabbit.ocm.mapper.impl.annotation.Node;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 
 @Node(isInterface = true)

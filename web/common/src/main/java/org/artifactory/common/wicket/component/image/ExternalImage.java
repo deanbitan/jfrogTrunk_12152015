@@ -44,13 +44,13 @@ public class ExternalImage extends WebMarkupContainer {
 
     @Override
     public boolean isVisible() {
-        return super.isVisible() && StringUtils.isNotEmpty(getModelObjectAsString());
+        return super.isVisible() && StringUtils.isNotEmpty(getDefaultModelObjectAsString());
     }
 
     @Override
     protected void onComponentTag(ComponentTag tag) {
         super.onComponentTag(tag);
         checkComponentTag(tag, "img");
-        tag.put("src", getModelObjectAsString());
+        tag.put("src", getDefaultModelObjectAsString());
     }
 }

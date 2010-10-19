@@ -19,7 +19,7 @@
 package org.artifactory.api.config;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 
 /**
  * User: freds Date: Aug 5, 2008 Time: 9:30:26 PM

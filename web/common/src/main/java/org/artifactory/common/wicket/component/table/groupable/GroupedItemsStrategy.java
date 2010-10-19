@@ -26,6 +26,7 @@ import org.apache.wicket.markup.repeater.IItemReuseStrategy;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.artifactory.common.wicket.behavior.CssClass;
+import org.artifactory.common.wicket.component.table.groupable.provider.GroupableDataProvider;
 
 import java.util.Iterator;
 
@@ -71,10 +72,11 @@ public class GroupedItemsStrategy implements IItemReuseStrategy {
                 final IModel model = (IModel) next;
 
                 // check if grouped
-                SortParam groupParam = table.getDataProvider().getGroupParam();
+                final GroupableDataProvider provider = table.getGroupableDataProvider();
+                SortParam groupParam = provider.getGroupParam();
                 if (groupParam != null && model != null) {
                     String property = groupParam.getProperty();
-                    IChoiceRenderer reneder = table.getDataProvider().getGroupReneder(property);
+                    IChoiceRenderer reneder = provider.getGroupReneder(property);
                     Object modelObject = model.getObject();
                     Object value = reneder.getIdValue(modelObject, index);
                     if (!value.equals(lastGroupValue)) {
@@ -95,7 +97,7 @@ public class GroupedItemsStrategy implements IItemReuseStrategy {
             private Item newRowItem(IModel model) {
                 Item item = factory.newItem(index, model);
                 if (lastGroupItem != null && !table.isGroupExpanded(lastGroupItem) &&
-                        table.getDataProvider().getGroupParam() != null) {
+                        table.getGroupableDataProvider().getGroupParam() != null) {
                     item.add(new CssClass("row-collapsed"));
                 }
                 index++;

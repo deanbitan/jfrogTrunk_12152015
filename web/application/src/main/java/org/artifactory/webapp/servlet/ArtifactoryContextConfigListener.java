@@ -158,12 +158,13 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             SpringConfigPaths springConfigPaths = SpringConfigResourceLoader.getConfigurationPaths(artifactoryHome);
             context = (ApplicationContext) constructor.newInstance(
                     contextUniqueName, springConfigPaths, artifactoryHome);
-            ArtifactoryHome.unbind();
-
         } catch (Exception e) {
             log.error("Error creating spring context", e);
             throw new RuntimeException(e);
+        } finally {
+            ArtifactoryHome.unbind();
         }
+
         log.info("\n" +
                 "###########################################################\n" +
                 "### Artifactory successfully started (" +
@@ -196,7 +197,6 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
     /**
      * @return True if the current jvm version is supported (the unsupported versions are java 6 upto java 6 update 4)
      */
-    //TODO [by noam]: find a better way to check the minor versions when on different vendors of the JVM
     private boolean isSupportedJava6() {
         //Make sure to warn user if he is using Java 6 with an update earlier than 4
         boolean supported = true;
@@ -204,7 +204,8 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             String javaVersion = JdkVersion.getJavaVersion();
             int underscoreIndex = javaVersion.indexOf('_');
             if (underscoreIndex == -1) {
-                supported = false;
+                // maybe not sun jvm (don't bother checking)
+                supported = true;
             } else {
                 try {
                     int minorVersion = Integer.parseInt(javaVersion.substring(underscoreIndex + 1));
@@ -212,7 +213,8 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
                         supported = false;
                     }
                 } catch (Exception e) {
-                    supported = false;
+                    // maybe not sun jvm (don't bother checking)                    
+                    supported = true;
                 }
             }
         }

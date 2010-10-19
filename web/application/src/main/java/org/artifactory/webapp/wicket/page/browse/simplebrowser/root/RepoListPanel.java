@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.browse.simplebrowser.root;
 
 import org.apache.wicket.Component;
+import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
@@ -40,17 +41,21 @@ public class RepoListPanel extends TitledPanel {
     public RepoListPanel(String id, List<? extends RepoBaseDescriptor> repoDescriptorList) {
         super(id);
         final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
-        add(new ListView("repos", repoDescriptorList) {
+        add(new ListView<RepoBaseDescriptor>("repos", repoDescriptorList) {
             @Override
-            protected void populateItem(ListItem item) {
-                RepoBaseDescriptor repo = (RepoBaseDescriptor) item.getModelObject();
+            protected void populateItem(ListItem<RepoBaseDescriptor> item) {
+                RepoBaseDescriptor repo = item.getModelObject();
                 String key = repo.getKey();
-                String href = hrefPrefix + "/" + key + "/";
-                Component link = new ExternalLink("link", href, key);
 
+                Component browseLink = new ExternalLink("link", hrefPrefix + "/" + key + "/", key);
                 String cssClass = ItemCssClass.getRepoDescriptorCssClass(repo);
-                link.add(new CssClass(cssClass));
-                item.add(link);
+                browseLink.add(new CssClass(cssClass));
+                item.add(browseLink);
+
+                final ExternalLink listLink = new ExternalLink("listLink", hrefPrefix + "/list/" + key + "/", " ");
+                listLink.add(new SimpleAttributeModifier("title", "Directory Listing for " + key));
+                listLink.add(new CssClass("ext-link"));
+                item.add(listLink);
             }
         });
     }

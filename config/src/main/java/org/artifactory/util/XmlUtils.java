@@ -32,7 +32,9 @@ import java.io.StringReader;
  * @author yoavl
  */
 public abstract class XmlUtils {
-
+    private XmlUtils() {
+        // utility class
+    }
 
     public static String outputString(Document doc) {
         String convertedXml = new XMLOutputter().outputString(doc);

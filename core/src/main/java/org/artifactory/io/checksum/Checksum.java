@@ -18,13 +18,18 @@
 
 package org.artifactory.io.checksum;
 
-import org.artifactory.api.mime.ChecksumType;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.artifactory.checksum.ChecksumType;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class Checksum {
 
@@ -77,5 +82,34 @@ public class Checksum {
             sb.append(t);
         }
         checksum = sb.toString().trim();
+    }
+
+    /**
+     * Reads and formats the checksum value from the given stream of a checksum file
+     *
+     * @param inputStream An input stream of checksum file
+     * @return Extracted checksum value
+     * @throws java.io.IOException If failed to read from the input stream
+     */
+    @SuppressWarnings({"unchecked"})
+    public static String checksumStringFromStream(InputStream inputStream) throws IOException {
+        List<String> lineList = IOUtils.readLines(inputStream, "utf-8");
+        for (String line : lineList) {
+            //Make sure the line isn't blank or commented out
+            if (StringUtils.isNotBlank(line) && !line.startsWith("//")) {
+                //Remove white spaces at the end
+                line = line.trim();
+                //Check for 'MD5 (name) = CHECKSUM'
+                int prefixPos = line.indexOf(")= ");
+                if (prefixPos != -1) {
+                    line = line.substring(prefixPos + 3);
+                }
+                //We don't simply return the file content since some checksum files have more
+                //characters at the end of the checksum file.
+                String checksum = StringUtils.split(line)[0];
+                return checksum;
+            }
+        }
+        return "";
     }
 }

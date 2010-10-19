@@ -26,7 +26,8 @@ import org.slf4j.Logger;
 /**
  * Displays the permissions recipients table.
  * <p/>
- * Created by IntelliJ IDEA. User: yoavl
+ *
+ * @author Yoav Landman
  */
 public class PermissionTargetRecipientsPanel extends Panel {
     private static final Logger log = LoggerFactory.getLogger(PermissionTargetRecipientsPanel.class);

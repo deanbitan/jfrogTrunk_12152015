@@ -50,7 +50,7 @@ import java.io.OutputStream;
 import java.security.AccessControlException;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class JcrSession implements XASession {
     private static final Logger log = LoggerFactory.getLogger(JcrSession.class);
@@ -302,10 +302,9 @@ public class JcrSession implements XASession {
     private void validateSessionCleaness() {
         SessionResourceManager resourceManager = getSessionResourceManager();
         if (resourceManager != null && resourceManager.hasPendingResources()) {
-            IllegalStateException e =
-                    new IllegalStateException("Tried to return a session with unprocessed pending resources (" +
-                            resourceManager.getClass().getName() + ".");
-            log.error(e.getMessage(), e);
+            IllegalStateException e = new IllegalStateException("Tried to return a session with unprocessed pending " +
+                    "resources: " + resourceManager.pendingResources());
+            log.error("Session is not clean: ", e);
         }
     }
 

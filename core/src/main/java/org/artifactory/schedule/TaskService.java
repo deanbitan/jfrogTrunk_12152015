@@ -137,4 +137,6 @@ public interface TaskService extends ReloadableBean {
     boolean hasTaskOfType(Class<? extends TaskCallback> callbackType);
 
     TaskBase getSingletonTaskTaskOfType(Class<? extends TaskCallback> callbackType);
+
+    void pauseTask(String token, long timeToPause);
 }

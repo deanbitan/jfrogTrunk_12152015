@@ -20,12 +20,11 @@ package org.artifactory.webapp.wicket.page.security.group;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.LdapGroupWebAddon;
@@ -38,6 +37,7 @@ import org.artifactory.common.wicket.component.modal.links.ModalShowLink;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
+import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
 import org.artifactory.webapp.wicket.page.security.group.permission.GroupPermissionsPanel;
 
 import java.util.List;
@@ -69,19 +69,20 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
 
     @Override
     protected void addColumns(List<IColumn> columns) {
-        columns.add(new PropertyColumn(new Model("Group Name"), "groupName", "groupName") {
+        columns.add(new TitlePropertyColumn<String>("Group Name", "groupName", "groupName") {
             @Override
-            public void populateItem(Item item, String componentId, IModel model) {
+            public void populateItem(Item<ICellPopulator<String>> item, String componentId, IModel<String> model) {
                 super.populateItem(item, componentId, model);
                 item.add(new CssClass("group nowrap"));
             }
         });
 
-        columns.add(new PropertyColumn(new Model("Description"), "description", "description") {
+        columns.add(new TitlePropertyColumn<GroupInfo>("Description", "description", "description") {
             @Override
-            public void populateItem(Item item, String componentId, IModel model) {
+            public void populateItem(Item<ICellPopulator<GroupInfo>> item, String componentId,
+                    IModel<GroupInfo> model) {
                 super.populateItem(item, componentId, model);
-                GroupInfo groupInfo = (GroupInfo) model.getObject();
+                GroupInfo groupInfo = model.getObject();
                 String description = groupInfo.getDescription();
                 item.add(new SimpleAttributeModifier("title",
                         description != null ? description : ""));
@@ -93,7 +94,7 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
         if (externalGroupColumn != null) {
             columns.add(externalGroupColumn);
         }
-        columns.add(new BooleanColumn(new Model("Auto Join"), "newUserDefault", "newUserDefault"));
+        columns.add(new BooleanColumn("Auto Join", "newUserDefault", "newUserDefault"));
     }
 
     @Override

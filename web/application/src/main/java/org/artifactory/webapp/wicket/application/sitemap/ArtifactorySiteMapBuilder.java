@@ -21,9 +21,10 @@ package org.artifactory.webapp.wicket.application.sitemap;
 import org.apache.wicket.Page;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.HttpSsoAddon;
+import org.artifactory.addon.wicket.LicensesWebAddon;
 import org.artifactory.addon.wicket.PropertiesAddon;
 import org.artifactory.addon.wicket.SearchAddon;
+import org.artifactory.addon.wicket.SsoAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.addon.wicket.WebstartWebAddon;
 import org.artifactory.api.security.ArtifactoryPermission;
@@ -40,7 +41,9 @@ import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 import org.artifactory.webapp.wicket.page.deploy.DeployArtifactPage;
 import org.artifactory.webapp.wicket.page.deploy.fromzip.DeployFromZipPage;
 import org.artifactory.webapp.wicket.page.home.HomePage;
-import org.artifactory.webapp.wicket.page.home.MavenSettingsPage;
+import org.artifactory.webapp.wicket.page.home.settings.gradle.GradleInitScriptPage;
+import org.artifactory.webapp.wicket.page.home.settings.ivy.IvySettingsPage;
+import org.artifactory.webapp.wicket.page.home.settings.maven.MavenSettingsPage;
 import org.artifactory.webapp.wicket.page.search.archive.ArchiveSearchPage;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
 import org.artifactory.webapp.wicket.page.search.gavc.GavcSearchPage;
@@ -73,7 +76,12 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
 
         MenuNode welcomePage = new MenuNode("Welcome", HomePage.class);
         homeGroup.addChild(welcomePage);
-        homeGroup.addChild(new MenuNode("Maven Settings", MavenSettingsPage.class));
+
+        MenuNode settingsGroup = new OpenedMenuNode("Client Settings");
+        homeGroup.addChild(settingsGroup);
+        settingsGroup.addChild(new MenuNode("Maven Settings", MavenSettingsPage.class));
+        settingsGroup.addChild(new MenuNode("Gradle Init Script", GradleInitScriptPage.class));
+        settingsGroup.addChild(new MenuNode("Ivy Settings", IvySettingsPage.class));
 
         MenuNode browseRepoPage = new ArtifactsPageNode("Artifacts", BrowseRepoPage.class);
         root.addChild(browseRepoPage);
@@ -105,13 +113,13 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
 
         MenuNode adminPage = new AdminPageNode("Admin");
         root.addChild(adminPage);
-
-        MenuNode adminConfiguration = applicationAddon.getConfigurationMenuNode(propertiesAddon);
+        LicensesWebAddon licensesWebAddon = addons.addonByType(LicensesWebAddon.class);
+        MenuNode adminConfiguration = applicationAddon.getConfigurationMenuNode(propertiesAddon, licensesWebAddon);
         adminPage.addChild(adminConfiguration);
 
         WebstartWebAddon webstartAddon = addons.addonByType(WebstartWebAddon.class);
-        HttpSsoAddon httpSsoAddon = addons.addonByType(HttpSsoAddon.class);
-        MenuNode securityConfiguration = applicationAddon.getSecurityMenuNode(webstartAddon, httpSsoAddon);
+        SsoAddon ssoAddon = addons.addonByType(SsoAddon.class);
+        MenuNode securityConfiguration = applicationAddon.getSecurityMenuNode(webstartAddon, ssoAddon);
         adminPage.addChild(securityConfiguration);
 
         MenuNode adminServices = applicationAddon.getServicesMenuNode();

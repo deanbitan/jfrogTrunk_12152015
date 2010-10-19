@@ -18,9 +18,10 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.mime.MimeType;
+import org.artifactory.repo.RepoPath;
 
 /**
  * A checksum resource is used as a response for checksum request and it wraps the actual file resource for which the
@@ -41,7 +42,7 @@ public class ChecksumResource extends FileResource {
     @Override
     public RepoPath getRepoPath() {
         RepoPath fileRepoPath = super.getRepoPath();
-        return new RepoPath(fileRepoPath.getRepoKey(), fileRepoPath.getPath() + type.ext());
+        return new RepoPathImpl(fileRepoPath.getRepoKey(), fileRepoPath.getPath() + type.ext());
     }
 
     @Override
@@ -49,7 +50,7 @@ public class ChecksumResource extends FileResource {
         RepoPath repoPath = super.getResponseRepoPath();
         // super might already call this class getRepoPath, so fix the path only if required 
         if (!repoPath.getPath().endsWith(type.ext())) {
-            repoPath = new RepoPath(repoPath.getRepoKey(), repoPath.getPath() + type.ext());
+            repoPath = new RepoPathImpl(repoPath.getRepoKey(), repoPath.getPath() + type.ext());
         }
         return repoPath;
     }

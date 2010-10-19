@@ -31,7 +31,7 @@ public class StyledCheckboxColumn<T> extends CheckboxColumn<T> {
     }
 
     @Override
-    protected FormComponent newCheckBox(String id, IModel model, final T rowObject) {
+    protected FormComponent newCheckBox(String id, IModel<Boolean> model, T rowObject) {
         return new StyledCheckbox(id, model).setTitle("");
     }
 }

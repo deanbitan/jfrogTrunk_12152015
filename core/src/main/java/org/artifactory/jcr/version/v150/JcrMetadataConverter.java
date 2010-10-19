@@ -19,9 +19,9 @@
 package org.artifactory.jcr.version.v150;
 
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.jcr.JcrConfResourceLoader;
 import org.artifactory.jcr.JcrService;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.version.FatalConversionException;

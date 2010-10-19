@@ -20,12 +20,12 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven;
 
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.webapp.actionable.FileActionable;
 
 import static org.artifactory.common.wicket.component.label.highlighter.Syntax.xml;
@@ -50,49 +50,9 @@ public class PomViewTabPanel extends Panel {
         super(id);
         add(new CssClass("veiw-tab"));
 
-        FileInfo fileInfo = repoItem.getFileInfo();
+        org.artifactory.fs.FileInfo fileInfo = repoItem.getFileInfo();
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(fileInfo.getRepoPath());
-        addMavenDependencySection(artifactInfo);
-        addIvyDependencySection(artifactInfo);
         addPomContent(fileInfo);
-    }
-
-    /**
-     * Adds the maven dependency declaration content
-     *
-     * @param artifactInfo Artifact info to display
-     */
-    private void addMavenDependencySection(MavenArtifactInfo artifactInfo) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<dependency>\n");
-        sb.append("    <groupId>").append(artifactInfo.getGroupId()).append("</groupId>\n");
-        sb.append("    <artifactId>").append(artifactInfo.getArtifactId())
-                .append("</artifactId>\n");
-        sb.append("    <version>").append(artifactInfo.getVersion()).append("</version>\n");
-        sb.append("</dependency>");
-
-        FieldSetBorder border = new FieldSetBorder("mavenDependencyBorder");
-        add(border);
-        border.add(WicketUtils.getSyntaxHighlighter("mavenDependencyDeclaration", sb.toString(), xml));
-    }
-
-    /**
-     * Adds the ivy dependency declaration content
-     *
-     * @param artifactInfo Artifact info to display
-     */
-    private void addIvyDependencySection(MavenArtifactInfo artifactInfo) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<dependency org=\"");
-        sb.append(artifactInfo.getGroupId()).append("\" ");
-        sb.append("name=\"");
-        sb.append(artifactInfo.getArtifactId()).append("\" ");
-        sb.append("rev=\"");
-        sb.append(artifactInfo.getVersion()).append("\" />");
-
-        FieldSetBorder border = new FieldSetBorder("ivyDependencyBorder");
-        add(border);
-        border.add(WicketUtils.getSyntaxHighlighter("ivyDependencyDeclaration", sb.toString(), xml));
     }
 
     /**
@@ -104,7 +64,7 @@ public class PomViewTabPanel extends Panel {
         FieldSetBorder border = new FieldSetBorder("pomBorder");
         add(border);
 
-        String content = repoService.getTextFileContent(fileInfo);
+        String content = repoService.getStringContent(fileInfo);
         border.add(WicketUtils.getSyntaxHighlighter("pomContent", content, xml));
     }
 }

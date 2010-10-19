@@ -19,15 +19,14 @@
 package org.artifactory.update.md.v130beta6;
 
 import com.thoughtworks.xstream.XStream;
-import org.artifactory.api.common.StatusHolder;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.FileInfo;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.fs.FileInfoImpl;
-import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.FolderInfoImpl;
 import org.artifactory.api.md.MetadataEntry;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.api.xstream.XStreamFactory;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.update.md.MetadataReaderBaseTest;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
@@ -57,7 +56,7 @@ public class MetadataReader130beta6Test extends MetadataReaderBaseTest {
     public void readFolderMetadata() {
         MetadataReader130beta6 reader = new MetadataReader130beta6();
         File folderMetadataDirectory = getMetadataDirectory("/metadata/v130beta6/3.8.1.artifactory-metadata");
-        StatusHolder status = new StatusHolder();
+        BasicStatusHolder status = new BasicStatusHolder();
         List<MetadataEntry> entries = reader.getMetadataEntries(folderMetadataDirectory, null, status);
         assertFalse(status.isError());
         assertNotNull(entries);
@@ -65,21 +64,22 @@ public class MetadataReader130beta6Test extends MetadataReaderBaseTest {
         assertEquals(entries.get(0).getMetadataName(), "artifactory-folder");
 
         // the result should be compatible with the latest FolderInfo
-        FolderInfo folderInfo = (FolderInfo) xstream.fromXML(entries.get(0).getXmlContent());
+        org.artifactory.fs.FolderInfo folderInfo =
+                (org.artifactory.fs.FolderInfo) xstream.fromXML(entries.get(0).getXmlContent());
     }
 
     public void readFileMetadata() {
         MetadataReader130beta6 reader = new MetadataReader130beta6();
         File fileMetadataDirectory = getMetadataDirectory(
                 "/metadata/v130beta6/junit-3.8.1.jar.artifactory-metadata");
-        StatusHolder status = new StatusHolder();
+        BasicStatusHolder status = new BasicStatusHolder();
         List<MetadataEntry> entries = reader.getMetadataEntries(fileMetadataDirectory, null, status);
         assertFalse(status.isError());
         assertNotNull(entries);
         assertEquals(entries.size(), 2, "Two matadata entries are expected - file and stats");
 
         MetadataEntry fileInfoEntry = getMetadataByName(entries, FileInfo.ROOT);
-        FileInfo fileInfo = (FileInfo) xstream.fromXML(fileInfoEntry.getXmlContent());
+        org.artifactory.fs.FileInfo fileInfo = (FileInfo) xstream.fromXML(fileInfoEntry.getXmlContent());
         Set<ChecksumInfo> checksums = fileInfo.getChecksums();
         Assert.assertNotNull(checksums);
         Assert.assertEquals(checksums.size(), 2);

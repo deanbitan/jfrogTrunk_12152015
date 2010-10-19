@@ -24,9 +24,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchControls;
@@ -44,9 +42,9 @@ import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.jackrabbit.DataStoreRecordNotFoundException;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.util.ExceptionUtils;
-import org.jdom.Content;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
@@ -108,7 +106,8 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
     }
 
     protected StringBuilder getPathQueryBuilder(SearchControlsBase controls) {
-        StringBuilder queryBuilder = new StringBuilder("/");
+        // only search under the repositories node
+        StringBuilder queryBuilder = new StringBuilder("/jcr:root" + JcrPath.get().getRepoJcrRootPath() + "/");
         addRepoToQuery(controls, queryBuilder);
         return queryBuilder;
     }
@@ -117,8 +116,7 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
 
     private void addRepoToQuery(SearchControlsBase controls, StringBuilder queryBuilder) {
         if (controls.isSpecificRepoSearch()) {
-            queryBuilder.append("jcr:root").append(JcrPath.get().getRepoJcrRootPath()).append(FORWARD_SLASH).
-                    append(". [");
+            queryBuilder.append(". [");
 
             Iterator<String> repoKeys = controls.getSelectedRepoForSearch().iterator();
 
@@ -186,69 +184,11 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
         return fragments.toArray(new Element[fragments.size()]);
     }
 
-    /**
-     * Returns the beginning of the path (if any) before a highlighted element in a list of Element contents.
-     *
-     * @param children   List of Element contents
-     * @param path       The path StringBuilder
-     * @param childIndex The index of the highlighted child
-     */
-    protected void getPathBeforeHighlight(List<Content> children, StringBuilder path, int childIndex) {
-        //Make sure we are not the first element in the array
-        if (childIndex > 0) {
-            for (int i = (childIndex - 1); i > -1; i--) {
-
-                //Get element
-                Content element = children.get(i);
-                String elementValue = element.getValue();
-
-                //Paths are separated by spaces, so we should stop at the last space occurrence
-                int lastSpace = elementValue.lastIndexOf(' ');
-                if (lastSpace < 0) {
-                    path.insert(0, elementValue);
-                } else {
-                    String pathPiece = elementValue.substring(lastSpace + 1);
-                    path.insert(0, pathPiece);
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
-     * Returns the rest of the path (if any) after a highlighted element in a list of Element contents.
-     *
-     * @param children   List of Element contents
-     * @param path       The path StringBuilder
-     * @param childIndex The index of the highlighted child
-     */
-    protected void getPathAfterHighlight(List<Content> children, StringBuilder path, int childIndex) {
-        //Make sure we are not at the end of the array
-        if (childIndex < children.size()) {
-            for (int i = (childIndex + 1); i < children.size(); i++) {
-
-                //Get element
-                Content element = children.get(i);
-                String elementValue = element.getValue();
-
-                //Paths are separated by spaces, so we should stop at the next space occurrence
-                int firstSpace = elementValue.indexOf(' ');
-                if (firstSpace < 0) {
-                    path.append(elementValue);
-                } else {
-                    String pathPiece = elementValue.substring(0, firstSpace);
-                    path.append(pathPiece);
-                    break;
-                }
-            }
-        }
-    }
-
     protected int getMaxResults() {
         return maxResults;
     }
 
-    protected ItemInfo getProxyItemInfo(Node artifactNode) throws RepositoryException {
+    protected org.artifactory.fs.ItemInfo getProxyItemInfo(Node artifactNode) throws RepositoryException {
         ItemInfoProxy itemInfo;
         RepoPath repoPath = JcrPath.get().getRepoPath(artifactNode.getPath());
         if (JcrFile.isFileNode(artifactNode)) {
@@ -316,9 +256,9 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
                 PathNotFoundException.class, FileNotFoundException.class, ItemNotFoundException.class);
         if (notFound != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Skipping unfound archive search result", re);
+                log.debug("Skipping unfound search result", re);
             } else {
-                log.error("Skipping unfound archive search result: {}.", re.getMessage());
+                log.error("Skipping unfound search result: {}.", re.getMessage());
             }
         } else {
             throw re;

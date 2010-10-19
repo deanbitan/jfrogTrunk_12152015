@@ -110,7 +110,7 @@
         <level value="DEBUG"/>
         <appender-ref ref="ACCESS"/>
     </logger>
-    <logger name="org.artifactory.api.common.StatusHolder" additivity="false">
+    <logger name="org.artifactory.api.common.BasicStatusHolder" additivity="false">
         <level value="DEBUG"/>
         <appender-ref ref="IMPORT.EXPORT"/>
     </logger>
@@ -150,6 +150,9 @@
         <level value="INFO"/>
     </logger>
     <logger name="org.eclipse.jetty">
+        <level value="WARN"/>
+    </logger>
+    <logger name="com.atlassian.crowd.integration.service.soap.client.ClientPropertiesImpl">
         <level value="WARN"/>
     </logger>
     <!--

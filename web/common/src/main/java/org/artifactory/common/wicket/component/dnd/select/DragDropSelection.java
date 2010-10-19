@@ -23,6 +23,7 @@ import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.behavior.IBehavior;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.FormComponentPanel;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
@@ -31,8 +32,8 @@ import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.model.util.WildcardListModel;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.common.wicket.component.StringChoiceRenderer;
 import org.artifactory.common.wicket.component.dnd.list.DragDropList;
 import org.artifactory.common.wicket.component.links.SimpleTitledLink;
 import org.artifactory.common.wicket.component.template.HtmlTemplate;
@@ -51,47 +52,51 @@ import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 /**
  * @author Yoav Aharoni
  */
-public class DragDropSelection<T> extends FormComponentPanel {
+public class DragDropSelection<T> extends FormComponentPanel<T> {
     private IModel choicesModel;
     private IChoiceRenderer renderer;
     private List<T> unselectedItems;
 
     public DragDropSelection(final String id) {
-        this(id, Collections.<T>emptyList());
+        this(id, new ArrayList<T>(), new ChoiceRenderer<T>());
     }
 
-    public DragDropSelection(final String id, final List<T> choices) {
-        this(id, new Model((Serializable) choices));
+    public DragDropSelection(final String id, final List<? extends T> choices) {
+        this(id, choices, new ChoiceRenderer<T>());
     }
 
-    public DragDropSelection(final String id, final List<T> choices, final IChoiceRenderer renderer) {
-        this(id, new Model((Serializable) choices), renderer);
+    public DragDropSelection(final String id, final List<? extends T> choices,
+            final IChoiceRenderer<? super T> renderer) {
+        this(id, new WildcardListModel<T>(choices), renderer);
     }
 
-    public DragDropSelection(final String id, IModel model, final List<T> choices) {
-        this(id, model, new Model((Serializable) choices));
+    public DragDropSelection(final String id, IModel<T> model, final List<? extends T> choices) {
+        this(id, model, choices, new ChoiceRenderer<T>());
     }
 
-    public DragDropSelection(final String id, IModel model, final List<T> choices, final IChoiceRenderer renderer) {
-        this(id, model, new Model((Serializable) choices), renderer);
+    public DragDropSelection(final String id, IModel<T> model, final List<? extends T> choices,
+            final IChoiceRenderer<? super T> renderer) {
+        this(id, model, new WildcardListModel<T>(choices), renderer);
     }
 
-    public DragDropSelection(String id, IModel choicesModel) {
-        this(id, choicesModel, StringChoiceRenderer.getInstance());
+    public DragDropSelection(final String id, final IModel<? extends List<? extends T>> choicesModel) {
+        this(id, choicesModel, new ChoiceRenderer<T>());
     }
 
-    public DragDropSelection(String id, IModel model, IModel choicesModel) {
-        this(id, model, choicesModel, StringChoiceRenderer.getInstance());
+    public DragDropSelection(final String id, IModel<T> model, final IModel<? extends List<? extends T>> choicesModel) {
+        this(id, model, choicesModel, new ChoiceRenderer<T>());
     }
 
-    public DragDropSelection(String id, IModel choicesModel, IChoiceRenderer renderer) {
+    public DragDropSelection(final String id, final IModel<? extends List<? extends T>> choicesModel,
+            final IChoiceRenderer<? super T> renderer) {
         super(id);
         this.choicesModel = choicesModel;
         this.renderer = renderer;
         init();
     }
 
-    public DragDropSelection(String id, IModel model, IModel choicesModel, IChoiceRenderer renderer) {
+    public DragDropSelection(final String id, IModel<T> model, final IModel<? extends List<? extends T>> choicesModel,
+            final IChoiceRenderer<? super T> renderer) {
         super(id, model);
         this.choicesModel = choicesModel;
         this.renderer = renderer;
@@ -186,7 +191,7 @@ public class DragDropSelection<T> extends FormComponentPanel {
 
     @SuppressWarnings({"unchecked"})
     protected void populateItem(ListItem item) {
-        T itemObject = (T) item.getModelObject();
+        T itemObject = (T) item.getDefaultModelObject();
         List<T> choices = (List<T>) choicesModel.getObject();
         int index = choices.indexOf(itemObject);
         item.add(new SimpleAttributeModifier("idx", String.valueOf(index)));
@@ -213,7 +218,7 @@ public class DragDropSelection<T> extends FormComponentPanel {
     }
 
     public void setChoices(List<T> choices) {
-        choicesModel = new Model((Serializable) choices);
+        choicesModel = new Model<Serializable>((Serializable) choices);
     }
 
     public IChoiceRenderer getChoiceRenderer() {
@@ -233,7 +238,7 @@ public class DragDropSelection<T> extends FormComponentPanel {
     @SuppressWarnings({"unchecked"})
     private void updateSourceList() {
         unselectedItems = new ArrayList<T>((Collection<T>) choicesModel.getObject());
-        Collection<T> selected = (Collection<T>) getModelObject();
+        Collection<T> selected = (Collection<T>) getDefaultModelObject();
         if (isNotEmpty(selected)) {
             unselectedItems.removeAll(selected);
         }
@@ -253,7 +258,7 @@ public class DragDropSelection<T> extends FormComponentPanel {
     private class TargetListModel extends AbstractReadOnlyModel {
         @Override
         public Object getObject() {
-            Collection<?> selected = (Collection<?>) getModelObject();
+            Collection<?> selected = (Collection<?>) getDefaultModelObject();
             if (selected instanceof List) {
                 return selected;
             }
@@ -334,7 +339,7 @@ public class DragDropSelection<T> extends FormComponentPanel {
         }
     }
 
-    private class TargetSelectionModel extends Model {
+    private class TargetSelectionModel extends Model<String> {
         private TargetSelectionModel() {
             // make sure model will notify change for empty selection
             super("-");
@@ -342,14 +347,17 @@ public class DragDropSelection<T> extends FormComponentPanel {
 
         @Override
         @SuppressWarnings({"unchecked"})
-        public void setObject(Object object) {
-            super.setObject(object);
-            if (object == null) {
-                setModelObject(createNewSelectionCollection(0));
+        public void setObject(String selectionString) {
+            super.setObject(selectionString);
+            if ("-".equals(selectionString)) {
                 return;
             }
 
-            String selectionString = object.toString();
+            if (selectionString == null) {
+                setDefaultModelObject(createNewSelectionCollection(0));
+                return;
+            }
+
             String[] selectedIndices = selectionString.split(",");
 
             // get newSelection list
@@ -359,13 +367,15 @@ public class DragDropSelection<T> extends FormComponentPanel {
             List<T> choices = (List<T>) choicesModel.getObject();
             for (String index : selectedIndices) {
                 Integer intIndex = Integer.valueOf(index);
-                newSelection.add(choices.get(intIndex));
+                if (intIndex != -1) {
+                    newSelection.add(choices.get(intIndex));
+                }
             }
-            setModelObject(newSelection);
+            setDefaultModelObject(newSelection);
         }
     }
 
-    private class SelectionField extends HiddenField {
+    private class SelectionField extends HiddenField<String> {
         private SelectionField(String id) {
             super(id, new TargetSelectionModel());
             setOutputMarkupId(true);

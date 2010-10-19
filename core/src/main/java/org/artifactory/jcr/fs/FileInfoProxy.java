@@ -18,19 +18,20 @@
 
 package org.artifactory.jcr.fs;
 
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.ChecksumsInfo;
 import org.artifactory.api.fs.FileAdditionalInfo;
-import org.artifactory.api.fs.FileInfo;
+import org.artifactory.api.fs.InternalFileInfo;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumsInfo;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.repo.RepoPath;
 
 import java.util.Set;
 
 /**
  * @author Yoav Landman
  */
-public class FileInfoProxy extends ItemInfoProxy<FileInfo> implements FileInfo {
+public class FileInfoProxy extends ItemInfoProxy<InternalFileInfo> implements FileInfo {
 
     public FileInfoProxy(RepoPath repoPath) {
         super(repoPath);

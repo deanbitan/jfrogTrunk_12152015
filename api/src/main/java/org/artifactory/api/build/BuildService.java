@@ -23,6 +23,7 @@ import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
+import org.artifactory.jcr.JcrTypes;
 import org.jfrog.build.api.Build;
 
 import java.io.IOException;
@@ -38,6 +39,8 @@ public interface BuildService extends ImportableExportable {
 
     public static final String BUILD_CHECKSUM_PREFIX_MD5 = "{MD5}";
     public static final String BUILD_CHECKSUM_PREFIX_SHA1 = "{SHA1}";
+    public static final String PROP_BUILD_LATEST_NUMBER = JcrTypes.PROP_BUILD_LATEST_NUMBER;
+    public static final String PROP_BUILD_LATEST_START_TIME = JcrTypes.PROP_BUILD_LATEST_START_TIME;
 
     /**
      * Adds the given build to the DB

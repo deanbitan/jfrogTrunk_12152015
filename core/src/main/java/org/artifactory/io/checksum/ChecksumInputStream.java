@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class ChecksumInputStream extends BufferedInputStream {
 

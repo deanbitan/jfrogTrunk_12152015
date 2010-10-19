@@ -21,38 +21,45 @@ package org.artifactory.engine;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.plugin.PluginsAddon;
+import org.artifactory.addon.plugin.download.AltResponseAction;
+import org.artifactory.addon.plugin.download.ResponseCtx;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.mime.ChecksumType;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.fs.RepoResource;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
-import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.cache.InternalCacheService;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.io.StringResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.Repo;
-import org.artifactory.repo.context.DownloadRequestContext;
-import org.artifactory.repo.context.RequestContext;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.request.RemoteRequestException;
-import org.artifactory.request.RequestResponseHelper;
+import org.artifactory.request.*;
 import org.artifactory.resource.ChecksumResource;
 import org.artifactory.resource.FileResource;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.traffic.InternalTrafficService;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Service;
 
 import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+
+/**
+ * @author Yoav Landman
+ */
 
 @Service
 @Reloadable(beanClass = InternalDownloadService.class,
@@ -63,6 +70,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
 
     @Autowired
     private AuthorizationService authorizationService;
+
+    @Autowired
+    private BasicAuthenticationEntryPoint authenticationEntryPoint;
 
     @Autowired
     private InternalRepositoryService repositoryService;
@@ -186,17 +196,42 @@ public class DownloadServiceImpl implements InternalDownloadService {
     }
 
     private void respondFoundResource(RequestContext requestContext, ArtifactoryResponse response,
-            RepoResource resource) throws IOException {
+                                      RepoResource resource) throws IOException {
         //Get the actual repository the resource is in
-        String repoKey = resource.getResponseRepoPath().getRepoKey();
-        Repo repository = repositoryService.repositoryByKey(repoKey);
+        RepoPath responseRepoPath = resource.getResponseRepoPath();
+        String repoKey = responseRepoPath.getRepoKey();
+
         //Send the resource file back (will update the cache for remote repositories)
         ResourceStreamHandle handle = null;
+
+        //See if we need to return an alternate response
+        AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
+        PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
+        ResponseCtx responseCtx = new ResponseCtx();
+        pluginAddon.execPluginActions(AltResponseAction.class, responseCtx, responseRepoPath);
+        int status = responseCtx.getStatus();
+        String message = responseCtx.getMessage();
+        if (status != ResponseCtx.UNSET_STATUS) {
+            if (HttpUtils.isSuccessfulResponseCode(status)) {
+                response.setStatus(status);
+                if (message != null) {
+                    handle = new StringResourceStreamHandle(message);
+                }
+            } else {
+                response.sendError(status, message, log);
+                return;
+            }
+        }
+
+        Repo repository = repositoryService.repositoryByKey(repoKey);
+
         try {
-            handle = repositoryService.getResourceStreamHandle(requestContext, repository, resource);
+            if (handle == null) {
+                handle = repositoryService.getResourceStreamHandle(requestContext, repository, resource);
+            }
             //Streaming the file is done outside a tx, so there is a chance that the content will change!
             requestResponseHelper.sendBodyResponse(response, resource, handle);
-        } catch (RepoRejectionException rre) {
+        } catch (RepoRejectException rre) {
             String msg = "Rejected artifact download request: " + rre.getMessage();
             response.sendError(rre.getErrorCode(), msg, log);
         } catch (RemoteRequestException rre) {
@@ -213,13 +248,29 @@ public class DownloadServiceImpl implements InternalDownloadService {
     }
 
     private void respondResourceNotFound(ArtifactoryResponse response, RepoResource resource) throws IOException {
-        String reason;
+        String reason = "Resource not found";
+        int status = HttpStatus.SC_NOT_FOUND;
         if (resource instanceof UnfoundRepoResource) {
-            reason = ((UnfoundRepoResource) resource).getReason();
-        } else {
-            reason = "Resource not found";
+            UnfoundRepoResource unfound = (UnfoundRepoResource) resource;
+            // use the reason and status from the resource unless it's authorization response and the
+            // settings prohibit revealing this information
+            boolean hideUnauthorizedResources = centralConfig.getDescriptor().getSecurity().isHideUnauthorizedResources();
+            if (!hideUnauthorizedResources || notAuthorizationStatus(unfound.getStatusCode())) {
+                reason = unfound.getReason();
+                status = unfound.getStatusCode();
+            }
         }
-        response.sendError(HttpStatus.SC_NOT_FOUND, reason, log);
+        if (status == HttpStatus.SC_FORBIDDEN && authorizationService.isAnonymous()) {
+            // Transform a forbidden to unauthorized if received for an anonymous user
+            String realmName = authenticationEntryPoint.getRealmName();
+            response.sendAuthorizationRequired(reason, realmName);
+        } else {
+            response.sendError(status, reason, log);
+        }
+    }
+
+    private boolean notAuthorizationStatus(int status) {
+        return status != HttpStatus.SC_UNAUTHORIZED && status != HttpStatus.SC_FORBIDDEN;
     }
 
     /**
@@ -229,7 +280,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
      * how to proceed.
      */
     private void respondForChecksumRequest(ArtifactoryRequest request, ArtifactoryResponse response,
-            RepoResource resource) throws IOException {
+                                           RepoResource resource) throws IOException {
 
         String checksumFilePath = request.getPath();
         ChecksumType checksumType = ChecksumType.forFilePath(checksumFilePath);

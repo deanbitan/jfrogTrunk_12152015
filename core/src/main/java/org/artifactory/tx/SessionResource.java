@@ -23,9 +23,13 @@ package org.artifactory.tx;
  * @date Sep 22, 2008
  */
 public interface SessionResource {
-    void afterCompletion(boolean commit);
-
-    boolean hasPendingResources();
 
     void onSessionSave();
+
+    void afterCompletion(boolean commit);
+
+    /**
+     * @return True if this session resource has job pending
+     */
+    boolean hasPendingResources();
 }

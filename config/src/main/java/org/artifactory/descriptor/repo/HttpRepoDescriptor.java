@@ -33,7 +33,7 @@ public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
     private String password;
 
-    @XmlElement(defaultValue = "0", required = false)
+    @XmlElement(defaultValue = "15000", required = false)
     private int socketTimeoutMillis = 15000;//Default socket timeout
 
     private String localAddress;

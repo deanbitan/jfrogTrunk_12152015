@@ -31,7 +31,10 @@ import java.util.List;
  *
  * @author Noam Tenne
  */
-public class VersionParser {
+public abstract class VersionParser {
+    private VersionParser() {
+        // utility class
+    }
 
     /**
      * Parses the recieved input string info an ArtifactoryVersioning object

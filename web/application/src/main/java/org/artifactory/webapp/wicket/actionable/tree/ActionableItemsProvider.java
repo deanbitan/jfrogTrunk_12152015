@@ -25,7 +25,7 @@ import org.artifactory.webapp.actionable.model.HierarchicActionableItem;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public interface ActionableItemsProvider {
     List<? extends ActionableItem> getChildren(HierarchicActionableItem parent);

@@ -20,8 +20,8 @@ package org.artifactory.rest.resource.search.types;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.addon.MissingRestAddonException;
-import org.artifactory.addon.RestAddon;
+import org.artifactory.addon.rest.MissingRestAddonException;
+import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.PatternResultFileSet;
 import org.artifactory.api.security.AuthorizationService;
@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -64,7 +65,7 @@ public class PatternSearchResource {
     }
 
     @GET
-    @Produces({SearchRestConstants.MT_PATTERN_SEARCH_RESULT})
+    @Produces({SearchRestConstants.MT_PATTERN_SEARCH_RESULT, MediaType.APPLICATION_JSON})
     public PatternResultFileSet get(@QueryParam(SearchRestConstants.PARAM_PATTERN) String pattern) throws IOException {
         if (!authorizationService.isAuthenticated() || authorizationService.isAnonymous()) {
             RestUtils.sendUnauthorizedResponse(response,

@@ -18,7 +18,7 @@
 
 package org.artifactory.io.checksum.policy;
 
-import org.artifactory.api.fs.ChecksumInfo;
+import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;

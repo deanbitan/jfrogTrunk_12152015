@@ -22,6 +22,7 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 import javanet.staxutils.StaxUtilsXMLOutputFactory;
 import org.artifactory.api.md.xstream.PropertiesConverter;
+import org.artifactory.api.repo.xstream.RepoPathConverter;
 import org.artifactory.api.security.xstream.UserGroupInfoConverter;
 
 import javax.xml.stream.XMLOutputFactory;
@@ -30,6 +31,10 @@ import javax.xml.stream.XMLOutputFactory;
  * @author Yoav Landman
  */
 public abstract class XStreamFactory {
+    private XStreamFactory() {
+        // utility class
+    }
+
     /**
      * Creates an XStream object with a standard stax driver
      *
@@ -71,6 +76,7 @@ public abstract class XStreamFactory {
      */
     private static XStream createXStream(StaxDriver driver, Class... annotatedClassesToProcess) {
         XStream xstream = new XStream(driver);
+        xstream.registerConverter(new RepoPathConverter());
         xstream.registerConverter(new PropertiesConverter());
         xstream.registerConverter(new UserGroupInfoConverter());
         for (Class annotatedClass : annotatedClassesToProcess) {

@@ -23,9 +23,8 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
 import org.artifactory.api.build.BasicBuildInfo;
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.JcrQuerySpec;
@@ -47,7 +46,7 @@ import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrPath;
@@ -61,6 +60,7 @@ import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.Repo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
@@ -211,7 +211,8 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
-    public List<Pair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(Calendar from, Calendar to,
+    public List<SerializablePair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(Calendar from,
+            Calendar to,
             List<String> reposToSearch) {
         if (from == null && to == null) {
             return Collections.emptyList();
@@ -236,7 +237,7 @@ public class SearchServiceImpl implements InternalSearchService {
 
             QueryResult resultXpath = jcrService.executeQuery(JcrQuerySpec.xpath(builder.toString()).noLimit());
             NodeIterator nodeIterator = resultXpath.getNodes();
-            List<Pair<RepoPath, Calendar>> result = Lists.newArrayList();
+            List<SerializablePair<RepoPath, Calendar>> result = Lists.newArrayList();
             while (nodeIterator.hasNext()) {
                 Node fileNode = (Node) nodeIterator.next();
                 Calendar modified = fileNode.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getValue().getDate();
@@ -249,7 +250,7 @@ public class SearchServiceImpl implements InternalSearchService {
                     continue;
                 }
 
-                result.add(new Pair<RepoPath, Calendar>(repoPath, modified));
+                result.add(new SerializablePair<RepoPath, Calendar>(repoPath, modified));
             }
             return result;
         } catch (RepositoryException e) {
@@ -316,7 +317,7 @@ public class SearchServiceImpl implements InternalSearchService {
 
         final String innerPattern = StringUtils.replace(patternTokens[1], "\\", "/");
 
-        final RepoPath repoPath = new RepoPath(repoKey, "");
+        final RepoPath repoPath = new RepoPathImpl(repoKey, "");
 
         Callable<Set<String>> callable = new Callable<Set<String>>() {
 
@@ -501,7 +502,7 @@ public class SearchServiceImpl implements InternalSearchService {
     private void collectLocalRepoItemsRecursively(List<String> patternFragments, Set<String> pathsToReturn,
             RepoPath repoPath) {
 
-        ItemInfo itemInfo = repoService.getItemInfo(repoPath);
+        org.artifactory.fs.ItemInfo itemInfo = repoService.getItemInfo(repoPath);
 
         if (!patternFragments.isEmpty()) {
 
@@ -519,7 +520,7 @@ public class SearchServiceImpl implements InternalSearchService {
                         List<String> fragmentsToPass = Lists.newArrayList(patternFragments);
                         fragmentsToPass.remove(0);
                         collectLocalRepoItemsRecursively(fragmentsToPass, pathsToReturn,
-                                new RepoPath(repoPath, childName));
+                                new RepoPathImpl(repoPath, childName));
                     }
                 }
             }
@@ -556,7 +557,7 @@ public class SearchServiceImpl implements InternalSearchService {
                         List<String> fragmentsToPass = Lists.newArrayList(patternFragments);
                         fragmentsToPass.remove(0);
                         collectVirtualRepoItemsRecursively(fragmentsToPass, pathsToReturn,
-                                new RepoPath(repoPath, child.getName()));
+                                new RepoPathImpl(repoPath, child.getName()));
                     }
                 }
             }

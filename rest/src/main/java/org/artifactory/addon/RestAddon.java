@@ -18,18 +18,22 @@
 
 package org.artifactory.addon;
 
-import org.artifactory.api.fs.ItemInfo;
+import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
+import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.DownloadResource;
 import org.artifactory.rest.resource.artifact.SyncResource;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -39,7 +43,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @author Tomer Cohen
  */
-public interface RestAddon extends AddonFactory {
+public interface RestAddon extends Addon {
     /**
      * Copy an artifact from one path to another.
      *
@@ -66,8 +70,8 @@ public interface RestAddon extends AddonFactory {
             HttpServletResponse response) throws Exception;
 
     /**
-     * Search for artifacts within a repository matching a given pattern.<br>
-     * The pattern should be like repo-key:this/is/a/pattern
+     * Search for artifacts within a repository matching a given pattern.<br> The pattern should be like
+     * repo-key:this/is/a/pattern
      *
      * @param pattern Pattern to search for
      * @return Set of matching artifact paths relative to the repo
@@ -109,8 +113,8 @@ public interface RestAddon extends AddonFactory {
      * @param progress       One to show transfer progress, Zero or other to show normal transfer completion message
      * @param mark           Every how many bytes to print a progress mark (when using progress tracking policy)
      * @param deleteExisting One to delete existing files which do not exist in the remote source, Zero to keep
-     * @param overwrite      Null for default artifactory behavior, never for never replacing an existing file and force
-     *                       for replacing existing files (only if the local file is older than the target)
+     * @param overwrite      Never for never replacing an existing file and force for replacing existing files
+     *                       (only if the local file is older than the target) and Null for default of force.
      * @param httpResponse   Response to return once complete
      * @return Response
      */
@@ -135,10 +139,66 @@ public interface RestAddon extends AddonFactory {
     void renameBuildsAsync(String from, String to);
 
     /**
+     * Deletes the build with given name and number
+     *
+     * @param response
+     * @param buildName    Name of build to delete
+     * @param buildNumbers
+     */
+    void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers);
+
+    /**
      * Returns the latest modified item of the given file or folder (recursively)
      *
      * @param pathToSearch Repo path to search in
      * @return Latest modified item
      */
-    ItemInfo getLastModified(String pathToSearch);
+    org.artifactory.fs.ItemInfo getLastModified(String pathToSearch);
+
+    /**
+     * Find licenses in repositories, if empty, a scan of all repositories will take place.
+     *
+     * @param status            A container to hold the different license statuses.
+     * @param repos             The repositories to scan, if empty, all repositories will be scanned.
+     * @param servletContextUrl The contextUrl of the server.
+     * @return The search results.
+     */
+    LicensesSearchResult findLicensesInRepos(LicenseStatus status, StringList repos, String servletContextUrl);
+
+    /**
+     * Delete a repository via REST.
+     *
+     * @param repoKey The repokey that is associated to the repository that is wanted for deletion.
+     */
+    Response deleteRepository(String repoKey);
+
+    /**
+     * Get Repository configuration according to the repository key in conjunction with the media type to enforce
+     * a certain type of repository configuration.
+     *
+     * @param repoKey    The repokey of the repository.
+     * @param mediaTypes The acceptable media types for this request
+     * @return The response with the configuration embedded in it.
+     */
+    Response getRepositoryConfiguration(String repoKey, List<MediaType> mediaTypes);
+
+    /**
+     * Create or replace an existing repository via REST.
+     *
+     * @param repoKey
+     * @param repositoryConfig Map of attributes.
+     * @param mediaTypes       The mediatypes of which are applicable. {@link org.artifactory.api.rest.constant.RepositoriesRestConstants}
+     * @param position         The position in the map that the newly created repository will be placed
+     */
+    Response createOrReplaceRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes, int position);
+
+    /**
+     * Update an existing repository via REST.
+     *
+     * @param repoKey          The repokey of the repository to be updated.
+     * @param repositoryConfig The repository config of what is to be updated.
+     * @param mediaTypes       The acceptable media types for this REST command.
+     * @return The response for this command.
+     */
+    Response updateRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes);
 }

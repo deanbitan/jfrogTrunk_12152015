@@ -20,7 +20,11 @@ package org.artifactory.api.fs;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumsInfo;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.ItemInfo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 
 import javax.annotation.Nonnull;
@@ -31,8 +35,8 @@ import java.util.Set;
  *
  * @author yoavl
  */
-@XStreamAlias(FileInfo.ROOT)
-public class FileInfoImpl extends ItemInfoImpl implements FileInfo {
+@XStreamAlias(org.artifactory.fs.FileInfo.ROOT)
+public class FileInfoImpl extends ItemInfoImpl implements InternalFileInfo {
 
     private long size;
     private String mimeType;
@@ -46,7 +50,7 @@ public class FileInfoImpl extends ItemInfoImpl implements FileInfo {
         this.additionalInfo = new FileAdditionalInfo();
     }
 
-    public FileInfoImpl(FileInfo info) {
+    public FileInfoImpl(InternalFileInfo info) {
         super(info);
         this.size = info.getSize();
         setMimeType(info.getMimeType());
@@ -59,7 +63,7 @@ public class FileInfoImpl extends ItemInfoImpl implements FileInfo {
      * @param info
      */
     protected FileInfoImpl(FileInfoImpl info) {
-        this((FileInfo) info);
+        this((InternalFileInfo) info);
     }
 
     public boolean isFolder() {
@@ -156,12 +160,12 @@ public class FileInfoImpl extends ItemInfoImpl implements FileInfo {
         this.additionalInfo.createTrustedChecksums();
     }
 
-    public void addChecksumInfo(ChecksumInfo info) {
+    public void addChecksumInfo(org.artifactory.checksum.ChecksumInfo info) {
         additionalInfo.addChecksumInfo(info);
     }
 
     @Override
-    public boolean merge(ItemInfo itemInfo) {
+    public boolean merge(InternalItemInfo itemInfo) {
         boolean modified = super.merge(itemInfo);
         if (itemInfo instanceof FileInfo) {
             FileInfo fileInfo = (FileInfo) itemInfo;

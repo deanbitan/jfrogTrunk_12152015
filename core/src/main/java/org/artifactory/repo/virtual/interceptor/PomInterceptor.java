@@ -20,19 +20,20 @@ package org.artifactory.repo.virtual.interceptor;
 
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.fs.FileInfoImpl;
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.fs.RepoResource;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.Repo;
-import org.artifactory.repo.context.RequestContext;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.repo.virtual.interceptor.transformer.PomTransformer;
+import org.artifactory.request.RequestContext;
 import org.artifactory.resource.FileResource;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.PathUtils;
@@ -84,7 +85,7 @@ public class PomInterceptor {
             return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + e.getMessage());
         }
 
-        RepoPath localStoragePath = new RepoPath(virtualRepo.getKey(), resourcePath);
+        RepoPath localStoragePath = new RepoPathImpl(virtualRepo.getKey(), resourcePath);
         FileInfoImpl fileInfo = new FileInfoImpl(localStoragePath);
         long now = System.currentTimeMillis();
         fileInfo.setCreated(now);
@@ -100,7 +101,7 @@ public class PomInterceptor {
             String message = "Failed to import file to local storage";
             log.error(message, e);
             return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + e.getMessage());
-        } catch (RepoRejectionException rre) {
+        } catch (RepoRejectException rre) {
             String message = "Failed to import file to local storage";
             log.error(message, rre);
             return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + rre.getMessage());
@@ -116,7 +117,7 @@ public class PomInterceptor {
         ResourceStreamHandle handle;
         try {
             handle = repoService.getResourceStreamHandle(context, repository, resource);
-        } catch (RepoRejectionException rre) {
+        } catch (RepoRejectException rre) {
             throw new IOException(rre.getMessage());
         }
 

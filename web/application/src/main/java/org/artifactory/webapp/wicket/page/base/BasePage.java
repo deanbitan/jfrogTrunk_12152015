@@ -163,7 +163,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         TitledAjaxSubmitLink searchButton = new TitledAjaxSubmitLink("searchButton", "Search", form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                String query = searchTextField.getModelObjectAsString();
+                String query = searchTextField.getDefaultModelObjectAsString();
                 if (StringUtils.isBlank(query)) {
                     setResponsePage(ArtifactSearchPage.class);
                 } else {
@@ -238,7 +238,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         @Override
         protected void onBeforeRender() {
             String footer = centralConfig.getDescriptor().getFooter();
-            setModelObject(footer);
+            setDefaultModelObject(footer);
             super.onBeforeRender();
         }
     }
@@ -258,7 +258,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
             String message = null;
             if (authorizationService.isAdmin() || isTrial()) {
                 message = addons.getLicenseFooterMessage();
-                setModelObject(message);
+                setDefaultModelObject(message);
             }
             setVisible(StringUtils.isNotEmpty(message));
         }

@@ -283,7 +283,8 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
             StringBuilder debugBuilder = new StringBuilder();
             while (results.hasNext()) {
                 Node node = results.nextNode();
-                debugBuilder.append("Node ").append(node.getUUID()).append(" '").append(node.getPath()).append("'");
+                debugBuilder.append("Node ").append(node.getIdentifier()).append(" '").append(node.getPath())
+                        .append("'");
                 for (String propertyName : binaryPropertyNames) {
                     Property p = node.getProperty(propertyName);
                     debugBuilder.append(" ").append(p.getName()).append("=").append(p.getLength());

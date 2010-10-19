@@ -20,8 +20,8 @@ package org.artifactory.rest.resource.system;
 
 
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.storage.StorageService;
+import org.artifactory.common.StatusHolder;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;

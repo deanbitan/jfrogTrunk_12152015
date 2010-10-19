@@ -28,6 +28,16 @@ import javax.xml.bind.annotation.XmlEnumValue;
  */
 @XmlEnum(String.class)
 public enum LocalRepoChecksumPolicyType {
-    @XmlEnumValue("client-checksums")CLIENT,
-    @XmlEnumValue("server-generated-checksums")SERVER
+    @XmlEnumValue("client-checksums")CLIENT("client-checksums"),
+    @XmlEnumValue("server-generated-checksums")SERVER("client-checksums");
+
+    String message;
+
+    LocalRepoChecksumPolicyType(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
 }

@@ -52,7 +52,7 @@ public abstract class DragDropList extends Panel {
         item.add(new SimpleAttributeModifier("dndType", getDndValue(item)));
         item.add(new CssClass("dojoDndItem"));
 
-        String displayValue = renderer.getDisplayValue(item.getModelObject()).toString();
+        String displayValue = renderer.getDisplayValue(item.getDefaultModelObject()).toString();
         item.add(new Label("value", displayValue));
 
         String sortValue = getSortValue(item);

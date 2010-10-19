@@ -20,6 +20,7 @@ package org.artifactory.common.wicket.component;
 
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.artifactory.common.wicket.behavior.CssClass;
 
@@ -30,14 +31,15 @@ public class LabeledValue extends Panel {
     }
 
     public LabeledValue(String id, String label, String value) {
-        super(id, new Model(value));
+        super(id, new Model<String>(value));
         add(new CssClass("labeled-value"));
 
         add(new Label("label", label));
-        add(new Label("value", getModel()));
+        add(new Label("value", getDefaultModel()));
     }
 
+    @SuppressWarnings({"unchecked"})
     public void setValue(String value) {
-        getModel().setObject(value);
+        ((IModel<String>) getDefaultModel()).setObject(value);
     }
 }

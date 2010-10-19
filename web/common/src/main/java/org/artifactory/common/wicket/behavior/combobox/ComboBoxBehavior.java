@@ -43,7 +43,7 @@ public class ComboBoxBehavior extends TemplateBehavior {
         super.onComponentTag(component, tag);
         assertTagName(tag, "select");
         tag.put("dojoType", getJsClass());
-        tag.put("value", component.getModelObjectAsString());
+        tag.put("value", component.getDefaultModelObjectAsString());
     }
 
     @Override

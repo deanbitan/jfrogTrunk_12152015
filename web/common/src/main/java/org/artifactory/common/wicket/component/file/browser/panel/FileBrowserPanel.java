@@ -36,6 +36,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.util.string.AppendingStringBuffer;
 import org.apache.wicket.util.string.Strings;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.file.path.PathAutoCompleteTextField;
 import org.artifactory.common.wicket.component.file.path.PathHelper;
@@ -66,7 +67,7 @@ public class FileBrowserPanel extends BaseModalPanel {
         setWidth(570);
         setHeight(345);
         if (model != null) {
-            setModel(model);
+            setDefaultModel(model);
         }
 
         this.pathHelper = pathHelper;
@@ -74,7 +75,7 @@ public class FileBrowserPanel extends BaseModalPanel {
     }
 
     protected void init() {
-        setChRoot(pathHelper.getRoot());
+        setChRoot(pathHelper.getWorkingDirectoryPath());
 
         setOutputMarkupId(true);
         add(new SimpleAttributeModifier("class", "fileBrowser"));
@@ -122,17 +123,17 @@ public class FileBrowserPanel extends BaseModalPanel {
         if (file.isDirectory()) {
             // is folder
             if (getMask().includeFolders()) {
-                setModelObject(file);
+                setDefaultModelObject(file);
                 onOkClicked(target);
             } else {
-                setCurrentFolder(file.getAbsolutePath());
+                setCurrentFolder(enforceRootFolder(file).getAbsolutePath());
                 target.addComponent(this);
             }
             return;
         }
 
         // is file
-        setModelObject(file);
+        setDefaultModelObject(file);
         onOkClicked(target);
     }
 
@@ -147,25 +148,50 @@ public class FileBrowserPanel extends BaseModalPanel {
 
     public void setMask(PathMask mask) {
         pathAutoCompleteTextField.setMask(mask);
-        filesList.setModelObject(pathHelper.getFiles("/", mask));
+        filesList.setDefaultModelObject(pathHelper.getFiles("/", mask));
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public File getModelObject() {
+        return (File) getDefaultModelObject();
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setModelObject(File file) {
+        setDefaultModelObject(file);
+    }
+
+    @SuppressWarnings({"unchecked", "UnusedDeclaration"})
+    public IModel<File> getModel() {
+        return (IModel<File>) getDefaultModel();
     }
 
     public void setChRoot(String chRoot) {
-        this.chRoot = new File(chRoot == null ? "/" : chRoot).getAbsolutePath();
+        if (chRoot == null) {
+            final String uiRoot = ConstantValues.uiChroot.getString();
+            if (StringUtils.isBlank(uiRoot)) {
+                this.chRoot = null;
+            } else {
+                this.chRoot = pathHelper.getCanonicalPath(new File(uiRoot));
+            }
+        } else {
+            this.chRoot = pathHelper.getCanonicalPath(new File(chRoot));
+        }
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public String getChRoot() {
         return chRoot;
     }
 
     public String getCurrentFolder() {
-        return StringUtils.defaultString(pathHelper.getRoot(), "/");
+        return StringUtils.defaultString(pathHelper.getWorkingDirectoryPath(), "/");
     }
 
     public void setCurrentFolder(String root) {
-        pathHelper.setRoot(root);
-        filesList.setModelObject(pathHelper.getFiles("/", getMask()));
-        breadcrumbs.setModelObject(new File(getCurrentFolder()));
+        pathHelper.setWorkingDirectoryPath(root);
+        filesList.setDefaultModelObject(pathHelper.getFiles("/", getMask()));
+        breadcrumbs.setDefaultModelObject(new File(getCurrentFolder()));
     }
 
     private static class OkButton extends BaseTitledLink {
@@ -181,7 +207,7 @@ public class FileBrowserPanel extends BaseModalPanel {
         }
 
         public void onClick(AjaxRequestTarget target) {
-            FileBrowserPanel.this.setModelObject(null);
+            FileBrowserPanel.this.setDefaultModelObject(null);
             onCancelClicked(target);
         }
     }
@@ -193,26 +219,30 @@ public class FileBrowserPanel extends BaseModalPanel {
 
         @Override
         public void onClick(AjaxRequestTarget target) {
-            File currentFile = new File(getCurrentFolder());
-            File parentFile = currentFile.getParentFile();
-            if (parentFile == null || chRoot.equals(currentFile.getAbsolutePath())) {
+            File currentFolder = new File(getCurrentFolder());
+            File parentFolder = currentFolder.getParentFile();
+            String root = chRoot;
+            if (root == null) {
+                root = new File("/").getAbsolutePath();
+            }
+            if (parentFolder == null || root.equals(currentFolder.getAbsolutePath())) {
                 return;
             }
 
-            setCurrentFolder(parentFile.getAbsolutePath());
-            FileBrowserPanel.this.setModelObject(parentFile);
+            setCurrentFolder(parentFolder.getAbsolutePath());
+            FileBrowserPanel.this.setDefaultModelObject(parentFolder);
             target.addComponent(FileBrowserPanel.this);
         }
     }
 
-    private class FilesListView extends ListView {
+    private class FilesListView extends ListView<File> {
         private FilesListView(String id) {
             super(id, pathHelper.getFiles("/", getMask()));
         }
 
         @Override
         protected void populateItem(ListItem item) {
-            File file = (File) item.getModelObject();
+            File file = (File) item.getDefaultModelObject();
             item.add(new FileLink("fileNameLabel", file));
             item.add(new SimpleAttributeModifier("class", file.isDirectory() ? "folder" : "file"));
 
@@ -231,7 +261,7 @@ public class FileBrowserPanel extends BaseModalPanel {
                     @Override
                     protected void onEvent(AjaxRequestTarget target) {
                         setCurrentFolder(file.getAbsolutePath());
-                        FileBrowserPanel.this.setModelObject(file);
+                        FileBrowserPanel.this.setDefaultModelObject(file);
                         target.addComponent(FileBrowserPanel.this);
                     }
                 });
@@ -255,17 +285,16 @@ public class FileBrowserPanel extends BaseModalPanel {
         }
     }
 
-    private class BreadCrumbsDropDownChoice extends DropDownChoice {
+    private class BreadCrumbsDropDownChoice extends DropDownChoice<File> {
         private BreadCrumbsDropDownChoice(String id) {
-            super(id, new Model(new File(getCurrentFolder())), new BreadCrumbsModel(),
-                    new ChoiceRenderer("name", "absolutePath"));
+            super(id, new Model<File>(new File(getCurrentFolder())), new BreadCrumbsModel(), new ChoiceRenderer<File>("name", "path"));
 
             add(new AjaxFormComponentUpdatingBehavior("onchange") {
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {
-                    File root = (File) getModelObject();
+                    File root = getModelObject();
                     setCurrentFolder(root.getAbsolutePath());
-                    FileBrowserPanel.this.setModelObject(root);
+                    FileBrowserPanel.this.setDefaultModelObject(root);
 
                     target.addComponent(FileBrowserPanel.this);
                 }
@@ -274,9 +303,8 @@ public class FileBrowserPanel extends BaseModalPanel {
 
         @SuppressWarnings({"RefusedBequest"})
         @Override
-        protected void appendOptionHtml(AppendingStringBuffer buffer, Object choice, int index,
-                String selected) {
-            IChoiceRenderer renderer = getChoiceRenderer();
+        protected void appendOptionHtml(AppendingStringBuffer buffer, File choice, int index, String selected) {
+            IChoiceRenderer<? super File> renderer = getChoiceRenderer();
             Object objectValue = renderer.getDisplayValue(choice);
             String displayValue = "";
             if (objectValue != null) {
@@ -306,13 +334,27 @@ public class FileBrowserPanel extends BaseModalPanel {
         }
     }
 
-    private class BreadCrumbsModel extends AbstractReadOnlyModel {
+    private File enforceRootFolder(File root) {
+        if (chRoot == null) {
+            return root;
+        }
+        if (!pathHelper.getCanonicalPath(root).startsWith(chRoot)) {
+            return new File(chRoot);
+        }
+        return root;
+    }
+
+    private class BreadCrumbsModel extends AbstractReadOnlyModel<List<File>> {
         @Override
-        public Object getObject() {
+        public List<File> getObject() {
+            String root = chRoot;
+            if (root == null) {
+                root = new File("/").getAbsolutePath();
+            }
             List<File> breadCrumbs = new ArrayList<File>();
             for (File folder = new File(getCurrentFolder()); folder != null;
                  folder = folder.getParentFile()) {
-                if (chRoot.equals(folder.getAbsolutePath())) {
+                if (root.equals(folder.getAbsolutePath())) {
                     breadCrumbs.add(0, folder);
                     break;
                 }
@@ -324,16 +366,16 @@ public class FileBrowserPanel extends BaseModalPanel {
 
     private class BrowserAutoCompleteTextField extends PathAutoCompleteTextField {
         private BrowserAutoCompleteTextField(String id) {
-            super(id, new DelegetedModel(FileBrowserPanel.this), FileBrowserPanel.this.pathHelper);
+            super(id, new DelegetedModel<File>(FileBrowserPanel.this), FileBrowserPanel.this.pathHelper);
 
             add(new AjaxFormComponentUpdatingBehavior("onselection") {
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {
-                    File file = (File) pathAutoCompleteTextField.getModelObject();
+                    File file = (File) pathAutoCompleteTextField.getDefaultModelObject();
 
                     // if pathAutoCompleteTextField is empty default to current root
                     if (file == null) {
-                        file = pathHelper.getAbsuloteFile("");
+                        file = pathHelper.getAbsoluteFile("");
                     }
                     onFileSelected(file, target);
                 }
@@ -342,22 +384,45 @@ public class FileBrowserPanel extends BaseModalPanel {
         }
     }
 
-    private class RootsDropDownChoice extends DropDownChoice {
+    private class RootsDropDownChoice extends DropDownChoice<File> {
         private RootsDropDownChoice(String id) {
-            super(id, Arrays.asList(File.listRoots()));
-            setVisible(getChoices().size() > 1);
-            setModel(new Model(new File(FilenameUtils.getPrefix(getCurrentFolder())).getAbsoluteFile()));
+            super(id);
+            if (chRoot != null) {
+                // allow only chRoot
+                ArrayList<File> files = new ArrayList<File>(1);
+                File rootFile = new File(chRoot);
+                files.add(rootFile);
+                setChoices(files);
+                setChoiceRenderer(new RootOnlyChoiceRenderer());
+                setDefaultModel(new Model<File>(rootFile));
+            } else {
+                // allow changing root
+                List<File> roots = Arrays.asList(File.listRoots());
+                setChoices(roots);
+                setVisible(!roots.isEmpty());
+                File defaultRoot = new File(FilenameUtils.getPrefix(getCurrentFolder())).getAbsoluteFile();
+                setDefaultModel(new Model<File>(defaultRoot));
+            }
 
             add(new AjaxFormComponentUpdatingBehavior("onchange") {
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {
-                    File root = (File) getModelObject();
+                    File root = getModelObject();
                     setCurrentFolder(root.getAbsolutePath());
-                    FileBrowserPanel.this.setModelObject(root);
+                    FileBrowserPanel.this.setDefaultModelObject(root);
                     target.addComponent(FileBrowserPanel.this);
                 }
             });
         }
     }
 
+    private static class RootOnlyChoiceRenderer implements IChoiceRenderer<File> {
+        public Object getDisplayValue(File object) {
+            return "/";
+        }
+
+        public String getIdValue(File object, int index) {
+            return "0";
+        }
+    }
 }

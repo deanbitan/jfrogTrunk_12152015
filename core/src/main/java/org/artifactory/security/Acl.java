@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 @Node(extend = OcmStorable.class)
 public class Acl implements MutableAcl, OcmStorable {

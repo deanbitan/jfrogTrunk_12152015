@@ -35,12 +35,13 @@ import org.apache.wicket.util.string.Strings;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.DelegateEventBehavior;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
+import org.artifactory.common.wicket.model.DelegetedModel;
 import org.artifactory.common.wicket.model.Titled;
 
 /**
  *
  */
-public class StyledCheckbox extends FormComponentPanel implements Titled {
+public class StyledCheckbox extends FormComponentPanel<Boolean> implements Titled {
     private CheckBox checkbox;
     private Component button;
     private String title = null;
@@ -51,34 +52,17 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
         init();
     }
 
-    public StyledCheckbox(String id, IModel model) {
+    public StyledCheckbox(String id, IModel<Boolean> model) {
         super(id, model);
         init();
     }
 
     protected void init() {
-        add(ResourcePackage.forJavaScript(StyledCheckbox.class));
-        add(new CssClass("styled-checkbox"));
+        setType(Boolean.class);
+        super.add(ResourcePackage.forJavaScript(StyledCheckbox.class));
+        super.add(new CssClass("styled-checkbox"));
 
-        checkbox = new CheckBox("checkbox", new DelegetedModel()) {
-            @Override
-            public boolean isEnabled() {
-                return super.isEnabled() && StyledCheckbox.this.isEnabled();
-            }
-
-            @Override
-            protected void onComponentTag(ComponentTag tag) {
-                super.onComponentTag(tag);
-                if (isEnabled()) {
-                    tag.put("onclick", "StyledCheckbox.update(this);");
-                }
-            }
-
-            @Override
-            public String getInputName() {
-                return StyledCheckbox.this.getCheckboxInputName(super.getInputName());
-            }
-        };
+        checkbox = new MyCheckBox("checkbox");
         checkbox.setOutputMarkupId(true);
         add(checkbox);
 
@@ -88,30 +72,23 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
 
     /**
      * Get a custom input name to be used as 'name' attribute of the form element
+     *
+     * @param defaultName default input name
+     * @return input name
      */
     protected String getCheckboxInputName(String defaultName) {
         return defaultName;
     }
 
     @Override
-    protected void convertInput() {
-        String[] value = checkbox.getInputAsArray();
-        String tmp = value != null && value.length > 0 ? value[0] : null;
-        try {
-            if (tmp == null) {
-                setConvertedInput(null);
-            } else {
-                setConvertedInput(Strings.toBoolean(tmp));
-            }
+    public Component add(final IBehavior... behaviors) {
+        for (IBehavior behavior : behaviors) {
+            internalAdd(behavior);
         }
-        catch (StringValueConversionException e) {
-            throw new ConversionException("Invalid boolean input value posted \"" + getInput() + "\"", e)
-                    .setTargetType(Boolean.class);
-        }
+        return this;
     }
 
-    @Override
-    public Component add(IBehavior behavior) {
+    private Component internalAdd(IBehavior behavior) {
         if (AjaxEventBehavior.class.isAssignableFrom(behavior.getClass())) {
             AjaxEventBehavior ajaxEventBehavior = (AjaxEventBehavior) behavior;
             button.add(new DelegateEventBehavior(ajaxEventBehavior.getEvent(), checkbox));
@@ -128,7 +105,7 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
     }
 
     public boolean isChecked() {
-        return Boolean.TRUE.equals(getModelObject());
+        return Boolean.TRUE.equals(getDefaultModelObject());
     }
 
     @Override
@@ -183,14 +160,35 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
     }
 
     @Override
-    public void updateModel() {
-        checkbox.updateModel();
+    public String getInputName() {
+        return checkbox.getInputName();
     }
 
     @Override
-    public void setModelValue(final String[] value) {
-        super.setModelValue(value);
-        checkbox.setModelValue(value);
+    protected Boolean convertValue(String[] value) throws ConversionException {
+        return toBoolean(value);
+    }
+
+    @Override
+    public boolean checkRequired() {
+        if (isRequired()) {
+            final String input = getInput();
+            return input == null && !isInputNullable() && !isEnabledInHierarchy() || !Strings.isEmpty(input);
+
+        }
+        return true;
+    }
+
+    private static Boolean toBoolean(String[] value) throws ConversionException {
+        String tmp = value != null && value.length > 0 ? value[0] : null;
+        try {
+            return Strings.toBoolean(tmp);
+        }
+        catch (StringValueConversionException e) {
+            final ConversionException conversionException = new ConversionException(String.format("Invalid boolean input value posted \"%s\"", tmp), e);
+            conversionException.setTargetType(Boolean.class);
+            throw conversionException;
+        }
     }
 
     private class CheckboxButton extends WebMarkupContainer {
@@ -245,18 +243,32 @@ public class StyledCheckbox extends FormComponentPanel implements Titled {
         }
     }
 
-    private class DelegetedModel implements IModel {
-        public Object getObject() {
-            return getModelObject();
+    private class MyCheckBox extends CheckBox {
+        public MyCheckBox(String id) {
+            super(id, new DelegetedModel<Boolean>(StyledCheckbox.this));
         }
 
-        public void setObject(Object object) {
-            if (object != null) {
-                setModelObject(object);
+        @Override
+        public boolean isEnabled() {
+            return super.isEnabled() && StyledCheckbox.this.isEnabled();
+        }
+
+        @Override
+        protected Boolean convertValue(String[] value) throws ConversionException {
+            return toBoolean(value);
+        }
+
+        @Override
+        protected void onComponentTag(ComponentTag tag) {
+            super.onComponentTag(tag);
+            if (isEnabled()) {
+                tag.put("onclick", "StyledCheckbox.update(this);");
             }
         }
 
-        public void detach() {
+        @Override
+        public String getInputName() {
+            return StyledCheckbox.this.getCheckboxInputName(super.getInputName());
         }
     }
 }

@@ -18,9 +18,9 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.api.fs.FileInfo;
+import org.artifactory.api.fs.InternalFileInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 import org.sonatype.nexus.index.context.IndexingContext;
 
 /**
@@ -38,7 +38,7 @@ public class ArtifactResource extends FileResource {
         mavenInfo = calcMavenInfo();
     }
 
-    public ArtifactResource(FileInfo info) {
+    public ArtifactResource(InternalFileInfo info) {
         super(info);
         mavenInfo = calcMavenInfo();
     }

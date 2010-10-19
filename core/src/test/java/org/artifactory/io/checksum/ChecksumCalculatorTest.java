@@ -18,7 +18,7 @@
 
 package org.artifactory.io.checksum;
 
-import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.checksum.ChecksumType;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;

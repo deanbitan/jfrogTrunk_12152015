@@ -1,13 +1,6 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.DialogUnderlay"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.DialogUnderlay"] = true;
 dojo.provide("dijit.DialogUnderlay");
+
+dojo.require("dojo.window");
 
 dojo.require("dijit._Widget");
 dojo.require("dijit._Templated");
@@ -80,7 +73,7 @@ dojo.declare(
 			os.display = "none";
 
 			// then resize and show
-			var viewport = dijit.getViewport();
+			var viewport = dojo.window.getBox();
 			os.top = viewport.t + "px";
 			os.left = viewport.l + "px";
 			is.width = viewport.w + "px";
@@ -111,5 +104,3 @@ dojo.declare(
 		}
 	}
 );
-
-}

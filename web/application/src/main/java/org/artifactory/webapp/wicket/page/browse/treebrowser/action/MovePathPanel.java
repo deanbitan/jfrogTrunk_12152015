@@ -26,16 +26,16 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.tree.ITreeState;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MoveMultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 
@@ -108,7 +108,7 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
                     Tree tree = (Tree) componentToRefresh;
                     ITreeState treeState = tree.getTreeState();
                     treeState.collapseAll();
-                    DefaultTreeModel treeModel = (DefaultTreeModel) tree.getModelObject();
+                    DefaultTreeModel treeModel = (DefaultTreeModel) tree.getDefaultModelObject();
                 }
 
                 browseRepoPanel.removeNodePanel(target);

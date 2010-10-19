@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit._TimePicker"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit._TimePicker"] = true;
 dojo.provide("dijit._TimePicker");
 
 dojo.require("dijit.form._FormWidget");
@@ -40,7 +31,7 @@ dojo.declare("dijit._TimePicker",
 		//		This widget is used internally by other widgets and is not available
 		//		as a standalone widget due to lack of accessibility support.
 
-		templateString: dojo.cache("dijit", "templates/TimePicker.html", "<div id=\"widget_${id}\" class=\"dijitMenu ${baseClass}\"\r\n    ><div dojoAttachPoint=\"upArrow\" class=\"dijitButtonNode dijitUpArrowButton\" dojoAttachEvent=\"onmouseenter:_buttonMouse,onmouseleave:_buttonMouse\"\r\n\t\t><div class=\"dijitReset dijitInline dijitArrowButtonInner\" wairole=\"presentation\" role=\"presentation\">&nbsp;</div\r\n\t\t><div class=\"dijitArrowButtonChar\">&#9650;</div></div\r\n    ><div dojoAttachPoint=\"timeMenu,focusNode\" dojoAttachEvent=\"onclick:_onOptionSelected,onmouseover,onmouseout\"></div\r\n    ><div dojoAttachPoint=\"downArrow\" class=\"dijitButtonNode dijitDownArrowButton\" dojoAttachEvent=\"onmouseenter:_buttonMouse,onmouseleave:_buttonMouse\"\r\n\t\t><div class=\"dijitReset dijitInline dijitArrowButtonInner\" wairole=\"presentation\" role=\"presentation\">&nbsp;</div\r\n\t\t><div class=\"dijitArrowButtonChar\">&#9660;</div></div\r\n></div>\r\n"),
+		templateString: dojo.cache("dijit", "templates/TimePicker.html"),
 
 		// baseClass: [protected] String
 		//		The root className to use for the various states of this widget
@@ -113,8 +104,8 @@ dojo.declare("dijit._TimePicker",
 			//		Deprecated.  Used attr('value') instead.
 			// tags:
 			//		deprecated
-			dojo.deprecated("dijit._TimePicker:setValue() is deprecated.  Use attr('value') instead.", "", "2.0");
-			this.attr('value', value);
+			dojo.deprecated("dijit._TimePicker:setValue() is deprecated.  Use set('value', ...) instead.", "", "2.0");
+			this.set('value', value);
 		},
 		_setValueAttr: function(/*Date*/ date){
 			// summary:
@@ -141,7 +132,7 @@ dojo.declare("dijit._TimePicker",
 				// valid)
 				var p = dijit.byId(this.domNode.parentNode.dijitPopupParent);
 				if(p){
-					var val = p.attr('displayedValue');
+					var val = p.get('displayedValue');
 					if(val && !p.parse(val, p.constraints)){
 						this._filterString = val;
 					}else{
@@ -279,10 +270,14 @@ dojo.declare("dijit._TimePicker",
 
 		_buttonMouse: function(/*Event*/ e){
 			// summary:
-			//		Handler for mouse button presses
+			//		Handler for hover (and unhover) on up/down arrows
 			// tags:
 			//		private
-			dojo.toggleClass(e.currentTarget, "dijitButtonNodeHover", e.type == "mouseover");
+
+			// in non-IE browser the "mouseenter" event will become "mouseover", 
+			// but in IE it's still "mouseenter"
+			dojo.toggleClass(e.currentTarget, e.currentTarget == this.upArrow ? "dijitUpArrowHover" : "dijitDownArrowHover", 
+				e.type == "mouseenter" || e.type == "mouseover");
 		},
 
 		_createOption: function(/*Number*/ index){
@@ -342,7 +337,7 @@ dojo.declare("dijit._TimePicker",
 			var tdate = tgt.target.date || tgt.target.parentNode.date;
 			if(!tdate || this.isDisabledDate(tdate)){ return; }
 			this._highlighted_option = null;
-			this.attr('value', tdate);
+			this.set('value', tdate);
 			this.onValueSelected(tdate);
 		},
 
@@ -496,4 +491,3 @@ dojo.declare("dijit._TimePicker",
 	}
 );
 
-}

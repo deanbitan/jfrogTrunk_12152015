@@ -18,8 +18,8 @@
 
 package org.artifactory.jcr.lock;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.repo.RepoPath;
 
 /**
  * @author Noam Tenne

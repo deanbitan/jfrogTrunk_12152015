@@ -1,1 +1,13 @@
-({"set":"Ορισμός","text":"Περιγραφή:","insertImageTitle":"Ιδιότητες εικόνας","url":"Διεύθυνση URL:","createLinkTitle":"Ιδιότητες διασύνδεσης","newWindow":"New Window","topWindow":"Topmost Window","target":"Target:","parentWindow":"Parent Window","currentWindow":"Current Window"})
+({
+	createLinkTitle: "Ιδιότητες σύνδεσης",
+	insertImageTitle: "Ιδιότητες εικόνας",
+	url: "Διεύθυνση URL:",
+	text: "Περιγραφή:",
+	target: "Προορισμός:",
+	set: "Ορισμός",
+	currentWindow: "Τρέχον παράθυρο",
+	parentWindow: "Γονικό παράθυρο",
+	topWindow: "Παράθυρο σε πρώτο πλάνο",
+	newWindow: "Νέο παράθυρο"
+})
+

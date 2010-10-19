@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
@@ -31,6 +30,7 @@ import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.search.SearcherBase;
 import org.artifactory.util.PathUtils;
 import org.jdom.Element;
@@ -103,7 +103,7 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
                 if (!controls.isLimitSearchResults() || (resultList.size() < getMaxResults())) {
                     String artifactPath = row.getValue(JcrConstants.JCR_PATH).getString();
                     RepoPath repoPath = JcrPath.get().getRepoPath(artifactPath);
-                    if ((repoPath == null) || (!controls.isSpecificRepoSearch() && !isResultRepoPathValid(repoPath))) {
+                    if ((repoPath == null) || !isResultRepoPathValid(repoPath)) {
                         continue;
                     }
 

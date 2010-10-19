@@ -35,8 +35,7 @@
     <!-- Enable configuration by annotations -->
     <context:annotation-config/>
     <context:component-scan base-package="org.artifactory">
-        <context:include-filter type="annotation"
-                                expression="org.artifactory.spring.Reloadable"/>
+        <context:include-filter type="annotation" expression="org.artifactory.spring.Reloadable"/>
         <context:exclude-filter type="regex" expression="org.artifactory.test.*"/>
     </context:component-scan>
 

@@ -1,6 +1,3 @@
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-
-<body>
 <wicket:head>
     <style type="text/css">
         td.group {
@@ -9,8 +6,12 @@
         }
     </style>
 </wicket:head>
+
 <wicket:extend>
-    <div wicket:id="systemLogsViewPanel"/>
+    <div wicket:id="systemLogsViewPanel" id="systemLogsViewPanel"/>
+    <script type="text/javascript">
+        DomUtils.bindHeight(dojo.byId('systemLogsViewPanel'), function(docHeight) {
+            return Math.max(200, docHeight - 290);
+        }, true);
+    </script>
 </wicket:extend>
-</body>
-</html>

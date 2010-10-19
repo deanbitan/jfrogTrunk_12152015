@@ -22,6 +22,8 @@ import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.spi.container.WebApplication;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 import com.sun.jersey.spi.spring.container.SpringComponentProviderFactory;
+import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.beanutils.BeanUtilsBean2;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.servlet.DelayedInit;
@@ -55,6 +57,10 @@ public class ArtifactoryRestServlet extends ServletContainer implements DelayedI
             //Servlet 2.5 lazy filter initing
             delayedInit();
         }
+        // register the bean utils converter to fail if encounters a type mismatch between the destination
+        // and the original, see RTFACT-3610
+        BeanUtilsBean instance = BeanUtilsBean2.getInstance();
+        instance.getConvertUtils().register(true, false, 0);
     }
 
     public void delayedInit() throws ServletException {

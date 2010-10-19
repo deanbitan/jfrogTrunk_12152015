@@ -24,6 +24,7 @@ import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.artifactory.common.wicket.component.template.HtmlTemplate;
@@ -42,7 +43,7 @@ public class KeyEventHandler extends Panel {
     public KeyEventHandler(String id) {
         super(id, new Model());
 
-        HiddenField keyCodeField = new HiddenField("keyCodeField", getModel(), Integer.class);
+        HiddenField keyCodeField = new HiddenField<Integer>("keyCodeField", (IModel<Integer>) getDefaultModel(), Integer.class);
         keyCodeField.setOutputMarkupId(true);
         keyCodeField.add(new AjaxFormComponentUpdatingBehavior("onkeyup") {
             @Override
@@ -68,7 +69,7 @@ public class KeyEventHandler extends Panel {
     }
 
     public Integer getKeyCode() {
-        return (Integer) getModelObject();
+        return (Integer) getDefaultModelObject();
     }
 
     public void addKeyListener(KeyListener listener, Integer... keyCodes) {

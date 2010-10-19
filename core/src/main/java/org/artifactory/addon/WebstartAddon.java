@@ -29,7 +29,7 @@ import org.artifactory.repo.virtual.VirtualRepo;
  *
  * @author Yossi Shaul
  */
-public interface WebstartAddon extends AddonFactory {
+public interface WebstartAddon extends Addon {
     /**
      * Creates new VirtualRepo instance. The actual type of the virtual repo is determined by the addon impl.
      *

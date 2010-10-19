@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.wicket.util.validation;
 
-import org.apache.wicket.validation.validator.NumberValidator;
+import org.apache.wicket.validation.validator.RangeValidator;
 
 /**
  * The port number field wicket validator. Asserts the input is no lower than 1, and no higher than 65535 (the valid
@@ -26,12 +26,12 @@ import org.apache.wicket.validation.validator.NumberValidator;
  *
  * @author Noam Y. Tenne
  */
-public class PortNumberValidator extends NumberValidator.RangeValidator {
+public class PortNumberValidator extends RangeValidator<Integer> {
 
     /**
      * Default constructor
      */
     public PortNumberValidator() {
-        super(1L, 65535L);
+        super(1, 65535);
     }
 }

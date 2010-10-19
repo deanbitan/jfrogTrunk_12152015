@@ -18,24 +18,15 @@
 
 package org.artifactory.security.ldap;
 
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
-import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.springframework.ldap.AuthenticationException;
-import org.springframework.ldap.BadLdapGrammarException;
-import org.springframework.ldap.CommunicationException;
-import org.springframework.ldap.InvalidNameException;
-import org.springframework.ldap.NameNotFoundException;
+import org.springframework.ldap.*;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.util.StringUtils;
-
-import java.util.HashMap;
-
-import static org.apache.commons.lang.StringUtils.isBlank;
 
 /**
  * @author Tomer Cohen
@@ -44,7 +35,8 @@ public class AbstractLdapService {
     private static final Logger log = LoggerFactory.getLogger(AbstractLdapService.class);
 
 
-    protected void handleException(Exception e, StatusHolder status, String username, boolean isSearchAndBindActive) {
+    protected void handleException(Exception e, BasicStatusHolder status, String username,
+                                   boolean isSearchAndBindActive) {
         log.debug("LDAP connection test failed with exception", e);
         if (e instanceof CommunicationException) {
             status.setError("Failed connecting to the server (probably wrong url or port)", e, log);
@@ -84,34 +76,9 @@ public class AbstractLdapService {
      * @return The LDAP template.
      */
     public LdapTemplate createLdapTemplate(LdapSetting settings) {
-        return new LdapTemplate(getLdapContext(settings));
-    }
-
-    private LdapContextSource getLdapContext(LdapSetting ldapSettings) {
-        LdapContextSource ldapContextSource = new LdapContextSource();
-        HashMap<String, String> env = new HashMap<String, String>();
-        env.put("com.sun.jndi.ldap.connect.timeout", "10000");
-        ldapContextSource.setBaseEnvironmentProperties(env);
-        ldapContextSource.setUrl(ldapSettings.getLdapUrl());
-        SearchPattern searchPattern = ldapSettings.getSearch();
-        String managerDn = null;
-        String managerPassword = null;
-        if (searchPattern != null) {
-            managerDn = searchPattern.getManagerDn();
-            managerPassword = searchPattern.getManagerPassword();
-        }
-        if (isBlank(managerDn) || isBlank(managerPassword)) {
-            log.debug("Manager credentials not set, trying anonymous query");
-            ldapContextSource.setAnonymousReadOnly(true);
-        } else {
-            ldapContextSource.setUserDn(managerDn);
-            ldapContextSource.setPassword(managerPassword);
-        }
-        try {
-            ldapContextSource.afterPropertiesSet();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to init ldap context", e);
-        }
-        return ldapContextSource;
+        LdapContextSource securityContext = ArtifactoryLdapAuthenticator.createSecurityContext(settings);
+        LdapTemplate ldapTemplate = new LdapTemplate(securityContext);
+        ldapTemplate.setIgnorePartialResultException(true);
+        return ldapTemplate;
     }
 }

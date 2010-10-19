@@ -19,8 +19,9 @@
 package org.artifactory.jcr;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
@@ -127,7 +128,7 @@ public class JcrPath {
         if (modifiedAbsPath.length() > repoRootPathLength) {
             relPath = PathUtils.formatRelativePath(modifiedAbsPath.substring(repoRootPathLength));
         }
-        RepoPath repoPath = new RepoPath(repoKey, relPath);
+        RepoPath repoPath = new RepoPathImpl(repoKey, relPath);
         return repoPath;
     }
 

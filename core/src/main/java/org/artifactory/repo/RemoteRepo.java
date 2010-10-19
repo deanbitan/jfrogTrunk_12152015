@@ -18,13 +18,13 @@
 
 package org.artifactory.repo;
 
-import org.artifactory.api.md.Properties;
-import org.artifactory.api.repo.exception.RepoRejectionException;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.api.fs.RepoResource;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
-import org.artifactory.repo.context.RequestContext;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.md.Properties;
+import org.artifactory.request.RequestContext;
+import org.artifactory.resource.ResourceStreamHandle;
 
 import javax.jcr.RepositoryException;
 import java.io.IOException;
@@ -70,6 +70,18 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
 
     RepoType getType();
 
+    /**
+     * Performs the actual remote download of the artifact.
+     *
+     * @param requestContext
+     * @param remoteResource A remote resource that has been returned by getInfo()
+     * @param cachedResource
+     * @return
+     * @throws IOException
+     * @throws RepositoryException
+     * @throws org.artifactory.api.repo.exception.RepoRejectException
+     *
+     */
     ResourceStreamHandle downloadAndSave(RequestContext requestContext, RepoResource remoteResource,
-            RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectionException;
+                                         RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectException;
 }

@@ -1,1 +1,13 @@
-({"set":"Ayarla","text":"Açıklama:","insertImageTitle":"Resim Özellikleri","url":"URL:","createLinkTitle":"Bağlantı Özellikleri","newWindow":"New Window","topWindow":"Topmost Window","target":"Target:","parentWindow":"Parent Window","currentWindow":"Current Window"})
+({
+	createLinkTitle: "Bağlantı Özellikleri",
+	insertImageTitle: "Resim Özellikleri",
+	url: "URL:",
+	text: "Açıklama:",
+	target: "Hedef:",
+	set: "Ayarla",
+	currentWindow: "Geçerli Pencere",
+	parentWindow: "Üst Pencere",
+	topWindow: "En Üst Pencere",
+	newWindow: "Yeni Pencere"
+})
+

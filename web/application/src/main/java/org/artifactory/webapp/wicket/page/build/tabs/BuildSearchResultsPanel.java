@@ -31,7 +31,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.Addon;
+import org.artifactory.addon.wicket.AddonType;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.security.AuthorizationService;
@@ -78,7 +78,7 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
     @WicketProperty
     protected boolean dependencies = true;
 
-    protected Model messageModel;
+    protected Model<String> messageModel;
     protected Build build;
     private String currentResultName;
 
@@ -91,12 +91,12 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
      * @param requestingAddon The addon that requests the panel
      * @param build           Build to use as file result
      */
-    public BuildSearchResultsPanel(Addon requestingAddon, Build build) {
+    public BuildSearchResultsPanel(AddonType requestingAddon, Build build) {
         super("saveSearchResultsPanel");
         this.build = build;
         currentResultName =
                 new StringBuilder().append(build.getName()).append("-").append(build.getNumber()).toString();
-        messageModel = new Model();
+        messageModel = new Model<String>();
         scopes = buildService.findScopes(build);
         selectedScopes = new HashSet<String>(scopes);
 
@@ -136,26 +136,25 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
      *
      * @param requestingAddon The addon that requests the panel
      */
-    private void addSaveResultsForm(Addon requestingAddon) {
+    private void addSaveResultsForm(AddonType requestingAddon) {
         Form form = new Form("saveResultsForm");
         add(form);
 
         form.add(new TooltipBehavior(messageModel));
-        add(form);
 
         form.add(new HelpBubble("help", "The name of the search result to use.\nBy saving and assembling named " +
                 "search results, you can perform bulk artifact operations."));
 
         form.add(getResultComboBox("resultName"));
 
-        Component saveResultsLink = getSaveResultsLink("saveResultsLink", "Save");
+        Component saveResultsLink = createSaveResultsLink("saveResultsLink", "Save");
         form.add(saveResultsLink);
 
-        Component addResultsLink = getAddResultsLink("addResultsLink", "Add");
+        Component addResultsLink = createAddResultsLink("addResultsLink", "Add");
         form.add(addResultsLink);
 
-        form.add(getSubtractResultsLink("subtractResultsLink", "Subtract"));
-
+        form.add(createSubtractResultsLink("subtractResultsLink", "Subtract"));
+        form.add(createIntersectResultsLink("intersectResultsLink", "Intersect"));
 
         final MarkupContainer scopesContainer = createScopesContainer();
         form.add(scopesContainer);
@@ -170,7 +169,7 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
         if (scopes.isEmpty()) {
             dependenciesCheckbox.add(new NopFormComponentUpdatingBehavior("onclick"));
         } else {
-            dependenciesCheckbox.setLabel(new Model("Include Dependencies of the following scopes:"));
+            dependenciesCheckbox.setLabel(new Model<String>("Include Dependencies of the following scopes:"));
             dependenciesCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {
@@ -208,7 +207,7 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
                             return dependencies && super.isEnabled();
                         }
                     };
-            checkbox.setLabel(new Model(scope));
+            checkbox.setLabel(new Model<String>(scope));
             scopesView.add(checkbox);
         }
         return scopesContainer;
@@ -221,7 +220,7 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
      * @return Result name combo box
      */
     protected ComboBox getResultComboBox(String id) {
-        return new ComboBox(id, new Model(""), Lists.<String>newArrayList());
+        return new ComboBox(id, new Model<String>(""), Lists.<String>newArrayList());
     }
 
     /**
@@ -229,7 +228,7 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
      *
      * @param requestingAddon The addon that requests the panel
      */
-    protected void postInit(Addon requestingAddon) {
+    protected void postInit(AddonType requestingAddon) {
         setAllEnable(false);
         add(new DisabledAddonBehavior(requestingAddon));
     }
@@ -241,7 +240,7 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
      * @param title The title to assign to the link
      * @return Save results link
      */
-    protected Component getSaveResultsLink(String id, String title) {
+    protected Component createSaveResultsLink(String id, String title) {
         return createDummyLink(id, title);
     }
 
@@ -252,7 +251,7 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
      * @param title The title to assign to the link
      * @return Add results link
      */
-    protected Component getAddResultsLink(String id, String title) {
+    protected Component createAddResultsLink(String id, String title) {
         return createDummyLink(id, title);
     }
 
@@ -263,7 +262,11 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
      * @param title The title to assign to the link
      * @return Substract results link
      */
-    protected Component getSubtractResultsLink(String id, String title) {
+    protected Component createSubtractResultsLink(String id, String title) {
+        return createDummyLink(id, title);
+    }
+
+    protected Component createIntersectResultsLink(String id, String title) {
         return createDummyLink(id, title);
     }
 
@@ -292,8 +295,8 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
      * @param checkByDefault Should the checkbox be checked by default
      */
     private StyledCheckbox addCheckBox(Form form, String id, String helpMessage, boolean checkByDefault) {
-        StyledCheckbox checkbox = new StyledCheckbox(id, new PropertyModel(this, id));
-        checkbox.setModelObject(checkByDefault);
+        StyledCheckbox checkbox = new StyledCheckbox(id, new PropertyModel<Boolean>(this, id));
+        checkbox.setDefaultModelObject(checkByDefault);
         checkbox.setOutputMarkupId(true);
         form.add(checkbox);
         form.add(new HelpBubble(id + ".help", helpMessage));

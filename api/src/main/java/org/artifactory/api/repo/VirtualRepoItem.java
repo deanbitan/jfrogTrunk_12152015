@@ -18,7 +18,7 @@
 
 package org.artifactory.api.repo;
 
-import org.artifactory.api.fs.ItemInfo;
+import org.artifactory.fs.ItemInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,32 +29,32 @@ import java.util.List;
  *
  * @author yoavl
  */
-public class VirtualRepoItem {
-    private final ItemInfo item;
+public class VirtualRepoItem implements ItemInfoAware {
+    private final ItemInfo itemInfo;
     private List<String> repoKeys = new ArrayList<String>();
 
-    public VirtualRepoItem(ItemInfo item) {
-        this.item = item;
+    public VirtualRepoItem(ItemInfo itemInfo) {
+        this.itemInfo = itemInfo;
     }
 
     public String getName() {
-        return item.getName();
+        return itemInfo.getName();
     }
 
     public String getPath() {
-        return item.getRelPath();
+        return itemInfo.getRelPath();
     }
 
     public boolean isFolder() {
-        return item.isFolder();
+        return itemInfo.isFolder();
     }
 
     public List<String> getRepoKeys() {
         return repoKeys;
     }
 
-    public ItemInfo getItem() {
-        return item;
+    public org.artifactory.fs.ItemInfo getItemInfo() {
+        return itemInfo;
     }
 
     public void addRepoKey(String repoKey) {
@@ -69,18 +69,18 @@ public class VirtualRepoItem {
             return false;
         }
         VirtualRepoItem item1 = (VirtualRepoItem) o;
-        return item.equals(item1.item);
+        return itemInfo.equals(item1.itemInfo);
 
     }
 
     public int hashCode() {
-        return item.hashCode();
+        return itemInfo.hashCode();
     }
 
     @Override
     public String toString() {
         return "VirtualRepoItem{" +
-                "item=" + item +
+                "item=" + itemInfo +
                 ", repoKeys=" + repoKeys +
                 '}';
     }

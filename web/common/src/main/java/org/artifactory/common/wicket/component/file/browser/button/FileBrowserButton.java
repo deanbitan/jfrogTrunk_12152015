@@ -31,8 +31,6 @@ import org.artifactory.common.wicket.component.file.path.PathMask;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.model.DelegetedModel;
 
-import java.io.File;
-
 /**
  * @author Yoav Aharoni
  */
@@ -41,6 +39,7 @@ public class FileBrowserButton extends Panel {
     private PathHelper pathHelper;
     private PathMask mask = PathMask.ALL;
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public FileBrowserButton(String id) {
         this(id, null, new PathHelper());
     }
@@ -49,6 +48,7 @@ public class FileBrowserButton extends Panel {
         this(id, model, new PathHelper());
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public FileBrowserButton(String id, String root) {
         this(id, null, root);
     }
@@ -59,17 +59,13 @@ public class FileBrowserButton extends Panel {
 
     protected FileBrowserButton(String id, IModel model, PathHelper pathHelper) {
         super(id);
+        this.pathHelper = pathHelper;
+        chRoot = pathHelper.getWorkingDirectoryPath();
 
         if (model != null) {
-            setModel(model);
+            setDefaultModel(model);
         }
 
-        this.pathHelper = pathHelper;
-        init();
-    }
-
-    protected void init() {
-        chRoot = new File(chRoot == null ? "/" : chRoot).getAbsolutePath();
         add(new BrowseLink("browseLink"));
     }
 
@@ -80,14 +76,12 @@ public class FileBrowserButton extends Panel {
     }
 
     protected void onShowBrowserClicked(AjaxRequestTarget target) {
-        FileBrowserPanel fileBrowserPanel = new MyFileBrowserPanel();
-        fileBrowserPanel.setMask(mask);
-
         ModalHandler modalHandler = ModalHandler.getInstanceFor(this);
-        modalHandler.setModalPanel(fileBrowserPanel);
+        modalHandler.setModalPanel(new MyFileBrowserPanel());
         modalHandler.show(target);
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public PathMask getMask() {
         return mask;
     }
@@ -95,7 +89,6 @@ public class FileBrowserButton extends Panel {
     public void setMask(PathMask mask) {
         this.mask = mask;
     }
-
 
     private class BrowseLink extends WebComponent {
         private BrowseLink(String id) {
@@ -114,7 +107,8 @@ public class FileBrowserButton extends Panel {
     private class MyFileBrowserPanel extends FileBrowserPanel {
         private MyFileBrowserPanel() {
             super(new DelegetedModel(FileBrowserButton.this), pathHelper);
-            setChRoot(chRoot);
+            super.setChRoot(chRoot);
+            super.setMask(mask);
         }
 
         @Override

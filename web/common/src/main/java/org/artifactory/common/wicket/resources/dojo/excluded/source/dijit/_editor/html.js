@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit._editor.html"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit._editor.html"] = true;
 dojo.provide("dijit._editor.html");
 
 dijit._editor.escapeXml=function(/*String*/str, /*Boolean?*/noSingleQuotes){
@@ -25,7 +16,7 @@ dijit._editor.getNodeHtml=function(/* DomNode */node){
 	switch(node.nodeType){
 		case 1: //element node
 			var lName = node.nodeName.toLowerCase();
-			if(lName.charAt(0) == "/"){
+			if(!lName || lName.charAt(0) == "/"){
 				// IE does some strange things with malformed HTML input, like
 				// treating a close tag </span> without an open tag <span>, as
 				// a new tag with tagName of /span.  Corrupts output HTML, remove
@@ -187,5 +178,3 @@ dijit._editor.getChildrenHtml = function(/* DomNode */dom){
 	}
 	return out; // String
 };
-
-}

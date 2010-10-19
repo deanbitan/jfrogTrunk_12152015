@@ -18,7 +18,7 @@
 
 package org.artifactory.api.fs;
 
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 import org.artifactory.util.PathUtils;
 
 /**

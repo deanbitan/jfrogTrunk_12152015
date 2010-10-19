@@ -19,7 +19,7 @@
 package org.artifactory.api.config;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public interface ImportableExportable {
     void exportTo(ExportSettings settings);

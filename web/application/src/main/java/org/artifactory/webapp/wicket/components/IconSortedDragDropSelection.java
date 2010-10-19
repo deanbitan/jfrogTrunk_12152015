@@ -77,10 +77,10 @@ public class IconSortedDragDropSelection<T> extends SortedDragDropSelection<T> {
 
     @Override
     protected String getSortValue(ListItem item) {
-        return item.getModelObject().getClass().getSimpleName();
+        return item.getDefaultModelObject().getClass().getSimpleName();
     }
 
     protected String getCssClass(ListItem item) {
-        return ItemCssClass.getRepoCssClass(item.getModelObject());
+        return ItemCssClass.getRepoCssClass(item.getDefaultModelObject());
     }
 }

@@ -18,8 +18,6 @@
 
 package org.artifactory.repo;
 
-import org.artifactory.api.repo.RepoPath;
-
 /**
  * An utility object that caches a repoPath with its repository
  * <p/>

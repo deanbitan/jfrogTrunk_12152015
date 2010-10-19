@@ -34,7 +34,11 @@ import java.util.List;
  * @author Yossi Shaul
  */
 @SuppressWarnings({"unchecked"})
-public class ListPropertySorter {
+public abstract class ListPropertySorter {
+
+    private ListPropertySorter() {
+        // utility class
+    }
 
     /**
      * Sorts the input string using property comparator. The property must have a getter and must be primitive type or
@@ -47,7 +51,8 @@ public class ListPropertySorter {
         if (!listToSort.isEmpty() && sortParam != null) {
             final String property = sortParam.getProperty();
             if (StringUtils.hasText(property)) {
-                final SortDefinition sortDefinition = new MutableSortDefinition(property, true, sortParam.isAscending());
+                final SortDefinition sortDefinition = new MutableSortDefinition(property, true,
+                        sortParam.isAscending());
                 Collections.sort(listToSort, new PropertyComparator(sortDefinition));
             }
         }
@@ -69,7 +74,8 @@ public class ListPropertySorter {
             if (sortParam != null) {
                 final String property = sortParam.getProperty();
                 if (StringUtils.hasText(property)) {
-                    final SortDefinition sortDefinition = new MutableSortDefinition(property, true, sortParam.isAscending());
+                    final SortDefinition sortDefinition = new MutableSortDefinition(property, true,
+                            sortParam.isAscending());
                     if (ordering == null) {
                         ordering = Ordering.from(new PropertyComparator(sortDefinition));
                     } else {

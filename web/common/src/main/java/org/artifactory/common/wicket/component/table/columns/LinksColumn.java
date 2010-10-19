@@ -34,16 +34,16 @@ import static org.artifactory.common.wicket.component.panel.links.LinksPanel.LIN
 /**
  * @author Yoav Aharoni
  */
-public abstract class LinksColumn<T> extends AbstractColumn implements AttachColumnListener {
+public abstract class LinksColumn<T> extends AbstractColumn<T> implements AttachColumnListener {
     protected LinksColumn() {
-        this(new Model(""));
+        this(new Model<String>(""));
     }
 
     protected LinksColumn(String title) {
-        this(new Model(title));
+        this(new Model<String>(title));
     }
 
-    protected LinksColumn(IModel titleModel) {
+    protected LinksColumn(IModel<String> titleModel) {
         super(titleModel);
     }
 

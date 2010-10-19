@@ -19,11 +19,9 @@
 package org.artifactory.rest.resource.repositories;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.common.StatusEntry;
-import org.artifactory.api.common.StatusEntryLevel;
-import org.artifactory.api.config.ImportSettings;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.search.SearchService;
@@ -33,7 +31,6 @@ import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoDetails;
 import org.artifactory.repo.RepoDetailsType;
-import org.artifactory.rest.resource.system.StreamStatusHolder;
 import org.artifactory.rest.util.RestUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,16 +42,21 @@ import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import java.io.File;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static org.artifactory.repo.RepoDetailsType.*;
 
@@ -78,11 +80,17 @@ public class RepositoriesResource {
     @Context
     HttpServletResponse httpResponse;
 
+    @Context
+    private HttpHeaders requestHeaders;
+
     @Autowired
     RepositoryService repositoryService;
 
     @Autowired
     AuthorizationService authorizationService;
+
+    @Autowired
+    AddonsManager addonsManager;
 
     @Autowired
     SearchService searchService;
@@ -93,9 +101,66 @@ public class RepositoriesResource {
      * @return RepoConfigurationResource
      */
     @Path("{repoKey}/" + RepositoriesRestConstants.PATH_CONFIGURATION)
+    @Deprecated
     public RepoConfigurationResource getRepoConfigResource(@PathParam("repoKey") String repoKey) {
         return new RepoConfigurationResource(repositoryService, repoKey);
     }
+
+    /**
+     * Get repository configuration depending on the repository's type
+     *
+     * @param repoKey The repo Key
+     * @return The repository configuration JSON
+     */
+    @GET
+    @Path("{repoKey: .+}")
+    @Produces({RepositoriesRestConstants.MT_LOCAL_REPOSITORY_CONFIGURATION,
+            RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIG,
+            RepositoriesRestConstants.MT_VIRTUAL_REPOSITORY_CONFIGURATION, MediaType.APPLICATION_JSON})
+    public Response getRepoConfig(@PathParam("repoKey") String repoKey) {
+        List<MediaType> acceptableMediaTypes = requestHeaders.getAcceptableMediaTypes();
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return restAddon.getRepositoryConfiguration(repoKey, acceptableMediaTypes);
+    }
+
+    private boolean matches(List<MediaType> acceptableMediaTypes, String mediaType) {
+        MediaType mt = MediaType.valueOf(mediaType);
+        for (MediaType amt : acceptableMediaTypes) {
+            // accept any compatible media type and if the user specified application/json
+            if (mt.isCompatible(amt) || MediaType.APPLICATION_JSON_TYPE.equals(amt)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @PUT
+    @Consumes(
+            {RepositoriesRestConstants.MT_LOCAL_REPOSITORY_CONFIGURATION, RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIG,
+                    RepositoriesRestConstants.MT_VIRTUAL_REPOSITORY_CONFIGURATION, MediaType.APPLICATION_JSON})
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("{repoKey: .+}")
+    public Response createOrReplaceRepository(@PathParam("repoKey") String repoKey,
+            @QueryParam(RepositoriesRestConstants.POSITION) int position, Map repositoryConfiguration)
+            throws IOException {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        List<MediaType> acceptableMediaTypes = requestHeaders.getAcceptableMediaTypes();
+        return restAddon.createOrReplaceRepository(repoKey, repositoryConfiguration, acceptableMediaTypes, position);
+    }
+
+    @POST
+    @Consumes(
+            {RepositoriesRestConstants.MT_LOCAL_REPOSITORY_CONFIGURATION, RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIG,
+                    RepositoriesRestConstants.MT_VIRTUAL_REPOSITORY_CONFIGURATION, MediaType.APPLICATION_JSON})
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("{repoKey: .+}")
+    public Response updateRepository(@PathParam("repoKey") String repoKey, Map repositoryConfiguration)
+            throws IOException {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        List<MediaType> acceptableMediaTypes = requestHeaders.getAcceptableMediaTypes();
+        return restAddon.updateRepository(repoKey, repositoryConfiguration, acceptableMediaTypes);
+    }
+
 
     /**
      * Returns a JSON list of repository details.
@@ -108,70 +173,26 @@ public class RepositoriesResource {
      * @throws Exception
      */
     @GET
-    @Produces(RepositoriesRestConstants.MT_REPOSITORY_DETAILS_LIST)
+    @Produces({RepositoriesRestConstants.MT_REPOSITORY_DETAILS_LIST, MediaType.APPLICATION_JSON})
     public List<RepoDetails> getAllRepoDetails(@QueryParam(RepositoriesRestConstants.PARAM_REPO_TYPE)
     String repoType) throws Exception {
         return getRepoDetailsList(repoType);
     }
 
-    @POST
-    @Consumes("application/x-www-form-urlencoded")
-    public void importRepositories(
-            //The base path to import from (may contain a single repo or multiple repos with named sub folders
-            @QueryParam(RepositoriesRestConstants.PATH) String path,
-            //Empty/null repo -> all
-            @QueryParam(RepositoriesRestConstants.TARGET_REPO) String targetRepo,
-            //Include metadata - default 1
-            @QueryParam(RepositoriesRestConstants.INCLUDE_METADATA) String includeMetadata,
-            //Verbose - default 0
-            @QueryParam(RepositoriesRestConstants.VERBOSE) String verbose) throws IOException {
-        StreamStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
-        String repoNameToImport = targetRepo;
-        if (StringUtils.isBlank(repoNameToImport)) {
-            repoNameToImport = "All repositories";
-        }
-        statusHolder.setStatus("Starting Repositories Import of " + repoNameToImport + " from " + path, log);
-        if (!authorizationService.isAdmin()) {
-            statusHolder.setError(
-                    "User " + authorizationService.currentUsername() + " is not permitted to import repositories",
-                    HttpStatus.SC_UNAUTHORIZED, log);
-        }
-        if (StringUtils.isEmpty(path)) {
-            statusHolder.setError("Source directory path may not be empty.", HttpStatus.SC_BAD_REQUEST, log);
-        }
-        File baseDir = new File(path);
-        if (!baseDir.exists()) {
-            statusHolder.setError("Directory " + path + " does not exist.", HttpStatus.SC_BAD_REQUEST, log);
-        }
-        ImportSettings importSettings = new ImportSettings(baseDir, statusHolder);
-        if (StringUtils.isNotBlank(includeMetadata)) {
-            importSettings.setIncludeMetadata(Integer.parseInt(includeMetadata) == 1);
-        }
-        if (StringUtils.isNotBlank(verbose)) {
-            importSettings.setVerbose(Integer.parseInt(verbose) == 1);
-        }
-        try {
-            if (StringUtils.isBlank(targetRepo)) {
-                repositoryService.importAll(importSettings);
-            } else {
-                importSettings.setIndexMarkedArchives(true);
-                repositoryService.importRepo(targetRepo, importSettings);
-            }
-        } catch (Exception e) {
-            statusHolder.setError("Unable to import repository", e, log);
-        } finally {
-            if (!importSettings.isIndexMarkedArchives()) {
-                searchService.asyncIndexMarkedArchives();
-            }
-        }
-        StringBuilder builder = new StringBuilder();
-        List<StatusEntry> statusEntries = statusHolder.getEntries(StatusEntryLevel.INFO);
-        for (StatusEntry entry : statusEntries) {
-            String message = entry.getMessage();
-            builder.append(message).append("\n");
-        }
-    }
 
+    @DELETE
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("{repoKey: .+}")
+    public Response deleteRepository(@PathParam("repoKey") String repoKey) throws IOException {
+        if (!authorizationService.isAdmin()) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        if (StringUtils.isBlank(repoKey)) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Repo key must not be null\n").build();
+        }
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return restAddon.deleteRepository(repoKey);
+    }
 
     /**
      * Returns a list of repository details

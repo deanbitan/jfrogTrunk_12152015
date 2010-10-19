@@ -18,22 +18,23 @@
 
 package org.artifactory.webapp.wicket.page.security.login;
 
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.security.AuthenticationHelper;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
-import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 import org.artifactory.webapp.wicket.page.base.BasePage;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
+
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class LogoutPage extends BasePage {
-
-    @SpringBean
-    private LogoutHandler logoutHandler;
 
     public LogoutPage() {
         TitledBorder border = new TitledBorder("logoutBorder", "outer-border");
@@ -43,10 +44,14 @@ public class LogoutPage extends BasePage {
 
     @Override
     protected void init() {
-        logoutHandler.logout(WicketUtils.getWebRequest().getHttpServletRequest(),
-                WicketUtils.getWebResponse().getHttpServletResponse(),
-                AuthenticationHelper.getAuthentication());
-        ArtifactoryWebSession.get().signOut();
+        HttpServletRequest servletRequest = WicketUtils.getWebRequest().getHttpServletRequest();
+        HttpServletResponse servletResponse = WicketUtils.getWebResponse().getHttpServletResponse();
+        Authentication authentication = AuthenticationHelper.getAuthentication();
+
+        Map<String, LogoutHandler> logoutHandlers = ContextHelper.get().beansForType(LogoutHandler.class);
+        for (LogoutHandler logoutHandler : logoutHandlers.values()) {
+            logoutHandler.logout(servletRequest, servletResponse, authentication);
+        }
         super.init();
     }
 

@@ -50,6 +50,8 @@ public class StartWebContainer {
 
         // set home dir - dev mode only!
         System.setProperty(ConstantValues.dev.getPropertyName(), "true");
+        //In dev mod check for plugin updates frequently
+        System.setProperty(ConstantValues.pluginScriptsRefreshIntervalSecs.getPropertyName(), "20");
         File standalone = new File(prefix + "/open/standalone/src").getCanonicalFile();
         File artHome = new File(prefix + "/devenv/.artifactory").getCanonicalFile();
         if (!artHome.exists()) {
@@ -60,7 +62,7 @@ public class StartWebContainer {
         System.setProperty(ArtifactoryHome.SYS_PROP, artHome.getAbsolutePath());
 
         copyNewerDevResources(standalone, artHome);
-        updateDefaultResources(standalone);
+        //updateDefaultResources(new File(standalone, "etc"));
 
         //Manually set the selector (needed explicitly here before any logger kicks in)
         // create the logger only after artifactory.home is set
@@ -93,6 +95,14 @@ public class StartWebContainer {
         IOFileFilter fileFilter = new NewerFileFilter(devEtcDir, homeEtcDir);
         fileFilter = FileFilterUtils.makeSVNAware(fileFilter);
         FileUtils.copyDirectory(devEtcDir, homeEtcDir, fileFilter, true);
+
+        /**
+         * If the bootstrap already exists, it means it's not the first startup, so don't keep the original config file
+         * or the etc folder will flood with bootstrap files
+         */
+        if (new File(homeEtcDir, ArtifactoryHome.ARTIFACTORY_CONFIG_BOOTSTRAP_FILE).exists()) {
+            new File(homeEtcDir, ArtifactoryHome.ARTIFACTORY_CONFIG_FILE).delete();
+        }
     }
 
     private static void updateDefaultResources(File devEtcDir) {

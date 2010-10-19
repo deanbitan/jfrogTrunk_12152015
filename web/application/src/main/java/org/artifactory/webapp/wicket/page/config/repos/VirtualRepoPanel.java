@@ -35,9 +35,9 @@ import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WebstartWebAddon;
-import org.artifactory.api.common.StatusHolder;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.common.StatusHolder;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -53,6 +53,7 @@ import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoResolver;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.components.IconDragDropSelection;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 
@@ -118,7 +119,7 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
         resolvedRepo.add(new DataView("resolvedRepo", new ResolvedReposDataProvider()) {
             @Override
             protected void populateItem(final Item item) {
-                RepoDescriptor repo = (RepoDescriptor) item.getModelObject();
+                RepoDescriptor repo = (RepoDescriptor) item.getDefaultModelObject();
                 item.add(new Label("key", repo.getKey()));
             }
         });
@@ -172,7 +173,7 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
                     @Override
                     protected void onSubmit(AjaxRequestTarget target, Form form) {
                         String repoKey = descriptor.getKey();
-                        RepoPath repoPath = RepoPath.repoRootPath(repoKey);
+                        RepoPath repoPath = RepoPathImpl.repoRootPath(repoKey);
                         StatusHolder statusHolder;
                         statusHolder = repositoryService.undeploy(repoPath, false);
                         if (!statusHolder.isError()) {

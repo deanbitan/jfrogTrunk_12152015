@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dojo.dnd.Manager"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojo.dnd.Manager"] = true;
 dojo.provide("dojo.dnd.Manager");
 
 dojo.require("dojo.dnd.common");
@@ -145,7 +136,7 @@ dojo.declare("dojo.dnd.Manager", null, {
 		if(this.avatar){
 			if(this.target && this.canDropFlag){
 				var copy = Boolean(this.source.copyState(dojo.isCopyKey(e))),
-				params = [this.source, this.nodes, copy, this.target];
+				params = [this.source, this.nodes, copy, this.target, e];
 				dojo.publish("/dnd/drop/before", params);
 				dojo.publish("/dnd/drop", params);
 			}else{
@@ -216,5 +207,3 @@ dojo.dnd.manager = function(){
 	}
 	return dojo.dnd._manager;	// Object
 };
-
-}

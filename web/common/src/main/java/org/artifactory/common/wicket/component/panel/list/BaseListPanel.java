@@ -18,6 +18,7 @@
 
 package org.artifactory.common.wicket.component.panel.list;
 
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
@@ -30,6 +31,7 @@ import org.apache.wicket.model.Model;
 import org.artifactory.common.wicket.ajax.CancelDefaultDecorator;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
+import org.artifactory.common.wicket.component.PlaceHolder;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
@@ -75,6 +77,9 @@ public abstract class BaseListPanel<T> extends TitledPanel {
         // add new item link
         newItemLink = getNewItemLink();
         add(newItemLink);
+
+        Component exportItemLink = newExportLink("export");
+        add(exportItemLink);
 
         // add table
         List<IColumn> columns = new ArrayList<IColumn>();
@@ -127,6 +132,10 @@ public abstract class BaseListPanel<T> extends TitledPanel {
     protected abstract void deleteItem(T itemObject, AjaxRequestTarget target);
 
     protected abstract TitledAjaxLink getNewItemLink();
+
+    protected Component newExportLink(String id) {
+        return new PlaceHolder(id);
+    }
 
     protected abstract TitledAjaxLink getEditItemLink(final T itemObject, String linkId);
 

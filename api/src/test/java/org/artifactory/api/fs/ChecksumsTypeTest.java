@@ -18,14 +18,14 @@
 
 package org.artifactory.api.fs;
 
-import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.checksum.ChecksumType;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Tests the {@link ChecksumType} enum.
+ * Tests the {@link org.artifactory.checksum.ChecksumType} enum.
  *
  * @author Yossi Shaul
  */

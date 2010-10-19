@@ -19,7 +19,6 @@
 package org.artifactory.webapp.actionable.model;
 
 import com.google.common.collect.Lists;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.tree.fs.ZipEntriesTree;
 import org.artifactory.api.tree.fs.ZipTreeNode;
@@ -33,8 +32,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A zip file actionable item which is a file actionable item with hierarchy behavior that allows browsing
- * the internals of the zip.
+ * A zip file actionable item which is a file actionable item with hierarchy behavior that allows browsing the internals
+ * of the zip.
  *
  * @author Yossi Shaul
  */
@@ -43,7 +42,7 @@ public class ZipFileActionableItem extends FileActionableItem implements Hierarc
 
     private boolean compactAllowed;
 
-    public ZipFileActionableItem(FileInfo fileInfo, boolean compactAllowed) {
+    public ZipFileActionableItem(org.artifactory.fs.FileInfo fileInfo, boolean compactAllowed) {
         super(fileInfo);
         this.compactAllowed = compactAllowed;
     }

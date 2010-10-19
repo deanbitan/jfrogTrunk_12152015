@@ -18,7 +18,7 @@
 
 package org.artifactory.api.md;
 
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 
 /**
  * @author freds

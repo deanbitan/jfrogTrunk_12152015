@@ -22,6 +22,9 @@ package org.artifactory.log;
  * @author Yoav Landman
  */
 public abstract class BootstrapLogger {
+    private BootstrapLogger() {
+        // utility class
+    }
 
     public static void info(String msg) {
         log("INFO", msg);

@@ -23,11 +23,11 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
@@ -86,7 +86,7 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
         final DropDownChoice targetRepo = new DropDownChoice("targetRepo", targetRepoModel, deployableRepos);
         if (deployableRepos.size() > 0) {
             LocalRepoDescriptor defaultTarget = deployableRepos.get(0);
-            targetRepo.setModelObject(defaultTarget);
+            targetRepo.setDefaultModelObject(defaultTarget);
         } //Else - BUG!
         deployForm.add(targetRepo);
 

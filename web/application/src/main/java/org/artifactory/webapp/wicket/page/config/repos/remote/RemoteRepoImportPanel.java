@@ -37,7 +37,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
@@ -60,6 +60,7 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepositoryConfigPage;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
@@ -112,7 +113,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
         urlTextField.setPersistent(true);
         urlTextField.setOutputMarkupId(true);
         urlTextField.setRequired(true);
-        urlTextField.setModelObject("http://repo.jfrog.org/artifactory");
+        urlTextField.setDefaultModelObject("http://repo.jfrog.org/artifactory");
         loadBorder.add(urlTextField);
         loadBorder.add(getLoadButton(loadForm));
 
@@ -215,7 +216,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
 
                             //Add the repo to the zap list
                             if (repoToImport.isStoreArtifactsLocally()) {
-                                reposToZap.add(new RepoPath(key + "-cache", ""));
+                                reposToZap.add(new RepoPathImpl(key + "-cache", ""));
                             }
                         }
 

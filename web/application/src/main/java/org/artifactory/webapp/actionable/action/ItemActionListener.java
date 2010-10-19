@@ -21,7 +21,7 @@ package org.artifactory.webapp.actionable.action;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public interface ItemActionListener {
     void actionPerformed(ItemEvent e);

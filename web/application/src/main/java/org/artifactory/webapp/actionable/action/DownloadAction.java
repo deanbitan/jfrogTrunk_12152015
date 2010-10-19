@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.actionable.action;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;

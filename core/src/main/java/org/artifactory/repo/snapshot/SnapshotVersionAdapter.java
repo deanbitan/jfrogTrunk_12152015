@@ -18,11 +18,11 @@
 
 package org.artifactory.repo.snapshot;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 /**
- * A snapshot version adapter is used in local repositories and is the implementation of the
- * {@link org.artifactory.descriptor.repo.SnapshotVersionBehavior}.
+ * A snapshot version adapter is used in local repositories and is the implementation of the {@link
+ * org.artifactory.descriptor.repo.SnapshotVersionBehavior}.
  *
  * @author Yossi Shaul
  */

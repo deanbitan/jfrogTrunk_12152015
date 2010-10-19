@@ -28,7 +28,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class JcrGarbageCollectorJob extends QuartzCommand {
     @Override

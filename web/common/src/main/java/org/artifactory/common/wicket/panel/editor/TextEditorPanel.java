@@ -29,7 +29,7 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 
 /**
- * Created by IntelliJ IDEA. User: noam
+ * @author Noam Tenne
  */
 public class TextEditorPanel extends TitledPanel {
 
@@ -40,7 +40,7 @@ public class TextEditorPanel extends TitledPanel {
     private String editorValue;
 
     public TextEditorPanel(String id, String title, String helpMessage) {
-        this(id, title, new Model(helpMessage));
+        this(id, title, new Model<String>(helpMessage));
     }
 
     public TextEditorPanel(String id, String title, IModel helpModel) {
@@ -56,7 +56,7 @@ public class TextEditorPanel extends TitledPanel {
 
     @Override
     protected Component newToolbar(String id) {
-        return new HelpBubble(id, getModel());
+        return new HelpBubble(id, getDefaultModel());
     }
 
     public void setEditorValue(String pomText) {
@@ -72,11 +72,11 @@ public class TextEditorPanel extends TitledPanel {
     }
 
     private void addTextArea() {
-        editorTextArea = new TextArea("editorTextArea", newTextModel());
+        editorTextArea = new TextArea<String>("editorTextArea", newTextModel());
         add(editorTextArea);
     }
 
-    protected IModel newTextModel() {
-        return new PropertyModel(this, "editorValue");
+    protected IModel<String> newTextModel() {
+        return new PropertyModel<String>(this, "editorValue");
     }
 }

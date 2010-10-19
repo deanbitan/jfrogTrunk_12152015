@@ -40,7 +40,7 @@ import javax.jcr.Node;
 import java.util.Collection;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 @Repository("userDetailsService")
 @Reloadable(beanClass = UserGroupManager.class, initAfter = JcrService.class)
@@ -95,6 +95,17 @@ public class JcrUserGroupManager implements UserGroupManager {
         return users;
     }
 
+    public boolean userExists(String username) {
+        if (UserInfo.ANONYMOUS.equals(username)) {
+            return true;
+        }
+
+        if (StringUtils.hasLength(username)) {
+            return getOcm().objectExists(new User(username).getJcrPath());
+        }
+        return false;
+    }
+
     public SimpleUser loadUserByUsername(String username) throws UsernameNotFoundException, DataAccessException {
         if (UserInfo.ANONYMOUS.equals(username) && anonymousUser != null) {
             return anonymousUser;
@@ -102,8 +113,8 @@ public class JcrUserGroupManager implements UserGroupManager {
 
         log.debug("Loading user {} from storage.", username);
 
-        ObjectContentManager ocm = getOcm();
         if (StringUtils.hasLength(username)) {
+            ObjectContentManager ocm = getOcm();
             User user = (User) ocm.getObject(new User(username).getJcrPath());
             if (user != null) {
                 SimpleUser simpleUser = new SimpleUser(user.getInfo());

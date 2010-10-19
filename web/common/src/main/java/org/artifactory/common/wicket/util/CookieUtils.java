@@ -27,7 +27,11 @@ import javax.servlet.http.Cookie;
 /**
  * @author Yoav Aharoni
  */
-public class CookieUtils {
+public abstract class CookieUtils {
+    private CookieUtils() {
+        // utility class
+    }
+
     public static String getCookie(String name) {
         WebRequest request = (WebRequest) RequestCycle.get().getRequest();
         Cookie cookie = request.getCookie(name);

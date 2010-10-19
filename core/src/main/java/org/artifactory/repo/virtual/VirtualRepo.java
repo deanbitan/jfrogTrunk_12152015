@@ -23,16 +23,15 @@ import com.google.common.collect.Sets;
 import org.apache.commons.collections15.OrderedMap;
 import org.apache.commons.collections15.map.ListOrderedMap;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderInfo;
+import org.artifactory.api.fs.InternalFileInfo;
+import org.artifactory.api.fs.InternalFolderInfo;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.md.Properties;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
-import org.artifactory.api.repo.exception.RepoRejectionException;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -44,18 +43,14 @@ import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.LocalCacheRepo;
-import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.RealRepo;
-import org.artifactory.repo.RemoteRepo;
-import org.artifactory.repo.Repo;
-import org.artifactory.repo.RepoBase;
-import org.artifactory.repo.context.RequestContext;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.*;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.jcr.StoringRepoMixin;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.interceptor.PomInterceptor;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.request.RequestContext;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.slf4j.Logger;
 
 import javax.jcr.Node;
@@ -91,8 +86,8 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
      * Special ctor for the default global repo
      */
     public VirtualRepo(InternalRepositoryService service, VirtualRepoDescriptor descriptor,
-            OrderedMap<String, LocalRepo> localRepositoriesMap,
-            OrderedMap<String, RemoteRepo> remoteRepositoriesMap) {
+                       OrderedMap<String, LocalRepo> localRepositoriesMap,
+                       OrderedMap<String, RemoteRepo> remoteRepositoriesMap) {
         super(service);
         this.localRepositoriesMap = localRepositoriesMap;
         this.remoteRepositoriesMap = remoteRepositoriesMap;
@@ -177,10 +172,22 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
      * Returns a local non-cache repository by key
      *
      * @param key The repository key
-     * @return Local non-cahce repository or null if not found
+     * @return Local non-cache repository or null if not found
      */
     public LocalRepo localRepositoryByKey(String key) {
         return localRepositoriesMap.get(key);
+    }
+
+    public Repo repositoryByKey(String key) {
+        Repo repo = localOrCachedRepositoryByKey(key);
+        if (repo != null) {
+            return repo;
+        }
+        repo = remoteRepositoryByKey(key);
+        if (repo != null) {
+            return repo;
+        }
+        return virtualRepositoriesMap.get(key);
     }
 
     /**
@@ -279,7 +286,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
             }
             JcrFsItem fsItem = repo.getLocalJcrFsItem(path);
             if (!fsItem.isFolder()) {
-                log.warn("Expected folder but got file: {}", new RepoPath(repo.getKey(), path));
+                log.warn("Expected folder but got file: {}", new RepoPathImpl(repo.getKey(), path));
                 continue;
             }
             JcrFolder dir = (JcrFolder) fsItem;
@@ -295,7 +302,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return children;
     }
 
-    private List<VirtualRepo> getResolvedVirtualRepos() {
+    public List<VirtualRepo> getResolvedVirtualRepos() {
         //Add items from contained virtual repositories
         List<VirtualRepo> virtualRepos = new ArrayList<VirtualRepo>();
         //Assemble the virtual repo deep search lists
@@ -450,7 +457,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     }
 
     public RepoResource saveResource(RepoResource res, final InputStream in, Properties keyvals) throws IOException,
-            RepoRejectionException {
+            RepoRejectException {
         return storageMixin.saveResource(res, in, keyvals);
     }
 
@@ -521,7 +528,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     }
 
     public ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, RepoResource res)
-            throws IOException, RepositoryException, RepoRejectionException {
+            throws IOException, RepositoryException, RepoRejectException {
         return storageMixin.getResourceStreamHandle(requestContext, res);
     }
 
@@ -556,11 +563,11 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return storageMixin.getLockedJcrFolder(relPath, createIfMissing);
     }
 
-    public MetadataDefinition<FileInfo> getFileInfoMd() {
+    public MetadataDefinition<InternalFileInfo> getFileInfoMd() {
         return storageMixin.getFileInfoMd();
     }
 
-    public MetadataDefinition<FolderInfo> getFolderInfoMd() {
+    public MetadataDefinition<InternalFolderInfo> getFolderInfoMd() {
         return storageMixin.getFolderInfoMd();
     }
 

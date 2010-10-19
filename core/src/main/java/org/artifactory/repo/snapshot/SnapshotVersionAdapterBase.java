@@ -21,7 +21,7 @@ package org.artifactory.repo.snapshot;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.resource.ArtifactResource;
@@ -71,7 +71,7 @@ public abstract class SnapshotVersionAdapterBase implements SnapshotVersionAdapt
             return false;
         }
 
-        MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(new RepoPath("repo", path));
+        MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(new RepoPathImpl("repo", path));
         if (!mavenInfo.isValid()) {
             log.debug("{} is not a valid maven GAV path. Not applying snapshot policy.", path);
             return false;

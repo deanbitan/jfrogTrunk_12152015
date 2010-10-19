@@ -19,7 +19,9 @@
 package org.artifactory.api.fs;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
+import org.artifactory.checksum.ChecksumsInfo;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
@@ -77,7 +79,7 @@ public class FileAdditionalInfo extends ItemAdditionalInfo {
         if (additionalInfo instanceof FileAdditionalInfo) {
             FileAdditionalInfo fileAdditionalInfo = (FileAdditionalInfo) additionalInfo;
             if (!fileAdditionalInfo.isIdentical(this)) {
-                ChecksumsInfo otherChecksumInfo = fileAdditionalInfo.getChecksumsInfo();
+                org.artifactory.checksum.ChecksumsInfo otherChecksumInfo = fileAdditionalInfo.getChecksumsInfo();
                 if (otherChecksumInfo != null) {
                     if (checksumsInfo == null || checksumsInfo.getChecksums() == null ||
                             checksumsInfo.getChecksums().isEmpty()) {

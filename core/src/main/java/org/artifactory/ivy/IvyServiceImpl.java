@@ -20,14 +20,9 @@ package org.artifactory.ivy;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor;
-import org.apache.ivy.core.settings.IvySettings;
-import org.apache.ivy.plugins.parser.ParserSettings;
-import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorParser;
-import org.apache.ivy.plugins.repository.BasicResource;
-import org.apache.ivy.plugins.repository.Resource;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.util.StringInputStream;
 import org.slf4j.Logger;
@@ -37,11 +32,8 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
-import java.util.Date;
 
 @Service
 public class IvyServiceImpl implements IvyService {
@@ -50,8 +42,6 @@ public class IvyServiceImpl implements IvyService {
 
     @Autowired
     private InternalRepositoryService repositoryService;
-
-    private final ParserSettings settings = new IvySettings();
 
     public ModuleDescriptor parseIvyFile(File file) {
         FileInputStream input = null;
@@ -87,24 +77,6 @@ public class IvyServiceImpl implements IvyService {
         } catch (Exception e) {
             log.warn("Could not parse the item at {} as a valid Ivy file.", e);
             return null;
-        }
-    }
-
-    class IvyParser extends XmlModuleDescriptorParser {
-        public ModuleDescriptor getModuleDescriptorForStringContent(InputStream input, long contentLength)
-                throws IOException, ParseException {
-            Resource resource = new BasicResource("ivyBasicResource", true, contentLength, new Date().getTime(), true);
-            return getModuleDescriptor(settings, input, resource, true);
-        }
-
-        public ModuleDescriptor getModuleDescriptor(ParserSettings settings, InputStream input,
-                Resource res, boolean validate) throws ParseException, IOException {
-            Parser parser = newParser(settings);
-            parser.setValidate(validate);
-            parser.setResource(res);
-            parser.setInput(input);
-            parser.parse();
-            return parser.getModuleDescriptor();
         }
     }
 }

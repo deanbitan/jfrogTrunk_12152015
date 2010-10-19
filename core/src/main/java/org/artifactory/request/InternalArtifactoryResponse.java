@@ -18,9 +18,10 @@
 
 package org.artifactory.request;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.io.output.NullWriter;
+import org.artifactory.api.common.BasicStatusHolder;
+import org.artifactory.common.StatusHolder;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -34,6 +35,8 @@ import java.io.Writer;
  * @author Yossi Shaul
  */
 public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
+
+    private String statusMessage;
 
     public InternalArtifactoryResponse() {
     }
@@ -49,6 +52,7 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
     @Override
     public void sendErrorInternal(int statusCode, String reason) throws IOException {
         // nothing special
+        statusMessage = reason;
     }
 
     public void sendAuthorizationRequired(String message, String realm) throws IOException {
@@ -67,10 +71,6 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
         // ignore
     }
 
-    public void sendOk() {
-        setStatus(HttpStatus.SC_OK);
-    }
-
     public void flush() {
         // ignore
     }
@@ -87,6 +87,20 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
     public void sendError(int statusCode, String reason, Logger log) throws IOException {
         log.info("Internal request failed with code {}. Reason: {}", statusCode, reason);
         super.sendError(statusCode, reason, log);
+    }
+
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+
+    public StatusHolder getStatusHolder() {
+        BasicStatusHolder sh = new BasicStatusHolder();
+        if (isSuccessful()) {
+            sh.setStatus(statusMessage, getStatus(), null);
+        } else {
+            sh.setError(statusMessage, getStatus(), getException(), null);
+        }
+        return sh;
     }
 
 }

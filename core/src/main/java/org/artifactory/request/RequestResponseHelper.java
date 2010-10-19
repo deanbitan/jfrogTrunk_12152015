@@ -19,13 +19,13 @@
 package org.artifactory.request;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.request.ArtifactoryResponse;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.ArtifactResource;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.traffic.InternalTrafficService;
 import org.artifactory.traffic.entry.DownloadEntry;
@@ -99,7 +99,7 @@ public final class RequestResponseHelper {
     public void sendHeadResponse(ArtifactoryResponse response, RepoResource res) {
         log.debug("{}: Sending HEAD meta-information", res.getRepoPath());
         updateResponseFromRepoResource(response, res);
-        response.sendOk();
+        response.sendSuccess();
     }
 
     public void sendNotModifiedResponse(ArtifactoryResponse response, RepoResource res) throws IOException {
@@ -120,7 +120,7 @@ public final class RequestResponseHelper {
     private void updateResponseActualLength(ArtifactoryResponse response, ResourceStreamHandle handle) {
         long actualSize = handle.getSize();
         if (actualSize > 0) {
-            response.setContentLength((int) actualSize);
+            response.setContentLength(actualSize);
         }
     }
 
@@ -129,7 +129,7 @@ public final class RequestResponseHelper {
         response.setContentType(mimeType);
         if (!response.isContentLengthSet()) {
             //Only set the content length once
-            response.setContentLength((int) res.getSize());
+            response.setContentLength(res.getSize());
         }
         response.setLastModified(res.getLastModified());
         response.setEtag(res.getInfo().getSha1());

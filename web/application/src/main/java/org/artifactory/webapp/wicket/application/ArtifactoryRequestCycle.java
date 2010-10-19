@@ -27,17 +27,17 @@ import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebRequestCycle;
 import org.apache.wicket.request.target.resource.SharedResourceRequestTarget;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.slf4j.Logger;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class ArtifactoryRequestCycle extends WebRequestCycle {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryRequestCycle.class);
@@ -68,6 +68,7 @@ public class ArtifactoryRequestCycle extends WebRequestCycle {
             return;
         }
         ArtifactoryWebSession session = ArtifactoryWebSession.get();
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             if (!session.isSignedIn() ||
@@ -75,7 +76,7 @@ public class ArtifactoryRequestCycle extends WebRequestCycle {
                 // session is not logged in yet, but was already authenticated (probably by a filter) so set the
                 // authentication and call signIn with empty params which will mark the session as authenticated
                 session.setAuthentication(authentication);
-                session.signIn("" + authentication.getPrincipal(), "");
+                session.markSignedIn();
             }
         }
         session.bindAuthentication();

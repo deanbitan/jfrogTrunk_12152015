@@ -18,8 +18,6 @@
 
 package org.artifactory.common.wicket.component.table.toolbar;
 
-import org.apache.wicket.Component;
-import org.apache.wicket.behavior.IBehavior;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractToolbar;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.DataTable;
@@ -62,10 +60,5 @@ public class BaseRowToolbar extends AbstractToolbar {
 
     protected WebMarkupContainer newRowItem(String id) {
         return new WebMarkupContainer(id);
-    }
-
-    @Override
-    public Component add(IBehavior behavior) {
-        return super.add(behavior);
     }
 }

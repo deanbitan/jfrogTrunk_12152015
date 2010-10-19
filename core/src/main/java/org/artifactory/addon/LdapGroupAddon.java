@@ -29,7 +29,7 @@ import java.util.List;
  *
  * @author Tomer Cohen
  */
-public interface LdapGroupAddon extends AddonFactory {
+public interface LdapGroupAddon extends Addon {
 
     /**
      * Populate the group for a certain user by his Distinguished Name (dn)

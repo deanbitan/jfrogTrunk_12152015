@@ -21,7 +21,7 @@ package org.artifactory.webapp.wicket.page.config.general;
 import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.validation.validator.NumberValidator;
+import org.apache.wicket.validation.validator.RangeValidator;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -50,10 +50,10 @@ public class GeneralSettingsPanel extends TitledPanel {
 
         add(applicationAddon.getUrlBaseLabel("urlBaseLabel"));
         add(applicationAddon.getUrlBaseTextField("urlBase"));
-        RequiredTextField uploadSizeField = new RequiredTextField("fileUploadMaxSizeMb");
-        uploadSizeField.add(NumberValidator.range(0, Integer.MAX_VALUE));
+        RequiredTextField<Integer> uploadSizeField = new RequiredTextField<Integer>("fileUploadMaxSizeMb");
+        uploadSizeField.add(new RangeValidator<Integer>(0, Integer.MAX_VALUE));
         add(uploadSizeField);
-        RequiredTextField dateFormatField = new RequiredTextField("dateFormat");
+        RequiredTextField<String> dateFormatField = new RequiredTextField<String>("dateFormat");
         dateFormatField.add(new DateFormatValidator());
         add(dateFormatField);
         add(new StyledCheckbox("offlineMode"));

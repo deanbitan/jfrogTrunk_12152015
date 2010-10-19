@@ -35,10 +35,11 @@ public class TooltipLabel extends Label {
 
     @WicketProperty
     private transient String tooltip;
+
     private transient String text;
 
     public TooltipLabel(String id, String label, int maxLength) {
-        this(id, new Model(label), maxLength);
+        this(id, new Model<String>(label), maxLength);
     }
 
     public TooltipLabel(String id, IModel model, int maxLength) {
@@ -50,7 +51,7 @@ public class TooltipLabel extends Label {
     @Override
     protected void onBeforeRender() {
         super.onBeforeRender();
-        Object modelObject = getModelObject();
+        Object modelObject = getDefaultModelObject();
         if (modelObject == null) {
             text = null;
             tooltip = null;
@@ -59,10 +60,10 @@ public class TooltipLabel extends Label {
 
         String modelObjectString = modelObject.toString();
         if (modelObjectString.length() > maxLength) {
-            text = getModelObjectAsString(modelObjectString.substring(0, maxLength)) + "...";
-            tooltip = getModelObjectAsString(modelObjectString);
+            text = getDefaultModelObjectAsString(modelObjectString.substring(0, maxLength)) + "...";
+            tooltip = getDefaultModelObjectAsString(modelObjectString);
         } else {
-            text = getModelObjectAsString(modelObjectString);
+            text = getDefaultModelObjectAsString(modelObjectString);
             tooltip = null;
         }
     }

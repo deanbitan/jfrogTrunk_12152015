@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.form.SimpleTextarea"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.form.SimpleTextarea"] = true;
 dojo.provide("dijit.form.SimpleTextarea");
 
 dojo.require("dijit.form.TextBox");
@@ -25,7 +16,7 @@ dojo.declare("dijit.form.SimpleTextarea",
 	// example:
 	//	|	new dijit.form.SimpleTextarea({ rows:20, cols:30 }, "foo");
 
-	baseClass: "dijitTextArea",
+	baseClass: "dijitTextBox dijitTextArea",
 
 	attributeMap: dojo.delegate(dijit.form._FormValueWidget.prototype.attributeMap, {
 		rows:"textbox", cols: "textbox"
@@ -39,7 +30,7 @@ dojo.declare("dijit.form.SimpleTextarea",
 	//		The number of characters per line.
 	cols: "20",
 
-	templateString: "<textarea ${nameAttrSetting} dojoAttachPoint='focusNode,containerNode,textbox' autocomplete='off'></textarea>",
+	templateString: "<textarea ${!nameAttrSetting} dojoAttachPoint='focusNode,containerNode,textbox' autocomplete='off'></textarea>",
 
 	postMixInProperties: function(){
 		// Copy value from srcNodeRef, unless user specified a value explicitly (or there is no srcNodeRef)
@@ -98,5 +89,3 @@ dojo.declare("dijit.form.SimpleTextarea",
 		this.inherited(arguments);
 	}
 });
-
-}

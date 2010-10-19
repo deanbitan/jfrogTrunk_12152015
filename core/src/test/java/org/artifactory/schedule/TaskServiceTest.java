@@ -66,7 +66,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         lrd.setKey("libs");
         JcrRepo jcrRepo = new JcrRepo(irs, lrd);
         ReflectionTestUtils.setField(jcrRepo, "anonAccessEnabled", false);
-        RepoPath path = new RepoPath("libs", "jfrog/settings/jfrog-settings-sources.zip");
+        RepoPath path = new RepoPathImpl("libs", "jfrog/settings/jfrog-settings-sources.zip");
         EasyMock.expect(authService.canRead(path)).andReturn(false);
         EasyMock.expect(authService.currentUsername()).andReturn("testUser");
         EasyMock.replay(authService);

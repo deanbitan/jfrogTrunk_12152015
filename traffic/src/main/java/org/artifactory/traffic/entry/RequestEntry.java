@@ -28,7 +28,7 @@ import org.artifactory.traffic.TrafficAction;
  * @author Noam Tenne
  */
 public class RequestEntry extends TokenizedTrafficEntry {
-    private static int COLUMNS_COUNT_SPEC = 10;
+    private static final int COLUMNS_COUNT_SPEC = 10;
 
     private String userAddress;
     private String username;
@@ -36,7 +36,7 @@ public class RequestEntry extends TokenizedTrafficEntry {
     private String path;
     private String protocol;
     private int returnCode;
-    private int contentLength;
+    private long contentLength;
 
     /**
      * Parses the given textual entry and sets the object fields accordingly
@@ -66,7 +66,7 @@ public class RequestEntry extends TokenizedTrafficEntry {
      * @param contentLength Response body size
      */
     public RequestEntry(String userAddress, String username, String method, String path, String protocol,
-            int returnCode, int contentLength, long duration) {
+            int returnCode, long contentLength, long duration) {
         super(duration);
         this.userAddress = userAddress;
         this.username = username;
@@ -156,9 +156,9 @@ public class RequestEntry extends TokenizedTrafficEntry {
     /**
      * Returns the response body size
      *
-     * @return int - Response body size
+     * @return Response body size
      */
-    public int getContentLength() {
+    public long getContentLength() {
         return contentLength;
     }
 }

@@ -18,7 +18,7 @@
 
 package org.artifactory.api.md;
 
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ImportSettings;
 
 import java.io.File;
@@ -29,5 +29,5 @@ import java.util.List;
  * @date Nov 13, 2008
  */
 public interface MetadataReader {
-    List<MetadataEntry> getMetadataEntries(File file, ImportSettings settings, StatusHolder status);
+    List<MetadataEntry> getMetadataEntries(File file, ImportSettings settings, BasicStatusHolder status);
 }

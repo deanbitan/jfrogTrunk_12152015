@@ -22,7 +22,6 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.artifactory.api.fs.DeployableUnit;
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
@@ -46,7 +45,7 @@ public class DeleteVersionsAction extends RepoAwareItemAction {
     @Override
     public void onAction(RepoAwareItemEvent event) {
         RepoAwareActionableItem source = event.getSource();
-        ItemInfo info = source.getItemInfo();
+        org.artifactory.fs.ItemInfo info = source.getItemInfo();
         RepositoryService repositoryService = getRepoService();
         List<DeployableUnit> deployableUnits = repositoryService.getDeployableUnitsUnder(info.getRepoPath());
 

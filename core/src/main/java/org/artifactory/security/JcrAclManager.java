@@ -51,7 +51,7 @@ import java.util.List;
 import static org.artifactory.api.security.PermissionTargetInfo.*;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 @Repository
 @Reloadable(beanClass = InternalAclManager.class, initAfter = {JcrService.class, InternalCacheService.class})

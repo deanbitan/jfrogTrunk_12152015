@@ -19,12 +19,12 @@
 package org.artifactory.webapp.actionable.action.metadata;
 
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.action.ViewAction;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;

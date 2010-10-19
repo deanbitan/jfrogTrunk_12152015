@@ -18,10 +18,11 @@
 
 package org.artifactory.api.maven;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
@@ -108,15 +109,15 @@ public class MavenArtifactInfo implements UnitInfo {
     }
 
     public boolean hasGroupId() {
-        return groupId != null && !NA.equals(groupId);
+        return StringUtils.isNotBlank(groupId) && !NA.equals(groupId);
     }
 
     public boolean hasArtifactId() {
-        return artifactId != null && !NA.equals(artifactId);
+        return StringUtils.isNotBlank(artifactId) && !NA.equals(artifactId);
     }
 
     public boolean hasVersion() {
-        return version != null && !NA.equals(version);
+        return StringUtils.isNotBlank(version) && !NA.equals(version);
     }
 
     public boolean isMavenArtifact() {
@@ -151,7 +152,7 @@ public class MavenArtifactInfo implements UnitInfo {
     }
 
     public boolean isValid() {
-        return groupId != null && !NA.equals(groupId) && artifactId != null && !NA.equals(artifactId) && hasVersion();
+        return hasGroupId() && hasArtifactId() && hasVersion();
     }
 
     public String getPath() {

@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.config.repos;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -25,12 +26,14 @@ import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.validation.validator.NumberValidator;
+import org.apache.wicket.validation.validator.RangeValidator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
+import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
+import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -74,6 +77,35 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
     @Override
     public void saveEditDescriptor(LocalRepoDescriptor repoDescriptor) {
         getCachingDescriptorHelper().syncAndSaveLocalRepositories();
+    }
+
+    @Override
+    protected ModalCloseLink getCloseLink() {
+        ModalCloseLink link = new ModalCloseLink("cancel") {
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+
+                LocalRepoDescriptor descriptor = getRepoDescriptor();
+                if (descriptor != null) {
+
+                    String descriptorKey = descriptor.getKey();
+                    if (StringUtils.isNotBlank(descriptorKey)) {
+
+                        LocalRepoDescriptor localRepoDescriptor = centralConfigService.getMutableDescriptor().
+                                getLocalRepositoriesMap().get(descriptorKey);
+                        if (localRepoDescriptor != null) {
+                            maxUniqueSnapshots.setModelObject(localRepoDescriptor.getMaxUniqueSnapshots());
+                            snapshotVersionDropDown.setModelObject(
+                                    localRepoDescriptor.getSnapshotVersionBehavior());
+                            target.addComponent(form);
+                            AjaxUtils.refreshFeedback(target);
+                        }
+                    }
+                }
+                super.onClick(target);
+            }
+        };
+        return link;
     }
 
     private void addBasicSettings(CachingDescriptorHelper cachingDescriptorHelper) {
@@ -149,10 +181,10 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         advancedSettings.add(new SchemaHelpBubble("localRepoChecksumPolicyType.help", "checksumPolicyType"));
     }
 
-    private class MaxUniqueSnapshotsTextField extends TextField {
+    private class MaxUniqueSnapshotsTextField extends TextField<Integer> {
         public MaxUniqueSnapshotsTextField(String id) {
             super(id, Integer.class);
-            add(NumberValidator.range(0, Integer.MAX_VALUE));
+            add(new RangeValidator<Integer>(0, Integer.MAX_VALUE));
             setRequired(true);
             setOutputMarkupId(true);
         }

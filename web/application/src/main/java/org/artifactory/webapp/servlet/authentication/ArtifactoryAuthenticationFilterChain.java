@@ -56,9 +56,10 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
     public void addFilters(Collection<ArtifactoryAuthenticationFilter> filters) {
         ArtifactoryAuthenticationFilter last = null;
         for (ArtifactoryAuthenticationFilter filter : filters) {
-            //HACK! BasicArtifactoryAuthenticationFilter should always be last so it doesn't handle basic auth intended
+            //TODO: [by YS] Not sure thhe comment below is true. All basic authentications are done by the same filter
+            //HACK! ArtifactoryBasicAuthenticationFilter should always be last so it doesn't handle basic auth intended
             //for other sso filters
-            if (filter instanceof BasicArtifactoryAuthenticationFilter) {
+            if (filter instanceof ArtifactoryBasicAuthenticationFilter) {
                 last = filter;
             } else {
                 this.chain.add(filter);
@@ -73,13 +74,13 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
         this.chain.add(filter);
     }
 
-    public boolean validAuthentication(ServletRequest request, Authentication authentication) {
+    public boolean requiresReauthentication(ServletRequest request, Authentication authentication) {
         for (ArtifactoryAuthenticationFilter filter : chain) {
-            if (!filter.validAuthentication(request, authentication)) {
-                return false;
+            if (filter.requiresReauthentication(request, authentication)) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     public boolean acceptFilter(ServletRequest request) {

@@ -100,6 +100,7 @@ public class TestCli {
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     private File exportToTemp() throws IOException {
         Random random = new Random(System.currentTimeMillis());
         File exportTo = new File(System.getProperty("java.io.tmpdir"), "test/" + random.nextInt());
@@ -131,7 +132,6 @@ public class TestCli {
         assertTrue(propFile.exists());
         assertTrue(repositories.exists());
         Collection<File> mdFiles = FileUtils.listFiles(repositories, new String[]{"xml"}, true);
-        ArrayList<File> m2MDList = new ArrayList<File>();
         mdExported = new ArrayList<MdToFind>();
         boolean hasMetadataXml = false;
         boolean hasM2MetadataXml = false;

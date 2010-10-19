@@ -139,7 +139,7 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
      * true
      *
      * @param proxy                      The proxy descriptor to add
-     * @param replaceDefaultProxyInRepos Flag whether to replace the existing default proxy in exising repositories.
+     * @param replaceDefaultProxyInRepos Flag whether to replace the existing default proxy in existing repositories.
      */
     void proxyChanged(ProxyDescriptor proxy, boolean replaceDefaultProxyInRepos);
 

@@ -20,9 +20,10 @@ package org.artifactory.repo.service;
 
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportSettings;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.PermissionTargetInfo;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.InternalContextHelper;
@@ -56,7 +57,7 @@ public class ImportJob extends QuartzCommand {
                     repositoryService.importAll(settings);
                 } else {
                     if (deleteRepo && repositoryService.repositoryByKey(repoKey) != null) {
-                        RepoPath deleteRepoPath = RepoPath.repoRootPath(repoKey);
+                        RepoPath deleteRepoPath = RepoPathImpl.repoRootPath(repoKey);
                         status.setStatus("Fully removing repository '" + deleteRepoPath + "'.", log);
                         try {
                             repositoryService.undeploy(deleteRepoPath);

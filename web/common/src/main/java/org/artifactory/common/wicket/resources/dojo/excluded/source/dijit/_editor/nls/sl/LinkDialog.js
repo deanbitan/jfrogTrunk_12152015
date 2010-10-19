@@ -1,1 +1,13 @@
-({"set":"Nastavi","text":"Opis:","insertImageTitle":"Lastnosti slike","url":"URL:","createLinkTitle":"Lastnosti povezave","newWindow":"New Window","topWindow":"Topmost Window","target":"Target:","parentWindow":"Parent Window","currentWindow":"Current Window"})
+({
+	createLinkTitle: "Lastnosti povezave",
+	insertImageTitle: "Lastnosti slike",
+	url: "URL:",
+	text: "Opis:",
+	target: "Cilj:",
+	set: "Nastavi",
+	currentWindow: "Trenutno okno",
+	parentWindow: "Nadrejeno okno",
+	topWindow: "Najvišje okno",
+	newWindow: "Novo okno"
+})
+

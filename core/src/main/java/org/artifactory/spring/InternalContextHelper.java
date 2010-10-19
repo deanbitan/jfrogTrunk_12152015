@@ -21,9 +21,13 @@ package org.artifactory.spring;
 import org.artifactory.api.context.ContextHelper;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
-public class InternalContextHelper {
+public abstract class InternalContextHelper {
+    private InternalContextHelper() {
+        // utility class
+    }
+
     public static InternalArtifactoryContext get() {
         return (InternalArtifactoryContext) ContextHelper.get();
     }

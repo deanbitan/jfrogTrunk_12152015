@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.layout._TabContainerBase"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.layout._TabContainerBase"] = true;
 dojo.provide("dijit.layout._TabContainerBase");
 
 dojo.require("dijit.layout.StackContainer");
@@ -41,7 +32,7 @@ dojo.declare("dijit.layout._TabContainerBase",
 	//		border since the outer TabContainer already has a border.
 	nested: false,
 
-	templateString: dojo.cache("dijit.layout", "templates/TabContainer.html", "<div class=\"dijitTabContainer\">\r\n\t<div class=\"dijitTabListWrapper\" dojoAttachPoint=\"tablistNode\"></div>\r\n\t<div dojoAttachPoint=\"tablistSpacer\" class=\"dijitTabSpacer ${baseClass}-spacer\"></div>\r\n\t<div class=\"dijitTabPaneWrapper ${baseClass}-container\" dojoAttachPoint=\"containerNode\"></div>\r\n</div>\r\n"),
+	templateString: dojo.cache("dijit.layout", "templates/TabContainer.html"),
 
 	postMixInProperties: function(){
 		// set class name according to tab position, ex: dijitTabContainerTop
@@ -91,7 +82,10 @@ dojo.declare("dijit.layout._TabContainerBase",
 	layout: function(){
 		// Overrides StackContainer.layout().
 		// Configure the content pane to take up all the space except for where the tabs are
+
 		if(!this._contentBox || typeof(this._contentBox.l) == "undefined"){return;}
+
+		var sc = this.selectedChildWidget;
 
 		if(this.doLayout){
 			// position and size the titles and the container node
@@ -110,10 +104,8 @@ dojo.declare("dijit.layout._TabContainerBase",
 			// children[2] is the margin-box size of this.containerNode, set by layoutChildren() call above
 			this._containerContentBox = dijit.layout.marginBox2contentBox(this.containerNode, children[2]);
 
-			if(this.selectedChildWidget){
-				if(this.selectedChildWidget.resize){
-					this.selectedChildWidget.resize(this._containerContentBox);
-				}
+			if(sc && sc.resize){
+				sc.resize(this._containerContentBox);
 			}
 		}else{
 			// just layout the tab controller, so it can position left/right buttons etc.
@@ -121,8 +113,10 @@ dojo.declare("dijit.layout._TabContainerBase",
 				this.tablist.resize({w: dojo.contentBox(this.domNode).w});
 			}
 
-			// and call resize() on the pane just to tell it that it's been made visible
-			this.selectedChildWidget.resize();
+			// and call resize() on the selected pane just to tell it that it's been made visible
+			if(sc && sc.resize){
+				sc.resize();
+			}
 		}
 	},
 
@@ -134,5 +128,3 @@ dojo.declare("dijit.layout._TabContainerBase",
 	}
 });
 
-
-}

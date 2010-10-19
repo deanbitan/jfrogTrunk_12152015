@@ -18,19 +18,19 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.FolderInfoImpl;
-import org.artifactory.api.fs.MetadataInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.fs.InternalFolderInfo;
+import org.artifactory.md.MetadataInfo;
+import org.artifactory.repo.RepoPath;
 
 import javax.jcr.Node;
 
 /**
  * @author freds
  */
-public class FolderInfoPersistenceHandler extends AbstractPersistenceHandler<FolderInfo> {
+public class FolderInfoPersistenceHandler extends AbstractPersistenceHandler<InternalFolderInfo> {
 
-    public FolderInfoPersistenceHandler(XmlMetadataProvider<FolderInfo> xmlProvider) {
+    public FolderInfoPersistenceHandler(XmlMetadataProvider<InternalFolderInfo> xmlProvider) {
         super(xmlProvider);
     }
 
@@ -38,7 +38,7 @@ public class FolderInfoPersistenceHandler extends AbstractPersistenceHandler<Fol
         return metadataAware.isDirectory();
     }
 
-    public FolderInfo read(MetadataAware metadataAware) {
+    public InternalFolderInfo read(MetadataAware metadataAware) {
         RepoPath repoPath = metadataAware.getRepoPath();
         Node node = metadataAware.getNode();
         FolderInfoImpl folderInfo = new FolderInfoImpl(repoPath);
@@ -46,7 +46,7 @@ public class FolderInfoPersistenceHandler extends AbstractPersistenceHandler<Fol
         return folderInfo;
     }
 
-    public void update(MetadataAware metadataAware, FolderInfo folderInfo) {
+    public void update(MetadataAware metadataAware, InternalFolderInfo folderInfo) {
         Node node = metadataAware.getNode();
         setPropertiesInNodeFromInfo(node, folderInfo);
     }
@@ -56,7 +56,7 @@ public class FolderInfoPersistenceHandler extends AbstractPersistenceHandler<Fol
                 "Done on folder " + metadataAware);
     }
 
-    public FolderInfo copy(FolderInfo original) {
+    public InternalFolderInfo copy(InternalFolderInfo original) {
         return new FolderInfoImpl(original);
     }
 

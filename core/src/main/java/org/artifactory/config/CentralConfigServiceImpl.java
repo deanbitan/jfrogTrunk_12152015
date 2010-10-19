@@ -30,7 +30,7 @@ import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -97,31 +97,13 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     }
 
     public void init() {
-        Pair<CentralConfigDescriptor, Boolean> result = getCurrentConfig();
+        SerializablePair<CentralConfigDescriptor, Boolean> result = getCurrentConfig();
         CentralConfigDescriptor currentConfig = result.getFirst();
         boolean updateDescriptor = result.getSecond();
         setDescriptor(currentConfig, updateDescriptor);
-        backupStartupConfigXml(currentConfig);
     }
 
-    /**
-     * Creates a backup of the startup configuration XML in the "etc" dir
-     *
-     * @param startupConfig Startup configuration content
-     */
-    private void backupStartupConfigXml(CentralConfigDescriptor startupConfig) {
-        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-        File startupConfigFile = new File(artifactoryHome.getEtcDir(), ArtifactoryHome.ARTIFACTORY_STARTUP_CONFIG_FILE);
-        FileUtils.deleteQuietly(startupConfigFile);
-        try {
-            String startupConfigXml = JaxbHelper.toXml(startupConfig);
-            FileUtils.writeStringToFile(startupConfigFile, startupConfigXml, "utf-8");
-        } catch (IOException e) {
-            log.warn("Unable to backup startup configuration file", e);
-        }
-    }
-
-    private Pair<CentralConfigDescriptor, Boolean> getCurrentConfig() {
+    private SerializablePair<CentralConfigDescriptor, Boolean> getCurrentConfig() {
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
 
         //First try to see if there is an import config file to load
@@ -143,8 +125,9 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
                 currentConfigXml = artifactoryHome.getBootstrapConfigXml();
             }
         }
+        artifactoryHome.renameInitialConfigFileIfExists();
         log.trace("Current config xml is:\n{}", currentConfigXml);
-        return new Pair<CentralConfigDescriptor, Boolean>(
+        return new SerializablePair<CentralConfigDescriptor, Boolean>(
                 new CentralConfigReader().read(currentConfigXml), updateDescriptor);
     }
 
@@ -222,6 +205,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         String configXml = JaxbHelper.toXml(descriptor);
         CentralConfigDescriptor newDescriptor = centralConfigReader.read(configXml);// will fail if invalid
         reloadConfiguration(newDescriptor);
+        storeLatestConfigToFile(configXml);
     }
 
     public void importFrom(ImportSettings settings) {
@@ -305,6 +289,15 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
             String msg = "Failed to reload configuration: " + e.getMessage();
             log.error(msg, e);
             throw new RuntimeException(msg, e);
+        }
+    }
+
+    private void storeLatestConfigToFile(String configXml) {
+        try {
+            org.artifactory.util.FileUtils.writeContentToRollingFile(configXml,
+                    new File(ArtifactoryHome.get().getEtcDir(), ArtifactoryHome.ARTIFACTORY_CONFIG_LATEST_FILE));
+        } catch (IOException e) {
+            log.error("Error occurred while performing a backup of the latest configuration.", e);
         }
     }
 

@@ -23,11 +23,9 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
-import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
-import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.bordered.CodeModalPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.action.ViewAction;
@@ -62,12 +60,9 @@ public class ViewBuildJsonAction extends ItemAction {
         String json = buildService.getBuildAsJson(basicBuildInfo.getName(), basicBuildInfo.getNumber(),
                 basicBuildInfo.getStarted());
 
-        Component contentPanel =
-                WicketUtils.getSyntaxHighlighter(textContentViewer.getContentId(), json, Syntax.javascript);
-
-        BaseModalPanel modelPanel = new BorderedModalPanel(contentPanel);
+        Component content = WicketUtils.getSyntaxHighlighter(textContentViewer.getContentId(), json, Syntax.javascript);
+        CodeModalPanel modelPanel = new CodeModalPanel(content);
         modelPanel.setTitle("Build Info JSON");
-        contentPanel.add(new CssClass("modal-code"));
         textContentViewer.setContent(modelPanel);
         AjaxRequestTarget target = e.getTarget();
         textContentViewer.show(target);

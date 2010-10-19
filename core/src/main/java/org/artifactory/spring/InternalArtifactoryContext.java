@@ -28,7 +28,7 @@ import org.springframework.context.ApplicationContext;
 import javax.management.MBeanServer;
 
 /**
- * User: freds Date: Aug 3, 2008 Time: 6:48:52 PM
+ * @author freds
  */
 public interface InternalArtifactoryContext extends ArtifactoryContext, ReloadableBean, ApplicationContext {
     JcrService getJcrService();

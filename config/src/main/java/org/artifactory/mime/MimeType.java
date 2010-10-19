@@ -56,10 +56,10 @@ public class MimeType implements Serializable {
     @XStreamAsAttribute
     private final boolean viewable;
     /**
-     * True if this mime type is an xml
+     * True if this mime type should be indexed (set to true only for xml files)
      */
     @XStreamAsAttribute
-    private final boolean xml;
+    private final boolean index;
     /**
      * True if this mime type is a browsable archive (currently zip/jar variants are supported)
      */
@@ -76,12 +76,12 @@ public class MimeType implements Serializable {
     @XStreamAsAttribute
     private final String css;
 
-    protected MimeType(String type, ImmutableSet<String> extensions, boolean viewable, boolean xml, boolean archive,
+    protected MimeType(String type, ImmutableSet<String> extensions, boolean viewable, boolean index, boolean archive,
             String syntax, String css) {
         this.type = type;
         this.extensions = extensions;
         this.viewable = viewable;
-        this.xml = xml;
+        this.index = index;
         this.archive = archive;
         this.syntax = syntax;
         this.css = css;
@@ -99,8 +99,8 @@ public class MimeType implements Serializable {
         return viewable;
     }
 
-    public boolean isXml() {
-        return xml;
+    public boolean isIndex() {
+        return index;
     }
 
     public boolean isArchive() {
@@ -136,5 +136,10 @@ public class MimeType implements Serializable {
     @Override
     public int hashCode() {
         return type.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return type;
     }
 }

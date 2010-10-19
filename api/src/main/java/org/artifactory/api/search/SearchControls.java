@@ -18,7 +18,7 @@
 
 package org.artifactory.api.search;
 
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 
 public interface SearchControls extends Info {
     /**

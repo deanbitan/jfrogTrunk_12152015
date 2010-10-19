@@ -19,7 +19,7 @@
 package org.artifactory.rest.resource.artifact;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.RestAddon;
+import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -65,8 +65,8 @@ public class SyncResource {
      * @param progress  One to show transfer progress, Zero or other to show normal transfer completion message
      * @param mark      Every how many bytes to print a progress mark (when using progress tracking policy)
      * @param delete    One to delete existing files which do not exist in the remote source, Zero to keep
-     * @param overwrite Null for default artifactory behavior, never for never replacing an existing file and force
-     *                  for replacing existing files (only if the local file is older than the target)
+     * @param overwrite Never for never replacing an existing file and force for replacing existing files
+     *                  (only if the local file is older than the target) and Null for default of force.
      * @return Response
      */
     @GET

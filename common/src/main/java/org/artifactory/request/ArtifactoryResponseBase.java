@@ -20,10 +20,11 @@ package org.artifactory.request;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.common.StatusHolder;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ExceptionUtils;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.util.LoggingUtils;
 import org.slf4j.Logger;
 
@@ -37,7 +38,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     private State state = State.UNSET;
     private int status = HttpStatus.SC_OK;
     private Exception exception;
-    private int contentLength = -1;
+    private long contentLength = -1;
 
     public void sendStream(InputStream is) throws IOException {
         OutputStream os = getOutputStream();
@@ -45,11 +46,11 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
             state = State.SUCCESS;
         }
         try {
-            int bytesCopied = IOUtils.copy(is, os);
+            long bytesCopied = IOUtils.copyLarge(is, os);
             if (bytesCopied == 0) {
                 log.warn("Zero bytes sent to client.");
             } else {
-                int expectedLength = getContentLength();
+                long expectedLength = getContentLength();
                 if (expectedLength > 0 && bytesCopied != expectedLength) {
                     log.warn("Actual bytes sent to client ({}) are different than expected ({}).", bytesCopied,
                             expectedLength);
@@ -57,7 +58,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
                     log.debug("{} bytes sent to client.", bytesCopied);
                 }
             }
-            sendOk();
+            sendSuccess();
         } catch (Exception e) {
             exception = e;
             sendInternalError(e, log);
@@ -69,10 +70,42 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
 
     public void setStatus(int status) {
         this.status = status;
+        if (HttpUtils.isSuccessfulResponseCode(status) && state == State.UNSET) {
+            state = State.SUCCESS;
+        }
     }
 
     public int getStatus() {
         return status;
+    }
+
+    public void sendSuccess() {
+        //Update the current status
+        setStatus(status);
+        if (isSuccessful()) {
+            flush();
+        } else {
+            log.error("Could not send success. Exiting status: {}.", status);
+            if (log.isDebugEnabled()) {
+                log.debug("Could not send success.", new Throwable());
+            }
+        }
+    }
+
+    public void sendError(int statusCode, String reason, Logger logger) throws IOException {
+        String msg = makeDebugMessage(statusCode, reason);
+        if (statusCode == HttpStatus.SC_NOT_FOUND || statusCode == HttpStatus.SC_NOT_MODIFIED) {
+            logger.debug(msg);
+        } else {
+            LoggingUtils.warnOrDebug(logger, msg);
+        }
+        state = State.FAILURE;
+        this.status = statusCode;
+        sendErrorInternal(statusCode, reason);
+    }
+
+    public void sendError(StatusHolder statusHolder) throws IOException {
+        sendError(statusHolder.getStatusCode(), statusHolder.getStatusMsg(), log);
     }
 
     public void sendInternalError(Exception exception, Logger logger) throws IOException {
@@ -93,22 +126,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         sendErrorInternal(status, reason);
     }
 
-    public void sendError(int statusCode, String reason, Logger logger) throws IOException {
-        String msg = makeDebugMessage(statusCode, reason);
-        if (statusCode == HttpStatus.SC_NOT_FOUND || statusCode == HttpStatus.SC_NOT_MODIFIED) {
-            logger.debug(msg);
-        } else {
-            LoggingUtils.warnOrDebug(logger, msg);
-        }
-        state = State.FAILURE;
-        this.status = statusCode;
-        sendErrorInternal(statusCode, reason);
-    }
-
-    public void sendError(StatusHolder statusHolder) throws IOException {
-        sendError(statusHolder.getStatusCode(), statusHolder.getStatusMsg(), log);
-    }
-
     public boolean isSuccessful() {
         return state == State.SUCCESS;
     }
@@ -122,7 +139,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         this.exception = exception;
     }
 
-    public int getContentLength() {
+    public long getContentLength() {
         return contentLength;
     }
 
@@ -130,7 +147,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         return contentLength != -1;
     }
 
-    public void setContentLength(int length) {
+    public void setContentLength(long length) {
         //Cache the content length locally
         this.contentLength = length;
     }

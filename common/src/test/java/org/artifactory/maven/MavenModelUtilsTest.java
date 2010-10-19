@@ -145,10 +145,7 @@ public class MavenModelUtilsTest extends ArtifactoryHomeBoundTest {
     }
 
     public void mavenModelToArtifactInfo() {
-        Model model = new Model();
-        model.setGroupId("myGroupId");
-        model.setArtifactId("myArtifactId");
-        model.setVersion("1.0.0");
+        Model model = new MavenPomBuilder().groupId("myGroupId").artifactId("myArtifactId").version("1.0.0").build();
         MavenArtifactInfo artifactInfo = MavenModelUtils.mavenModelToArtifactInfo(model);
         assertEquals(artifactInfo.getGroupId(), "myGroupId");
         assertEquals(artifactInfo.getArtifactId(), "myArtifactId");
@@ -156,9 +153,7 @@ public class MavenModelUtilsTest extends ArtifactoryHomeBoundTest {
     }
 
     public void mavenModelToArtifactInfoGroupIdInParent() {
-        Model model = new Model();
-        model.setArtifactId("myArtifactId");
-        model.setVersion("1.0.0");
+        Model model = new MavenPomBuilder().artifactId("myArtifactId").version("1.0.0").build();
         Parent parent = new Parent();
         parent.setGroupId("parentGroupId");
         parent.setArtifactId("parentArifactId");
@@ -170,5 +165,11 @@ public class MavenModelUtilsTest extends ArtifactoryHomeBoundTest {
         assertEquals(artifactInfo.getGroupId(), "parentGroupId");
         assertEquals(artifactInfo.getArtifactId(), "myArtifactId");
         assertEquals(artifactInfo.getVersion(), "1.0.0");
+    }
+
+    public void readNewMaven3MetadataFormat() throws IOException {
+        String newMaven3MetadataFormat = ResourceUtils.getResourceAsString(
+                "/org/artifactory/maven/maven3-metadata.xml");
+        Metadata metadata = MavenModelUtils.toMavenMetadata(newMaven3MetadataFormat);
     }
 }

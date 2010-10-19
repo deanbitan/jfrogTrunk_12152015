@@ -60,14 +60,17 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
-public class MavenModelUtils {
+public abstract class MavenModelUtils {
     private static final Logger log = LoggerFactory.getLogger(MavenModelUtils.class);
     private static final String UTF8 = "utf-8";
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
     private static final String UTC_TIMESTAMP_PATTERN = "yyyyMMdd.HHmmss";
 
+    private MavenModelUtils() {
+        // utility class
+    }
 
     public static void validatePomTargetPath(InputStream in, String relPath, boolean suppressPomConsistencyChecks)
             throws IOException {
@@ -122,7 +125,13 @@ public class MavenModelUtils {
                     log.trace("Could not extract bad POM content for '{}': {}.", relPath, e.getMessage());
                 }
             }
-            throw new BadPomException("Failed to read POM for '" + relPath + "': " + e.getMessage() + ".");
+            String message = "Failed to read POM for '" + relPath + "': " + e.getMessage() + ".";
+            if (suppressPomConsistencyChecks) {
+                log.error(message + " POM consistency checks are suppressed. Broken artifacts might have been " +
+                        "stored in the repository - please resolve this manually.");
+            } else {
+                throw new BadPomException(message);
+            }
         }
     }
 
@@ -180,7 +189,7 @@ public class MavenModelUtils {
     public static Metadata toMavenMetadata(Reader reader) throws IOException {
         MetadataXpp3Reader metadataReader = new MetadataXpp3Reader();
         try {
-            return metadataReader.read(reader);
+            return metadataReader.read(reader, false);
         } catch (XmlPullParserException e) {
             throw new IOException("Failed to parse metadata: " + e.getMessage());
         } finally {
@@ -206,14 +215,8 @@ public class MavenModelUtils {
      * @return A maven {@link Model} matching the values of the maven artifact info.
      */
     public static Model toMavenModel(MavenArtifactInfo artifactInfo) {
-        Model model = new Model();
-        model.setModelVersion("4.0.0");
-        model.setGroupId(artifactInfo.getGroupId());
-        model.setArtifactId(artifactInfo.getArtifactId());
-        model.setVersion(artifactInfo.getVersion());
-        model.setPackaging(artifactInfo.getType());
-        model.setDescription("Artifactory auto generated POM");
-        return model;
+        return new MavenPomBuilder().groupId(artifactInfo.getGroupId()).artifactId(artifactInfo.getArtifactId())
+                .version(artifactInfo.getVersion()).packaging(artifactInfo.getType()).build();
     }
 
     public static String mavenModelToString(Model model) {

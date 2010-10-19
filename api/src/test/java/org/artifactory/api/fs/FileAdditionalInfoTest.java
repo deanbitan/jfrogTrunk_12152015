@@ -19,7 +19,8 @@
 package org.artifactory.api.fs;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -44,7 +45,7 @@ public class FileAdditionalInfoTest {
         info = new FileAdditionalInfo();
         sha1 = new ChecksumInfo(ChecksumType.sha1, "121232434534", "34387534754");
         md5 = new ChecksumInfo(ChecksumType.md5, "efhiehfeih", "efhiehfeih");
-        HashSet<ChecksumInfo> checksums = new HashSet<ChecksumInfo>(Arrays.asList(sha1, md5));
+        HashSet<org.artifactory.checksum.ChecksumInfo> checksums = new HashSet<ChecksumInfo>(Arrays.asList(sha1, md5));
         info.setChecksums(checksums);
     }
 

@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.List;
 
@@ -76,7 +77,7 @@ public class XpathSearchResource {
      * @return Rest search results object
      */
     @GET
-    @Produces({SearchRestConstants.MT_XPATH_SEARCH_RESULT})
+    @Produces({SearchRestConstants.MT_XPATH_SEARCH_RESULT, MediaType.APPLICATION_JSON})
     public InfoRestSearchResult get(
             @QueryParam(SearchRestConstants.PARAM_METADATA_NAME_SEARCH) String metadataName,
             @QueryParam(SearchRestConstants.PARAM_METADATA_SEARCH_TYPE) String searchType,

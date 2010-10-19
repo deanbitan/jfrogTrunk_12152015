@@ -19,10 +19,10 @@
 package org.artifactory.jcr.lock;
 
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.concurrent.LockingException;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.lock.aop.LockingAdvice;
+import org.artifactory.repo.RepoPath;
 
 /**
  * Public lock helper exposing static operations on the thread (tx) based lock manager.
@@ -30,9 +30,13 @@ import org.artifactory.jcr.lock.aop.LockingAdvice;
  * @author freds
  * @author Yoav Landman
  */
-public class LockingHelper {
+public abstract class LockingHelper {
 
     private static LockingExceptionListener lockingExceptionListener;
+
+    private LockingHelper() {
+        // utility class
+    }
 
     public static InternalLockManager getSessionLockManager() {
         InternalLockManager result = LockingAdvice.getLockManager();

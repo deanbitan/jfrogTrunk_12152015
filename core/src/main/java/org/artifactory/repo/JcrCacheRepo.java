@@ -19,10 +19,9 @@
 package org.artifactory.repo;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.FileExpectedException;
-import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
@@ -31,11 +30,11 @@ import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.ChecksumPolicyBase;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.context.RequestContext;
 import org.artifactory.repo.jcr.JcrRepoBase;
 import org.artifactory.repo.snapshot.SnapshotVersionAdapter;
+import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ExpiredRepoResource;
-import org.artifactory.resource.RepoResource;
 import org.slf4j.Logger;
 
 public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implements LocalCacheRepo {

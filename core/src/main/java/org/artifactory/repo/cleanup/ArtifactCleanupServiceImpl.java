@@ -18,7 +18,6 @@
 
 package org.artifactory.repo.cleanup;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
@@ -31,6 +30,7 @@ import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.schedule.TaskService;

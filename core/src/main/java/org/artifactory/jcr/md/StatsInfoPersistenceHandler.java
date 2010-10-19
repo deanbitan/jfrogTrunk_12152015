@@ -18,12 +18,13 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.fs.MetadataInfo;
+import org.artifactory.api.fs.MetadataInfoImpl;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.jcr.JcrTypes;
+import org.artifactory.md.MetadataInfo;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.search.SearcherBase;
 import org.artifactory.search.xml.metadata.StatsInfoSearcher;
@@ -86,7 +87,7 @@ public class StatsInfoPersistenceHandler extends AbstractMetadataPersistenceHand
             return null;
         }
         String metadataName = getMetadataName();
-        MetadataInfo mdi = new MetadataInfo(metadataAware.getRepoPath(), metadataName);
+        MetadataInfo mdi = new MetadataInfoImpl(metadataAware.getRepoPath(), metadataName);
         try {
             Calendar created = metadataNode.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getDate();
             mdi.setCreated(created.getTimeInMillis());

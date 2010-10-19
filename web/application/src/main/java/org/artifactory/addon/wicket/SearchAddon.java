@@ -20,7 +20,7 @@ package org.artifactory.addon.wicket;
 
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
-import org.artifactory.addon.AddonFactory;
+import org.artifactory.addon.Addon;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.webapp.wicket.page.search.LimitlessCapableSearcher;
 import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
@@ -31,7 +31,7 @@ import org.jfrog.build.api.Build;
  *
  * @author Yossi Shaul
  */
-public interface SearchAddon extends AddonFactory {
+public interface SearchAddon extends Addon {
     /**
      * @return Panel to manage search results.
      */
@@ -49,7 +49,7 @@ public interface SearchAddon extends AddonFactory {
      * @param build           Build to use for results
      * @return Build save search results panel
      */
-    Panel getBuildSearchResultsPanel(Addon requestingAddon, Build build);
+    Panel getBuildSearchResultsPanel(AddonType requestingAddon, Build build);
 
     /**
      * Returns a disclaimer about the fact that saved searches are not affected by reaching max results in user queries

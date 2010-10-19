@@ -28,10 +28,10 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.LdapGroupWebAddon;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
-import org.artifactory.api.common.StatusEntryLevel;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.SecurityService;
+import org.artifactory.common.StatusEntry;
+import org.artifactory.common.StatusEntryLevel;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -88,7 +88,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         form.add(border);
 
         // Ldap key
-        RequiredTextField ldapKeyField = new RequiredTextField("key");
+        RequiredTextField<String> ldapKeyField = new RequiredTextField<String>("key");
         ldapKeyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
             ldapKeyField.add(new XsdNCNameValidator("Invalid LDAP key '%s'"));
@@ -99,7 +99,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
 
         border.add(new StyledCheckbox("enabled"));
 
-        TextField ldapUrlField = new RequiredTextField("ldapUrl");
+        TextField<String> ldapUrlField = new RequiredTextField<String>("ldapUrl");
         ldapUrlField.add(new UriValidator("ldap", "ldaps"));
         border.add(ldapUrlField);
         border.add(new SchemaHelpBubble("ldapUrl.help"));
@@ -138,14 +138,14 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         borderDn.add(new TextField("searchBase", new PropertyModel(searchPattern, "searchBase")));
         borderDn.add(new SchemaHelpBubble("searchBase.help", new SchemaHelpModel(searchPattern, "searchBase")));
 
-        borderDn.add(new StyledCheckbox("searchSubTree", new PropertyModel(searchPattern, "searchSubTree")));
+        borderDn.add(new StyledCheckbox("searchSubTree", new PropertyModel<Boolean>(searchPattern, "searchSubTree")));
         borderDn.add(new SchemaHelpBubble("searchSubTree.help", new SchemaHelpModel(searchPattern, "searchSubTree")));
 
         borderDn.add(new TextField("managerDn", new PropertyModel(searchPattern, "managerDn")));
         borderDn.add(new SchemaHelpBubble("managerDn.help", new SchemaHelpModel(searchPattern, "managerDn")));
 
         PasswordTextField managerPasswordField = new PasswordTextField(
-                "managerPassword", new PropertyModel(searchPattern, "managerPassword"));
+                "managerPassword", new PropertyModel<String>(searchPattern, "managerPassword"));
         managerPasswordField.setRequired(false);
         managerPasswordField.setResetPassword(false);
         borderDn.add(managerPasswordField);
@@ -160,7 +160,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         borderTest.add(new HelpBubble("testUsername.help", "Username to test the ldap connection"));
 
         PasswordTextField testPasswordField = new PasswordTextField(
-                "testPassword", new PropertyModel(this, "testPassword"));
+                "testPassword", new PropertyModel<String>(this, "testPassword"));
         testPasswordField.setRequired(false);
         testPasswordField.setResetPassword(false);
         borderTest.add(testPasswordField);
@@ -175,7 +175,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         TitledAjaxSubmitLink submit = new TitledAjaxSubmitLink("submit", submitCaption, form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                LdapSetting ldapSetting = (LdapSetting) form.getModelObject();
+                LdapSetting ldapSetting = (LdapSetting) form.getDefaultModelObject();
                 if (!validateAndUpdateLdapSettings(ldapSetting)) {
                     AjaxUtils.refreshFeedback(target);
                     return;
@@ -205,7 +205,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         TitledAjaxSubmitLink submit = new TitledAjaxSubmitLink("testLdap", "Test Connection", form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                LdapSetting ldapSetting = (LdapSetting) form.getModelObject();
+                LdapSetting ldapSetting = (LdapSetting) form.getDefaultModelObject();
                 if (!validateAndUpdateLdapSettings(ldapSetting)) {
                     AjaxUtils.refreshFeedback(target);
                     return;
@@ -217,16 +217,16 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                     return;
                 }
                 MultiStatusHolder status = securityService.testLdapConnection(ldapSetting, testUsername, testPassword);
+                List<StatusEntry> infos = status.getEntries(StatusEntryLevel.INFO);
                 if (status.isError()) {
                     error(status.getStatusMsg());
+                }
+                for (StatusEntry info : infos) {
+                    info(info.getMessage());
                 }
                 List<StatusEntry> warnings = status.getEntries(StatusEntryLevel.WARNING);
                 for (StatusEntry warning : warnings) {
                     warn(warning.getMessage());
-                }
-                List<StatusEntry> infos = status.getEntries(StatusEntryLevel.INFO);
-                for (StatusEntry info : infos) {
-                    info(info.getMessage());
                 }
                 AjaxUtils.refreshFeedback(target);
             }
@@ -250,7 +250,8 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         }
 
         // if the search filter has value set the search pattern
-        if (StringUtils.hasText(searchPattern.getSearchFilter())) {
+        if (StringUtils.hasText(searchPattern.getSearchFilter()) || (StringUtils.hasText(
+                searchPattern.getManagerDn()) && StringUtils.hasText(searchPattern.getManagerPassword()))) {
             ldapSetting.setSearch(searchPattern);
         }
 

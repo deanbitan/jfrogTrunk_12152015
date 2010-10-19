@@ -1,15 +1,6 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.form.CheckBox"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.form.CheckBox"] = true;
 dojo.provide("dijit.form.CheckBox");
 
-dojo.require("dijit.form.Button");
+dojo.require("dijit.form.ToggleButton");
 
 dojo.declare(
 	"dijit.form.CheckBox",
@@ -19,19 +10,20 @@ dojo.declare(
 		// 		Same as an HTML checkbox, but with fancy styling.
 		//
 		// description:
-		// User interacts with real html inputs.
-		// On onclick (which occurs by mouse click, space-bar, or
-		// using the arrow keys to switch the selected radio button),
-		// we update the state of the checkbox/radio.
+		//		User interacts with real html inputs.
+		//		On onclick (which occurs by mouse click, space-bar, or
+		//		using the arrow keys to switch the selected radio button),
+		//		we update the state of the checkbox/radio.
 		//
-		// There are two modes:
-		//   1. High contrast mode
-		//   2. Normal mode
-		// In case 1, the regular html inputs are shown and used by the user.
-		// In case 2, the regular html inputs are invisible but still used by
-		// the user. They are turned quasi-invisible and overlay the background-image.
+		//		There are two modes:
+		//			1. High contrast mode
+		//			2. Normal mode
+		//
+		//		In case 1, the regular html inputs are shown and used by the user.
+		//		In case 2, the regular html inputs are invisible but still used by
+		//		the user. They are turned quasi-invisible and overlay the background-image.
 
-		templateString: dojo.cache("dijit.form", "templates/CheckBox.html", "<div class=\"dijitReset dijitInline\" waiRole=\"presentation\"\r\n\t><input\r\n\t \t${nameAttrSetting} type=\"${type}\" ${checkedAttrSetting}\r\n\t\tclass=\"dijitReset dijitCheckBoxInput\"\r\n\t\tdojoAttachPoint=\"focusNode\"\r\n\t \tdojoAttachEvent=\"onmouseover:_onMouse,onmouseout:_onMouse,onclick:_onClick\"\r\n/></div>\r\n"),
+		templateString: dojo.cache("dijit.form", "templates/CheckBox.html"),
 
 		baseClass: "dijitCheckBox",
 
@@ -58,8 +50,10 @@ dojo.declare(
 		//		In markup, this is specified as "readOnly".
 		//		Similar to disabled except readOnly form values are submitted.
 		readOnly: false,
-
-		attributeMap: dojo.delegate(dijit.form.ToggleButton.prototype.attributeMap, {
+		
+		// the attributeMap should inherit from dijit.form._FormWidget.prototype.attributeMap 
+		// instead of ToggleButton as the icon mapping has no meaning for a CheckBox
+		attributeMap: dojo.delegate(dijit.form._FormWidget.prototype.attributeMap, {
 			readOnly: "focusNode"
 		}),
 
@@ -67,10 +61,9 @@ dojo.declare(
 			this.readOnly = value;
 			dojo.attr(this.focusNode, 'readOnly', value);
 			dijit.setWaiState(this.focusNode, "readonly", value);
-			this._setStateClass();
 		},
 
-		_setValueAttr: function(/*String or Boolean*/ newValue){
+		_setValueAttr: function(/*String or Boolean*/ newValue, /*Boolean*/ priorityChange){
 			// summary:
 			//		Handler for value= attribute to constructor, and also calls to
 			//		attr('value', val).
@@ -88,7 +81,7 @@ dojo.declare(
 				newValue = true;
 			}
 			if(this._created){
-				this.attr('checked', newValue);
+				this.set('checked', newValue, priorityChange);
 			}
 		},
 		_getValueAttr: function(){
@@ -99,6 +92,10 @@ dojo.declare(
 			//		Otherwise returns false.
 			return (this.checked ? this.value : false);
 		},
+
+		// Override dijit.form.Button._setLabelAttr() since we don't even have a containerNode.
+		// Normally users won't try to set label, except when CheckBox or RadioButton is the child of a dojox.layout.TabContainer
+		_setLabelAttr: undefined,
 
 		postMixInProperties: function(){
 			if(this.value == ""){
@@ -123,7 +120,7 @@ dojo.declare(
 
 			this._hasBeenBlurred = false;
 
-			this.attr('checked', this.params.checked || false);
+			this.set('checked', this.params.checked || false);
 
 			// Handle unlikely event that the <input type=checkbox> value attribute has changed
 			this.value = this.params.value || "on";
@@ -134,12 +131,14 @@ dojo.declare(
 			if(this.id){
 				dojo.query("label[for='"+this.id+"']").addClass("dijitFocusedLabel");
 			}
+			this.inherited(arguments);
 		},
 
 		_onBlur: function(){
 			if(this.id){
 				dojo.query("label[for='"+this.id+"']").removeClass("dijitFocusedLabel");
 			}
+			this.inherited(arguments);
 		},
 
 		_onClick: function(/*Event*/ e){
@@ -176,7 +175,7 @@ dojo.declare(
 						if(inputNode.name == _this.name && inputNode != _this.focusNode && inputNode.form == _this.focusNode.form){
 							var widget = dijit.getEnclosingWidget(inputNode);
 							if(widget && widget.checked){
-								widget.attr('checked', false);
+								widget.set('checked', false);
 							}
 						}
 					}
@@ -186,10 +185,8 @@ dojo.declare(
 
 		_clicked: function(/*Event*/ e){
 			if(!this.checked){
-				this.attr('checked', true);
+				this.set('checked', true);
 			}
 		}
 	}
 );
-
-}

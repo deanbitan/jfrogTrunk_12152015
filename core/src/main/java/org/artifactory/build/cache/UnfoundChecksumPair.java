@@ -18,14 +18,14 @@
 
 package org.artifactory.build.cache;
 
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
 
 /**
  * The implementation of a checksum pair which was not found
  *
  * @author Noam Y. Tenne
  */
-public class UnfoundChecksumPair extends Pair<String, String> implements ChecksumPair {
+public class UnfoundChecksumPair extends SerializablePair<String, String> implements ChecksumPair {
 
     /**
      * Default constructor, sets the pair with null values

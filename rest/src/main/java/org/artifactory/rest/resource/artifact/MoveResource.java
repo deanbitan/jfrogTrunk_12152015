@@ -19,7 +19,7 @@
 package org.artifactory.rest.resource.artifact;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.RestAddon;
+import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
@@ -34,6 +34,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 
 import static org.artifactory.api.rest.constant.ArtifactRestConstants.PATH_MOVE;
 
@@ -59,7 +60,7 @@ public class MoveResource {
      */
     @POST
     @Path("{path: .+}")
-    @Produces({ArtifactRestConstants.MT_COPY_MOVE_RESULT})
+    @Produces({ArtifactRestConstants.MT_COPY_MOVE_RESULT, MediaType.APPLICATION_JSON})
     public MoveCopyResult move(
             // The path of the source item to be moved/copied
             @PathParam("path") String path,

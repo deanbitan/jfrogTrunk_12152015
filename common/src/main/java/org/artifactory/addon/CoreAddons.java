@@ -23,7 +23,7 @@ package org.artifactory.addon;
  *
  * @author Yossi Shaul
  */
-public interface CoreAddons extends AddonFactory {
+public interface CoreAddons extends Addon {
     /**
      * @return True if creation of new admin accounts is allowed.
      */

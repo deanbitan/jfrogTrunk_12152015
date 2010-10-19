@@ -143,7 +143,7 @@ public class SyntaxHighlighter extends WebComponent implements IHeaderContributo
     }
 
     private CharSequence getMarkup() {
-        final String code = getModelObjectAsString();
+        final String code = getDefaultModelObjectAsString();
 
         final StringBuilder markup = new StringBuilder();
         markup.append("<pre id=\"code-").append(getMarkupId()).append("\">");

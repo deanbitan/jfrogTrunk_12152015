@@ -27,6 +27,9 @@ import java.lang.reflect.Constructor;
  * @author Yoav Landman
  */
 public abstract class TokenizedTrafficEntryFactory {
+    private TokenizedTrafficEntryFactory() {
+        // utility class
+    }
 
     /**
      * Initializes a new traffic entry class using a textual entry

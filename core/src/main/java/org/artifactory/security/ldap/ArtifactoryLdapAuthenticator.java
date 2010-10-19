@@ -40,6 +40,7 @@ import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.stereotype.Component;
 
+import javax.naming.Context;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -114,6 +115,7 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
         HashMap<String, String> env = new HashMap<String, String>();
         //TODO: [by yl] check how timeout is set on other jdks
         env.put("com.sun.jndi.ldap.connect.timeout", "10000");
+        env.put(Context.REFERRAL, "follow");
         contextSource.setBaseEnvironmentProperties(env);
         SearchPattern searchPattern = ldapSetting.getSearch();
         if (searchPattern != null) {

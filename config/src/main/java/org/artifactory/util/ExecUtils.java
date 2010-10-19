@@ -30,8 +30,12 @@ import java.util.Locale;
 /**
  * @author yoavl
  */
-public class ExecUtils {
+public abstract class ExecUtils {
     private static final Logger log = LoggerFactory.getLogger(ExecUtils.class);
+
+    private ExecUtils() {
+        // utility class
+    }
 
     public static boolean execute(String cmd) {
         BufferedReader err = null;

@@ -28,16 +28,16 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.string.Strings;
 import org.artifactory.api.common.MoveMultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.SavedSearchResults;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 
 import java.util.HashSet;
@@ -83,7 +83,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
     }
 
     protected String getSelectedTargetRepository() {
-        return targetRepos.getModelObjectAsString();
+        return targetRepos.getDefaultModelObjectAsString();
     }
 
     protected abstract TitledAjaxSubmitLink createSubmitButton(Form form, String wicketId);
@@ -124,7 +124,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
                 }
 
                 Component dryRunResult = form.get("dryRunResult");
-                dryRunResult.setModelObject(result.toString());
+                dryRunResult.setDefaultModelObject(result.toString());
                 dryRunResult.setVisible(true);
                 target.addComponent(MoveAndCopyBasePanel.this);
                 target.addComponent(form);

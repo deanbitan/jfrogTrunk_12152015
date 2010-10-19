@@ -21,9 +21,10 @@ package org.artifactory.rest.resource.ci;
 import com.google.common.collect.Sets;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.RestAddon;
+import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.build.BuildInfo;
@@ -32,7 +33,6 @@ import org.artifactory.api.rest.build.BuildsByName;
 import org.artifactory.api.rest.constant.BuildRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.SearchService;
-import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.log.LoggerFactory;
@@ -50,6 +50,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -87,6 +88,9 @@ public class BuildResource {
     private BuildService buildService;
 
     @Autowired
+    private RepositoryService repositoryService;
+
+    @Autowired
     private SearchService searchService;
 
     @Context
@@ -103,7 +107,7 @@ public class BuildResource {
      * @return Builds json object
      */
     @GET
-    @Produces({BuildRestConstants.MT_BUILDS})
+    @Produces({BuildRestConstants.MT_BUILDS, MediaType.APPLICATION_JSON})
     public Builds getAllBuilds() throws IOException {
         Set<BasicBuildInfo> latestBuildsByName = searchService.getLatestBuildsByName();
         if (!latestBuildsByName.isEmpty()) {
@@ -131,7 +135,7 @@ public class BuildResource {
      */
     @GET
     @Path("/{name}")
-    @Produces({BuildRestConstants.MT_BUILDS_BY_NAME})
+    @Produces({BuildRestConstants.MT_BUILDS_BY_NAME, MediaType.APPLICATION_JSON})
     public BuildsByName getAllSpecificBuilds() throws IOException {
         String buildName = RestUtils.getBuildNameFromRequest(request);
         Set<BasicBuildInfo> buildsByName;
@@ -161,7 +165,7 @@ public class BuildResource {
      */
     @GET
     @Path("/{name}/{buildNumber}")
-    @Produces({BuildRestConstants.MT_BUILD_INFO})
+    @Produces({BuildRestConstants.MT_BUILD_INFO, MediaType.APPLICATION_JSON})
     public BuildInfo getBuildInfo() throws IOException {
         String buildName = RestUtils.getBuildNameFromRequest(request);
         String buildNumber = RestUtils.getBuildNumberFromRequest(request);
@@ -190,7 +194,7 @@ public class BuildResource {
     public void addBuild(Build build) throws Exception {
         log.info("Adding build '{} #{}'", build.getName(), build.getNumber());
 
-        if (authorizationService.isAnonymous() || !authorizationService.hasPermission(ArtifactoryPermission.DEPLOY)) {
+        if (repositoryService.getDeployableRepoDescriptors().isEmpty()) {
             response.sendError(HttpStatus.SC_UNAUTHORIZED);
             return;
         }
@@ -212,7 +216,7 @@ public class BuildResource {
      */
     @POST
     @Path("/{action}/{name}/{buildNumber}")
-    @Produces({BuildRestConstants.MT_COPY_MOVE_RESULT})
+    @Produces({BuildRestConstants.MT_COPY_MOVE_RESULT, MediaType.APPLICATION_JSON})
     public MoveCopyResult moveBuildItems(@QueryParam("started") String started,
             @QueryParam("to") String to,
             @QueryParam("arts") @DefaultValue("1") int arts,
@@ -248,6 +252,29 @@ public class BuildResource {
         }
 
         return null;
+    }
+
+    /**
+     * Removes the build with the given name and number
+     *
+     * @return Status message
+     */
+    @DELETE
+    @Path("/{name}")
+    public void deleteBuilds(@QueryParam("buildNumbers") StringList buildNumbers) throws IOException {
+        String[] pathElements = RestUtils.getBuildRestUrlPathElements(request);
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        try {
+            String buildName = URLDecoder.decode(pathElements[0], "UTF-8");
+            restAddon.deleteBuilds(response, buildName, buildNumbers);
+        } catch (AuthorizationException ae) {
+            response.sendError(HttpStatus.SC_UNAUTHORIZED, ae.getMessage());
+        } catch (IllegalArgumentException iae) {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+        } catch (DoesNotExistException dnne) {
+            response.sendError(HttpStatus.SC_NOT_FOUND, dnne.getMessage());
+        }
+        response.flushBuffer();
     }
 
     /**

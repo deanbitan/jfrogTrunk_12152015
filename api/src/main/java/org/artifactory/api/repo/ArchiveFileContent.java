@@ -18,6 +18,8 @@
 
 package org.artifactory.api.repo;
 
+import org.artifactory.repo.RepoPath;
+
 /**
  * A value object with results for archive file content request.
  *

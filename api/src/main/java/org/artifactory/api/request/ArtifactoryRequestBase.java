@@ -19,11 +19,14 @@
 package org.artifactory.api.request;
 
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.md.Properties;
+import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
@@ -37,7 +40,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
      * <p/>
      * /pathseg1/pathseg2;param1=v1;param2=v2;param3=v3
      */
-    private Properties properties = new Properties();
+    private Properties properties = new PropertiesImpl();
 
     private long modificationTime = -1;
 
@@ -57,7 +60,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         return properties;
     }
 
-    public boolean hasMatrixProperties() {
+    public boolean hasProperties() {
         return properties.size() > 0;
     }
 
@@ -167,14 +170,14 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         String path = startIdx < endIdx ? requestPath.substring(startIdx, endIdx) : "";
         //Calculate matrix params on the path
         path = processMatrixParamsIfExist(path);
-        RepoPath repoPath = new RepoPath(targetRepo, path);
+        RepoPath repoPath = new RepoPathImpl(targetRepo, path);
         return repoPath;
     }
 
     private String processMatrixParamsIfExist(String fragment) {
         int matrixParamStart = fragment.indexOf(Properties.MATRIX_PARAMS_SEP);
         if (matrixParamStart > 0) {
-            Properties.processMatrixParams(this.properties, fragment.substring(matrixParamStart));
+            PropertiesImpl.processMatrixParams(this.properties, fragment.substring(matrixParamStart));
             //Return the clean fragment
             return fragment.substring(0, matrixParamStart);
         } else {

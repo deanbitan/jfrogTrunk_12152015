@@ -38,6 +38,7 @@ import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.io.output.TeeOutputStream;
+import org.artifactory.api.rest.constant.ImportRestConstants;
 import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.log.LoggerFactory;
@@ -66,7 +67,7 @@ import java.net.UnknownHostException;
  *
  * @author Noam Tenne
  */
-public class RestClient {
+public abstract class RestClient {
     private static final Logger log = LoggerFactory.getLogger(RestClient.class);
 
     //TODO: [by yl] Use com.sun.jersey.api.client.WebResource instead of commons-httpclient
@@ -77,11 +78,15 @@ public class RestClient {
     public static final String SYSTEM_URL = SystemRestConstants.PATH_ROOT;
     public static final String CONFIG_URL = SYSTEM_URL + "/" + SystemRestConstants.PATH_CONFIGURATION;
     public static final String EXPORT_URL = SYSTEM_URL + "/" + SystemRestConstants.PATH_EXPORT;
-    public static final String IMPORT_URL = SYSTEM_URL + "/" + SystemRestConstants.PATH_IMPORT;
+    public static final String IMPORT_URL = ImportRestConstants.PATH_ROOT + "/" + ImportRestConstants.SYSTEM_PATH;
     public static final String SECURITY_URL = SYSTEM_URL + "/" + SystemRestConstants.PATH_SECURITY;
     public static final String COMPRESS_URL = SYSTEM_URL + "/" + SystemRestConstants.PATH_STORAGE + "/" +
             SystemRestConstants.PATH_STORAGE_COMPRESS;
     public static final String REPOSITORIES_URL = SystemRestConstants.PATH_REPOSITORIES;
+
+    private RestClient() {
+        // utility class
+    }
 
     /**
      * Get method with default settings

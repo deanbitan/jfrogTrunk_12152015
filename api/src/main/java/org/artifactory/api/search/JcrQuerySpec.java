@@ -71,7 +71,7 @@ public final class JcrQuerySpec {
 
     public enum Type {
         //Don't introduce direct dependencies on jcr classes
-        XPATH("xpath"), SQL("sql");
+        XPATH("xpath"), SQL("sql"), JCR_SQL2("JCR-SQL2"), JCR_JQOM("JCR-JQOM");
 
         private final String jcrType;
 

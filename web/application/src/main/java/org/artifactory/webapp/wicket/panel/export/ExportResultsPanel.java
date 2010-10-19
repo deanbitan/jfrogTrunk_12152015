@@ -26,9 +26,10 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
+import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.SavedSearchResults;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
@@ -75,16 +76,18 @@ public class ExportResultsPanel extends FieldSetPanel {
     @WicketProperty
     private boolean createArchive;
 
+    @WicketProperty
+    private boolean verbose;
+
     private static final Logger log = LoggerFactory.getLogger(ExportResultsPanel.class);
 
     public ExportResultsPanel(String id, final ActionableItem actionableItem) {
-        super(id, new Model("Export to Path"));
+        super(id, new Model<String>("Export to Path"));
         searchResultName = actionableItem.getDisplayName();
         Form exportForm = new Form("exportForm");
         add(exportForm);
-        PropertyModel pathModel = new PropertyModel(this, "exportToPath");
-        final PathAutoCompleteTextField exportToPathTf =
-                new PathAutoCompleteTextField("exportToPath", pathModel);
+        PropertyModel<File> pathModel = new PropertyModel<File>(this, "exportToPath");
+        final PathAutoCompleteTextField exportToPathTf = new PathAutoCompleteTextField("exportToPath", pathModel);
         exportToPathTf.setMask(PathMask.FOLDERS);
         exportToPathTf.setRequired(true);
         exportForm.add(exportToPathTf);
@@ -99,21 +102,31 @@ public class ExportResultsPanel extends FieldSetPanel {
         browserButton.setMask(PathMask.FOLDERS);
         exportForm.add(browserButton);
 
-        exportForm.add(new StyledCheckbox("m2Compatible", new PropertyModel(this, "m2Compatible")));
+        exportForm.add(new StyledCheckbox("m2Compatible", new PropertyModel<Boolean>(this, "m2Compatible")));
         exportForm.add(new HelpBubble("m2CompatibleHelp", new ResourceModel("m2CompatibleHelp")));
-        exportForm.add(new StyledCheckbox("excludeMetadata", new PropertyModel(this, "excludeMetadata")));
+        exportForm.add(new StyledCheckbox("excludeMetadata", new PropertyModel<Boolean>(this, "excludeMetadata")));
         exportForm.add(new HelpBubble("excludeMetadataHelp", new ResourceModel("excludeMetadataHelp")));
-        exportForm.add(new StyledCheckbox("createArchive", new PropertyModel(this, "createArchive")));
+        exportForm.add(new StyledCheckbox("createArchive", new PropertyModel<Boolean>(this, "createArchive")));
         exportForm.add(new HelpBubble("createArchiveHelp", new ResourceModel("createArchiveHelp")));
+
+        exportForm.add(new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose")));
+        exportForm.add(new HelpBubble("verboseHelp", "Lowers the log level to debug and redirects the output from the "
+                + "standard log to the import-export log."));
+
         TitledAjaxSubmitLink exportButton = new TitledAjaxSubmitLink("export", "Export", exportForm) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 try {
                     Session.get().cleanupFeedbackMessages();
-                    exportToPath = new File(exportToPathTf.getModelObjectAsString());
                     SavedSearchResults searchResults = ArtifactoryWebSession.get().getResults(searchResultName);
-                    MultiStatusHolder status = repoService.exportSearchResults(
-                            searchResults, exportToPath, !excludeMetadata, m2Compatible, createArchive);
+
+                    MultiStatusHolder status = new MultiStatusHolder();
+                    ExportSettings baseSettings = new ExportSettings(exportToPath, status);
+                    baseSettings.setIncludeMetadata(!excludeMetadata);
+                    baseSettings.setM2Compatible(m2Compatible);
+                    baseSettings.setCreateArchive(createArchive);
+                    baseSettings.setVerbose(verbose);
+                    repoService.exportSearchResults(searchResults, baseSettings);
                     List<StatusEntry> warnings = status.getWarnings();
                     if (!warnings.isEmpty()) {
                         CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);

@@ -36,10 +36,10 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.jcr.jackrabbit.query.LenientOnWorkspaceInconsistency;
 import org.artifactory.jcr.version.JcrVersion;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
@@ -59,6 +59,10 @@ import java.util.List;
  */
 abstract class JcrRepoInitHelper {
     private static final Logger log = LoggerFactory.getLogger(JcrRepoInitHelper.class);
+
+    private JcrRepoInitHelper() {
+        // utility class
+    }
 
     public static JackrabbitRepository createJcrRepository(ResourceStreamHandle repoXml, boolean preInit) {
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();

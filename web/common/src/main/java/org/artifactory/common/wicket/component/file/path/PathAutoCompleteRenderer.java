@@ -25,7 +25,7 @@ import java.io.File;
 /**
  * @author yoava
  */
-public class PathAutoCompleteRenderer extends AbstractAutoCompleteTextRenderer {
+public class PathAutoCompleteRenderer extends AbstractAutoCompleteTextRenderer<File> {
     private PathHelper pathHelper;
 
     public PathAutoCompleteRenderer(PathHelper pathHelper) {
@@ -33,8 +33,7 @@ public class PathAutoCompleteRenderer extends AbstractAutoCompleteTextRenderer {
     }
 
     @Override
-    protected String getTextValue(Object object) {
-        File file = (File) object;
+    protected String getTextValue(File file) {
         if (file == null) {
             return "";
         }

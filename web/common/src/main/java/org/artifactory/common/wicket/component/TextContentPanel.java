@@ -23,7 +23,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class TextContentPanel extends Panel {
     private final Label contentText = new Label("contentText");
@@ -43,13 +43,13 @@ public class TextContentPanel extends Panel {
     }
 
     public String getContent() {
-        return (String) contentText.getModelObject();
+        return (String) contentText.getDefaultModelObject();
     }
 
     public TextContentPanel setContent(String content) {
         // f**king wicket encoding, see RTFACT-2767 
         if (content != null) {
-            contentText.setModel(new Model(content.replaceAll("\\]", "&#93;")));
+            contentText.setDefaultModel(new Model(content.replaceAll("\\]", "&#93;")));
         }
         return this;
     }

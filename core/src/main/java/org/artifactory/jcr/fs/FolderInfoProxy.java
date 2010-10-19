@@ -19,13 +19,13 @@
 package org.artifactory.jcr.fs;
 
 import org.artifactory.api.fs.FolderAdditionalInfo;
-import org.artifactory.api.fs.FolderInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.fs.InternalFolderInfo;
+import org.artifactory.repo.RepoPath;
 
 /**
  * @author Yoav Landman
  */
-public class FolderInfoProxy extends ItemInfoProxy<FolderInfo> implements FolderInfo {
+public class FolderInfoProxy extends ItemInfoProxy<InternalFolderInfo> implements org.artifactory.fs.FolderInfo {
 
     public FolderInfoProxy(RepoPath repoPath) {
         super(repoPath);

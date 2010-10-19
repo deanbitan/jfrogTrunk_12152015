@@ -52,6 +52,10 @@ import java.util.List;
 public abstract class JcrUtils {
     private static final Logger log = LoggerFactory.getLogger(JcrUtils.class);
 
+    private JcrUtils() {
+        // utility class
+    }
+
     public static void preorder(Node node) {
         preorder(node, Collections.<String>emptyList());
     }

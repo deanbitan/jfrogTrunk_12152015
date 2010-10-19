@@ -19,11 +19,11 @@
 package org.artifactory.maven;
 
 import org.apache.maven.artifact.repository.metadata.Metadata;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
@@ -51,7 +51,7 @@ public class AbstractMetadataCalculator {
         return jcrService;
     }
 
-    protected void saveMetadata(RepoPath repoPath, Metadata metadata, StatusHolder status) {
+    protected void saveMetadata(RepoPath repoPath, Metadata metadata, BasicStatusHolder status) {
         String metadataStr;
         try {
             metadataStr = MavenModelUtils.mavenMetadataToString(metadata);

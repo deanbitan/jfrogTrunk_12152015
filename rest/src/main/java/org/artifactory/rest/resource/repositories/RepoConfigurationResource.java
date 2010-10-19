@@ -28,6 +28,7 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.List;
  *
  * @author Noam Tenne
  */
+@Deprecated
 public class RepoConfigurationResource {
 
     private RepositoryService repositoryService;
@@ -60,7 +62,7 @@ public class RepoConfigurationResource {
      * @throws IOException
      */
     @GET
-    @Produces(RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIGURATION)
+    @Produces({RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIGURATION, MediaType.APPLICATION_JSON})
     public Response getRemoteDescriptor() throws IOException {
         List<RemoteRepoDescriptor> remoteRepoDescriptors = repositoryService.getRemoteRepoDescriptors();
         for (RemoteRepoDescriptor remoteRepoDescriptor : remoteRepoDescriptors) {
@@ -94,6 +96,9 @@ public class RepoConfigurationResource {
 
             //Remove local address
             descriptorCopy.setLocalAddress(null);
+
+            // remove property sets
+            descriptorCopy.setPropertySets(null);
 
             return descriptorCopy;
         }

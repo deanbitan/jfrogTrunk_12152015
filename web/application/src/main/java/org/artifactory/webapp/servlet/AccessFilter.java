@@ -23,6 +23,7 @@ import org.artifactory.api.cache.ArtifactoryCache;
 import org.artifactory.api.cache.Cache;
 import org.artifactory.api.cache.CacheService;
 import org.artifactory.api.context.ArtifactoryContext;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.HttpAuthenticationDetailsSource;
@@ -36,21 +37,16 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
 
 public class AccessFilter extends DelayedFilterBase {
     private static final Logger log = LoggerFactory.getLogger(AccessFilter.class);
-
-    private static final String EMPTY_HEADER = DigestUtils.shaHex("");
 
     private ArtifactoryContext context;
     private ArtifactoryAuthenticationFilter authFilter;
@@ -109,36 +105,47 @@ public class AccessFilter extends DelayedFilterBase {
         }
         //Reuse the authentication if it exists
         Authentication authentication = RequestUtils.getAuthentication(request);
-        boolean validAuth = authFilter.validAuthentication(request, authentication);
+        boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
+        boolean reauthenticationRequired = isAuthenticated && authFilter.requiresReauthentication(request,
+                authentication);
+        if (reauthenticationRequired) {
+            /**
+             * A re-authentication is required but we might still have data that needs to be invalidated (like the
+             * Wicket session)
+             */
+            Map<String, LogoutHandler> logoutHandlers = ContextHelper.get().beansForType(LogoutHandler.class);
+            for (LogoutHandler logoutHandler : logoutHandlers.values()) {
+                logoutHandler.logout(request, response, authentication);
+            }
+        }
+        boolean authenticationRequired = !isAuthenticated || reauthenticationRequired;
         SecurityContext securityContext = SecurityContextHolder.getContext();
-        if (validAuth) {
-            log.debug("Using authentication {} from Http session in UI request.", authentication);
-            useAuthentication(request, response, chain, authentication, securityContext);
-        } else {
+        if (authenticationRequired) {
             if (authFilter.acceptFilter(request)) {
                 authenticateAndExecute(request, response, chain, securityContext);
             } else {
                 useAnonymousIfPossible(request, response, chain, securityContext);
             }
+        } else {
+            log.debug("Using authentication {} from Http session.", authentication);
+            useAuthentication(request, response, chain, authentication, securityContext);
         }
     }
 
 
     private void authenticateAndExecute(HttpServletRequest request, HttpServletResponse response,
-            FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
+                                        FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
         // Try to see if authentication in cache based on the hashed header and client ip
-        AuthCacheKey authCacheKey = new AuthCacheKey(request);
+        AuthCacheKey authCacheKey = new AuthCacheKey(authFilter.getCacheKey(request), request.getRemoteAddr());
         Authentication authentication = nonUiAuthCache.get(authCacheKey);
-        if (authFilter.validAuthentication(request, authentication)) {
+        boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
+        if (isAuthenticated && !authFilter.requiresReauthentication(request, authentication)) {
             log.debug("Header authentication {} found in cache.", authentication);
             useAuthentication(request, response, chain, authentication, securityContext);
             return;
         }
         try {
             authFilter.doFilter(request, response, chain);
-        }
-        catch (ServletException e) {
-            log.error("Authentication error occurred ", e);
         } finally {
             Authentication newAuthentication = securityContext.getAuthentication();
             if (newAuthentication != null && newAuthentication.isAuthenticated()) {
@@ -162,7 +169,7 @@ public class AccessFilter extends DelayedFilterBase {
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     private void useAnonymousIfPossible(HttpServletRequest request, HttpServletResponse response,
-            FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
+                                        FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
         boolean anonAccessEnabled = context.getAuthorizationService().isAnonAccessEnabled();
         if (anonAccessEnabled) {
             log.debug("Using anonymous");
@@ -200,7 +207,7 @@ public class AccessFilter extends DelayedFilterBase {
     }
 
     private void useAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-            Authentication authentication, SecurityContext securityContext) throws IOException, ServletException {
+                                   Authentication authentication, SecurityContext securityContext) throws IOException, ServletException {
         try {
             securityContext.setAuthentication(authentication);
             chain.doFilter(request, response);
@@ -209,13 +216,11 @@ public class AccessFilter extends DelayedFilterBase {
         }
     }
 
-    private class AuthCacheKey {
+    private static class AuthCacheKey {
+        private static final String EMPTY_HEADER = DigestUtils.shaHex("");
+
         private final String hashedHeader;
         private final String ip;
-
-        AuthCacheKey(HttpServletRequest request) {
-            this(authFilter.getCacheKey(request), request.getRemoteAddr());
-        }
 
         private AuthCacheKey(String header, String ip) {
             if (header == null) {
@@ -227,7 +232,7 @@ public class AccessFilter extends DelayedFilterBase {
         }
 
         public boolean hasEmptyHeader() {
-            return this.hashedHeader == EMPTY_HEADER;
+            return this.hashedHeader.equals(EMPTY_HEADER);
         }
 
         @Override

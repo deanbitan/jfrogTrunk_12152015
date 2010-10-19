@@ -25,7 +25,7 @@
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>2.2.5</version>
+    <version>2.3.0</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -50,30 +50,25 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <artifactory.version>2.2.5</artifactory.version>
         <sourceforgeId>175347</sourceforgeId>
         <sourceforgeName>artifactory</sourceforgeName>
-        <spring.version>3.0.2.RELEASE</spring.version>
-        <spring.security.version>3.0.2.RELEASE</spring.security.version>
-        <spring.ldap.tiger.version>1.2.1</spring.ldap.tiger.version>
-        <wicket.version>1.3.7</wicket.version>
+        <spring.version>3.0.4.RELEASE</spring.version>
+        <spring.security.version>3.0.3.RELEASE</spring.security.version>
+        <artifactory.version>2.3.0</artifactory.version>
+        <build.info.version>1.4.5</build.info.version>
+        <wicket.version>1.4.10</wicket.version>
         <jetty.version>7.0.2.v20100331</jetty.version>
         <maven.version>2.2.1</maven.version>
         <jersey.version>1.1.5.1</jersey.version>
         <slf4j.version>1.5.10</slf4j.version>
-        <build.info.version>1.4.0</build.info.version>
+        <jackson.version>1.5.5</jackson.version>
     </properties>
 
     <mailingLists>
         <mailingList>
             <name>Artifactory Users List</name>
             <subscribe>https://lists.sourceforge.net/lists/listinfo/artifactory-users</subscribe>
-            <archive>http://www.nabble.com/Artifactory-Users-f19964.html</archive>
-        </mailingList>
-        <mailingList>
-            <name>Artifactory Developers List</name>
-            <subscribe>https://lists.sourceforge.net/lists/listinfo/artifactory-developers</subscribe>
-            <archive>http://www.nabble.com/Artifactory-Developers-f19965.html</archive>
+            <archive>http://forums.jfrog.org/Artifactory-Users-f2377369.html</archive>
         </mailingList>
     </mailingLists>
 
@@ -95,9 +90,9 @@
             </roles>
         </developer>
         <developer>
-            <id>yossish</id>
+            <id>yossis</id>
             <name>Yossi Shaul</name>
-            <email>yossish at users.sourceforge.net</email>
+            <email>yoshaul@gmail.com</email>
             <roles>
                 <role>Developer</role>
             </roles>
@@ -121,22 +116,17 @@
     </developers>
 
     <description>
-        Artifactory is a Maven 2 enterprise repository. It offers advanced proxying, caching and security facilities to
-        provide a robust, reproducible
-        and independent build environment when using Maven.
-        Artifactory is being used by clients ranging from small startup teams to international corporate teams employing
-        distributed development, thus
-        improving the development experience for tens of thousands of developers.
-        Artifactory exposes a robust artifacts management platform using rich Ajax web UI and can be run out-of-the-box
-        with a simple "unzip and
-        launch".
+        Artifactory is an enterprise repository for binaries. It offers advanced artifacts proxying, caching and
+        management facilities to provide a robust, reproducible and independent build environment when using Maven 2/3,
+        Gradle and Ant/Ivy.
     </description>
 
     <modules>
         <module>log</module>
+        <module>papi</module>
         <module>config</module>
-        <module>traffic</module>
         <module>api</module>
+        <module>traffic</module>
         <module>common</module>
         <module>core</module>
         <module>rest</module>
@@ -150,6 +140,10 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
         </dependency>
     </dependencies>
 
@@ -171,6 +165,11 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common</artifactId>
+                <version>${artifactory.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.artifactory</groupId>
+                <artifactId>artifactory-papi</artifactId>
                 <version>${artifactory.version}</version>
             </dependency>
             <dependency>
@@ -235,22 +234,17 @@
                 <version>1.0.1</version>
                 <scope>runtime</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.jfrog.buildinfo</groupId>
                 <artifactId>build-info-api</artifactId>
                 <version>${build.info.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.collections</groupId>
-                        <artifactId>google-collections</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-jcr-commons</artifactId>
-                <version>1.1.1</version>
+                <version>1.1.2</version>
             </dependency>
 
             <dependency>
@@ -270,6 +264,19 @@
                 <groupId>com.sun.jersey</groupId>
                 <artifactId>jersey-client</artifactId>
                 <version>${jersey.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>1.7.5</version>
+                <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy-all</artifactId>
+                <version>1.7.5</version>
             </dependency>
 
             <dependency>
@@ -336,7 +343,7 @@
 
             <dependency>
                 <groupId>org.apache.wicket</groupId>
-                <artifactId>wicket-spring-annot</artifactId>
+                <artifactId>wicket-spring</artifactId>
                 <version>${wicket.version}</version>
                 <exclusions>
                     <exclusion>
@@ -349,7 +356,7 @@
             <dependency>
                 <groupId>asm</groupId>
                 <artifactId>asm</artifactId>
-                <version>3.1</version>
+                <version>3.2</version>
             </dependency>
 
             <!-- Required by wicket spring proxying -->
@@ -363,25 +370,25 @@
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-jaxrs</artifactId>
-                <version>1.5.0</version>
+                <version>${jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-xc</artifactId>
-                <version>1.5.0</version>
+                <version>${jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-mapper-asl</artifactId>
-                <version>1.5.0</version>
+                <version>${jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
-                <version>1.0.4</version>
+                <version>1.1.1</version>
             </dependency>
 
             <dependency>
@@ -407,6 +414,14 @@
                 <scope>compile</scope>
             </dependency>
 
+            <!-- bridge from log4j to slf4j -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>log4j-over-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+                <scope>compile</scope>
+            </dependency>
+
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
@@ -416,10 +431,9 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>r06</version>
+                <version>r07</version>
             </dependency>
 
-            <!-- TODO: Remove Apache collections 4 and use google collections instead -->
             <dependency>
                 <groupId>net.sourceforge.collections</groupId>
                 <artifactId>collections-generic</artifactId>
@@ -477,7 +491,7 @@
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-utils</artifactId>
-                <version>1.5.6</version>
+                <version>2.0.5</version>
             </dependency>
 
             <dependency>
@@ -496,7 +510,14 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-settings</artifactId>
                 <version>${maven.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-interpolation</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
+
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-plugin-descriptor</artifactId>
@@ -524,32 +545,74 @@
                         <groupId>org.codehaus.plexus</groupId>
                         <artifactId>plexus-interpolation</artifactId>
                     </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>1.2</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.maven</groupId>
+                        <artifactId>maven-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.maven.reporting</groupId>
+                        <artifactId>maven-reporting-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.maven.reporting</groupId>
+                        <artifactId>maven-reporting-impl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.maven.shared</groupId>
+                        <artifactId>maven-common-artifact-filters</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.maven.wagon</groupId>
+                        <artifactId>wagon-file</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.maven.doxia</groupId>
+                        <artifactId>doxia-sink-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.maven.doxia</groupId>
+                        <artifactId>doxia-site-renderer</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>org.codehaus.plexus</groupId>
-                        <artifactId>plexus-container-default</artifactId>
+                        <artifactId>plexus-i18n</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>wstx-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>stax</groupId>
+                        <artifactId>stax-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
 
-            <!-- Core jaxb classes -->
             <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
-                <version>2.2</version>
+                <version>2.2.1</version>
             </dependency>
 
-            <!-- Core jaxb classes -->
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
-                <version>2.1.10</version>
+                <version>2.2.1.1</version>
                 <scope>runtime</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
-                <version>10.5.3.0</version>
+                <version>10.6.1.0</version>
                 <scope>runtime</scope>
             </dependency>
 
@@ -616,7 +679,17 @@
                         <groupId>cglib</groupId>
                         <artifactId>cglib</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>commons-beanutils</groupId>
+                        <artifactId>commons-beanutils</artifactId>
+                    </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>1.8.3</version>
             </dependency>
 
             <dependency>
@@ -761,13 +834,13 @@
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-ldap</artifactId>
-                <version>3.0.0.RELEASE</version>
+                <version>${spring.security.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-web</artifactId>
-                <version>3.0.0.RELEASE</version>
+                <version>${spring.security.version}</version>
             </dependency>
 
             <dependency>
@@ -816,23 +889,11 @@
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>woodstox-core-lgpl</artifactId>
-                <version>4.0.3</version>
+                <version>4.0.8</version>
                 <exclusions>
                     <exclusion>
                         <groupId>stax</groupId>
                         <artifactId>stax-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.codehaus.plexus</groupId>
-                <artifactId>plexus-digest</artifactId>
-                <version>1.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.codehaus.plexus</groupId>
-                        <artifactId>plexus-component-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -843,16 +904,8 @@
                 <version>2.0.4</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>org.codehaus.plexus</groupId>
-                        <artifactId>plexus-container-default</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>org.apache.maven.artifact</groupId>
                         <artifactId>maven-artifact</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>jdom</groupId>
-                        <artifactId>jdom</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>dom4j</groupId>
@@ -878,11 +931,6 @@
             </dependency>
 
             <dependency>
-                <groupId>ant</groupId>
-                <artifactId>ant</artifactId>
-                <version>1.6.5</version>
-            </dependency>
-            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>3.8.1</version>
@@ -891,7 +939,7 @@
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
-                <version>5.12.1</version>
+                <version>5.14</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -950,7 +998,7 @@
             <dependency>
                 <groupId>javax.mail</groupId>
                 <artifactId>mail</artifactId>
-                <version>1.4.1</version>
+                <version>1.4.3</version>
             </dependency>
 
             <dependency>
@@ -970,7 +1018,7 @@
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>selenium-server</artifactId>
-                <version>2.0a2</version>
+                <version>2.0a5</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -1021,13 +1069,13 @@
             <dependency>
                 <groupId>com.ocpsoft</groupId>
                 <artifactId>ocpsoft-pretty-time</artifactId>
-                <version>1.0.2</version>
+                <version>1.0.6</version>
             </dependency>
 
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>1.6</version>
+                <version>1.6.2</version>
             </dependency>
 
             <dependency>
@@ -1049,7 +1097,74 @@
             <dependency>
                 <groupId>net.sf.jsignature.io-tools</groupId>
                 <artifactId>easystream</artifactId>
-                <version>1.2.6</version>
+                <version>1.2.8</version>
+            </dependency>
+
+            <!-- backport of java 6 concurrent collections -->
+            <dependency>
+                <groupId>backport-util-concurrent</groupId>
+                <artifactId>backport-util-concurrent</artifactId>
+                <version>3.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.atlassian.crowd</groupId>
+                <artifactId>crowd-integration-client</artifactId>
+                <version>2.0.7</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>jdom</groupId>
+                        <artifactId>jdom</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>xmlParserAPIs</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>stax</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>xercesImpl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>wstx-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.sf.ehcache</groupId>
+                        <artifactId>ehcache</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-lang</groupId>
+                        <artifactId>commons-lang</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.xfire</groupId>
+                        <artifactId>xfire-annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xfire</groupId>
+                        <artifactId>xfire-jsr181-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.java.dev.stax-utils</groupId>
+                        <artifactId>stax-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.ws.commons</groupId>
+                        <artifactId>XmlSchema</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jaxen</groupId>
+                        <artifactId>jaxen</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1103,7 +1218,6 @@
                                         <exclude>jdom:jdom</exclude>
                                         <!-- we use cglib:cglib-nodep -->
                                         <exclude>cglib:cglib</exclude>
-                                        <exclude>log4j:log4j</exclude>
                                         <!-- avoid the full spring jar -->
                                         <exclude>org.springframework:spring</exclude>
                                         <!-- don't need xerces for jdk 5+ -->
@@ -1120,6 +1234,8 @@
                                         <exclude>org.apache.lucene:lucene-core</exclude>
                                         <!-- google-collections cannot co-exist with guava -->
                                         <exclude>com.google.collections:google-collections</exclude>
+                                        <!--we use log4j over slf4j -->
+                                        <exclude>log4j:log4j</exclude>
                                     </excludes>
                                 </bannedDependencies>
                                 <requirePluginVersions>
@@ -1158,7 +1274,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>2.3.1</version>
+                    <version>2.3.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1183,7 +1299,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>2.6</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1224,7 +1340,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>2.6</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1307,7 +1423,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.5</version>
+                <version>2.6</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -1388,7 +1504,7 @@
                             <execution>
                                 <id>attach-sources</id>
                                 <goals>
-                                    <goal>jar</goal>
+                                    <goal>jar-no-fork</goal>
                                 </goals>
                             </execution>
                         </executions>

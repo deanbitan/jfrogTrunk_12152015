@@ -18,9 +18,9 @@
 
 package org.artifactory.webapp.servlet;
 
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.api.request.ArtifactoryRequestBase;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 
@@ -67,10 +67,6 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
     public boolean isRecursive() {
         String origin = getOrigin();
         return origin != null && origin.equals(PathUtils.getHostId());
-    }
-
-    public boolean isWebdav() {
-        return RequestUtils.isWebdavRequest(httpRequest);
     }
 
     public InputStream getInputStream() throws IOException {

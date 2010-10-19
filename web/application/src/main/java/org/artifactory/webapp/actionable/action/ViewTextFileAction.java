@@ -18,8 +18,7 @@
 
 package org.artifactory.webapp.actionable.action;
 
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.ItemInfo;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 
@@ -39,15 +38,15 @@ public class ViewTextFileAction extends ViewAction {
             return;
         }
 
-        final FileInfo fileInfo = (FileInfo) itemInfo;
+        final org.artifactory.fs.FileInfo fileInfo = (org.artifactory.fs.FileInfo) itemInfo;
         String content = getContent(fileInfo);
         String title = itemInfo.getName();
 
         showHighlightedSourceModal(e, content, title);
     }
 
-    private String getContent(FileInfo fileInfo) {
-        return getRepoService().getTextFileContent(fileInfo);
+    private String getContent(org.artifactory.fs.FileInfo fileInfo) {
+        return getRepoService().getStringContent(fileInfo);
     }
 
     @Override

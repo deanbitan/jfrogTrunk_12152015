@@ -19,7 +19,7 @@
 package org.artifactory.api.fs;
 
 import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 import java.io.Serializable;
 

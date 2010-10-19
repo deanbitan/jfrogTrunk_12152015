@@ -18,12 +18,11 @@
 
 package org.artifactory.webapp.actionable.action;
 
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableArchiveSearchResult;
@@ -46,7 +45,7 @@ public class ViewSourceAction extends ViewAction {
         ActionableArchiveSearchResult source = (ActionableArchiveSearchResult) event.getSource();
         ArchiveSearchResult searchResult = source.getSearchResult();
 
-        ItemInfo itemInfo = searchResult.getItemInfo();
+        org.artifactory.fs.ItemInfo itemInfo = searchResult.getItemInfo();
         if (itemInfo.isFolder()) {
             event.getTarget().getPage().error("View action is not applicable on folders");
             return;

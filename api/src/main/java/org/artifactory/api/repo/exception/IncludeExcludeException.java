@@ -18,8 +18,8 @@
 
 package org.artifactory.api.repo.exception;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.repo.RepoPath;
 
 /**
  * A rejection exception thrown when the artifact path clashes with the include\exclude definitions

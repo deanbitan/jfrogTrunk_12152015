@@ -10,7 +10,7 @@ set LIB_DIR=%~dp0\..\clilib
 set LOGS_DIR=%~dp0\..\logs
 set CLASSPATH=.
 
-for %%a in (%LIB_DIR%\*.*) do call :process %%~nxa
+for %%a in ("%LIB_DIR%\*.*") do call :process %%~nxa
 goto :next
 
 :process

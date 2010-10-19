@@ -21,7 +21,6 @@ package org.artifactory.api.search;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
@@ -36,7 +35,8 @@ import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
+import org.artifactory.repo.RepoPath;
 
 import javax.annotation.Nullable;
 import java.util.Calendar;
@@ -74,7 +74,7 @@ public interface SearchService {
      *         was modified. Empty if none is found.
      */
     @Lock(transactional = true)
-    List<Pair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(
+    List<SerializablePair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(
             @Nullable Calendar from, @Nullable Calendar to, List<String> reposToSearch);
 
     @Lock(transactional = true)
@@ -110,8 +110,8 @@ public interface SearchService {
     List<BasicBuildInfo> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryRuntimeException;
 
     /**
-     * Search for artifacts within a repository matching a given pattern.<br>
-     * The pattern should be like repo-key:this/is/a/pattern
+     * Search for artifacts within a repository matching a given pattern.<br> The pattern should be like
+     * repo-key:this/is/a/pattern
      *
      * @param pattern Pattern to search for
      * @return Set of matching artifact paths relative to the repo

@@ -18,8 +18,8 @@
 
 package org.artifactory.io.checksum.policy;
 
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.checksum.ChecksumInfo;
 
 import java.util.Set;
 
@@ -28,7 +28,7 @@ import java.util.Set;
  *
  * @author Yossi Shaul
  */
-public class ChecksumPolicyException extends RepoRejectionException {
+public class ChecksumPolicyException extends RepoRejectException {
     public ChecksumPolicyException(ChecksumPolicy policy, Set<ChecksumInfo> checksums, String fileName) {
         super("Checksum policy '" + policy + "' rejected the artifact '" + fileName + "'. " +
                 "Checksums info: " + checksums);

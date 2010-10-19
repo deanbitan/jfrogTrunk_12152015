@@ -18,10 +18,9 @@
 
 package org.artifactory.repo;
 
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.IncludeExcludeException;
 import org.artifactory.api.repo.exception.SnapshotPolicyException;
@@ -85,8 +84,9 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
         return getDescriptor().isLocal();
     }
 
-    public StatusHolder assertValidPath(RepoPath repoPath) {
-        StatusHolder statusHolder = new StatusHolder();
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    public BasicStatusHolder assertValidPath(RepoPath repoPath) {
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
         statusHolder.setActivateLogging(log.isDebugEnabled());
         if (isBlackedOut()) {
             BlackedOutException exception = new BlackedOutException(this.getDescriptor(), repoPath);

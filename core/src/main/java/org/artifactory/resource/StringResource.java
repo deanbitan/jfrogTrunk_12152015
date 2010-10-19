@@ -18,7 +18,7 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.api.fs.MetadataInfo;
+import org.artifactory.md.MetadataInfo;
 
 /**
  * String resource is an already resolved metadata resource (no need to get it's handle for its content) that holds the

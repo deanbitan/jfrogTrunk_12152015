@@ -18,20 +18,20 @@
 
 package org.artifactory.repo.jcr;
 
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderInfo;
-import org.artifactory.api.md.Properties;
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.fs.InternalFileInfo;
+import org.artifactory.api.fs.InternalFolderInfo;
+import org.artifactory.api.fs.RepoResource;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionFactory;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.JcrFsItemFactory;
 import org.artifactory.repo.Repo;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.repo.RepoPath;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,10 +48,11 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, JcrFsIte
      *
      * @param res     the destination resource definition
      * @param stream  the stream to save at the location
-     * @param keyvals A set of keyval metadata to attach to the (file) resource as part of this storage process. Null is
+     * @param keyvals A set of keyval metadata to attach to the (file) resource as part of this storage process. Null
+     *                is
      */
     RepoResource saveResource(RepoResource res, InputStream stream, Properties keyvals) throws IOException,
-            RepoRejectionException;
+            RepoRejectException;
 
     void undeploy(RepoPath repoPath);
 
@@ -73,9 +74,9 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, JcrFsIte
 
     void onDelete(JcrFsItem fsItem);
 
-    MetadataDefinition<FileInfo> getFileInfoMd();
+    MetadataDefinition<InternalFileInfo> getFileInfoMd();
 
-    MetadataDefinition<FolderInfo> getFolderInfoMd();
+    MetadataDefinition<InternalFolderInfo> getFolderInfoMd();
 
     boolean isWriteLocked(RepoPath path);
 

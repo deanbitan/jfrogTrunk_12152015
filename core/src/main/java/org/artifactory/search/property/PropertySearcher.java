@@ -23,15 +23,15 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.md.Properties;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.search.SearcherBase;
 
 import javax.jcr.Node;
@@ -188,7 +188,7 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
                     String artifactPath = path.substring(0, path.lastIndexOf("/" + JcrTypes.NODE_ARTIFACTORY_METADATA));
                     Node artifactNode = (Node) getJcrService().getManagedSession().getItem(artifactPath);
                     RepoPath repoPath = JcrPath.get().getRepoPath(artifactNode.getPath());
-                    if ((repoPath == null) || (!controls.isSpecificRepoSearch() && !isResultRepoPathValid(repoPath))) {
+                    if ((repoPath == null) || !isResultRepoPathValid(repoPath)) {
                         continue;
                     }
 

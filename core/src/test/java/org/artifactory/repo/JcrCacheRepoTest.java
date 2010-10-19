@@ -19,7 +19,7 @@
 package org.artifactory.repo;
 
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.resource.FileResource;
@@ -28,58 +28,65 @@ import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.mock.MockUtils;
 import org.easymock.EasyMock;
-import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /**
  * @author Yoav Landman
  */
 public class JcrCacheRepoTest extends ArtifactoryHomeBoundTest {
 
-    @SuppressWarnings({"unchecked"})
     @Test
     public void testExpiry() {
-        FileResource releaseRes = new FileResource(new RepoPath("repox", "g1/g2/g3/a/v1/a.jar"));
+        FileResource releaseRes = new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1/a.jar"));
         releaseRes.getInfo().setLastModified(0);
-        FileResource snapRes = new FileResource(new RepoPath("repox", "g1/g2/g3/a/v1-SNAPSHOT/a-v1-SNAPSHOT.pom"));
+        FileResource snapRes = new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1-SNAPSHOT/a-v1-SNAPSHOT.pom"));
         snapRes.getInfo().setLastModified(0);
         FileResource uniqueSnapRes =
-                new FileResource(new RepoPath("repox", "g1/g2/g3/a/v1-SNAPSHOT/a-v1-20081214.090217-4.pom"));
+                new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1-SNAPSHOT/a-v1-20081214.090217-4.pom"));
         uniqueSnapRes.getInfo().setLastModified(0);
-        FileResource nonSnapRes = new FileResource(new RepoPath("repox", "g1/g2/g3/a/v1/aSNAPSHOT.pom"));
+        FileResource nonSnapRes = new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1/aSNAPSHOT.pom"));
         nonSnapRes.getInfo().setLastModified(0);
-        MetadataResource relMdRes = new MetadataResource(new RepoPath("repox", "g1/g2/g3/a/v1/maven-metadata.xml"));
+        MetadataResource relMdRes = new MetadataResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1/maven-metadata.xml"));
         relMdRes.getInfo().setLastModified(0);
-        FileResource snapMdRes = new FileResource(new RepoPath("repox", "g1/g2/g3/a/v1-SNAPSHOT/maven-metadata.xml"));
+        FileResource snapMdRes =
+                new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1-SNAPSHOT/maven-metadata.xml"));
         snapMdRes.getInfo().setLastModified(0);
-        FileResource nonsnapMdRes = new FileResource(new RepoPath("repox", "g1/g2/g3/a/v1/maven-metadata.metadata"));
+        FileResource nonsnapMdRes =
+                new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1/maven-metadata.metadata"));
         nonsnapMdRes.getInfo().setLastModified(0);
-        FileResource indexRes = new FileResource(new RepoPath("repox", MavenNaming.NEXUS_INDEX_GZ));
+        FileResource indexRes = new FileResource(new RepoPathImpl("repox", MavenNaming.NEXUS_INDEX_GZ));
         indexRes.getInfo().setLastModified(0);
 
-        RemoteRepo remoteRepo = createRemoreRepoMock(0L);
+        RemoteRepo<?> remoteRepo = createRemoteRepoMock(0L);
 
         InternalArtifactoryContext context = MockUtils.getThreadBoundedMockContext();
         EasyMock.replay(context);
 
         JcrCacheRepo cacheRepo = new JcrCacheRepo(remoteRepo, null);
+ try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        assertFalse(cacheRepo.isExpired(releaseRes));
+        assertTrue(cacheRepo.isExpired(snapRes));
+        assertFalse(cacheRepo.isExpired(uniqueSnapRes));
+        assertFalse(cacheRepo.isExpired(nonSnapRes));
+        assertTrue(cacheRepo.isExpired(relMdRes));
+        assertTrue(cacheRepo.isExpired(snapMdRes));
+        assertFalse(cacheRepo.isExpired(nonsnapMdRes));
+        assertTrue(cacheRepo.isExpired(indexRes));
 
-        Assert.assertFalse(cacheRepo.isExpired(releaseRes));
-        Assert.assertTrue(cacheRepo.isExpired(snapRes));
-        Assert.assertFalse(cacheRepo.isExpired(uniqueSnapRes));
-        Assert.assertFalse(cacheRepo.isExpired(nonSnapRes));
-        Assert.assertTrue(cacheRepo.isExpired(relMdRes));
-        Assert.assertTrue(cacheRepo.isExpired(snapMdRes));
-        Assert.assertFalse(cacheRepo.isExpired(nonsnapMdRes));
-        Assert.assertTrue(cacheRepo.isExpired(indexRes));
-
-        remoteRepo = createRemoreRepoMock(10L);
+        remoteRepo = createRemoteRepoMock(10L);
         cacheRepo = new JcrCacheRepo(remoteRepo, null);
 
-        Assert.assertFalse(cacheRepo.isExpired(indexRes));
+        assertFalse(cacheRepo.isExpired(indexRes));
     }
 
-    private RemoteRepo createRemoreRepoMock(long expiry) {
+    private RemoteRepo<?> createRemoteRepoMock(long expiry) {
         RemoteRepo remoteRepo = EasyMock.createMock(RemoteRepo.class);
         EasyMock.expect(remoteRepo.getRepositoryService()).andReturn(null).anyTimes();
         HttpRepoDescriptor httpRepoDescriptor = new HttpRepoDescriptor();

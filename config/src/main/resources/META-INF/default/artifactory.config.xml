@@ -18,9 +18,9 @@
   -->
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.4.4"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.4
-        http://www.jfrog.org/xsd/artifactory-v1_4_4.xsd">
+        xmlns="http://artifactory.jfrog.org/xsd/1.4.5"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.5
+        http://www.jfrog.org/xsd/artifactory-v1_4_5.xsd">
     <!--
     enable/disable anonymous downloads
     -->
@@ -176,7 +176,7 @@
             <includesPattern>org/jboss/**,org/hibernate/**,org/richfaces/**,org/drools/**</includesPattern>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <url>http://repository.jboss.com/maven2</url>
+            <url>http://repository.jboss.org/nexus/content/groups/public-jboss</url>
         </remoteRepository>
         <remoteRepository>
             <key>codehaus</key>
@@ -193,7 +193,7 @@
             <includesPattern>org/springframework/**</includesPattern>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <url>http://maven.springframework.org/milestone</url>
+            <url>http://repository.springsource.com/maven/bundles/milestone</url>
         </remoteRepository>
         <remoteRepository>
             <key>spring-snapshots</key>
@@ -201,7 +201,7 @@
             <includesPattern>org/springframework/**</includesPattern>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
-            <url>http://maven.springframework.org/snapshot</url>
+            <url>http://repository.springsource.com/maven/bundles/snapshot</url>
         </remoteRepository>
         <remoteRepository>
             <key>spring-release</key>
@@ -209,7 +209,7 @@
             <includesPattern>org/springframework/**</includesPattern>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <url>http://maven.springframework.org/release</url>
+            <url>http://repository.springsource.com/maven/bundles/release</url>
         </remoteRepository>
         <remoteRepository>
             <key>google-code</key>

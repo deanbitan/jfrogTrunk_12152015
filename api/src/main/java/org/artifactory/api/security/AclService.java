@@ -28,7 +28,7 @@ import java.util.List;
 public interface AclService {
 
     /**
-     * Returns a list of permission targets for the type of permission given
+     * Returns a list of permission targets for the current logged-in user for the type of permission given.
      *
      * @param artifactoryPermission Type of permission to find
      * @return List of permission target info objects

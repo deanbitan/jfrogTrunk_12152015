@@ -264,6 +264,13 @@ span.label-gray {
     font-weight: bold;
 }
 
+.approved {
+    background: url("images/icons/checkmark.gif") left top no-repeat;
+    padding-bottom: 3px;
+    font-weight: bold;
+    padding-left: 22px;
+}
+
 .small {
     font-size: 11px;
     font-weight: normal;
@@ -432,13 +439,13 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
     padding-right: 1px;
 }
 
-.IE .upload-form  button.button {
+.IE .upload-form  .button {
     padding-left: 4px;
     position: relative;
     margin-top: -4px;
 }
 
-.Chrome .upload-form  button.button {
+.Chrome .upload-form  .button {
     padding-left: 4px;
 }
 
@@ -477,12 +484,12 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
 }
 
 /*--DeployFromZipPanel--*/
-.upload-zip-form button.button {
+.upload-zip-form .button {
     padding-left: 2px;
     padding-top: 3px;
 }
 
-.IE .upload-zip-form button.button {
+.IE .upload-zip-form .button {
     padding-top: 0;
 }
 
@@ -729,7 +736,7 @@ button.help-link {
 
 .search-tabs .tab-panel {
     padding-top: 7px;
-    min-width: 732px;
+    min-width: 772px;
 }
 
 .search-tabs .data-table {
@@ -824,7 +831,7 @@ body button.pageableDropDown {
     color: black;
 }
 
-.user-info button.button  .button-right {
+.user-info .button .button-right {
     background-image: url("images/user-area/button-normal/BTN_user_normal_right.gif");
     height: 20px;
     padding-top: 0;
@@ -832,27 +839,27 @@ body button.pageableDropDown {
     font-size: 12px;
 }
 
-.user-info button.button .button-center {
+.user-info .button .button-center {
     background-image: url("images/user-area/button-normal/BTN_user_normal_center.gif");
 }
 
-.user-info button.button .button-left {
+.user-info .button .button-left {
     background-image: url("images/user-area/button-normal/BTN_user_normal_left.gif");
 }
 
-.user-info button.button .button-right {
+.user-info .button .button-right {
     background-image: url("images/user-area/button-normal/BTN_user_normal_right.gif");
 }
 
-.user-info button.button:hover .button-center, .user-info button.button:focus .button-center {
+.user-info .button:hover .button-center, .user-info .button:focus .button-center {
     background-image: url("images/user-area/button-mouseover/BTN_user_mo_center.gif");
 }
 
-.user-info button.button:hover .button-left, .user-info button.button:focus .button-left {
+.user-info .button:hover .button-left, .user-info .button:focus .button-left {
     background-image: url("images/user-area/button-mouseover/BTN_user_mo_left.gif");
 }
 
-.user-info button.button:hover .button-right, .user-info button.button:focus .button-right {
+.user-info .button:hover .button-right, .user-info .button:focus .button-right {
     background-image: url("images/user-area/button-mouseover/BTN_user_mo_right.gif");
 }
 
@@ -1450,6 +1457,7 @@ td.one-line span {
 .tundra div.dijitSplitterV {
     background: none;
     width: 12px;
+    cursor: col-resize;
 }
 
 .tundra .dijitSplitterV .dijitSplitterThumb {
@@ -1548,7 +1556,7 @@ td.one-line span {
 
 /*-- TitledLink --*/
 
-button.button, button.styled-checkbox {
+.button, button.styled-checkbox {
     white-space: nowrap;
     border: none;
     background: transparent no-repeat;
@@ -1574,64 +1582,67 @@ button.button, button.styled-checkbox {
     left: 0 !important;
 }
 
-button.button span, button.styled-checkbox span {
+.button span, button.styled-checkbox span {
     display: block;
 }
 
-button.button .button-center, button.styled-checkbox .button-center, button.button .button-left, button.styled-checkbox .button-left {
+.button .button-center, button.styled-checkbox .button-center, .button .button-left, button.styled-checkbox .button-left {
     display: inline-block;
 }
 
-button.button .button-right {
+.button .button-right {
     padding: 6px 15px 0 15px;
     height: 24px;
     font-weight: bold;
     color: #555555;
 }
 
-.Safari button.button .button-right {
+a.styled {
+    text-decoration: none;
+}
+
+.Safari .button .button-right {
     padding-top: 8px;
     height: 22px;
 }
 
-button.button .button-center {
+.button .button-center {
     background: url("images/buttons/gray-button/normal/BTN-gray-center.gif") repeat-x top;
 }
 
-button.button .button-left {
+.button .button-left {
     background: url("images/buttons/gray-button/normal/BTN-gray-left.gif") no-repeat left top;
 }
 
-button.button .button-right {
+.button .button-right {
     background: url("images/buttons/gray-button/normal/BTN-gray-right.gif") no-repeat right top;
 }
 
-button.button:hover .button-center, button.button:focus .button-center {
+.button:hover .button-center, .button:focus .button-center {
     background: url("images/buttons/gray-button/mouseover/BTN-gray-mouseover-center.gif") repeat-x top;
 }
 
-button.button:hover .button-left, button.button:focus .button-left {
+.button:hover .button-left, .button:focus .button-left {
     background: url("images/buttons/gray-button/mouseover/BTN-gray-mouseover-left.gif") no-repeat left top;
 }
 
-button.button:hover .button-right, button.button:focus .button-right {
+.button:hover .button-right, .button:focus .button-right {
     background: url("images/buttons/gray-button/mouseover/BTN-gray-mouseover-right.gif") no-repeat right top;
 }
 
-button.button-disabled {
+.button-disabled {
     cursor: default;
-
 }
 
-button.button-disabled .button-center, button.button-disabled:hover .button-center {
+.button-disabled .button-center, .button-disabled:hover .button-center {
     background: url("images/buttons/gray-button/disabled/BTN-gray-disabled-center.gif") repeat-x top;
 }
 
-button.button-disabled .button-left, button.button-disabled:hover .button-left {
+.button-disabled .button-left, .button-disabled:hover .button-left {
     background: url("images/buttons/gray-button/disabled/BTN-gray-disabled-left.gif") no-repeat left top;
 }
 
-button.button-disabled .button-right, button.button-disabled:hover .button-right {
+.button-disabled .button-right, .button-disabled:hover .button-right {
     background: url("images/buttons/gray-button/disabled/BTN-gray-disabled-right.gif") no-repeat right top;
     color: #999999;
 }
@@ -1904,34 +1915,34 @@ div.footer, .copywrites, .version {
     padding-top: 2px;
 }
 
-body div.quick-search-box button.button {
+body div.quick-search-box .button {
     float: left;
     height: 24px;
     margin: 0 15px 0 2px !important;
 }
 
-div.quick-search-box button.button .button-center {
+div.quick-search-box .button .button-center {
     background-image: url("images/quick-search/button-normal/BTN-qs-normal-center.gif");
 }
 
-div.quick-search-box button.button .button-left {
+div.quick-search-box .button .button-left {
     background-image: url("images/quick-search/button-normal/BTN-qs-normal-left.gif");
 }
 
-div.quick-search-box button.button .button-right {
+div.quick-search-box .button .button-right {
     background-image: url("images/quick-search/button-normal/BTN-qs-normal-right.gif");
     padding: 2px 7px 0 7px;
 }
 
-div.quick-search-box button.button:hover .button-center, div.quick-search-box button.button:focus .button-center {
+div.quick-search-box .button:hover .button-center, div.quick-search-box .button:focus .button-center {
     background-image: url("images/quick-search/button-mouseover/BTN-qs-mo-center.gif");
 }
 
-div.quick-search-box button.button:hover .button-left, div.quick-search-box button.button:focus .button-left {
+div.quick-search-box .button:hover .button-left, div.quick-search-box .button:focus .button-left {
     background-image: url("images/quick-search/button-mouseover/BTN-qs-mo-left.gif");
 }
 
-div.quick-search-box button.button:hover .button-right, div.quick-search-box button.button:focus .button-right {
+div.quick-search-box .button:hover .button-right, div.quick-search-box .button:focus .button-right {
     background-image: url("images/quick-search/button-mouseover/BTN-qs-mo-right.gif");
 }
 
@@ -2191,7 +2202,7 @@ div.quick-search-box button.button:hover .button-right, div.quick-search-box but
 }
 
 .fieldset-border-content {
-    padding: 20px 10px 10px 10px;
+    padding: 13px 10px 10px 10px;
     min-height: 20px;
     overflow: auto;
 }
@@ -2281,6 +2292,11 @@ div.quick-search-box button.button:hover .button-right, div.quick-search-box but
     overflow: auto;
 }
 
+.IE-6 .outer-border-content,
+.IE-7 .outer-border-content {
+    position: relative;
+}
+
 .outer-border-top {
     background: url("images/outer-frame/outer-top-center.gif") repeat-x top;
 }
@@ -2330,12 +2346,7 @@ div.list-panel .border-title {
     border: solid 1px #41413F;
     background: white url("images/buttons/field-center.gif") top repeat-x;
     margin: 0 104px 5px 15px;
-    height: 203px;
     overflow: auto;
-}
-
-.IE-7 .ordered-list {
-    height: 205px;
 }
 
 .Chrome .ordered-list {
@@ -2377,28 +2388,12 @@ div.list-panel .border-title {
 
 .list-panel-buttons .buttons-top {
     background: url("images/buttons/on-dark-bg/dark-bg/darkbg-wide-top.gif") top no-repeat;
-
 }
 
 .list-panel-buttons .buttons-bottom {
     background: url("images/buttons/on-dark-bg/dark-bg/darkbg-bottom.gif") bottom no-repeat;
-    height: 398px;
-}
-
-.IE .list-panel-buttons .buttons-bottom {
-    height: 399px;
-}
-
-.Safari .list-panel-buttons .buttons-bottom {
-    height: 401px;
-}
-
-.ordered-list-panel .list-panel-buttons .buttons-bottom {
-    height: 205px;
-}
-
-.IE-7 .ordered-list-panel .list-panel-buttons .buttons-bottom {
-    height: 207px;
+    position: relative;
+    top: 2px;
 }
 
 button.up-link, button.down-link, button.down-link-disabled, button.up-link-disabled {
@@ -2455,66 +2450,65 @@ button.new-link .button-right, button.import-link .button-right {
     width: 40px;
 }
 
-div.list-panel-buttons button.button .button-center {
+div.list-panel-buttons .button .button-center {
     background-image: url("images/buttons/green-button/normal/BTN-green-center.gif");
 }
 
-div.list-panel-buttons button.button .button-left {
+div.list-panel-buttons .button .button-left {
     background-image: url("images/buttons/green-button/normal/BTN-green-left.gif");
 }
 
-div.list-panel-buttons button.button .button-right {
+div.list-panel-buttons .button .button-right {
     background-image: url("images/buttons/green-button/normal/BTN-green-right.gif");
     color: white;
 }
 
-div.list-panel-buttons button.button:hover .button-center, div.list-panel-buttons button.button:focus .button-center {
+div.list-panel-buttons .button:hover .button-center, div.list-panel-buttons .button:focus .button-center {
     background-image: url("images/buttons/green-button/mouseover/BTN-green-mouseover-center.gif");
 }
 
-div.list-panel-buttons button.button:hover .button-left, div.list-panel-buttons button.button:focus .button-left {
+div.list-panel-buttons .button:hover .button-left, div.list-panel-buttons .button:focus .button-left {
     background-image: url("images/buttons/green-button/mouseover/BTN-green-mouseover-left.gif");
 }
 
-div.list-panel-buttons button.button:hover .button-right, div.list-panel-buttons button.button:focus .button-right {
+div.list-panel-buttons .button:hover .button-right, div.list-panel-buttons .button:focus .button-right {
     background-image: url("images/buttons/green-button/mouseover/BTN-green-mouseover-right.gif");
 }
 
-div.list-panel-buttons button.button-disabled .button-center, div.list-panel-buttons button.button-disabled:hover .button-center {
+div.list-panel-buttons .button-disabled .button-center, div.list-panel-buttons .button-disabled:hover .button-center {
     background-image: url("images/buttons/gray-button/disabled/BTN-gray-disabled-center.gif");
 }
 
-div.list-panel-buttons button.button-disabled .button-left, div.list-panel-buttons button.button-disabled:hover .button-left {
+div.list-panel-buttons .button-disabled .button-left, div.list-panel-buttons .button-disabled:hover .button-left {
     background-image: url("images/buttons/gray-button/disabled/BTN-gray-disabled-left.gif");
 }
 
-div.list-panel-buttons button.button-disabled .button-right, div.list-panel-buttons button.button-disabled:hover .button-right {
+div.list-panel-buttons .button-disabled .button-right, div.list-panel-buttons .button-disabled:hover .button-right {
     background-image: url("images/buttons/gray-button/disabled/BTN-gray-disabled-right.gif");
     color: #999999;
 }
 
-/*-----------------------*/
-div.list-panel-buttons button.cancel-link .button-center {
+div.list-panel-buttons button.gray-link .button-center {
     background: url("images/buttons/gray-button/normal/BTN-gray-center.gif") repeat-x top;
 }
 
-div.list-panel-buttons button.cancel-link .button-left {
+div.list-panel-buttons button.gray-link .button-left {
     background: url("images/buttons/gray-button/normal/BTN-gray-left.gif") no-repeat left top;
 }
 
-div.list-panel-buttons button.cancel-link .button-right {
+div.list-panel-buttons button.gray-link .button-right {
     background: url("images/buttons/gray-button/normal/BTN-gray-right.gif") no-repeat right top;
 }
 
-div.list-panel-buttons button.cancel-link:hover .button-center, div.list-panel-buttons button.cancel-link:focus .button-center {
+div.list-panel-buttons button.gray-link:hover .button-center, div.list-panel-buttons button.gray-link:focus .button-center {
     background: url("images/buttons/gray-button/mouseover/BTN-gray-mouseover-center.gif") repeat-x top;
 }
 
-div.list-panel-buttons button.cancel-link:hover .button-left, div.list-panel-buttons button.cancel-link:focus .button-left {
+div.list-panel-buttons button.gray-link:hover .button-left, div.list-panel-buttons button.gray-link:focus .button-left {
     background: url("images/buttons/gray-button/mouseover/BTN-gray-mouseover-left.gif") no-repeat left top;
 }
 
-div.list-panel-buttons button.cancel-link:hover .button-right, div.list-panel-buttons button.cancel-link:focus .button-right {
+div.list-panel-buttons button.gray-link:hover .button-right, div.list-panel-buttons button.gray-link:focus .button-right {
     background: url("images/buttons/gray-button/mouseover/BTN-gray-mouseover-right.gif") no-repeat right top;
 }
 
@@ -2530,6 +2524,57 @@ tr.opened .links-icon {
 
 .ordered-list-panel .info {
     margin-left: 16px;
+}
+
+button.save-link {
+    position: relative;
+    left: 15px;
+    top: 20px;
+}
+
+.save-link .button-right {
+    width: 40px;
+}
+
+button.cancel-link {
+    position: relative;
+    top: 26px;
+    left: 15px;
+}
+
+.IE-7 .button.new-link {
+    left: 16px;
+}
+
+.IE-7 button.save-link {
+    top: 54px;
+    left: -58px;
+}
+
+.IE-7 button.cancel-link {
+    top: 92px;
+    left: -132px;
+}
+
+div.list-panel-buttons button.gray-link .button-right {
+    width: 40px;
+    color: gray;
+}
+
+/*-- BaseListPanel --*/
+
+a.export-link {
+    position: absolute;
+    top: 50px;
+    right: 15px;
+}
+
+.IE-7 a.export-link {
+    right: 14px;
+}
+
+.Safari a.export-link {
+    right: 12px;
 }
 
 /*-- ModalWindow --*/
@@ -2733,7 +2778,7 @@ div.w_content_scroll {
     padding-bottom: 15px;
 }
 
-.ldap-test-fields button.button {
+.ldap-test-fields .button {
     position: absolute;
     right: 23px;
     top: 22px;
@@ -3504,7 +3549,6 @@ table.selectable tbody tr.hover td, table.selectable tbody tr.opened td {
     background: white;
     margin: 0 104px 0 0;
     padding: 0;
-    height: 396px;
     overflow-y: auto;
     overflow-x: hidden;
     position: relative; /*IE fix*/
@@ -3514,17 +3558,16 @@ table.selectable tbody tr.hover td, table.selectable tbody tr.opened td {
     margin: 0;
 }
 
-.IE .list-panel .table-wrapper {
-    height: 397px;
-}
-
 .Safari .list-panel .table-wrapper {
     margin: 0 0 20px 0;
-    height: 399px;
 }
 
-.ordered-list-panel .table-wrapper {
-    height: 148px;
+.list-panel .table-wrapper, .list-panel .buttons-bottom {
+    height: 400px;
+}
+
+.ordered-list, .ordered-list-panel .buttons-bottom {
+    height: 200px;
 }
 
 /*-- GeneralSettingsPanel --*/
@@ -3568,6 +3611,18 @@ div.general-settings-panel input.text-file {
 
 .black-listed-label {
     color: red;
+}
+
+.blue-listed-label {
+    color: blue;
+}
+
+.orange-listed-label {
+    color: #FF6600;
+}
+
+.gray-listed-label {
+    color: gray;
 }
 
 /*-- icons --*/
@@ -3799,9 +3854,18 @@ div.login-panel {
 }
 
 /*-- SimpleRepoBrowserPage --*/
+.ext-link {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: url("images/icons/new-win-icon.gif") center center no-repeat;
+    position: relative;
+    top: 2px;
+}
 
 .repo-list .icon-link {
     margin: 5px 0;
+    display: inline-block;
 }
 
 .bread-crumbs a, .bread-crumbs span {
@@ -4092,7 +4156,7 @@ td.true span {
     zoom: 1;
 }
 
-.maven-settings-panel {
+.base-settings-panel {
     margin-top: 10px;
 }
 
@@ -4104,26 +4168,43 @@ td.true span {
 
 /*--MavenSettingsPanel----------------------------------------*/
 
-.Chrome .maven-settings .field-sep  button.styled-checkbox {
+.Chrome .settings-border .border-content .field-row .field  button.styled-checkbox {
     margin: 0 -3px;
 }
 
-.Chrome .maven-settings .field-sep .value {
+.Chrome .settings-border .border-content .field-row .field .value {
     margin-top: 2px;
 }
 
-.IE-8 .maven-settings .field-sep .value {
+.IE-8 .settings-border .border-content .field-row .field .value {
     margin-top: 2px;
 }
 
-/*--MavenSettingsModalPanel-----------------------------------*/
+.Chrome .top-settings-text-field {
+    padding-top: 2px;
+}
+
+.Chrome .bottom-settings-text-field {
+    padding-top: 3px;
+}
+
+.Chrome .settings-checkbox {
+    padding-left: 7px;
+}
+
+.settings-field-group {
+    float: left;
+}
+
+/*--IvySettingsPanel-----------------------------------*/
+.ivy-pattern {
+    width: 700px;
+}
+
+/*--SettingsModalPanel-----------------------------------*/
 
 .modal-code {
     overflow: auto;
-}
-
-.maven-settings-export {
-    padding-top: 10px
 }
 
 textarea.modal-code {
@@ -4135,6 +4216,18 @@ textarea.modal-code {
 
 .IE-7 textarea.modal-code {
     width: 99%;
+}
+
+.modal-code .syntaxhighlighter .lines.no-wrap {
+    overflow-y: auto !important;
+}
+
+.modal-code .syntaxhighlighter .toolbar {
+    right: 20px !important;
+}
+
+.IE-7 .modal-code .syntaxhighlighter .line .content {
+    width: 100% !important;
 }
 
 /*-- DeployArtifactPage --------------------------------------*/
@@ -4302,10 +4395,6 @@ table.data-table tr.headers button.styled-checkbox .button-center {
     zoom: 1;
 }
 
-.IE-7 .collapse-link {
-    background-position: 9px 12px;
-}
-
 .collapsed .border-title, .disabled-collapsible .border-title {
     min-height: 25px;
 }
@@ -4323,6 +4412,10 @@ table.data-table tr.headers button.styled-checkbox .button-center {
     left: 0;
     background-position: 9px 9px;
     background-repeat: no-repeat;
+}
+
+.IE-7 .collapse-link {
+    background-position: 9px 12px;
 }
 
 a.collapse-link:hover, a.collapse-link:focus {
@@ -4387,15 +4480,15 @@ a.collapse-link:hover, a.collapse-link:focus {
     margin-top: 1px;
 }
 
-.meta-field button.button {
+.meta-field .button {
     margin-left: -3px;
 }
 
-.IE-7 .meta-field button.button {
+.IE-7 .meta-field .button {
     margin-left: -5px;
 }
 
-.Safari .meta-field button.button {
+.Safari .meta-field .button {
     margin-top: 2px;
 }
 
@@ -4423,15 +4516,11 @@ a.collapse-link:hover, a.collapse-link:focus {
 }
 
 .IE-7 .save-results {
-    width: 425px;
+    width: 470px;
 }
 
 .save-results .fieldset-border-wrapper {
     margin-bottom: 5px;
-}
-
-.save-results .fieldset-border-content, .build-save-results .fieldset-border-content {
-    padding-top: 10px;
 }
 
 .save-results .value, .build-save-results .value {
@@ -4457,6 +4546,11 @@ a.collapse-link:hover, a.collapse-link:focus {
 
 .IE .small-buttons .button {
     display: inline-block;
+}
+
+.save-results .small-buttons .button {
+    margin: 0 1px;
+    padding: 1px 2px;
 }
 
 .small-buttons .button-disabled {
@@ -4563,7 +4657,7 @@ input.autocomplete {
 /*-- PropertiesTabPanel --*/
 
 .properties-border {
-    padding-top: 10px;
+    padding-top: 0;
 }
 
 .properties-border table.data-table {
@@ -4823,29 +4917,8 @@ table.data-table td.add-value-row {
     padding: 5px 7px 2px;
 }
 
-.properties-list .table-wrapper {
-    height: 196px;
-}
-
-.IE .properties-list .table-wrapper {
-    height: 197px;
-}
-
-.Safari .properties-list .table-wrapper {
-    height: 199px;
-}
-
-.properties-list .list-panel-buttons .buttons-bottom {
-    background: url("images/buttons/on-dark-bg/dark-bg/darkbg-bottom.gif") bottom no-repeat;
-    height: 198px;
-}
-
-.IE .properties-list .list-panel-buttons .buttons-bottom {
-    height: 199px;
-}
-
-.Safari .properties-list .list-panel-buttons .buttons-bottom {
-    height: 201px;
+.properties-list .table-wrapper, .properties-list .buttons-bottom {
+    height: 200px;
 }
 
 /*-- TextFieldColumn --*/
@@ -4929,6 +5002,10 @@ table.data-table td.add-value-row {
     background: url(images/addons/16rest.png) no-repeat left top;
 }
 
+.addon-license {
+    background: url(images/addons/16licenses.png) no-repeat left top;
+}
+
 .addon-ldap, .addon-ldapgroup {
     background: url(images/addons/16group.png) no-repeat left top;
 }
@@ -4951,6 +5028,10 @@ table.data-table td.add-value-row {
 
 .addon-webstart {
     background: url(images/addons/16sso.png) no-repeat left top;
+}
+
+.addon-plugins {
+    background: url(images/addons/16plugins.png) no-repeat left top;
 }
 
 /*-- ProfilePanel --*/
@@ -5058,49 +5139,6 @@ div.styled-tab-panel div.tab-row li.disabled-addon-last-tab span {
 
 /*-- RepositoryConfigPage --*/
 
-button.save-link {
-    position: relative;
-    left: 15px;
-    top: 20px;
-}
-
-.save-link .button-right {
-    width: 40px;
-}
-
-button.cancel-link {
-    position: relative;
-    top: 26px;
-    left: 15px;
-}
-
-.IE-7 .button.new-link {
-    left: 16px;
-}
-
-.IE-7 button.save-link {
-    top: 54px;
-    left: -58px;
-}
-
-.IE-7 button.cancel-link {
-    top: 92px;
-    left: -132px;
-}
-
-div.list-panel-buttons button.cancel-link .button-right {
-    width: 40px;
-    color: gray;
-}
-
-.remote-repos .list-panel-buttons .buttons-bottom {
-    height: 239px;
-}
-
-.IE-7 .remote-repos .list-panel-buttons .buttons-bottom {
-    height: 251px;
-}
-
 .remote-repos button.new-link {
     top: 11px;
 }
@@ -5126,12 +5164,8 @@ div.list-panel-buttons button.cancel-link .button-right {
     left: -206px;
 }
 
-.remote-repos .ordered-list {
-    height: 237px;
-}
-
-.IE-7 .remote-repos .ordered-list {
-    height: 249px;
+.remote-repos .ordered-list, .remote-repos .buttons-bottom {
+    height: 240px;
 }
 
 /*-- ExportResultsPanel --*/
@@ -5167,11 +5201,15 @@ div.list-panel-buttons button.cancel-link .button-right {
 }
 
 .IE-8 .search-form .collapse-link {
-    top: 3px;
+    top: 4px;
+}
+
+.search-form .collapse-link {
+    top: 5px;
 }
 
 .IE-7 .search-form .collapse-link {
-    top: -3px;
+    top: 2px;
 }
 
 /*Customizing Panel*/
@@ -5181,7 +5219,7 @@ div.list-panel-buttons button.cancel-link .button-right {
     margin-top: -29px;
 }
 
-.FF .general-settings-panel .upload-form button.button {
+.FF .general-settings-panel .upload-form .button {
     left: 15px;
 }
 
@@ -5565,10 +5603,42 @@ table.data-table {
     width: 100%;
     height: 200px;
     font-family: "Courier New", Courier, monospace;
+    background: none;
+    border: none;
 }
 
 /*-- BuildSearchResultsPanel --*/
 
 .build-scopes {
     padding-left: 24px;
+}
+
+/*EditLicensePanel*/
+
+.edit-license-panel .text-field-width {
+    width: 200px;
+}
+
+/*BuildLicensesPanel*/
+
+.build-licenses-panel .module-table {
+    margin-top: 10px;
+}
+
+.IE-7 .module-table {
+    width: 98%;
+}
+
+/*CrowdConfigPanel*/
+.crowd-url-field {
+    width: 255px;
+}
+
+/*DependencyDeclarationPanel*/
+.dependency-decleration-content {
+    padding-top: 10px;
+}
+
+table.sep {
+    margin-top: 7px;
 }

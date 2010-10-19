@@ -21,9 +21,12 @@ package org.artifactory.util;
 import org.slf4j.Logger;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public abstract class LoggingUtils {
+    private LoggingUtils() {
+        // utility class
+    }
 
     public static void warnOrDebug(Logger logger, String msg) {
         warnOrDebug(logger, msg, null);

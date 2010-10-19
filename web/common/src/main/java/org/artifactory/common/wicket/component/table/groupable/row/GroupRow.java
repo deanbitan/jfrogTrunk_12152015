@@ -31,10 +31,10 @@ public class GroupRow extends Panel {
 
     public GroupRow(String id, Object value, final int groupSize) {
         super(id);
-        add(new Label("label", new Model(value.toString())) {
+        add(new Label("label", new Model<String>(value.toString())) {
             @Override
             protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
-                String body = getModelObjectAsString() + "&nbsp;<span style=\"color:grey\">(" + groupSize + ")</span>";
+                String body = getDefaultModelObjectAsString() + "&nbsp;<span style=\"color:grey\">(" + groupSize + ")</span>";
                 replaceComponentTagBody(markupStream, openTag, body);
             }
         });

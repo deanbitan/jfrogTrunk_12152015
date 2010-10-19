@@ -63,7 +63,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         setWidth(560);
 
         // Cancel button
-        form.add(new ModalCloseLink("cancel"));
+        form.add(getCloseLink());
 
         // Submit button
         TitledAjaxSubmitLink submit = createSubmitButton();
@@ -73,13 +73,17 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         add(form);
     }
 
+    protected ModalCloseLink getCloseLink() {
+        return new ModalCloseLink("cancel");
+    }
+
     public abstract void addAndSaveDescriptor(E repoDescriptor);
 
     public abstract void saveEditDescriptor(E repoDescriptor);
 
     @SuppressWarnings({"unchecked"})
     protected E getRepoDescriptor() {
-        return (E) form.getModelObject();
+        return (E) form.getDefaultModelObject();
     }
 
     private TitledAjaxSubmitLink createSubmitButton() {

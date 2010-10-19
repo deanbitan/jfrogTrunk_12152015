@@ -21,23 +21,26 @@ package org.artifactory.repo.webdav;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MoveMultiStatusHolder;
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.exception.RepoRejectionException;
-import org.artifactory.api.request.ArtifactoryRequest;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.webdav.WebdavService;
+import org.artifactory.common.StatusHolder;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.request.ArtifactoryRequest;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -196,7 +199,7 @@ public class WebdavServiceImpl implements WebdavService {
         //Check that we are allowed to write
         try {
             repoService.assertValidDeployPath(repo, path);
-        } catch (RepoRejectionException rre) {
+        } catch (RepoRejectException rre) {
             response.sendError(rre.getErrorCode(), rre.getMessage(), log);
             return;
         }
@@ -208,19 +211,54 @@ public class WebdavServiceImpl implements WebdavService {
 
     public void handleDelete(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         RepoPath repoPath = request.getRepoPath();
+        String repoKey = repoPath.getRepoKey();
+        LocalRepo localRepository = repoService.localOrCachedRepositoryByKey(repoKey);
+        if (localRepository == null) {
+            if (repoService.virtualRepoDescriptorByKey(repoKey) != null) {
+                response.setStatus(HttpStatus.SC_METHOD_NOT_ALLOWED);
+                response.setHeader("Allow", "GET");
+                return;
+            }
+            response.setStatus(HttpStatus.SC_NOT_FOUND);
+            return;
+        }
+        if (request.isMetadata()) {
+            String metadataName = NamingUtils.getMetadataName(repoPath.getPath());
+            MetadataInfo metadataInfo = repoService.getMetadataInfo(repoPath, metadataName);
+            if (metadataInfo == null) {
+                response.setStatus(HttpStatus.SC_NOT_FOUND);
+                return;
+            }
+        }
         StatusHolder statusHolder = repoService.undeploy(repoPath);
         if (statusHolder.isError()) {
             response.sendError(statusHolder);
             return;
         }
-        response.sendOk();
+        response.setStatus(HttpStatus.SC_NO_CONTENT);
     }
 
     public void handleOptions(ArtifactoryResponse response) throws IOException {
         response.setHeader("DAV", "1,2");
-        response.setHeader("Allow", "OPTIONS, MKCOL, PUT, GET, HEAD, POST, DELETE, PROPFIND, MOVE");
+        response.setHeader("Allow", WEBDAV_METHODS_LIST);
+        //response.setHeader("Allow", "OPTIONS, MKCOL, PUT, GET, HEAD, POST, DELETE, PROPFIND, MOVE");
         response.setHeader("MS-Author-Via", "DAV");
-        response.sendOk();
+        response.sendSuccess();
+    }
+
+    public void handlePost(ArtifactoryRequest request, ArtifactoryResponse response) {
+        RepoPath repoPath = request.getRepoPath();
+        String repoKey = repoPath.getRepoKey();
+        VirtualRepoDescriptor virtualRepo = repoService.virtualRepoDescriptorByKey(repoKey);
+
+        StringBuilder allowHeaderBuilder = new StringBuilder();
+        allowHeaderBuilder.append("GET");
+
+        if (virtualRepo == null) {
+            allowHeaderBuilder.append(",PUT,DELETE");
+        }
+        response.setHeader("Allow", allowHeaderBuilder.toString());
+        response.setStatus(HttpStatus.SC_METHOD_NOT_ALLOWED);
     }
 
     public void handleMove(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
@@ -240,14 +278,14 @@ public class WebdavServiceImpl implements WebdavService {
             response.sendError(HttpStatus.SC_NOT_FOUND, "Target local repository not found.", log);
             return;
         }
-        if (!authService.canDelete(repoPath) || !authService.canDeploy(new RepoPath(targetRepoKey, ""))) {
+        if (!authService.canDelete(repoPath) || !authService.canDeploy(new RepoPathImpl(targetRepoKey, ""))) {
             response.sendError(HttpStatus.SC_UNAUTHORIZED, "Insufficient permissions.", log);
             return;
         }
 
         MoveMultiStatusHolder status = repoService.move(repoPath, targetRepoKey, false);
         if (!status.hasWarnings() && !status.hasErrors()) {
-            response.sendOk();
+            response.sendSuccess();
         } else {
             response.sendError(status);
         }
@@ -307,10 +345,8 @@ public class WebdavServiceImpl implements WebdavService {
      *                               those properties
      */
     @SuppressWarnings({"OverlyComplexMethod"})
-    private void parseProperties(ArtifactoryRequest request,
-            ArtifactoryResponse response,
-            XmlWriter generatedXml, final String path,
-            int type, List<String> propertiesList) throws IOException {
+    private void parseProperties(ArtifactoryRequest request, ArtifactoryResponse response, XmlWriter generatedXml,
+                                 final String path, int type, List<String> propertiesList) throws IOException {
         JcrFsItem item = getJcrFsItem(request, response, path);
         if (item == null) {
             log.warn("Item '" + path + "' not found.");
@@ -500,10 +536,9 @@ public class WebdavServiceImpl implements WebdavService {
     /**
      * goes recursive through all folders. used by propfind
      */
-    private void recursiveParseProperties(ArtifactoryRequest request,
-            ArtifactoryResponse response,
-            XmlWriter generatedXml, String currentPath,
-            int propertyFindType, List<String> properties, int depth) throws IOException {
+    private void recursiveParseProperties(ArtifactoryRequest request, ArtifactoryResponse response,
+                                          XmlWriter generatedXml, String currentPath, int propertyFindType, List<String> properties, int depth)
+            throws IOException {
         parseProperties(request, response, generatedXml, currentPath, propertyFindType, properties);
         JcrFsItem item = getJcrFsItem(request, response, currentPath);
         if (item == null) {
@@ -522,11 +557,11 @@ public class WebdavServiceImpl implements WebdavService {
         }
     }
 
-    private JcrFsItem getJcrFsItem(ArtifactoryRequest request,
-            ArtifactoryResponse response, String path) throws IOException {
+    private JcrFsItem getJcrFsItem(ArtifactoryRequest request, ArtifactoryResponse response, String path)
+            throws IOException {
         final StoringRepo repo = getLocalRepo(request, response);
         String repoKey = request.getRepoKey();
-        RepoPath repoPath = new RepoPath(repoKey, path);
+        RepoPath repoPath = new RepoPathImpl(repoKey, path);
         if (repo.isReal()) {
             StatusHolder status = ((RealRepo) repo).checkDownloadIsAllowed(repoPath);
             //Check that we are allowed to read

@@ -19,7 +19,7 @@
 package org.artifactory.descriptor;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public interface DescriptorAware<T extends Descriptor> {
 

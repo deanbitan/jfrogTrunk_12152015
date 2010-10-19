@@ -18,11 +18,11 @@
 
 package org.artifactory.io.checksum.policy;
 
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
+import org.artifactory.repo.RepoPath;
 
 import java.io.Serializable;
 import java.util.Set;

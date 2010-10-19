@@ -46,7 +46,6 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.ArrayList;
@@ -93,9 +92,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     private List<BackupDescriptor> backups = new ArrayList<BackupDescriptor>();
 
     private IndexerDescriptor indexer;
-
-    @XmlTransient
-    private ProxyDescriptor defaultProxy;
 
     /**
      * A name uniquely identifying this artifactory server instance
@@ -147,7 +143,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     public void setRemoteRepositoriesMap(OrderedMap<String, RemoteRepoDescriptor> remoteRepositoriesMap) {
         this.remoteRepositoriesMap = remoteRepositoriesMap;
-        updateDefaultProxy();
     }
 
     public OrderedMap<String, VirtualRepoDescriptor> getVirtualRepositoriesMap() {
@@ -172,7 +167,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
                 return proxy;
             }
         }
-        return defaultProxy;
+        return null;
     }
 
     public String getDateFormat() {
@@ -242,6 +237,9 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     public void setSecurity(SecurityDescriptor security) {
+        if (security == null) {
+            security = new SecurityDescriptor();
+        }
         this.security = security;
     }
 
@@ -270,7 +268,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         RepoDescriptor removedRepo = localRepositoriesMap.remove(repoKey);
         if (removedRepo == null) {
             removedRepo = remoteRepositoriesMap.remove(repoKey);
-            updateDefaultProxy();
         }
         if (removedRepo == null) {
             removedRepo = virtualRepositoriesMap.remove(repoKey);
@@ -344,7 +341,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
                 ((HttpRepoDescriptor) remoteRepoDescriptor).setProxy(defaultProxyDescriptor);
             }
         }
-        updateDefaultProxy();
     }
 
     public void addVirtualRepository(VirtualRepoDescriptor virtualRepoDescriptor) {
@@ -386,24 +382,20 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
                 ((HttpRepoDescriptor) remoteRepo).setProxy(null);
             }
         }
-        updateDefaultProxy();
-
         return proxyDescriptor;
     }
 
     public void proxyChanged(ProxyDescriptor proxy, boolean updateExistingRepos) {
         if (proxy.isDefaultProxy()) {
-            defaultProxy = proxy;
             if (updateExistingRepos) {
-                updateExisingRepos(defaultProxy);
+                updateExisingRepos(proxy);
             }
+            //Unset the previous default if any
             for (ProxyDescriptor proxyDescriptor : proxies) {
                 if (!proxy.equals(proxyDescriptor)) {
                     proxyDescriptor.setDefaultProxy(false);
                 }
             }
-        } else if (defaultProxy == proxy) {
-            defaultProxy = null;
         }
     }
 
@@ -543,21 +535,5 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         if (!exists && shouldExist) {
             throw new DoesNotExistException("Repository " + repoKey + " does not exist");
         }
-    }
-
-    /**
-     * Sets the default proxy to be the first proxy used by a remote repo.
-     */
-    private void updateDefaultProxy() {
-        for (RemoteRepoDescriptor remoteRepoDescriptor : remoteRepositoriesMap.values()) {
-            if (remoteRepoDescriptor instanceof HttpRepoDescriptor) {
-                ProxyDescriptor proxyDescriptor = ((HttpRepoDescriptor) remoteRepoDescriptor).getProxy();
-                if (proxyDescriptor != null) {
-                    defaultProxy = proxyDescriptor;
-                    return;
-                }
-            }
-        }
-        defaultProxy = null;
     }
 }

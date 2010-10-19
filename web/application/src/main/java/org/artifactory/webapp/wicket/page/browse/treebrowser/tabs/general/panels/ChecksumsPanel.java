@@ -23,14 +23,14 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.fs.FileInfo;
 
 /**
  * A panel to display MD5 and SHA1 checksums on the GeneralTabPanel
@@ -45,7 +45,7 @@ public class ChecksumsPanel extends Panel {
     @SpringBean
     private AuthorizationService authService;
 
-    public ChecksumsPanel(String id, final FileInfo file) {
+    public ChecksumsPanel(String id, final org.artifactory.fs.FileInfo file) {
         super(id);
         setOutputMarkupId(true);
 
@@ -56,15 +56,15 @@ public class ChecksumsPanel extends Panel {
         boolean checksumsMatch = true;
 
         String md5 = "";
-        if (file.getMd5() != null) {
-            ChecksumInfo md5Info = file.getChecksumsInfo().getChecksumInfo(ChecksumType.md5);
+        ChecksumInfo md5Info = getChecksumOfType(file, ChecksumType.md5);
+        if (md5Info != null) {
             checksumsMatch &= md5Info.checksumsMatch();
             md5 = buildChecksumString(md5Info, isLocalRepo);
         }
 
         String sha1 = "";
-        if (file.getSha1() != null) {
-            ChecksumInfo sha1Info = file.getChecksumsInfo().getChecksumInfo(ChecksumType.sha1);
+        ChecksumInfo sha1Info = getChecksumOfType(file, ChecksumType.sha1);
+        if (sha1Info != null) {
             checksumsMatch &= sha1Info.checksumsMatch();
             sha1 = buildChecksumString(sha1Info, isLocalRepo);
         }
@@ -77,9 +77,30 @@ public class ChecksumsPanel extends Panel {
             checksumMismatchContainer.setVisible(false);
         } else {
             boolean canFixChecksum = authService.canDeploy(file.getRepoPath()) && !authService.isAnonymous();
-            StringBuilder message = new StringBuilder().append(isLocalRepo ? "Uploaded" : "Remote")
-                    .append(" checksum doesn't match the actual checksum. ")
-                    .append("Please redeploy the artifact with a correct checksum.<br/>");
+            // if one is missing but the other is broken display the following
+            StringBuilder message = new StringBuilder();
+            String repoClass = isLocalRepo ? "Uploaded" : "Remote";
+            if ((sha1Info == null || sha1Info.getOriginal() == null) && (md5Info == null || md5Info.getOriginal() == null)) {
+                message.append(" Remote checksum doesn't exist. <br/>");
+            } // if one is missing and the other is ok.
+            else if (((sha1Info != null && sha1Info.checksumsMatch()) && (md5Info == null || md5Info.getOriginal() == null))
+                    || ((md5Info != null && md5Info.checksumsMatch()) && (sha1Info == null || sha1Info.getOriginal() == null))) {
+                message = new StringBuilder().append(repoClass).append(" Remote checksum doesn't exist. <br/>");
+            } else if ((sha1Info.checksumsMatch() && !md5Info.checksumsMatch()) || (md5Info.checksumsMatch() && !sha1Info.checksumsMatch())) {
+                // one is ok, the other is broken (not missing)
+                message = new StringBuilder().append(repoClass).append(" checksum doesn't match the actual checksum. ")
+                        .append("Please redeploy the artifact with a correct checksum.<br/>");
+                // one is missing and the other is broken
+            } else if (((sha1Info != null && !sha1Info.checksumsMatch()) && (md5Info == null || md5Info.getOriginal() == null))
+                    || ((md5Info != null && !md5Info.checksumsMatch()) && (sha1Info == null || sha1Info.getOriginal() == null))) {
+                message = new StringBuilder().append(repoClass).append(" checksum doesn't match the actual checksum. ")
+                        .append("Please redeploy the artifact with a correct checksum.<br/>");
+                // both are legally broken
+            } else if (sha1Info != null && !sha1Info.checksumsMatch() && md5Info != null && !md5Info.checksumsMatch()) {
+                message = new StringBuilder().append(repoClass).append(" checksum doesn't match the actual checksum. ")
+                        .append("Please redeploy the artifact with a correct checksum.<br/>");
+            }
+
             if (canFixChecksum) {
                 message.append("If you trust the ").append(isLocalRepo ? "uploaded" : "remote")
                         .append(" artifact you can accept the actual checksum by clicking the 'Fix Checksum' button.");
@@ -94,14 +115,31 @@ public class ChecksumsPanel extends Panel {
         }
     }
 
+    private ChecksumInfo getChecksumOfType(FileInfo file, ChecksumType checksumType) {
+        if (file != null) {
+            return file.getChecksumsInfo().getChecksumInfo(checksumType);
+        }
+        return null;
+    }
+
     private String buildChecksumString(ChecksumInfo checksumInfo, boolean isLocalRepo) {
         StringBuilder sb = new StringBuilder()
                 .append(checksumInfo.getType()).append(": ")
                 .append(checksumInfo.getActual()).append(" (")
                 .append(isLocalRepo ? "Uploaded" : "Remote").append(": ")
-                .append(checksumInfo.checksumsMatch() ? "" : "<span style=\"color:red\"}>")
-                .append(checksumInfo.getOriginal() != null ? checksumInfo.getOriginal() : "None")
-                .append(checksumInfo.checksumsMatch() ? "" : "</span>")
+                .append(checksumInfo.checksumsMatch() ? "" : "<span style=\"color:red\"}>");
+
+        if (checksumInfo.getOriginal() != null) {
+            if (checksumInfo.checksumsMatch()) {
+                sb.append("Identical");
+            } else {
+                sb.append(checksumInfo.getOriginal());
+            }
+        } else {
+            sb.append("None");
+        }
+
+        sb.append(checksumInfo.checksumsMatch() ? "" : "</span>")
                 .append(")");
         return sb.toString();
     }
@@ -111,7 +149,7 @@ public class ChecksumsPanel extends Panel {
     }
 
     private class FixChecksumsButton extends TitledAjaxLink {
-        private final FileInfo file;
+        private final org.artifactory.fs.FileInfo file;
 
         public FixChecksumsButton(FileInfo file) {
             super("fix", "Fix Checksum");

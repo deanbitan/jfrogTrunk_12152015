@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.artifactory</groupId>
         <artifactId>artifactory-web-parent</artifactId>
-        <version>2.2.5</version>
+        <version>2.3.0</version>
     </parent>
 
     <build>
@@ -144,7 +144,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <!-- (overriden) compile scope to allow programmatic configuration -->
+            <!-- (overridden) compile scope to allow programmatic configuration -->
             <scope>compile</scope>
         </dependency>
 
@@ -156,11 +156,6 @@
         <dependency>
             <groupId>org.wicketstuff</groupId>
             <artifactId>wicketstuff-annotation</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
         </dependency>
 
         <dependency>

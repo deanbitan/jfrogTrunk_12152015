@@ -109,9 +109,12 @@ public interface UserGroupService {
     /**
      * For use with external authentication methods only (CAS\LDAP\SSO) tries to locate a user with the given name. When
      * can't be found a new user will be created. The user will have no defined email, will not be an admin, and will
-     * not have an updatable profile
+     * not have an updatable profile.
      *
+     * @param username      The username to find/create
+     * @param transientUser If true a transient user will be created and will cease to exists when the session ends. If
+     *                      the user already exist in Artifactory users, this flag has no meaning.
      * @return Found\created user
      */
-    UserInfo findOrCreateExternalAuthUser(String username, boolean createIfNotFound);
+    UserInfo findOrCreateExternalAuthUser(String username, boolean transientUser);
 }

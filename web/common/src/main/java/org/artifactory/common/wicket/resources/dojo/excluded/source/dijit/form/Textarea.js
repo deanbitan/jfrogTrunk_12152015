@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.form.Textarea"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.form.Textarea"] = true;
 dojo.provide("dijit.form.Textarea");
 
 dojo.require("dijit.form.SimpleTextarea");
@@ -143,8 +134,13 @@ dojo.declare(
 		this.connect(this.textbox, "onscroll", this._onInput);
 		this.connect(this.textbox, "onresize", this._onInput);
 		this.connect(this.textbox, "onfocus", this._onInput); // useful when a previous estimate was off a bit
-		setTimeout(dojo.hitch(this, "resize"), 0);
+		this._setTimeoutHandle = setTimeout(dojo.hitch(this, "resize"), 0);
+	},
+
+	uninitialize: function(){
+		if(this._setTimeoutHandle){
+			clearTimeout(this._setTimeoutHandle);
+		}
+		this.inherited(arguments);
 	}
 });
-
-}

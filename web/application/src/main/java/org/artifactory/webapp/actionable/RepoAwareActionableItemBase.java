@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.actionable;
 
-import com.google.common.collect.Lists;
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
@@ -26,19 +25,18 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
-import org.artifactory.addon.wicket.PropertiesAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.GeneralTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.MetadataTabPanel;
@@ -50,7 +48,7 @@ import org.slf4j.Logger;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         implements RepoAwareActionableItem, TabViewedActionableItem {
@@ -60,7 +58,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
     private final RepoPath repoPath;
 
     protected RepoAwareActionableItemBase(ItemInfo itemInfo) {
-        this.repoPath = new RepoPath(itemInfo.getRepoKey(), itemInfo.getRelPath());
+        this.repoPath = new RepoPathImpl(itemInfo.getRepoKey(), itemInfo.getRelPath());
     }
 
     protected RepoAwareActionableItemBase(RepoPath repoPath) {
@@ -88,11 +86,11 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         return getXmlMetadata(StatsInfo.class);
     }
 
-    public ItemInfo getItemInfo() {
+    public org.artifactory.fs.ItemInfo getItemInfo() {
         return getItemInfo(repoPath);
     }
 
-    public ItemInfo getItemInfo(RepoPath repoPath) {
+    public org.artifactory.fs.ItemInfo getItemInfo(RepoPath repoPath) {
         return getRepoService().getItemInfo(repoPath);
     }
 
@@ -120,7 +118,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         AuthorizationService authService = ContextHelper.get().getAuthorizationService();
         boolean canAdminRepoPath = authService.canAdmin(repoPath);
 
-        tabs.add(new AbstractTab(new Model("General")) {
+        tabs.add(new AbstractTab(new Model<String>("General")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new GeneralTabPanel(panelId, item);
@@ -133,21 +131,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
             tabs.add(new PermissionsTab(item));
         }
 
-        //Add properties panel
-        PropertiesAddon propertiesAddon = getAddonsProvider().addonByType(PropertiesAddon.class);
-
-        ItemInfo info;
-        if (item instanceof FolderActionableItem) {
-            // take the last element if folder compacted compacted
-            info = ((FolderActionableItem) item).getFolderInfo();
-        } else {
-            info = item.getItemInfo();
-        }
-
-        ITab propertiesPanel = propertiesAddon.getPropertiesTabPanel(info);
-        tabs.add(propertiesPanel);
-
-        ItemInfo itemInfo = item.getItemInfo();
+        org.artifactory.fs.ItemInfo itemInfo = item.getItemInfo();
         final RepoPath canonicalRepoPath;
         if ((itemInfo.isFolder()) && (item instanceof FolderActionableItem)) {
             canonicalRepoPath = ((FolderActionableItem) item).getCanonicalPath();
@@ -155,17 +139,13 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
             canonicalRepoPath = item.getRepoPath();
         }
 
-        final List<String> typeList = getMetadataNames(canonicalRepoPath);
-        //Display the metadata tab only if there is any associated with the item
-        if (!typeList.isEmpty()) {
-            // add metadata view panel
-            tabs.add(new AbstractTab(new Model("Metadata")) {
-                @Override
-                public Panel getPanel(String panelId) {
-                    return new MetadataTabPanel(panelId, canonicalRepoPath, typeList);
-                }
-            });
-        }
+        // add metadata view panel
+        tabs.add(new AbstractTab(new Model<String>("Metadata")) {
+            @Override
+            public Panel getPanel(String panelId) {
+                return new MetadataTabPanel(panelId, item, canonicalRepoPath);
+            }
+        });
 
         if (canAdminRepoPath) {
             //Add watchers tab
@@ -198,25 +178,11 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         return repoPath.hashCode();
     }
 
-    /**
-     * @return a list of metadata type names that are associated with this item
-     */
-    private List<String> getMetadataNames(RepoPath canonicalRepoPath) {
-        try {
-            return getRepoService().getMetadataNames(canonicalRepoPath);
-        } catch (RepositoryRuntimeException rre) {
-            String repoPathId = canonicalRepoPath.getId();
-            log.error("Error while retrieving metadata names for '{}': {}", repoPathId, rre.getMessage());
-            log.debug("Error while retrieving metadata names for '" + repoPathId + "'.", rre);
-            return Lists.newArrayList();
-        }
-    }
-
     private static class PermissionsTab extends BaseTab {
         private final RepoAwareActionableItem item;
 
         private PermissionsTab(RepoAwareActionableItem item) {
-            super(new Model("Effective Permissions"));
+            super(new Model<String>("Effective Permissions"));
             this.item = item;
         }
 

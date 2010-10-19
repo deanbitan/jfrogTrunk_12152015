@@ -19,11 +19,12 @@
 package org.artifactory.rest.util;
 
 import org.apache.commons.httpclient.HttpStatus;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.rest.constant.BuildRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.SearchResultBase;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.joda.time.format.ISODateTimeFormat;
@@ -38,6 +39,10 @@ import java.net.URLDecoder;
  * @author yoavl
  */
 public abstract class RestUtils {
+
+    private RestUtils() {
+        // utility class
+    }
 
     public static String getServletContextUrl(HttpServletRequest request) {
         return HttpUtils.getServletContextUrl(request);
@@ -121,6 +126,16 @@ public abstract class RestUtils {
             int index = relPath.length() - 1;
             relPath = relPath.substring(0, index);
         }
-        return new RepoPath(repoKey, relPath);
+        return new RepoPathImpl(repoKey, relPath);
+    }
+
+    public static String newlineResp(Appendable format, Object... args) {
+        Appendable appended = null;
+        try {
+            appended = format.append("\n");
+        } catch (IOException e) {
+            throw new RuntimeException("Could not append string", e);
+        }
+        return String.format(appended.toString(), args);
     }
 }

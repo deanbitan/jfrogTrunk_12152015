@@ -28,7 +28,10 @@ import java.io.File;
  * @author freds
  * @date Nov 9, 2008
  */
-public class BackupUtils {
+public abstract class BackupUtils {
+    private BackupUtils() {
+        // utility class
+    }
 
     public static ArtifactoryVersion findVersion(File backupFolder) {
         if (backupFolder == null || !backupFolder.exists()) {

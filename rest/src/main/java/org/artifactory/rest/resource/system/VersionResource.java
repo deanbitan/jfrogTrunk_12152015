@@ -33,6 +33,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import java.util.List;
 
 /**
@@ -57,7 +58,7 @@ public class VersionResource {
      * @return The artifactory version and enabled addons
      */
     @GET
-    @Produces({SystemRestConstants.MT_VERSION_RESULT})
+    @Produces({SystemRestConstants.MT_VERSION_RESULT, MediaType.APPLICATION_JSON})
     public VersionRestResult getArtifactoryVersion() {
         VersionInfo versionInfo = centralConfigService.getVersionInfo();
         List<String> addonNames = addonsManager.getEnabledAddonNames();

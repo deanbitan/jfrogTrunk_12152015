@@ -18,7 +18,7 @@
 
 package org.artifactory.api.request;
 
-import org.artifactory.api.md.Properties;
+import org.artifactory.md.Properties;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
 
@@ -109,10 +109,6 @@ public class ArtifactoryRequestTest extends ArtifactoryHomeBoundTest {
 
             public String getHeader(String headerName) {
                 return null;
-            }
-
-            public boolean isWebdav() {
-                return false;
             }
 
             public String getUri() {

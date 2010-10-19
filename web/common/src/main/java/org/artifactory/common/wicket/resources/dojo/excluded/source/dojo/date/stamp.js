@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dojo.date.stamp"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dojo.date.stamp"] = true;
 dojo.provide("dojo.date.stamp");
 
 // Methods to convert dates to or from a wire (string) format using well-known conventions
@@ -61,12 +52,10 @@ dojo.date.stamp.fromISOString = function(/*String*/formattedString, /*Number?*/d
 		if(defaultTime){
 			// mix in defaultTime.  Relatively expensive, so use || operators for the fast path of defaultTime === 0
 			defaultTime = new Date(defaultTime);
-			dojo.map(["FullYear", "Month", "Date", "Hours", "Minutes", "Seconds", "Milliseconds"], function(prop){
+			dojo.forEach(dojo.map(["FullYear", "Month", "Date", "Hours", "Minutes", "Seconds", "Milliseconds"], function(prop){
 				return defaultTime["get" + prop]();
-			}).forEach(function(value, index){
-				if(match[index] === undefined){
-					match[index] = value;
-				}
+			}), function(value, index){
+				match[index] = match[index] || value;
 			});
 		}
 		result = new Date(match[0]||1970, match[1]||0, match[2]||1, match[3]||0, match[4]||0, match[5]||0, match[6]||0); //TODO: UTC defaults
@@ -145,6 +134,4 @@ dojo.date.stamp.toISOString = function(/*Date*/dateObject, /*dojo.date.stamp.__O
 		formattedDate.push(time);
 	}
 	return formattedDate.join('T'); // String
-}
-
 }

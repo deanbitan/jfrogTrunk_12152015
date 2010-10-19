@@ -24,7 +24,7 @@ import org.artifactory.webapp.actionable.ActionableItem;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public interface HierarchicActionableItem extends ActionableItem, Compactable {
 

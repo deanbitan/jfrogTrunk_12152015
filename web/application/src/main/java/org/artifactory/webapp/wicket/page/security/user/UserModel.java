@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class UserModel extends ProfileModel {
 
@@ -63,11 +63,6 @@ public class UserModel extends ProfileModel {
         lastLoginTimeMillis = userInfo.getLastLoginTimeMillis();
         lastAccessTimeMillis = userInfo.getLastAccessTimeMillis();
         statuses = new HashMap<String, Status>();
-        if (!disableInternalPassword) {
-            //setStatus(Status.NOT_LDAP_USER);
-        } else {
-            //setStatus(Status.UNKNOWN);
-        }
     }
 
     public void removeGroup(UserInfo.UserGroupInfo group) {

@@ -19,9 +19,9 @@
 package org.artifactory.api.repo;
 
 import org.artifactory.api.artifact.UnitInfo;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 
@@ -37,16 +37,16 @@ public interface DeployService {
 
     @Request
     @Lock(transactional = true)
-    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy) throws RepoRejectionException;
+    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy) throws RepoRejectException;
 
     @Request
     @Lock(transactional = true)
     void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo,
-            File fileToDeploy, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy)
-            throws RepoRejectionException;
+                File fileToDeploy, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy)
+            throws RepoRejectException;
 
     @Request
-    void deployBundle(File bundle, RealRepoDescriptor targetRepo, StatusHolder status);
+    void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status);
 
     /**
      * Validates pom before deployment.

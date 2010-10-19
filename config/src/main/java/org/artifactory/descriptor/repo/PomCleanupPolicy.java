@@ -26,8 +26,8 @@ import javax.xml.bind.annotation.XmlEnumValue;
  */
 @XmlEnum(String.class)
 public enum PomCleanupPolicy {
-    @XmlEnumValue("discard_active_reference")discard_active_reference("Discard Active References"),
-    @XmlEnumValue("discard_any_reference")discard_any_reference("Discard Any References"),
+    @XmlEnumValue("discard_active_reference")discard_active_reference("Discard Active Reference"),
+    @XmlEnumValue("discard_any_reference")discard_any_reference("Discard Any Reference"),
     @XmlEnumValue("nothing")nothing("Nothing");
 
     private String message;

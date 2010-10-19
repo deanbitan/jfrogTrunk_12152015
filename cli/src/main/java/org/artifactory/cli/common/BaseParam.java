@@ -20,12 +20,14 @@ package org.artifactory.cli.common;
 
 import org.artifactory.util.PathUtils;
 
+import java.io.Serializable;
+
 /**
  * Represents a basic parameter of the CLI
  *
  * @author Noam Tenne
  */
-public class BaseParam implements Param {
+public class BaseParam implements Param, Serializable {
     /**
      * Parameter name
      */

@@ -23,10 +23,13 @@ import org.apache.wicket.markup.html.form.IChoiceRenderer;
 /**
  * @author Yoav Aharoni
  */
-public class StringChoiceRenderer implements IChoiceRenderer {
+public class StringChoiceRenderer<T> implements IChoiceRenderer<T> {
     private static final StringChoiceRenderer INSTANCE = new StringChoiceRenderer();
 
     public Object getDisplayValue(Object object) {
+        if (object == null) {
+            return "";
+        }
         return object.toString();
     }
 
@@ -34,7 +37,8 @@ public class StringChoiceRenderer implements IChoiceRenderer {
         return String.valueOf(index);
     }
 
-    public static StringChoiceRenderer getInstance() {
-        return INSTANCE;
+    @SuppressWarnings({"unchecked"})
+    public static <T> StringChoiceRenderer<T> getInstance() {
+        return (StringChoiceRenderer<T>) INSTANCE;
     }
 }

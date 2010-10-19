@@ -18,7 +18,8 @@
 
 package org.artifactory.api.fs;
 
-import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -42,7 +43,7 @@ public class ChecksumInfoTest {
     }
 
     public void matchNullOriginal() {
-        ChecksumInfo info = new ChecksumInfo(ChecksumType.sha1, null, "321");
+        ChecksumInfo info = new org.artifactory.checksum.ChecksumInfo(ChecksumType.sha1, null, "321");
         assertFalse(info.checksumsMatch(), "Checksums shouldn't if one is null");
     }
 

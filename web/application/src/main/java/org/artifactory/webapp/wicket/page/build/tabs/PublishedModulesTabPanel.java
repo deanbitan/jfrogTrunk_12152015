@@ -75,7 +75,7 @@ public class PublishedModulesTabPanel extends Panel {
         List<IColumn> columns = new ArrayList<IColumn>();
         columns.add(new AbstractColumn(new Model("Module ID"), "id") {
             public void populateItem(Item cellItem, String componentId, IModel rowModel) {
-                Module module = (Module) cellItem.getParent().getParent().getModelObject();
+                Module module = (Module) cellItem.getParent().getParent().getDefaultModelObject();
                 cellItem.add(getModuleNameLink(componentId, module.getId()));
             }
         });

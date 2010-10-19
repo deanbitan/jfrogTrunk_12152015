@@ -26,7 +26,7 @@ import org.artifactory.version.ArtifactoryVersion;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 @XStreamAlias("import-settings")
 public class ImportSettings extends BaseSettings {

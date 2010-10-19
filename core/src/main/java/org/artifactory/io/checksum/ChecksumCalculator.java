@@ -19,7 +19,7 @@
 package org.artifactory.io.checksum;
 
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.checksum.ChecksumType;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,7 +31,10 @@ import java.io.InputStream;
  *
  * @author Yossi Shaul
  */
-public class ChecksumCalculator {
+public abstract class ChecksumCalculator {
+    private ChecksumCalculator() {
+        // utility class
+    }
 
     /**
      * Calculate checksums for all known checksum types.

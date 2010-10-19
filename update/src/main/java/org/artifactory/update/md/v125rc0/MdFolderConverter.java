@@ -18,7 +18,8 @@
 
 package org.artifactory.update.md.v125rc0;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataConverterUtils;
 import org.artifactory.update.md.MetadataType;
@@ -49,7 +50,7 @@ public class MdFolderConverter implements MetadataConverter {
         // In this version the relPath is the father and name need to be added
         if (rootElement.getChild(ARTIFACTORY_NAME) != null) {
             String name = rootElement.getChildText(ARTIFACTORY_NAME);
-            repoPath = new RepoPath(repoPath, name);
+            repoPath = new RepoPathImpl(repoPath, name);
         }
         List<Element> toMove = MetadataConverterUtils.extractExtensionFields(rootElement);
         MetadataConverterUtils.addNewContent(rootElement, repoPath, toMove);

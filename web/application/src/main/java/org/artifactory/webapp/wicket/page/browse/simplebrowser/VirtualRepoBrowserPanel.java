@@ -18,6 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.browse.simplebrowser;
 
+import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.OrderByBorder;
@@ -36,25 +38,18 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.repo.VirtualRepoItem;
+import org.artifactory.api.repo.VirtualBrowsableItem;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.mime.MimeType;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
-import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 /**
  * @author Yoav Landman
@@ -62,8 +57,6 @@ import java.util.TreeMap;
 public class VirtualRepoBrowserPanel extends TitledPanel {
 
     private static final long serialVersionUID = 1L;
-
-    private SortedMap<String, DirectoryItem> dirItems = new TreeMap<String, DirectoryItem>();
 
     @SpringBean
     private RepositoryService repoService;
@@ -73,68 +66,67 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
         add(new CssClass("virtual-repo-browser"));
         add(new BreadCrumbsPanel("breadCrumbs", repoPath.getId()));
 
-        final String virtualRepoKey = repoPath.getRepoKey();
-
         final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
         //Try to get a virtual repo
-        VirtualRepoDescriptor virtualRepo = repoService.virtualRepoDescriptorByKey(virtualRepoKey);
-        if (virtualRepo == null) {
+        List<VirtualBrowsableItem> browsableChildren = repoService.getVirtualBrowsableChildren(repoPath, true);
+        if (browsableChildren == null) {
             //Return a 404
             throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }
 
-        //Collect the items under the virtual directory viewed from all local repositories
-        List<VirtualRepoItem> result = repoService.getVirtualRepoItems(repoPath);
-
-        for (VirtualRepoItem item : result) {
-            DirectoryItem directoryItem = new DirectoryItem(item);
-            dirItems.put(item.getPath(), directoryItem);
-        }
-
-        //Finally, add the '..' link if necessary
-        addUpLink(repoPath);
+        final String repoKey = repoPath.getRepoKey();
 
         //Add a table for the dirItems
-        final DirectoryItemsDataProvider dataProvider = new DirectoryItemsDataProvider("name");
-        final DataView table = new DataView("items", dataProvider) {
-            //Add each item with its icon and link
-            @Override
-            protected void populateItem(final Item item) {
-                final DirectoryItem dirItem = (DirectoryItem) item.getModelObject();
-                String directoryPath = dirItem.getPath();
-                if ("/".equals(directoryPath)) {
-                    //Do not repeat / twice for root repo link
-                    directoryPath = "";
-                }
-                String name = dirItem.getName();
-                AbstractLink link;
-                if (DirectoryItem.UP.equals(directoryPath)) {
-                    //Up link to the list of repositories
-                    link = new BookmarkablePageLink("link", SimpleBrowserRootPage.class);
-                } else {
-                    String href = hrefPrefix + "/" + virtualRepoKey + "/" + directoryPath;
-                    link = new ExternalLink("link", href, name);
-                }
-                item.add(link);
-                link.add(new CssClass(dirItem.getCssClass()));
+        DirectoryItemsDataProvider dataProvider = new DirectoryItemsDataProvider(Lists.newArrayList(browsableChildren));
+        DataView table = new DataView<VirtualBrowsableItem>("items", dataProvider) {
 
-                final List<String> repoKeys = dirItem.getRepoKeys();
-                final String finalDirectoryPath = directoryPath;
-                ListView repositoriesList = new ListView("repositoriesList", repoKeys) {
+            @Override
+            protected void populateItem(final Item<VirtualBrowsableItem> listItem) {
+                VirtualBrowsableItem browsableItem = listItem.getModelObject();
+
+                String relativePath = browsableItem.getRelativePath();
+                if ("/".equals(relativePath)) {
+                    //Do not repeat / twice for root repo link
+                    relativePath = "";
+                }
+
+                String itemName = browsableItem.getName();
+                AbstractLink itemLink;
+                if (VirtualBrowsableItem.UP.equals(relativePath)) {
+                    //Up link to the list of repositories
+                    itemLink = new BookmarkablePageLink<Class>("link", SimpleBrowserRootPage.class);
+                } else {
+                    StringBuilder hrefBuilder = new StringBuilder(hrefPrefix).append("/").append(repoKey).
+                            append("/").append(relativePath);
+
+                    //Make sure to add a slash at the end of the URI so we always reach the browser
+                    if (browsableItem.isFolder() &&
+                            ((!StringUtils.isBlank(relativePath)) && (!StringUtils.endsWith(relativePath, "/")))) {
+                        hrefBuilder.append("/");
+                    }
+                    itemLink = new ExternalLink("link", hrefBuilder.toString(), itemName);
+                }
+                itemLink.add(new CssClass(getCssClass(browsableItem)));
+                listItem.add(itemLink);
+
+                final List<String> repoKeys = browsableItem.getRepoKeys();
+                final String finalRelativePath = relativePath;
+                ListView<String> repositoriesList = new ListView<String>("repositoriesList", repoKeys) {
+
                     @Override
-                    protected void populateItem(ListItem item) {
-                        String key = (String) item.getModelObject();
-                        String href = hrefPrefix + "/" + key + "/" + finalDirectoryPath;
-                        ExternalLink link = new ExternalLink("repoKey", href, key);
-                        link.add(new CssClass("item-link"));
-                        item.add(link);
+                    protected void populateItem(ListItem<String> repoKeyListItem) {
+                        String repoItemKey = repoKeyListItem.getModelObject();
+                        String localRepoHref = hrefPrefix + "/" + repoItemKey + "/" + finalRelativePath;
+                        ExternalLink repoItemLink = new ExternalLink("repoKey", localRepoHref, repoItemKey);
+                        repoItemLink.add(new CssClass("item-link"));
+                        repoKeyListItem.add(repoItemLink);
                     }
                 };
-                item.add(repositoriesList);
-                item.add(new AttributeModifier("class", true, new AbstractReadOnlyModel() {
+                listItem.add(repositoriesList);
+                listItem.add(new AttributeModifier("class", true, new AbstractReadOnlyModel() {
                     @Override
                     public Object getObject() {
-                        return (item.getIndex() % 2 == 0) ? "even" : "odd";
+                        return (listItem.getIndex() % 2 == 0) ? "even" : "odd";
                     }
                 }));
             }
@@ -144,147 +136,58 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
         add(table);
     }
 
-    private void addUpLink(RepoPath repoPath) {
-        final String path = repoPath.getPath();
-        DirectoryItem upDirItem;
-        if (StringUtils.hasLength(path)) {
-            int upDirIdx = path.lastIndexOf('/');
-            String upDirPath;
-            if (upDirIdx > 0) {
-                upDirPath = path.substring(0, upDirIdx);
-            } else {
-                upDirPath = "";
-            }
-            upDirItem = new DirectoryItem(DirectoryItem.UP, upDirPath, true, null);
+    private String getCssClass(VirtualBrowsableItem browsableItem) {
+        String cssClass;
+        if (browsableItem.isFolder()) {
+            cssClass = "folder";
         } else {
-            // up link for the root repo dir
-            upDirItem = new DirectoryItem(DirectoryItem.UP, DirectoryItem.UP, true, null);
+            String name = browsableItem.getName();
+            if (NamingUtils.getMimeType(name).isArchive()) {
+                cssClass = "jar";
+            } else if (name.equals(VirtualBrowsableItem.UP)) {
+                cssClass = "parent";
+            } else if (NamingUtils.isPom(name)) {
+                cssClass = "pom";
+            } else if (NamingUtils.isXml(name)) {
+                cssClass = "xml";
+            } else {
+                cssClass = "doc";
+            }
         }
-        dirItems.put(DirectoryItem.UP, upDirItem);
+
+        return cssClass;
     }
 
-    public static class DirectoryItem implements Serializable, Comparable {
-        private static final long serialVersionUID = 1L;
+    private static class DirectoryItemsDataProvider extends SortableDataProvider<VirtualBrowsableItem> {
+        private List<VirtualBrowsableItem> browsableChildren;
 
-        static final String UP = "..";
-
-        private final String name;
-        private final String path;
-        private final boolean folder;
-        private final String cssClass;
-        private final List<String> repoKeys;
-
-        private DirectoryItem(VirtualRepoItem child) {
-            this(child.getName(), child.getPath(), child.isFolder(), child.getRepoKeys());
-        }
-
-        private DirectoryItem(String name, String path, boolean folder, List<String> repoKeys) {
-            this.name = name;
-            this.folder = folder;
-            // TODO: Duplicate from LocalRepoBrowserPanel
-            if (folder) {
-                cssClass = "folder";
-                //DO not change the path for upo, as it is later used in comparissons
-                this.path = UP.equals(path) ? path : path + "/";
-            } else {
-                this.path = path;
-                MimeType ct = NamingUtils.getMimeType(name);
-                if (ct.isArchive()) {
-                    cssClass = "jar";
-                } else if (name.equals(UP)) {
-                    cssClass = "parent";
-                } else if (NamingUtils.isPom(name)) {
-                    cssClass = "pom";
-                } else if (ct.isXml()) {
-                    cssClass = "xml";
-                } else {
-                    cssClass = "doc";
-                }
-            }
-            if (repoKeys != null) {
-                this.repoKeys = repoKeys;
-            } else {
-                this.repoKeys = new ArrayList<String>();
-            }
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getPath() {
-            return path;
-        }
-
-        public boolean isFolder() {
-            return folder;
-        }
-
-        public String getCssClass() {
-            return cssClass;
-        }
-
-        public List<String> getRepoKeys() {
-            return repoKeys;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            DirectoryItem item = (DirectoryItem) o;
-            return path.equals(item.path);
-        }
-
-        @Override
-        public int hashCode() {
-            return path.hashCode();
-        }
-
-        public int compareTo(Object o) {
-            DirectoryItem other = (DirectoryItem) o;
-            if (this.name.equals(UP)) {
-                // up should always appear first
-                return -1;
-            } else {
-                return this.path.compareTo(other.path);
-            }
-        }
-    }
-
-    private class DirectoryItemsDataProvider extends SortableDataProvider {
-
-        private DirectoryItemsDataProvider(String prop) {
+        private DirectoryItemsDataProvider(List<VirtualBrowsableItem> browsableChildren) {
+            this.browsableChildren = browsableChildren;
             //Set the initial sort direction
             ISortState state = getSortState();
-            state.setPropertySortOrder(prop, ISortState.ASCENDING);
+            state.setPropertySortOrder("name", ISortState.ASCENDING);
         }
 
-        public Iterator iterator(int first, int count) {
-            List<DirectoryItem> data = new ArrayList<DirectoryItem>(dirItems.values());
+        public Iterator<? extends VirtualBrowsableItem> iterator(int first, int count) {
             SortParam sortParam = getSort();
             if (sortParam.isAscending()) {
-                Collections.sort(data);
+                Collections.sort(browsableChildren);
             } else {
-                Collections.sort(data, Collections.reverseOrder());
+                Collections.sort(browsableChildren, Collections.reverseOrder());
                 // now put the up dir first
-                DirectoryItem up = data.remove(data.size() - 1);
-                data.add(0, up);
+                VirtualBrowsableItem up = browsableChildren.remove(browsableChildren.size() - 1);
+                browsableChildren.add(0, up);
             }
-            List<DirectoryItem> list = data.subList(first, first + count);
+            List<VirtualBrowsableItem> list = browsableChildren.subList(first, first + count);
             return list.iterator();
         }
 
-        public int size() {
-            return dirItems.size();
+        public IModel<VirtualBrowsableItem> model(VirtualBrowsableItem object) {
+            return new Model<VirtualBrowsableItem>(object);
         }
 
-        public IModel model(Object object) {
-            return new Model((DirectoryItem) object);
+        public int size() {
+            return browsableChildren.size();
         }
     }
 }

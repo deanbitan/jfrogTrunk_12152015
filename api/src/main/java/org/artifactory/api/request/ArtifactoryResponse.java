@@ -18,7 +18,7 @@
 
 package org.artifactory.api.request;
 
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.common.StatusHolder;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -38,9 +38,9 @@ public interface ArtifactoryResponse {
 
     void setEtag(String etag);
 
-    void setContentLength(int length);
+    void setContentLength(long length);
 
-    int getContentLength();
+    long getContentLength();
 
     boolean isContentLengthSet();
 
@@ -58,7 +58,7 @@ public interface ArtifactoryResponse {
 
     void sendStream(InputStream is) throws IOException;
 
-    void sendOk();
+    void sendSuccess();
 
     int getStatus();
 

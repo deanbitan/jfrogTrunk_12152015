@@ -28,18 +28,18 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.cache.ArtifactoryCache;
 import org.artifactory.api.cache.CacheService;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.mail.MailService;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.*;
-import org.artifactory.api.util.Pair;
+import org.artifactory.api.util.SerializablePair;
 import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.config.ConfigurationException;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -51,6 +51,7 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.Repo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.security.interceptor.SecurityConfigurationChangesInterceptors;
@@ -74,12 +75,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.jcr.Session;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -475,18 +471,16 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     public String resetPassword(String userName, String remoteAddress, String resetPageUrl) {
-        boolean foundUser = false;
         UserInfo userInfo = null;
         try {
             userInfo = findUser(userName);
-            foundUser = true;
         } catch (UsernameNotFoundException e) {
             //Alert in the log when trying to reset a password of an unknown user
             log.warn("An attempt has been made to reset a password of unknown user: {}", userName);
         }
 
         //If the user is found, and has an email address
-        if (foundUser && (userInfo != null) && (!StringUtils.isEmpty(userInfo.getEmail()))) {
+        if (userInfo != null && !StringUtils.isEmpty(userInfo.getEmail())) {
 
             //If the user hasn't got sufficient permissions
             if (!userInfo.isUpdatableProfile()) {
@@ -582,7 +576,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
-    public Pair<Date, String> getPasswordResetKeyInfo(String username) {
+    public SerializablePair<Date, String> getPasswordResetKeyInfo(String username) {
         UserInfo userInfo = findUser(username);
         String passwordKey = userInfo.getGenPasswordKey();
         if (StringUtils.isEmpty(passwordKey)) {
@@ -603,10 +597,10 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
         Date date = new Date(Long.parseLong(time));
 
-        return new Pair<Date, String>(date, ip);
+        return new SerializablePair<Date, String>(date, ip);
     }
 
-    public Pair<String, Long> getUserLastLoginInfo(String username) {
+    public SerializablePair<String, Long> getUserLastLoginInfo(String username) {
         UserInfo userInfo;
         try {
             userInfo = findUser(username);
@@ -616,30 +610,33 @@ public class SecurityServiceImpl implements InternalSecurityService {
             return null;
         }
 
-        Pair<String, Long> pair = null;
+        SerializablePair<String, Long> pair = null;
         String lastLoginClientIp = userInfo.getLastLoginClientIp();
         long lastLoginTimeMillis = userInfo.getLastLoginTimeMillis();
         if (!StringUtils.isEmpty(lastLoginClientIp) && (lastLoginTimeMillis != 0)) {
-            pair = new Pair<String, Long>(lastLoginClientIp, lastLoginTimeMillis);
+            pair = new SerializablePair<String, Long>(lastLoginClientIp, lastLoginTimeMillis);
         }
         return pair;
     }
 
     public void updateUserLastLogin(String username, String clientIp, long loginTimeMillis) {
-        UserInfo userInfo;
-        try {
-            userInfo = findUser(username);
-        } catch (UsernameNotFoundException e) {
+        /**
+         * Avoid throwing a UsernameNotFoundException by check if the user exists, since we are in an an
+         * async-transactional method, and any unchecked exception thrown will fire a rollback and an ugly exception
+         * stacktrace print
+         */
+        if (!userGroupManager.userExists(username)) {
             // user not found (might be a transient user)
             log.trace("Could not update non-exiting username: {}'.", username);
             return;
         }
+        UserInfo userInfo = findUser(username);
         userInfo.setLastLoginTimeMillis(loginTimeMillis);
         userInfo.setLastLoginClientIp(clientIp);
         updateUser(userInfo);
     }
 
-    public Pair<String, Long> getUserLastAccessInfo(String username) {
+    public SerializablePair<String, Long> getUserLastAccessInfo(String username) {
         UserInfo userInfo;
         try {
             userInfo = findUser(username);
@@ -648,17 +645,17 @@ public class SecurityServiceImpl implements InternalSecurityService {
             throw new IllegalArgumentException("Could not find specified username.", e);
         }
 
-        Pair<String, Long> pair = null;
+        SerializablePair<String, Long> pair = null;
         String lastAccessClientIp = userInfo.getLastAccessClientIp();
         long lastAccessTimeMillis = userInfo.getLastAccessTimeMillis();
         if (!StringUtils.isEmpty(lastAccessClientIp) && (lastAccessTimeMillis != 0)) {
-            pair = new Pair<String, Long>(lastAccessClientIp, lastAccessTimeMillis);
+            pair = new SerializablePair<String, Long>(lastAccessClientIp, lastAccessTimeMillis);
         }
         return pair;
     }
 
     public void updateUserLastAccess(String username, String clientIp, long accessTimeMillis,
-            long acessUpdatesResolutionMillis) {
+                                     long acessUpdatesResolutionMillis) {
         UserInfo userInfo;
         try {
             userInfo = findUser(username);
@@ -680,12 +677,12 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return httpSsoSettings != null && httpSsoSettings.isHttpSsoProxied();
     }
 
-    public boolean isNoAutoUserCreation() {
+    public boolean isNoHttpSsoAutoUserCreation() {
         HttpSsoSettings httpSsoSettings = centralConfig.getDescriptor().getSecurity().getHttpSsoSettings();
         return httpSsoSettings != null && httpSsoSettings.isNoAutoUserCreation();
     }
 
-    public String getRemoteUserRequestVariable() {
+    public String getHttpSsoRemoteUserRequestVariable() {
         HttpSsoSettings httpSsoSettings = centralConfig.getDescriptor().getSecurity().getHttpSsoSettings();
         if (httpSsoSettings == null) {
             return null;
@@ -864,7 +861,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     private boolean hasPermissionOnRoot(String repoKey) {
-        RepoPath path = RepoPath.repoRootPath(repoKey);
+        RepoPath path = RepoPathImpl.repoRootPath(repoKey);
         for (ArtifactoryPermission permission : ArtifactoryPermission.values()) {
             Permission artifactoryPermission = permissionFor(permission);
             if (hasPermission(path, artifactoryPermission, false)) {
@@ -923,7 +920,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     private List<PermissionTargetInfo> getPermissionTargets(ArtifactoryPermission artifactoryPermission,
-            SimpleUser user) {
+                                                            SimpleUser user) {
         Permission permission = permissionFor(artifactoryPermission);
         return getPermissionTargetsByPermission(permission, user);
     }
@@ -1050,7 +1047,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         importSecurityXml(settings, status);
     }
 
-    private void importSecurityXml(ImportSettings settings, StatusHolder status) {
+    private void importSecurityXml(ImportSettings settings, BasicStatusHolder status) {
         //Import the new security definitions
         File baseDir = settings.getBaseDir();
         // First check for security.xml file

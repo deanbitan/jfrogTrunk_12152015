@@ -18,7 +18,6 @@
 
 package org.artifactory.api.search.xml.metadata;
 
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.search.SearchResultBase;
 
@@ -36,7 +35,7 @@ public class MetadataSearchResult extends SearchResultBase {
      * @param itemInfo     Item info
      * @param metadataName Metadata name
      */
-    public MetadataSearchResult(ItemInfo itemInfo, String metadataName, Object metadataObject) {
+    public MetadataSearchResult(org.artifactory.fs.ItemInfo itemInfo, String metadataName, Object metadataObject) {
         super(itemInfo);
         this.metadataName = metadataName;
         this.metadataObject = metadataObject;

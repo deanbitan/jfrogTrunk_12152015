@@ -18,8 +18,8 @@
 
 package org.artifactory.update.md.v130beta6;
 
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.mime.ChecksumType;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataType;

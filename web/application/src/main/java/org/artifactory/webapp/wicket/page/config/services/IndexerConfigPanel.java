@@ -25,7 +25,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.validation.validator.NumberValidator;
+import org.apache.wicket.validation.validator.MinimumValidator;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
@@ -81,13 +81,13 @@ public class IndexerConfigPanel extends TitledActionPanel {
             indexer = new IndexerDescriptor();
         }
 
-        setModel(new CompoundPropertyModel(indexer));
+        setDefaultModel(new CompoundPropertyModel(indexer));
 
         add(new StyledCheckbox("enabled"));
         add(new SchemaHelpBubble("enabled.help"));
 
-        final TextField indexingIntervalHours = new TextField("indexingIntervalHours", Integer.class);
-        indexingIntervalHours.add(new NumberValidator.MinimumValidator(1));
+        final TextField<Integer> indexingIntervalHours = new TextField<Integer>("indexingIntervalHours", Integer.class);
+        indexingIntervalHours.add(new MinimumValidator<Integer>(1));
         add(indexingIntervalHours);
         add(new SchemaHelpBubble("indexingIntervalHours.help"));
 

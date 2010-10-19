@@ -21,7 +21,7 @@ package org.artifactory.schedule;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class ArtifactorySchedulerFactoryBean extends SchedulerFactoryBean {
 

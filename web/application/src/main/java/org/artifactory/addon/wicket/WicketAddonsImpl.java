@@ -58,12 +58,7 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderInfo;
-import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.md.Properties;
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.search.SearchService;
+import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
@@ -75,9 +70,14 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.collapsible.DisabledCollapsibleBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
+import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.PlaceHolder;
+import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.common.wicket.component.links.TitledAjaxLink;
+import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.EditValueButtonRefreshBehavior;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
@@ -93,6 +93,12 @@ import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupPopulatorStrategies;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
+import org.artifactory.descriptor.security.sso.CrowdSettings;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.FolderInfo;
+import org.artifactory.fs.ItemInfo;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.action.ItemAction;
@@ -104,6 +110,7 @@ import org.artifactory.webapp.wicket.page.base.LogoutLink;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.BaseBuildsTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildDependencyActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildTabActionableItem;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.PropertiesPanel;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildSearchResultsPanel;
@@ -144,14 +151,17 @@ import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Module;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static java.lang.String.format;
-import static org.artifactory.addon.wicket.Addon.*;
+import static org.artifactory.addon.wicket.AddonType.*;
 
 /**
  * Default implementation of the addons interface. Represents a normal execution of artifactory.
@@ -163,7 +173,7 @@ import static org.artifactory.addon.wicket.Addon.*;
  */
 @org.springframework.stereotype.Component
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesAddon, SearchAddon,
-        WatchAddon, WebstartWebAddon, HttpSsoAddon, LdapGroupWebAddon, BuildAddon {
+        WatchAddon, WebstartWebAddon, SsoAddon, LdapGroupWebAddon, BuildAddon, LicensesWebAddon {
 
     @Autowired
     private CentralConfigService centralConfigService;
@@ -185,7 +195,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return "Artifactory@" + serverName + " :: " + page.getPageName();
     }
 
-    public MenuNode getSecurityMenuNode(WebstartWebAddon webstartAddon, HttpSsoAddon httpSsoAddon) {
+    public MenuNode getSecurityMenuNode(WebstartWebAddon webstartAddon, SsoAddon ssoAddon) {
         MenuNode security = new MenuNode("Security");
         security.addChild(new MenuNode("General", SecurityGeneralConfigPage.class));
         security.addChild(new MenuNode("Users", UsersPage.class));
@@ -193,19 +203,22 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         security.addChild(new MenuNode("Permissions", AclsPage.class));
         security.addChild(new MenuNode("LDAP Settings", LdapsListPage.class));
         security.addChild(webstartAddon.getKeyPairMenuNode());
-        security.addChild(httpSsoAddon.getHttpSsoMenuNode("HTTP SSO"));
+        security.addChild(ssoAddon.getHttpSsoMenuNode("HTTP SSO"));
+        security.addChild(ssoAddon.getCrowdAddonMenuNode("Crowd SSO"));
         return security;
     }
 
-    public MenuNode getConfigurationMenuNode(PropertiesAddon propertiesAddon) {
+    public MenuNode getConfigurationMenuNode(PropertiesAddon propertiesAddon, LicensesWebAddon licensesWebAddon) {
         MenuNode adminConfiguration = new MenuNode("Configuration");
         adminConfiguration.addChild(new MenuNode("General", GeneralConfigPage.class));
         adminConfiguration.addChild(new MenuNode("Repositories", RepositoryConfigPage.class));
+        LicensesWebAddon licensesAddon = addonsManager.addonByType(LicensesWebAddon.class);
+        adminConfiguration.addChild(licensesAddon.getLicensesMenuNode("Licenses"));
         adminConfiguration.addChild(propertiesAddon.getPropertySetsPage("Property Sets"));
         adminConfiguration.addChild(new MenuNode("Proxies", ProxyConfigPage.class));
         adminConfiguration.addChild(new MenuNode("Mail", MailConfigPage.class));
         if (!(addonsManager instanceof OssAddonsManager)) {
-            adminConfiguration.addChild(new MenuNode("License", LicensePage.class));
+            adminConfiguration.addChild(new MenuNode("Register Pro", LicensePage.class));
         }
         return adminConfiguration;
     }
@@ -215,7 +228,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public TextField getUrlBaseTextField(String id) {
-        TextField urlBaseTextField = new TextField(id);
+        TextField<String> urlBaseTextField = new TextField<String>(id);
         urlBaseTextField.add(new UriValidator("http", "https"));
         return urlBaseTextField;
     }
@@ -271,7 +284,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
                 // send ajax refresh in 5 second and update the latest version with the result
                 latestLabel.add(new UpdateNewsFromCache());
             } else {
-                latestLabel.setModelObject(formatLatestVersion(latestVersion));
+                latestLabel.setDefaultModelObject(formatLatestVersion(latestVersion));
             }
         }
         container.add(latestLabel);
@@ -287,11 +300,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return panel;
     }
 
-    public Panel getBuildSearchResultsPanel(Addon requestingAddon, Build build) {
+    public Panel getBuildSearchResultsPanel(AddonType requestingAddon, Build build) {
         return new BuildSearchResultsPanel(requestingAddon, build);
     }
 
-    public FileInfo getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean) {
+    public org.artifactory.fs.FileInfo getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean) {
         return null;
     }
 
@@ -304,7 +317,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public ITab getPropertiesTabPanel(ItemInfo itemInfo) {
-        return new DisabledAddonTab(new Model("Properties"), PROPERTIES);
+        return new DisabledAddonTab(new Model<String>("Properties"), PROPERTIES);
     }
 
     public ITab getSearchPropertiesTabPanel(FolderInfo folderInfo, List<FileInfo> searchResults) {
@@ -316,7 +329,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public ITab getPropertySearchTabPanel(Page parent, String tabTitle) {
-        return new DisabledAddonTab(new Model(tabTitle), PROPERTIES);
+        return new DisabledAddonTab(new Model<String>(tabTitle), PROPERTIES);
     }
 
     public MenuNode getPropertySetsPage(String nodeTitle) {
@@ -332,7 +345,16 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return propertySetsBorder;
     }
 
-    public Map<RepoPath, Properties> getProperties(Set<RepoPath> repoPaths, String... mandatoryKeys) {
+    public BaseModalPanel getEditPropertyPanel(EditValueButtonRefreshBehavior refreshBehavior, RepoPath path,
+            String predefinedValues) {
+        return null;
+    }
+
+    public Properties getProperties(RepoPath repoPath) {
+        return new PropertiesImpl();
+    }
+
+    public Map<RepoPath, Properties> getProperties(Set<RepoPath> repoPaths) {
         return Maps.newHashMap();
     }
 
@@ -342,9 +364,13 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     public void addProperty(RepoPath repoPath, PropertySet propertySet, Property property, String... values) {
     }
 
+    public Component getTreeItemPropertiesPanel(String panelId, ItemInfo itemInfo) {
+        return new DisabledPropertiesPanel(panelId, panelId);
+    }
+
     public WebMarkupContainer getKeyPairContainer(String wicketId, String virtualRepoKey, boolean isCreate) {
         WebMarkupContainer container = new WebMarkupContainer(wicketId);
-        DropDownChoice keyPairDropDown = new DropDownChoice("keyPair", Collections.emptyList());
+        DropDownChoice<Object> keyPairDropDown = new DropDownChoice<Object>("keyPair", Collections.emptyList());
         keyPairDropDown.setEnabled(false);
         keyPairDropDown.add(new DisabledAddonBehavior(WEBSTART));
         container.add(keyPairDropDown);
@@ -361,7 +387,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public ITab getWatchersTab(String tabTitle, RepoPath repoPath) {
-        return new DisabledAddonTab(new Model(tabTitle), WATCH);
+        return new DisabledAddonTab(new Model<String>(tabTitle), WATCH);
     }
 
     public MarkupContainer getWatchingSinceLabel(String labelId, RepoPath itemRepoPath) {
@@ -373,7 +399,26 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public MenuNode getHttpSsoMenuNode(String nodeName) {
-        return new DisabledAddonMenuNode(nodeName, Addon.SSO);
+        return new DisabledAddonMenuNode(nodeName, AddonType.SSO);
+    }
+
+    public boolean isCrowdAuthenticationSupported(Class<? extends Object> authentication) {
+        return false;
+    }
+
+    public Authentication authenticateCrowd(Authentication authentication) {
+        throw new UnsupportedOperationException("This feature requires the Crowd SSO addon.");
+    }
+
+    public MenuNode getCrowdAddonMenuNode(String nodeName) {
+        return new DisabledAddonMenuNode(nodeName, AddonType.SSO);
+    }
+
+    public void testCrowdConnection(CrowdSettings crowdSettings) throws Exception {
+        throw new UnsupportedOperationException("This feature requires the Crowd SSO addon.");
+    }
+
+    public void logOffSso(HttpServletRequest request, HttpServletResponse response) {
     }
 
     public FieldSetPanel getExportResultPanel(String panelId, ActionableItem item) {
@@ -398,7 +443,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return new DisabledPublishedTab();
     }
 
-    public String getDeleteItemWarningMessage(ItemInfo item, String defaultMessage) {
+    public String getDeleteItemWarningMessage(org.artifactory.fs.ItemInfo item, String defaultMessage) {
         return defaultMessage;
     }
 
@@ -462,11 +507,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         }
     }
 
-    public Set<FileInfo> getArtifactFileInfo(Build build) {
+    public Set<org.artifactory.fs.FileInfo> getArtifactFileInfo(Build build) {
         return Sets.newHashSet();
     }
 
-    public Set<FileInfo> getDependencyFileInfo(Build build, Set<String> scopes) {
+    public Set<org.artifactory.fs.FileInfo> getDependencyFileInfo(Build build, Set<String> scopes) {
         return Sets.newHashSet();
     }
 
@@ -517,6 +562,34 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return services;
     }
 
+    public MenuNode getLicensesMenuNode(String nodeName) {
+        return new DisabledAddonMenuNode(nodeName, AddonType.LICENSES);
+    }
+
+    public ITab getLicensesInfoTab(String title, Build build, boolean hasDeployOnLocal) {
+        return new DisabledAddonTab(new Model<String>(title), AddonType.LICENSES);
+    }
+
+    public LabeledValue getLicenseLabel(String id, RepoPath repoPath) {
+        LabeledValue label = new LabeledValue(id, "");
+        label.setVisible(false);
+        return label;
+    }
+
+    public TitledAjaxLink getEditLicenseLink(String id, RepoPath path, String currentValues,
+            LabeledValue licensesLabel) {
+        return new DisabledTitledAjaxLink(id);
+    }
+
+    public TitledAjaxLink getAddLicenseLink(String id, RepoPath path, String currentValues,
+            LabeledValue licensesLabel) {
+        return new DisabledTitledAjaxLink(id);
+    }
+
+    public TitledAjaxLink getDeleteLink(String id, RepoPath path, String currentValues, FieldSetBorder border) {
+        return new DisabledTitledAjaxLink(id);
+    }
+
     public String getCompanyLogoUrl() {
         String descriptorLogo = centralConfigService.getDescriptor().getLogo();
         if (StringUtils.isNotBlank(descriptorLogo)) {
@@ -554,6 +627,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {
+
         @SpringBean
         private VersionInfoService versionInfoService;
 
@@ -572,7 +646,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
             stop(); // try only once
             String latestVersion = versionInfoService.getLatestVersionFromCache(true);
             if (!VersionInfoService.SERVICE_UNAVAILABLE.equals(latestVersion)) {
-                getComponent().setModelObject(formatLatestVersion(latestVersion));
+                getComponent().setDefaultModelObject(formatLatestVersion(latestVersion));
                 target.addComponent(getComponent());
             }
         }
@@ -615,7 +689,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         @Override
         public void onNewTabItem(Loop.LoopItem item) {
             super.onNewTabItem(item);
-            item.add(new AddonNeededBehavior(Addon.BUILD));
+            item.add(new AddonNeededBehavior(AddonType.BUILD));
         }
     }
 
@@ -632,7 +706,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         @Override
         public void onNewTabItem(Loop.LoopItem item) {
             super.onNewTabItem(item);
-            item.add(new AddonNeededBehavior(Addon.BUILD));
+            item.add(new AddonNeededBehavior(AddonType.BUILD));
         }
     }
 
@@ -640,14 +714,22 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         public DisabledLdapGroupListPanel(String id) {
             super(id);
             add(new CssClass("disabled-panel"));
-            add(new DisabledAddonBehavior(Addon.LDAP));
+            add(new DisabledAddonBehavior(AddonType.LDAP));
             disableAll(this);
         }
     }
 
+    private static class DisabledTitledAjaxLink extends TitledAjaxLink {
+        protected DisabledTitledAjaxLink(String id) {
+            super(id);
+            setVisible(false);
+        }
+
+        public void onClick(AjaxRequestTarget target) {
+        }
+    }
+
     private static class DisabledBuildsTabPanel extends BaseBuildsTabPanel {
-        @SpringBean
-        private SearchService searchService;
 
         /**
          * Main constructor
@@ -673,7 +755,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         }
 
         @Override
-        protected List<BuildTabActionableItem> getArtifactActionableItems(List<BasicBuildInfo> builds) {
+        protected List<BuildTabActionableItem> getArtifactActionableItems(BasicBuildInfo basicInfo) {
             return Lists.newArrayList();
         }
 
@@ -692,4 +774,17 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         container.visitChildren(new SetEnableVisitor(false));
     }
 
+    private static class DisabledPropertiesPanel extends PropertiesPanel {
+
+        public DisabledPropertiesPanel(String id, String nestedPanelId) {
+            super(id);
+            add(new DisabledCollapsibleBehavior());
+            add(new WebMarkupContainer(nestedPanelId));
+        }
+
+        @Override
+        protected Component newToolbar(String id) {
+            return new DisabledAddonHelpBubble(id, PROPERTIES);
+        }
+    }
 }

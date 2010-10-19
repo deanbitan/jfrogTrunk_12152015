@@ -30,6 +30,10 @@ import org.slf4j.Logger;
 public abstract class RequestLogger {
     private static final Logger log = LoggerFactory.getLogger(RequestLogger.class);
 
+    private RequestLogger() {
+        // utility class
+    }
+
     /**
      * Logs a web request
      *
@@ -42,7 +46,7 @@ public abstract class RequestLogger {
      * @param contentLength Response body size
      */
     public static void request(String userAddress, String username, String method, String path, String protocol,
-            int returnCode, int contentLength, long duration) {
+            int returnCode, long contentLength, long duration) {
         RequestEntry requestEntry = new RequestEntry(userAddress, username, method, path, protocol, returnCode,
                 contentLength, duration);
         log.info(requestEntry.toString());

@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public class NonClosingInputStream extends ProxyInputStream {
 

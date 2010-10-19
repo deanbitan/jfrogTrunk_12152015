@@ -18,14 +18,13 @@
 
 package org.artifactory.api.search;
 
-import org.artifactory.api.common.Info;
-import org.artifactory.api.fs.ItemInfo;
+import org.artifactory.common.Info;
 
 /**
  * @author Yoav Landman
  */
 public interface SearchResult extends Info {
-    ItemInfo getItemInfo();
+    org.artifactory.fs.ItemInfo getItemInfo();
 
     String getName();
 

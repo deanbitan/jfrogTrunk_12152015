@@ -19,15 +19,28 @@
 package org.artifactory.api.webdav;
 
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.request.ArtifactoryRequest;
 import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.util.PathUtils;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User: freds Date: Jul 27, 2008 Time: 9:26:56 PM
  */
 public interface WebdavService {
+
+    Set<String> WEBDAV_METHODS = new HashSet<String>() {{
+        add("propfind");
+        add("mkcol");
+        add("move");
+        add("delete");
+        add("options");
+    }};
+    String WEBDAV_METHODS_LIST = PathUtils.collectionToDelimitedString(WEBDAV_METHODS);
+
     /**
      * PROPFIND Method.
      *
@@ -43,6 +56,8 @@ public interface WebdavService {
     void handleDelete(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
 
     void handleOptions(ArtifactoryResponse response) throws IOException;
+
+    void handlePost(ArtifactoryRequest request, ArtifactoryResponse response);
 
     @Lock(transactional = true)
     void handleMove(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;

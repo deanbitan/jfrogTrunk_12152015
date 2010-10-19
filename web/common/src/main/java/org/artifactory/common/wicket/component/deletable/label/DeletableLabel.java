@@ -109,7 +109,7 @@ public abstract class DeletableLabel extends Panel {
 
     private class DeletegeModel extends AbstractReadOnlyModel {
         public Object getObject() {
-            return DeletableLabel.this.getModelObject();
+            return DeletableLabel.this.getDefaultModelObject();
         }
     }
 }

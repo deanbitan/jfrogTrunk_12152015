@@ -46,7 +46,7 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
     private UserGroupService groupService;
 
     public GroupCreateUpdatePanel(CreateUpdateAction action, GroupInfo groupInfo,
-            GroupsListPanel groupsListPanel) {
+                                  GroupsListPanel groupsListPanel) {
         super(action, groupInfo);
         setWidth(440);
 
@@ -119,7 +119,7 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
     }
 
     private GroupInfo getGroupInfo() {
-        GroupInfo groupInfo = (GroupInfo) form.getModelObject();
+        GroupInfo groupInfo = (GroupInfo) form.getDefaultModelObject();
         groupInfo.setGroupName(groupInfo.getGroupName().toLowerCase());
         return groupInfo;
     }

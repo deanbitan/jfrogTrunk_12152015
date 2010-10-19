@@ -20,7 +20,7 @@ package org.artifactory.webapp.wicket.util;
 
 import com.google.common.collect.ImmutableMap;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.DirectoryItem;
+import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -120,7 +120,7 @@ public enum ItemCssClass {
     @Nonnull
     public static ItemCssClass getFileCssClass(String path) {
         ItemCssClass cssClass;
-        if (path.endsWith(DirectoryItem.UP)) {
+        if (path.endsWith(BaseBrowsableItem.UP)) {
             cssClass = parent;
         } else {
             MimeType ct = NamingUtils.getMimeType(path);

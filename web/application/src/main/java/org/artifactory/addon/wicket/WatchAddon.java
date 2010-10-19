@@ -20,8 +20,8 @@ package org.artifactory.addon.wicket;
 
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
-import org.artifactory.addon.AddonFactory;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.addon.Addon;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.action.ItemAction;
 
 /**
@@ -29,7 +29,7 @@ import org.artifactory.webapp.actionable.action.ItemAction;
  *
  * @author Noam Tenne
  */
-public interface WatchAddon extends AddonFactory {
+public interface WatchAddon extends Addon {
 
     /**
      * Returns the watch action object

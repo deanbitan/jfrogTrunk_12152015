@@ -18,19 +18,20 @@
 
 package org.artifactory.addon.wicket;
 
+import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.artifactory.addon.AddonFactory;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderInfo;
-import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.md.Properties;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.addon.Addon;
+import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.EditValueButtonRefreshBehavior;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
+import org.artifactory.fs.ItemInfo;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
 
 import java.util.List;
 import java.util.Map;
@@ -41,7 +42,7 @@ import java.util.Set;
  *
  * @author Noam Tenne
  */
-public interface PropertiesAddon extends AddonFactory {
+public interface PropertiesAddon extends Addon {
 
     /**
      * Returns the properties tab panel within a tab
@@ -58,7 +59,8 @@ public interface PropertiesAddon extends AddonFactory {
      * @param decendents Decendent files of this folder within the search result
      * @return Tab containing the properties search panel
      */
-    ITab getSearchPropertiesTabPanel(final FolderInfo folderInfo, List<FileInfo> decendents);
+    ITab getSearchPropertiesTabPanel(final org.artifactory.fs.FolderInfo folderInfo,
+            List<org.artifactory.fs.FileInfo> decendents);
 
     /**
      * Returns the property search page within a menu node
@@ -97,15 +99,24 @@ public interface PropertiesAddon extends AddonFactory {
     WebMarkupContainer getPropertySetsBorder(String borderId, String dragDropId, RealRepoDescriptor entity,
             List<PropertySet> propertySets);
 
+    BaseModalPanel getEditPropertyPanel(EditValueButtonRefreshBehavior refreshBehavior, RepoPath path,
+            String predefinedValues);
+
     /**
-     * Returns map of properties for the given repo paths
+     * Returns properties for the given repo path.
      *
-     * @param repoPaths     Paths to extract properties for
-     * @param mandatoryKeys Any property keys that should be mandatory for resulting properties. If provided, property
-     *                      objects will be added to the map only if they contain all the given keys
+     * @param repoPath Path to extract properties for
+     * @return Properties of the repo path
+     */
+    Properties getProperties(RepoPath repoPath);
+
+    /**
+     * Returns map of properties for the given repo paths.
+     *
+     * @param repoPaths Paths to extract properties for
      * @return Map of repo paths with their corresponding properties
      */
-    Map<RepoPath, Properties> getProperties(Set<RepoPath> repoPaths, String... mandatoryKeys);
+    Map<RepoPath, Properties> getProperties(Set<RepoPath> repoPaths);
 
     /**
      * Deletes the property from the item.
@@ -124,4 +135,13 @@ public interface PropertiesAddon extends AddonFactory {
      * @param values      Property values (if null, will not add the property)
      */
     void addProperty(RepoPath repoPath, PropertySet propertySet, Property property, String... values);
+
+    /**
+     * Returns the property management panel of a selected tree item
+     *
+     * @param panelId  ID of the panel to construct
+     * @param itemInfo Info object of the currently selected tree item
+     * @return Property management display component
+     */
+    Component getTreeItemPropertiesPanel(String panelId, ItemInfo itemInfo);
 }

@@ -19,13 +19,14 @@
 package org.artifactory.security;
 
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.slf4j.Logger;
 import org.springframework.security.core.Authentication;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public abstract class AccessLogger {
     private static final Logger log = LoggerFactory.getLogger(AccessLogger.class);
@@ -34,10 +35,14 @@ public abstract class AccessLogger {
         ANNOTATE, ANNOTATE_DELETE, DOWNLOAD, DEPLOY, DELETE, SEARCH, LOGIN, CONFIGURATION_CHANGE
     }
 
+    private AccessLogger() {
+        // utility class
+    }
+
     public static void annotated(RepoPath repoPath, String metadataName) {
         if (!MavenNaming.MAVEN_METADATA_NAME.equals(metadataName)) {
             // don't log maven metadata since it is mostly internal
-            RepoPath metadataPath = new RepoPath(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataName);
+            RepoPath metadataPath = new RepoPathImpl(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataName);
             annotated(metadataPath);
         }
     }
@@ -47,7 +52,7 @@ public abstract class AccessLogger {
     }
 
     public static void annotationDeleted(RepoPath repoPath, String metadataName) {
-        RepoPath metadataPath = new RepoPath(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataName);
+        RepoPath metadataPath = new RepoPathImpl(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataName);
         logAction(metadataPath, Action.ANNOTATE_DELETE, false, AuthenticationHelper.getAuthentication());
     }
 

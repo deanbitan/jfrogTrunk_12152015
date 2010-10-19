@@ -88,7 +88,7 @@ public class ComboBox extends DropDownChoice {
 
     @Override
     public String getModelValue() {
-        final Object modelObject = getModelObject();
+        final Object modelObject = getDefaultModelObject();
         return modelObject == null ? null : modelObject.toString();
     }
 

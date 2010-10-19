@@ -18,7 +18,6 @@
 
 package org.artifactory.api.search.archive;
 
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 
 /**
@@ -38,7 +37,7 @@ public class ArchiveSearchResult extends ArtifactSearchResult {
      * @param entry     Entry name
      * @param entryPath Entry path
      */
-    public ArchiveSearchResult(ItemInfo itemInfo, String entry, String entryPath) {
+    public ArchiveSearchResult(org.artifactory.fs.ItemInfo itemInfo, String entry, String entryPath) {
         super(itemInfo);
         this.entry = entry;
         this.entryPath = entryPath;

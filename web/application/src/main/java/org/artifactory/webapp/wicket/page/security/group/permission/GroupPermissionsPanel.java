@@ -83,11 +83,11 @@ public class GroupPermissionsPanel extends BaseModalPanel {
             }
         });
 
-        columns.add(new BooleanColumn(new Model("Admin"), "admin", "admin"));
-        columns.add(new BooleanColumn(new Model("Delete"), "delete", "delete"));
-        columns.add(new BooleanColumn(new Model("Deploy"), "deploy", "deploy"));
-        columns.add(new BooleanColumn(new Model("Annotate"), "annotate", "annotate"));
-        columns.add(new BooleanColumn(new Model("Read"), "read", "read"));
+        columns.add(new BooleanColumn("Admin", "admin", "admin"));
+        columns.add(new BooleanColumn("Delete", "delete", "delete"));
+        columns.add(new BooleanColumn("Deploy", "deploy", "deploy"));
+        columns.add(new BooleanColumn("Annotate", "annotate", "annotate"));
+        columns.add(new BooleanColumn("Read", "read", "read"));
         PermissionsTabTableDataProvider dataProvider = new PermissionsTabTableDataProvider(groupInfo);
         return new SortableTable("userPermissionsTable", columns, dataProvider, 10);
     }

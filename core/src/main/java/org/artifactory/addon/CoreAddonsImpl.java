@@ -19,16 +19,21 @@
 package org.artifactory.addon;
 
 import com.google.common.collect.Lists;
+import org.artifactory.addon.license.LicenseStatus;
+import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.descriptor.repo.RealRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
+import org.jfrog.build.api.Build;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.stereotype.Component;
 
@@ -40,7 +45,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 @Component
-public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon {
+public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon {
     private static final String POWERPACK_MESSAGE =
             "This API is available only in the Artifactory Addon-ons Power Pack (http://www.jfrog.org/addons.php).";
 
@@ -75,6 +80,26 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon {
         if (enabledLdapSettings != null && !enabledLdapSettings.isEmpty()) {
             return Lists.newArrayList(enabledLdapSettings.get(0));
         }
+        return Lists.newArrayList();
+    }
+
+    public void performOnBuildArtifacts(Build build) {
+        // NOP
+    }
+
+    public void addPropertySetToRepository(RealRepoDescriptor descriptor) {
+        // NOP
+    }
+
+    public void importLicenses(ImportSettings settings) {
+        // NOP
+    }
+
+    public void exportLicenses(ExportSettings exportSettings) {
+        // nop
+    }
+
+    public List findLicensesInRepos(List<RepoDescriptor> repositories, LicenseStatus status) {
         return Lists.newArrayList();
     }
 }

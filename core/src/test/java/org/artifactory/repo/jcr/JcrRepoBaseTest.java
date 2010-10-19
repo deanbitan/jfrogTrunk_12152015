@@ -18,14 +18,15 @@
 
 package org.artifactory.repo.jcr;
 
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.snapshot.SnapshotVersionAdapter;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -58,7 +59,7 @@ public class JcrRepoBaseTest {
     public void anonAccessDisabledAndNoReadPermissions() {
         setAnonAccessEnabled(repo, false);
 
-        RepoPath dummyPath = new RepoPath("target", "blabla");
+        RepoPath dummyPath = new RepoPathImpl("target", "blabla");
         expect(authService.canRead(dummyPath)).andReturn(false);
         replay(authService);
 
@@ -72,7 +73,7 @@ public class JcrRepoBaseTest {
     public void anonAccessEnabledAndNoReadPermissions() {
         setAnonAccessEnabled(repo, true);
 
-        RepoPath dummyPath = new RepoPath("target", "blabla");
+        RepoPath dummyPath = new RepoPathImpl("target", "blabla");
         expect(authService.canRead(dummyPath)).andReturn(false);
         replay(authService);
 

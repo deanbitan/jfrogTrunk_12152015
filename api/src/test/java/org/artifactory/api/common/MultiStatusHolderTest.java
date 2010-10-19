@@ -83,7 +83,7 @@ public class MultiStatusHolderTest {
     }
 
     public void mergeWithSingleStatusHolder() {
-        StatusHolder single = new StatusHolder();
+        BasicStatusHolder single = new BasicStatusHolder();
         single.setError("error", null);
 
         target.setStatus("target1", null);
@@ -99,7 +99,7 @@ public class MultiStatusHolderTest {
         assertTrue(target.hasErrors());
         assertEquals(target.getAllEntries().size(), 3);
 
-        single = new StatusHolder();
+        single = new BasicStatusHolder();
         single.setWarning("warning", null);
 
         // merge again

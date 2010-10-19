@@ -27,7 +27,7 @@ import org.artifactory.webapp.wicket.page.base.BasePage;
 import java.io.Serializable;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class LoginPage extends BasePage implements Serializable {
     private static final long serialVersionUID = 1L;

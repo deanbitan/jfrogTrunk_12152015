@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
- * User: freds Date: Aug 12, 2008 Time: 5:36:40 PM
+ * User: freds
  */
 public class ArtAdmin {
     private static final Logger log = LoggerFactory.getLogger(ArtAdmin.class);

@@ -18,9 +18,9 @@
 
 package org.artifactory.jcr.lock;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.slf4j.Logger;
 
 import java.util.Collection;

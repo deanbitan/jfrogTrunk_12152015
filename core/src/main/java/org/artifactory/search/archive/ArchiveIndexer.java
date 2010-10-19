@@ -21,7 +21,6 @@ package org.artifactory.search.archive;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrSession;
@@ -29,6 +28,7 @@ import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrZipFile;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.LoggingUtils;
 import org.slf4j.Logger;
 
@@ -49,6 +49,10 @@ import java.util.zip.ZipEntry;
  */
 public abstract class ArchiveIndexer {
     private static final Logger log = LoggerFactory.getLogger(ArchiveIndexer.class);
+
+    private ArchiveIndexer() {
+        // utility class
+    }
 
     /**
      * Indexes the content of the given JCR file
@@ -92,7 +96,6 @@ public abstract class ArchiveIndexer {
                 node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_ENTRY, archiveIndex, PropertyType.STRING);
                 //Mark the files as indexed
                 node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, true);
-                node.getSession().save();
                 log.info("The content of the archive: '{}' was indexed successfully.", file.getName());
                 log.debug("Indexed the classes: {}.", archiveIndex);
             } catch (RepositoryException e) {
@@ -102,7 +105,6 @@ public abstract class ArchiveIndexer {
         } else {
             try {
                 node.setProperty(JcrTypes.PROP_ARTIFACTORY_ARCHIVE_INDEXED, "failed");
-                node.getSession().save();
                 log.info("Marking the indexed property of '{}' as 'failed'.", node.toString());
             } catch (RepositoryException e) {
                 log.error("Unable to set archive indexed property on '{}': {}", node.toString(), e.getMessage());

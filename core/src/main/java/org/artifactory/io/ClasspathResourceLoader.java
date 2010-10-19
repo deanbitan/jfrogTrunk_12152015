@@ -18,7 +18,7 @@
 
 package org.artifactory.io;
 
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.resource.ResourceStreamHandle;
 
 import java.io.IOException;
 import java.io.InputStream;

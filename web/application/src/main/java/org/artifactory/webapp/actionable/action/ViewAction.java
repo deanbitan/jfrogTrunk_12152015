@@ -21,14 +21,12 @@ package org.artifactory.webapp.actionable.action;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
-import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
-import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.bordered.CodeModalPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 
@@ -66,9 +64,8 @@ public abstract class ViewAction extends RepoAwareItemAction {
 
     private void showModal(RepoAwareItemEvent e, String title, Component content) {
         ModalWindow modalWindow = e.getTargetComponents().getModalWindow();
-        BaseModalPanel modelPanel = new BorderedModalPanel(content);
+        CodeModalPanel modelPanel = new CodeModalPanel(content);
         modelPanel.setTitle(title);
-        content.add(new CssClass("modal-code"));
         modalWindow.setContent(modelPanel);
         AjaxRequestTarget target = e.getTarget();
         modalWindow.show(target);

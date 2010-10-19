@@ -18,7 +18,7 @@
 
 package org.artifactory.api.artifact;
 
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 
 /**
  * A unit info representation.

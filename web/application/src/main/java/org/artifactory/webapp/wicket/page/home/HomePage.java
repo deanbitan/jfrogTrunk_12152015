@@ -25,7 +25,7 @@ import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class HomePage extends AuthenticatedPage {
 

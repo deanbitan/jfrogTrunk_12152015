@@ -22,17 +22,17 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -64,7 +64,7 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
             try {
                 Node artifactNode = nodes.nextNode();
                 RepoPath repoPath = JcrPath.get().getRepoPath(artifactNode.getPath());
-                if ((repoPath == null) || (!controls.isSpecificRepoSearch() && !isResultRepoPathValid(repoPath))) {
+                if ((repoPath == null) || !isResultRepoPathValid(repoPath)) {
                     continue;
                 }
 

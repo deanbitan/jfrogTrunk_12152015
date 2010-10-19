@@ -25,17 +25,16 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.fs.FileAdditionalInfo;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FileInfoImpl;
 import org.artifactory.api.fs.FolderAdditionalInfo;
-import org.artifactory.api.fs.FolderInfo;
 import org.artifactory.api.fs.FolderInfoImpl;
+import org.artifactory.api.fs.InternalFileInfo;
+import org.artifactory.api.fs.InternalFolderInfo;
 import org.artifactory.api.fs.ItemAdditionalInfo;
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.jackson.JacksonFactory;
-import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.xstream.XStreamFactory;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumInputStream;
 import org.artifactory.jcr.JcrPath;
@@ -108,8 +107,8 @@ public class JcrMetadataConverterExecutor {
     };
 
     private MetadataDefinitionService mdService;
-    private MetadataDefinition<FolderInfo> folderInfoMD;
-    private MetadataDefinition<FileInfo> fileInfoMD;
+    private MetadataDefinition<InternalFolderInfo> folderInfoMD;
+    private MetadataDefinition<InternalFileInfo> fileInfoMD;
     private Session jcrSession;
     private int nbNodesConverted = 0;
     private final XStream buildXstream = XStreamFactory.create(Build.class);
@@ -117,8 +116,8 @@ public class JcrMetadataConverterExecutor {
     public JcrMetadataConverterExecutor(Session session) {
         jcrSession = session;
         mdService = InternalContextHelper.get().beanForType(MetadataDefinitionService.class);
-        folderInfoMD = mdService.getMetadataDefinition(FolderInfo.class);
-        fileInfoMD = mdService.getMetadataDefinition(FileInfo.class);
+        folderInfoMD = mdService.getMetadataDefinition(InternalFolderInfo.class);
+        fileInfoMD = mdService.getMetadataDefinition(InternalFileInfo.class);
     }
 
     public void convert() {
@@ -178,14 +177,15 @@ public class JcrMetadataConverterExecutor {
             while (children.hasNext()) {
                 Node node = children.nextNode();
                 String name = getNodeName(node);
-                if (name.equals(NODE_ARTIFACTORY_METADATA)) {
-                    // Ignore metadata node, done in folder convert
-                } else if (JcrHelper.isFile(node)) {
-                    convertNode(node);
-                } else if (JcrHelper.isFolder(node)) {
-                    convertFolderNode(node);
-                } else {
-                    log.error("Node element from repo " + display(node) + " should be a file or folder");
+                // Ignore metadata node, done in folder convert
+                if (!name.equals(NODE_ARTIFACTORY_METADATA)) {
+                    if (JcrHelper.isFile(node)) {
+                        convertNode(node);
+                    } else if (JcrHelper.isFolder(node)) {
+                        convertFolderNode(node);
+                    } else {
+                        log.error("Node element from repo " + display(node) + " should be a file or folder");
+                    }
                 }
             }
         } catch (RepositoryException e) {
@@ -254,7 +254,8 @@ public class JcrMetadataConverterExecutor {
             // Already done
             return;
         }
-        if (metadataName.equals(FolderInfo.ROOT) || metadataName.equals(FileInfo.ROOT)) {
+        if (metadataName.equals(org.artifactory.fs.FolderInfo.ROOT) ||
+                metadataName.equals(org.artifactory.fs.FileInfo.ROOT)) {
             // Should have been removed
             log.error("There should not be a metadata node " + metadataNode.getPath() +
                     " for file item info!\n Deleting it!");
@@ -303,13 +304,13 @@ public class JcrMetadataConverterExecutor {
                 // ATTENTION: This supposed that AdditionalInfo xstreamable from jcr:content
                 // Should normally call the metadata converter here
                 ItemAdditionalInfo itemAdditionalInfo = (ItemAdditionalInfo) getXstream(definition).fromXML(xmlData);
-                ItemInfo itemInfo;
+                org.artifactory.fs.ItemInfo itemInfo;
                 if (folder) {
                     itemInfo = new FolderInfoImpl(JcrPath.get().getRepoPath(node.getPath()));
-                    ((FolderInfo) itemInfo).setAdditionalInfo((FolderAdditionalInfo) itemAdditionalInfo);
+                    ((InternalFolderInfo) itemInfo).setAdditionalInfo((FolderAdditionalInfo) itemAdditionalInfo);
                 } else {
                     itemInfo = new FileInfoImpl(JcrPath.get().getRepoPath(node.getPath()));
-                    ((FileInfo) itemInfo).setAdditionalInfo((FileAdditionalInfo) itemAdditionalInfo);
+                    ((InternalFileInfo) itemInfo).setAdditionalInfo((FileAdditionalInfo) itemAdditionalInfo);
                 }
                 // The created and lastModified timestamps was coming from JCR property
                 itemInfo.setCreated(getLongProperty(node, PROP_ARTIFACTORY_CREATED, getJcrCreated(node), false));
@@ -325,8 +326,8 @@ public class JcrMetadataConverterExecutor {
                         getLongProperty(node, PROP_ARTIFACTORY_LAST_UPDATED, itemInfo.getLastUpdated(), true));
                 if (!folder) {
                     Node resNode = getResourceNode(node);
-                    ((FileInfo) itemInfo).setSize(getLength(resNode));
-                    ((FileInfo) itemInfo).setMimeType(getMimeType(resNode));
+                    ((org.artifactory.fs.FileInfo) itemInfo).setSize(getLength(resNode));
+                    ((org.artifactory.fs.FileInfo) itemInfo).setMimeType(getMimeType(resNode));
                 }
                 definition.getPersistenceHandler().update(new MetadataAwareAdapter(node), itemInfo);
                 // Everything work, delete the additional info metadata entry
@@ -342,7 +343,7 @@ public class JcrMetadataConverterExecutor {
         InputStream is = null;
         String xmlData = null;
         try {
-            is = node.getProperty(JcrConstants.JCR_DATA).getStream();
+            is = node.getProperty(JcrConstants.JCR_DATA).getBinary().getStream();
             xmlData = IOUtils.toString(is, "utf-8");
         } catch (IOException e) {
             log.warn("Could not read content of " + display(node), e);

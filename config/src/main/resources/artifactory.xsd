@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.4"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.4"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.5"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.5"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -30,7 +30,7 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        A name uniquely identifying this artifactory server instance accross the network.
+                        A name uniquely identifying this artifactory server instance across the network.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -294,7 +294,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="description" type="xs:string" default="default description" minOccurs="0">
+            <xs:element name="description" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
                         Textual description of the repository.
@@ -908,6 +908,16 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="hideUnauthorizedResources" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        When checked, Artifactory will hide the existence of unauthorized resources by sending a 404
+                        response (not found) to requests for resources that are not accessible by the user. Otherwise,
+                        the response will imply that the resource exists but is protected - by requesting authentication
+                        for anonymous requests (401) or by denying an authenticated request for unauthorized users.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="passwordSettings" type="PasswordSettingsType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
@@ -940,6 +950,15 @@
                     <xs:documentation source="description">
                         <![CDATA[
                         Security settings specific to HTTP SSO.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="crowdSettings" type="CrowdSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to Atlassian Crowd.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1012,6 +1031,79 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                         <![CDATA[
                                 The name of the HTTP request variable to use for extracting the user identity.
                                 Default is: REMOTE_USER.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="CrowdSettingsType">
+        <xs:sequence>
+            <xs:element name="enableIntegration" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Enable security integration with Atlassian Crowd.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="serverUrl" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The full URL of the Crowd server to use.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="applicationName" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The application name that was configured for Artifactory in Crowd.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The application password that was configured for Artifactory in Crowd.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="sessionValidationInterval" type="xs:long" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The time window in which the session does not need to be revalidated.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="useDefaultProxy" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        If true, and a default proxy definition exists, it will be used to pass through to the Crowd Server.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="noAutoUserCreation" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        When automatic user creation is off, authenticated users will not be automatically created
+                        inside Artifactory. Instead, for every request from a Crowd user, the user will be temporarily
+                        associated with default groups (if such groups are defined), and the permissions for these
+                        groups will apply.
+                        Without auto user creation, you will need to manually create the user inside Artifactory in
+                        order to manage user permissions that are not attached to his default groups.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>

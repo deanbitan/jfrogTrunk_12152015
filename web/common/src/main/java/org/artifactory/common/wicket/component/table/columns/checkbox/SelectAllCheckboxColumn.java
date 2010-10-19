@@ -40,7 +40,7 @@ import static org.artifactory.common.wicket.component.table.columns.panel.checkb
  * @author Yoav Aharoni
  */
 public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
-    private IModel selectAllModel = new Model(false);
+    private IModel<Boolean> selectAllModel = new Model<Boolean>(false);
     private StyledCheckbox selectAllCheckbox;
 
     public SelectAllCheckboxColumn(String title, String expression, String sortProperty) {
@@ -55,9 +55,10 @@ public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
         selectAllCheckbox.add(new SimpleAttributeModifier("title", "Select All"));
         selectAllCheckbox.setOutputMarkupId(true);
         selectAllCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
+            @SuppressWarnings({"unchecked"})
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                SortableTable table = (SortableTable) selectAllCheckbox.findParent(DataTable.class);
+                SortableTable<T> table = (SortableTable<T>) selectAllCheckbox.findParent(DataTable.class);
                 selectAll(table, target);
                 onSelectAllUpdate(target);
             }
@@ -67,8 +68,8 @@ public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
     }
 
     @SuppressWarnings({"unchecked"})
-    private void selectAll(SortableTable table, AjaxRequestTarget target) {
-        ISortableDataProvider dataProvider = table.getDataProvider();
+    private void selectAll(SortableTable<T> table, AjaxRequestTarget target) {
+        ISortableDataProvider<T> dataProvider = table.getSortableDataProvider();
         Iterator<T> iterator = (Iterator<T>) dataProvider.iterator(0, dataProvider.size());
         while (iterator.hasNext()) {
             T rowObject = iterator.next();
@@ -78,6 +79,7 @@ public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
         target.addComponent(table);
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     protected void onSelectAll(Iterator<T> iterator, AjaxRequestTarget target) {
     }
 
@@ -96,16 +98,16 @@ public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
     protected void onSelectAllUpdate(AjaxRequestTarget target) {
     }
 
-    public IModel getSelectAllModel() {
+    public IModel<Boolean> getSelectAllModel() {
         return selectAllModel;
     }
 
-    public void setSelectAllModel(IModel selectAllModel) {
+    public void setSelectAllModel(IModel<Boolean> selectAllModel) {
         this.selectAllModel = selectAllModel;
     }
 
     public boolean isSelectAll() {
-        return (Boolean) getSelectAllModel().getObject();
+        return getSelectAllModel().getObject();
     }
 
     public void setSelectAll(boolean selectAll) {

@@ -18,23 +18,32 @@
 
 package org.artifactory.common.wicket.component.table.groupable.column;
 
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.model.IModel;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.AttachColumnListener;
+import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
 import org.artifactory.common.wicket.component.table.groupable.GroupableTable;
 
 /**
  * @author Yoav Aharoni
  */
-public class GroupableColumn extends PropertyColumn implements IGroupableColumn, AttachColumnListener {
-    public GroupableColumn(IModel displayModel, String sortProperty, String propertyExpression) {
-        super(displayModel, sortProperty, propertyExpression);
+public class GroupableColumn extends TitlePropertyColumn implements IGroupableColumn, AttachColumnListener {
+
+    public GroupableColumn(String title, String propertyExpression) {
+        super(title, propertyExpression);
     }
 
-    public GroupableColumn(IModel displayModel, String propertyExpression) {
-        this(displayModel, propertyExpression, propertyExpression);
+    public GroupableColumn(String title, String sortProperty, String propertyExpression) {
+        super(title, sortProperty, propertyExpression);
+    }
+
+    public GroupableColumn(IModel<String> displayModel, String propertyExpression) {
+        super(displayModel.getObject(), propertyExpression);
+    }
+
+    public GroupableColumn(IModel<String> displayModel, String sortProperty, String propertyExpression) {
+        super(displayModel.getObject(), sortProperty, propertyExpression);
     }
 
     public String getGroupProperty() {
@@ -43,7 +52,8 @@ public class GroupableColumn extends PropertyColumn implements IGroupableColumn,
 
     public void onColumnAttached(SortableTable table) {
         if (this instanceof IChoiceRenderer && table instanceof GroupableTable) {
-            ((GroupableTable) table).getDataProvider().setGroupReneder(getGroupProperty(), (IChoiceRenderer) this);
+            ((GroupableTable) table).getGroupableDataProvider().setGroupReneder(getGroupProperty(),
+                    (IChoiceRenderer) this);
         }
     }
 }

@@ -18,10 +18,12 @@
 
 package org.artifactory.tx;
 
+import com.google.common.collect.Lists;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -77,11 +79,20 @@ public class SessionResourceManagerImpl implements SessionResourceManager {
 
     public boolean hasPendingResources() {
         for (SessionResource resource : resources.values()) {
-            final boolean hasPendingResources = resource.hasPendingResources();
-            if (hasPendingResources) {
+            if (resource.hasPendingResources()) {
                 return true;
             }
         }
         return false;
+    }
+
+    public List<SessionResource> pendingResources() {
+        List<SessionResource> pending = Lists.newArrayList();
+        for (SessionResource resource : resources.values()) {
+            if (resource.hasPendingResources()) {
+                pending.add(resource);
+            }
+        }
+        return pending;
     }
 }

@@ -43,7 +43,7 @@ public class PagingNavigatorWithDropDown extends Panel {
     private Integer currentPageIndex = 0;
     private static final String PREV_PAGE = "prevPage";
     private static final String NEXT_PAGE = "nextPage";
-    private DropDownChoice pageableDropDown;
+    private DropDownChoice<Integer> pageableDropDown;
 
     public PagingNavigatorWithDropDown(String id, IPageable pageable) {
         super(id);
@@ -93,30 +93,30 @@ public class PagingNavigatorWithDropDown extends Panel {
         add(link);
 
         // pageable drop down
-        pageableDropDown = new DropDownChoice("pageableDropDown", new Model() {
+        pageableDropDown = new DropDownChoice<Integer>("pageableDropDown", new Model<Integer>() {
             @Override
-            public Object getObject() {
+            public Integer getObject() {
                 return currentPageIndex;
             }
 
             @Override
-            public void setObject(Object object) {
+            public void setObject(Integer object) {
                 if (object == null) {
                     return;
                 }
-                currentPageIndex = (Integer) object;
+                currentPageIndex = object;
             }
         }, getPagesNumbers());
         pageableDropDown.setOutputMarkupId(true);
-        pageableDropDown.setChoiceRenderer(new ChoiceRenderer() {
+        pageableDropDown.setChoiceRenderer(new ChoiceRenderer<Integer>() {
             @Override
-            public Object getDisplayValue(Object object) {
+            public Object getDisplayValue(Integer object) {
                 if (object == null) {
                     return null;
                 }
 
                 // displaying the "Page X of Y"
-                return format("Page %d of %d", (Integer) object + 1, pageable.getPageCount());
+                return format("Page %d of %d", object + 1, pageable.getPageCount());
             }
 
         });

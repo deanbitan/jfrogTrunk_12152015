@@ -19,16 +19,16 @@
 package org.artifactory.jcr.md;
 
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.MetadataInfo;
-import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumCalculator;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.MetadataInfo;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;

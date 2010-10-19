@@ -46,11 +46,11 @@ public class BasePanel<T extends Serializable> extends Panel {
 
     @SuppressWarnings({"unchecked"})
     public T getPanelModelObject() {
-        return (T) getModelObject();
+        return (T) getDefaultModelObject();
     }
 
     @SuppressWarnings({"TypeMayBeWeakened"})
     public void setPanelModelObject(T value) {
-        setModelObject(value);
+        setDefaultModelObject(value);
     }
 }

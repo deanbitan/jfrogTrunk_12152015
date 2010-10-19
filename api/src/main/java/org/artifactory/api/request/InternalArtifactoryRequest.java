@@ -18,7 +18,7 @@
 
 package org.artifactory.api.request;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 import java.io.InputStream;
 
@@ -63,10 +63,6 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
     }
 
     public boolean isRecursive() {
-        return false;
-    }
-
-    public boolean isWebdav() {
         return false;
     }
 

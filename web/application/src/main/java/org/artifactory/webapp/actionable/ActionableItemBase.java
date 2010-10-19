@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public abstract class ActionableItemBase extends AbstractReadOnlyModel implements ActionableItem {
 

@@ -19,10 +19,10 @@
 package org.artifactory.api.stat;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.common.Info;
+import org.artifactory.common.Info;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 @XStreamAlias(StatsInfo.ROOT)
 public class StatsInfo implements Info {

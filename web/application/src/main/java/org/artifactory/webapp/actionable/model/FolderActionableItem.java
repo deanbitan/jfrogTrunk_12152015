@@ -18,18 +18,19 @@
 
 package org.artifactory.webapp.actionable.model;
 
+import com.google.common.collect.Lists;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WatchAddon;
-import org.artifactory.api.fs.FileInfo;
-import org.artifactory.api.fs.FolderInfo;
-import org.artifactory.api.fs.ItemInfo;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.DirectoryItem;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.FolderInfo;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.mime.MimeType;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
@@ -41,7 +42,6 @@ import org.artifactory.webapp.actionable.action.MoveAction;
 import org.artifactory.webapp.actionable.action.ZapAction;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -64,11 +64,7 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
     private boolean compactAllowed;
     private ItemAction watchAction;
 
-    public FolderActionableItem(FolderInfo folderInfo) {
-        this(folderInfo, true);
-    }
-
-    public FolderActionableItem(FolderInfo folderInfo, boolean compactAllowed) {
+    public FolderActionableItem(org.artifactory.fs.FolderInfo folderInfo, boolean compactAllowed) {
         super(folderInfo.getRepoPath());
         this.folderInfo = folderInfo;
         this.compactAllowed = compactAllowed;
@@ -139,7 +135,7 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
     /**
      * The folder info of the last element of the compacted folder or the current folder if not compacted.
      */
-    public FolderInfo getFolderInfo() {
+    public org.artifactory.fs.FolderInfo getFolderInfo() {
         return folderInfo;
     }
 
@@ -152,33 +148,43 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
     }
 
     public List<ActionableItem> getChildren(AuthorizationService authService) {
-        boolean childrenCacheUpToDate = childrenCacheUpToDate();
+        boolean childrenCacheUpToDate = childrenCacheUpToDate(authService);
         if (!childrenCacheUpToDate) {
-            List<DirectoryItem> items = getRepoService().getDirectoryItems(getCanonicalPath(), false);
-            children = new ArrayList<ActionableItem>(items.size());
-            for (DirectoryItem dirItem : items) {
-                ItemInfo item = dirItem.getItemInfo();
+            RepositoryService repoService = getRepoService();
+            List<ItemInfo> items = repoService.getChildren(getCanonicalPath());
+
+            children = Lists.newArrayListWithExpectedSize(items.size());
+
+            for (ItemInfo pathItem : items) {
+
                 //Check if we should return the child
-                RepoPath childRepoPath = new RepoPath(item.getRepoKey(), item.getRelPath());
+                String relativePath = pathItem.getRelPath();
+
+                RepoPath childRepoPath = new RepoPathImpl(pathItem.getRepoKey(), relativePath);
                 boolean childReader = authService.canRead(childRepoPath);
                 if (!childReader) {
                     //Don't bother with stuff that we do not have read access to
                     continue;
                 }
-                String name = item.getName();
+
+                if (!repoService.isLocalRepoPathAccepted(childRepoPath) && !authService.canAnnotate(childRepoPath)) {
+                    continue;
+                }
+
+                String name = pathItem.getName();
                 //Skip checksum files
                 if (NamingUtils.isChecksum(name)) {
                     continue;
                 }
                 RepoAwareActionableItem child;
-                if (item.isFolder()) {
-                    child = new FolderActionableItem(((FolderInfo) item), isCompactAllowed());
+                if (pathItem.isFolder()) {
+                    child = new FolderActionableItem(((org.artifactory.fs.FolderInfo) pathItem), isCompactAllowed());
                 } else {
-                    MimeType mimeType = NamingUtils.getMimeType(item.getRelPath());
+                    MimeType mimeType = NamingUtils.getMimeType(relativePath);
                     if (mimeType.isArchive()) {
-                        child = new ZipFileActionableItem((FileInfo) item, isCompactAllowed());
+                        child = new ZipFileActionableItem((org.artifactory.fs.FileInfo) pathItem, isCompactAllowed());
                     } else {
-                        child = new FileActionableItem((FileInfo) item);
+                        child = new FileActionableItem((FileInfo) pathItem);
                     }
                 }
                 children.add(child);
@@ -192,7 +198,7 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
     // We don't simply remove the deleted item since it might be a compacted folder and we don't
     // want to repeat the same logic.
 
-    private boolean childrenCacheUpToDate() {
+    private boolean childrenCacheUpToDate(AuthorizationService authService) {
         if (children == null) {
             return false;
         }
@@ -204,7 +210,8 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
                     repoPath = ((FolderActionableItem) repoAwareItem).getCanonicalPath();
                 }
                 RepositoryService repoService = getRepoService();
-                if (!repoService.exists(repoPath)) {
+                if (!repoService.exists(repoPath) ||
+                        (!repoService.isLocalRepoPathAccepted(repoPath) && !authService.canAnnotate(repoPath))) {
                     return false;
                 }
             }

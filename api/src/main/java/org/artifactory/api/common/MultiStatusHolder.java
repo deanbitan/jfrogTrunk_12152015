@@ -18,6 +18,8 @@
 
 package org.artifactory.api.common;
 
+import org.artifactory.common.StatusEntry;
+import org.artifactory.common.StatusEntryLevel;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -31,7 +33,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author freds
  * @date Sep 25, 2008
  */
-public class MultiStatusHolder extends StatusHolder {
+public class MultiStatusHolder extends BasicStatusHolder {
     private static final Logger log = LoggerFactory.getLogger(MultiStatusHolder.class);
 
     private final BlockingQueue<StatusEntry> statusEntries = new LinkedBlockingQueue<StatusEntry>();
@@ -136,7 +138,7 @@ public class MultiStatusHolder extends StatusHolder {
      *
      * @param toMerge The status to merge into this.
      */
-    public void merge(StatusHolder toMerge) {
+    public void merge(BasicStatusHolder toMerge) {
         statusEntries.add(toMerge.getStatusEntry());
         if (toMerge.isError()) {
             setLastError(toMerge.getLastError());

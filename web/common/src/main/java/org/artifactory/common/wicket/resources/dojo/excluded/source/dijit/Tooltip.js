@@ -1,12 +1,3 @@
-/*
-	Copyright (c) 2004-2009, The Dojo Foundation All Rights Reserved.
-	Available via Academic Free License >= 2.1 OR the modified BSD license.
-	see: http://dojotoolkit.org/license for details
-*/
-
-
-if(!dojo._hasResource["dijit.Tooltip"]){ //_hasResource checks added by build. Do not use _hasResource directly in your code.
-dojo._hasResource["dijit.Tooltip"] = true;
 dojo.provide("dijit.Tooltip");
 
 dojo.require("dijit._Widget");
@@ -28,7 +19,7 @@ dojo.declare(
 		//		Milliseconds to fade in/fade out
 		duration: dijit.defaultDuration,
 
-		templateString: dojo.cache("dijit", "templates/Tooltip.html", "<div class=\"dijitTooltip dijitTooltipLeft\" id=\"dojoTooltip\">\r\n\t<div class=\"dijitTooltipContainer dijitTooltipContents\" dojoAttachPoint=\"containerNode\" waiRole='alert'></div>\r\n\t<div class=\"dijitTooltipConnector\"></div>\r\n</div>\r\n"),
+		templateString: dojo.cache("dijit", "templates/Tooltip.html"),
 
 		postCreate: function(){
 			dojo.body().appendChild(this.domNode);
@@ -41,10 +32,10 @@ dojo.declare(
 
 		},
 
-		show: function(/*String*/ innerHTML, /*DomNode*/ aroundNode, /*String[]?*/ position){
+		show: function(/*String*/ innerHTML, /*DomNode*/ aroundNode, /*String[]?*/ position, /*Boolean*/ rtl){
 			// summary:
 			//		Display tooltip w/specified contents to right of specified node
-			//		(To left if there's no space on the right, or if LTR==right)
+			//		(To left if there's no space on the right, or if rtl == true)
 
 			if(this.aroundNode && this.aroundNode === aroundNode){
 				return;
@@ -57,11 +48,7 @@ dojo.declare(
 			}
 			this.containerNode.innerHTML=innerHTML;
 
-			// Firefox bug. when innerHTML changes to be shorter than previous
-			// one, the node size will not be updated until it moves.
-			this.domNode.style.top = (this.domNode.offsetTop + 1) + "px";
-
-			var pos = dijit.placeOnScreenAroundElement(this.domNode, aroundNode, dijit.getPopupAroundAlignment((position && position.length) ? position : dijit.Tooltip.defaultPosition, this.isLeftToRight()), dojo.hitch(this, "orient"));
+			var pos = dijit.placeOnScreenAroundElement(this.domNode, aroundNode, dijit.getPopupAroundAlignment((position && position.length) ? position : dijit.Tooltip.defaultPosition, !rtl), dojo.hitch(this, "orient"));
 
 			// show it
 			dojo.style(this.domNode, "opacity", 0);
@@ -124,6 +111,7 @@ dojo.declare(
 			//		protected
 
 			this.domNode.style.cssText="";	// to position offscreen again
+			this.containerNode.innerHTML="";
 			if(this._onDeck){
 				// a show request has been queued up; do it now
 				this.show.apply(this, this._onDeck);
@@ -134,13 +122,13 @@ dojo.declare(
 	}
 );
 
-dijit.showTooltip = function(/*String*/ innerHTML, /*DomNode*/ aroundNode, /*String[]?*/ position){
+dijit.showTooltip = function(/*String*/ innerHTML, /*DomNode*/ aroundNode, /*String[]?*/ position, /*Boolean*/ rtl){
 	// summary:
 	//		Display tooltip w/specified contents in specified position.
 	//		See description of dijit.Tooltip.defaultPosition for details on position parameter.
 	//		If position is not specified then dijit.Tooltip.defaultPosition is used.
 	if(!dijit._masterTT){ dijit._masterTT = new dijit._MasterTooltip(); }
-	return dijit._masterTT.show(innerHTML, aroundNode, position);
+	return dijit._masterTT.show(innerHTML, aroundNode, position, rtl);
 };
 
 dijit.hideTooltip = function(aroundNode){
@@ -214,10 +202,6 @@ dojo.declare(
 				this.connect(node, "onfocus", "_onTargetFocus"),
 				this.connect(node, "onblur", "_onTargetBlur")
 			];
-			if(dojo.isIE && !node.style.zoom){//preserve zoom
-				// BiDi workaround
-				node.style.zoom = 1;
-			}
 		},
 
 		removeTarget: function(/*DOMNODE || String*/ node){
@@ -322,7 +306,7 @@ dojo.declare(
 				clearTimeout(this._showTimer);
 				delete this._showTimer;
 			}
-			dijit.showTooltip(this.label || this.domNode.innerHTML, target, this.position);
+			dijit.showTooltip(this.label || this.domNode.innerHTML, target, this.position, !this.isLeftToRight());
 
 			this._connectNode = target;
 			this.onShow(target, this.position);
@@ -388,5 +372,3 @@ dojo.declare(
 //		that the drop down and tooltip don't overlap, even when the viewport is scrolled so that there
 //		is only room below (or above) the target node, but not both.
 dijit.Tooltip.defaultPosition = ["after", "before"];
-
-}

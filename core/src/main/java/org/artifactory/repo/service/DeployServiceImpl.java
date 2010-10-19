@@ -29,15 +29,15 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.artifactory.api.artifact.UnitInfo;
-import org.artifactory.api.common.StatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.DeployService;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.RepoAccessException;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.UploadService;
@@ -48,6 +48,7 @@ import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.request.InternalArtifactoryResponse;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.security.AccessLogger;
@@ -59,11 +60,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Collections;
 import java.util.List;
 
@@ -88,14 +85,14 @@ public class DeployServiceImpl implements DeployService {
     @Autowired
     private UploadService uploadService;
 
-    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File file) throws RepoRejectionException {
+    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File file) throws RepoRejectException {
         String pomString = getPomModelString(file);
         deploy(targetRepo, artifactInfo, file, pomString, false, false);
     }
 
     public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo,
-            final File fileToDeploy, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy)
-            throws RepoRejectionException {
+                       final File fileToDeploy, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy)
+            throws RepoRejectException {
 
         validatePath(artifactInfo);
 
@@ -112,8 +109,10 @@ public class DeployServiceImpl implements DeployService {
         }
         //Check acceptance according to include/exclude patterns
         String path = artifactInfo.getPath();
+        //TODO: [by yl] assertValidDeployPath is already called by the upload service, including security checks!
         repositoryService.assertValidDeployPath(localRepo, path);
-        RepoPath repoPath = new RepoPath(targetRepo.getKey(), path);
+        RepoPath repoPath = new RepoPathImpl(targetRepo.getKey(), path);
+        //TODO: [by yl] assertValidDeployPath is already checking deploy permissions!
         if (!authService.canDeploy(repoPath)) {
             AccessLogger.deployDenied(repoPath);
             throw new RepoAccessException("Not enough permissions to deploy artifact '" + fileToDeploy + "'.", repoPath,
@@ -125,9 +124,7 @@ public class DeployServiceImpl implements DeployService {
             request.setSkipJarIndexing(partOfBundleDeploy);
             InternalArtifactoryResponse response = new InternalArtifactoryResponse();
             uploadService.process(request, response);
-            if (response.getException() != null) {
-                throw new RuntimeException("Cannot deploy file " + fileToDeploy.getName(), response.getException());
-            }
+            assertNotFailedRequest(fileToDeploy.getName(), response);
         } catch (IOException e) {
             String msg = "Cannot deploy file " + fileToDeploy.getName() + ". Cause: " + e.getMessage();
             log.debug(msg, e);
@@ -137,9 +134,9 @@ public class DeployServiceImpl implements DeployService {
         //Handle extra pom deployment - add the metadata with the generated pom file to the artifact
         if (forceDeployPom && artifactInfo.isMavenArtifact()) {
             MavenArtifactInfo mavenArtifactInfo = (MavenArtifactInfo) artifactInfo;
-            RepoPath pomPath = new RepoPath(repoPath.getParent(),
+            RepoPath pomPath = new RepoPathImpl(repoPath.getParent(),
                     mavenArtifactInfo.getArtifactId() + "-" + mavenArtifactInfo.getVersion() + ".pom");
-            RepoPath uploadPomPath = new RepoPath(targetRepo.getKey(), pomPath.getPath());
+            RepoPath uploadPomPath = new RepoPathImpl(targetRepo.getKey(), pomPath.getPath());
             try {
                 ArtifactoryDeployRequest pomRequest = new ArtifactoryDeployRequest(
                         uploadPomPath, IOUtils.toInputStream(pomString), fileToDeploy.length(),
@@ -147,15 +144,32 @@ public class DeployServiceImpl implements DeployService {
                 InternalArtifactoryResponse pomResponse = new InternalArtifactoryResponse();
                 // upload the POM if needed
                 uploadService.process(pomRequest, pomResponse);
-                if (pomResponse.getException() != null) {
-                    throw new RuntimeException("Cannot deploy file " + fileToDeploy.getName(),
-                            pomResponse.getException());
-                }
+                assertNotFailedRequest(fileToDeploy.getName(), pomResponse);
             } catch (IOException e) {
                 String msg = "Cannot deploy file " + pomPath.getName() + ". Cause: " + e.getMessage();
                 log.debug(msg, e);
                 throw new RepositoryRuntimeException(msg, e);
             }
+        }
+    }
+
+    private void assertNotFailedRequest(String deployedFileName, InternalArtifactoryResponse response)
+            throws RepoRejectException {
+        if (response.getException() != null) {
+            throw new RuntimeException("Cannot deploy file " + deployedFileName, response.getException());
+        } else if (!response.isSuccessful()) {
+            StringBuilder errorMessageBuilder = new StringBuilder("Cannot deploy file '").append(deployedFileName).
+                    append("'. ");
+            String statusMessage = response.getStatusMessage();
+            if (StringUtils.isNotBlank(statusMessage)) {
+                errorMessageBuilder.append(statusMessage);
+                if (!StringUtils.endsWith(statusMessage, ".")) {
+                    errorMessageBuilder.append(".");
+                }
+            } else {
+                errorMessageBuilder.append("Please view the logs for further information.");
+            }
+            throw new RepoRejectException(errorMessageBuilder.toString());
         }
     }
 
@@ -166,7 +180,7 @@ public class DeployServiceImpl implements DeployService {
     }
 
     @SuppressWarnings({"unchecked"})
-    public void deployBundle(File bundle, RealRepoDescriptor targetRepo, StatusHolder status) {
+    public void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status) {
         long start = System.currentTimeMillis();
         if (!bundle.exists()) {
             String message =
@@ -222,7 +236,7 @@ public class DeployServiceImpl implements DeployService {
                     }
                 }
                 MavenArtifactInfo artifactInfo =
-                        MavenArtifactInfo.fromRepoPath(new RepoPath(targetRepo.getKey(), relPath));
+                        MavenArtifactInfo.fromRepoPath(new RepoPathImpl(targetRepo.getKey(), relPath));
                 if (!artifactInfo.isValid()) {
                     deployFailedList.add(file);
                 } else {
@@ -231,8 +245,7 @@ public class DeployServiceImpl implements DeployService {
                         getTransactionalMe().deploy(targetRepo, artifactInfo, file, pomString, false, true);
                     } catch (IllegalArgumentException iae) {
                         status.setWarning(iae.getMessage(), log);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         String msg = "Error during deployment";
                         status.setError(msg, e, log);
                     }
@@ -284,7 +297,7 @@ public class DeployServiceImpl implements DeployService {
         return MavenModelUtils.mavenModelToString(MavenModelUtils.toMavenModel(model));
     }
 
-    private File extractArchive(StatusHolder status, File archive) throws Exception {
+    private File extractArchive(BasicStatusHolder status, File archive) throws Exception {
         String archiveName = archive.getName();
         String fixedArchiveName = new String(archiveName.getBytes("utf-8"));
         File fixedArchive = new File(archive.getParentFile(), fixedArchiveName);

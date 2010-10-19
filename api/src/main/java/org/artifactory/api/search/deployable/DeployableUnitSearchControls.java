@@ -18,8 +18,8 @@
 
 package org.artifactory.api.search.deployable;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.search.SearchControlsBase;
+import org.artifactory.repo.RepoPath;
 
 /**
  * Holds the deployable unit search parameters

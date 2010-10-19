@@ -19,6 +19,7 @@
 package org.artifactory.api.security;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.util.Builder;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,7 +30,7 @@ import java.util.Set;
  *
  * @author Yossi Shaul
  */
-public class UserInfoBuilder {
+public class UserInfoBuilder implements Builder<UserInfo> {
 
     private final String username;
 
@@ -38,9 +39,6 @@ public class UserInfoBuilder {
     private boolean admin = false;
     private boolean enabled = true;
     private boolean updatableProfile = false;
-    private boolean accountNonExpired = true;
-    private boolean credentialsNonExpired = true;
-    private boolean accountNonLocked = true;
     private boolean transientUser = false;
     private Set<UserInfo.UserGroupInfo> groups = new HashSet<UserInfo.UserGroupInfo>();
 
@@ -62,9 +60,9 @@ public class UserInfoBuilder {
         user.setAdmin(admin);
         user.setEnabled(enabled);
         user.setUpdatableProfile(updatableProfile);
-        user.setAccountNonExpired(accountNonExpired);
-        user.setCredentialsNonExpired(credentialsNonExpired);
-        user.setAccountNonLocked(accountNonLocked);
+        user.setAccountNonExpired(true);
+        user.setCredentialsNonExpired(true);
+        user.setAccountNonLocked(true);
         user.setTransientUser(transientUser);
         user.setGroups(groups);
         return user;

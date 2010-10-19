@@ -25,7 +25,7 @@ import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
-import org.artifactory.addon.wicket.Addon;
+import org.artifactory.addon.wicket.AddonType;
 import org.artifactory.common.wicket.behavior.template.TemplateBehavior;
 import org.artifactory.common.wicket.behavior.tooltip.TooltipBehavior;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
@@ -42,10 +42,10 @@ import javax.servlet.http.Cookie;
 public class AddonNeededBehavior extends TemplateBehavior {
     private static final String MESSAGE_KEY = "addon.disabled";
 
-    private Addon addon;
+    private AddonType addon;
     private boolean enabled;
 
-    public AddonNeededBehavior(Addon addon) {
+    public AddonNeededBehavior(AddonType addon) {
         super(AddonNeededBehavior.class);
         this.addon = addon;
 
@@ -95,7 +95,7 @@ public class AddonNeededBehavior extends TemplateBehavior {
         response.renderJavascript(String.format("var artApp = '/%s'", contextPrefix), null);
     }
 
-    public Addon getAddon() {
+    public AddonType getAddon() {
         return addon;
     }
 

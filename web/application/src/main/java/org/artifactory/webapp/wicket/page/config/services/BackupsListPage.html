@@ -1,8 +1,11 @@
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-
-<body>
 <wicket:extend>
     <div wicket:id="backupsListPanel"/>
+    <script type="text/javascript">
+        DomUtils.bindHeight(dojo.query('.table-wrapper')[0], function(docHeight) {
+            return Math.max(200, docHeight - 220);
+        }, true);
+        DomUtils.bindHeight(dojo.query('.buttons-bottom')[0], function(docHeight) {
+            return Math.max(200, docHeight - 220);
+        }, true);
+    </script>
 </wicket:extend>
-</body>
-</html>

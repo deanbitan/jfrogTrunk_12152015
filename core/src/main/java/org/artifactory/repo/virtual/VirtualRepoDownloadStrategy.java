@@ -18,35 +18,38 @@
 
 package org.artifactory.repo.virtual;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.collections15.OrderedMap;
 import org.apache.commons.collections15.map.ListOrderedMap;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
+import org.apache.maven.artifact.repository.metadata.Snapshot;
+import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.MetadataInfo;
+import org.artifactory.api.fs.MetadataInfoImpl;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.exception.RepoRejectionException;
-import org.artifactory.common.ResourceStreamHandle;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumCalculator;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
-import org.artifactory.repo.LocalCacheRepo;
-import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.RealRepo;
-import org.artifactory.repo.RemoteRepo;
-import org.artifactory.repo.Repo;
-import org.artifactory.repo.context.RequestContext;
+import org.artifactory.maven.versioning.MavenVersionComparator;
+import org.artifactory.md.MetadataInfo;
+import org.artifactory.repo.*;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.resource.RepoResource;
+import org.artifactory.request.RequestContext;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.StringResource;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.util.Utils;
 import org.slf4j.Logger;
 
 import javax.jcr.RepositoryException;
@@ -54,7 +57,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -91,7 +94,7 @@ public class VirtualRepoDownloadStrategy {
 
         // release the read lock on the virtual repo local cache to prevent deadlock in any of the interceptors
         // (in case one of them needs to write back to the virtual repo cache)
-        RepoPath localCacheRepoPath = new RepoPath(virtualRepo.getKey(), context.getResourcePath());
+        RepoPath localCacheRepoPath = new RepoPathImpl(virtualRepo.getKey(), context.getResourcePath());
         LockingHelper.releaseReadLock(localCacheRepoPath);
 
         // not found in local virtual repository storage, look in configured repositories
@@ -118,7 +121,7 @@ public class VirtualRepoDownloadStrategy {
                     searchableHandle = repositoryService.getResourceStreamHandle(context, repo, searchableResource);
                 } catch (IOException ioe) {
                     log.error("Could not update download stats", ioe);
-                } catch (RepoRejectionException rre) {
+                } catch (RepoRejectException rre) {
                     log.error("Could not update download stats", rre);
                 } catch (RepositoryException re) {
                     log.error("Could not update download stats", re);
@@ -141,7 +144,7 @@ public class VirtualRepoDownloadStrategy {
 
     public RepoResource getInfoFromSearchableRepositories(RequestContext context) {
         String path = context.getResourcePath();
-        RepoPath repoPath = new RepoPath(virtualRepo.getKey(), path);
+        RepoPath repoPath = new RepoPathImpl(virtualRepo.getKey(), path);
         RepoResource result;
         try {
             List<RealRepo> repositories = assembleSearchRepositoriesList(repoPath, context);
@@ -212,6 +215,8 @@ public class VirtualRepoDownloadStrategy {
             throws IOException {
         //For metadata checksums, first check the merged metadata cache
         String path = repoPath.getPath();
+        // save forbidden unfound response
+        UnfoundRepoResource forbidden = null;
         //Locate the resource matching the request
         RepoResource closetMatch = null;
         for (RealRepo repo : repositories) {
@@ -232,6 +237,8 @@ public class VirtualRepoDownloadStrategy {
                 } else {
                     closetMatch = res;
                 }
+            } else {
+                forbidden = checkIfForbidden(res);
             }
         }
 
@@ -241,7 +248,11 @@ public class VirtualRepoDownloadStrategy {
         }
 
         // not found in any repo
-        return new UnfoundRepoResource(repoPath, "Could not found resource");
+        if (forbidden != null) {
+            return new UnfoundRepoResource(repoPath, forbidden.getReason(), forbidden.getStatusCode());
+        } else {
+            return new UnfoundRepoResource(repoPath, "Could not find resource");
+        }
     }
 
     /**
@@ -252,6 +263,8 @@ public class VirtualRepoDownloadStrategy {
         String resourcePath = repoPath.getPath();
         //Find the latest in all repositories
         RepoResource latestRes = null;
+        // save forbidden unfound response
+        UnfoundRepoResource forbidden = null;
         //Traverse the local, caches and remote repositories and search for the newest snapshot
         //Make sure local repos are always searched first
         boolean foundInLocalRepo = false;
@@ -293,15 +306,21 @@ public class VirtualRepoDownloadStrategy {
                     updateResponseRepoPath(repo, res);
                     latestRes = res;
                 }
+            } else {
+                forbidden = checkIfForbidden(res);
             }
         }
 
         boolean nonFoundRetrievalCacheHit = latestRes != null && !latestRes.isFound();
         if (latestRes == null || nonFoundRetrievalCacheHit) {
-            String msg = "Artifact not found: " + resourcePath +
-                    (nonFoundRetrievalCacheHit ? " (cached on " +
-                            centralConfig.format(latestRes.getLastModified()) + ")" : "");
-            return new UnfoundRepoResource(repoPath, msg);
+            if (forbidden != null) {
+                return new UnfoundRepoResource(repoPath, forbidden.getReason(), forbidden.getStatusCode());
+            } else {
+                String msg = "Artifact not found: " + resourcePath +
+                        (nonFoundRetrievalCacheHit ? " (cached on " +
+                                centralConfig.format(latestRes.getLastModified()) + ")" : "");
+                return new UnfoundRepoResource(repoPath, msg);
+            }
         }
         //Found a newer version
         log.debug("{}: Found the latest version of {}", latestRes.getResponseRepoPath().getRepoKey(), resourcePath);
@@ -313,12 +332,15 @@ public class VirtualRepoDownloadStrategy {
      *
      * @param context      Request context
      * @param repoPath     The repository path pointing to a maven-metadata.xml
-     * @param repositories List of repositories to search   @return A StringResource with the metadata content or an un-found resource.
+     * @param repositories List of repositories to search   @return A StringResource with the metadata content or an
+     *                     un-found resource.
      */
     private RepoResource processMavenMetadata(RequestContext context, RepoPath repoPath, List<RealRepo> repositories)
             throws IOException {
         String path = repoPath.getPath();
         MergedMavenMetadata mergedMavenMetadata = new MergedMavenMetadata();
+        // save forbidden unfound response
+        UnfoundRepoResource forbidden = null;
         for (RealRepo repo : repositories) {
             if (repo.isCache()) {
                 //  Skip cache repos - we search in remote repos directly which will handle the cache retrieval
@@ -328,6 +350,7 @@ public class VirtualRepoDownloadStrategy {
 
             RepoResource res = repo.getInfo(context);
             if (!res.isFound()) {
+                forbidden = checkIfForbidden(res);
                 continue;
             }
 
@@ -335,23 +358,35 @@ public class VirtualRepoDownloadStrategy {
             if (metadata != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("{}: found maven metadata res: {}", repo, path);
-                    log.debug(res.getRepoPath() + " last modified " + centralConfig.format(res.getLastModified()));
+                    log.debug("{}: last modified {}", res.getRepoPath(), centralConfig.format(res.getLastModified()));
                 }
                 mergedMavenMetadata.merge(metadata, res);
             }
         }   // end repositories iteration
 
         if (mergedMavenMetadata.getMetadata() == null) {
-            String msg = "Maven metadata not found for '" + path + "'.";
-            return new UnfoundRepoResource(repoPath, msg);
+            if (forbidden != null) {
+                return new UnfoundRepoResource(repoPath, forbidden.getReason(), forbidden.getStatusCode());
+            } else {
+                return new UnfoundRepoResource(repoPath, "Maven metadata not found for '" + path + "'.");
+            }
         } else {
             log.debug("Maven artifact metadata found for '{}'.", path);
             return createMavenMetadataFoundResource(repoPath, mergedMavenMetadata);
         }
     }
 
+    private UnfoundRepoResource checkIfForbidden(RepoResource resource) {
+        if (resource instanceof UnfoundRepoResource) {
+            if (((UnfoundRepoResource) resource).getStatusCode() == HttpStatus.SC_FORBIDDEN) {
+                return (UnfoundRepoResource) resource;
+            }
+        }
+        return null;
+    }
+
     private void updateResponseRepoPath(Repo foundInRepo, RepoResource resource) {
-        resource.setResponseRepoPath(new RepoPath(foundInRepo.getKey(), resource.getRepoPath().getPath()));
+        resource.setResponseRepoPath(new RepoPathImpl(foundInRepo.getKey(), resource.getRepoPath().getPath()));
     }
 
     private Metadata getMavenMetadataContent(RequestContext requestContext, Repo repo, RepoResource res) {
@@ -365,7 +400,7 @@ public class VirtualRepoDownloadStrategy {
             metadataInputStream = handle.getInputStream();
             String metadataContent = IOUtils.toString(metadataInputStream, "utf-8");
             return MavenModelUtils.toMavenMetadata(metadataContent);
-        } catch (RepoRejectionException rre) {
+        } catch (RepoRejectException rre) {
             log.warn("Metadata retrieval failed on repo '{}': {}", repo, rre.getMessage());
         } catch (IOException ioe) {
             log.error("IO exception retrieving maven metadata content from repo '{}'", repo, ioe);
@@ -380,17 +415,20 @@ public class VirtualRepoDownloadStrategy {
     }
 
     private RepoResource createMavenMetadataFoundResource(RepoPath mavenMetadataRepoPath,
-            MergedMavenMetadata mergedMavenMetadata) throws IOException {
+                                                          MergedMavenMetadata mergedMavenMetadata) throws IOException {
         String metadataContent = MavenModelUtils.mavenMetadataToString(mergedMavenMetadata.getMetadata());
-        MetadataInfo metadataInfo = new MetadataInfo(mavenMetadataRepoPath);
+        MetadataInfo metadataInfo = new MetadataInfoImpl(mavenMetadataRepoPath);
         metadataInfo.setLastModified(mergedMavenMetadata.getLastModified());
         metadataInfo.setSize(metadataContent.length());
         ByteArrayInputStream bais = new ByteArrayInputStream(metadataContent.getBytes("utf-8"));
-        Checksum checksum = ChecksumCalculator.calculate(bais, ChecksumType.sha1);
-        String sha1 = checksum.getChecksum();
-        Set<ChecksumInfo> checksumInfos = new HashSet<ChecksumInfo>(1);
-        ChecksumInfo sha1Info = new ChecksumInfo(ChecksumType.sha1, sha1, sha1);
-        checksumInfos.add(sha1Info);
+
+        Checksum[] checksums = ChecksumCalculator.calculate(bais, ChecksumType.values());
+        Set<ChecksumInfo> checksumInfos = Sets.newHashSetWithExpectedSize(checksums.length);
+        for (Checksum checksum : checksums) {
+            ChecksumInfo checksumInfo =
+                    new ChecksumInfo(checksum.getType(), checksum.getChecksum(), checksum.getChecksum());
+            checksumInfos.add(checksumInfo);
+        }
         metadataInfo.setChecksums(checksumInfos);
         return new StringResource(metadataInfo, metadataContent);
     }
@@ -455,14 +493,43 @@ public class VirtualRepoDownloadStrategy {
             return lastModified;
         }
 
-        public void merge(Metadata otherMetedata, RepoResource foundResource) {
+        public void merge(Metadata otherMetadata, RepoResource foundResource) {
             long otherLastModified = foundResource.getLastModified();
             if (metadata == null) {
-                metadata = otherMetedata;
+                metadata = otherMetadata;
                 lastModified = otherLastModified;
             } else {
-                metadata.merge(otherMetedata);
+                metadata.merge(otherMetadata);
                 lastModified = Math.max(otherLastModified, lastModified);
+
+                Versioning versioning = metadata.getVersioning();
+                if (versioning != null) {
+                    List<String> versions = versioning.getVersions();
+                    if (!Utils.isNullOrEmpty(versions)) {
+                        Collections.sort(versions, new MavenVersionComparator());
+                        // latest is simply the last (be it snapshot or release version)
+                        String latestVersion = versions.get(versions.size() - 1);
+                        versioning.setLatest(latestVersion);
+
+                        // release is the latest non snapshot version
+                        for (String version : versions) {
+                            if (!MavenNaming.isSnapshot(version)) {
+                                versioning.setRelease(version);
+                            }
+                        }
+                    }
+
+                    // if there's a unique snapshot version prefer the one with the bigger build number
+                    Snapshot snapshot = versioning.getSnapshot();
+                    Snapshot otherSnapshot = otherMetadata.getVersioning() != null ?
+                            otherMetadata.getVersioning().getSnapshot() : null;
+                    if (snapshot != null && otherSnapshot != null) {
+                        if (snapshot.getBuildNumber() < otherSnapshot.getBuildNumber()) {
+                            snapshot.setBuildNumber(otherSnapshot.getBuildNumber());
+                            snapshot.setTimestamp(otherSnapshot.getTimestamp());
+                        }
+                    }
+                }
             }
         }
     }

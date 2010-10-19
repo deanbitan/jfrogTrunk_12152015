@@ -19,7 +19,7 @@
 package org.artifactory.rest.resource.artifact;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.RestAddon;
+import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.security.AuthorizationService;

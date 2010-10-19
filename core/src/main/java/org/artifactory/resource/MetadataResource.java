@@ -18,12 +18,14 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.api.fs.MetadataInfo;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.fs.MetadataInfoImpl;
+import org.artifactory.api.fs.RepoResource;
+import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MimeType;
+import org.artifactory.repo.RepoPath;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class MetadataResource implements RepoResource {
 
@@ -35,7 +37,7 @@ public class MetadataResource implements RepoResource {
     }
 
     public MetadataResource(RepoPath repoPath) {
-        this.info = new MetadataInfo(repoPath);
+        this.info = new MetadataInfoImpl(repoPath);
     }
 
     public RepoPath getRepoPath() {

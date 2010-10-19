@@ -24,7 +24,7 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import java.util.concurrent.Future;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class CachedThreadPoolTaskExecutor extends ConcurrentTaskExecutor {
 

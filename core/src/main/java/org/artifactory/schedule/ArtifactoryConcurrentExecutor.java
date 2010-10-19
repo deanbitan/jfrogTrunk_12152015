@@ -20,11 +20,8 @@ package org.artifactory.schedule;
 
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.property.ArtifactorySystemProperties;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
-import org.slf4j.Logger;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,10 +38,7 @@ import java.util.concurrent.TimeUnit;
  * @author Fred Simon
  */
 class ArtifactoryConcurrentExecutor implements Executor {
-    private static final Logger log = LoggerFactory.getLogger(ArtifactoryConcurrentExecutor.class);
-
     private final InternalArtifactoryContext artifactoryContext;
-    private final ArtifactorySystemProperties artifactorySystemProperties;
     private final ExecutorService executor;
 
     ArtifactoryConcurrentExecutor() {
@@ -53,7 +47,6 @@ class ArtifactoryConcurrentExecutor implements Executor {
         executor = new ThreadPoolExecutor(
                 0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), threadFactory);
         artifactoryContext = InternalContextHelper.get();
-        artifactorySystemProperties = artifactoryContext.getArtifactoryHome().getArtifactoryProperties();
     }
 
     public void execute(Runnable task) {

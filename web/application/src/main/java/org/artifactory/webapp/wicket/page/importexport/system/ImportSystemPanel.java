@@ -27,12 +27,12 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -83,7 +83,7 @@ public class ImportSystemPanel extends TitledPanel {
 
         Form importForm = new Form("importForm");
         add(importForm);
-        PropertyModel pathModel = new PropertyModel(this, "importFromPath");
+        PropertyModel<File> pathModel = new PropertyModel<File>(this, "importFromPath");
         final PathAutoCompleteTextField importToPathTf =
                 new PathAutoCompleteTextField("importFromPath", pathModel);
         importToPathTf.setRequired(true);
@@ -105,30 +105,33 @@ public class ImportSystemPanel extends TitledPanel {
     }
 
     private void addTrustServerChecksumsCheckbox(Form form) {
-        form.add(new StyledCheckbox("trustServerChecksums", new PropertyModel(this, "trustServerChecksums")));
+        form.add(new StyledCheckbox("trustServerChecksums", new PropertyModel<Boolean>(this, "trustServerChecksums")));
         form.add(new HelpBubble("trustServerChecksumsHelp",
                 "Ignore missing checksum and calculate them automatically."));
     }
 
     private void addVerboseCheckbox(Form importForm) {
-        StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel(this, "verbose"));
+        StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose"));
         verboseCheckbox.setRequired(false);
         importForm.add(verboseCheckbox);
         CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
-        importForm.add(new HelpBubble("verboseHelp",
-                "HINT: You can monitor the log in the <a href=\"" + systemLogsPage + "\">'System Logs'</a> page."));
+        importForm.add(
+                new HelpBubble("verboseHelp", "Lowers the log level to debug and redirects the output from the " +
+                        "standard log to the import-export log." +
+                        "\nHint: You can monitor the log in the <a href=\"" + systemLogsPage +
+                        "\">'System Logs'</a> page."));
     }
 
     private void addExcludeMetadataCheckbox(Form importForm) {
         final StyledCheckbox excludeMetadataCheckbox =
-                new StyledCheckbox("excludeMetadata", new PropertyModel(this, "excludeMetadata"));
+                new StyledCheckbox("excludeMetadata", new PropertyModel<Boolean>(this, "excludeMetadata"));
         excludeMetadataCheckbox.setOutputMarkupId(true);
         importForm.add(excludeMetadataCheckbox);
         importForm.add(new HelpBubble("excludeMetadataHelp",
                 "Exclude Artifactory-specific metadata from the import."));
 
         final StyledCheckbox excludeContentCheckbox =
-                new StyledCheckbox("excludeContent", new PropertyModel(this, "excludeContent"));
+                new StyledCheckbox("excludeContent", new PropertyModel<Boolean>(this, "excludeContent"));
         excludeContentCheckbox.setOutputMarkupId(true);
         excludeContentCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
@@ -136,7 +139,7 @@ public class ImportSystemPanel extends TitledPanel {
                 boolean excludeMDSelected = excludeMetadataCheckbox.isChecked();
                 boolean excludeContentSelected = excludeContentCheckbox.isChecked();
                 if (excludeMDSelected != excludeContentSelected) {
-                    excludeMetadataCheckbox.setModelObject(excludeContentSelected);
+                    excludeMetadataCheckbox.setDefaultModelObject(excludeContentSelected);
                     target.addComponent(excludeMetadataCheckbox);
                 }
             }
@@ -146,6 +149,7 @@ public class ImportSystemPanel extends TitledPanel {
                 "Exclude repository content from the import.\n" + "(Import only settings)"));
     }
 
+    @SuppressWarnings({"unchecked"})
     private void addImportButton(final Form importForm) {
         TitledAjaxSubmitLink importButton = new TitledAjaxSubmitLink("import", "Import", importForm) {
             @Override

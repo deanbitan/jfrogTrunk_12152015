@@ -31,6 +31,9 @@ import org.artifactory.version.CompoundVersionDetails;
  * @author Yoav Landman
  */
 public abstract class LogbackContextHelper {
+    private LogbackContextHelper() {
+        // utility class
+    }
 
     public static LoggerContext configure(LoggerContext lc, ArtifactoryHome artifactoryHome) {
         try {

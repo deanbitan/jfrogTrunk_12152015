@@ -20,9 +20,9 @@ package org.artifactory.version;
 
 /**
  * Holds the various Artifactory configuration versions. Each configuration version represents a range of versions that
- * use the same undelying subconfig versions (of metadata, security etc.). Config versions can be used to determine if
+ * use the same underlying sub-config versions (of metadata, security etc.). Config versions can be used to determine if
  * conversion from one version to another is needed (different sub config elements), if such conversion is possible, and
- * whether it can be done automactially.
+ * whether it can be done automatically.
  *
  * @author Yossi Shaul
  */

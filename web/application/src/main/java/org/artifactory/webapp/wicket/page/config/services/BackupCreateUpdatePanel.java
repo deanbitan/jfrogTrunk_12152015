@@ -78,7 +78,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
     private PathAutoCompleteTextField backupDir;
 
     public BackupCreateUpdatePanel(CreateUpdateAction action, BackupDescriptor backupDescriptor,
-                                   BackupsListPanel backupsListPanel) {
+            BackupsListPanel backupsListPanel) {
         super(action, backupDescriptor);
         createIncrementalBackup = backupDescriptor.isIncremental();
         setWidth(560);
@@ -143,7 +143,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                 boolean isCreateArchiveChecked = createArchiveCheckbox.isChecked();
                 createIncremental.setEnabled(!isCreateArchiveChecked);
                 if (isCreateArchiveChecked) {
-                    createIncremental.setModelObject(Boolean.FALSE);
+                    createIncremental.setDefaultModelObject(Boolean.FALSE);
                 }
                 target.addComponent(createIncremental);
             }
@@ -165,8 +165,8 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                 createArchiveCheckbox.setEnabled(!isIncrementalChecked);
                 retentionHoursField.setEnabled(!isIncrementalChecked);
                 if (isIncrementalChecked) {
-                    createArchiveCheckbox.setModelObject(Boolean.FALSE);
-                    retentionHoursField.setModelObject("0");
+                    createArchiveCheckbox.setDefaultModelObject(Boolean.FALSE);
+                    retentionHoursField.setDefaultModelObject("0");
                 }
                 target.addComponent(retentionHoursField);
                 target.addComponent(createArchiveCheckbox);
@@ -209,8 +209,8 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
             @Override
             protected void onError(AjaxRequestTarget target) {
                 super.onError(target);
-                IModel dirModal = browserButton.getModel();
-                backupDir.setModel(dirModal);
+                IModel dirModal = browserButton.getDefaultModel();
+                backupDir.setDefaultModel(dirModal);
             }
         };
     }

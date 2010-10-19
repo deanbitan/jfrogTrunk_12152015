@@ -18,12 +18,13 @@
 
 package org.artifactory.api.fs;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.fs.ItemInfo;
+import org.artifactory.repo.RepoPath;
 
 /**
  * @author yoavl
  */
-public abstract class ItemInfoImpl implements ItemInfo {
+public abstract class ItemInfoImpl implements InternalItemInfo {
 
     private final RepoPath repoPath;
     private final String name;
@@ -40,7 +41,7 @@ public abstract class ItemInfoImpl implements ItemInfo {
         this.lastModified = System.currentTimeMillis();
     }
 
-    protected ItemInfoImpl(ItemInfo info) {
+    protected ItemInfoImpl(org.artifactory.fs.ItemInfo info) {
         this(info.getRepoPath());
         this.created = info.getCreated();
         this.lastModified = info.getLastModified();
@@ -117,10 +118,10 @@ public abstract class ItemInfoImpl implements ItemInfo {
                 this.created == info.getCreated() &&
                 this.repoPath.equals(info.getRepoPath()) &&
                 this.name.equals(info.getName()) &&
-                this.getAdditionalInfo().isIdentical(info.getAdditionalInfo());
+                this.getAdditionalInfo().isIdentical(((InternalItemInfo) info).getAdditionalInfo());
     }
 
-    public boolean merge(ItemInfo itemInfo) {
+    public boolean merge(InternalItemInfo itemInfo) {
         if (this == itemInfo || this.isIdentical(itemInfo)) {
             // They are equal nothing to do
             return false;

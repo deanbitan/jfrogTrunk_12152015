@@ -19,9 +19,12 @@
 package org.artifactory.util;
 
 /**
- * Created by IntelliJ IDEA. User: yoav
+ * @author Yoav Landman
  */
 public abstract class ExceptionUtils {
+    private ExceptionUtils() {
+        // utility class
+    }
 
     /**
      * Unwrap an exception

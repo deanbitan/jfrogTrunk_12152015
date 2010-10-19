@@ -18,9 +18,8 @@
 
 package org.artifactory.update.md.v130beta6;
 
-import org.artifactory.api.fs.ChecksumInfo;
-import org.artifactory.api.fs.FileInfo;
 import org.artifactory.api.fs.FileInfoImpl;
+import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverterTest;
 import org.artifactory.util.ResourceUtils;
@@ -50,7 +49,7 @@ public class ChecksumsConverterTest extends MetadataConverterTest {
 
         // the result is intermediate so it might not be compatible with latest FileInfo
         // but for now it is a good test to test the resulting FileInfo 
-        FileInfo fileInfo = (FileInfo) xstream.fromXML(result);
+        org.artifactory.fs.FileInfo fileInfo = (org.artifactory.fs.FileInfo) xstream.fromXML(result);
         Set<ChecksumInfo> checksums = fileInfo.getChecksums();
         Assert.assertNotNull(checksums);
         Assert.assertEquals(checksums.size(), 2);

@@ -24,7 +24,7 @@ import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.model.Model;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class SecuredPageLink extends BookmarkablePageLink {
 
@@ -33,7 +33,7 @@ public class SecuredPageLink extends BookmarkablePageLink {
     public SecuredPageLink(final String id, String caption, final Class<? extends Page> pageClass) {
         super(id, pageClass);
         if (caption != null) {
-            setModel(new Model(caption));
+            setDefaultModel(new Model(caption));
         }
         this.pageClass = pageClass;
     }

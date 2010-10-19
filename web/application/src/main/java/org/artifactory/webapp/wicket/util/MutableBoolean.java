@@ -21,7 +21,7 @@ package org.artifactory.webapp.wicket.util;
 import java.io.Serializable;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 public class MutableBoolean implements Serializable {
     private boolean value;

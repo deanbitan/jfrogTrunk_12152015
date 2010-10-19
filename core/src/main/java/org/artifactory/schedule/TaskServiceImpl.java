@@ -118,7 +118,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     public void cancelTask(String token, boolean wait) {
         TaskBase task = activeTasksByToken.get(token);
         if (task != null) {
-            task.stop(wait, false, true);
+            task.stop(false, true, wait, 0);
         } else {
             log.warn("Could not find task {} to cancel.", token);
         }
@@ -141,7 +141,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     public void stopTask(String token, boolean wait) {
         TaskBase task = activeTasksByToken.get(token);
         if (task != null) {
-            task.stop(wait, false, false);
+            task.stop(false, false, wait, 0);
         } else {
             log.warn("Could not find task {} to stop.", token);
         }
@@ -156,10 +156,19 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         }
     }
 
+    public void pauseTask(String token, long pauseTime) {
+        TaskBase task = getInternalActiveTask(token);
+        if (task != null) {
+            task.stop(true, false, false, pauseTime);
+        } else {
+            log.warn("Could not find task {} to pause.", token);
+        }
+    }
+
     public void pauseTask(String token, boolean wait) {
         TaskBase task = getInternalActiveTask(token);
         if (task != null) {
-            task.stop(wait, true, false);
+            task.stop(true, false, wait, 0);
         } else {
             log.warn("Could not find task {} to pause.", token);
         }

@@ -65,7 +65,7 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
         this.contextSource = contextSource;
         boolean hasDnPattern = StringUtils.hasText(ldapSetting.getUserDnPattern());
         SearchPattern search = ldapSetting.getSearch();
-        boolean hasSearch = search != null;
+        boolean hasSearch = search != null && StringUtils.hasText(search.getSearchFilter());
         Assert.isTrue(hasDnPattern || hasSearch,
                 "An Authentication pattern should provide a userDnPattern or a searchFilter (or both)");
 
@@ -122,8 +122,7 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
                 } catch (UsernameNotFoundException e) {
                     log.debug("Searching for user {} failed for {}: {}",
                             new Object[]{userSearch, username, e.getMessage()});
-                }
-                catch (IncorrectResultSizeDataAccessException irsae) {
+                } catch (IncorrectResultSizeDataAccessException irsae) {
                     log.error("User: {} found {} times in LDAP server", username, irsae.getActualSize());
                 }
             }
@@ -140,7 +139,7 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
     private DirContextOperations bindWithDn(String userDn, String username, String password) {
         SpringSecurityLdapTemplate template = new SpringSecurityLdapTemplate(
                 new BindWithSpecificDnContextSource(getContextSource(), userDn, password));
-
+        template.setIgnorePartialResultException(true);
         try {
             return template.retrieveEntry(userDn, getUserAttributes());
 

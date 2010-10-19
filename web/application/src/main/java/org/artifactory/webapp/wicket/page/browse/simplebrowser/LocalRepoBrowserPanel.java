@@ -27,11 +27,10 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.fs.ItemInfo;
-import org.artifactory.api.repo.DirectoryItem;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
@@ -40,7 +39,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
-import static org.artifactory.api.repo.DirectoryItem.UP;
 
 /**
  * @author Yoav Landman
@@ -52,63 +50,59 @@ public class LocalRepoBrowserPanel extends TitledPanel {
     @SpringBean
     private RepositoryService repoService;
 
-    private final RepoPath repoPath;
-
     public LocalRepoBrowserPanel(String id, final RepoPath repoPath) {
         super(id);
-        this.repoPath = repoPath;
 
         add(new BreadCrumbsPanel("breadCrumbs", repoPath.getId()));
 
-        List<DirectoryItem> dirItems = repoService.getDirectoryItems(repoPath, true);
+        List<BrowsableItem> dirItems = repoService.getBrowsableChildren(repoPath, true);
         if (dirItems == null) {
             throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }
         final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
-        add(new ListView("items", dirItems) {
+        add(new ListView<BrowsableItem>("items", dirItems) {
+
             @Override
-            protected void populateItem(ListItem item) {
-                DirectoryItem directoryItem = (DirectoryItem) item.getModelObject();
-                String directoryPath = directoryItem.getPath();
-                if ("/".equals(directoryPath)) {
+            protected void populateItem(ListItem<BrowsableItem> listItem) {
+                BrowsableItem browsableItem = listItem.getModelObject();
+
+                String itemRelativePath = browsableItem.getRelativePath();
+                if ("/".equals(itemRelativePath)) {
                     //Do not repeat / twice for root repo link
-                    directoryPath = "";
+                    itemRelativePath = "";
                 } else {
-                    if (directoryItem.isFolder() && directoryPath.length() > 0) {
-                        directoryPath += "/";
+                    if (browsableItem.isFolder() && itemRelativePath.length() > 0) {
+                        itemRelativePath += "/";
                     }
                 }
-                String href = hrefPrefix + "/" + repoPath.getRepoKey() + "/" + directoryPath;
+                String href = hrefPrefix + "/" + repoPath.getRepoKey() + "/" + itemRelativePath;
                 AbstractLink link;
-                if (isEmpty(directoryItem.getItemInfo().getRepoKey())) {
+                if (isEmpty(browsableItem.getRepoKey())) {
                     link = getRootLink();
                 } else {
-                    link = new ExternalLink("link", href, directoryItem.getName());
+                    link = new ExternalLink("link", href, browsableItem.getName());
                 }
-                item.add(link);
                 link.add(new org.artifactory.common.wicket.behavior.CssClass(
-                        getCssClass(directoryItem)));
+                        getCssClass(browsableItem)));
+                listItem.add(link);
             }
 
             private BookmarkablePageLink getRootLink() {
-                return new BookmarkablePageLink("link", SimpleBrowserRootPage.class) {
+                return new BookmarkablePageLink<SimpleBrowserRootPage>("link", SimpleBrowserRootPage.class) {
                     @Override
-                    protected void onComponentTagBody(MarkupStream markupStream,
-                            ComponentTag openTag) {
-                        replaceComponentTagBody(markupStream, openTag, getModelObjectAsString(UP));
+                    protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+                        replaceComponentTagBody(markupStream, openTag, getDefaultModelObjectAsString(BrowsableItem.UP));
                     }
                 };
             }
         });
     }
 
-    public String getCssClass(DirectoryItem dirItem) {
-        ItemInfo itemInfo = dirItem.getItemInfo();
-        if (itemInfo.isFolder()) {
+    public String getCssClass(BrowsableItem browsableItem) {
+        if (browsableItem.isFolder()) {
             return ItemCssClass.folder.name();
         } else {
-            String path = itemInfo.getRelPath();
-            return ItemCssClass.getFileCssClass(path).name();
+            return ItemCssClass.getFileCssClass(browsableItem.getRelativePath()).name();
         }
     }
 }

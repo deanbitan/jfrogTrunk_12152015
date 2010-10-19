@@ -59,7 +59,7 @@ public class VirtualRepoListPanel extends FieldSetPanel {
         add(new ListView("items", reposToDisplay) {
             @Override
             protected void populateItem(ListItem virtualRepo) {
-                VirtualRepoDescriptor virtualRepoDescriptor = (VirtualRepoDescriptor) virtualRepo.getModelObject();
+                VirtualRepoDescriptor virtualRepoDescriptor = (VirtualRepoDescriptor) virtualRepo.getDefaultModelObject();
                 final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
                 String path = getRepoPath(item);
                 String href = hrefPrefix + "/" + virtualRepoDescriptor.getKey() + "/" + path;

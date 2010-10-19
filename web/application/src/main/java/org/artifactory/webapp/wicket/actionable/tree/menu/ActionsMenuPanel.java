@@ -60,7 +60,7 @@ public class ActionsMenuPanel extends Panel {
         ListView menuItems = new ListView("menuItem", menuActions) {
             @Override
             protected void populateItem(ListItem item) {
-                final ItemAction action = (ItemAction) item.getModelObject();
+                final ItemAction action = (ItemAction) item.getDefaultModelObject();
                 item.add(new ActionLink("link", action, actionableItem));
             }
         };

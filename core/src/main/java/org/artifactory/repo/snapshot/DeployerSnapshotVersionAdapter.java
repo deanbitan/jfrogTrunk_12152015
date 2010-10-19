@@ -18,7 +18,7 @@
 
 package org.artifactory.repo.snapshot;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 /**
  * This adapter doesn't modify in any way the input path.

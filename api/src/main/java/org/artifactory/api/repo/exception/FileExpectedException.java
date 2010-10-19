@@ -18,7 +18,7 @@
 
 package org.artifactory.api.repo.exception;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 /**
  * This exception is thrown whenever a folder exists in the repository path but a file is expected.

@@ -18,9 +18,14 @@
 
 package org.artifactory.common.wicket.component.file.path;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.util.file.Folder;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,31 +38,42 @@ import static org.springframework.util.StringUtils.startsWithIgnoreCase;
  * @author yoava
  */
 public class PathHelper implements Serializable {
+    private static final Logger log = LoggerFactory.getLogger(PathHelper.class);
     private static final Pattern ROOT_PATTERN = Pattern.compile(getRootPattern());
     private static final Pattern ABSOLUTE_PATTERN = Pattern.compile(getAbsolutePattern());
 
-    private String root;
+    private String workingDirectoryPath;
 
     public PathHelper() {
+        setDefaultWorkingDirectory();
+    }
+
+    public void setDefaultWorkingDirectory() {
+        final String defaultRoot = ConstantValues.uiChroot.getString();
+        if (StringUtils.isBlank(defaultRoot)) {
+            setWorkingDirectoryPath(null);
+        } else {
+            setWorkingDirectoryPath(defaultRoot);
+        }
     }
 
     public PathHelper(String chRoot) {
-        setRoot(chRoot);
+        setWorkingDirectoryPath(chRoot);
     }
 
-    public String getRoot() {
-        return root;
+    public String getWorkingDirectoryPath() {
+        return workingDirectoryPath;
     }
 
-    public void setRoot(String root) {
-        if (root == null) {
-            this.root = null;
+    public void setWorkingDirectoryPath(String workingDirectoryPath) {
+        if (workingDirectoryPath == null) {
+            this.workingDirectoryPath = null;
             return;
         }
 
-        this.root = new Folder(root).getAbsolutePath().replace('\\', '/');
-        if (!this.root.endsWith("/")) {
-            this.root += "/";
+        this.workingDirectoryPath = new Folder(workingDirectoryPath).getAbsolutePath().replace('\\', '/');
+        if (!this.workingDirectoryPath.endsWith("/")) {
+            this.workingDirectoryPath += "/";
         }
     }
 
@@ -69,9 +85,9 @@ public class PathHelper implements Serializable {
         return path;
     }
 
-    public String getAbsulotePath(String input) {
+    public String getAbsolutePath(String input) {
         String inputPath = input.trim().replace('\\', '/');
-        if (root == null) {
+        if (workingDirectoryPath == null) {
             // path is absolute
             if (!isAbsolutePath(inputPath)) {
                 inputPath = "/" + inputPath;
@@ -88,7 +104,7 @@ public class PathHelper implements Serializable {
             inputPath = inputPath.substring(1);
         }
 
-        inputPath = root + inputPath;
+        inputPath = workingDirectoryPath + inputPath;
         return inputPath;
     }
 
@@ -101,50 +117,71 @@ public class PathHelper implements Serializable {
     }
 
     public List<File> getFiles(String path, PathMask mask) {
-        String absulotePath = getAbsulotePath(path);
-        Folder folder = new Folder(getPathFolder(absulotePath));
-        if (folder.exists() && folder.isDirectory()) {
-            Folder[] folders = folder.getFolders();
-            File[] files = folder.getFiles();
-            List<File> filesList = new ArrayList<File>(folders.length + files.length);
+        String absolutePath = getAbsolutePath(path);
+        Folder folder = new Folder(getPathFolder(absolutePath));
 
-            if (mask.includeFolders()) {
-                for (Folder file : folders) {
-                    String fileAbsPath = file.getAbsolutePath().replace('\\', '/');
-                    if (startsWithIgnoreCase(fileAbsPath, absulotePath)) {
-                        filesList.add(file);
-                    }
-                }
-            }
-
-            if (mask.includeFiles()) {
-                for (File file : files) {
-                    String fileAbsPath = file.getPath().replace('\\', '/');
-                    if (startsWithIgnoreCase(fileAbsPath, absulotePath)) {
-                        filesList.add(file);
-                    }
-                }
-            }
-            return filesList;
+        if (!folder.exists() || !folder.isDirectory()) {
+            return Collections.emptyList();
         }
 
+        if (!isParentOf(workingDirectoryPath, folder)) {
+            return Collections.emptyList();
+        }
+        Folder[] folders = folder.getFolders();
+        File[] files = folder.getFiles();
+        List<File> filesList = new ArrayList<File>(folders.length + files.length);
 
-        return Collections.emptyList();
+        if (mask.includeFolders()) {
+            for (Folder file : folders) {
+                String fileAbsPath = file.getAbsolutePath().replace('\\', '/');
+                if (startsWithIgnoreCase(fileAbsPath, absolutePath)) {
+                    filesList.add(file);
+                }
+            }
+        }
+
+        if (mask.includeFiles()) {
+            for (File file : files) {
+                String fileAbsPath = file.getPath().replace('\\', '/');
+                if (startsWithIgnoreCase(fileAbsPath, absolutePath)) {
+                    filesList.add(file);
+                }
+            }
+        }
+        return filesList;
+    }
+
+    public boolean isParentOf(String parent, Folder child) {
+        if (parent == null) {
+            return true;
+        }
+        // check if child folder matches canonicalParent/*
+        final String canonicalParent = getCanonicalPath(new File(parent));
+        return getCanonicalPath(child).startsWith(canonicalParent);
+    }
+
+    public String getCanonicalPath(File file) {
+        try {
+            return file.getCanonicalPath();
+        } catch (IOException e) {
+            log.error(String.format("Could not get canonical path for \"%s\", using absolute path instead: %s", file.getAbsolutePath(), e.getMessage()), e);
+        }
+        return file.getAbsolutePath();
     }
 
     public String getRelativePath(File file) {
-        if (root == null) {
+        if (workingDirectoryPath == null) {
             return file.getAbsolutePath();
         }
-        return file.getAbsolutePath().substring(root.length() - 1);
+        return file.getAbsolutePath().substring(workingDirectoryPath.length() - 1);
     }
 
-    public File getAbsuloteFile(String relativePath) {
+    public File getAbsoluteFile(String relativePath) {
         if (relativePath == null) {
             return null;
         }
 
-        return new File(getAbsulotePath(relativePath));
+        return new File(getAbsolutePath(relativePath));
     }
 
     private static String getRootPattern() {

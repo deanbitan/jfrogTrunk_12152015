@@ -18,7 +18,8 @@
 
 package org.artifactory.traffic.read;
 
-import org.apache.commons.io.IOUtils;
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import org.apache.commons.io.input.NullReader;
 import org.apache.commons.lang.time.DateUtils;
 import org.artifactory.traffic.entry.TrafficEntry;
@@ -84,7 +85,7 @@ public class TrafficStreamParserTest {
      * @throws ParseException
      */
     public void testWithinRange() throws IOException, ParseException {
-        List<String> list = IOUtils.readLines(new FileReader(trafficLogFile.getFile()));
+        List<String> list = Resources.readLines(trafficLogFile, Charsets.UTF_8);
         String firstEntry = list.get(0);
         String[] splitFirstEntry = firstEntry.split("\\|");
         String lastEntry = list.get(list.size() - 1);

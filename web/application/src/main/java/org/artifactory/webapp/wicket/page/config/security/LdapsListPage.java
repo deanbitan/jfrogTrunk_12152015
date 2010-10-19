@@ -62,8 +62,8 @@ public class LdapsListPage extends AuthenticatedPage {
     public void refresh(AjaxRequestTarget target) {
         Component component = get("ldapListPanel");
         MutableCentralConfigDescriptor descriptor = centralConfigService.getMutableDescriptor();
-        if (component.getModelObject() != null) {
-            component.setModelObject(descriptor.getSecurity().getLdapSettings());
+        if (component.getDefaultModelObject() != null) {
+            component.setDefaultModelObject(descriptor.getSecurity().getLdapSettings());
         }
         if (component instanceof LdapsListPanel) {
             ((LdapsListPanel) component).refresh();

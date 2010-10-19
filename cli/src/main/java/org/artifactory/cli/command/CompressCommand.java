@@ -69,7 +69,7 @@ public class CompressCommand extends UrlBasedCommand implements Command {
      * @throws NoSuchMethodException
      */
     private int compress() throws Exception {
-        String compressUri = RestClient.COMPRESS_URL;
+        String compressUri = getUrl() + RestClient.COMPRESS_URL;
         log.info("Sending compress command to {} ...", compressUri);
         MultiStatusHolder statusHolder = post(compressUri, null, MultiStatusHolder.class);
         return reportMultiStatusResult(statusHolder);

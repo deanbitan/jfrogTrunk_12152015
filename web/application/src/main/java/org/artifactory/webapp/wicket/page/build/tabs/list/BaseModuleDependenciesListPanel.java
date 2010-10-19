@@ -119,13 +119,12 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
             return dependenciesList.size();
         }
 
-        @Override
         public IModel model(Object object) {
             ModuleDependencyActionableItem item = (ModuleDependencyActionableItem) object;
             item = new ModuleDependencyActionableItem(item.getRepoPath(), item.getDependency()) {
                 public Object getRepoPathOrMissingMessage() {
                     if (super.getRepoPath() == null) {
-                        return "Not Found: Artifact may have been deleted or overwritten.";
+                        return "Not in repository (may have been deleted or overwritten)";
                     } else {
                         return super.getRepoPath();
                     }

@@ -18,9 +18,9 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrPath;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.JcrHelper;
 
 import javax.jcr.Node;

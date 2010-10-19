@@ -18,7 +18,7 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.repo.RepoPath;
 
 import javax.jcr.Node;
 
@@ -29,6 +29,7 @@ import javax.jcr.Node;
  * User: freds Date: Aug 10, 2008 Time: 3:39:02 PM
  */
 public interface MetadataAware {
+    String METADATA_FOLDER = ".artifactory-metadata";
 
     /**
      * @return the actual JCR node of the entity on which Metadata is added

@@ -20,7 +20,7 @@ package org.artifactory.rest.resource.system;
 
 
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusEntry;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 

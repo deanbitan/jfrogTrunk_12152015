@@ -1,1 +1,13 @@
-({"set":"Defineix","text":"Descripció:","insertImageTitle":"Propietats de la imatge","url":"URL:","createLinkTitle":"Propietats de l'enllaç","newWindow":"New Window","topWindow":"Topmost Window","target":"Target:","parentWindow":"Parent Window","currentWindow":"Current Window"})
+({
+	createLinkTitle: "Propietats de l\'enllaç",
+	insertImageTitle: "Propietats de la imatge",
+	url: "URL:",
+	text: "Descipció:",
+	target: "Destinació:",
+	set: "Defineix",
+	currentWindow: "Finestra actual",
+	parentWindow: "Finestra pare",
+	topWindow: "Finestra superior",
+	newWindow: "Finestra nova"
+})
+

@@ -18,14 +18,17 @@
 
 package org.artifactory.api.config;
 
+import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.repo.RepoPath;
 
 import java.io.File;
 import java.util.Date;
+import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA. User: yoavl
+ * @author Yoav Landman
  */
 @XStreamAlias("export-settings")
 public class ExportSettings extends BaseSettings {
@@ -33,6 +36,7 @@ public class ExportSettings extends BaseSettings {
     private boolean ignoreRepositoryFilteringRulesOn = false;
     private boolean createArchive = false;
     private Date time;
+
     /**
      * Flag that indicates if to export m2 compatible meta data
      */
@@ -41,18 +45,20 @@ public class ExportSettings extends BaseSettings {
     private boolean incremental;
 
     /**
-     * Callback - If we need to perform any special actions
+     * Callbacks - If we need to perform any special actions before exporting a file
      */
-    private ExportCallback callback;
+    private Set<FileExportCallback> callbacks;
 
     public ExportSettings(File baseDir) {
         super(baseDir);
         time = new Date();
+        callbacks = Sets.newHashSet();
     }
 
     public ExportSettings(File baseDir, MultiStatusHolder statusHolder) {
         super(baseDir, statusHolder);
         time = new Date();
+        callbacks = Sets.newHashSet();
     }
 
     public ExportSettings(File baseDir, ExportSettings settings) {
@@ -62,7 +68,7 @@ public class ExportSettings extends BaseSettings {
         this.time = settings.time;
         this.m2Compatible = settings.m2Compatible;
         this.incremental = settings.incremental;
-        this.callback = settings.callback;
+        this.callbacks = settings.callbacks;
     }
 
     public boolean isIgnoreRepositoryFilteringRulesOn() {
@@ -113,30 +119,19 @@ public class ExportSettings extends BaseSettings {
         this.m2Compatible = m2Compatible;
     }
 
-    /**
-     * Returns the callback object
-     *
-     * @return Export callback object
-     */
-    public ExportCallback getCallback() {
-        return callback;
+    public void addCallback(FileExportCallback callback) {
+        if (callbacks == null) {
+            callbacks = Sets.newHashSet();
+        }
+        callbacks.add(callback);
     }
 
-    /**
-     * Sets the export callback object
-     *
-     * @param callback Callback object to set
-     */
-    public void setCallback(ExportCallback callback) {
-        this.callback = callback;
-    }
+    public void executeCallbacks(RepoPath currentRepoPath) {
+        if ((callbacks != null) && !callbacks.isEmpty()) {
+            for (FileExportCallback callback : callbacks) {
+                callback.callback(this, currentRepoPath);
+            }
 
-    /**
-     * Indicates if the callback object is set
-     *
-     * @return True if the object is set
-     */
-    public boolean hasCallback() {
-        return callback != null;
+        }
     }
 }

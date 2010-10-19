@@ -28,7 +28,10 @@ import java.util.Date;
  *
  * @author Noam Tenne
  */
-public class CronUtils {
+public abstract class CronUtils {
+    private CronUtils() {
+        // utility class
+    }
 
     /**
      * Returns a boolean value representing the validity of a given Cron Expression

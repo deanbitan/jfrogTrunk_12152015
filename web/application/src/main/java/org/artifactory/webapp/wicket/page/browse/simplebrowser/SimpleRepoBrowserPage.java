@@ -22,8 +22,9 @@ import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebRequestCycle;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.repo.RepoPath;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RepoFilter;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.base.BasePage;
@@ -39,6 +40,9 @@ public class SimpleRepoBrowserPage extends AuthenticatedPage {
     private RepositoryService repoService;
 
     public SimpleRepoBrowserPage() {
+        setStatelessHint(false);
+        setVersioned(false);
+
         //Retrieve the repository path from the request
         WebRequestCycle webRequestCycle = (WebRequestCycle) getRequestCycle();
         WebRequest request = webRequestCycle.getWebRequest();
@@ -54,7 +58,7 @@ public class SimpleRepoBrowserPage extends AuthenticatedPage {
             warn("Remote repositories are not directly browsable - browsing the remote repository cache.");
             // switch the repo path and key to the cache repo
             repoKey = repoKey + "-cache";
-            repoPath = new RepoPath(repoKey, repoPath.getPath());
+            repoPath = new RepoPathImpl(repoKey, repoPath.getPath());
         }
 
         if (repoService.localOrCachedRepoDescriptorByKey(repoKey) != null) {

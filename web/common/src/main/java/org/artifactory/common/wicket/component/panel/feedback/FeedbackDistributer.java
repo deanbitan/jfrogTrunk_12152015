@@ -40,7 +40,7 @@ public class FeedbackDistributer extends Panel implements IFeedback {
     public FeedbackDistributer(String id) {
         super(id);
 
-        setModel(newFeedbackMessagesModel());
+        setDefaultModel(newFeedbackMessagesModel());
         setOutputMarkupId(true);
 
         add(ResourcePackage.forJavaScript(FeedbackDistributer.class));
@@ -69,12 +69,12 @@ public class FeedbackDistributer extends Panel implements IFeedback {
     }
 
     public final FeedbackMessagesModel getFeedbackMessagesModel() {
-        return (FeedbackMessagesModel) getModel();
+        return (FeedbackMessagesModel) getDefaultModel();
     }
 
     public void updateFeedback() {
         // Force model to load
-        getModelObject();
+        getDefaultModelObject();
     }
 
     public boolean anyErrorMessage() {
@@ -99,7 +99,7 @@ public class FeedbackDistributer extends Panel implements IFeedback {
 
     @SuppressWarnings({"unchecked"})
     protected final List<FeedbackMessage> getCurrentMessages() {
-        List<FeedbackMessage> messages = (List<FeedbackMessage>) getModelObject();
+        List<FeedbackMessage> messages = (List<FeedbackMessage>) getDefaultModelObject();
         return Collections.unmodifiableList(messages);
     }
 

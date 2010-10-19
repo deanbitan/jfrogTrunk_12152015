@@ -18,12 +18,13 @@
 
 package org.artifactory.jcr.fs;
 
-import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.fs.ItemInfo;
+import org.artifactory.api.fs.InternalItemInfo;
 import org.artifactory.api.fs.ItemInfoImpl;
-import org.artifactory.api.repo.RepoPath;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
 
 /**
@@ -31,7 +32,7 @@ import org.slf4j.Logger;
  *
  * @author Yoav Landman
  */
-public abstract class ItemInfoProxy<T extends ItemInfo> extends ItemInfoImpl {
+public abstract class ItemInfoProxy<T extends InternalItemInfo> extends ItemInfoImpl {
     private static final Logger log = LoggerFactory.getLogger(ItemInfoProxy.class);
 
     private T materialized;
@@ -85,7 +86,7 @@ public abstract class ItemInfoProxy<T extends ItemInfo> extends ItemInfoImpl {
             } else {
                 log.debug("Materializing ItemInfo: {}.", getRelPath());
             }
-            RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
+            RepositoryService repositoryService = InternalContextHelper.get().getRepositoryService();
             materialized = (T) repositoryService.getItemInfo(getRepoPath());
         }
         return materialized;

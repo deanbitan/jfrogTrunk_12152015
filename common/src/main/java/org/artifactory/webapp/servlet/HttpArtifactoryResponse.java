@@ -64,6 +64,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
             } else {
                 response.sendError(statusCode);
             }
+            flush();
         } catch (IOException e) {
             throw e;
         } catch (Throwable t) {
@@ -75,6 +76,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         try {
             response.addHeader("WWW-Authenticate", "Basic realm=\"" + realm + "\"");
             response.sendError(HttpStatus.SC_UNAUTHORIZED, message);
+            flush();
         } catch (IOException e) {
             throw e;
         } catch (IllegalStateException e) {
@@ -85,9 +87,14 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
     }
 
     @Override
-    public void setContentLength(int length) {
+    public void setContentLength(long length) {
         super.setContentLength(length);
-        response.setContentLength(length);
+        if (length <= Integer.MAX_VALUE) {
+            response.setContentLength((int) length);
+        } else {
+            // servlet api doesn't support long values, set the header manually
+            response.setHeader("Content-Length", length + "");
+        }
     }
 
     public OutputStream getOutputStream() throws IOException {
@@ -106,11 +113,6 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
 
     public void setHeader(String header, String value) {
         response.setHeader(header, value);
-    }
-
-    public void sendOk() {
-        flush();
-        setStatus(HttpStatus.SC_OK);
     }
 
     public void flush() {

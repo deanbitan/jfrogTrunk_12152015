@@ -19,7 +19,11 @@ import org.springframework.beans.support.PropertyComparator;
 import org.springframework.beans.support.SortDefinition;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Yoav Aharoni
@@ -27,12 +31,14 @@ import java.util.*;
 public abstract class MasterDetailTable<M extends Serializable, D extends Serializable> extends SortableTable {
     private Set<M> openedItems = new HashSet<M>();
 
-    public MasterDetailTable(String id, List<IColumn> columns, List<M> masterList, int rowsPerPage) {
-        this(id, columns.toArray(new IColumn[columns.size()]), masterList, rowsPerPage);
+    public MasterDetailTable(String id, List<IColumn> columns, List<M> masterList, String defaultSortProp,
+            int rowsPerPage) {
+        this(id, columns.toArray(new IColumn[columns.size()]), masterList, defaultSortProp, rowsPerPage);
     }
 
-    public MasterDetailTable(String id, IColumn[] columns, List<M> masterList, int rowsPerPage) {
-        super(id, addSpaceColumns(columns), new MasterDataProvider(masterList), rowsPerPage);
+    public MasterDetailTable(String id, IColumn[] columns, List<M> masterList, String defaultSortProp,
+            int rowsPerPage) {
+        super(id, addSpaceColumns(columns), new MasterDataProvider(masterList, defaultSortProp), rowsPerPage);
     }
 
     {
@@ -64,7 +70,7 @@ public abstract class MasterDetailTable<M extends Serializable, D extends Serial
 
     @SuppressWarnings({"unchecked"})
     protected void onMasterToggle(MasterDetailRowPanel row, AjaxRequestTarget target) {
-        final M m = (M) row.getModelObject();
+        final M m = (M) row.getDefaultModelObject();
         if (openedItems.contains(m)) {
             openedItems.remove(m);
         } else {
@@ -96,11 +102,13 @@ public abstract class MasterDetailTable<M extends Serializable, D extends Serial
         }
     }
 
-    private static class MasterDataProvider<M extends Serializable, D extends Serializable> extends SortableDataProvider {
+    private static class MasterDataProvider<M extends Serializable, D extends Serializable>
+            extends SortableDataProvider {
         private List<?> list;
 
-        private MasterDataProvider(List<?> list) {
+        private MasterDataProvider(List<?> list, String defaultSortProp) {
             this.list = list;
+            setSort(defaultSortProp, false);
         }
 
         @SuppressWarnings({"unchecked"})
@@ -109,7 +117,8 @@ public abstract class MasterDetailTable<M extends Serializable, D extends Serial
             if (sortParam != null && sortParam.getProperty().startsWith("master.")) {
                 ListPropertySorter.sort(list, sortParam);
                 final String property = sortParam.getProperty().substring(7);
-                final SortDefinition sortDefinition = new MutableSortDefinition(property, true, sortParam.isAscending());
+                final SortDefinition sortDefinition = new MutableSortDefinition(property, true,
+                        sortParam.isAscending());
                 Collections.sort(list, new PropertyComparator(sortDefinition));
             }
             List<?> result = list.subList(first, first + count);

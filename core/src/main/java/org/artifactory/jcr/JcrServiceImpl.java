@@ -32,21 +32,20 @@ import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
 import org.apache.jackrabbit.ocm.manager.impl.ObjectContentManagerImpl;
 import org.apache.jackrabbit.ocm.mapper.Mapper;
 import org.apache.jackrabbit.spi.QNodeTypeDefinition;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.common.StatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.mime.ChecksumType;
 import org.artifactory.api.repo.ArtifactCount;
-import org.artifactory.api.repo.RepoPath;
-import org.artifactory.api.repo.exception.RepoRejectionException;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.storage.GarbageCollectorInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.ResourceStreamHandle;
 import org.artifactory.config.xml.ArtifactoryXmlFactory;
 import org.artifactory.config.xml.EntityResolvingContentHandler;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -64,9 +63,11 @@ import org.artifactory.jcr.trash.Trashman;
 import org.artifactory.jcr.version.JcrVersion;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.security.AccessLogger;
@@ -87,14 +88,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import javax.annotation.PostConstruct;
-import javax.jcr.Binary;
-import javax.jcr.ImportUUIDBehavior;
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.Property;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.Workspace;
+import javax.jcr.*;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
@@ -105,11 +99,7 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 
 import static org.apache.jackrabbit.JcrConstants.*;
@@ -210,8 +200,6 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
 
     /**
      * Inits the singleton JCR repository
-     *
-     * @throws Exception
      */
     @PostConstruct
     private void initJcrRepository() throws Exception {
@@ -434,8 +422,8 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     }
 
     public JcrFile importFile(JcrFolder parentFolder, File file, ImportSettings settings)
-            throws RepoRejectionException {
-        RepoPath targetRepoPath = new RepoPath(parentFolder.getRepoPath(), file.getName());
+            throws RepoRejectException {
+        RepoPath targetRepoPath = new RepoPathImpl(parentFolder.getRepoPath(), file.getName());
         log.debug("Importing '{}'.", targetRepoPath);
         //Takes a read lock
         assertValidDeployment(targetRepoPath);
@@ -448,10 +436,9 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
             targetRepoPath = jcrFile.getRepoPath();
             log.debug("Imported '{}'.", targetRepoPath);
             AccessLogger.deployed(targetRepoPath);
-        } catch (RepoRejectionException rre) {
+        } catch (RepoRejectException rre) {
             throw rre;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             MultiStatusHolder status = settings.getStatusHolder();
             status.setWarning("Could not import file '" + file.getAbsolutePath() + "' into " + jcrFile + ".", e, log);
             //Remove the file, so that save will not be attempted at the end of the transaction
@@ -545,7 +532,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
         }
     }
 
-    public void writeMetadataEntries(JcrFsItem fsItem, StatusHolder status, File folder, boolean incremental) {
+    public void writeMetadataEntries(JcrFsItem fsItem, BasicStatusHolder status, File folder, boolean incremental) {
         fsItem.writeMetadataEntries(status, folder, incremental);
     }
 
@@ -644,7 +631,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     }
 
     public void setString(Node parent, String nodeName, String value, String mimeType, String userId,
-            boolean saveXmlHierarchy
+                          boolean saveXmlHierarchy
     ) {
         InputStream stringStream = null;
         try {
@@ -664,7 +651,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
      * NOTE: Caller is expected to close the provided stream.
      */
     public void setStream(Node parent, String nodeName, InputStream value, String mimeType, String userId,
-            boolean saveXmlHierarchy) {
+                          boolean saveXmlHierarchy) {
         try {
             Node metadataNode;
             Node stringNode;
@@ -748,7 +735,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     /**
      * {@inheritDoc}
      */
-    public FolderTreeNode getFolderTreeNode(RepoPath folder, StatusHolder status) {
+    public FolderTreeNode getFolderTreeNode(RepoPath folder, BasicStatusHolder status) {
         Node node = getNode(JcrPath.get().getAbsolutePath(folder));
         if (node == null || !JcrHelper.isFolder(node)) {
             status.setError("No folder found in " + folder, log);
@@ -760,7 +747,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     /**
      * Scan folders recursively, to create the data tree of folders and pom names
      */
-    private FolderTreeNode processFolder(Node folder, StatusHolder status) {
+    private FolderTreeNode processFolder(Node folder, BasicStatusHolder status) {
         List<FolderTreeNode> childFolders = Lists.newArrayList();
         List<String> childPoms = Lists.newArrayList();
         NodeIterator nodeIterator;
@@ -804,18 +791,14 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
                                 safeGetNode(childNode, "artifactory:xml", "project", "packaging", "jcr:xmltext");
                         if (packagingNodeText != null) {
                             try {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Found Maven Plugin pom at '{}'", childNode.getPath());
-                                }
+                                log.debug("Found Maven Plugin pom at '{}'", childNode.getPath());
                                 if (packagingNodeText.hasProperty("jcr:xmlcharacters")) {
                                     hasMavenPlugins |= "maven-plugin"
                                             .equals(packagingNodeText.getProperty("jcr:xmlcharacters").getString());
                                 }
                             } catch (RepositoryException e) {
-                                status.setError(
-                                        "Error while reading pom packaging value for " + JcrHelper.display(
-                                                childNode) + ".", e,
-                                        log);
+                                status.setError("Error while reading pom packaging value for " +
+                                        JcrHelper.display(childNode) + ".", e, log);
                             }
                         }
                     }
@@ -932,11 +915,11 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     /**
      * Check that the repository approves the deployment
      */
-    private void assertValidDeployment(RepoPath targetRepoPath) throws RepoRejectionException {
+    private void assertValidDeployment(RepoPath targetRepoPath) throws RepoRejectException {
         String repoKey = targetRepoPath.getRepoKey();
         LocalRepo repo = repositoryService.localOrCachedRepositoryByKey(repoKey);
         if (repo == null) {
-            throw new RepoRejectionException("The repository '" + repoKey + "' is not configured.");
+            throw new RepoRejectException("The repository '" + repoKey + "' is not configured.");
         }
         repositoryService.assertValidDeployPath(repo, targetRepoPath.getPath());
     }
@@ -1028,12 +1011,17 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
             NodeIterator nodeIterator = result.getNodes();
             while (nodeIterator.hasNext()) {
                 Node node = nodeIterator.nextNode();
-                String path = node.getPath();
-                if (path.startsWith(repoPrefix) && path.endsWith("artifactory:xml/project/packaging/jcr:xmltext")) {
-                    String artifactPath = path.substring(0, path.lastIndexOf("/" + NODE_ARTIFACTORY_XML));
-                    RepoPath repoPath = JcrPath.get().getRepoPath(artifactPath);
-                    JcrFile jcrFile = repo.getJcrFile(repoPath);
-                    pluginPomFiles.add(jcrFile);
+                try {
+                    String path = node.getPath();
+                    if (path.startsWith(repoPrefix) && path.endsWith("artifactory:xml/project/packaging/jcr:xmltext")) {
+                        String artifactPath = path.substring(0, path.lastIndexOf("/" + NODE_ARTIFACTORY_XML));
+                        RepoPath repoPath = JcrPath.get().getRepoPath(artifactPath);
+                        JcrFile jcrFile = repo.getJcrFile(repoPath);
+                        pluginPomFiles.add(jcrFile);
+                    }
+                } catch (ItemNotFoundException e) {
+                    // in some cases nodes are in the trash and can get deleted while this iteration executes
+                    log.warn(e.getMessage());
                 }
             }
         } catch (Exception e) {
