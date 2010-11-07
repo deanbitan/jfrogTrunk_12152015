@@ -17,7 +17,7 @@
  */
 
 var Collapsible = {
-    collapseExpand: function(link, resize, callback) {
+    collapseExpand: function(link, resize, cookieName, callback) {
         var container = link.parentNode;
         var expanded = container.className.indexOf('expanded') >= 0;
         if (expanded) {
@@ -25,6 +25,14 @@ var Collapsible = {
         } else {
             container.className = 'collapsible-wrapper expanded';
         }
+        if (cookieName) {
+            if (expanded) {
+                dojo.cookie(cookieName, null, {expires: -1});
+            } else {
+                dojo.cookie(cookieName, true);
+            }
+        }
+
         if (resize) {
             ModalHandler.resizeCurrent();
             ModalHandler.centerCurrent();

@@ -18,12 +18,11 @@
 
 package org.artifactory.repo.service;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
@@ -195,7 +194,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     private VirtualRepo globalVirtualRepo;
 
-    private OrderedMap<String, VirtualRepo> virtualRepositoriesMap = new ListOrderedMap<String, VirtualRepo>();
+    private Map<String, VirtualRepo> virtualRepositoriesMap = Maps.newLinkedHashMap();
 
     // a cache of all the repository keys
     private Set<String> allRepoKeysCache;
@@ -223,7 +222,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     private void checkAndCleanChangedVirtualPomCleanupPolicy(CentralConfigDescriptor oldDescriptor) {
-        OrderedMap<String, VirtualRepoDescriptor> oldVirtualDescriptors = oldDescriptor.getVirtualRepositoriesMap();
+        Map<String, VirtualRepoDescriptor> oldVirtualDescriptors = oldDescriptor.getVirtualRepositoriesMap();
         List<VirtualRepoDescriptor> newVirtualDescriptors = getVirtualRepoDescriptors();
         for (VirtualRepoDescriptor newDescriptor : newVirtualDescriptors) {
             String repoKey = newDescriptor.getKey();
@@ -329,9 +328,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         InternalRepositoryService transactionalMe = getTransactionalMe();
 
         //Local repos
-        OrderedMap<String, LocalRepo> localRepositoriesMap = new ListOrderedMap<String, LocalRepo>();
-        OrderedMap<String, LocalRepoDescriptor> localRepoDescriptorMap = centralConfig.getLocalRepositoriesMap();
-        OrderedMap<String, LocalRepo> oldLocalRepos = null;
+        Map<String, LocalRepo> localRepositoriesMap = Maps.newLinkedHashMap();
+        Map<String, LocalRepoDescriptor> localRepoDescriptorMap = centralConfig.getLocalRepositoriesMap();
+        Map<String, LocalRepo> oldLocalRepos = null;
         if (oldDescriptor != null && globalVirtualRepo != null) {
             oldLocalRepos = globalVirtualRepo.getLocalRepositoriesMap();
         }
@@ -368,9 +367,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
 
         //Remote repos
-        OrderedMap<String, RemoteRepo> remoteRepositoriesMap = new ListOrderedMap<String, RemoteRepo>();
-        OrderedMap<String, RemoteRepoDescriptor> remoteRepoDescriptorMap = centralConfig.getRemoteRepositoriesMap();
-        OrderedMap<String, RemoteRepo> oldRemoteRepos = null;
+        Map<String, RemoteRepo> remoteRepositoriesMap = Maps.newLinkedHashMap();
+        Map<String, RemoteRepoDescriptor> remoteRepoDescriptorMap = centralConfig.getRemoteRepositoriesMap();
+        Map<String, RemoteRepo> oldRemoteRepos = null;
         if (oldDescriptor != null && globalVirtualRepo != null) {
             oldRemoteRepos = globalVirtualRepo.getRemoteRepositoriesMap();
         }
@@ -410,7 +409,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         virtualRepositoriesMap.put(globalVirtualRepo.getKey(), globalVirtualRepo);
 
         // virtual repos init in 2 passes
-        OrderedMap<String, VirtualRepoDescriptor> virtualRepoDescriptorMap =
+        Map<String, VirtualRepoDescriptor> virtualRepoDescriptorMap =
                 centralConfig.getVirtualRepositoriesMap();
         // 1. create the virtual repos
         WebstartAddon webstartAddon = addonsManager.addonByType(WebstartAddon.class);
@@ -1632,11 +1631,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
      * @return List of deploy-permitted local repos
      */
     public List<LocalRepoDescriptor> getDeployableRepoDescriptors() {
-        OrderedMap<String, LocalRepoDescriptor> descriptorMap =
-                centralConfigService.getDescriptor().getLocalRepositoriesMap();
+        // if the user is an admin user, simply return all the deployable descriptors without checking specific
+        // permission targets.
+        if (authService.isAdmin()) {
+            return getLocalRepoDescriptors();
+        }
         List<PermissionTargetInfo> permissionTargetInfos =
                 aclService.getPermissionTargets(ArtifactoryPermission.DEPLOY);
         Set<LocalRepoDescriptor> permittedDescriptors = Sets.newHashSet();
+        Map<String, LocalRepoDescriptor> descriptorMap = centralConfigService.getDescriptor().getLocalRepositoriesMap();
         for (PermissionTargetInfo permissionTargetInfo : permissionTargetInfos) {
             List<String> repoKeys = permissionTargetInfo.getRepoKeys();
             if (repoKeys.contains(PermissionTargetInfo.ANY_REPO) ||
@@ -2040,7 +2043,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
      */
     private Set<RepoPath> aggregatePathsToMove(Set<RepoPath> pathsToMove, String targetLocalRepoKey) {
         // aggregate paths by parent repo path
-        MultiMap<RepoPath, RepoPath> pathsByParent = new MultiHashMap<RepoPath, RepoPath>();
+        Multimap<RepoPath, RepoPath> pathsByParent = HashMultimap.create();
         for (RepoPath pathToMove : pathsToMove) {
             if (!pathToMove.getRepoKey().equals(targetLocalRepoKey)) {
                 pathsByParent.put(pathToMove.getParent(), pathToMove);

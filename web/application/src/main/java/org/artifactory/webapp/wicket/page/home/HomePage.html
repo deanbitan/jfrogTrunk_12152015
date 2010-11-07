@@ -39,7 +39,7 @@
             </div>
         </wicket:enclosure>
 
-        <wicket:enclosure child="currentLabel">
+        <span wicket:id="versioningInfo">
             <div class="info">
                 You are running Artifactory version <span class="value" wicket:id="currentLabel"/>
                 <span wicket:id="latestLabel"/>
@@ -48,7 +48,8 @@
                 For up-to-date information, please visit the online <a wicket:id="wikiLink" target="_blank">
                 Artifactory User Guide</a>.
             </div>
-        </wicket:enclosure>
+        </span>
+
         <div wicket:id="news"></div>
     </div>
 

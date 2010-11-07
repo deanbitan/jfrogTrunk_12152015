@@ -120,6 +120,6 @@ public class LoginPanel extends TitledActionPanel {
      */
     private boolean isMailServerConfigured() {
         CentralConfigDescriptor descriptor = centralConfig.getDescriptor();
-        return ((descriptor != null) && (descriptor.getMailServer() != null));
+        return ((descriptor != null) && (descriptor.getMailServer() != null) && descriptor.getMailServer().isEnabled());
     }
 }

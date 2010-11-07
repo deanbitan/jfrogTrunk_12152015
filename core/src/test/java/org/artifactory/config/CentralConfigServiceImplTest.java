@@ -18,8 +18,7 @@
 
 package org.artifactory.config;
 
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
+import com.google.common.collect.Maps;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PredefinedValue;
@@ -33,6 +32,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import static org.testng.Assert.assertTrue;
 
@@ -51,7 +51,7 @@ public class CentralConfigServiceImplTest {
 
         LocalRepoDescriptor local1 = new LocalRepoDescriptor();
         local1.setKey("local1");
-        OrderedMap<String, LocalRepoDescriptor> localReposMap = new ListOrderedMap<String, LocalRepoDescriptor>();
+        Map<String, LocalRepoDescriptor> localReposMap = Maps.newLinkedHashMap();
         localReposMap.put(local1.getKey(), local1);
         cc.setLocalRepositoriesMap(localReposMap);
 
@@ -65,7 +65,7 @@ public class CentralConfigServiceImplTest {
         httpRepo.setKey("http");
         httpRepo.setProxy(proxy);
         httpRepo.setUrl("http://blabla");
-        OrderedMap<String, RemoteRepoDescriptor> map = new ListOrderedMap<String, RemoteRepoDescriptor>();
+        Map<String, RemoteRepoDescriptor> map = Maps.newLinkedHashMap();
         map.put(httpRepo.getKey(), httpRepo);
         cc.setRemoteRepositoriesMap(map);
 

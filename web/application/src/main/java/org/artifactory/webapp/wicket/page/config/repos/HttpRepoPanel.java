@@ -20,7 +20,10 @@ package org.artifactory.webapp.wicket.page.config.repos;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.markup.html.form.*;
+import org.apache.wicket.markup.html.form.ChoiceRenderer;
+import org.apache.wicket.markup.html.form.DropDownChoice;
+import org.apache.wicket.markup.html.form.PasswordTextField;
+import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.validation.IValidatable;
@@ -58,7 +61,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     private boolean isStoreArtifactsLocally = false;
 
     public HttpRepoPanel(CreateUpdateAction action, HttpRepoDescriptor repoDescriptor,
-                         CachingDescriptorHelper cachingDescriptorHelper) {
+            CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor, cachingDescriptorHelper);
 
         MutableCentralConfigDescriptor mutableCentralConfigDescriptor =
@@ -88,8 +91,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     }
 
     private void addBasicSettings(CreateUpdateAction action,
-                                  MutableCentralConfigDescriptor mutableCentralConfigDescriptor,
-                                  CachingDescriptorHelper cachingDescriptorHelper) {
+            MutableCentralConfigDescriptor mutableCentralConfigDescriptor,
+            CachingDescriptorHelper cachingDescriptorHelper) {
         TitledBorder basicSettings = new TitledBorder("basicSettings");
         form.add(basicSettings);
 
@@ -229,9 +232,6 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
 
         advancedSettings.add(new StyledCheckbox("synchronizeProperties"));
         advancedSettings.add(new SchemaHelpBubble("synchronizeProperties.help"));
-
-        advancedSettings.add(new TextArea("notes"));
-        advancedSettings.add(new SchemaHelpBubble("notes.help"));
     }
 
     private void flipLogic() {
@@ -266,32 +266,27 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
 
     }
 
-    private static class ChecksumPolicyChoiceRenderer extends ChoiceRenderer {
+    private static class ChecksumPolicyChoiceRenderer extends ChoiceRenderer<ChecksumPolicyType> {
         @Override
-        public Object getDisplayValue(Object object) {
-            if (object instanceof ChecksumPolicyType) {
-                ChecksumPolicyType policy = (ChecksumPolicyType) object;
-                switch (policy) {
-                    case FAIL:
-                        return "Fail";
-                    case GEN_IF_ABSENT:
-                        return "Generate if absent";
-                    case IGNORE_AND_GEN:
-                        return "Ignore and generated";
-                    case PASS_THRU:
-                        return "Ignore and pass-through";
-                    default:
-                        return policy;
-                }
-            } else {
-                return super.getDisplayValue(object);
+        public String getDisplayValue(ChecksumPolicyType policy) {
+            switch (policy) {
+                case FAIL:
+                    return "Fail";
+                case GEN_IF_ABSENT:
+                    return "Generate if absent";
+                case IGNORE_AND_GEN:
+                    return "Ignore and generated";
+                case PASS_THRU:
+                    return "Ignore and pass-through";
+                default:
+                    return String.valueOf(policy);
             }
         }
     }
 
     private static class HttpRepoGeneralSettingsPanel extends RepoGeneralSettingsPanel {
         public HttpRepoGeneralSettingsPanel(String id, boolean create,
-                                            CachingDescriptorHelper cachingDescriptorHelper) {
+                CachingDescriptorHelper cachingDescriptorHelper) {
             super(id, create, cachingDescriptorHelper);
         }
     }

@@ -120,6 +120,6 @@ public class AddonNeededBehavior extends TemplateBehavior {
     }
 
     public String getMessage() {
-        return getComponent().getString(MESSAGE_KEY, new Model(addon));
+        return getComponent().getString(MESSAGE_KEY, Model.of(addon));
     }
 }

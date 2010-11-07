@@ -54,7 +54,7 @@ public class HtmlTemplate extends WebComponent {
     }
 
     public void setParameter(String key, String value) {
-        parametersMap.put(key, new Model(value));
+        parametersMap.put(key, Model.of(value));
     }
 
     public void setParameter(String key, IModel modelValue) {

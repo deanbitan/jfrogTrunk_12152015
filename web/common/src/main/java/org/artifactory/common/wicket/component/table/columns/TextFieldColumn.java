@@ -19,6 +19,7 @@
 package org.artifactory.common.wicket.component.table.columns;
 
 import org.apache.wicket.MarkupContainer;
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextField;
@@ -31,41 +32,48 @@ import org.artifactory.common.wicket.component.table.columns.panel.textfield.Tex
 
 /**
  * A {@link AbstractColumn} that displays a text field in column. For editable text fields one should override
- * {@link TextFieldColumn#newTextField(String, org.apache.wicket.model.IModel, T)}.
+ * {@link TextFieldColumn#newTextField(java.lang.String, org.apache.wicket.model.IModel<T>, T)}.
  *
  * @author Yoav Aharoni
  */
-public class TextFieldColumn<T> extends AbstractColumn {
+public class TextFieldColumn<T> extends AbstractColumn<T> {
     private String expression;
 
-    public TextFieldColumn(String title, String expression, String sortProperty) {
-        super(new Model<String>(title), sortProperty);
+    /**
+     * Construct new text field column with the given property expression for property access and sorting.
+     *
+     * @param title      The columns title
+     * @param expression Property expression which will be used to extract value from the raw object, both for
+     *                   display and as sorting property
+     */
+    public TextFieldColumn(String title, String expression) {
+        super(Model.of(title), expression);
         this.expression = expression;
     }
 
-    public void populateItem(final Item cellItem, String componentId, final IModel rowModel) {
-        T rowObject = getRowModelObject(rowModel);
-
+    public void populateItem(Item<ICellPopulator<T>> cellItem, String componentId, IModel<T> rowModel) {
         MarkupContainer panel = new TextFieldPanel(componentId, rowModel);
         cellItem.add(new CssClass("TextFieldColumn"));
         cellItem.add(panel);
 
-        IModel model = newPropertyModel(rowObject);
+        T rowObject = rowModel.getObject();
+        PropertyModel<String> model = newPropertyModel(rowObject);
         FormComponent textField = newTextField(TextFieldPanel.TEXTFIELD_ID, model, rowObject);
         panel.add(textField);
     }
 
-    protected FormComponent newTextField(String id, IModel model, T rowObject) {
-        return new TextField(id, model);
+    /**
+     * @param id         Wicket component id
+     * @param valueModel Model for the value to display in the panel (string)
+     * @param rowObject  The row object (which the value model gets the information from)
+     * @return Construct a new text field.
+     */
+    protected TextField<String> newTextField(String id, IModel<String> valueModel, T rowObject) {
+        return new TextField<String>(id, valueModel);
     }
 
-    protected IModel newPropertyModel(T rowObject) {
-        return new PropertyModel(rowObject, expression);
-    }
-
-    @SuppressWarnings({"unchecked"})
-    protected final T getRowModelObject(IModel model) {
-        return (T) model.getObject();
+    protected PropertyModel<String> newPropertyModel(T rowObject) {
+        return new PropertyModel<String>(rowObject, expression);
     }
 
     public final String getExpression() {

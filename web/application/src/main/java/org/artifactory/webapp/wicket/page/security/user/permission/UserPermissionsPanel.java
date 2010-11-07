@@ -18,6 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.security.user.permission;
 
+import com.google.common.collect.Lists;
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -75,25 +77,26 @@ public class UserPermissionsPanel extends BaseModalPanel {
     }
 
     private SortableTable addTable() {
-        List<IColumn> columns = new ArrayList<IColumn>();
+        List<IColumn<PermissionsRow>> columns = Lists.newArrayList();
+        columns.add(
+                new AbstractColumn<PermissionsRow>(Model.of("Permission Target"), "permissionTarget.name") {
+                    public void populateItem(Item<ICellPopulator<PermissionsRow>> cellItem, String componentId,
+                            IModel<PermissionsRow> rowModel) {
+                        cellItem.add(new LinkPanel(componentId, rowModel));
+                    }
+                });
 
-        columns.add(new AbstractColumn(new Model("Permission Target"), "permissionTarget.name") {
-            public void populateItem(Item cellItem, String componentId, IModel rowModel) {
-                cellItem.add(new LinkPanel(componentId, rowModel));
-            }
-        });
-
-        columns.add(new BooleanColumn(new Model("Admin"), "admin", "admin"));
-        columns.add(new BooleanColumn(new Model("Delete"), "delete", "delete"));
-        columns.add(new BooleanColumn(new Model("Deploy"), "deploy", "deploy"));
-        columns.add(new BooleanColumn(new Model("Annotate"), "annotate", "annotate"));
-        columns.add(new BooleanColumn(new Model("Read"), "read", "read"));
+        columns.add(new BooleanColumn<PermissionsRow>("Admin", "admin", "admin"));
+        columns.add(new BooleanColumn<PermissionsRow>("Delete", "delete", "delete"));
+        columns.add(new BooleanColumn<PermissionsRow>("Deploy", "deploy", "deploy"));
+        columns.add(new BooleanColumn<PermissionsRow>("Annotate", "annotate", "annotate"));
+        columns.add(new BooleanColumn<PermissionsRow>("Read", "read", "read"));
 
         PermissionsTabTableDataProvider dataProvider = new PermissionsTabTableDataProvider(userInfo);
-        return new SortableTable("userPermissionsTable", columns, dataProvider, 10);
+        return new SortableTable<PermissionsRow>("userPermissionsTable", columns, dataProvider, 10);
     }
 
-    class PermissionsTabTableDataProvider extends SortableDataProvider {
+    class PermissionsTabTableDataProvider extends SortableDataProvider<PermissionsRow> {
         private final UserInfo userInfo;
         private List<PermissionsRow> userPermissions;
 
@@ -103,7 +106,7 @@ public class UserPermissionsPanel extends BaseModalPanel {
             loadData();
         }
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<PermissionsRow> iterator(int first, int count) {
             ListPropertySorter.sort(userPermissions, getSort());
             List<PermissionsRow> list = userPermissions.subList(first, first + count);
             return list.iterator();
@@ -113,8 +116,8 @@ public class UserPermissionsPanel extends BaseModalPanel {
             return userPermissions.size();
         }
 
-        public IModel model(Object object) {
-            return new Model((PermissionsRow) object);
+        public IModel<PermissionsRow> model(PermissionsRow object) {
+            return new Model<PermissionsRow>(object);
         }
 
         private void loadData() {
@@ -145,12 +148,13 @@ public class UserPermissionsPanel extends BaseModalPanel {
         }
     }
 
-    private class LinkPanel extends Panel {
-        private LinkPanel(String id, IModel model) {
+    private static class LinkPanel extends Panel {
+        private LinkPanel(String id, IModel<PermissionsRow> model) {
             super(id, model);
-            PermissionsRow permRow = (PermissionsRow) model.getObject();
+            PermissionsRow permRow = model.getObject();
             final PermissionTargetInfo permissionTarget = permRow.getPermissionTarget();
             Link link = new Link("link") {
+                @Override
                 public void onClick() {
                     setResponsePage(new AclsPage(permissionTarget));
                 }

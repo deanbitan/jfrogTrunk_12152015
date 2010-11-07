@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.components;
 
-import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.model.IModel;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
@@ -26,6 +25,7 @@ import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -34,42 +34,14 @@ import java.util.List;
  *
  * @author Noam Tenne
  */
-public class SortedRepoDragDropSelection<T> extends IconSortedDragDropSelection<T> {
-
-    public SortedRepoDragDropSelection(String id) {
-        super(id);
-    }
+public class SortedRepoDragDropSelection<T extends Serializable> extends IconSortedDragDropSelection<T> {
 
     public SortedRepoDragDropSelection(String id, List<T> choices) {
         super(id, choices);
     }
 
-    public SortedRepoDragDropSelection(String id, List<T> choices, IChoiceRenderer renderer) {
-        super(id, choices, renderer);
-    }
-
-    public SortedRepoDragDropSelection(String id, IModel model, List<T> choices) {
+    public SortedRepoDragDropSelection(String id, IModel<T> model, List<T> choices) {
         super(id, model, choices);
-    }
-
-    public SortedRepoDragDropSelection(String id, IModel model, List<T> choices, IChoiceRenderer renderer) {
-        super(id, model, choices, renderer);
-    }
-
-    public SortedRepoDragDropSelection(String id, IModel choicesModel) {
-        super(id, choicesModel);
-    }
-
-    public SortedRepoDragDropSelection(String id, IModel model, IModel choicesModel) {
-        super(id, model, choicesModel);
-    }
-
-    public SortedRepoDragDropSelection(String id, IModel choicesModel, IChoiceRenderer renderer) {
-        super(id, choicesModel, renderer);
-    }
-
-    public SortedRepoDragDropSelection(String id, IModel model, IModel choicesModel, IChoiceRenderer renderer) {
-        super(id, model, choicesModel, renderer);
     }
 
     @Override

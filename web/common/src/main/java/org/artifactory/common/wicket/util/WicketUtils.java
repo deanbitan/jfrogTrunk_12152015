@@ -23,11 +23,11 @@ import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.RequestCycle;
+import org.apache.wicket.protocol.http.RequestUtils;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebRequestCycle;
 import org.apache.wicket.protocol.http.WebResponse;
-import org.apache.wicket.request.target.component.BookmarkablePageRequestTarget;
 import org.apache.wicket.util.io.Streams;
 import org.apache.wicket.util.lang.Packages;
 import org.apache.wicket.util.resource.IResourceStream;
@@ -54,25 +54,24 @@ public abstract class WicketUtils {
     }
 
     /**
-     * Get the bookmarkable path of a page that has been mounted
+     * Get the absolute bookmarkable path of a page
      *
-     * @param pageClass Mounted page
-     * @return CharSequence - Bookmarkable path
+     * @param pageClass Page
+     * @return Bookmarkable path
      */
-    public static CharSequence mountPathForPage(Class pageClass) {
-        return mountPathForPage(pageClass, null);
+    public static String absoluteMountPathForPage(Class<? extends Page> pageClass) {
+        return absoluteMountPathForPage(pageClass, PageParameters.NULL);
     }
 
     /**
-     * Get the bookmarkable path of a page that has been mounted
+     * Get the absolute bookmarkable path of a page
      *
-     * @param pageClass      Mounted page
+     * @param pageClass      Page
      * @param pageParameters Optional page parameters
-     * @return CharSequence - Bookmarkable path
+     * @return Bookmarkable path
      */
-    public static CharSequence mountPathForPage(Class pageClass, PageParameters pageParameters) {
-        return getWebApplication().getRequestCycleProcessor().getRequestCodingStrategy()
-                .pathForTarget(new BookmarkablePageRequestTarget(pageClass, pageParameters));
+    public static String absoluteMountPathForPage(Class<? extends Page> pageClass, PageParameters pageParameters) {
+        return RequestUtils.toAbsolutePath(RequestCycle.get().urlFor(pageClass, pageParameters).toString());
     }
 
     /**

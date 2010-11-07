@@ -18,20 +18,22 @@
 
 package org.artifactory.webapp.wicket.page.security.user.column;
 
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
+import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
+import org.artifactory.webapp.wicket.page.security.user.UserModel;
 
 /**
  * @author Yoav Aharoni
  */
-public class UserColumn extends PropertyColumn {
-    public UserColumn(IModel displayModel) {
-        super(displayModel, "username", "username");
+public class UserColumn extends TitlePropertyColumn<UserModel> {
+    public UserColumn(String title) {
+        super(title, "username", "username");
     }
 
     @Override
-    public void populateItem(Item item, String componentId, IModel model) {
+    public void populateItem(Item<ICellPopulator<UserModel>> item, String componentId, IModel<UserModel> model) {
         item.add(new UsernamePanel(componentId, model));
     }
 }

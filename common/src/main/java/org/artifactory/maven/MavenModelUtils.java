@@ -78,8 +78,14 @@ public abstract class MavenModelUtils {
         try {
             Model model = reader.read(new InputStreamReader(in, UTF8));
             String groupId = model.getGroupId();
+            if (StringUtils.isBlank(groupId)) {
+                Parent parent = model.getParent();
+                if (parent != null) {
+                    groupId = parent.getGroupId();
+                }
+            }
             if (StringUtils.isNotBlank(groupId)) {
-                //Do not verify if the pom's groupid does not exist (inherited)
+                //Do not verify if the pom's groupid does not exist
                 String modelVersion = model.getVersion();
                 //Version may come from the parent
                 if (StringUtils.isBlank(modelVersion)) {

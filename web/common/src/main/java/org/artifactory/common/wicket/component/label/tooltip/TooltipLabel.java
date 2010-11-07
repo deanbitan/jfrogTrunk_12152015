@@ -39,7 +39,7 @@ public class TooltipLabel extends Label {
     private transient String text;
 
     public TooltipLabel(String id, String label, int maxLength) {
-        this(id, new Model<String>(label), maxLength);
+        this(id, Model.of(label), maxLength);
     }
 
     public TooltipLabel(String id, IModel model, int maxLength) {

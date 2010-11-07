@@ -26,7 +26,7 @@ import org.apache.wicket.validation.ValidationError;
 /**
  * @author Yoav Landman
  */
-public class JcrNameValidator extends DefautlMessageStringValidator {
+public class JcrNameValidator extends DefaultMessageStringValidator {
 
     public JcrNameValidator() {
         this(null);
@@ -37,9 +37,9 @@ public class JcrNameValidator extends DefautlMessageStringValidator {
     }
 
     @Override
-    protected void onValidate(IValidatable validatable) {
+    protected void onValidate(IValidatable<String> validatable) {
         // Check value is a valid jcr name
-        String value = (String) validatable.getValue();
+        String value = validatable.getValue();
         try {
             NameParser.checkFormat(value);
         } catch (IllegalNameException e) {

@@ -70,7 +70,7 @@ public class MetadataTabPanel extends Panel {
             add(new WebMarkupContainer("metadataPanel"));
         } else {
             MetadataPanel metadataPanel = new MetadataPanel("metadataPanel", canonicalRepoPath, metadataTypeList);
-            metadataPanel.add(new CollapsibleBehavior());
+            metadataPanel.add(new CollapsibleBehavior().setPersistenceCookie("metadata"));
             add(metadataPanel);
         }
     }

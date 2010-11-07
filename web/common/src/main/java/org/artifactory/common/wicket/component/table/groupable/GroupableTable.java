@@ -18,7 +18,7 @@
 
 package org.artifactory.common.wicket.component.table.groupable;
 
-import org.apache.commons.lang.ArrayUtils;
+import com.google.common.collect.Lists;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
@@ -37,6 +37,7 @@ import org.artifactory.common.wicket.component.table.toolbar.emptyrow.EmptyRowTo
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -93,10 +94,11 @@ public class GroupableTable<T extends Serializable> extends SortableTable<T> {
     }
 
     protected void populateGroupItem(Item cellItem, String componentId, String property, IModel<T> rowModel) {
-        IChoiceRenderer<T> renderer = getGroupableDataProvider().getGroupReneder(property);
+        IChoiceRenderer<T> renderer = getGroupableDataProvider().getGroupRenderer(property);
         Object value = renderer.getDisplayValue(rowModel.getObject());
         Item rowItem = (Item) cellItem.getParent();
-        int groupSize = getGroupableDataProvider().getGroupSize(rowItem.getIndex() + getCurrentPage() * getRowsPerPage());
+        int groupSize = getGroupableDataProvider().getGroupSize(
+                rowItem.getIndex() + getCurrentPage() * getRowsPerPage());
         cellItem.add(new GroupRow(componentId, value, groupSize));
     }
 
@@ -113,16 +115,16 @@ public class GroupableTable<T extends Serializable> extends SortableTable<T> {
         }
     }
 
-    @SuppressWarnings({"unchecked"})
     private static <T> IColumn<T>[] addSpaceColumns(IColumn<T>[] columns) {
-        columns = (IColumn<T>[]) ArrayUtils.add(columns, 0, new SpaceColumn<T>());
-        columns = (IColumn<T>[]) ArrayUtils.add(columns, new SpaceColumn<T>());
-        return columns;
+        List<IColumn<T>> spacedColumns = Lists.newArrayList(Arrays.asList(columns));
+        spacedColumns.add(0, new SpaceColumn<T>());
+        spacedColumns.add(new SpaceColumn<T>());
+        return spacedColumns.toArray(columns);
     }
 
     private static class SpaceColumn<T> extends AbstractColumn<T> {
         public SpaceColumn() {
-            super(new Model<String>(""));
+            super(Model.of(""));
         }
 
         public void populateItem(Item cellItem, String componentId, IModel rowModel) {

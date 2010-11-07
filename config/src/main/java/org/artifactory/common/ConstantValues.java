@@ -46,8 +46,6 @@ public enum ConstantValues {
     substituteRepoKeys("repo.key.subst."),
     repoCleanupIntervalHours("repo.cleanup.intervalHours", 1),
     repoConcurrentDownloadSyncTimeoutSecs("repo.concurrentDownloadSyncTimeoutSecs", Seconds.MINUTE * 15),
-    artifactoryRequestsToGlobalCanRetrieveRemoteArtifacts(
-            "artifactoryRequestsToGlobalCanRetrieveRemoteArtifacts", FALSE),
     fsItemCacheIdleTimeSecs("fsitem.cache.idleTimeSecs", Seconds.MINUTE * 20),
     searchMaxResults("search.maxResults", 500),
     searchUserQueryLimit("search.userQueryLimit", 1000),
@@ -74,13 +72,16 @@ public enum ConstantValues {
     missingBuildChecksumCacheIdeTimeSecs("build.checksum.cache.idleTimeSecs", Seconds.MINUTE * 5),
     artifactoryUpdatesRefreshIntervalSecs("updates.refreshIntervalSecs", Seconds.HOUR * 4),
     artifactoryUpdatesUrl("updates.url", "http://service.jfrog.org/artifactory/updates"),
+    artifactoryRequestsToGlobalCanRetrieveRemoteArtifacts(
+            "artifactoryRequestsToGlobalCanRetrieveRemoteArtifacts", FALSE),
     uiSyntaxColoringMaxTextSizeBytes("ui.syntaxColoringMaxTextSizeBytes", 512000),
     pluginScriptsRefreshIntervalSecs("plugin.scripts.refreshIntervalSecs", Integer.MAX_VALUE),
     uiChroot("ui.chroot"),
     artifactoryLicenseDir("licenseDir"),
     fileRollerMaxFilesToRetain("file.roller.maxFileToRetain", 10),
     backupFileExportSleepIterationMillis("backup.fileExportSleepIterationMillis", 2000),
-    backupFileExportSleepMillis("backup.fileExportSleepMillis", 250);
+    backupFileExportSleepMillis("backup.fileExportSleepMillis", 250),
+    httpAcceptEncodingGzip("http.acceptEncoding.gzip", true);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

@@ -78,15 +78,15 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
         searchControls = new MetadataSearchControls<MetadataSearchResult>();
         xmlTypes = Lists.newArrayList("*.pom", "*ivy*.xml");
         searchControls.setMetadataName(xmlTypes.get(0));
-        typesChoices =
-                new HistoryComboBox("metadataName", new PropertyModel(searchControls, "metadataName"),
-                        new PropertyModel(this, "metaDataNames"));
+        typesChoices = new HistoryComboBox("metadataName", new
+                PropertyModel<String>(searchControls, "metadataName"),
+                new PropertyModel<List<String>>(this, "metaDataNames"));
         typesChoices.setPersistent(true);
         typesChoices.setRequired(true);
         typesChoices.setOutputMarkupId(true);
         form.add(typesChoices);
         metaDataSearchCheckBox = new StyledCheckbox("metaDataSearch", new Model<Boolean>());
-        metaDataSearchCheckBox.setLabel(new Model<String>("Metadata Search"));
+        metaDataSearchCheckBox.setLabel(Model.of("Metadata Search"));
         metaDataSearchCheckBox.setPersistent(true);
         form.add(metaDataSearchCheckBox);
         metaDataSearchCheckBox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
@@ -138,14 +138,13 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new ActionsColumn(""));
-
+    protected void addColumns(List<IColumn<ActionableSearchResult<T>>> columns) {
+        columns.add(new ActionsColumn<ActionableSearchResult<T>>(""));
         columns.add(new BaseSearchPanel.ArtifactNameColumn("Metadata Container"));
-        columns.add(new PropertyColumn<String>(new Model<String>("Path"), "searchResult.relDirPath",
-                "searchResult.relDirPath"));
-        columns.add(new PropertyColumn<String>(new Model<String>("Repository"), "searchResult.repoKey",
-                "searchResult.repoKey"));
+        columns.add(new PropertyColumn<ActionableSearchResult<T>>(
+                Model.of("Path"), "searchResult.relDirPath", "searchResult.relDirPath"));
+        columns.add(new PropertyColumn<ActionableSearchResult<T>>(
+                Model.of("Repository"), "searchResult.repoKey", "searchResult.repoKey"));
     }
 
     @SuppressWarnings({"unchecked"})

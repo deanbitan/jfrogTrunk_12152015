@@ -22,6 +22,7 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.security.GroupInfo;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
@@ -73,7 +74,7 @@ public interface LdapGroupWebAddon extends Addon {
      * @param statusHolder Status holder
      * @return Indicator whether a group is external.
      */
-    BooleanColumn addExternalGroupIndicator(MultiStatusHolder statusHolder);
+    BooleanColumn<GroupInfo> addExternalGroupIndicator(MultiStatusHolder statusHolder);
 
     /**
      * Get the Ldap Group configuration Panel when addon is activated.

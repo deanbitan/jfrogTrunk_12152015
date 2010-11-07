@@ -43,6 +43,7 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.security.AccessLogger;
 import org.artifactory.webapp.wicket.components.SortedRepoDragDropSelection;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.services.cron.CronNextDatePanel;
@@ -51,6 +52,7 @@ import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -89,7 +91,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         form.add(simpleFields);
 
         // Backup key
-        RequiredTextField keyField = new RequiredTextField("key");
+        RequiredTextField<String> keyField = new RequiredTextField<String>("key");
         keyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
             keyField.add(new JcrNameValidator("Invalid backup key '%s'"));
@@ -101,14 +103,14 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
 
         simpleFields.add(new StyledCheckbox("enabled"));
 
-        final RequiredTextField cronExpField = new RequiredTextField("cronExp");
+        final RequiredTextField<String> cronExpField = new RequiredTextField<String>("cronExp");
         cronExpField.add(CronExpValidator.getInstance());
         simpleFields.add(cronExpField);
         simpleFields.add(new SchemaHelpBubble("cronExp.help"));
 
         simpleFields.add(new CronNextDatePanel("cronNextDatePanel", cronExpField));
 
-        PropertyModel pathModel = new PropertyModel(backupDescriptor, "dir");
+        PropertyModel<File> pathModel = new PropertyModel<File>(backupDescriptor, "dir");
 
         backupDir = new PathAutoCompleteTextField("dir", pathModel);
         backupDir.setMask(PathMask.FOLDERS);
@@ -155,7 +157,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         advancedFields.add(new SchemaHelpBubble("sendMailOnError.help"));
 
         createIncremental = new StyledCheckbox("createIncrementalBackup",
-                new PropertyModel(this, "createIncrementalBackup"));
+                new PropertyModel<Boolean>(this, "createIncrementalBackup"));
         createIncremental.setOutputMarkupId(true);
         createIncremental.setRequired(false);
         createIncremental.add(new AjaxFormComponentUpdatingBehavior("onclick") {
@@ -196,10 +198,14 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                 if (isCreate()) {
                     configDescriptor.addBackup(entity);
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    getPage().info("Backup '" + entity.getKey() + "' successfully created.");
+                    String message = "Backup '" + entity.getKey() + "' successfully created.";
+                    AccessLogger.created(message);
+                    getPage().info(message);
                 } else {
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    getPage().info("Backup '" + entity.getKey() + "' successfully updated.");
+                    String message = "Backup '" + entity.getKey() + "' successfully updated.";
+                    AccessLogger.updated(message);
+                    getPage().info(message);
                 }
                 AjaxUtils.refreshFeedback(target);
                 target.addComponent(backupsListPanel);

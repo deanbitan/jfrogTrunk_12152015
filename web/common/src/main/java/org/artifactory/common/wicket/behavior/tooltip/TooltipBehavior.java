@@ -20,13 +20,11 @@ package org.artifactory.common.wicket.behavior.tooltip;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.artifactory.common.wicket.behavior.template.TemplateBehavior;
 
 /**
  * @author Yoav Aharoni
  */
-
 public class TooltipBehavior extends TemplateBehavior {
     private IModel messageModel;
 
@@ -43,10 +41,6 @@ public class TooltipBehavior extends TemplateBehavior {
     @Override
     public boolean isEnabled(Component component) {
         return messageModel.getObject() != null;
-    }
-
-    public TooltipBehavior(String message) {
-        this(new Model(message));
     }
 
     @Override

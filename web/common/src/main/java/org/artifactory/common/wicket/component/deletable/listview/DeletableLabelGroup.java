@@ -39,34 +39,26 @@ import java.util.Iterator;
 /**
  * @author Yoav Aharoni
  */
-public class DeletableLabelGroup<T> extends Panel {
-    private IChoiceRenderer renderer;
+public class DeletableLabelGroup<T extends Serializable> extends Panel {
+    private IChoiceRenderer<T> renderer;
     private boolean labelClickable = true;
     private boolean labelDeletable = true;
     private DataView dataView;
 
-    public DeletableLabelGroup(String id, IModel collectionModel) {
-        this(id, collectionModel, null);
-    }
-
+    @SuppressWarnings({"unchecked"})
     public DeletableLabelGroup(String id, Collection<T> collection) {
         this(id, new Model((Serializable) collection), null);
     }
 
-    public DeletableLabelGroup(String id, Collection<T> collection, IChoiceRenderer renderer) {
-        this(id, new Model((Serializable) collection), renderer);
-    }
-
-    public DeletableLabelGroup(String id, IModel collectionModel, IChoiceRenderer renderer) {
+    public DeletableLabelGroup(String id, IModel<Collection<T>> collectionModel, IChoiceRenderer<T> renderer) {
         super(id, collectionModel);
         setRenderer(renderer);
         setOutputMarkupId(true);
 
-        dataView = new DataView("item", new LabelsDataProvider()) {
-            @SuppressWarnings({"unchecked"})
+        dataView = new DataView<T>("item", new LabelsDataProvider()) {
             @Override
-            protected void populateItem(Item item) {
-                final T value = (T) item.getDefaultModelObject();
+            protected void populateItem(Item<T> item) {
+                final T value = item.getModelObject();
                 String itemText = getDisplayValue(value);
                 item.add(newLabel(value, itemText));
             }
@@ -84,12 +76,12 @@ public class DeletableLabelGroup<T> extends Panel {
         target.addComponent(this);
     }
 
-    public IChoiceRenderer getRenderer() {
+    public IChoiceRenderer<T> getRenderer() {
         return renderer;
     }
 
-    public void setRenderer(IChoiceRenderer renderer) {
-        this.renderer = renderer == null ? StringChoiceRenderer.getInstance() : renderer;
+    public void setRenderer(IChoiceRenderer<T> renderer) {
+        this.renderer = renderer == null ? StringChoiceRenderer.<T>getInstance() : renderer;
     }
 
     public boolean isLabelClickable(T value) {
@@ -143,8 +135,8 @@ public class DeletableLabelGroup<T> extends Panel {
         return data;
     }
 
-    private class LabelsDataProvider implements IDataProvider {
-        public Iterator iterator(int first, int count) {
+    private class LabelsDataProvider implements IDataProvider<T> {
+        public Iterator<T> iterator(int first, int count) {
             // no paging anyway...
             return getData().iterator();
         }
@@ -153,8 +145,8 @@ public class DeletableLabelGroup<T> extends Panel {
             return getData().size();
         }
 
-        public IModel model(Object object) {
-            return new Model((Serializable) object);
+        public IModel<T> model(T object) {
+            return new Model<T>(object);
         }
 
 

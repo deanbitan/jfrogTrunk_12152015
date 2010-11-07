@@ -27,12 +27,6 @@ import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
  */
 public class MetadataSearchPage extends BaseSearchPage {
 
-    /**
-     * Required for the initialization from the side menu
-     */
-    public MetadataSearchPage() {
-    }
-
     @Override
     public int getSelectedTab() {
         return METADATA_SEARCH_INDEX;

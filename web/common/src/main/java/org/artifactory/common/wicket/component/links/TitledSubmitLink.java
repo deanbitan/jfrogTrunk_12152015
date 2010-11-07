@@ -29,32 +29,28 @@ import org.apache.wicket.util.string.PrependingStringBuffer;
 /**
  * @author Yoav Aharoni
  */
-public abstract class TitledSubmitLink<T> extends BaseTitledLink implements IFormSubmittingComponent {
-    protected Form<T> form;
+public abstract class TitledSubmitLink extends BaseTitledLink implements IFormSubmittingComponent {
+    protected Form<?> form;
 
     protected TitledSubmitLink(String id) {
-        this(id, (Form<T>) null);
-    }
-
-    protected TitledSubmitLink(String id, IModel titleModel) {
-        this(id, titleModel, null);
+        this(id, (Form<?>) null);
     }
 
     protected TitledSubmitLink(String id, String title) {
         this(id, title, null);
     }
 
-    protected TitledSubmitLink(String id, Form<T> form) {
+    protected TitledSubmitLink(String id, Form<?> form) {
         super(id);
         this.form = form;
     }
 
-    protected TitledSubmitLink(String id, IModel titleModel, Form<T> form) {
+    protected TitledSubmitLink(String id, IModel titleModel, Form<?> form) {
         super(id, titleModel);
         this.form = form;
     }
 
-    protected TitledSubmitLink(String id, String title, Form<T> form) {
+    protected TitledSubmitLink(String id, String title, Form<?> form) {
         super(id, title);
         this.form = form;
     }
@@ -72,7 +68,7 @@ public abstract class TitledSubmitLink<T> extends BaseTitledLink implements IFor
         return true;
     }
 
-    public final Form<T> getForm() {
+    public final Form<?> getForm() {
         if (form == null) {
             // try to find form in the hierarchy of owning component
             form = findParent(Form.class);

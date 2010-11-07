@@ -53,6 +53,7 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.security.AccessLogger;
 import org.artifactory.security.CryptoHelper;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
 import org.slf4j.Logger;
@@ -169,7 +170,7 @@ public class ProfilePanel extends TitledActionPanel {
         profileForm.add(new EqualPasswordInputValidator(newPassword, retypedPassword));
 
         // Email
-        TextField emailTf = new TextField("email");
+        TextField<String> emailTf = new TextField<String>("email");
         emailTf.setEnabled(false);
         emailTf.add(EmailAddressValidator.getInstance());
         updateFieldsContainer.add(emailTf);
@@ -221,7 +222,7 @@ public class ProfilePanel extends TitledActionPanel {
                         // generate a new KeyPair and update the user profile
                         regenerateKeyPair(userInfo);
 
-                        // display the encryptd password
+                        // display the encrypted password
                         if (securityService.isPasswordEncryptionEnabled()) {
                             displayEncryptedPassword(userInfo);
                         }
@@ -229,6 +230,7 @@ public class ProfilePanel extends TitledActionPanel {
                 }
                 if (!this.hasErrorMessage()) {
                     userGroupService.updateUser(userInfo);
+                    AccessLogger.updated("User " + userInfo.getUsername() + " has updated his profile successfully");
                     info("Profile successfully updated.");
                 }
                 form.clearInput();
@@ -250,11 +252,11 @@ public class ProfilePanel extends TitledActionPanel {
     }
 
     private void unlockProfile(UserInfo userInfo) {
-        unlockForm.visitChildren(new SetEnableVisitor(false));
+        unlockForm.visitChildren(new SetEnableVisitor<Component>(false));
 
-        profileForm.visitChildren(new SetEnableVisitor(true));
+        profileForm.visitChildren(new SetEnableVisitor<Component>(true));
 
-        getButtonsContainer().visitChildren(new SetEnableVisitor(true));
+        getButtonsContainer().visitChildren(new SetEnableVisitor<Component>(true));
 
         // generate a new KeyPair and update the user profile
         regenerateKeyPair(userInfo);

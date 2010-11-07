@@ -27,6 +27,7 @@ import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
+import org.artifactory.jcr.jackrabbit.ArtifactoryDbDataStoreImpl;
 import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
 import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.jcr.utils.DerbyUtils;
@@ -143,5 +144,24 @@ public class StorageServiceImpl implements InternalStorageService {
 
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         //nop
+    }
+
+    public void exportDbDataStore(String destDir) {
+        JcrSession session = jcrService.getUnmanagedSession();
+        try {
+            RepositoryImpl repository = (RepositoryImpl) session.getRepository();
+            ExtendedDbDataStore dataStore = JcrUtils.getDataStore(repository);
+            if (dataStore instanceof ArtifactoryDbDataStoreImpl) {
+                try {
+                    ((ArtifactoryDbDataStoreImpl) dataStore).exportData(destDir);
+                } catch (Exception e) {
+                    log.error("Failed to export datasource data.", e);
+                }
+            } else {
+                throw new IllegalArgumentException("Datasource used is not a db one.");
+            }
+        } finally {
+            session.logout();
+        }
     }
 }

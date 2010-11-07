@@ -31,28 +31,24 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 /**
  * @author Yoav Aharoni
  */
-public abstract class TitledAjaxSubmitLink<T> extends TitledSubmitLink<T> implements IAjaxLink {
+public abstract class TitledAjaxSubmitLink extends TitledSubmitLink implements IAjaxLink {
     protected TitledAjaxSubmitLink(String id) {
         super(id);
-    }
-
-    protected TitledAjaxSubmitLink(String id, IModel titleModel) {
-        super(id, titleModel);
     }
 
     protected TitledAjaxSubmitLink(String id, String title) {
         super(id, title);
     }
 
-    protected TitledAjaxSubmitLink(String id, Form<T> form) {
+    protected <T> TitledAjaxSubmitLink(String id, Form<T> form) {
         super(id, form);
     }
 
-    protected TitledAjaxSubmitLink(String id, IModel titleModel, Form<T> form) {
+    protected TitledAjaxSubmitLink(String id, IModel titleModel, Form<?> form) {
         super(id, titleModel, form);
     }
 
-    protected TitledAjaxSubmitLink(String id, String title, Form<T> form) {
+    protected TitledAjaxSubmitLink(String id, String title, Form<?> form) {
         super(id, title, form);
     }
 
@@ -61,7 +57,7 @@ public abstract class TitledAjaxSubmitLink<T> extends TitledSubmitLink<T> implem
             @Override
             protected void onSubmit(AjaxRequestTarget target) {
                 //TODO: [by YS] why don't we use this link's form directly?
-                TitledAjaxSubmitLink.this.onSubmit(target, (Form<T>) getForm());
+                TitledAjaxSubmitLink.this.onSubmit(target, getForm());
             }
 
             @Override
@@ -85,7 +81,7 @@ public abstract class TitledAjaxSubmitLink<T> extends TitledSubmitLink<T> implem
         }
     }
 
-    protected abstract void onSubmit(AjaxRequestTarget target, Form<T> form);
+    protected abstract void onSubmit(AjaxRequestTarget target, Form<?> form);
 
     protected void onError(AjaxRequestTarget target) {
         AjaxUtils.refreshFeedback(target);

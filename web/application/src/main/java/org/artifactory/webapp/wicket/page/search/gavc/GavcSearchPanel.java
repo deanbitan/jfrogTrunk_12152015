@@ -57,25 +57,29 @@ public class GavcSearchPanel extends BaseSearchPanel<GavcSearchResult> {
         add(new CssClass("gavc-panel"));
         searchControls = new GavcSearchControls();
 
-        TextField groupIdField = new TextField("groupIdField", new PropertyModel(searchControls, "groupId"));
+        TextField groupIdField = new TextField<String>("groupIdField",
+                new PropertyModel<String>(searchControls, "groupId"));
         groupIdField.setOutputMarkupId(true);
         groupIdField.setPersistent(true);
         form.add(groupIdField);
         form.add(new HelpBubble("groupIdHelp", "The artifact's group id.<br/>* and ? are accepted."));
 
-        TextField artifactIdField = new TextField("artifactIdField", new PropertyModel(searchControls, "artifactId"));
+        TextField artifactIdField = new TextField<String>("artifactIdField",
+                new PropertyModel<String>(searchControls, "artifactId"));
         artifactIdField.setOutputMarkupId(true);
         artifactIdField.setPersistent(true);
         form.add(artifactIdField);
         form.add(new HelpBubble("artifactIdHelp", "The artifact's id.<br/>* and ? are accepted."));
 
-        TextField versionField = new TextField("versionField", new PropertyModel(searchControls, "version"));
+        TextField versionField = new TextField<String>("versionField",
+                new PropertyModel<String>(searchControls, "version"));
         versionField.setPersistent(true);
         versionField.setOutputMarkupId(true);
         form.add(versionField);
         form.add(new HelpBubble("versionHelp", "The artifact's version.<br/>* and ? are accepted."));
 
-        TextField classifierField = new TextField("classifierField", new PropertyModel(searchControls, "classifier"));
+        TextField classifierField = new TextField<String>("classifierField",
+                new PropertyModel<String>(searchControls, "classifier"));
         classifierField.setOutputMarkupId(true);
         classifierField.setPersistent(true);
         form.add(classifierField);
@@ -93,17 +97,20 @@ public class GavcSearchPanel extends BaseSearchPanel<GavcSearchResult> {
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new ActionsColumn(""));
+    protected void addColumns(List<IColumn<ActionableSearchResult<GavcSearchResult>>> columns) {
+        columns.add(new ActionsColumn<ActionableSearchResult<GavcSearchResult>>(""));
 
         columns.add(new BaseSearchPanel.ArtifactNameColumn());
-        columns.add(new GroupableColumn(new Model("Group ID"), "searchResult.groupId",
-                "searchResult.groupId"));
-        columns.add(
-                new GroupableColumn(new Model("Artifact ID"), "searchResult.artifactId", "searchResult.artifactId"));
-        columns.add(new GroupableColumn(new Model("Version"), "searchResult.version", "searchResult.version"));
-        columns.add(new GroupableColumn(new Model("Classifier"), "searchResult.classifier", "searchResult.classifier"));
-        columns.add(new PropertyColumn(new Model("Repository"), "searchResult.repoKey", "searchResult.repoKey"));
+        columns.add(new GroupableColumn<ActionableSearchResult<GavcSearchResult>>(
+                Model.of("Group ID"), "searchResult.groupId", "searchResult.groupId"));
+        columns.add(new GroupableColumn<ActionableSearchResult<GavcSearchResult>>(
+                Model.of("Artifact ID"), "searchResult.artifactId", "searchResult.artifactId"));
+        columns.add(new GroupableColumn<ActionableSearchResult<GavcSearchResult>>(
+                Model.of("Version"), "searchResult.version", "searchResult.version"));
+        columns.add(new GroupableColumn<ActionableSearchResult<GavcSearchResult>>(
+                Model.of("Classifier"), "searchResult.classifier", "searchResult.classifier"));
+        columns.add(new PropertyColumn<ActionableSearchResult<GavcSearchResult>>(
+                Model.of("Repository"), "searchResult.repoKey", "searchResult.repoKey"));
     }
 
     @Override

@@ -22,8 +22,8 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
+import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.addon.plugin.download.AltResponseAction;
-import org.artifactory.addon.plugin.download.ResponseCtx;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.exception.RepoRejectException;
@@ -38,7 +38,11 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.request.*;
+import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.request.DownloadRequestContext;
+import org.artifactory.request.RemoteRequestException;
+import org.artifactory.request.RequestContext;
+import org.artifactory.request.RequestResponseHelper;
 import org.artifactory.resource.ChecksumResource;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -196,7 +200,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
     }
 
     private void respondFoundResource(RequestContext requestContext, ArtifactoryResponse response,
-                                      RepoResource resource) throws IOException {
+            RepoResource resource) throws IOException {
         //Get the actual repository the resource is in
         RepoPath responseRepoPath = resource.getResponseRepoPath();
         String repoKey = responseRepoPath.getRepoKey();
@@ -254,7 +258,8 @@ public class DownloadServiceImpl implements InternalDownloadService {
             UnfoundRepoResource unfound = (UnfoundRepoResource) resource;
             // use the reason and status from the resource unless it's authorization response and the
             // settings prohibit revealing this information
-            boolean hideUnauthorizedResources = centralConfig.getDescriptor().getSecurity().isHideUnauthorizedResources();
+            boolean hideUnauthorizedResources =
+                    centralConfig.getDescriptor().getSecurity().isHideUnauthorizedResources();
             if (!hideUnauthorizedResources || notAuthorizationStatus(unfound.getStatusCode())) {
                 reason = unfound.getReason();
                 status = unfound.getStatusCode();
@@ -280,7 +285,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
      * how to proceed.
      */
     private void respondForChecksumRequest(ArtifactoryRequest request, ArtifactoryResponse response,
-                                           RepoResource resource) throws IOException {
+            RepoResource resource) throws IOException {
 
         String checksumFilePath = request.getPath();
         ChecksumType checksumType = ChecksumType.forFilePath(checksumFilePath);

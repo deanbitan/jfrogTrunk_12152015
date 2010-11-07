@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.security.profile;
 
+import org.apache.wicket.Page;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
@@ -36,7 +37,7 @@ public class ProfilePage extends AuthenticatedPage {
 
     public ProfilePage() {
         if (!isEnabled()) {
-            Class accessDeniedPage = getApplication().getApplicationSettings().getAccessDeniedPage();
+            Class<? extends Page> accessDeniedPage = getApplication().getApplicationSettings().getAccessDeniedPage();
             setResponsePage(accessDeniedPage);
         }
         add(new ProfilePanel("updatePanel"));

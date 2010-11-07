@@ -22,12 +22,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
+import org.artifactory.api.checksum.ChecksumInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
-import org.artifactory.checksum.ChecksumType;
+import org.artifactory.api.search.artifact.ChecksumSearchControls;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
@@ -84,36 +85,34 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
     /**
      * Searches for artifacts by their checksum values
      *
-     * @param sha1 SHA1 checksum to search for. Can be blank.
-     * @param md5  MD5 checksum to search for. Can be blank.
+     * @param searchControls Search controls
      * @return Set of repo paths that comply with the given checksums
      */
-    public Set<RepoPath> searchArtifactsByChecksum(String sha1, String md5) throws RepositoryException {
+    public Set<RepoPath> searchArtifactsByChecksum(ChecksumSearchControls searchControls) throws RepositoryException {
         Set<RepoPath> repoPathSet = Sets.newHashSet();
 
-        if (StringUtils.isNotBlank(sha1)) {
-            findArtifactsByChecksum(ChecksumType.sha1, sha1, repoPathSet);
+        Set<ChecksumInfo> checksums = searchControls.getChecksums();
+        for (ChecksumInfo checksumInfo : checksums) {
+            if (repoPathSet.isEmpty() && StringUtils.isNotBlank(checksumInfo.getActual())) {
+                findArtifactsByChecksum(checksumInfo, searchControls, repoPathSet);
+            }
         }
-
-        if (repoPathSet.isEmpty() && StringUtils.isNotBlank(md5)) {
-            findArtifactsByChecksum(ChecksumType.md5, md5, repoPathSet);
-        }
-
         return repoPathSet;
     }
 
     /**
      * Locates artifacts by the given checksum value and adds them to the given list
      *
-     * @param checksumValue Checksum value to search for
-     * @param repoPathSet   Set of repo paths to append the results to
+     * @param checksumInfo   Checksum info to search for
+     * @param searchControls Search controls
+     * @param repoPathSet    Set of repo paths to append the results to
      */
-    private void findArtifactsByChecksum(ChecksumType type, String checksumValue, Set<RepoPath> repoPathSet)
-            throws RepositoryException {
+    private void findArtifactsByChecksum(ChecksumInfo checksumInfo, ChecksumSearchControls checksumSearchControls,
+            Set<RepoPath> repoPathSet) throws RepositoryException {
         //Make a general search which might include results from the trash or the builds, but should save a lot of time
-        String queryStr = new StringBuilder().append("//element(*, ").append(JcrTypes.NT_ARTIFACTORY_FILE).
-                append(") [@").append(type.getActualPropName()).append(" = '").append(checksumValue).append("']").
-                toString();
+        String queryStr = getPathQueryBuilder(checksumSearchControls).append("/element(*, ").
+                append(JcrTypes.NT_ARTIFACTORY_FILE).append(") [@").append(checksumInfo.getType().getActualPropName()).
+                append(" = '").append(checksumInfo.getActual()).append("']").toString();
 
         QueryResult queryResult = getJcrService().executeQuery(JcrQuerySpec.xpath(queryStr).noLimit());
 

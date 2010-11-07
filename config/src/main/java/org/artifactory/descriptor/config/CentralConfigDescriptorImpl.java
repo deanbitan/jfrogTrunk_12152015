@@ -18,8 +18,9 @@
 
 package org.artifactory.descriptor.config;
 
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
@@ -41,6 +42,7 @@ import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.util.AlreadyExistsException;
 import org.artifactory.util.DoesNotExistException;
 
+import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -51,6 +53,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @XmlRootElement(name = "config")
 @XmlType(name = "CentralConfigType",
@@ -65,18 +68,15 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElement(name = "localRepositories", required = true)
     @XmlJavaTypeAdapter(LocalRepositoriesMapAdapter.class)
-    private OrderedMap<String, LocalRepoDescriptor> localRepositoriesMap =
-            new ListOrderedMap<String, LocalRepoDescriptor>();
+    private Map<String, LocalRepoDescriptor> localRepositoriesMap = Maps.newLinkedHashMap();
 
     @XmlElement(name = "remoteRepositories", required = false)
     @XmlJavaTypeAdapter(RemoteRepositoriesMapAdapter.class)
-    private OrderedMap<String, RemoteRepoDescriptor> remoteRepositoriesMap =
-            new ListOrderedMap<String, RemoteRepoDescriptor>();
+    private Map<String, RemoteRepoDescriptor> remoteRepositoriesMap = Maps.newLinkedHashMap();
 
     @XmlElement(name = "virtualRepositories", required = false)
     @XmlJavaTypeAdapter(VirtualRepositoriesMapAdapter.class)
-    private OrderedMap<String, VirtualRepoDescriptor> virtualRepositoriesMap =
-            new ListOrderedMap<String, VirtualRepoDescriptor>();
+    private Map<String, VirtualRepoDescriptor> virtualRepositoriesMap = Maps.newLinkedHashMap();
 
     @XmlElementWrapper(name = "proxies")
     @XmlElement(name = "proxy", required = false)
@@ -129,27 +129,27 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @XmlElement
     private String footer;
 
-    public OrderedMap<String, LocalRepoDescriptor> getLocalRepositoriesMap() {
+    public Map<String, LocalRepoDescriptor> getLocalRepositoriesMap() {
         return localRepositoriesMap;
     }
 
-    public void setLocalRepositoriesMap(OrderedMap<String, LocalRepoDescriptor> localRepositoriesMap) {
+    public void setLocalRepositoriesMap(Map<String, LocalRepoDescriptor> localRepositoriesMap) {
         this.localRepositoriesMap = localRepositoriesMap;
     }
 
-    public OrderedMap<String, RemoteRepoDescriptor> getRemoteRepositoriesMap() {
+    public Map<String, RemoteRepoDescriptor> getRemoteRepositoriesMap() {
         return remoteRepositoriesMap;
     }
 
-    public void setRemoteRepositoriesMap(OrderedMap<String, RemoteRepoDescriptor> remoteRepositoriesMap) {
+    public void setRemoteRepositoriesMap(Map<String, RemoteRepoDescriptor> remoteRepositoriesMap) {
         this.remoteRepositoriesMap = remoteRepositoriesMap;
     }
 
-    public OrderedMap<String, VirtualRepoDescriptor> getVirtualRepositoriesMap() {
+    public Map<String, VirtualRepoDescriptor> getVirtualRepositoriesMap() {
         return virtualRepositoriesMap;
     }
 
-    public void setVirtualRepositoriesMap(OrderedMap<String, VirtualRepoDescriptor> virtualRepositoriesMap) {
+    public void setVirtualRepositoriesMap(Map<String, VirtualRepoDescriptor> virtualRepositoriesMap) {
         this.virtualRepositoriesMap = virtualRepositoriesMap;
     }
 
@@ -223,7 +223,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     public void addDefaultProxyToRemoteRepositories(ProxyDescriptor proxyDescriptor) {
-        OrderedMap<String, RemoteRepoDescriptor> descriptorOrderedMap = getRemoteRepositoriesMap();
+        Map<String, RemoteRepoDescriptor> descriptorOrderedMap = getRemoteRepositoriesMap();
         for (RemoteRepoDescriptor descriptor : descriptorOrderedMap.values()) {
             if (descriptor instanceof HttpRepoDescriptor) {
                 HttpRepoDescriptor httpRepoDescriptor = (HttpRepoDescriptor) descriptor;
@@ -353,12 +353,13 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return getProxy(proxyKey) != null;
     }
 
-    public void addProxy(ProxyDescriptor proxyDescriptor) {
+    public void addProxy(ProxyDescriptor proxyDescriptor, boolean defaultForAllRemoteRepo) {
         String proxyKey = proxyDescriptor.getKey();
         if (isProxyExists(proxyKey)) {
             throw new AlreadyExistsException("Proxy " + proxyKey + " already exists");
         }
         if (proxyDescriptor.isDefaultProxy()) {
+            proxyChanged(proxyDescriptor, defaultForAllRemoteRepo);
             // remove default flag from other existing proxy if exist
             for (ProxyDescriptor proxy : proxies) {
                 proxy.setDefaultProxy(false);
@@ -388,7 +389,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     public void proxyChanged(ProxyDescriptor proxy, boolean updateExistingRepos) {
         if (proxy.isDefaultProxy()) {
             if (updateExistingRepos) {
-                updateExisingRepos(proxy);
+                updateExistingRepos(proxy);
             }
             //Unset the previous default if any
             for (ProxyDescriptor proxyDescriptor : proxies) {
@@ -399,13 +400,26 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         }
     }
 
-    private void updateExisingRepos(ProxyDescriptor proxy) {
+    private void updateExistingRepos(ProxyDescriptor proxy) {
+        ProxyDescriptor previousDefaultProxy = findPreviousProxyDescriptor(proxy);
         for (RemoteRepoDescriptor remoteRepoDescriptor : remoteRepositoriesMap.values()) {
             if (remoteRepoDescriptor instanceof HttpRepoDescriptor) {
                 HttpRepoDescriptor httpRepoDescriptor = (HttpRepoDescriptor) remoteRepoDescriptor;
-                httpRepoDescriptor.setProxy(proxy);
+                ProxyDescriptor existingRepoProxy = httpRepoDescriptor.getProxy();
+                // if the repo doesn't have a proxy, or it is the previous default proxy configured then override it.
+                if (existingRepoProxy == null || existingRepoProxy.equals(previousDefaultProxy)) {
+                    httpRepoDescriptor.setProxy(proxy);
+                }
             }
         }
+    }
+
+    private ProxyDescriptor findPreviousProxyDescriptor(final ProxyDescriptor proxyDescriptor) {
+        return Iterables.find(proxies, new Predicate<ProxyDescriptor>() {
+            public boolean apply(@Nullable ProxyDescriptor input) {
+                return input.isDefaultProxy() && !input.getKey().equals(proxyDescriptor.getKey());
+            }
+        }, null);
     }
 
     public boolean isBackupExists(String backupKey) {

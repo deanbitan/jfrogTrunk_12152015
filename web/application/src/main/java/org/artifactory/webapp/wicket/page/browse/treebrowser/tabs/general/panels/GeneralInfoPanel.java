@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panel
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DurationFormatUtils;
+import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.ExternalLink;
@@ -36,6 +37,7 @@ import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.storage.StorageUnit;
+import org.artifactory.common.wicket.ajax.AjaxLazyLoadSpanPanel;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
@@ -47,6 +49,7 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
@@ -94,7 +97,8 @@ public class GeneralInfoPanel extends Panel {
         infoBorder.add(nameLabel);
 
         String itemDisplayName = repoItem.getDisplayName();
-        String pathUrl = getRepoPathUrl(repoItem.getRepoPath().getRepoKey(), repoItem.getRepoPath().getPath());
+
+        String pathUrl = getRepoPathUrl(repoItem);
         if (StringUtils.isBlank(pathUrl)) {
             pathUrl = "";
         }
@@ -187,21 +191,20 @@ public class GeneralInfoPanel extends Panel {
         addLicenseInfo(infoBorder, path);
     }
 
-    private void addArtifactCount(final boolean itemIsRepo, FieldSetBorder infoBorder, String itemDisplayName) {
-        long artifactCount = 0;
-        if (itemIsRepo) {
-            ArtifactCount count = repositoryService.getArtifactCount(itemDisplayName);
-            artifactCount = count.getCount();
+    private void addArtifactCount(final boolean itemIsRepo, FieldSetBorder infoBorder, final String itemDisplayName) {
+        if (!itemIsRepo) {
+            infoBorder.add(new WebMarkupContainer("artifactCountLabel"));
+            infoBorder.add(new WebMarkupContainer("artifactCountValue"));
+        } else {
+            infoBorder.add(new Label("artifactCountLabel", "Artifact Count: "));
+            infoBorder.add(new AjaxLazyLoadSpanPanel("artifactCountValue") {
+                @Override
+                public Component getLazyLoadComponent(String markupId) {
+                    ArtifactCount count = repositoryService.getArtifactCount(itemDisplayName);
+                    return new Label(markupId, Long.toString(count.getCount()));
+                }
+            });
         }
-
-        LabeledValue artifactCountLabel = new LabeledValue("artifactCount", "Artifact Count: ",
-                Long.toString(artifactCount)) {
-            @Override
-            public boolean isVisible() {
-                return itemIsRepo;
-            }
-        };
-        infoBorder.add(artifactCountLabel);
     }
 
     private void addWatcherInfo(RepoAwareActionableItem repoItem, FieldSetBorder infoBorder) {
@@ -259,46 +262,27 @@ public class GeneralInfoPanel extends Panel {
             ageLabel.setValue(ageStr);
             sizeLabel.setValue(StorageUnit.toReadableString(size));
             if (mavenInfo.isValid()) {
-                artifactIdLabel.setValue(getPrettyArtifactId(mavenInfo));
+                artifactIdLabel.setValue(mavenInfo.getPrettyArtifactId());
             } else {
                 artifactIdLabel.setVisible(false);
             }
         }
     }
 
-    /**
-     * Returns the maven artifact "id" in a "prettier" format.<br>
-     * org.artifactory.api.maven.MavenArtifactInfo#toString() will not omit fields like the classifier and type when
-     * they are not specified. This results in ugly artifact IDs.<br>
-     * This implementation will simply omit fields which are not specified.
-     *
-     * @param mavenArtifactInfo Maven artifact info to summarize
-     * @return Summarized artifact info
-     */
-    private String getPrettyArtifactId(MavenArtifactInfo mavenArtifactInfo) {
-        StringBuilder artifactIdBuilder = new StringBuilder(mavenArtifactInfo.getGroupId()).append(":").
-                append(mavenArtifactInfo.getArtifactId()).append(":").
-                append(mavenArtifactInfo.getVersion());
-
-        String classifier = mavenArtifactInfo.getClassifier();
-        if (StringUtils.isNotBlank(classifier) && !MavenArtifactInfo.NA.equals(classifier)) {
-            artifactIdBuilder.append(":").append(classifier);
+    private String getRepoPathUrl(RepoAwareActionableItem repoItem) {
+        String artifactPath;
+        if (repoItem instanceof CannonicalEnabledActionableFolder) {
+            artifactPath = ((CannonicalEnabledActionableFolder) repoItem).getCanonicalPath().getPath();
+        } else {
+            artifactPath = repoItem.getRepoPath().getPath();
         }
 
-        String type = mavenArtifactInfo.getType();
-        if (StringUtils.isNotBlank(type) && !MavenArtifactInfo.NA.equals(classifier)) {
-            artifactIdBuilder.append(":").append(type);
-        }
-        return artifactIdBuilder.toString();
-    }
-
-    private String getRepoPathUrl(String repoKey, String artifactPath) {
         StringBuilder urlBuilder = new StringBuilder();
         if (NamingUtils.isChecksum(artifactPath)) {
             // if a checksum file is deployed, link to the target file
             artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
         }
-        String repoPathId = new RepoPathImpl(repoKey, artifactPath).getId();
+        String repoPathId = new RepoPathImpl(repoItem.getRepo().getKey(), artifactPath).getId();
 
         String encodedPathId;
         try {
@@ -309,7 +293,7 @@ public class GeneralInfoPanel extends Panel {
         }
 
         //Using request parameters instead of wicket's page parameters. See RTFACT-2843
-        urlBuilder.append(WicketUtils.mountPathForPage(BrowseRepoPage.class)).append("?").
+        urlBuilder.append(WicketUtils.absoluteMountPathForPage(BrowseRepoPage.class)).append("?").
                 append(BrowseRepoPage.PATH_ID_PARAM).append("=").append(encodedPathId);
         return urlBuilder.toString();
     }

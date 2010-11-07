@@ -48,7 +48,7 @@ public class MenuItem extends Panel {
         if (pageClass == null) {
             link = new ToogleGroupLink("link", menuNode);
         } else {
-            link = new BookmarkablePageLink("link", pageClass);
+            link = new BookmarkablePageLink<String>("link", pageClass);
         }
         link.setEnabled(enabled);
         add(link);

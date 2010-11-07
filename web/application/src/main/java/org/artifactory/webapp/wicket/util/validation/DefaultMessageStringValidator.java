@@ -16,27 +16,18 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.common.wicket.component;
+package org.artifactory.webapp.wicket.util.validation;
 
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.markup.repeater.Item;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
+import org.apache.wicket.validation.validator.StringValidator;
 
 /**
- * @author Yoav Aharoni
+ * @author yoavl
  */
-public class UsernameColumn extends PropertyColumn {
-    public UsernameColumn(String propertyExpression) {
-        this(new Model("Username"), propertyExpression);
-    }
+public abstract class DefaultMessageStringValidator extends StringValidator {
 
-    public UsernameColumn(IModel displayModel, String propertyExpression) {
-        super(displayModel, propertyExpression, propertyExpression);
-    }
+    protected final String errorMessage;
 
-    @Override
-    public void populateItem(Item item, String componentId, IModel model) {
-        super.populateItem(item, componentId, model);
+    public DefaultMessageStringValidator(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 }

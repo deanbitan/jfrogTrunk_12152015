@@ -31,8 +31,9 @@ import org.testng.annotations.Test;
  */
 @Test
 public class UriValidatorTest {
-    private IValidatable validatable;
+    private IValidatable<String> validatable;
 
+    @SuppressWarnings({"unchecked"})
     @BeforeMethod
     protected void setUp() throws Exception {
         validatable = EasyMock.createMock(IValidatable.class);

@@ -18,8 +18,7 @@
 
 package org.artifactory.descriptor.repo.jaxb;
 
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
+import com.google.common.collect.Maps;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 
@@ -28,18 +27,18 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Yoav Landman
  */
 public class VirtualRepositoriesMapAdapter
-        extends
-        XmlAdapter<VirtualRepositoriesMapAdapter.Wrappper, OrderedMap<String, VirtualRepoDescriptor>> {
+        extends XmlAdapter<VirtualRepositoriesMapAdapter.Wrappper, Map<String, VirtualRepoDescriptor>> {
 
-    public OrderedMap<String, VirtualRepoDescriptor> unmarshal(Wrappper wrapper)
+    @Override
+    public Map<String, VirtualRepoDescriptor> unmarshal(Wrappper wrapper)
             throws Exception {
-        OrderedMap<String, VirtualRepoDescriptor> virtualRepositoriesMap =
-                new ListOrderedMap<String, VirtualRepoDescriptor>();
+        Map<String, VirtualRepoDescriptor> virtualRepositoriesMap = Maps.newLinkedHashMap();
         for (VirtualRepoDescriptor repository : wrapper.getList()) {
             String key = repository.getKey();
             VirtualRepoDescriptor repo = virtualRepositoriesMap.put(key, repository);
@@ -53,9 +52,8 @@ public class VirtualRepositoriesMapAdapter
         return virtualRepositoriesMap;
     }
 
-    public VirtualRepositoriesMapAdapter.Wrappper marshal(
-            OrderedMap<String, VirtualRepoDescriptor> map)
-            throws Exception {
+    @Override
+    public VirtualRepositoriesMapAdapter.Wrappper marshal(Map<String, VirtualRepoDescriptor> map) throws Exception {
         return new VirtualRepositoriesMapAdapter.Wrappper(map);
     }
 
@@ -69,7 +67,7 @@ public class VirtualRepositoriesMapAdapter
         public Wrappper() {
         }
 
-        public Wrappper(OrderedMap<String, VirtualRepoDescriptor> map) {
+        public Wrappper(Map<String, VirtualRepoDescriptor> map) {
             for (VirtualRepoDescriptor repo : map.values()) {
                 list.add(repo);
             }

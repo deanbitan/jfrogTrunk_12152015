@@ -76,12 +76,14 @@ public class PomInterceptor {
             if (ExceptionUtils.getRootCause(e) instanceof BadPomException) {
                 log.error(message + ":" + e.getMessage());
             } else {
-                log.error(message, e);
+                log.debug(message, e);
+                log.error(e.getMessage());
             }
             return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + e.getMessage());
         } catch (RepositoryException e) {
             String message = "Failed to transform pom file";
-            log.error(message, e);
+            log.debug(message, e);
+            log.error(message + ":" + e.getMessage());
             return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + e.getMessage());
         }
 

@@ -62,7 +62,7 @@ public class ArchivedFileActionableItem extends RepoAwareActionableItemBase {
 
     @Override
     public void addTabs(List<ITab> tabs) {
-        tabs.add(new AbstractTab(new Model("General")) {
+        tabs.add(new AbstractTab(Model.of("General")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new ZipEntryPanel(panelId, getZipEntry());
@@ -70,7 +70,7 @@ public class ArchivedFileActionableItem extends RepoAwareActionableItemBase {
         });
 
         if (NamingUtils.isViewable(node.getName()) || "class".equals(PathUtils.getExtension(node.getName()))) {
-            tabs.add(new AbstractTab(new Model("View Source")) {
+            tabs.add(new AbstractTab(Model.of("View Source")) {
                 @Override
                 public Panel getPanel(String panelId) {
                     return new ViewableTabPanel(panelId, ArchivedFileActionableItem.this);

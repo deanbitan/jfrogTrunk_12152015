@@ -35,7 +35,13 @@ public class Watchers implements Info {
 
     public static final String ROOT = "watchers";
 
+    /**
+     * @deprecated Repo path is not needed and shouldn't be saved within the metadata. Removing this field requires
+     *             creating a converter that will process "watch" type metadata on each item that annotates it.
+     */
+    @Deprecated
     private RepoPath repoPath;
+
     /**
      * Watchers list
      */
@@ -48,17 +54,6 @@ public class Watchers implements Info {
         watchers = new TreeSet<Watcher>();
     }
 
-
-    /**
-     * Manual init constructor
-     *
-     * @param repoPath Path that watchers belongs to
-     */
-    public Watchers(RepoPath repoPath) {
-        watchers = new TreeSet<Watcher>();
-        this.repoPath = repoPath;
-    }
-
     /**
      * Copy constructor
      *
@@ -66,7 +61,6 @@ public class Watchers implements Info {
      */
     public Watchers(Watchers watchersObject) {
         watchers = watchersObject.getWatchers();
-        repoPath = watchersObject.getRepoPath();
     }
 
     /**
@@ -76,24 +70,6 @@ public class Watchers implements Info {
      */
     public Set<Watcher> getWatchers() {
         return watchers;
-    }
-
-    /**
-     * Returns the repo path that the watchers belong to
-     *
-     * @return RepoPath
-     */
-    public RepoPath getRepoPath() {
-        return repoPath;
-    }
-
-    /**
-     * Sets the repo path for the current watchers
-     *
-     * @param repoPath Repo path
-     */
-    public void setRepoPath(RepoPath repoPath) {
-        this.repoPath = repoPath;
     }
 
     /**
@@ -159,16 +135,6 @@ public class Watchers implements Info {
      */
     public boolean isEmpty() {
         return watchers.isEmpty();
-    }
-
-    /**
-     * Indicates if the given repo path is equal to the contained one
-     *
-     * @param repoPath To compare
-     * @return True if both paths are equal. False if not
-     */
-    public boolean isRepoPathEqual(RepoPath repoPath) {
-        return this.repoPath.equals(repoPath);
     }
 
     @Override

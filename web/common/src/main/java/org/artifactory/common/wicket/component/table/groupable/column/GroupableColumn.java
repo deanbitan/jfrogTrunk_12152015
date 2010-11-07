@@ -24,22 +24,18 @@ import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.AttachColumnListener;
 import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
 import org.artifactory.common.wicket.component.table.groupable.GroupableTable;
+import org.artifactory.common.wicket.component.table.groupable.provider.GroupableDataProvider;
+
+import java.io.Serializable;
 
 /**
  * @author Yoav Aharoni
  */
-public class GroupableColumn extends TitlePropertyColumn implements IGroupableColumn, AttachColumnListener {
-
-    public GroupableColumn(String title, String propertyExpression) {
-        super(title, propertyExpression);
-    }
+public class GroupableColumn<T extends Serializable> extends TitlePropertyColumn<T>
+        implements IGroupableColumn<T>, AttachColumnListener<T> {
 
     public GroupableColumn(String title, String sortProperty, String propertyExpression) {
         super(title, sortProperty, propertyExpression);
-    }
-
-    public GroupableColumn(IModel<String> displayModel, String propertyExpression) {
-        super(displayModel.getObject(), propertyExpression);
     }
 
     public GroupableColumn(IModel<String> displayModel, String sortProperty, String propertyExpression) {
@@ -50,10 +46,10 @@ public class GroupableColumn extends TitlePropertyColumn implements IGroupableCo
         return super.getSortProperty();
     }
 
-    public void onColumnAttached(SortableTable table) {
+    public void onColumnAttached(SortableTable<T> table) {
         if (this instanceof IChoiceRenderer && table instanceof GroupableTable) {
-            ((GroupableTable) table).getGroupableDataProvider().setGroupReneder(getGroupProperty(),
-                    (IChoiceRenderer) this);
+            GroupableDataProvider<T> dataProvider = ((GroupableTable<T>) table).getGroupableDataProvider();
+            dataProvider.setGroupRenderer(getGroupProperty(), (IChoiceRenderer<T>) this);
         }
     }
 }

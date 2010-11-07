@@ -18,7 +18,6 @@
 
 package org.artifactory.descriptor.reader;
 
-import org.apache.commons.collections15.OrderedMap;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -32,6 +31,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Map;
 
 import static org.artifactory.common.ConstantValues.substituteRepoKeys;
 import static org.testng.Assert.assertNotNull;
@@ -49,7 +49,7 @@ public class CentralConfigReaderTest extends ArtifactoryHomeBoundTest {
         File oldConfigFile = ResourceUtils.getResourceAsFile("/config/install/config.1.4.1.xml");
         CentralConfigDescriptor newConfig =
                 new CentralConfigReader().read(oldConfigFile);
-        OrderedMap<String, RemoteRepoDescriptor> descriptorOrderedMap = newConfig.getRemoteRepositoriesMap();
+        Map<String, RemoteRepoDescriptor> descriptorOrderedMap = newConfig.getRemoteRepositoriesMap();
         Assert.assertEquals(descriptorOrderedMap.size(), 16, "Should contain 16 remote repository");
     }
 

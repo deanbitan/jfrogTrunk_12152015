@@ -26,6 +26,7 @@ import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
+import org.artifactory.api.search.artifact.ChecksumSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.api.search.property.PropertySearchControls;
@@ -59,12 +60,11 @@ public interface SearchService {
     /**
      * Searches for artifacts by their checksum values
      *
-     * @param sha1 SHA1 checksum to search for. Can be blank.
-     * @param md5  MD5 checksum to search for. Can be blank.
+     * @param searchControls Search controls
      * @return Set of repo paths that comply with the given checksums
      */
     @Lock(transactional = true)
-    Set<RepoPath> searchArtifactsByChecksum(String sha1, String md5);
+    Set<RepoPath> searchArtifactsByChecksum(ChecksumSearchControls searchControls);
 
     /**
      * @param from          The time to start the search exclusive (eg, >). If empty will start from 1st Jan 1970

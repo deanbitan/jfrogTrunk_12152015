@@ -18,6 +18,7 @@
 
 package org.artifactory.security.ldap;
 
+import com.google.common.collect.Maps;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LdapGroupAddon;
 import org.artifactory.api.config.CentralConfigService;
@@ -42,7 +43,6 @@ import org.springframework.stereotype.Component;
 
 import javax.naming.Context;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -95,7 +95,7 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
     }
 
     private Map<String, BindAuthenticator> createBindAuthenticators() {
-        Map<String, BindAuthenticator> result = new LinkedHashMap<String, BindAuthenticator>();
+        Map<String, BindAuthenticator> result = Maps.newLinkedHashMap();
         LdapGroupAddon groupAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
                 LdapGroupAddon.class);
         List<LdapSetting> ldapSettings = groupAddon.getEnabledLdapSettings();

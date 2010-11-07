@@ -58,8 +58,8 @@ public class UserModel extends ProfileModel {
         this.admin = userInfo.isAdmin();
         this.updatableProfile = userInfo.isUpdatableProfile();
         groups = userInfo.getGroups();
-        // if user we update has invalid password the internal password is disabled
-        disableInternalPassword = userInfo.hasInvalidPassword();
+        // if user we update is not admin has invalid password the internal password is disabled
+        disableInternalPassword = !admin && userInfo.hasInvalidPassword();
         lastLoginTimeMillis = userInfo.getLastLoginTimeMillis();
         lastAccessTimeMillis = userInfo.getLastAccessTimeMillis();
         statuses = new HashMap<String, Status>();

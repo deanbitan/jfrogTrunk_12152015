@@ -32,9 +32,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class TokenizedTrafficEntry extends TrafficEntryBase {
 
     /**
-     * Seperates the columns of the textual entries
+     * Separates the columns of the textual entries
      */
-    public static final String COLUMN_SEPERTAOR = "|";
+    public static final String COLUMN_SEPARATOR = "|";
 
     protected AtomicReference<String> tokenizedValue = new AtomicReference<String>();
 
@@ -85,7 +85,7 @@ public abstract class TokenizedTrafficEntry extends TrafficEntryBase {
         for (int i = 0; i < tokens.length; i++) {
             builder.append(tokens[i]);
             if (i != (tokens.length - 1)) {
-                builder.append(COLUMN_SEPERTAOR);
+                builder.append(COLUMN_SEPARATOR);
             }
         }
         return builder.toString();
@@ -101,7 +101,7 @@ public abstract class TokenizedTrafficEntry extends TrafficEntryBase {
             throw new IllegalArgumentException("Entry is empty");
         }
 
-        tokens = StringUtils.split(entry, COLUMN_SEPERTAOR);
+        tokens = StringUtils.split(entry, COLUMN_SEPARATOR);
 
         if (tokens.length == 0) {
             throw new IllegalArgumentException("No tokens found in entry");

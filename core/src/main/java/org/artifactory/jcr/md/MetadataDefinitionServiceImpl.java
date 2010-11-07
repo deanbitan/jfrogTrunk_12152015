@@ -18,7 +18,7 @@
 
 package org.artifactory.jcr.md;
 
-import org.apache.commons.collections15.map.FastHashMap;
+import org.apache.commons.collections.FastHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.fs.InternalFileInfo;
 import org.artifactory.api.fs.InternalFolderInfo;
@@ -49,8 +49,8 @@ import java.util.Set;
 public class MetadataDefinitionServiceImpl implements MetadataDefinitionService {
     private static final Logger log = LoggerFactory.getLogger(MetadataDefinitionServiceImpl.class);
 
-    private final Map<Class, MetadataDefinition> mdDefsByClass = new FastHashMap<Class, MetadataDefinition>();
-    private final Map<String, MetadataDefinition> mdDefsByName = new FastHashMap<String, MetadataDefinition>();
+    private final Map<Class, MetadataDefinition> mdDefsByClass = new FastHashMap();
+    private final Map<String, MetadataDefinition> mdDefsByName = new FastHashMap();
 
     public void init() {
         // Internal metadata
@@ -90,6 +90,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @SuppressWarnings({"unchecked"})
     public <T> MetadataDefinition<T> getMetadataDefinition(Class<T> clazz) {
         MetadataDefinition<T> definition = mdDefsByClass.get(clazz);
         if (definition == null) {

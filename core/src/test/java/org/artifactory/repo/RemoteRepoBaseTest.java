@@ -47,16 +47,9 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     InternalRepositoryService internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
     InternalArtifactoryContext context = EasyMock.createMock(InternalArtifactoryContext.class);
 
-    {
-        resetMocks();
-    }
-
     HttpRepoDescriptor httpRepoDescriptor = new HttpRepoDescriptor();
     HttpRepo httpRepo = new HttpRepo(internalRepoService, httpRepoDescriptor, false, null);
     RepoPath repoPath = new RepoPathImpl("remote-repo-cache", "test/test/1.0/test-1.0.jar");
-
-    public RemoteRepoBaseTest() {
-    }
 
     /**
      * Try to download with ordinary path

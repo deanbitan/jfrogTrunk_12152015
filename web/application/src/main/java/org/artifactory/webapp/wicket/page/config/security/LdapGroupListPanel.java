@@ -90,10 +90,10 @@ public class LdapGroupListPanel extends ModalListPanel<LdapGroupSetting> {
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new PropertyColumn(new Model("Name"), "name", "name"));
-        columns.add(new PropertyColumn(new Model("Strategy"), "strategy", "strategy"));
-        columns.add(new PropertyColumn(new Model("Attached LDAP"), "enabledLdap", "enabledLdap"));
+    protected void addColumns(List<? super IColumn<LdapGroupSetting>> columns) {
+        columns.add(new PropertyColumn<LdapGroupSetting>(Model.of("Name"), "name", "name"));
+        columns.add(new PropertyColumn<LdapGroupSetting>(Model.of("Strategy"), "strategy", "strategy"));
+        columns.add(new PropertyColumn<LdapGroupSetting>(Model.of("Attached LDAP"), "enabledLdap", "enabledLdap"));
     }
 
     @Override

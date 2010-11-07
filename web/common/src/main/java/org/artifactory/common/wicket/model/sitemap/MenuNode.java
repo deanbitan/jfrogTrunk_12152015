@@ -77,10 +77,6 @@ public class MenuNode implements TreeNode, Serializable {
         return children;
     }
 
-    public void setChildren(List<MenuNode> children) {
-        this.children = children;
-    }
-
     public void addChild(MenuNode child) {
         //Allow a null and ignore - helps with transperancy of addons
         if (child != null) {

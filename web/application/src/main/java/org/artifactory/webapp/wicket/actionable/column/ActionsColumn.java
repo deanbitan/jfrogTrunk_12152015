@@ -49,7 +49,7 @@ public class ActionsColumn<T extends ActionableItem> extends LinksColumn<T> {
         super(title);
     }
 
-    public ActionsColumn(IModel titleModel) {
+    public ActionsColumn(IModel<String> titleModel) {
         super(titleModel);
     }
 

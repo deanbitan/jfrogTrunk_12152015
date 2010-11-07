@@ -43,7 +43,8 @@ public class KeyEventHandler extends Panel {
     public KeyEventHandler(String id) {
         super(id, new Model());
 
-        HiddenField keyCodeField = new HiddenField<Integer>("keyCodeField", (IModel<Integer>) getDefaultModel(), Integer.class);
+        HiddenField keyCodeField = new HiddenField<Integer>("keyCodeField", (IModel<Integer>) getDefaultModel(),
+                Integer.class);
         keyCodeField.setOutputMarkupId(true);
         keyCodeField.add(new AjaxFormComponentUpdatingBehavior("onkeyup") {
             @Override
@@ -82,8 +83,9 @@ public class KeyEventHandler extends Panel {
         }
     }
 
-    private class KeysArrayModel extends AbstractReadOnlyModel {
-        public Object getObject() {
+    private class KeysArrayModel extends AbstractReadOnlyModel<String> {
+        @Override
+        public String getObject() {
             StringBuilder buf = new StringBuilder();
             for (Integer keyCode : listenerMap.keySet()) {
                 buf.append(',').append(keyCode);

@@ -72,14 +72,14 @@ class SecurityGeneralConfigPanel extends TitledActionPanel {
 
     private void addAnonymousAccessField(Form form) {
         StyledCheckbox anonAccess = new StyledCheckbox("anonAccessEnabled");
-        anonAccess.setLabel(new Model<String>("Allow Anonymous Access"));
+        anonAccess.setLabel(Model.of("Allow Anonymous Access"));
         form.add(anonAccess);
         form.add(new SchemaHelpBubble("anonAccessEnabled.help"));
     }
 
     private void addHideUnauthorizedResourcesField(Form form) {
         StyledCheckbox anonAccess = new StyledCheckbox("hideUnauthorizedResources");
-        anonAccess.setLabel(new Model<String>("Hide Existence of Unauthorized Resource"));
+        anonAccess.setLabel(Model.of("Hide Existence of Unauthorized Resource"));
         form.add(anonAccess);
         form.add(new SchemaHelpBubble("hideUnauthorizedResources.help"));
     }
@@ -95,11 +95,11 @@ class SecurityGeneralConfigPanel extends TitledActionPanel {
     }
 
     private TitledAjaxSubmitLink createSaveButton(Form<SecurityDescriptor> form) {
-        return new TitledAjaxSubmitLink<SecurityDescriptor>("save", "Save", form) {
+        return new TitledAjaxSubmitLink("save", "Save", form) {
             @Override
-            protected void onSubmit(AjaxRequestTarget target, Form<SecurityDescriptor> form) {
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
                 MutableCentralConfigDescriptor centralConfig = centralConfigService.getMutableDescriptor();
-                SecurityDescriptor editedDescriptor = form.getModelObject();
+                SecurityDescriptor editedDescriptor = (SecurityDescriptor) form.getModelObject();
                 centralConfig.setSecurity(editedDescriptor);
                 centralConfigService.saveEditedDescriptorAndReload(centralConfig);
                 info("Security settings successfully updated.");

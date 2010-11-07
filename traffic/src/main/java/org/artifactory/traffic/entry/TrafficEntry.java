@@ -27,7 +27,7 @@ import java.util.Date;
  *
  * @author Noam Tenne
  */
-public interface TrafficEntry extends Comparable {
+public interface TrafficEntry extends Comparable<TrafficEntry> {
 
     /**
      * Returns the entry's event date

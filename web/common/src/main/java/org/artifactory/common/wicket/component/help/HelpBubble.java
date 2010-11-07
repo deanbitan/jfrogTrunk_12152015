@@ -37,7 +37,6 @@ import java.util.Map;
 
 public class HelpBubble extends Label {
     protected static final String TEMPLATE_FILE = "HelpBubble.html";
-    protected static final String ENCODING = "utf-8";
 
     /**
      * Protected constructor for explicitly for a class which overrides the class and would Like to supply the model
@@ -51,7 +50,7 @@ public class HelpBubble extends Label {
     }
 
     public HelpBubble(String id, String helpMessage) {
-        this(id, new Model(helpMessage));
+        this(id, Model.of(helpMessage));
     }
 
     public HelpBubble(String id, IModel helpModel) {

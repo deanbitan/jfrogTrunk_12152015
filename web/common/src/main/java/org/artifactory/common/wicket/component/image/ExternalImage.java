@@ -34,7 +34,7 @@ public class ExternalImage extends WebMarkupContainer {
     }
 
     public ExternalImage(String id, String url) {
-        super(id, new Model(url));
+        super(id, Model.of(url));
         setOutputMarkupId(true);
     }
 

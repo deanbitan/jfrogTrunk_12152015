@@ -23,6 +23,6 @@ import org.artifactory.common.wicket.component.table.SortableTable;
 /**
  * @author Yoav Aharoni
  */
-public interface AttachColumnListener {
-    void onColumnAttached(SortableTable table);
+public interface AttachColumnListener<T> {
+    void onColumnAttached(SortableTable<T> table);
 }

@@ -559,6 +559,7 @@ span.textbox-disabled {
     float: left;
     width: 170px;
     background: url("images/accordion-menu/menu_bg_center.gif") repeat-y right;
+    left: 0;
 }
 
 .IE-6 .side-menu {
@@ -764,10 +765,6 @@ button.help-link {
     white-space: nowrap;
 }
 
-.Moz .navigatorLabel {
-    padding-top: 0;
-}
-
 .navigator {
     float: right;
 }
@@ -818,6 +815,11 @@ body button.pageableDropDown span {
 body button.pageableDropDown {
     width: 20px;
     height: 19px;
+}
+
+.FF .navigator button {
+    position: relative;
+    top: 1px;
 }
 
 /*-- login in the header ---------------------------------*/
@@ -4718,6 +4720,14 @@ div.field.checkbox-field {
     padding-right: 16px;
 }
 
+.IE .mail-config .artifactory-url {
+    width: 320px;
+}
+
+.mail-config .artifactory-url {
+    width: 323px;
+}
+
 .IE-8 .mail-config .mail-text {
     margin-top: 6px;
     padding-right: 16px;
@@ -5363,12 +5373,13 @@ div.styled-tab-panel div.tab-row li.disabled-addon-last-tab span {
 
 .build-save-results {
     position: relative;
+    float: none;
 }
 
 .build-save-results .addon-icon {
-    left: 11.9em;
+    left: 13.5em;
     position: absolute;
-    top: 0.5em;
+    top: 0.1em;
     z-index: 1;
 }
 
@@ -5587,6 +5598,10 @@ div.syntaxhighlighter .toolbar a.about {
 
 .syntaxhighlighter div.line {
     min-height: 0 !important;
+}
+
+.IE-7 .tab-panel .build-json {
+    min-width: 99%;
 }
 
 /*-- BaseModuleDependenciesListPanel --*/

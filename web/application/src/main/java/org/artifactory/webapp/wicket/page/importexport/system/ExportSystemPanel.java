@@ -138,7 +138,7 @@ public class ExportSystemPanel extends TitledPanel {
         StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose"));
         verboseCheckbox.setRequired(false);
         exportForm.add(verboseCheckbox);
-        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+        String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
         exportForm.add(
                 new HelpBubble("verboseHelp", "Lowers the log level to debug and redirects the output from the " +
                         "standard log to the import-export log." + "\nHint: You can monitor the log in the <a href=\"" +
@@ -163,7 +163,7 @@ public class ExportSystemPanel extends TitledPanel {
                     context.exportTo(settings);
                     List<StatusEntry> warnings = status.getWarnings();
                     if (!warnings.isEmpty()) {
-                        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                        String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                         warn(warnings.size() + " warning(s) reported during the export. Please review the " +
                                 "<a href=\"" + systemLogsPage + "\">log</a> for further information.");
                     }

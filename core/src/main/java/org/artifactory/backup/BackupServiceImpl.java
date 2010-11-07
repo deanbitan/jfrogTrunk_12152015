@@ -271,7 +271,7 @@ public class BackupServiceImpl implements InternalBackupService {
                 if (userInfo.isAdmin()) {
                     String adminEmail = userInfo.getEmail();
                     if (StringUtils.isNotBlank(adminEmail)) {
-
+                        log.debug("Sending backup error notification to '{}'.", adminEmail);
                         String message = MessageFormat.format(body, backupName, errorListBlock);
                         mailService.sendMail(new String[]{adminEmail}, "Backup Error Notification", message);
                     }

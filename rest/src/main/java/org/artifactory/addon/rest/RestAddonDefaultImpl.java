@@ -19,10 +19,13 @@
 package org.artifactory.addon.rest;
 
 import org.artifactory.addon.license.LicenseStatus;
+import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.DownloadResource;
 import org.artifactory.rest.resource.artifact.SyncResource;
@@ -112,6 +115,18 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     public Response updateRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes) {
+        throw new MissingRestAddonException();
+    }
+
+    public Set<RepoPath> searchArtifactsByChecksum(String md5Checksum, String sha1Checksum, StringList reposToSearch) {
+        throw new MissingRestAddonException();
+    }
+
+    public Response savePropertiesOnPath(String path, String recursive, KeyValueList properties) {
+        throw new MissingRestAddonException();
+    }
+
+    public ResponseCtx runPluginExecution(String executionName, Map params, boolean async) {
         throw new MissingRestAddonException();
     }
 }

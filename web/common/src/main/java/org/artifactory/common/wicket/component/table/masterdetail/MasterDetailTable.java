@@ -88,7 +88,7 @@ public abstract class MasterDetailTable<M extends Serializable, D extends Serial
         private String cssClass;
 
         public SpaceColumn(String cssClass) {
-            super(new Model(""));
+            super(Model.of(""));
             this.cssClass = cssClass;
         }
 

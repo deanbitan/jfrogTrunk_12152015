@@ -26,6 +26,6 @@ import org.apache.wicket.model.Model;
  */
 public class ModalCloseBehavior extends AttributeAppender {
     public ModalCloseBehavior() {
-        super("onlick", true, new Model("try {Wicket.Window.current.close();} catch(e) {};"), ";");
+        super("onlick", true, Model.of("try {Wicket.Window.current.close();} catch(e) {};"), ";");
     }
 }

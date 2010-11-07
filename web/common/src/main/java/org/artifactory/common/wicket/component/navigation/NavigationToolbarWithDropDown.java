@@ -30,9 +30,6 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.artifactory.common.wicket.component.table.SortableTable;
 
-/**
- * User: yevgenys Date: Oct 16, 2008
- */
 public class NavigationToolbarWithDropDown extends AbstractToolbar {
 
     private int displayRequiredPageAmount;
@@ -61,7 +58,7 @@ public class NavigationToolbarWithDropDown extends AbstractToolbar {
     }
 
     protected String getNavigatorText() {
-        return getString("navigator.text", new Model(getTable()));
+        return getString("navigator.text", new Model<DataTable<?>>(getTable()));
     }
 
     protected Panel newPagingNavigator(String navigatorId, DataTable table) {

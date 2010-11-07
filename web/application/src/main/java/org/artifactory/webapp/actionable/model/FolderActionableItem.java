@@ -32,6 +32,7 @@ import org.artifactory.fs.ItemInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.ActionableItem;
+import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.CopyAction;
@@ -48,7 +49,8 @@ import java.util.Set;
 /**
  * @author yoavl
  */
-public class FolderActionableItem extends RepoAwareActionableItemBase implements HierarchicActionableItem {
+public class FolderActionableItem extends RepoAwareActionableItemBase implements HierarchicActionableItem,
+        CannonicalEnabledActionableFolder {
 
     /**
      * The folder info of the last element of the compacted folder or the current folder if not compacted.
@@ -104,11 +106,6 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
         this.compactAllowed = compactAllowed;
     }
 
-    /**
-     * The repo path of the last element of the compacted folder or the current folder.
-     *
-     * @return the actual canonical repo path of this folder
-     */
     public RepoPath getCanonicalPath() {
         return getFolderInfo().getRepoPath();
     }

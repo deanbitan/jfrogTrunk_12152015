@@ -36,7 +36,7 @@ public class LoginPage extends BasePage implements Serializable {
         TitledBorder border = new TitledBorder("loginBorder", "outer-border");
         add(border);
 
-        final Form form = new Form("loginForm", new CompoundPropertyModel(new LoginInfo()));
+        final Form form = new Form<LoginInfo>("loginForm", new CompoundPropertyModel<LoginInfo>(new LoginInfo()));
         border.add(form);
 
         form.add(new LoginPanel("loginPanel", form));

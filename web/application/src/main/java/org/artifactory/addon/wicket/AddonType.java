@@ -30,7 +30,7 @@ public enum AddonType {
     LDAP("ldapgroup", "LDAP Group Synchronization"),
     AOL("aol", "Artifactory Online"),
     BUILD("build", "Build Integration"),
-    LICENSES("licenses", "License Control");
+    LICENSES("license", "License Control");
 
     private String addonName;
     private String addonDisplayName;

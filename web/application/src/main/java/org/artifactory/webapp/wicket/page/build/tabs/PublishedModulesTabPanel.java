@@ -39,7 +39,6 @@ import org.artifactory.webapp.wicket.page.build.tabs.compare.ModuleItemListSorte
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.Module;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -72,19 +71,21 @@ public class PublishedModulesTabPanel extends Panel {
      * Adds the published modules table to the panel
      */
     private void addTable() {
-        List<IColumn> columns = new ArrayList<IColumn>();
-        columns.add(new AbstractColumn(new Model("Module ID"), "id") {
+        List<IColumn<Module>> columns = Lists.newArrayList();
+        columns.add(new AbstractColumn<Module>(Model.of("Module ID"), "id") {
             public void populateItem(Item cellItem, String componentId, IModel rowModel) {
                 Module module = (Module) cellItem.getParent().getParent().getDefaultModelObject();
                 cellItem.add(getModuleNameLink(componentId, module.getId()));
             }
         });
-        columns.add(new PropertyColumn(new Model("Number Of Artifacts"), "artifacts", "artifacts.size"));
-        columns.add(new PropertyColumn(new Model("Number Of Dependencies"), "dependencies", "dependencies.size"));
+        columns.add(
+                new PropertyColumn<Module>(Model.of("Number Of Artifacts"), "artifacts", "artifacts.size"));
+        columns.add(new PropertyColumn<Module>(
+                Model.of("Number Of Dependencies"), "dependencies", "dependencies.size"));
 
         ModulesDataProvider dataProvider = new ModulesDataProvider(build.getModules());
 
-        add(new SortableTable("modules", columns, dataProvider, 10));
+        add(new SortableTable<Module>("modules", columns, dataProvider, 10));
     }
 
     /**
@@ -95,7 +96,7 @@ public class PublishedModulesTabPanel extends Panel {
      * @return Module redirection link
      */
     private AjaxLink getModuleNameLink(String componentId, final String moduleId) {
-        AjaxLink link = new AjaxLink(componentId, new Model(moduleId)) {
+        AjaxLink link = new AjaxLink<String>(componentId, Model.of(moduleId)) {
 
             @Override
             protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
@@ -119,7 +120,7 @@ public class PublishedModulesTabPanel extends Panel {
     /**
      * The modules table data provider
      */
-    private static class ModulesDataProvider extends SortableDataProvider {
+    private static class ModulesDataProvider extends SortableDataProvider<Module> {
 
         List<Module> moduleList;
 
@@ -133,7 +134,7 @@ public class PublishedModulesTabPanel extends Panel {
             moduleList = (publishedModules != null) ? publishedModules : Lists.<Module>newArrayList();
         }
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<Module> iterator(int first, int count) {
             ModuleItemListSorter.sort(moduleList, getSort());
             List<Module> listToReturn = moduleList.subList(first, first + count);
             return listToReturn.iterator();
@@ -143,8 +144,8 @@ public class PublishedModulesTabPanel extends Panel {
             return moduleList.size();
         }
 
-        public IModel model(Object object) {
-            return new Model((Module) object);
+        public IModel<Module> model(Module object) {
+            return new Model<Module>(object);
         }
     }
 }

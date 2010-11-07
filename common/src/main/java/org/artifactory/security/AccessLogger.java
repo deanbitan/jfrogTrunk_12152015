@@ -32,7 +32,7 @@ public abstract class AccessLogger {
     private static final Logger log = LoggerFactory.getLogger(AccessLogger.class);
 
     public enum Action {
-        ANNOTATE, ANNOTATE_DELETE, DOWNLOAD, DEPLOY, DELETE, SEARCH, LOGIN, CONFIGURATION_CHANGE
+        ANNOTATE, ANNOTATE_DELETE, DOWNLOAD, DEPLOY, DELETE, SEARCH, LOGIN, CONFIGURATION_CHANGE, CREATE, UPDATE, APPROVE, DISAPPROVE
     }
 
     private AccessLogger() {
@@ -53,7 +53,7 @@ public abstract class AccessLogger {
 
     public static void annotationDeleted(RepoPath repoPath, String metadataName) {
         RepoPath metadataPath = new RepoPathImpl(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataName);
-        logAction(metadataPath, Action.ANNOTATE_DELETE, false, AuthenticationHelper.getAuthentication());
+        logAction(metadataPath, Action.ANNOTATE_DELETE, false, AuthenticationHelper.getAuthentication(), null);
     }
 
     public static void annotateDenied(RepoPath repoPath) {
@@ -88,16 +88,20 @@ public abstract class AccessLogger {
         logAction(repoPath, Action.DEPLOY, denied, authentication);
     }
 
+    public static void deleted(String message) {
+        deleted(null, false, AuthenticationHelper.getAuthentication(), message);
+    }
+
     public static void deleted(RepoPath repoPath) {
-        deleted(repoPath, false, AuthenticationHelper.getAuthentication());
+        deleted(repoPath, false, AuthenticationHelper.getAuthentication(), null);
     }
 
     public static void deleteDenied(RepoPath repoPath) {
-        deleted(repoPath, true, AuthenticationHelper.getAuthentication());
+        deleted(repoPath, true, AuthenticationHelper.getAuthentication(), null);
     }
 
-    public static void deleted(RepoPath repoPath, boolean denied, Authentication authentication) {
-        logAction(repoPath, Action.DELETE, denied, authentication);
+    public static void deleted(RepoPath repoPath, boolean denied, Authentication authentication, String message) {
+        logAction(repoPath, Action.DELETE, denied, authentication, message);
     }
 
     public static void unauthorizedSearch() {
@@ -116,13 +120,34 @@ public abstract class AccessLogger {
         logAction(null, Action.CONFIGURATION_CHANGE, false, AuthenticationHelper.getAuthentication());
     }
 
-    public static void logAction(
-            RepoPath repoPath, Action action, boolean denied, Authentication authentication) {
+    public static void created(String message) {
+        logAction(null, Action.CREATE, false, AuthenticationHelper.getAuthentication(), message);
+    }
+
+    public static void updated(String message) {
+        logAction(null, Action.UPDATE, false, AuthenticationHelper.getAuthentication(), message);
+    }
+
+    public static void approved(String message) {
+        logAction(null, Action.APPROVE, false, AuthenticationHelper.getAuthentication(), message);
+    }
+
+    public static void disapproved(String message) {
+        logAction(null, Action.DISAPPROVE, false, AuthenticationHelper.getAuthentication(), message);
+    }
+
+    public static void logAction(RepoPath repoPath, Action action, boolean denied, Authentication authentication) {
+        logAction(repoPath, action, denied, authentication, null);
+    }
+
+    public static void logAction(RepoPath repoPath, Action action, boolean denied, Authentication authentication,
+            String message) {
         if (authentication != null) {
             String address = AuthenticationHelper.getRemoteAddress(authentication);
             log.info(
                     (denied ? "[DENIED " : "[ACCEPTED ") + action.name() + "] " + (repoPath != null ? repoPath : "") +
-                            " for " + authentication.getName() + (address != null ? "/" + address : "") + ".");
+                            (message != null ? message : "") + " for " + authentication.getName() + (address != null ?
+                            "/" + address : "") + ".");
         }
     }
 }

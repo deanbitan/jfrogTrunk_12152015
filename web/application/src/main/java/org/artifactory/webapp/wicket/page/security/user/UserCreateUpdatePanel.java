@@ -58,10 +58,9 @@ import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordStrengthComponentPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.security.AccessLogger;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
-import org.slf4j.Logger;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;
@@ -72,8 +71,6 @@ import java.util.Set;
  * @author Yoav Landman
  */
 public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
-    private static final Logger log = LoggerFactory.getLogger(UserCreateUpdatePanel.class);
-
     @SpringBean
     private UserGroupService userGroupService;
 
@@ -104,22 +101,26 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         final boolean create = isCreate();
 
         //Username
-        RequiredTextField usernameTf = new RequiredTextField("username");
-        usernameTf.add(StringValidator.maximumLength(100));
-        usernameTf.setEnabled(create);
-        usernameTf.add(new JcrNameValidator("Invalid username '%s'"));
-        border.add(usernameTf);
+        RequiredTextField<String> usernameField = new RequiredTextField<String>("username");
+        usernameField.setEnabled(create);
+        usernameField.add(StringValidator.maximumLength(100));
+        usernameField.add(new JcrNameValidator("Invalid username '%s'"));
+        border.add(usernameField);
 
         //Password
-        passwordField = new PasswordTextField("password");
-        passwordField.setRequired(create);
+        passwordField = new PasswordTextField("password") {
+            @Override
+            public boolean isEnabled() {
+                return !entity.isDisableInternalPassword();
+            }
+        };
+        passwordField.setRequired(create).setOutputMarkupId(true);
         passwordField.add(PasswordStreangthValidator.getInstance());
         border.add(passwordField);
 
         final PasswordStrengthComponentPanel strength =
                 new PasswordStrengthComponentPanel("strengthPanel", new PropertyModel(passwordField, "modelObject"));
-        border.add(strength);
-        strength.setOutputMarkupId(true);
+        border.add(strength.setOutputMarkupId(true));
 
         passwordField.add(new AjaxFormComponentUpdatingBehavior("onkeyup") {
             @Override
@@ -141,8 +142,13 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
             }
         }.setThrottleDelay(Duration.seconds(0.5)));
 
-        retypedPasswordField = new PasswordTextField("retypedPassword");
-        retypedPasswordField.setRequired(create);
+        retypedPasswordField = new PasswordTextField("retypedPassword") {
+            @Override
+            public boolean isEnabled() {
+                return !entity.isDisableInternalPassword();
+            }
+        };
+        retypedPasswordField.setRequired(create).setOutputMarkupId(true);
         border.add(retypedPasswordField);
 
         // validate password and retyped password
@@ -166,59 +172,58 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         });
 
         //Email
-        RequiredTextField emailTf = new RequiredTextField("email");
+        RequiredTextField<String> emailTf = new RequiredTextField<String>("email");
         emailTf.add(EmailAddressValidator.getInstance());
         border.add(emailTf);
-
-        //Admin
-        adminCheckbox = new StyledCheckbox("admin");
-        adminCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
-            @Override
-            protected void onUpdate(AjaxRequestTarget target) {
-                if (adminCheckbox.isChecked()) {
-                    updatableProfileCheckbox.setDefaultModelObject(Boolean.TRUE);
-                }
-                target.addComponent(updatableProfileCheckbox);
-            }
-        });
-        adminCheckbox.setLabel(new Model("Admin"));
-        border.add(adminCheckbox);
 
         //Can update profile
         updatableProfileCheckbox = new StyledCheckbox("updatableProfile") {
             @Override
             public boolean isEnabled() {
-                return !adminCheckbox.isChecked();
+                return !entity.isAdmin();
             }
         };
         updatableProfileCheckbox.setOutputMarkupId(true);
         border.add(updatableProfileCheckbox);
 
         // Internal password
-        final StyledCheckbox disableInternalPassword = new StyledCheckbox("disableInternalPassword");
-        if (create || entity.isAdmin()) {
-            // disable if creating new user or it's an admin user
-            disableInternalPassword.setEnabled(false);
-        }
+        final StyledCheckbox disableInternalPassword = new StyledCheckbox("disableInternalPassword") {
+            @Override
+            public boolean isEnabled() {
+                // disable if creating new user or it's an admin user
+                return !create && !entity.isAdmin();
+            }
+        };
 
         disableInternalPassword.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                if (disableInternalPassword.isChecked()) {
-                    disablePasswordFields();
-                } else {
-                    enablePasswordFields();
-                }
-                target.addComponent(form);
+                target.addComponent(passwordField);
+                target.addComponent(retypedPasswordField);
             }
         });
-        border.add(disableInternalPassword);
+        border.add(disableInternalPassword.setOutputMarkupId(true));
         StringResourceModel helpMessage = new StringResourceModel("disableInternalPasswordHelp", this, null);
         border.add(new HelpBubble("disableInternalPasswordHelp", helpMessage));
 
-        if (!create && user.isDisableInternalPassword()) {
-            disablePasswordFields();
-        }
+        //Admin
+        adminCheckbox = new StyledCheckbox("admin");
+        adminCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
+            @Override
+            protected void onUpdate(AjaxRequestTarget target) {
+                if (entity.isAdmin()) {
+                    entity.setUpdatableProfile(true);
+                    entity.setDisableInternalPassword(false);
+                }
+                target.addComponent(updatableProfileCheckbox);
+                target.addComponent(disableInternalPassword);
+                target.addComponent(passwordField);
+                target.addComponent(retypedPasswordField);
+            }
+        });
+        adminCheckbox.setLabel(Model.of("Admin"));
+        border.add(adminCheckbox);
+
         // groups
         Set<UserInfo.UserGroupInfo> userGroups = user.getGroups();
         if (!create) {
@@ -241,10 +246,15 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         border.add(groupsLabel);
 
         addLastLoginLabel(border);
-        //addLastAccessLabel(border);
 
         //Cancel
-        form.add(new ModalCloseLink("cancel"));
+        form.add(new ModalCloseLink("cancel") {
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                usersListTable.refreshUsersList(target);    // make sure to reload the original model                
+                super.onClick(target);
+            }
+        });
 
         //Submit
         String submitCaption = create ? "Create" : "Save";
@@ -256,8 +266,10 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                 boolean successful = true;
                 if (create) {
                     successful = createNewUser(username);
+                    AccessLogger.created("User " + username + " was created successfully");
                 } else {
                     updateUser(username);
+                    AccessLogger.updated("User " + username + " was updated successfully");
                 }
                 if (successful) {
                     usersListTable.refreshUsersList(target);
@@ -311,16 +323,6 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         form.add(new DefaultButtonBehavior(submit));
     }
 
-    private void enablePasswordFields() {
-        passwordField.setEnabled(true);
-        retypedPasswordField.setEnabled(true);
-    }
-
-    private void disablePasswordFields() {
-        passwordField.setEnabled(false);
-        retypedPasswordField.setEnabled(false);
-    }
-
     private void addLastLoginLabel(TitledBorder border) {
         SerializablePair<String, Long> lastLoginInfo = null;
 
@@ -340,32 +342,6 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                             + clientIp + ".");
         } else {
             lastLogin.setDefaultModelObject("Last logged in: " + "Never.");
-        }
-    }
-
-    private void addLastAccessLabel(TitledBorder border) {
-        SerializablePair<String, Long> lastAccessInfo = null;
-
-        //If user exists
-        if (!isCreate()) {
-            lastAccessInfo = securityService.getUserLastAccessInfo(entity.getUsername());
-        }
-        final boolean loginAccessValid = (lastAccessInfo != null);
-
-        Label lastAccess = new Label("lastAccess", new Model()) {
-            @Override
-            public boolean isVisible() {
-                return loginAccessValid;
-            }
-        };
-        border.add(lastAccess);
-        if (loginAccessValid) {
-            Date date = new Date(lastAccessInfo.getSecond());
-            String clientIp = lastAccessInfo.getFirst();
-            PrettyTime prettyTime = new PrettyTime();
-            lastAccess.setDefaultModelObject(
-                    "Last access in: " + prettyTime.format(date) + " (" + date.toString() + "), from "
-                            + clientIp + ".");
         }
     }
 }

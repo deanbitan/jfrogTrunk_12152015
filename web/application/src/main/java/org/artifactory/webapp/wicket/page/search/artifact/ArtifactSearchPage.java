@@ -27,21 +27,6 @@ import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
  */
 public class ArtifactSearchPage extends BaseSearchPage {
 
-    /**
-     * Required for the initialization from the side menu
-     */
-    public ArtifactSearchPage() {
-    }
-
-    /**
-     * Required for the quick search to initialize with a ready supplied query
-     *
-     * @param query The query that the quick search supplies
-     */
-    public ArtifactSearchPage(String query) {
-        super(query);
-    }
-
     @Override
     public int getSelectedTab() {
         return ARTIFACT_SEARCH_INDEX;

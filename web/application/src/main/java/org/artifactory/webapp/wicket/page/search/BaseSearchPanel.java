@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.search;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Page;
 import org.apache.wicket.Session;
@@ -104,10 +105,11 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
 
         dataProvider.setSort(new SortParam(RESULT_NAME_PROPERTY, true));
 
-        List<IColumn> columns = new ArrayList<IColumn>();
+        List<IColumn<ActionableSearchResult<T>>> columns = Lists.newArrayList();
         addColumns(columns);
 
-        final GroupableTable table = new GroupableTable("results", columns, dataProvider, 20) {
+        final GroupableTable table = new GroupableTable<ActionableSearchResult<T>>("results", columns, dataProvider,
+                20) {
             public String getSearchExpression() {
                 return BaseSearchPanel.this.getSearchExpression();
             }
@@ -166,6 +168,7 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         SearchAddon searchAddon = addons.addonByType(SearchAddon.class);
         SaveSearchResultsPanel saveSearchResultsPanel = searchAddon.getSaveSearchResultsPanel("saveResultsPanel",
                 new PropertyModel(this, "searchResults.results"), this);
+        saveSearchResultsPanel.init();
         searchBorder.add(saveSearchResultsPanel);
 
         TitledAjaxSubmitLink searchButton = new TitledAjaxSubmitLink("submit", "Search", form) {
@@ -216,7 +219,7 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
 
     protected abstract Class<? extends BaseSearchPage> getMenuPageClass();
 
-    protected abstract void addColumns(List<IColumn> columns);
+    protected abstract void addColumns(List<IColumn<ActionableSearchResult<T>>> columns);
 
     public abstract String getSearchExpression();
 
@@ -252,7 +255,7 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
             searchResults = searchArtifacts();
             searchResultList = searchResults.getResults();
         } catch (Exception e) {
-            dataProvider.setData((List<ActionableSearchResult<T>>) Collections.EMPTY_LIST);
+            dataProvider.setData(Collections.<ActionableSearchResult<T>>emptyList());
             Session.get().error("There was an error while searching: " + e.getMessage());
             getSaveSearchResultsPanel().updateState();
             return;
@@ -301,6 +304,15 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         return (SaveSearchResultsPanel) searchBorder.get("saveResultsPanel");
     }
 
+    public GroupableDataProvider<ActionableSearchResult<T>> getDataProvider() {
+        return dataProvider;
+    }
+
+    public List<T> searchLimitlessArtifacts() {
+        SearchResults<T> results = performLimitlessArtifactSearch();
+        return results.getResults();
+    }
+
     protected static class ArtifactNameColumn extends GroupableColumn {
         public ArtifactNameColumn() {
             this("Artifact");
@@ -330,12 +342,4 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         }
     }
 
-    public GroupableDataProvider<ActionableSearchResult<T>> getDataProvider() {
-        return dataProvider;
-    }
-
-    public List<T> searchLimitlessArtifacts() {
-        SearchResults<T> results = performLimitlessArtifactSearch();
-        return results.getResults();
-    }
 }

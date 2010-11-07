@@ -24,9 +24,10 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.rest.resource.license.LicensesResource;
+import org.artifactory.rest.resource.license.LicenseResource;
 import org.artifactory.rest.resource.search.types.ArchiveSearchResource;
 import org.artifactory.rest.resource.search.types.ArtifactSearchResource;
+import org.artifactory.rest.resource.search.types.ChecksumSearchResource;
 import org.artifactory.rest.resource.search.types.CreatedInRangeResource;
 import org.artifactory.rest.resource.search.types.GavcSearchResource;
 import org.artifactory.rest.resource.search.types.PatternSearchResource;
@@ -150,9 +151,15 @@ public class SearchResource {
     }
 
     @Path(SearchRestConstants.PATH_LICENSE)
-    public LicensesResource licensesSearch() {
+    public LicenseResource licensesSearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new LicensesResource(restAddon, request, repositoryService, authorizationService);
+        return new LicenseResource(restAddon, request, repositoryService, authorizationService);
+    }
+
+    @Path(SearchRestConstants.PATH_CHECKSUM)
+    public ChecksumSearchResource checksumSearch() {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return new ChecksumSearchResource(authorizationService, restAddon, request, response);
     }
 
     /**

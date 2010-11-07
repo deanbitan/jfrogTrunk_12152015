@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.base;
 
+import org.apache.wicket.Page;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WebApplicationAddon;
@@ -35,7 +36,7 @@ public class HeaderLogoPanel extends BaseLogoPanel {
     }
 
     @Override
-    protected Class getLinkPage() {
+    protected Class<? extends Page> getLinkPage() {
         WebApplicationAddon applicationAddon = addons.addonByType(WebApplicationAddon.class);
         return applicationAddon.getHomePage();
     }

@@ -36,12 +36,12 @@ public abstract class SingleSelectionTable<T> extends SortableTable<T> {
     private T selection;
 
     protected SingleSelectionTable(String id, List<IColumn<T>> columns,
-                                   ISortableDataProvider<T> dataProvider, int rowsPerPage) {
+            ISortableDataProvider<T> dataProvider, int rowsPerPage) {
         super(id, columns, dataProvider, rowsPerPage);
     }
 
     protected SingleSelectionTable(String id, IColumn<T>[] columns, ISortableDataProvider<T> dataProvider,
-                                   int rowsPerPage) {
+            int rowsPerPage) {
         super(id, columns, dataProvider, rowsPerPage);
     }
 
@@ -55,8 +55,8 @@ public abstract class SingleSelectionTable<T> extends SortableTable<T> {
     }
 
     @Override
-    protected Item newRowItem(String id, int index, IModel<T> model) {
-        Item rowItem = super.newRowItem(id, index, model);
+    protected Item<T> newRowItem(String id, int index, IModel<T> model) {
+        Item<T> rowItem = super.newRowItem(id, index, model);
         if (model.getObject().equals(selection)) {
             rowItem.add(new CssClass("selected"));
         }

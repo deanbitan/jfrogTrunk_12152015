@@ -27,7 +27,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
  * @author yoavl
@@ -53,5 +55,12 @@ public class StorageResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String size() {
         return storageService.getStorageSize() + "";
+    }
+
+    @POST
+    @Path("exportds")
+    public Response activateExport(@QueryParam("to") String destDir) {
+        storageService.exportDbDataStore(destDir);
+        return Response.noContent().build();
     }
 }

@@ -16,18 +16,15 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.webapp.wicket.util.validation;
-
-import org.apache.wicket.validation.validator.StringValidator;
+package org.artifactory.api.rest.constant;
 
 /**
  * @author yoavl
  */
-public abstract class DefautlMessageStringValidator extends StringValidator {
+public interface PluginRestConstants {
+    String PATH_ROOT = "plugins";
+    String PATH_EXECUTE = "execute";
 
-    protected final String errorMessage;
-
-    public DefautlMessageStringValidator(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
+    String PARAM_PARAMS = "params";
+    String PARAM_ASYNC = "async";
 }

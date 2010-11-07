@@ -42,7 +42,7 @@ public class ActionsMenuPanel extends Panel {
     private static final long serialVersionUID = 1L;
 
     public ActionsMenuPanel(String id, final ActionableItemTreeNode node) {
-        super(id, new Model(node));
+        super(id, Model.of(node));
         setOutputMarkupId(true);
 
         add(ResourcePackage.forJavaScript(ActionsMenuPanel.class));
@@ -57,7 +57,7 @@ public class ActionsMenuPanel extends Panel {
                 menuActions.add(action);
             }
         }
-        ListView menuItems = new ListView("menuItem", menuActions) {
+        ListView<ItemAction> menuItems = new ListView<ItemAction>("menuItem", menuActions) {
             @Override
             protected void populateItem(ListItem item) {
                 final ItemAction action = (ItemAction) item.getDefaultModelObject();

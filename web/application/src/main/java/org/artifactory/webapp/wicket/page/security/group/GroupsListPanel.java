@@ -38,6 +38,7 @@ import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
+import org.artifactory.security.AccessLogger;
 import org.artifactory.webapp.wicket.page.security.group.permission.GroupPermissionsPanel;
 
 import java.util.List;
@@ -68,10 +69,11 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new TitlePropertyColumn<String>("Group Name", "groupName", "groupName") {
+    protected void addColumns(List<? super IColumn<GroupInfo>> columns) {
+        columns.add(new TitlePropertyColumn<GroupInfo>("Group Name", "groupName", "groupName") {
             @Override
-            public void populateItem(Item<ICellPopulator<String>> item, String componentId, IModel<String> model) {
+            public void populateItem(Item<ICellPopulator<GroupInfo>> item, String componentId,
+                    IModel<GroupInfo> model) {
                 super.populateItem(item, componentId, model);
                 item.add(new CssClass("group nowrap"));
             }
@@ -89,12 +91,13 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
                 item.add(new CssClass("one-line"));
             }
         });
-        final LdapGroupWebAddon ldapGroupWebAddon = addonsManager.addonByType(LdapGroupWebAddon.class);
-        BooleanColumn externalGroupColumn = ldapGroupWebAddon.addExternalGroupIndicator(new MultiStatusHolder());
+        LdapGroupWebAddon ldapGroupWebAddon = addonsManager.addonByType(LdapGroupWebAddon.class);
+        BooleanColumn<GroupInfo> externalGroupColumn = ldapGroupWebAddon.addExternalGroupIndicator(
+                new MultiStatusHolder());
         if (externalGroupColumn != null) {
             columns.add(externalGroupColumn);
         }
-        columns.add(new BooleanColumn("Auto Join", "newUserDefault", "newUserDefault"));
+        columns.add(new BooleanColumn<GroupInfo>("Auto Join", "newUserDefault", "newUserDefault"));
     }
 
     @Override
@@ -115,6 +118,7 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
     @Override
     protected void deleteItem(GroupInfo group, AjaxRequestTarget target) {
         userGroupService.deleteGroup(group.getGroupName());
+        AccessLogger.deleted("Group " + group.getGroupName() + " was deleted successfully");
     }
 
     protected BaseModalPanel newViewUserPermissionsPanel(GroupInfo groupInfo) {

@@ -30,23 +30,8 @@ import java.util.List;
  * @author Yoav Aharoni
  */
 public class TriggerHappyComboBox extends ComboBox {
-    public TriggerHappyComboBox(String id) {
-        super(id);
-    }
 
-    public TriggerHappyComboBox(String id, List<String> choices) {
-        super(id, choices);
-    }
-
-    public TriggerHappyComboBox(String id, IModel model, List<String> choices) {
-        super(id, model, choices);
-    }
-
-    public TriggerHappyComboBox(String id, IModel choices) {
-        super(id, choices);
-    }
-
-    public TriggerHappyComboBox(String id, IModel model, IModel choices) {
+    public TriggerHappyComboBox(String id, IModel<String> model, List<String> choices) {
         super(id, model, choices);
     }
 

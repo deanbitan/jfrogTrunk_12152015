@@ -20,6 +20,7 @@ package org.artifactory.common.wicket.panel.logo;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.MarkupContainer;
+import org.apache.wicket.Page;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.model.AbstractReadOnlyModel;
@@ -39,7 +40,7 @@ public abstract class BaseLogoPanel extends PanelWithBody {
     public BaseLogoPanel(String id) {
         super(id);
         setOutputMarkupId(true);
-        final Class pageClass = getLinkPage();
+        final Class<? extends Page> pageClass = getLinkPage();
         MarkupContainer link = newLink(pageClass);
         link.add(new ExternalImage("logoImage", new PropertyModel(this, "logoUrl")));
         link.add(new CssClass(new CssModel()));
@@ -54,14 +55,14 @@ public abstract class BaseLogoPanel extends PanelWithBody {
         super.onBeforeRender();
     }
 
-    protected MarkupContainer newLink(Class pageClass) {
+    protected MarkupContainer newLink(Class<? extends Page> pageClass) {
         if (pageClass == null) {
             return new WebMarkupContainer("homeLink");
         }
-        return new BookmarkablePageLink("homeLink", pageClass);
+        return new BookmarkablePageLink<Object>("homeLink", pageClass);
     }
 
-    protected abstract Class getLinkPage();
+    protected abstract Class<? extends Page> getLinkPage();
 
     protected abstract String getLogoUrl();
 

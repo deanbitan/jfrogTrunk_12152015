@@ -26,27 +26,34 @@ import org.apache.wicket.model.PropertyModel;
 import org.artifactory.common.wicket.behavior.CssClass;
 
 /**
+ * A property column that expects property expression that returns boolean value.
+ *
  * @author Yoav Aharoni
  */
-public class BooleanColumn extends TitlePropertyColumn<Boolean> {
+public class BooleanColumn<T> extends TitlePropertyColumn<T> {
+    public BooleanColumn(String title, String propertyExpression) {
+        super(title, propertyExpression);
+    }
+
     public BooleanColumn(String title, String sortProperty, String propertyExpression) {
         super(title, sortProperty, propertyExpression);
     }
-
-    // TODO: remove ctr
 
     public BooleanColumn(IModel<String> displayModel, String sortProperty, String propertyExpression) {
         super(displayModel.getObject(), sortProperty, propertyExpression);
     }
 
-    // TODO: remove ctr
-
     public BooleanColumn(IModel<String> displayModel, String propertyExpression) {
         super(displayModel.getObject(), propertyExpression);
     }
 
+    /**
+     * @param item        The cell item
+     * @param componentId The component id
+     * @param model       The raw model, expected to return boolean value for the column property expression.
+     */
     @Override
-    public void populateItem(Item<ICellPopulator<Boolean>> item, String componentId, IModel<Boolean> model) {
+    public void populateItem(Item<ICellPopulator<T>> item, String componentId, IModel<T> model) {
         PropertyModel<Boolean> booleanModel = new PropertyModel<Boolean>(model, getPropertyExpression());
         Boolean value = booleanModel.getObject();
         Label label = new Label(componentId, "<span>" + value + "</span>");

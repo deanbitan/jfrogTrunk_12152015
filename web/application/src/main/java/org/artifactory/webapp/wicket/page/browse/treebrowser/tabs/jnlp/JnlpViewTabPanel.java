@@ -95,7 +95,8 @@ public class JnlpViewTabPanel extends Panel {
 
             default:
                 add(new Label("repoLabel", getString("repo.many")));
-                Component select = new FilteringSelect("repositories", new Model(repos.get(0)), repos);
+                Component select = new FilteringSelect<VirtualRepoDescriptor>(
+                        "repositories", new Model<VirtualRepoDescriptor>(repos.get(0)), repos);
                 select.add(new AjaxFormComponentUpdatingBehavior("onchange") {
                     @Override
                     protected void onUpdate(AjaxRequestTarget target) {

@@ -180,16 +180,24 @@ public class RepoFilter extends DelayedFilterBase {
             log.debug("Serving a download or info request.");
             getDownloadEngine().process(artifactoryRequest, artifactoryResponse);
         } catch (FileExpectedException e) {
-            //For get send redirect, for head return found
-            if ("get".equals(method)) {
-                log.debug("Redirecting a directory browsing request.");
+            //If we try to get a file but encountered a folder and the request does not end with a '/'
+            // send a redirect that adds the slash with the request with a 302 status code. In the next request
+            // if it is a head request, then it is ok since the resource was found and avoid
+            // an infinite redirect situation, however if it is a GET, then
+            // return a 404 since it is the incorrect resource to get (we mimic was apache servers are doing).
+            // see RTFACT-2738 and RTFACT-3510
+            if (!request.getServletPath().endsWith("/")) {
+                log.debug("Redirecting a directory browsing or head request.");
                 //Dispatch a new directory browsing request
                 RepoPath repoPath = e.getRepoPath();
                 response.sendRedirect(HttpUtils.getServletContextUrl(request) +
                         "/" + repoPath.getRepoKey() + "/" + repoPath.getPath() +
                         (repoPath.getPath().length() > 0 ? "/" : ""));
-            } else {
+            } else if ("head".equals(method)) {
                 log.debug("Serving a directory head request.");
+            } else {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND,
+                        "Expected file response but received a directory response: " + e.getRepoPath());
             }
         }
     }
@@ -199,12 +207,8 @@ public class RepoFilter extends DelayedFilterBase {
         log.debug("Forwarding internally to a directory browsing request.");
         //Expose the artifactory repository path as a request attribute
         final RepoPath repoPath = artifactoryRequest.getRepoPath();
-        List<VirtualRepoDescriptor> virtualRepoDescriptors = getContext().getRepositoryService().getVirtualRepoDescriptors();
-        if (Iterables.any(virtualRepoDescriptors, new VirtualDescriptorPredicate(repoPath.getRepoKey()))) {
-            if (getContext().getRepositoryService().getVirtualRepoItem(repoPath) == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
+        if (checkForInvalidPath(response, repoPath)) {
+            return;
         }
         request.setAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH, repoPath);
 
@@ -225,14 +229,36 @@ public class RepoFilter extends DelayedFilterBase {
             response.sendRedirect(HttpUtils.getServletContextUrl(request) + servletPath + "/");
             return;
         }
-
         final String listPath = servletPath.substring(ArtifactListPage.REQUEST_PREFIX.length());
         final RepoPath repoPath = RequestUtils.calculateRepoPath(listPath);
+        if (checkForInvalidPath(response, repoPath)) {
+            return;
+        }
         request.setAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH, repoPath);
 
         RequestDispatcher dispatcher =
                 request.getRequestDispatcher("/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/" + ArtifactListPage.PATH);
         dispatcher.forward(request, response);
+    }
+
+    /**
+     * Check if the path that is being used for browsing (both simple and naked listing) is a valid path, and that
+     * the path that is being navigated to is a valid one, if it isn't then {@link HttpServletResponse#SC_NOT_FOUND}
+     * is being sent.
+     *
+     * @param response The response that is being manipulated with the correct response code.
+     * @param repoPath The repo path that is being checked.
+     * @return True if the path is invalid, false if it's valid.
+     */
+    private boolean checkForInvalidPath(HttpServletResponse response, RepoPath repoPath) throws IOException {
+        List<VirtualRepoDescriptor> virtualRepoDescriptors = getContext().getRepositoryService().getVirtualRepoDescriptors();
+        if (Iterables.any(virtualRepoDescriptors, new VirtualDescriptorPredicate(repoPath.getRepoKey()))) {
+            if (getContext().getRepositoryService().getVirtualRepoItem(repoPath) == null) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean doWebDavDirectory(HttpServletResponse response, ArtifactoryRequest artifactoryRequest)

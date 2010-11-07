@@ -28,10 +28,10 @@ import org.apache.wicket.markup.html.form.Form;
 public class ComponentUtils {
 
     public static void updatePersistentFormComponents(MarkupContainer container) {
-        container.visitChildren(Form.class, new Component.IVisitor() {
+        container.visitChildren(Form.class, new Component.IVisitor<Form>() {
             //For each FormComponent found on the Page (not Form)
-            public Object component(final Component component) {
-                ((Form) component).loadPersistentFormComponentValues();
+            public Object component(Form form) {
+                form.loadPersistentFormComponentValues();
                 return CONTINUE_TRAVERSAL;
             }
         });

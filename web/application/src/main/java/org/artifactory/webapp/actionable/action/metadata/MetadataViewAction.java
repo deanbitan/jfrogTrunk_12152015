@@ -50,7 +50,7 @@ public class MetadataViewAction extends ViewAction {
         } catch (RepositoryRuntimeException rre) {
             String logs;
             if (ContextHelper.get().getAuthorizationService().isAdmin()) {
-                CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                 logs = "<a href=\"" + systemLogsPage + "\">log</a>";
             } else {
                 logs = "log";

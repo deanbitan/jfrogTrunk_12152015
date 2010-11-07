@@ -29,6 +29,7 @@ import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.security.AccessLogger;
 
 import java.util.List;
 
@@ -58,10 +59,10 @@ public class BackupsListPanel extends ModalListPanel<BackupDescriptor> {
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new TitlePropertyColumn("Backup Key", "key", "key"));
-        columns.add(new TitlePropertyColumn("Cron Expression", "cronExp"));
-        columns.add(new BooleanColumn("Enabled", "enabled", "enabled"));
+    protected void addColumns(List<? super IColumn<BackupDescriptor>> columns) {
+        columns.add(new TitlePropertyColumn<BackupDescriptor>("Backup Key", "key", "key"));
+        columns.add(new TitlePropertyColumn<BackupDescriptor>("Cron Expression", "cronExp"));
+        columns.add(new BooleanColumn<BackupDescriptor>("Enabled", "enabled", "enabled"));
     }
 
     @Override
@@ -84,6 +85,7 @@ public class BackupsListPanel extends ModalListPanel<BackupDescriptor> {
     protected void deleteItem(BackupDescriptor backup, AjaxRequestTarget target) {
         mutableCentralConfig.removeBackup(backup.getKey());
         centralConfigService.saveEditedDescriptorAndReload(mutableCentralConfig);
+        AccessLogger.deleted("Backup " + backup.getKey() + " was deleted successfully");
     }
 
     MutableCentralConfigDescriptor getMutableDescriptor() {

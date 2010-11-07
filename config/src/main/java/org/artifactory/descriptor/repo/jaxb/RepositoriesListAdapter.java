@@ -39,10 +39,12 @@ import java.util.List;
 public class RepositoriesListAdapter
         extends XmlAdapter<RepositoriesListAdapter.Wrappper, List<RepoDescriptor>> {
 
+    @Override
     public List<RepoDescriptor> unmarshal(Wrappper wrappper) throws Exception {
         return wrappper.getList();
     }
 
+    @Override
     public Wrappper marshal(List<RepoDescriptor> list) throws Exception {
         return new RepositoriesListAdapter.Wrappper(list);
     }

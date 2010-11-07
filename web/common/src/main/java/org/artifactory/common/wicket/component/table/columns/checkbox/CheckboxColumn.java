@@ -18,6 +18,7 @@
 
 package org.artifactory.common.wicket.component.table.columns.checkbox;
 
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.FormComponent;
@@ -33,16 +34,16 @@ import static org.artifactory.common.wicket.component.table.columns.panel.checkb
 /**
  * @author Yoav Aharoni
  */
-public class CheckboxColumn<T> extends AbstractColumn {
+public class CheckboxColumn<T> extends AbstractColumn<T> {
     private String expression;
 
     public CheckboxColumn(String title, String expression, String sortProperty) {
-        super(new Model<String>(title), sortProperty);
+        super(Model.of(title), sortProperty);
         this.expression = expression;
     }
 
-    public void populateItem(final Item cellItem, String componentId, final IModel rowModel) {
-        T rowObject = getRowModelObject(rowModel);
+    public void populateItem(Item<ICellPopulator<T>> cellItem, String componentId, IModel<T> rowModel) {
+        T rowObject = rowModel.getObject();
 
         CheckboxPanel panel = new CheckboxPanel(componentId, rowModel);
         cellItem.add(new CssClass("CheckboxColumn"));
@@ -68,12 +69,7 @@ public class CheckboxColumn<T> extends AbstractColumn {
         return true;
     }
 
-    @SuppressWarnings({"unchecked"})
-    protected final T getRowModelObject(IModel model) {
-        return (T) model.getObject();
-    }
-
-    public final String getExpression() {
+    protected final String getExpression() {
         return expression;
     }
 }

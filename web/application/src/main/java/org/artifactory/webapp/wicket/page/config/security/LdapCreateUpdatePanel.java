@@ -33,7 +33,9 @@ import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.StatusEntryLevel;
 import org.artifactory.common.wicket.WicketProperty;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonStyleModel;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
@@ -107,6 +109,8 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         TitledBorder borderDn = new TitledBorder("borderDn");
         form.add(borderDn);
         borderDn.add(new TextField("userDnPattern"));
+        borderDn.add(new TextField("emailAttribute"));
+        borderDn.add(new SchemaHelpBubble("emailAttribute.help"));
         borderDn.add(new StyledCheckbox("autoCreateUser"));
         borderDn.add(new SchemaHelpBubble("autoCreateUser.help"));
         borderDn.add(new SchemaHelpBubble("userDnPattern.help"));
@@ -132,16 +136,16 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
             searchPattern = new SearchPattern();
         }
 
-        borderDn.add(new TextField("searchFilter", new PropertyModel(searchPattern, "searchFilter")));
+        borderDn.add(new TextField<String>("searchFilter", new PropertyModel<String>(searchPattern, "searchFilter")));
         borderDn.add(new SchemaHelpBubble("searchFilter.help", new SchemaHelpModel(searchPattern, "searchFilter")));
 
-        borderDn.add(new TextField("searchBase", new PropertyModel(searchPattern, "searchBase")));
+        borderDn.add(new TextField<String>("searchBase", new PropertyModel<String>(searchPattern, "searchBase")));
         borderDn.add(new SchemaHelpBubble("searchBase.help", new SchemaHelpModel(searchPattern, "searchBase")));
 
         borderDn.add(new StyledCheckbox("searchSubTree", new PropertyModel<Boolean>(searchPattern, "searchSubTree")));
         borderDn.add(new SchemaHelpBubble("searchSubTree.help", new SchemaHelpModel(searchPattern, "searchSubTree")));
 
-        borderDn.add(new TextField("managerDn", new PropertyModel(searchPattern, "managerDn")));
+        borderDn.add(new TextField<String>("managerDn", new PropertyModel<String>(searchPattern, "managerDn")));
         borderDn.add(new SchemaHelpBubble("managerDn.help", new SchemaHelpModel(searchPattern, "managerDn")));
 
         PasswordTextField managerPasswordField = new PasswordTextField(
@@ -156,7 +160,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
     private void addTestConnectionFields() {
         TitledBorder borderTest = new TitledBorder("borderTest");
         form.add(borderTest);
-        borderTest.add(new TextField("testUsername", new PropertyModel(this, "testUsername")));
+        borderTest.add(new TextField<String>("testUsername", new PropertyModel<String>(this, "testUsername")));
         borderTest.add(new HelpBubble("testUsername.help", "Username to test the ldap connection"));
 
         PasswordTextField testPasswordField = new PasswordTextField(
@@ -231,6 +235,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                 AjaxUtils.refreshFeedback(target);
             }
         };
+        submit.add(new CssClass(new DefaultButtonStyleModel(submit)));
         return submit;
     }
 

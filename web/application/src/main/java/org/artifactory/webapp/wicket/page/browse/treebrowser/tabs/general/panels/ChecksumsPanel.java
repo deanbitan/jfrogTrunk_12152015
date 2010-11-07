@@ -76,50 +76,101 @@ public class ChecksumsPanel extends Panel {
         if (checksumsMatch) {
             checksumMismatchContainer.setVisible(false);
         } else {
-            boolean canFixChecksum = authService.canDeploy(file.getRepoPath()) && !authService.isAnonymous();
             // if one is missing but the other is broken display the following
             StringBuilder message = new StringBuilder();
             String repoClass = isLocalRepo ? "Uploaded" : "Remote";
-            if ((sha1Info == null || sha1Info.getOriginal() == null) && (md5Info == null || md5Info.getOriginal() == null)) {
+            if (isAllChecksumsMissing(sha1Info, md5Info) || isOneMissingOtherMatches(sha1Info, md5Info)) {
                 message.append(" Remote checksum doesn't exist. <br/>");
-            } // if one is missing and the other is ok.
-            else if (((sha1Info != null && sha1Info.checksumsMatch()) && (md5Info == null || md5Info.getOriginal() == null))
-                    || ((md5Info != null && md5Info.checksumsMatch()) && (sha1Info == null || sha1Info.getOriginal() == null))) {
-                message = new StringBuilder().append(repoClass).append(" Remote checksum doesn't exist. <br/>");
-            } else if ((sha1Info.checksumsMatch() && !md5Info.checksumsMatch()) || (md5Info.checksumsMatch() && !sha1Info.checksumsMatch())) {
-                // one is ok, the other is broken (not missing)
-                message = new StringBuilder().append(repoClass).append(" checksum doesn't match the actual checksum. ")
-                        .append("Please redeploy the artifact with a correct checksum.<br/>");
-                // one is missing and the other is broken
-            } else if (((sha1Info != null && !sha1Info.checksumsMatch()) && (md5Info == null || md5Info.getOriginal() == null))
-                    || ((md5Info != null && !md5Info.checksumsMatch()) && (sha1Info == null || sha1Info.getOriginal() == null))) {
-                message = new StringBuilder().append(repoClass).append(" checksum doesn't match the actual checksum. ")
-                        .append("Please redeploy the artifact with a correct checksum.<br/>");
-                // both are legally broken
-            } else if (sha1Info != null && !sha1Info.checksumsMatch() && md5Info != null && !md5Info.checksumsMatch()) {
+            } else if (isAllChecksumsBroken(sha1Info, md5Info) || isOneOkOtherMissing(sha1Info, md5Info) ||
+                    isOneMissingOtherBroken(sha1Info, md5Info)) {
                 message = new StringBuilder().append(repoClass).append(" checksum doesn't match the actual checksum. ")
                         .append("Please redeploy the artifact with a correct checksum.<br/>");
             }
-
+            boolean canFixChecksum = authService.canDeploy(file.getRepoPath()) && !authService.isAnonymous();
             if (canFixChecksum) {
                 message.append("If you trust the ").append(isLocalRepo ? "uploaded" : "remote")
                         .append(" artifact you can accept the actual checksum by clicking the 'Fix Checksum' button.");
             }
-
-            checksumMismatchContainer
-                    .add(new Label("mismatchMessage", message.toString()).setEscapeModelStrings(false));
-
+            checksumMismatchContainer.add(
+                    new Label("mismatchMessage", message.toString()).setEscapeModelStrings(false));
             FixChecksumsButton fixChecksumsButton = new FixChecksumsButton(file);
             fixChecksumsButton.setVisible(canFixChecksum);
             checksumMismatchContainer.add(fixChecksumsButton);
         }
     }
 
+
     private ChecksumInfo getChecksumOfType(FileInfo file, ChecksumType checksumType) {
-        if (file != null) {
-            return file.getChecksumsInfo().getChecksumInfo(checksumType);
+        return file.getChecksumsInfo().getChecksumInfo(checksumType);
+    }
+
+
+    /**
+     * @return Check if one of the {@link ChecksumType} is ok and the other missing
+     */
+    private boolean isOneOkOtherMissing(ChecksumInfo sha1Info, ChecksumInfo md5Info) {
+        return (isChecksumMatch(sha1Info) && isChecksumBroken(md5Info))
+                || (isChecksumMatch(md5Info) && isChecksumBroken(sha1Info));
+    }
+
+    /**
+     * @return Check if one of the {@link ChecksumType} is missing and the other is broken (i.e don't match).
+     */
+    private boolean isOneMissingOtherBroken(ChecksumInfo sha1Info, ChecksumInfo md5Info) {
+        return isChecksumMatch(sha1Info) && isChecksumBroken(md5Info) || (isChecksumMatch(md5Info)
+                && isChecksumBroken(sha1Info));
+    }
+
+    /**
+     * @return Check if one of the {@link ChecksumType} is missing and the other matches.
+     */
+    private boolean isOneMissingOtherMatches(ChecksumInfo sha1Info, ChecksumInfo md5Info) {
+        return isChecksumMatch(sha1Info) && (isChecksumMissing(md5Info)) || ((isChecksumMatch(md5Info)) &&
+                (isChecksumMissing(sha1Info)));
+    }
+
+    /**
+     * @return Check that all {@link ChecksumType}s are broken (but are <b>NOT<b/> missing)
+     */
+    private boolean isAllChecksumsBroken(ChecksumInfo... checksumInfos) {
+        for (ChecksumInfo type : checksumInfos) {
+            if (!isChecksumBroken(type)) {
+                return false;
+            }
         }
-        return null;
+        return true;
+    }
+
+    /**
+     * @return Check that all {@link ChecksumType}s are <b>missing<b/>
+     */
+    private boolean isAllChecksumsMissing(ChecksumInfo... checksumInfos) {
+        for (ChecksumInfo type : checksumInfos) {
+            if (!isChecksumMissing(type)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isChecksumMatch(ChecksumInfo info) {
+        return info != null && info.checksumsMatch();
+    }
+
+    private boolean isChecksumBroken(ChecksumInfo info) {
+        return info != null && !info.checksumsMatch();
+
+    }
+
+    private boolean isChecksumMissing(ChecksumInfo info) {
+        return info == null || isMissing(info);
+    }
+
+    /**
+     * @return Is the remote checksum is missing.
+     */
+    private boolean isMissing(ChecksumInfo info) {
+        return info.getOriginal() == null;
     }
 
     private String buildChecksumString(ChecksumInfo checksumInfo, boolean isLocalRepo) {
@@ -159,7 +210,7 @@ public class ChecksumsPanel extends Panel {
         public void onClick(AjaxRequestTarget target) {
             try {
                 repoService.fixChecksums(file.getRepoPath());
-                info("Fixed checksums inconsistency");
+                info("Succesfully fixed checksum inconsistency.");
                 // refresh the panel's content
                 ChecksumsPanel currentPanel = ChecksumsPanel.this;
                 ChecksumsPanel newPanel = new ChecksumsPanel(
@@ -167,7 +218,7 @@ public class ChecksumsPanel extends Panel {
                 currentPanel.replaceWith(newPanel);
                 target.addComponent(newPanel);
             } catch (Exception e) {
-                error("Failed to fix checksum inconsistency");
+                error("Could not fix checksum inconsistency: " + e.getMessage() + ".");
             }
             AjaxUtils.refreshFeedback(target);
         }

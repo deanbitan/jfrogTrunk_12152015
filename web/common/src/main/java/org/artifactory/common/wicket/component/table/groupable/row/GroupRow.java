@@ -31,7 +31,7 @@ public class GroupRow extends Panel {
 
     public GroupRow(String id, Object value, final int groupSize) {
         super(id);
-        add(new Label("label", new Model<String>(value.toString())) {
+        add(new Label("label", Model.of(value.toString())) {
             @Override
             protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
                 String body = getDefaultModelObjectAsString() + "&nbsp;<span style=\"color:grey\">(" + groupSize + ")</span>";

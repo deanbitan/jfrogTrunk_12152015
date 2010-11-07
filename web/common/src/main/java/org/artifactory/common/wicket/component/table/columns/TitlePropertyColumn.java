@@ -28,10 +28,10 @@ import org.apache.wicket.model.Model;
  */
 public class TitlePropertyColumn<T> extends PropertyColumn<T> {
     public TitlePropertyColumn(String title, String propertyExpression) {
-        super(new Model<String>(title), propertyExpression);
+        super(Model.of(title), propertyExpression);
     }
 
     public TitlePropertyColumn(String title, String sortProperty, String propertyExpression) {
-        super(new Model<String>(title), sortProperty, propertyExpression);
+        super(Model.of(title), sortProperty, propertyExpression);
     }
 }

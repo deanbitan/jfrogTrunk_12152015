@@ -39,7 +39,6 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 
-import javax.swing.tree.DefaultTreeModel;
 import java.util.List;
 
 /**
@@ -84,7 +83,7 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
                         List<StatusEntry> warnings = status.getWarnings();
                         String logs;
                         if (authorizationService.isAdmin()) {
-                            CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                            String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                             logs = "<a href=\"" + systemLogsPage + "\">log</a>";
                         } else {
                             logs = "log";
@@ -108,7 +107,6 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
                     Tree tree = (Tree) componentToRefresh;
                     ITreeState treeState = tree.getTreeState();
                     treeState.collapseAll();
-                    DefaultTreeModel treeModel = (DefaultTreeModel) tree.getDefaultModelObject();
                 }
 
                 browseRepoPanel.removeNodePanel(target);

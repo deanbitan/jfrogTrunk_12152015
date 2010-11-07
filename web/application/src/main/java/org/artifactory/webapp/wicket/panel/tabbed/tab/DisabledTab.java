@@ -34,7 +34,7 @@ public class DisabledTab extends BaseTab {
         super(title);
     }
 
-    protected DisabledTab(IModel title) {
+    protected DisabledTab(IModel<String> title) {
         super(title);
     }
 

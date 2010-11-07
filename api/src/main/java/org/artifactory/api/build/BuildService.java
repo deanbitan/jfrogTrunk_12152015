@@ -41,6 +41,12 @@ public interface BuildService extends ImportableExportable {
     public static final String BUILD_CHECKSUM_PREFIX_SHA1 = "{SHA1}";
     public static final String PROP_BUILD_LATEST_NUMBER = JcrTypes.PROP_BUILD_LATEST_NUMBER;
     public static final String PROP_BUILD_LATEST_START_TIME = JcrTypes.PROP_BUILD_LATEST_START_TIME;
+    /**
+     * In case a dependency contains a {@code null} scope, fill it with an unspecified scope that will be used
+     * for filtering.
+     */
+    public static final String UNSPECIFIED_SCOPE = "unspecified";
+
 
     /**
      * Adds the given build to the DB

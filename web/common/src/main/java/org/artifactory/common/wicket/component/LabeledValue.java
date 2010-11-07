@@ -31,7 +31,7 @@ public class LabeledValue extends Panel {
     }
 
     public LabeledValue(String id, String label, String value) {
-        super(id, new Model<String>(value));
+        super(id, Model.of(value));
         add(new CssClass("labeled-value"));
 
         add(new Label("label", label));

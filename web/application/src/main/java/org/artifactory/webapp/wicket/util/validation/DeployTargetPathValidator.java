@@ -32,8 +32,8 @@ import org.apache.wicket.validation.validator.StringValidator;
 public class DeployTargetPathValidator extends StringValidator {
 
     @Override
-    protected void onValidate(IValidatable validatable) {
-        String targetPath = (String) validatable.getValue();
+    protected void onValidate(IValidatable<String> validatable) {
+        String targetPath = validatable.getValue();
         // Check for valid JCR path
         try {
             PathParser.checkFormat(targetPath);

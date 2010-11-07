@@ -79,35 +79,38 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
      * Adds the dependencies table
      */
     protected void addTable() {
-        List<IColumn> columns = Lists.newArrayList();
-        columns.add(new ActionsColumn(""));
-        columns.add(new PropertyColumn(new Model("ID"), "dependency.id", "dependency.id"));
-        columns.add(new GroupableColumn(new Model("Scopes"), "dependencyScope", "dependencyScope"));
-        columns.add(new PropertyColumn(new Model("Type"), "dependency.type", "dependency.type"));
-        columns.add(new PropertyColumn(new Model("Repo Path"), "repoPathOrMissingMessage"));
+        List<IColumn<ModuleDependencyActionableItem>> columns = Lists.newArrayList();
+        columns.add(new ActionsColumn<ModuleDependencyActionableItem>(""));
+        columns.add(new PropertyColumn<ModuleDependencyActionableItem>(
+                Model.of("ID"), "dependency.id", "dependency.id"));
+        columns.add(new GroupableColumn<ModuleDependencyActionableItem>(
+                Model.of("Scopes"), "dependencyScope", "dependencyScope"));
+        columns.add(new PropertyColumn<ModuleDependencyActionableItem>(
+                Model.of("Type"), "dependency.type", "dependency.type"));
+        columns.add(new PropertyColumn<ModuleDependencyActionableItem>(
+                Model.of("Repo Path"), "repoPathOrMissingMessage"));
 
-        add(new GroupableTable("dependencies", columns, new ModuleDependenciesDataProvider(), 10));
+        add(new GroupableTable<ModuleDependencyActionableItem>(
+                "dependencies", columns, new ModuleDependenciesDataProvider(), 10));
     }
 
     /**
      * The published module's dependencies table data provider
      */
-    private class ModuleDependenciesDataProvider extends GroupableDataProvider {
+    private class ModuleDependenciesDataProvider extends GroupableDataProvider<ModuleDependencyActionableItem> {
 
         private List<ModuleDependencyActionableItem> dependenciesList;
 
-        /**
-         * Default constructor
-         */
         public ModuleDependenciesDataProvider() {
             setSort("dependencyScope", true);
             setGroupParam(new SortParam("dependencyScope", true));
-            setGroupReneder("dependencyScope", new ChoiceRenderer("dependencyScope", "dependencyScope"));
+            setGroupRenderer("dependencyScope", new ChoiceRenderer<ModuleDependencyActionableItem>(
+                    "dependencyScope", "dependencyScope"));
             this.dependenciesList = getDependencies();
         }
 
         @Override
-        public Iterator iterator(int first, int count) {
+        public Iterator<ModuleDependencyActionableItem> iterator(int first, int count) {
             ListPropertySorter.sort(dependenciesList, getGroupParam(), getSort());
             List<ModuleDependencyActionableItem> listToReturn =
                     populateModuleDependencyActionableItem(dependenciesList.subList(first, first + count));
@@ -119,8 +122,8 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
             return dependenciesList.size();
         }
 
-        public IModel model(Object object) {
-            ModuleDependencyActionableItem item = (ModuleDependencyActionableItem) object;
+        @Override
+        public IModel<ModuleDependencyActionableItem> model(ModuleDependencyActionableItem item) {
             item = new ModuleDependencyActionableItem(item.getRepoPath(), item.getDependency()) {
                 public Object getRepoPathOrMissingMessage() {
                     if (super.getRepoPath() == null) {
@@ -130,7 +133,7 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
                     }
                 }
             };
-            return new Model(item);
+            return new Model<ModuleDependencyActionableItem>(item);
         }
     }
 }

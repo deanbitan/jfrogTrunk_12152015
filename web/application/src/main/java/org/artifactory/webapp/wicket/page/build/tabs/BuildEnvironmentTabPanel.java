@@ -31,7 +31,6 @@ import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.jfrog.build.api.Build;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -49,14 +48,15 @@ public class BuildEnvironmentTabPanel extends Panel {
         FieldSetBorder propertiesBorder = new FieldSetBorder("propertiesBorder");
         add(propertiesBorder);
 
-        List<IColumn> columns = new ArrayList<IColumn>();
-        columns.add(new PropertyColumn(new Model<String>("Key"), "first", "first"));
-        columns.add(new PropertyColumn(new Model<String>("Value"), "second", "second"));
+        List<IColumn<SerializablePair<String, String>>> columns = Lists.newArrayList();
+        columns.add(new PropertyColumn<SerializablePair<String, String>>(Model.of("Key"), "first", "first"));
+        columns.add(new PropertyColumn<SerializablePair<String, String>>(Model.of("Value"), "second", "second"));
 
         List<SerializablePair<String, String>> propertyPairs = getPropertiesAsPairs(build);
 
         PropertiesDataProvider dataProvider = new PropertiesDataProvider(propertyPairs);
-        propertiesBorder.add(new SortableTable("properties", columns, dataProvider, Integer.MAX_VALUE));
+        propertiesBorder.add(new SortableTable<SerializablePair<String, String>>(
+                "properties", columns, dataProvider, Integer.MAX_VALUE));
     }
 
     /**
@@ -84,7 +84,7 @@ public class BuildEnvironmentTabPanel extends Panel {
     /**
      * The build properties data provider
      */
-    private static class PropertiesDataProvider extends SortableDataProvider {
+    private static class PropertiesDataProvider extends SortableDataProvider<SerializablePair<String, String>> {
 
         private List<SerializablePair<String, String>> entries;
 
@@ -98,7 +98,7 @@ public class BuildEnvironmentTabPanel extends Panel {
             this.entries = entries;
         }
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<SerializablePair<String, String>> iterator(int first, int count) {
             ListPropertySorter.sort(entries, getSort());
             List<SerializablePair<String, String>> listToReturn = entries.subList(first, first + count);
             return listToReturn.iterator();
@@ -108,8 +108,8 @@ public class BuildEnvironmentTabPanel extends Panel {
             return entries.size();
         }
 
-        public IModel model(Object object) {
-            return new Model<SerializablePair>((SerializablePair) object);
+        public IModel<SerializablePair<String, String>> model(SerializablePair<String, String> object) {
+            return new Model<SerializablePair<String, String>>(object);
         }
     }
 }

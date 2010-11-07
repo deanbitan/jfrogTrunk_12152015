@@ -42,7 +42,7 @@ public abstract class TokenizedTrafficEntryFactory {
             throw new IllegalArgumentException("Entry is empty");
         }
 
-        String[] entryElements = StringUtils.split(entry, TokenizedTrafficEntry.COLUMN_SEPERTAOR);
+        String[] entryElements = StringUtils.split(entry, TokenizedTrafficEntry.COLUMN_SEPARATOR);
         if (entryElements.length < 3) {
             throw new IllegalArgumentException("Entry should contain at least three elements: " + entry);
         }

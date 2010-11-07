@@ -19,52 +19,25 @@
 package org.artifactory.common.wicket.component.dnd.select.sorted;
 
 import org.apache.wicket.behavior.IBehavior;
-import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.model.IModel;
 import org.artifactory.common.wicket.behavior.JavascriptEvent;
 import org.artifactory.common.wicket.component.dnd.select.DragDropSelection;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * @author Yoav Aharoni
  */
-public class SortedDragDropSelection<T> extends DragDropSelection<T> {
-    public SortedDragDropSelection(String id) {
-        super(id);
-    }
+public class SortedDragDropSelection<T extends Serializable> extends DragDropSelection<T> {
 
     public SortedDragDropSelection(String id, List<T> choices) {
         super(id, choices);
     }
 
-    public SortedDragDropSelection(String id, List<T> choices, IChoiceRenderer renderer) {
-        super(id, choices, renderer);
-    }
-
-    public SortedDragDropSelection(String id, IModel model, List<T> choices) {
+    public SortedDragDropSelection(String id, IModel<T> model, List<T> choices) {
         super(id, model, choices);
-    }
-
-    public SortedDragDropSelection(String id, IModel model, List<T> choices, IChoiceRenderer renderer) {
-        super(id, model, choices, renderer);
-    }
-
-    public SortedDragDropSelection(String id, IModel choicesModel) {
-        super(id, choicesModel);
-    }
-
-    public SortedDragDropSelection(String id, IModel model, IModel choicesModel) {
-        super(id, model, choicesModel);
-    }
-
-    public SortedDragDropSelection(String id, IModel choicesModel, IChoiceRenderer renderer) {
-        super(id, choicesModel, renderer);
-    }
-
-    public SortedDragDropSelection(String id, IModel model, IModel choicesModel, IChoiceRenderer renderer) {
-        super(id, model, choicesModel, renderer);
     }
 
     {

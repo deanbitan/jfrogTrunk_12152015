@@ -36,8 +36,11 @@ var SubMenuPanel = {
             menuItem.className = menuItem.className.replace(/menu-group-enabled/, 'menu-group-opened');
             menuGroup.className = SubMenuPanel.OPENED_CSS;
         }
+        SubMenuPanel.onToggle();
         return false;
-    }
+    },
+
+    onToggle: DomUtils.cancel
 };
 
 
@@ -58,3 +61,19 @@ var CookieUtils = {
         CookieUtils.setCookie(name, '', -1);
     }
 };
+
+// RTFACT-3689
+if (dojo.isIE >= 7) {
+    DomUtils.addOnLoad(function () {
+        var sideMenu = dojo.byId('sideMenu');
+
+        function fixSidebar() {
+            sideMenu.parentNode.style.minHeight = sideMenu.scrollHeight + 'px';
+        }
+
+        sideMenu.style.position = 'absolute';
+        fixSidebar();
+
+        SubMenuPanel.onToggle = fixSidebar;
+    });
+}

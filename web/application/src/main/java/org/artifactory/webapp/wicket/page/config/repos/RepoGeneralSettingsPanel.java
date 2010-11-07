@@ -34,7 +34,7 @@ public class RepoGeneralSettingsPanel extends Panel {
     public RepoGeneralSettingsPanel(String id, boolean create, CachingDescriptorHelper cachingDescriptorHelper) {
         super(id);
         // Repository name
-        RequiredTextField repoKeyField = new RequiredTextField("key");
+        RequiredTextField<String> repoKeyField = new RequiredTextField<String>("key");
         repoKeyField.setEnabled(create);// don't allow key update
         if (create) {
             repoKeyField.add(new JcrNameValidator("Invalid repository key '%s'."));
@@ -49,6 +49,9 @@ public class RepoGeneralSettingsPanel extends Panel {
         // Repository description
         add(new TextArea("description"));
         add(new SchemaHelpBubble("description.help"));
+
+        add(new TextArea("notes"));
+        add(new SchemaHelpBubble("notes.help"));
 
         add(new TextArea("includesPattern"));
         add(new SchemaHelpBubble("includesPattern.help"));

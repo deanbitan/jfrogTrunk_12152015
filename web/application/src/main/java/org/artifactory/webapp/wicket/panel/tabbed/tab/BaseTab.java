@@ -32,12 +32,12 @@ import org.artifactory.common.wicket.behavior.CssClass;
  */
 public abstract class BaseTab extends AbstractTab {
 
-    public BaseTab(IModel title) {
-        super(title);
+    public BaseTab(String title) {
+        super(Model.of(title));
     }
 
-    public BaseTab(String title) {
-        super(new Model(title));
+    public BaseTab(IModel<String> title) {
+        super(title);
     }
 
     public boolean isEnabled() {

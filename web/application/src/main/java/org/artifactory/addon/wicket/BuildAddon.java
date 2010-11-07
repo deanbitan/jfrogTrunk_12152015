@@ -19,7 +19,6 @@
 package org.artifactory.addon.wicket;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
-import org.apache.wicket.markup.html.panel.Panel;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.fs.FileInfo;
@@ -27,6 +26,7 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
+import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
@@ -126,7 +126,7 @@ public interface BuildAddon extends Addon {
      * @param build           Build to use for results
      * @return Build save search results panel
      */
-    Panel getBuildSearchResultsPanel(AddonType requestingAddon, Build build);
+    SaveSearchResultsPanel getBuildSearchResultsPanel(AddonType requestingAddon, Build build);
 
     /**
      * Returns a file info object for a build file bean

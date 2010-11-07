@@ -91,7 +91,7 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
                         List<StatusEntry> warnings = status.getWarnings();
                         String logs;
                         if (authorizationService.isAdmin()) {
-                            CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                            String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                             logs = "<a href=\"" + systemLogsPage + "\">log</a>";
                         } else {
                             logs = "log";

@@ -18,7 +18,6 @@
 
 package org.artifactory.version;
 
-import org.apache.commons.collections15.OrderedMap;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -54,6 +53,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.artifactory.common.ConstantValues.substituteRepoKeys;
@@ -84,7 +84,7 @@ public class ConfigXmlConversionTest extends ArtifactoryHomeBoundTest {
         // convert custom config
         cc = transform("/config/test/config.1.0.0.xml", v100);
         assertFalse(cc.getSecurity().isAnonAccessEnabled());
-        OrderedMap<String, LocalRepoDescriptor> localRepos = cc.getLocalRepositoriesMap();
+        Map<String, LocalRepoDescriptor> localRepos = cc.getLocalRepositoriesMap();
 
         LocalRepoDescriptor frogReleases = localRepos.get("frog-releases");
         assertEquals(frogReleases.getSnapshotVersionBehavior(), SnapshotVersionBehavior.DEPLOYER,

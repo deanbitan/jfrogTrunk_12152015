@@ -18,53 +18,20 @@
 
 package org.artifactory.webapp.wicket.components;
 
-import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.html.list.ListItem;
-import org.apache.wicket.model.IModel;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.dnd.select.DragDropSelection;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * @author Yoav Aharoni
  */
-public class IconDragDropSelection<T> extends DragDropSelection<T> {
-    public IconDragDropSelection(String id) {
-        super(id);
-    }
-
+public class IconDragDropSelection<T extends Serializable> extends DragDropSelection<T> {
     public IconDragDropSelection(String id, List<T> choices) {
         super(id, choices);
-    }
-
-    public IconDragDropSelection(String id, List<T> choices, IChoiceRenderer renderer) {
-        super(id, choices, renderer);
-    }
-
-    public IconDragDropSelection(String id, IModel model, List<T> choices) {
-        super(id, model, choices);
-    }
-
-    public IconDragDropSelection(String id, IModel model, List<T> choices, IChoiceRenderer renderer) {
-        super(id, model, choices, renderer);
-    }
-
-    public IconDragDropSelection(String id, IModel choicesModel) {
-        super(id, choicesModel);
-    }
-
-    public IconDragDropSelection(String id, IModel model, IModel choicesModel) {
-        super(id, model, choicesModel);
-    }
-
-    public IconDragDropSelection(String id, IModel choicesModel, IChoiceRenderer renderer) {
-        super(id, choicesModel, renderer);
-    }
-
-    public IconDragDropSelection(String id, IModel model, IModel choicesModel, IChoiceRenderer renderer) {
-        super(id, model, choicesModel, renderer);
     }
 
     @Override

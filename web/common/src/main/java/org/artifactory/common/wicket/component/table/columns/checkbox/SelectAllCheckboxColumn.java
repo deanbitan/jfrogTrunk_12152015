@@ -51,7 +51,7 @@ public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
     public Component getHeader(String componentId) {
         CheckboxPanel panel = new CheckboxPanel(componentId);
         selectAllCheckbox = new StyledCheckbox(CHECKBOX_ID, getSelectAllModel());
-        selectAllCheckbox.setTitle(getDisplayModel().getObject().toString());
+        selectAllCheckbox.setTitle(getDisplayModel().getObject());
         selectAllCheckbox.add(new SimpleAttributeModifier("title", "Select All"));
         selectAllCheckbox.setOutputMarkupId(true);
         selectAllCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {

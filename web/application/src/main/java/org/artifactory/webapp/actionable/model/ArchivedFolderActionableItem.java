@@ -66,7 +66,7 @@ public class ArchivedFolderActionableItem extends RepoAwareActionableItemBase im
 
     @Override
     public void addTabs(List<ITab> tabs) {
-        tabs.add(new AbstractTab(new Model("General")) {
+        tabs.add(new AbstractTab(Model.of("General")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new ZipEntryPanel(panelId, getZipEntry());

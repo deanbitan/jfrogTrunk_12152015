@@ -18,7 +18,6 @@
 
 package org.artifactory.common.wicket.component;
 
-import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
@@ -31,14 +30,13 @@ import java.util.Locale;
 public abstract class CreateUpdatePanel<E> extends BaseModalPanel {
 
     protected E entity;
+    protected Form<E> form;
     protected CreateUpdateAction action;
-    protected Form form;
 
     public CreateUpdatePanel(CreateUpdateAction action, E entity) {
         this.entity = entity;
         this.action = action;
-        CompoundPropertyModel model = new CompoundPropertyModel(entity);
-        form = new Form("form", model);
+        form = new Form<E>("form", new CompoundPropertyModel<E>(entity));
         setOutputMarkupId(true);
     }
 
@@ -53,11 +51,6 @@ public abstract class CreateUpdatePanel<E> extends BaseModalPanel {
     @Override
     public String getTitle() {
         return getLocalizer().getString(TITLE_KEY + "." + action.name().toLowerCase(Locale.ENGLISH), this);
-    }
-
-    public void replaceWith(AjaxRequestTarget target, CreateUpdatePanel<E> panel) {
-        replaceWith(panel);
-        target.addComponent(panel);
     }
 
     public boolean isCreate() {

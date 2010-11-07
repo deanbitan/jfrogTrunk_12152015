@@ -81,9 +81,10 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
         add(uploadBorder);
         uploadBorder.add(deployForm);
 
-        PropertyModel targetRepoModel = new PropertyModel(this, "targetRepo");
+        PropertyModel<LocalRepoDescriptor> targetRepoModel = new PropertyModel<LocalRepoDescriptor>(this, "targetRepo");
         List<LocalRepoDescriptor> deployableRepos = getDeployableRepos();
-        final DropDownChoice targetRepo = new DropDownChoice("targetRepo", targetRepoModel, deployableRepos);
+        DropDownChoice targetRepo = new DropDownChoice<LocalRepoDescriptor>(
+                "targetRepo", targetRepoModel, deployableRepos);
         if (deployableRepos.size() > 0) {
             LocalRepoDescriptor defaultTarget = deployableRepos.get(0);
             targetRepo.setDefaultModelObject(defaultTarget);
@@ -140,7 +141,7 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
 
             String logs;
             if (authorizationService.isAdmin()) {
-                CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                 logs = "<a href=\"" + systemLogsPage + "\">log</a>";
             } else {
                 logs = "log";

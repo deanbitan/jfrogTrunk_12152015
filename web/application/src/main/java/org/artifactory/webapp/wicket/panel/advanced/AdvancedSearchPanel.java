@@ -47,7 +47,7 @@ public class AdvancedSearchPanel extends WhiteTitlePanel {
         add(new CollapsibleBehavior().setResizeModal(true));
 
         List<String> repoList = getOrderdRepoKeys();
-        ListMultipleChoice choice = new ListMultipleChoice("selectedRepoForSearch", repoList);
+        ListMultipleChoice choice = new ListMultipleChoice<String>("selectedRepoForSearch", repoList);
         add(choice);
     }
 

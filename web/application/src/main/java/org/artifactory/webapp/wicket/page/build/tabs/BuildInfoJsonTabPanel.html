@@ -1,10 +1,14 @@
 <wicket:head>
     <script type="text/javascript">
+        var adjust = 365;
+        if (dojo.isIE == 8) {
+            adjust = 380;
+        }
         Tab.onResize = function() {
             var node = dojo.query('.lines')[0];
             if (node) {
                 var docHeight = document.documentElement.offsetHeight;
-                node.style.maxHeight = Math.max(50, docHeight - 365) + 'px';
+                node.style.maxHeight = Math.max(50, docHeight - adjust) + 'px';
             }
         };
     </script>

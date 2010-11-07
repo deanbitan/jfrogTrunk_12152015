@@ -21,8 +21,8 @@ package org.artifactory.rest.resource.license;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.addon.license.LicenseStatus;
+import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
@@ -54,7 +54,7 @@ import java.util.List;
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN})
-public class LicensesResource {
+public class LicenseResource {
 
     private final RestAddon restAddon;
     private final HttpServletRequest request;
@@ -68,7 +68,7 @@ public class LicensesResource {
             };
 
 
-    public LicensesResource(RestAddon restAddon, HttpServletRequest request, RepositoryService repositoryService,
+    public LicenseResource(RestAddon restAddon, HttpServletRequest request, RepositoryService repositoryService,
             AuthorizationService authorizationService) {
         this.restAddon = restAddon;
         this.request = request;

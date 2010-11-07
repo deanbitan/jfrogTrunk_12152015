@@ -26,19 +26,21 @@ import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalShowLink;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 
+import java.io.Serializable;
+
 /**
  * A BaseListPanel implementation which opens the create and update panels in a modal pop-up window
  *
  * @author Yoav Aharoni
  */
-public abstract class ModalListPanel<T> extends BaseListPanel<T> {
+public abstract class ModalListPanel<T extends Serializable> extends BaseListPanel<T> {
 
     protected ModalListPanel(String id) {
         super(id);
         init();
     }
 
-    protected ModalListPanel(String id, SortableDataProvider dataProvider) {
+    protected ModalListPanel(String id, SortableDataProvider<T> dataProvider) {
         super(id, dataProvider);
         init();
     }

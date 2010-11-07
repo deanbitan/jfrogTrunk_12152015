@@ -34,6 +34,7 @@ public interface SearchRestConstants {
     String PATH_CREATED_IN_RANGE = "creation";
     String PATH_PATTERN = "pattern";
     String PATH_LICENSE = "license";
+    String PATH_CHECKSUM = "checksum";
 
     //Common query params
     String PARAM_REPO_TO_SEARCH = "repos";
@@ -70,6 +71,9 @@ public interface SearchRestConstants {
     String AUTOFIND_PARAM = "autofind";
     String REPOS_PARAM = "repos";
 
+    String PARAM_MD5_CHECKSUM = "md5";
+    String PARAM_SHA1_CHECKSUM = "sha1";
+
     //Media types
     String MT_ARTIFACT_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactSearchResult+json";
     String MT_ARCHIVE_ENTRY_SEARCH_RESULT =
@@ -82,6 +86,7 @@ public interface SearchRestConstants {
             RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactCreationResult+json";
     String MT_PATTERN_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".PatternResultFileSet+json";
     String MT_LICENSE_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".LicenseResult+json";
+    String MT_CHECKSUM_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ChecksumSearchResult+json";
 
     String NOT_FOUND = "No results found.";
 }

@@ -62,11 +62,11 @@ public class CentralConfigDescriptorImplTest {
 
         ProxyDescriptor proxy1 = new ProxyDescriptor();
         proxy1.setKey("proxy1");
-        cc.addProxy(proxy1);
+        cc.addProxy(proxy1, false);
 
         ProxyDescriptor proxy2 = new ProxyDescriptor();
         proxy2.setKey("proxy2");
-        cc.addProxy(proxy2);
+        cc.addProxy(proxy2, false);
 
         BackupDescriptor backup1 = new BackupDescriptor();
         backup1.setKey("backup1");
@@ -168,7 +168,7 @@ public class CentralConfigDescriptorImplTest {
     public void removeReferencedProxy() {
         ProxyDescriptor proxy = new ProxyDescriptor();
         proxy.setKey("referencedProxy");
-        cc.addProxy(proxy);
+        cc.addProxy(proxy, false);
 
         HttpRepoDescriptor remoteRepo =
                 (HttpRepoDescriptor) cc.getRemoteRepositoriesMap().get("remote1");
@@ -184,13 +184,39 @@ public class CentralConfigDescriptorImplTest {
     public void addDefaultProxyToRemoteRepositories() {
         ProxyDescriptor proxy = new ProxyDescriptor();
         proxy.setKey("defaultProxy");
-        cc.addProxy(proxy);
+        cc.addProxy(proxy, false);
         cc.addDefaultProxyToRemoteRepositories(proxy);
 
         HttpRepoDescriptor remoteRepo = (HttpRepoDescriptor) cc.getRemoteRepositoriesMap().get("remote1");
 
         assertNotNull(remoteRepo.getProxy(), "Remote repo should have a proxy");
         assertEquals(remoteRepo.getProxy().getKey(), "defaultProxy", "Proxy name does not match");
+    }
+
+    public void defaultProxyChanged() {
+        ProxyDescriptor proxy = new ProxyDescriptor();
+        proxy.setKey("defaultProxy");
+        proxy.setDefaultProxy(true);
+        cc.addProxy(proxy, false);
+        cc.addDefaultProxyToRemoteRepositories(proxy);
+
+        ProxyDescriptor newDefaultProxy = new ProxyDescriptor();
+        newDefaultProxy.setKey("newDefaultProxy");
+        cc.addProxy(newDefaultProxy, false);
+        newDefaultProxy.setDefaultProxy(true);
+        cc.proxyChanged(newDefaultProxy, true);
+        HttpRepoDescriptor remoteRepo = (HttpRepoDescriptor) cc.getRemoteRepositoriesMap().get("remote1");
+
+        assertNotNull(remoteRepo.getProxy(), "Remote repo should have a proxy");
+        assertEquals(remoteRepo.getProxy().getKey(), "newDefaultProxy", "Proxy name does not match");
+        assertFalse(proxy.isDefaultProxy(), "Original proxy should now be false");
+
+        proxy.setDefaultProxy(true);
+        cc.proxyChanged(proxy, false);
+
+        assertNotNull(remoteRepo.getProxy(), "Remote repo should have a proxy");
+        assertEquals(remoteRepo.getProxy().getKey(), "newDefaultProxy", "Proxy name does not match");
+
     }
 
     public void backupExistence() {
@@ -207,7 +233,7 @@ public class CentralConfigDescriptorImplTest {
         assertFalse(cc.isBackupExists("backup2"));
     }
 
-    public void propertySetExistance() {
+    public void propertySetExistence() {
         assertEquals(cc.getPropertySets().size(), 2, "The config should contain 2 property sets");
         assertTrue(cc.isPropertySetExists("set1"), "The config should contain the property set: 'set1'");
         assertTrue(cc.isPropertySetExists("set2"), "The config should contain the property set: 'set2'");

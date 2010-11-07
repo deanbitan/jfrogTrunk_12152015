@@ -42,7 +42,7 @@ public abstract class AjaxUtils {
         if (page == null || target == null) {
             return;
         }
-        page.visitChildren(IFeedback.class, new Component.IVisitor() {
+        page.visitChildren(IFeedback.class, new Component.IVisitor<Component>() {
             public Object component(Component component) {
                 if (component.getOutputMarkupId()) {
                     target.addComponent(component);

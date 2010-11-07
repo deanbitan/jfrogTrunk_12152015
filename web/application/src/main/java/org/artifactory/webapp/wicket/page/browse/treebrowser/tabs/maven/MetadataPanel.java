@@ -94,8 +94,8 @@ public class MetadataPanel extends TitledPanel {
         metadataSelectorForm.add(metadataNameLabeledValue);
         final IModel<String> metadataTypeModel = new PropertyModel<String>(this, "metadataType");
 
-        final DropDownChoice metadataTypesDropDown =
-                new DropDownChoice("metadataTypes", metadataTypeModel, metadataTypeList);
+        final DropDownChoice<String> metadataTypesDropDown =
+                new DropDownChoice<String>("metadataTypes", metadataTypeModel, metadataTypeList);
         metadataTypesDropDown.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {

@@ -18,14 +18,12 @@
 
 package org.artifactory.webapp.wicket.page.config.repos;
 
-import org.apache.commons.collections15.OrderedMap;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.markup.repeater.data.DataView;
 import org.apache.wicket.markup.repeater.data.IDataProvider;
@@ -50,6 +48,7 @@ import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
+import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoResolver;
@@ -57,10 +56,10 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.components.IconDragDropSelection;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Virtual repository configuration panel.
@@ -96,7 +95,7 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
     public void saveEditDescriptor(VirtualRepoDescriptor repoDescriptor) {
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
         //update the model being saved
-        OrderedMap<String, VirtualRepoDescriptor> virtualRepos =
+        Map<String, VirtualRepoDescriptor> virtualRepos =
                 helper.getModelMutableDescriptor().getVirtualRepositoriesMap();
         if (virtualRepos.containsKey(repoDescriptor.getKey())) {
             virtualRepos.put(repoDescriptor.getKey(), repoDescriptor);
@@ -116,10 +115,10 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
         basicSettings.add(resolvedRepo);
         basicSettings.add(new HelpBubble("resolvedRepo.help", new ResourceModel("resolvedRepo.help")));
 
-        resolvedRepo.add(new DataView("resolvedRepo", new ResolvedReposDataProvider()) {
+        resolvedRepo.add(new DataView<RealRepoDescriptor>("resolvedRepo", new ResolvedReposDataProvider()) {
             @Override
-            protected void populateItem(final Item item) {
-                RepoDescriptor repo = (RepoDescriptor) item.getDefaultModelObject();
+            protected void populateItem(Item<RealRepoDescriptor> item) {
+                RepoDescriptor repo = item.getModelObject();
                 item.add(new Label("key", repo.getKey()));
             }
         });
@@ -152,8 +151,8 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
         // pomRepositoryReferencesCleanupPolicy
         PomCleanupPolicy[] policies = PomCleanupPolicy.values();
         DropDownChoice pomCleanPolicy =
-                new DropDownChoice("pomRepositoryReferencesCleanupPolicy", Arrays.asList(policies),
-                        new ChoiceRenderer("message"));
+                new DropDownChoice<PomCleanupPolicy>("pomRepositoryReferencesCleanupPolicy", Arrays.asList(policies),
+                        new ChoiceRenderer<PomCleanupPolicy>("message"));
         advancedSettings.add(pomCleanPolicy);
         advancedSettings.add(new SchemaHelpBubble("pomRepositoryReferencesCleanupPolicy.help"));
 
@@ -161,15 +160,12 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
         WebstartWebAddon webstartAddon = addonsManager.addonByType(WebstartWebAddon.class);
         advancedSettings
                 .add(webstartAddon.getKeyPairContainer("keyPairContainer", repoDescriptor.getKey(), isCreate()));
-
-        advancedSettings.add(new TextArea("notes"));
-        advancedSettings.add(new SchemaHelpBubble("notes.help"));
         addCleanCache(advancedSettings, repoDescriptor);
     }
 
     private void addCleanCache(TitledBorder advancedSettings, final VirtualRepoDescriptor descriptor) {
         TitledAjaxSubmitLink cleanCacheButton =
-                new TitledAjaxSubmitLink("cleanCache", new Model("Zap Caches"), form) {
+                new TitledAjaxSubmitLink("cleanCache", Model.of("Zap Caches"), form) {
                     @Override
                     protected void onSubmit(AjaxRequestTarget target, Form form) {
                         String repoKey = descriptor.getKey();
@@ -204,10 +200,10 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
         return repos;
     }
 
-    private class ResolvedReposDataProvider implements IDataProvider {
+    private class ResolvedReposDataProvider implements IDataProvider<RealRepoDescriptor> {
         private final VirtualRepoResolver resolver = new VirtualRepoResolver(getRepoDescriptor());
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<RealRepoDescriptor> iterator(int first, int count) {
             return resolver.getOrderedRepos().iterator();
         }
 
@@ -216,8 +212,8 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
             return resolver.getOrderedRepos().size();
         }
 
-        public IModel model(Object object) {
-            return new Model((Serializable) object);
+        public IModel<RealRepoDescriptor> model(RealRepoDescriptor object) {
+            return new Model<RealRepoDescriptor>(object);
         }
 
         public void detach() {

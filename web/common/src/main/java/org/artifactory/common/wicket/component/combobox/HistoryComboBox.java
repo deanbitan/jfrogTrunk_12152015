@@ -31,23 +31,11 @@ import static org.artifactory.common.wicket.util.JavaScriptUtils.jsParam;
  * @author Yoav Aharoni
  */
 public class HistoryComboBox extends ComboBox {
-    public HistoryComboBox(String id) {
-        super(id);
-    }
-
     public HistoryComboBox(String id, List<String> choices) {
         super(id, choices);
     }
 
-    public HistoryComboBox(String id, IModel choices) {
-        super(id, choices);
-    }
-
-    public HistoryComboBox(String id, IModel model, List<String> choices) {
-        super(id, model, choices);
-    }
-
-    public HistoryComboBox(String id, IModel model, IModel choices) {
+    public HistoryComboBox(String id, IModel<String> model, IModel<List<String>> choices) {
         super(id, model, choices);
     }
 

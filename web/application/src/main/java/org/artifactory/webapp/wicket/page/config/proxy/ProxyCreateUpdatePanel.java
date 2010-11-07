@@ -70,7 +70,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
         form.add(border);
 
         // Proxy key
-        RequiredTextField proxyKeyField = new RequiredTextField("key");
+        RequiredTextField<String> proxyKeyField = new RequiredTextField<String>("key");
         proxyKeyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
             proxyKeyField.add(new JcrNameValidator("Invalid proxy key '%s'."));
@@ -131,7 +131,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
                 }
                 MutableCentralConfigDescriptor mutableCentralConfig = proxiesListPanel.getEditingDescriptor();
                 if (isCreate()) {
-                    mutableCentralConfig.addProxy(entity);
+                    mutableCentralConfig.addProxy(entity, defaultForAllRemotRepo);
                     getPage().info("Proxy '" + entity.getKey() + "' successfully created.");
                 } else {
                     getPage().info("Proxy '" + entity.getKey() + "' successfully updated.");

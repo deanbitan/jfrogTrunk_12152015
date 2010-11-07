@@ -36,6 +36,7 @@ public class MailServerConfigurationTest {
      */
     public void testNullMailServerDescriptorConstructor() {
         MailServerConfiguration mailServerConfiguration = new MailServerConfiguration(null);
+        assertFalse(mailServerConfiguration.isEnabled(), "Default state of activity should be false.");
         assertNull(mailServerConfiguration.getHost(), "Default state of host should be null.");
         assertEquals(mailServerConfiguration.getPort(), 0, "Default state of port should be 0.");
         assertNull(mailServerConfiguration.getUsername(), "Default state of username should be null.");
@@ -52,6 +53,7 @@ public class MailServerConfigurationTest {
      */
     public void testDefaultMailServerDescriptorConstructor() {
         MailServerConfiguration mailServerConfiguration = new MailServerConfiguration(new MailServerDescriptor());
+        assertTrue(mailServerConfiguration.isEnabled(), "Default state of configuration activity should be true.");
         assertNull(mailServerConfiguration.getHost(), "Default state of descriptor host should be null.");
         assertEquals(mailServerConfiguration.getPort(), 25, "Default state of descriptor port should be 25.");
         assertNull(mailServerConfiguration.getUsername(), "Default state of descriptor username should be null.");
@@ -67,6 +69,7 @@ public class MailServerConfigurationTest {
      * Tests the state of the configuration after constructing with a valid MailServerDescriptor object
      */
     public void testMailServerDescriptorConstructor() {
+        boolean enabled = false;
         String host = "momo";
         int port = 2131;
         String username = "popo";
@@ -77,6 +80,7 @@ public class MailServerConfigurationTest {
         boolean useTls = true;
 
         MailServerDescriptor descriptor = new MailServerDescriptor();
+        descriptor.setEnabled(enabled);
         descriptor.setHost(host);
         descriptor.setPort(port);
         descriptor.setUsername(username);
@@ -88,6 +92,7 @@ public class MailServerConfigurationTest {
 
         MailServerConfiguration config = new MailServerConfiguration(descriptor);
 
+        assertEquals(config.isEnabled(), enabled, "Unexpected mail server activity state.");
         assertEquals(config.getHost(), host, "Unexpected mail server host.");
         assertEquals(config.getPort(), port, "Unexpected mail server port.");
         assertEquals(config.getUsername(), username, "Unexpected mail server username.");
@@ -102,6 +107,7 @@ public class MailServerConfigurationTest {
      * Tests the state of the configuration after constructing the the main constructor
      */
     public void testMainConstructor() {
+        boolean enabled = true;
         String host = "momo";
         int port = 2131;
         String username = "popo";
@@ -111,9 +117,10 @@ public class MailServerConfigurationTest {
         boolean useSsl = true;
         boolean useTls = true;
 
-        MailServerConfiguration config = new MailServerConfiguration(host, port, username, password, from,
+        MailServerConfiguration config = new MailServerConfiguration(enabled, host, port, username, password, from,
                 subjectPrefix, useSsl, useTls);
 
+        assertEquals(config.isEnabled(), enabled, "Unexpected mail server activity state.");
         assertEquals(config.getHost(), host, "Unexpected mail server host.");
         assertEquals(config.getPort(), port, "Unexpected mail server port.");
         assertEquals(config.getUsername(), username, "Unexpected mail server username.");

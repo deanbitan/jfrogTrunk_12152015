@@ -45,7 +45,7 @@ import org.artifactory.common.wicket.component.links.BaseTitledLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
-import org.artifactory.common.wicket.model.DelegetedModel;
+import org.artifactory.common.wicket.model.DelegatedModel;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -287,7 +287,8 @@ public class FileBrowserPanel extends BaseModalPanel {
 
     private class BreadCrumbsDropDownChoice extends DropDownChoice<File> {
         private BreadCrumbsDropDownChoice(String id) {
-            super(id, new Model<File>(new File(getCurrentFolder())), new BreadCrumbsModel(), new ChoiceRenderer<File>("name", "path"));
+            super(id, new Model<File>(new File(getCurrentFolder())), new BreadCrumbsModel(),
+                    new ChoiceRenderer<File>("name", "path"));
 
             add(new AjaxFormComponentUpdatingBehavior("onchange") {
                 @Override
@@ -366,7 +367,7 @@ public class FileBrowserPanel extends BaseModalPanel {
 
     private class BrowserAutoCompleteTextField extends PathAutoCompleteTextField {
         private BrowserAutoCompleteTextField(String id) {
-            super(id, new DelegetedModel<File>(FileBrowserPanel.this), FileBrowserPanel.this.pathHelper);
+            super(id, new DelegatedModel<File>(FileBrowserPanel.this), FileBrowserPanel.this.pathHelper);
 
             add(new AjaxFormComponentUpdatingBehavior("onselection") {
                 @Override

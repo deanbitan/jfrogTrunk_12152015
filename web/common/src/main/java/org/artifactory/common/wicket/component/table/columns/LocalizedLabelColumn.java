@@ -18,6 +18,7 @@
 
 package org.artifactory.common.wicket.component.table.columns;
 
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
@@ -26,22 +27,18 @@ import org.apache.wicket.model.ResourceModel;
 /**
  * @author Yoav Aharoni
  */
-public class LocalizedLabelColumn extends PropertyColumn {
-    public LocalizedLabelColumn(IModel displayModel, String sortProperty, String propertyExpression) {
+public class LocalizedLabelColumn<T> extends PropertyColumn<T> {
+    public LocalizedLabelColumn(IModel<String> displayModel, String sortProperty, String propertyExpression) {
         super(displayModel, sortProperty, propertyExpression);
     }
 
-    public LocalizedLabelColumn(IModel displayModel, String propertyExpression) {
-        super(displayModel, propertyExpression);
-    }
-
     @Override
-    public void populateItem(Item item, String componentId, IModel model) {
+    public void populateItem(Item<ICellPopulator<T>> item, String componentId, IModel<T> model) {
         super.populateItem(item, componentId, model);
     }
 
     @Override
-    protected IModel createLabelModel(IModel embeddedModel) {
+    protected IModel createLabelModel(IModel<T> embeddedModel) {
         IModel model = super.createLabelModel(embeddedModel);
         Object value = model.getObject();
         if (value == null) {

@@ -60,6 +60,7 @@ import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.api.security.GroupInfo;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.api.version.VersionHolder;
@@ -103,6 +104,7 @@ import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;
+import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.base.BasePage;
 import org.artifactory.webapp.wicket.page.base.EditProfileLink;
@@ -138,6 +140,7 @@ import org.artifactory.webapp.wicket.page.home.addon.AddonsInfoPanel;
 import org.artifactory.webapp.wicket.page.importexport.repos.ImportExportReposPage;
 import org.artifactory.webapp.wicket.page.importexport.system.ImportExportSystemPage;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
+import org.artifactory.webapp.wicket.page.search.ArtifactSaveSearchResultsPanel;
 import org.artifactory.webapp.wicket.page.search.LimitlessCapableSearcher;
 import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
 import org.artifactory.webapp.wicket.page.security.acl.AclsPage;
@@ -269,38 +272,42 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public void addVersionInfo(WebMarkupContainer container, Map<String, String> headersMap) {
-        Label currentLabel = new Label("currentLabel", ConstantValues.artifactoryVersion.getString());
-        container.add(currentLabel);
+        WebMarkupContainer versioningInfo = new WebMarkupContainer("versioningInfo");
 
-        final Label latestLabel = new Label("latestLabel", "");
+        versioningInfo.add(new Label("currentLabel", ConstantValues.artifactoryVersion.getString()));
+
+        Label latestLabel = new Label("latestLabel", "");
+        latestLabel.setEscapeModelStrings(false);   // to include a link easily...
         latestLabel.setOutputMarkupId(true);
         String latestWikiUrl = VersionHolder.VERSION_UNAVAILABLE.getWikiUrl();
         CentralConfigDescriptor configDescriptor = centralConfigService.getDescriptor();
         if (!configDescriptor.isOfflineMode()) {
             // try to get the latest version from the cache with a non-blocking call
-            String latestVersion = versionInfoService.getLatestVersion(headersMap, true);
-            latestWikiUrl = versionInfoService.getLatestWikiUrl(headersMap, true);
-            if (VersionInfoService.SERVICE_UNAVAILABLE.equals(latestVersion)) {
+            VersionHolder latestVersion = versionInfoService.getLatestVersion(headersMap, true);
+            latestWikiUrl = latestVersion.getWikiUrl();
+            if (VersionInfoService.SERVICE_UNAVAILABLE.equals(latestVersion.getVersion())) {
                 // send ajax refresh in 5 second and update the latest version with the result
                 latestLabel.add(new UpdateNewsFromCache());
             } else {
-                latestLabel.setDefaultModelObject(formatLatestVersion(latestVersion));
+                latestLabel.setDefaultModelObject(buildLatestVersionLabel(latestVersion));
             }
         }
-        container.add(latestLabel);
+        versioningInfo.add(latestLabel);
 
         ExternalLink wikiLink = new ExternalLink("wikiLink", latestWikiUrl);
-        container.add(wikiLink);
+        versioningInfo.add(wikiLink);
+
+        container.add(versioningInfo);
     }
 
     public SaveSearchResultsPanel getSaveSearchResultsPanel(String wicketId, IModel model,
             LimitlessCapableSearcher limitlessCapableSearcher) {
-        SaveSearchResultsPanel panel = new SaveSearchResultsPanel(wicketId, model);
+        SaveSearchResultsPanel panel = new ArtifactSaveSearchResultsPanel(wicketId, model, SEARCH);
         panel.setEnabled(false);
         return panel;
     }
 
-    public Panel getBuildSearchResultsPanel(AddonType requestingAddon, Build build) {
+    public SaveSearchResultsPanel getBuildSearchResultsPanel(AddonType requestingAddon, Build build) {
         return new BuildSearchResultsPanel(requestingAddon, build);
     }
 
@@ -317,7 +324,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public ITab getPropertiesTabPanel(ItemInfo itemInfo) {
-        return new DisabledAddonTab(new Model<String>("Properties"), PROPERTIES);
+        return new DisabledAddonTab(Model.of("Properties"), PROPERTIES);
     }
 
     public ITab getSearchPropertiesTabPanel(FolderInfo folderInfo, List<FileInfo> searchResults) {
@@ -329,7 +336,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public ITab getPropertySearchTabPanel(Page parent, String tabTitle) {
-        return new DisabledAddonTab(new Model<String>(tabTitle), PROPERTIES);
+        return new DisabledAddonTab(Model.of(tabTitle), PROPERTIES);
     }
 
     public MenuNode getPropertySetsPage(String nodeTitle) {
@@ -387,7 +394,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public ITab getWatchersTab(String tabTitle, RepoPath repoPath) {
-        return new DisabledAddonTab(new Model<String>(tabTitle), WATCH);
+        return new DisabledAddonTab(Model.of(tabTitle), WATCH);
     }
 
     public MarkupContainer getWatchingSinceLabel(String labelId, RepoPath itemRepoPath) {
@@ -460,7 +467,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return null;
     }
 
-    public BooleanColumn addExternalGroupIndicator(MultiStatusHolder statusHolder) {
+    public BooleanColumn<GroupInfo> addExternalGroupIndicator(MultiStatusHolder statusHolder) {
         return null;
     }
 
@@ -567,7 +574,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public ITab getLicensesInfoTab(String title, Build build, boolean hasDeployOnLocal) {
-        return new DisabledAddonTab(new Model<String>(title), AddonType.LICENSES);
+        return new DisabledAddonTab(Model.of(title), AddonType.LICENSES);
     }
 
     public LabeledValue getLicenseLabel(String id, RepoPath repoPath) {
@@ -604,8 +611,9 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return null;
     }
 
-    public String getSearchResultsPageMountPath(String resultToSelect) {
-        return "";
+    public String getSearchResultsPageAbsolutePath(String resultToSelect) {
+        return new StringBuilder(RequestUtils.getWicketServletContextUrl()).append("/").
+                append(RequestUtils.WEBAPP_URL_PATH_PREFIX).toString();
     }
 
     public String getVersionInfo() {
@@ -644,9 +652,9 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         @Override
         protected void onTimer(AjaxRequestTarget target) {
             stop(); // try only once
-            String latestVersion = versionInfoService.getLatestVersionFromCache(true);
-            if (!VersionInfoService.SERVICE_UNAVAILABLE.equals(latestVersion)) {
-                getComponent().setDefaultModelObject(formatLatestVersion(latestVersion));
+            VersionHolder latestVersion = versionInfoService.getLatestVersionFromCache(true);
+            if (!VersionInfoService.SERVICE_UNAVAILABLE.equals(latestVersion.getVersion())) {
+                getComponent().setDefaultModelObject(buildLatestVersionLabel(latestVersion));
                 target.addComponent(getComponent());
             }
         }
@@ -765,13 +773,14 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         }
     }
 
-    private static String formatLatestVersion(String latestVersion) {
-        return "(latest release is " + latestVersion + ")";
+    private static String buildLatestVersionLabel(VersionHolder latestVersion) {
+        return String.format("(latest release is <a href=\"%s\" target=\"_blank\">%s</a>)",
+                latestVersion.getDownloadUrl(), latestVersion.getVersion());
     }
 
     private static void disableAll(MarkupContainer container) {
         container.setEnabled(false);
-        container.visitChildren(new SetEnableVisitor(false));
+        container.visitChildren(new SetEnableVisitor<Component>(false));
     }
 
     private static class DisabledPropertiesPanel extends PropertiesPanel {

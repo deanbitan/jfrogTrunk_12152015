@@ -20,10 +20,14 @@ package org.artifactory.addon.plugin;
 
 import org.artifactory.addon.Addon;
 
+import java.util.Map;
+
 /**
  * @author Yoav Landman
  * @date Oct 28, 2008
  */
 public interface PluginsAddon extends Addon {
     <C> void execPluginActions(Class<? extends PluginAction> type, C context, Object... args);
+
+    ResponseCtx execute(String executionName, Map params, boolean async);
 }

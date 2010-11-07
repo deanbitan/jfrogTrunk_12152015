@@ -23,6 +23,7 @@ import org.apache.wicket.Component;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -101,27 +102,25 @@ public class BuildsForNamePanel extends TitledPanel {
      * @param buildsByName Builds to display
      */
     private void addTable(Set<BasicBuildInfo> buildsByName) {
-        List<IColumn> columns = Lists.newArrayList();
+        List<IColumn<BuildActionableItem>> columns = Lists.newArrayList();
 
-        columns.add(new ActionsColumn(""));
+        columns.add(new ActionsColumn<BuildActionableItem>(""));
         columns.add(new BuildNumberColumn());
         columns.add(new BuildDateColumn());
 
         BuildsDataProvider dataProvider = new BuildsDataProvider(buildsByName);
 
-        add(new SortableTable("builds", columns, dataProvider, 200));
+        add(new SortableTable<BuildActionableItem>("builds", columns, dataProvider, 200));
     }
 
     /**
      * The build table data provider
      */
-    private static class BuildsDataProvider extends SortableDataProvider {
+    private static class BuildsDataProvider extends SortableDataProvider<BuildActionableItem> {
 
         List<BasicBuildInfo> buildList;
 
         /**
-         * Main constructor
-         *
          * @param buildsByName Builds to display
          */
         public BuildsDataProvider(Set<BasicBuildInfo> buildsByName) {
@@ -129,7 +128,7 @@ public class BuildsForNamePanel extends TitledPanel {
             this.buildList = Lists.newArrayList(buildsByName);
         }
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<BuildActionableItem> iterator(int first, int count) {
             BuildForNameListSorter.sort(buildList, getSort());
             List<BuildActionableItem> listToReturn = getActionableItems(buildList.subList(first, first + count));
             return listToReturn.iterator();
@@ -139,8 +138,8 @@ public class BuildsForNamePanel extends TitledPanel {
             return buildList.size();
         }
 
-        public IModel model(Object object) {
-            return new Model((BuildActionableItem) object);
+        public IModel<BuildActionableItem> model(BuildActionableItem object) {
+            return new Model<BuildActionableItem>(object);
         }
 
         /**
@@ -168,9 +167,9 @@ public class BuildsForNamePanel extends TitledPanel {
         setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }
 
-    private class BuildNumberColumn extends AbstractColumn {
+    private class BuildNumberColumn extends AbstractColumn<BuildActionableItem> {
         public BuildNumberColumn() {
-            super(new Model("Build Number"), "number");
+            super(Model.of("Build Number"), "number");
         }
 
         public void populateItem(final Item cellItem, String componentId, IModel rowModel) {
@@ -188,14 +187,15 @@ public class BuildsForNamePanel extends TitledPanel {
         }
     }
 
-    private class BuildDateColumn extends FormattedDateColumn {
+    private class BuildDateColumn extends FormattedDateColumn<BuildActionableItem> {
         public BuildDateColumn() {
-            super(new Model("Time Built"), "startedDate", "started", centralConfigService, Build.STARTED_FORMAT);
+            super(Model.of("Time Built"), "startedDate", "started", centralConfigService, Build.STARTED_FORMAT);
         }
 
         @Override
-        public void populateItem(final Item item, String componentId, IModel model) {
-            super.populateItem(item, componentId, model);
+        public void populateItem(final Item<ICellPopulator<BuildActionableItem>> item, String componentId,
+                IModel<BuildActionableItem> rowModel) {
+            super.populateItem(item, componentId, rowModel);
             item.add(new AjaxEventBehavior("onclick") {
                 @Override
                 protected void onEvent(AjaxRequestTarget target) {

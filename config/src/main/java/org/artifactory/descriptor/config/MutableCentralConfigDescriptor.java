@@ -18,7 +18,6 @@
 
 package org.artifactory.descriptor.config;
 
-import org.apache.commons.collections15.OrderedMap;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
@@ -32,6 +31,7 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Mutable interface for the central config.
@@ -39,12 +39,11 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor {
-    void setLocalRepositoriesMap(OrderedMap<String, LocalRepoDescriptor> localRepositoriesMap);
+    void setLocalRepositoriesMap(Map<String, LocalRepoDescriptor> localRepositoriesMap);
 
-    void setRemoteRepositoriesMap(OrderedMap<String, RemoteRepoDescriptor> remoteRepositoriesMap);
+    void setRemoteRepositoriesMap(Map<String, RemoteRepoDescriptor> remoteRepositoriesMap);
 
-    void setVirtualRepositoriesMap(
-            OrderedMap<String, VirtualRepoDescriptor> virtualRepositoriesMap);
+    void setVirtualRepositoriesMap(Map<String, VirtualRepoDescriptor> virtualRepositoriesMap);
 
     void setProxies(List<ProxyDescriptor> proxies);
 
@@ -120,10 +119,11 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
     /**
      * Adds the proxy to the proxies list.
      *
-     * @param proxyDescriptor The new proxy to add.
+     * @param proxyDescriptor         The new proxy to add.
+     * @param defaultForAllRemoteRepo
      * @throws AlreadyExistsException If any proxy with the same key already exists.
      */
-    void addProxy(ProxyDescriptor proxyDescriptor);
+    void addProxy(ProxyDescriptor proxyDescriptor, boolean defaultForAllRemoteRepo);
 
     /**
      * Removes the proxy with the specified key from the proxies list. Will also remove any references to this proxy

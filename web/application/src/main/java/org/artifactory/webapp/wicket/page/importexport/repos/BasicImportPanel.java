@@ -100,8 +100,8 @@ public abstract class BasicImportPanel extends TitledPanel {
     private Form createImportForm() {
         Form importForm = new Form("importForm");
         add(importForm);
-        //Add the dropdown choice for the targetRepo
-        final IModel targetRepoModel = new PropertyModel(this, "targetRepoKey");
+        //Add the drop down choice for the targetRepo
+        IModel<String> targetRepoModel = new PropertyModel<String>(this, "targetRepoKey");
         List<LocalRepoDescriptor> localRepos =
                 repositoryService.getLocalAndCachedRepoDescriptors();
         final List<String> repoKeys = new ArrayList<String>(localRepos.size() + 1);
@@ -111,7 +111,7 @@ public abstract class BasicImportPanel extends TitledPanel {
             String key = localRepo.getKey();
             repoKeys.add(key);
         }
-        DropDownChoice targetRepoDdc = new DropDownChoice("targetRepo", targetRepoModel, repoKeys);
+        DropDownChoice<String> targetRepoDdc = new DropDownChoice<String>("targetRepo", targetRepoModel, repoKeys);
         targetRepoDdc.setDefaultModelObject(ImportExportReposPage.ALL_REPOS);
         importForm.add(targetRepoDdc);
         final MultiStatusHolder status = new MultiStatusHolder();
@@ -151,7 +151,7 @@ public abstract class BasicImportPanel extends TitledPanel {
                     }
                     List<StatusEntry> errors = status.getErrors();
                     List<StatusEntry> warnings = status.getWarnings();
-                    CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                    String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                     String logs = "Please review the <a href=\"" + systemLogsPage +
                             "\">log</a> for further information.";
                     if (!errors.isEmpty()) {
@@ -198,7 +198,7 @@ public abstract class BasicImportPanel extends TitledPanel {
         StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose"));
         verboseCheckbox.setRequired(false);
         form.add(verboseCheckbox);
-        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+        String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
         form.add(new HelpBubble("verboseHelp", "Lowers the log level to debug and redirects the output from the " +
                 "standard log to the import-export log." +
                 "\nHint: You can monitor the log in the <a href=\"" + systemLogsPage + "\">'System Logs'</a> page."));

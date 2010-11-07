@@ -93,12 +93,11 @@ public class ProxiesListPanel extends ModalListPanel<ProxyDescriptor> {
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new PropertyColumn(new Model("Proxy Key"), "key", "key"));
-        columns.add(new PropertyColumn(new Model("Host"), "host", "host"));
-        columns.add(new BooleanColumn(new Model("Default"), "default", "defaultProxy"));
-        columns.add(new PropertyColumn(new Model("Port"), "port", "port"));
-
+    protected void addColumns(List<? super IColumn<ProxyDescriptor>> columns) {
+        columns.add(new PropertyColumn<ProxyDescriptor>(Model.of("Proxy Key"), "key", "key"));
+        columns.add(new PropertyColumn<ProxyDescriptor>(Model.of("Host"), "host", "host"));
+        columns.add(new BooleanColumn<ProxyDescriptor>(Model.of("Default"), "default", "defaultProxy"));
+        columns.add(new PropertyColumn<ProxyDescriptor>(Model.of("Port"), "port", "port"));
     }
 
     MutableCentralConfigDescriptor getEditingDescriptor() {

@@ -18,9 +18,8 @@
 
 package org.artifactory.repo.virtual;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
@@ -33,6 +32,7 @@ import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
@@ -43,7 +43,12 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.maven.versioning.MavenVersionComparator;
 import org.artifactory.md.MetadataInfo;
-import org.artifactory.repo.*;
+import org.artifactory.repo.LocalCacheRepo;
+import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RealRepo;
+import org.artifactory.repo.RemoteRepo;
+import org.artifactory.repo.Repo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -59,6 +64,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -139,7 +145,13 @@ public class VirtualRepoDownloadStrategy {
     }
 
     public RepoResource getInfoFromLocalStorage(RequestContext context) {
-        return virtualRepo.storageMixin.getInfo(context);
+        try {
+            return virtualRepo.storageMixin.getInfo(context);
+        } catch (FileExpectedException e) {
+            // see RTFACT-3721
+            return new UnfoundRepoResource(new RepoPathImpl(virtualRepo.getKey(), context.getResourcePath()),
+                    "File expected but the cache already points to directory");
+        }
     }
 
     public RepoResource getInfoFromSearchableRepositories(RequestContext context) {
@@ -174,14 +186,11 @@ public class VirtualRepoDownloadStrategy {
      *         virtual repo they belong to.
      */
     List<RealRepo> assembleSearchRepositoriesList(RepoPath repoPath, RequestContext context) {
-        OrderedMap<String, LocalRepo> searchableLocalRepositories = newOrderedMap();
-        OrderedMap<String, LocalCacheRepo> searchableLocalCacheRepositories = newOrderedMap();
-        OrderedMap<String, RemoteRepo> searchableRemoteRepositories = newOrderedMap();
-        deeplyAssembleSearchRepositoryLists(repoPath,
-                new ListOrderedMap<String, VirtualRepo>(),
-                searchableLocalRepositories,
-                searchableLocalCacheRepositories,
-                searchableRemoteRepositories);
+        Map<String, LocalRepo> searchableLocalRepositories = Maps.newLinkedHashMap();
+        Map<String, LocalCacheRepo> searchableLocalCacheRepositories = Maps.newLinkedHashMap();
+        Map<String, RemoteRepo> searchableRemoteRepositories = Maps.newLinkedHashMap();
+        deeplyAssembleSearchRepositoryLists(repoPath, Maps.<String, VirtualRepo>newLinkedHashMap(),
+                searchableLocalRepositories, searchableLocalCacheRepositories, searchableRemoteRepositories);
 
         //Add all local repositories
         List<RealRepo> repositories = new ArrayList<RealRepo>();
@@ -415,7 +424,7 @@ public class VirtualRepoDownloadStrategy {
     }
 
     private RepoResource createMavenMetadataFoundResource(RepoPath mavenMetadataRepoPath,
-                                                          MergedMavenMetadata mergedMavenMetadata) throws IOException {
+            MergedMavenMetadata mergedMavenMetadata) throws IOException {
         String metadataContent = MavenModelUtils.mavenMetadataToString(mergedMavenMetadata.getMetadata());
         MetadataInfo metadataInfo = new MetadataInfoImpl(mavenMetadataRepoPath);
         metadataInfo.setLastModified(mergedMavenMetadata.getLastModified());
@@ -438,10 +447,10 @@ public class VirtualRepoDownloadStrategy {
      * repoPath pattern are not added to the list and are not recursively visited.
      */
     private void deeplyAssembleSearchRepositoryLists(
-            RepoPath repoPath, OrderedMap<String, VirtualRepo> visitedVirtualRepositories,
-            OrderedMap<String, LocalRepo> searchableLocalRepositories,
-            OrderedMap<String, LocalCacheRepo> searchableLocalCacheRepositories,
-            OrderedMap<String, RemoteRepo> searchableRemoteRepositories) {
+            RepoPath repoPath, Map<String, VirtualRepo> visitedVirtualRepositories,
+            Map<String, LocalRepo> searchableLocalRepositories,
+            Map<String, LocalCacheRepo> searchableLocalCacheRepositories,
+            Map<String, RemoteRepo> searchableRemoteRepositories) {
 
         if (!virtualRepo.accepts(repoPath)) {
             // includes/excludes should not affect system paths
@@ -475,10 +484,6 @@ public class VirtualRepoDownloadStrategy {
                         searchableRemoteRepositories);
             }
         }
-    }
-
-    private <K, V> OrderedMap<K, V> newOrderedMap() {
-        return new ListOrderedMap<K, V>();
     }
 
     private static class MergedMavenMetadata {

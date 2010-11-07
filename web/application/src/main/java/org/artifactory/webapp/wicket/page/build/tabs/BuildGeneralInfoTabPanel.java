@@ -29,6 +29,7 @@ import org.artifactory.addon.wicket.AddonType;
 import org.artifactory.addon.wicket.SearchAddon;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
+import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
 import org.jfrog.build.api.Agent;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildAgent;
@@ -135,6 +136,8 @@ public class BuildGeneralInfoTabPanel extends Panel {
     private void addSaveSearchResultsPanel(Build build) {
         SearchAddon searchAddon = addonsManager.addonByType(SearchAddon.class);
         //Make the search addon the requesting, so if it is disabled, it's because of the search
-        add(searchAddon.getBuildSearchResultsPanel(AddonType.SEARCH, build));
+        SaveSearchResultsPanel panel = searchAddon.getBuildSearchResultsPanel(AddonType.SEARCH, build);
+        panel.init();
+        add(panel);
     }
 }

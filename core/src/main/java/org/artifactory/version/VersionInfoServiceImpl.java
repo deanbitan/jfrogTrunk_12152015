@@ -25,34 +25,39 @@ import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.cache.ArtifactoryCache;
 import org.artifactory.api.cache.Cache;
 import org.artifactory.api.cache.CacheService;
-import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.version.ArtifactoryVersioning;
 import org.artifactory.api.version.VersionHolder;
 import org.artifactory.api.version.VersionInfoService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.TaskService;
-import org.artifactory.schedule.quartz.QuartzTask;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.HttpUtils;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
- * Main implementation of the Version Info Service. Can be used to etrieve the latest version and revision numbers.
+ * Main implementation of the Version Info Service. Can be used to retrieve the latest version and revision numbers.
  *
  * @author Noam Tenne
  */
 @Service
 public class VersionInfoServiceImpl implements VersionInfoService {
+    private static final Logger log = LoggerFactory.getLogger(VersionInfoServiceImpl.class);
+
     /**
      * URL of remote version info
      */
@@ -77,45 +82,23 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     /**
      * {@inheritDoc}
      */
-    public String getLatestVersion(Map<String, String> headersMap, boolean release) {
+    public VersionHolder getLatestVersion(Map<String, String> headersMap, boolean release) {
         ArtifactoryVersioning versioning = getVersioning(headersMap);
         if (release) {
-            return versioning.getRelease().getVersion();
+            return versioning.getRelease();
         }
-        return versioning.getLatest().getVersion();
+        return versioning.getLatest();
     }
 
     /**
      * {@inheritDoc}
      */
-    public String getLatestRevision(Map<String, String> headersMap, boolean release) {
-        ArtifactoryVersioning versioning = getVersioning(headersMap);
-        if (release) {
-            return versioning.getRelease().getRevision();
-        }
-        return versioning.getLatest().getRevision();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getLatestWikiUrl(Map<String, String> headersMap, boolean release) {
-        ArtifactoryVersioning versioning = getVersioning(headersMap);
-        if (release) {
-            return versioning.getRelease().getWikiUrl();
-        }
-        return versioning.getLatest().getWikiUrl();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getLatestVersionFromCache(boolean release) {
+    public VersionHolder getLatestVersionFromCache(boolean release) {
         ArtifactoryVersioning cachedVersioning = getVersioningFromCache();
         if (cachedVersioning != null) {
-            return release ? cachedVersioning.getRelease().getVersion() : cachedVersioning.getLatest().getVersion();
+            return release ? cachedVersioning.getRelease() : cachedVersioning.getLatest();
         } else {
-            return SERVICE_UNAVAILABLE;
+            return createServiceUnavailableVersioning().getRelease();
         }
     }
 
@@ -128,15 +111,9 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     private ArtifactoryVersioning getVersioning(Map<String, String> headersMap) {
         ArtifactoryVersioning versioning = getVersioningFromCache();
         if (versioning == null) {
-            synchronized (this) {
-                if (getVersioningFromCache() == null && !taskService.hasTaskOfType(VersioningRetrieverJob.class)) {
-                    // get the version asynchronously from the remote server
-                    QuartzTask versioningRetriever = new QuartzTask(VersioningRetrieverJob.class, 0);
-                    versioningRetriever.addAttribute(VersioningRetrieverJob.ATTR_HEADERS, headersMap);
-                    versioningRetriever.setSingleton(true);
-                    taskService.startTask(versioningRetriever);
-                }
-            }
+            // get the version asynchronously from the remote server
+            getTransactionalMe().getRemoteVersioningAsync(headersMap);
+            // return service unavailable
             versioning = createServiceUnavailableVersioning();
         }
         return versioning;
@@ -147,12 +124,12 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     }
 
     /**
-     * Retrieves the remote version info
+     * Retrieves the remote version info asynchronously.
      *
      * @param headersMap A map of the needed headers
-     * @return ArtifactoryVersioning - Latest version info
+     * @return ArtifactoryVersioning - Versioning info from the server
      */
-    public ArtifactoryVersioning getRemoteVersioning(Map<String, String> headersMap) {
+    public synchronized Future<ArtifactoryVersioning> getRemoteVersioningAsync(Map<String, String> headersMap) {
         GetMethod getMethod = new GetMethod(URL);
         NameValuePair[] httpMethodParams = new NameValuePair[]{
                 new NameValuePair(ConstantValues.artifactoryVersion.getPropertyName(),
@@ -180,19 +157,27 @@ public class VersionInfoServiceImpl implements VersionInfoService {
         ProxyDescriptor proxy = InternalContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
         HttpClientUtils.configureProxy(client, proxy);
 
-        String returnedInfo = null;
+        ArtifactoryVersioning result;
         try {
+            log.debug("Retrieving Artifactory versioning from remote server");
             client.executeMethod(getMethod);
+            String returnedInfo = null;
             if (getMethod.getStatusCode() == HttpStatus.SC_OK) {
                 returnedInfo = getMethod.getResponseBodyAsString();
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
+            if (StringUtils.isBlank(returnedInfo)) {
+                log.debug("Versioning response contains no data");
+                result = createServiceUnavailableVersioning();
+            } else {
+                result = VersionParser.parse(returnedInfo);
+            }
+        } catch (Exception e) {
+            log.debug("Failed to retrieve Artifactory versioning from remote server {}", e.getMessage());
+            result = createServiceUnavailableVersioning();
         }
-        if (("".equals(returnedInfo)) || (returnedInfo == null)) {
-            throw new ItemNotFoundRuntimeException("Requested field was not found.");
-        }
-        return VersionParser.parse(returnedInfo);
+
+        getCache().put(VersionInfoServiceImpl.CACHE_KEY, result);
+        return new AsyncResult<ArtifactoryVersioning>(result);
     }
 
     private void setHeader(GetMethod getMethod, Map<String, String> headersMap, String headerKey) {
@@ -206,7 +191,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     }
 
     private String adjustRefererValue(Map<String, String> headersMap, String headerVal) {
-        //Append the artifactory uagent to the referer
+        //Append the artifactory user agent to the referer
         if (headerVal == null) {
             //Fallback to host
             headerVal = headersMap.get("HOST");
@@ -235,5 +220,9 @@ public class VersionInfoServiceImpl implements VersionInfoService {
 
     private ArtifactoryVersioning createServiceUnavailableVersioning() {
         return new ArtifactoryVersioning(VersionHolder.VERSION_UNAVAILABLE, VersionHolder.VERSION_UNAVAILABLE);
+    }
+
+    private VersionInfoService getTransactionalMe() {
+        return ContextHelper.get().beanForType(VersionInfoService.class);
     }
 }

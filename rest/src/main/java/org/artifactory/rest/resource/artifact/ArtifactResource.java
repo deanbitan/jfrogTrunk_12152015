@@ -19,27 +19,30 @@
 package org.artifactory.rest.resource.artifact;
 
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.properties.PropertiesService;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
-import org.artifactory.api.rest.artifact.*;
+import org.artifactory.api.rest.artifact.FileList;
+import org.artifactory.api.rest.artifact.ItemLastModified;
+import org.artifactory.api.rest.artifact.ItemMetadata;
+import org.artifactory.api.rest.artifact.ItemMetadataNames;
+import org.artifactory.api.rest.artifact.ItemProperties;
+import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
+import org.artifactory.api.rest.artifact.RestFileInfo;
+import org.artifactory.api.rest.artifact.RestFolderInfo;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
-import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -49,7 +52,7 @@ import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.rest.common.list.PropertiesList;
+import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.util.DoesNotExistException;
@@ -63,13 +66,20 @@ import org.springframework.stereotype.Component;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 import static org.artifactory.api.rest.constant.ArtifactRestConstants.*;
 import static org.artifactory.api.rest.constant.RestConstants.PATH_API;
@@ -101,20 +111,17 @@ public class ArtifactResource {
     @Autowired
     private AuthorizationService authorizationService;
 
-    @Autowired
-    private PropertiesService propertiesService;
-
     @GET
     @Path("{path: .+}")
     @Produces({MediaType.APPLICATION_JSON, MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_METADATA_NAMES, MT_ITEM_PROPERTIES,
             MT_ITEM_METADATA, MT_FILE_LIST, MT_ITEM_LAST_MODIFIED})
     public Object getStorageInfo(@PathParam("path") String path,
-                                 @QueryParam("mdns") String mdns,
-                                 @QueryParam("md") StringList md,
-                                 @QueryParam("list") String list,
-                                 @QueryParam("deep") int deep,
-                                 @QueryParam("properties") StringList properties,
-                                 @QueryParam("lastModified") String lastModified) throws IOException {
+            @QueryParam("mdns") String mdns,
+            @QueryParam("md") StringList md,
+            @QueryParam("list") String list,
+            @QueryParam("deep") int deep,
+            @QueryParam("properties") StringList properties,
+            @QueryParam("lastModified") String lastModified) throws IOException {
 
         //Divert to file list request if the list param is mentioned
         if (list != null) {
@@ -478,63 +485,9 @@ public class ArtifactResource {
 
     @PUT
     @Path("{path: .+}")
-    public Object savePropertiesOnPath(@PathParam("path") String path, @QueryParam("recursive") String recursive,
-                                       @QueryParam("properties") PropertiesList properties) throws IOException {
-        RepoPath repoPath = RepoPathImpl.fromRepoPathPath(path);
-        if (!repositoryService.exists(repoPath)) {
-            RestUtils.sendNotFoundResponse(response);
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-        if (!authorizationService.canAnnotate(repoPath)) {
-            RestUtils.sendUnauthorizedResponse(response,
-                    "User: " + authorizationService.currentUsername() + " cannot annotate repository path: " + repoPath);
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
-        boolean isRecursive = false;
-        ItemInfo itemInfo = repositoryService.getItemInfo(repoPath);
-        if (StringUtils.isBlank(recursive)) {
-            if (itemInfo.isFolder()) {
-                isRecursive = true;
-            }
-        } else {
-            isRecursive = Integer.parseInt(recursive) != 0;
-        }
-        Map<Property, List<String>> propertyMapFromRequest = createPropertyMapFromRequest(properties);
-        if (isRecursive) {
-            for (Map.Entry<Property, List<String>> propertyStringEntry : propertyMapFromRequest.entrySet()) {
-                List<String> value = propertyStringEntry.getValue();
-                String[] values = new String[value.size()];
-                value.toArray(values);
-                propertiesService.addPropertyRecursively(repoPath, null, propertyStringEntry.getKey(), values);
-            }
-        } else {
-            for (Map.Entry<Property, List<String>> propertyStringEntry : propertyMapFromRequest.entrySet()) {
-                List<String> value = propertyStringEntry.getValue();
-                String[] values = new String[value.size()];
-                value.toArray(values);
-                propertiesService.addProperty(repoPath, null, propertyStringEntry.getKey(), values);
-            }
-        }
-        return Response.noContent().build();
-    }
-
-    private Map<Property, List<String>> createPropertyMapFromRequest(List<String> request) {
-        Map<Property, List<String>> map = Maps.newHashMap();
-        if (request == null || request.isEmpty()) {
-            return map;
-        }
-        for (String property : request) {
-            String[] split = StringUtils.split(property, "=");
-            if (split.length == 2) {
-                List<String> values = Lists.newArrayList();
-                Property propertyDescriptor = new Property();
-                propertyDescriptor.setName(split[0]);
-                String value = split[1];
-                String[] valueSplit = StringUtils.split(value, ",");
-                values.addAll(Arrays.asList(valueSplit));
-                map.put(propertyDescriptor, values);
-            }
-        }
-        return map;
+    public Response savePropertiesOnPath(@PathParam("path") String path, @QueryParam("recursive") String recursive,
+            @QueryParam("properties") KeyValueList properties) {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return restAddon.savePropertiesOnPath(path, recursive, properties);
     }
 }

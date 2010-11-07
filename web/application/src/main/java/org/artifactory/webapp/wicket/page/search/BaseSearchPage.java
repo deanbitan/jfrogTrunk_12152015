@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.search;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
@@ -29,13 +30,17 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.PropertiesAddon;
 import org.artifactory.common.wicket.component.panel.sidemenu.SubMenuPanel;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.search.archive.ArchiveSearchPanel;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPanel;
 import org.artifactory.webapp.wicket.page.search.gavc.GavcSearchPanel;
 import org.artifactory.webapp.wicket.page.search.metadata.MetadataSearchPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
+import org.slf4j.Logger;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.List;
 
 /**
@@ -44,10 +49,12 @@ import java.util.List;
  * @author Noam Tenne
  */
 public abstract class BaseSearchPage extends AuthenticatedPage {
+    private static final Logger log = LoggerFactory.getLogger(BaseSearchPage.class);
+
+    public static final String QUERY_PARAM = "q";
 
     @SpringBean
     private AddonsManager addons;
-
     public static final int ARTIFACT_SEARCH_INDEX = 0;
     public static final int ARCHIVE_SEARCH_INDEX = 1;
     public static final int GAVC_SEARCH_INDEX = 2;
@@ -57,17 +64,20 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
     private String searchQuery;
 
     public BaseSearchPage() {
-        this(null);
-    }
-
-    public BaseSearchPage(String query) {
-        searchQuery = query;
+        String requestQuery = getRequest().getParameter(QUERY_PARAM);
+        if (StringUtils.isNotBlank(requestQuery)) {
+            try {
+                searchQuery = URLDecoder.decode(requestQuery, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                log.error(String.format("Unable to extract the query request parameter '%s'", requestQuery), e);
+            }
+        }
         addTabs();
     }
 
     private void addTabs() {
         List<ITab> tabs = Lists.newArrayList();
-        tabs.add(new AbstractTab(new Model("Quick Search")) {
+        tabs.add(new AbstractTab(Model.of("Quick Search")) {
             @Override
             public Panel getPanel(String panelId) {
                 /**
@@ -81,14 +91,14 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
             }
         });
 
-        tabs.add(new AbstractTab(new Model("Class Search")) {
+        tabs.add(new AbstractTab(Model.of("Class Search")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new ArchiveSearchPanel(BaseSearchPage.this, panelId);
             }
         });
 
-        tabs.add(new AbstractTab(new Model("GAVC Search")) {
+        tabs.add(new AbstractTab(Model.of("GAVC Search")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new GavcSearchPanel(BaseSearchPage.this, panelId);
@@ -99,7 +109,7 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
         ITab searchPanel = propertiesAddon.getPropertySearchTabPanel(this, "Property Search");
         tabs.add(searchPanel);
 
-        tabs.add(new AbstractTab(new Model("POM/XML Search")) {
+        tabs.add(new AbstractTab(Model.of("POM/XML Search")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new MetadataSearchPanel(BaseSearchPage.this, panelId);

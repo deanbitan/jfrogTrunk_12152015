@@ -18,8 +18,7 @@
 
 package org.artifactory.descriptor.repo.jaxb;
 
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
+import com.google.common.collect.Maps;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 
@@ -28,16 +27,17 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Yoav Landman
  */
 public class LocalRepositoriesMapAdapter extends
-        XmlAdapter<LocalRepositoriesMapAdapter.Wrappper, OrderedMap<String, LocalRepoDescriptor>> {
+        XmlAdapter<LocalRepositoriesMapAdapter.Wrappper, Map<String, LocalRepoDescriptor>> {
 
-    public OrderedMap<String, LocalRepoDescriptor> unmarshal(Wrappper wrapper) throws Exception {
-        OrderedMap<String, LocalRepoDescriptor> localRepositoriesMap =
-                new ListOrderedMap<String, LocalRepoDescriptor>();
+    @Override
+    public Map<String, LocalRepoDescriptor> unmarshal(Wrappper wrapper) throws Exception {
+        Map<String, LocalRepoDescriptor> localRepositoriesMap = Maps.newLinkedHashMap();
         for (LocalRepoDescriptor repository : wrapper.getList()) {
             String key = repository.getKey();
             LocalRepoDescriptor repo = localRepositoriesMap.put(key, repository);
@@ -51,7 +51,8 @@ public class LocalRepositoriesMapAdapter extends
         return localRepositoriesMap;
     }
 
-    public Wrappper marshal(OrderedMap<String, LocalRepoDescriptor> map) throws Exception {
+    @Override
+    public Wrappper marshal(Map<String, LocalRepoDescriptor> map) throws Exception {
         return new Wrappper(map);
     }
 
@@ -63,7 +64,7 @@ public class LocalRepositoriesMapAdapter extends
         public Wrappper() {
         }
 
-        public Wrappper(OrderedMap<String, LocalRepoDescriptor> map) {
+        public Wrappper(Map<String, LocalRepoDescriptor> map) {
             for (LocalRepoDescriptor repo : map.values()) {
                 list.add(repo);
             }

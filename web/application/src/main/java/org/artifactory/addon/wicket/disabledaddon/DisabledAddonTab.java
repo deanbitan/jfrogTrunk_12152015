@@ -31,7 +31,7 @@ import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledTab;
 public class DisabledAddonTab extends DisabledTab {
     private AddonType addon;
 
-    public DisabledAddonTab(IModel title, AddonType addon) {
+    public DisabledAddonTab(IModel<String> title, AddonType addon) {
         super(title);
         this.addon = addon;
     }

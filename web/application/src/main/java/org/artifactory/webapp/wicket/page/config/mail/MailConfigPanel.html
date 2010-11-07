@@ -3,6 +3,15 @@
         <div class="border-content mail-config">
 
             <div class="field-row">
+                <div class="field">
+                    <div class="value">
+                        <input wicket:id="enabled" type="checkbox"/>
+                        <span wicket:id="enabled.help"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-row">
                 <div class="field required">
                     <label>Host</label>
                     <span wicket:id="host.help"></span>
@@ -28,7 +37,7 @@
                     <span wicket:id="username.help"></span>
 
                     <div class="value">
-                        <input wicket:id="username" type="text" class="text"/>
+                        <input autocomplete="off" wicket:id="username" type="text" class="text"/>
                     </div>
                 </div>
 
@@ -37,7 +46,7 @@
                     <span wicket:id="password.help"></span>
 
                     <div class="value">
-                        <input wicket:id="password" type="password" class="text"/>
+                        <input autocomplete="off" wicket:id="password" type="password" class="text"/>
                     </div>
                 </div>
             </div>
@@ -58,6 +67,17 @@
 
                     <div class="value">
                         <input wicket:id="subjectPrefix" type="text" class="text"/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label>Artifactory URL</label>
+                    <span wicket:id="artifactoryUrl.help"></span>
+
+                    <div class="artifactory-url value">
+                        <input wicket:id="artifactoryUrl" type="text" class="artifactory-url text"/>
                     </div>
                 </div>
             </div>

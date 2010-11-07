@@ -163,7 +163,7 @@ public class ImportZipPanel extends BasicImportPanel implements UploadListener {
             getImportForm().setVisible(true);
         } catch (Exception e) {
             String errorMessage = "Error during import of " + uploadedFile;
-            CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+            String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
             String logs = ". Please review the <a href=\"" + systemLogsPage + "\">log</a> for further information.";
             error(errorMessage + logs);
             log.error(errorMessage, e);

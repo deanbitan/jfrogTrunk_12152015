@@ -52,43 +52,21 @@ import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 /**
  * @author Yoav Aharoni
  */
-public class DragDropSelection<T> extends FormComponentPanel<T> {
-    private IModel choicesModel;
-    private IChoiceRenderer renderer;
+public class DragDropSelection<T extends Serializable> extends FormComponentPanel<T> {
+    private IModel<? extends List<? extends T>> choicesModel;
+    private IChoiceRenderer<T> renderer;
     private List<T> unselectedItems;
 
-    public DragDropSelection(final String id) {
-        this(id, new ArrayList<T>(), new ChoiceRenderer<T>());
-    }
-
     public DragDropSelection(final String id, final List<? extends T> choices) {
-        this(id, choices, new ChoiceRenderer<T>());
-    }
-
-    public DragDropSelection(final String id, final List<? extends T> choices,
-            final IChoiceRenderer<? super T> renderer) {
-        this(id, new WildcardListModel<T>(choices), renderer);
+        this(id, new WildcardListModel<T>(choices), new ChoiceRenderer<T>());
     }
 
     public DragDropSelection(final String id, IModel<T> model, final List<? extends T> choices) {
-        this(id, model, choices, new ChoiceRenderer<T>());
-    }
-
-    public DragDropSelection(final String id, IModel<T> model, final List<? extends T> choices,
-            final IChoiceRenderer<? super T> renderer) {
-        this(id, model, new WildcardListModel<T>(choices), renderer);
-    }
-
-    public DragDropSelection(final String id, final IModel<? extends List<? extends T>> choicesModel) {
-        this(id, choicesModel, new ChoiceRenderer<T>());
-    }
-
-    public DragDropSelection(final String id, IModel<T> model, final IModel<? extends List<? extends T>> choicesModel) {
-        this(id, model, choicesModel, new ChoiceRenderer<T>());
+        this(id, model, new WildcardListModel<T>(choices), new ChoiceRenderer<T>());
     }
 
     public DragDropSelection(final String id, final IModel<? extends List<? extends T>> choicesModel,
-            final IChoiceRenderer<? super T> renderer) {
+            IChoiceRenderer<T> renderer) {
         super(id);
         this.choicesModel = choicesModel;
         this.renderer = renderer;
@@ -96,7 +74,7 @@ public class DragDropSelection<T> extends FormComponentPanel<T> {
     }
 
     public DragDropSelection(final String id, IModel<T> model, final IModel<? extends List<? extends T>> choicesModel,
-            final IChoiceRenderer<? super T> renderer) {
+            final IChoiceRenderer<T> renderer) {
         super(id, model);
         this.choicesModel = choicesModel;
         this.renderer = renderer;
@@ -213,19 +191,20 @@ public class DragDropSelection<T> extends FormComponentPanel<T> {
         return choicesModel;
     }
 
-    public void setChoices(IModel choices) {
+    public void setChoices(IModel<? extends List<? extends T>> choices) {
         choicesModel = choices;
     }
 
-    public void setChoices(List<T> choices) {
-        choicesModel = new Model<Serializable>((Serializable) choices);
+    @SuppressWarnings({"unchecked"})
+    public void setChoices(List<? extends T> choices) {
+        choicesModel = new Model((Serializable) choices);
     }
 
-    public IChoiceRenderer getChoiceRenderer() {
+    public IChoiceRenderer<T> getChoiceRenderer() {
         return renderer;
     }
 
-    public void setChoiceRenderer(IChoiceRenderer renderer) {
+    public void setChoiceRenderer(IChoiceRenderer<T> renderer) {
         this.renderer = renderer;
     }
 
@@ -237,7 +216,7 @@ public class DragDropSelection<T> extends FormComponentPanel<T> {
 
     @SuppressWarnings({"unchecked"})
     private void updateSourceList() {
-        unselectedItems = new ArrayList<T>((Collection<T>) choicesModel.getObject());
+        unselectedItems = new ArrayList<T>(choicesModel.getObject());
         Collection<T> selected = (Collection<T>) getDefaultModelObject();
         if (isNotEmpty(selected)) {
             unselectedItems.removeAll(selected);
@@ -248,24 +227,25 @@ public class DragDropSelection<T> extends FormComponentPanel<T> {
         return null;
     }
 
-    private class SourceListModel extends AbstractReadOnlyModel {
+    private class SourceListModel extends AbstractReadOnlyModel<List<? extends T>> {
         @Override
-        public Object getObject() {
+        public List<? extends T> getObject() {
             return unselectedItems;
         }
     }
 
-    private class TargetListModel extends AbstractReadOnlyModel {
+    private class TargetListModel extends AbstractReadOnlyModel<List<? extends T>> {
+        @SuppressWarnings({"unchecked"})
         @Override
-        public Object getObject() {
-            Collection<?> selected = (Collection<?>) getDefaultModelObject();
+        public List<? extends T> getObject() {
+            Collection<T> selected = (Collection<T>) getDefaultModelObject();
             if (selected instanceof List) {
-                return selected;
+                return (List<? extends T>) selected;
             }
             if (isEmpty(selected)) {
                 return Collections.emptyList();
             }
-            return new ArrayList<Object>(selected);
+            return new ArrayList<T>(selected);
         }
     }
 
@@ -283,8 +263,8 @@ public class DragDropSelection<T> extends FormComponentPanel<T> {
         }
     }
 
-    private abstract class BaseDragDropList extends DragDropList {
-        private BaseDragDropList(String id, IModel listModel) {
+    private abstract class BaseDragDropList extends DragDropList<T> {
+        private BaseDragDropList(String id, IModel<? extends List<? extends T>> listModel) {
             super(id, listModel, getChoiceRenderer());
             setOutputMarkupId(true);
         }
@@ -300,7 +280,7 @@ public class DragDropSelection<T> extends FormComponentPanel<T> {
         }
 
         @Override
-        protected void populateItem(ListItem item) {
+        protected void populateItem(ListItem<T> item) {
             super.populateItem(item);
             DragDropSelection.this.populateItem(item);
         }

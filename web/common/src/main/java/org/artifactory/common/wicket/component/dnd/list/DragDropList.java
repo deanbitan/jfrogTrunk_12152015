@@ -29,13 +29,15 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.artifactory.common.wicket.behavior.CssClass;
 
+import java.util.List;
+
 /**
  * @author Yoav Aharoni
  */
-public abstract class DragDropList extends Panel {
-    private IChoiceRenderer renderer;
+public abstract class DragDropList<T> extends Panel {
+    private IChoiceRenderer<T> renderer;
 
-    public DragDropList(String id, IModel listModel, IChoiceRenderer renderer) {
+    public DragDropList(String id, IModel<? extends List<? extends T>> listModel, IChoiceRenderer<T> renderer) {
         super(id, listModel);
         this.renderer = renderer;
 
@@ -48,11 +50,11 @@ public abstract class DragDropList extends Panel {
 
     public abstract String getDndValue(ListItem item);
 
-    protected void populateItem(ListItem item) {
+    protected void populateItem(ListItem<T> item) {
         item.add(new SimpleAttributeModifier("dndType", getDndValue(item)));
         item.add(new CssClass("dojoDndItem"));
 
-        String displayValue = renderer.getDisplayValue(item.getDefaultModelObject()).toString();
+        String displayValue = renderer.getDisplayValue(item.getModelObject()).toString();
         item.add(new Label("value", displayValue));
 
         String sortValue = getSortValue(item);
@@ -61,17 +63,17 @@ public abstract class DragDropList extends Panel {
         item.add(sortLabel);
     }
 
-    protected String getSortValue(ListItem item) {
+    protected String getSortValue(ListItem<T> item) {
         return null;
     }
 
-    private class DndListView extends ListView {
-        private DndListView(String id, IModel model) {
+    private class DndListView extends ListView<T> {
+        private DndListView(String id, IModel<? extends List<? extends T>> model) {
             super(id, model);
         }
 
         @Override
-        protected void populateItem(ListItem item) {
+        protected void populateItem(ListItem<T> item) {
             DragDropList.this.populateItem(item);
         }
     }

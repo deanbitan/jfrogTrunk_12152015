@@ -74,19 +74,19 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
      * Adds the artifacts table
      */
     protected void addTable() {
-        List<IColumn> columns = Lists.newArrayList();
-        columns.add(new ActionsColumn(""));
-        columns.add(new PropertyColumn(new Model("Name"), "name", "artifact.name"));
-        columns.add(new PropertyColumn(new Model("Type"), "type", "artifact.type"));
-        columns.add(new PropertyColumn(new Model("Repo Path"), "repoPath"));
-
-        add(new SortableTable("artifacts", columns, new ModuleArtifactsDataProvider(), 10));
+        List<IColumn<ModuleArtifactActionableItem>> columns = Lists.newArrayList();
+        columns.add(new ActionsColumn<ModuleArtifactActionableItem>(""));
+        columns.add(new PropertyColumn<ModuleArtifactActionableItem>(Model.of("Name"), "name", "artifact.name"));
+        columns.add(new PropertyColumn<ModuleArtifactActionableItem>(Model.of("Type"), "type", "artifact.type"));
+        columns.add(new PropertyColumn<ModuleArtifactActionableItem>(Model.of("Repo Path"), "repoPath"));
+        add(new SortableTable<ModuleArtifactActionableItem>(
+                "artifacts", columns, new ModuleArtifactsDataProvider(), 10));
     }
 
     /**
      * The published module's artifacts table data provider
      */
-    private class ModuleArtifactsDataProvider extends SortableDataProvider {
+    private class ModuleArtifactsDataProvider extends SortableDataProvider<ModuleArtifactActionableItem> {
 
         private List<Artifact> artifactsList;
 
@@ -98,7 +98,7 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
             this.artifactsList = getArtifacts();
         }
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<ModuleArtifactActionableItem> iterator(int first, int count) {
             ListPropertySorter.sort(artifactsList, getSort());
             List<ModuleArtifactActionableItem> listToReturn =
                     getModuleArtifactActionableItems(artifactsList.subList(first, first + count));
@@ -109,8 +109,8 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
             return artifactsList.size();
         }
 
-        public IModel model(Object object) {
-            return new Model((ModuleArtifactActionableItem) object);
+        public IModel<ModuleArtifactActionableItem> model(ModuleArtifactActionableItem object) {
+            return new Model<ModuleArtifactActionableItem>(object);
         }
     }
 }

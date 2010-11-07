@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.security.user;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.markup.html.link.AbstractLink;
@@ -43,6 +44,7 @@ import org.artifactory.common.wicket.component.table.columns.TooltipLabelColumn;
 import org.artifactory.common.wicket.component.table.columns.checkbox.SelectAllCheckboxColumn;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.security.AccessLogger;
 import org.artifactory.webapp.wicket.page.security.user.column.UserColumn;
 import org.artifactory.webapp.wicket.page.security.user.permission.UserPermissionsPanel;
 import org.slf4j.Logger;
@@ -57,9 +59,7 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 public class UsersTable extends ModalListPanel<UserModel> {
-
     private static final Logger log = LoggerFactory.getLogger(UsersTable.class);
-
 
     @SpringBean
     private UserGroupService userGroupService;
@@ -91,24 +91,25 @@ public class UsersTable extends ModalListPanel<UserModel> {
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
+    protected void addColumns(List<? super IColumn<UserModel>> columns) {
         columns.add(new SelectAllCheckboxColumn<UserModel>("", "selected", null));
-        columns.add(new UserColumn(new Model("User Name")));
+        columns.add(new UserColumn("User Name"));
         List<LdapSetting> ldapSettings = centralConfigService.getDescriptor().getSecurity().getEnabledLdapSettings();
         for (LdapSetting ldapSetting : ldapSettings) {
             columns.add(createExternalStatusColumn(ldapSetting));
         }
-        columns.add(new BooleanColumn(new Model("Admin"), "admin", "admin"));
-        columns.add(new PropertyColumn(new Model("Last Login"), "lastLoginTimeMillis", "lastLoginString"));
-        //columns.add(new PropertyColumn(new Model("Last Access"), "lastAccessTimeMillis", "lastAccessString"));
+        columns.add(new BooleanColumn<UserModel>("Admin", "admin", "admin"));
+        columns.add(new PropertyColumn<UserModel>(Model.of("Last Login"), "lastLoginTimeMillis",
+                "lastLoginString"));
     }
 
-    private TooltipLabelColumn createExternalStatusColumn(final LdapSetting ldapSetting) {
+    private TooltipLabelColumn<UserModel> createExternalStatusColumn(final LdapSetting ldapSetting) {
         final String ldapSettingKey = ldapSetting.getKey();
-        return new TooltipLabelColumn(new Model("External " + ldapSettingKey), "status", "statuses." + ldapSettingKey,
-                0) {
+        return new TooltipLabelColumn<UserModel>(Model.of("External " + ldapSettingKey), "status",
+                "statuses." + ldapSettingKey, 0) {
             @Override
-            public void populateItem(Item item, String componentId, IModel model) {
+            public void populateItem(Item<ICellPopulator<UserModel>> item, String componentId,
+                    IModel<UserModel> model) {
                 item.add(new TooltipLabel(componentId, createLabelModel(model), 0) {
                     @Override
                     protected void onBeforeRender() {
@@ -116,19 +117,19 @@ public class UsersTable extends ModalListPanel<UserModel> {
                         setText("");
                     }
                 });
-                UserModel user = (UserModel) model.getObject();
+                UserModel user = model.getObject();
                 if (UserModel.Status.NOT_LDAP_USER.equals(user.getStatuses().get(ldapSettingKey))) {
                     log.debug("User {} is not an LDAP user", user.getUsername());
                     return;
                 }
-                if (ldapSetting != null && (ldapSetting.getSearch() == null ||
+                if ((ldapSetting.getSearch() == null ||
                         StringUtils.isBlank(ldapSetting.getSearch().getSearchFilter()))) {
                     item.add(new CssClass("WarnColumn"));
                     item.add(new CssClass("warn"));
                     user.getStatuses().put(ldapSettingKey, UserModel.Status.NO_SEARCH_FILTER);
                     return;
                 }
-                if (user.isDisableInternalPassword() && ldapSetting != null) {
+                if (user.isDisableInternalPassword()) {
                     LdapUser ldapUser = ldapService.getDnFromUserName(ldapSetting, user.getUsername());
                     if (ldapUser == null) {
                         item.add(new CssClass("WarnColumn"));
@@ -173,6 +174,7 @@ public class UsersTable extends ModalListPanel<UserModel> {
             return;
         }
         userGroupService.deleteUser(selectedUsername);
+        AccessLogger.deleted("User " + selectedUsername + " was deleted successfully");
         refreshUsersList(target);
     }
 

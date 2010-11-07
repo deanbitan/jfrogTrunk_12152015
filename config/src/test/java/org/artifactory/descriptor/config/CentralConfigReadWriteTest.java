@@ -18,8 +18,7 @@
 
 package org.artifactory.descriptor.config;
 
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
+import com.google.common.collect.Maps;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
@@ -87,8 +86,7 @@ public class CentralConfigReadWriteTest {
         local2.setHandleSnapshots(true);
         local2.setSuppressPomConsistencyChecks(true);
 
-        OrderedMap<String, LocalRepoDescriptor> localRepositoriesMap =
-                new ListOrderedMap<String, LocalRepoDescriptor>();
+        Map<String, LocalRepoDescriptor> localRepositoriesMap = Maps.newLinkedHashMap();
         localRepositoriesMap.put(local1.getKey(), local1);
         localRepositoriesMap.put(local2.getKey(), local2);
         desc.setLocalRepositoriesMap(localRepositoriesMap);
@@ -118,7 +116,7 @@ public class CentralConfigReadWriteTest {
         proxy.setUsername("1111");
         proxy.setPassword("1111");
         proxy.setNtHost("nthost");
-        desc.addProxy(proxy);
+        desc.addProxy(proxy, false);
 
         //Property sets
         PropertySet propertySet1 = new PropertySet();

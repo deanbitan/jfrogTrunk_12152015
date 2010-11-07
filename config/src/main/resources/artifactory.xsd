@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.5"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.5"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.6"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.6"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -298,6 +298,7 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         Textual description of the repository.
+                        This description will also appear when selecting the repository in the tree browser.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -840,6 +841,13 @@
 
     <xs:complexType name="MailServerType">
         <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="true" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The activity state of the configuration.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="host" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
@@ -893,6 +901,14 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         Determines whether to use SSL when connecting to the mail server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="artifactoryUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The Artifactory URL to use in all outgoing mails to denote links to Artifactory. Can be left
+                        blank.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1171,6 +1187,16 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                     <xs:documentation source="description">
                         Determines whether users should be auto-created when using LDAP, otherwise they are transient
                         and associated with auto-join groups defined in Artifactory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="emailAttribute" type="xs:string" default="mail" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        An attribute that can be used to map a users' email to a user that is created
+                        automatically in Artifactory.
+                        ]]>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

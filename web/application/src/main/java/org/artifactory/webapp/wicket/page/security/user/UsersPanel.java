@@ -56,16 +56,16 @@ public class UsersPanel extends TitledPanel {
         return usersTable.getSelectedUsernames();
     }
 
-    static class TargetGroupDropDownChoice extends DropDownChoice {
-        public TargetGroupDropDownChoice(String id, IModel model, List<GroupInfo> groups) {
+    static class TargetGroupDropDownChoice extends DropDownChoice<GroupInfo> {
+        public TargetGroupDropDownChoice(String id, IModel<GroupInfo> model, List<GroupInfo> groups) {
             super(id, model, groups);
             setPersistent(true);
             setOutputMarkupId(true);
         }
     }
 
-    static class FilterGroupDropDownChoice extends DropDownChoice {
-        public FilterGroupDropDownChoice(String id, IModel model, List<GroupInfo> groups) {
+    static class FilterGroupDropDownChoice extends DropDownChoice<GroupInfo> {
+        public FilterGroupDropDownChoice(String id, IModel<GroupInfo> model, List<GroupInfo> groups) {
             super(id, model, groups);
             setPersistent(true);
             setOutputMarkupId(true);

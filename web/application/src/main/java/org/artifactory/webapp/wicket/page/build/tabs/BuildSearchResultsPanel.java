@@ -18,8 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.build.tabs;
 
-import com.google.common.collect.Lists;
-import org.apache.wicket.Component;
+import com.google.common.collect.Sets;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
@@ -30,47 +29,29 @@ import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.AddonType;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
 import org.artifactory.api.build.BuildService;
-import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.NopFormComponentUpdatingBehavior;
-import org.artifactory.common.wicket.behavior.tooltip.TooltipBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
-import org.artifactory.common.wicket.component.combobox.ComboBox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
-import org.artifactory.common.wicket.component.links.BaseTitledLink;
-import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.model.SelectedItemModel;
-import org.artifactory.common.wicket.panel.defaultsubmit.DefaultSubmit;
-import org.artifactory.common.wicket.util.SetEnableVisitor;
-import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
+import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
 import org.jfrog.build.api.Build;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
- * Displays the default save search result interface for the build
+ * Implementation of the results management panel for build info
  *
  * @author Noam Y. Tenne
  */
-public class BuildSearchResultsPanel extends FieldSetPanel {
-
-    @SpringBean
-    protected AddonsManager addonsManager;
+public class BuildSearchResultsPanel extends SaveSearchResultsPanel {
 
     @SpringBean
     protected BuildService buildService;
-
-    @SpringBean
-    protected AuthorizationService authorizationService;
 
     @WicketProperty
     protected boolean artifacts = true;
@@ -78,52 +59,19 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
     @WicketProperty
     protected boolean dependencies = true;
 
-    protected Model<String> messageModel;
     protected Build build;
-    private String currentResultName;
 
     protected Set<String> scopes;
     protected Set<String> selectedScopes;
 
-    /**
-     * Main constructor
-     *
-     * @param requestingAddon The addon that requests the panel
-     * @param build           Build to use as file result
-     */
     public BuildSearchResultsPanel(AddonType requestingAddon, Build build) {
-        super("saveSearchResultsPanel");
+        super("saveSearchResultsPanel", new Model(), requestingAddon);
         this.build = build;
-        currentResultName =
-                new StringBuilder().append(build.getName()).append("-").append(build.getNumber()).toString();
-        messageModel = new Model<String>();
+
         scopes = buildService.findScopes(build);
-        selectedScopes = new HashSet<String>(scopes);
+        selectedScopes = Sets.newHashSet(scopes);
 
-        setOutputMarkupId(true);
         add(new CssClass("build-save-results"));
-
-        addSaveResultsForm(requestingAddon);
-        updateState();
-    }
-
-    /**
-     * Returns a list of the search name choices
-     *
-     * @return Search name choice list
-     */
-    public List<String> getSearchNameChoices() {
-        Set<String> resultNames = ArtifactoryWebSession.get().getResultNames();
-
-        List<String> resultNamesToReturn = Lists.newArrayList();
-        resultNamesToReturn.addAll(resultNames);
-
-        if (!resultNames.contains(currentResultName)) {
-            resultNamesToReturn.add(currentResultName);
-        }
-        Collections.swap(resultNamesToReturn, resultNamesToReturn.indexOf(currentResultName), 0);
-
-        return resultNamesToReturn;
     }
 
     @Override
@@ -131,31 +79,8 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
         return "Save to Search Results";
     }
 
-    /**
-     * Adds the save search results form the panel
-     *
-     * @param requestingAddon The addon that requests the panel
-     */
-    private void addSaveResultsForm(AddonType requestingAddon) {
-        Form form = new Form("saveResultsForm");
-        add(form);
-
-        form.add(new TooltipBehavior(messageModel));
-
-        form.add(new HelpBubble("help", "The name of the search result to use.\nBy saving and assembling named " +
-                "search results, you can perform bulk artifact operations."));
-
-        form.add(getResultComboBox("resultName"));
-
-        Component saveResultsLink = createSaveResultsLink("saveResultsLink", "Save");
-        form.add(saveResultsLink);
-
-        Component addResultsLink = createAddResultsLink("addResultsLink", "Add");
-        form.add(addResultsLink);
-
-        form.add(createSubtractResultsLink("subtractResultsLink", "Subtract"));
-        form.add(createIntersectResultsLink("intersectResultsLink", "Intersect"));
-
+    @Override
+    protected void addAdditionalFields(Form form) {
         final MarkupContainer scopesContainer = createScopesContainer();
         form.add(scopesContainer);
 
@@ -169,7 +94,7 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
         if (scopes.isEmpty()) {
             dependenciesCheckbox.add(new NopFormComponentUpdatingBehavior("onclick"));
         } else {
-            dependenciesCheckbox.setLabel(new Model<String>("Include Dependencies of the following scopes:"));
+            dependenciesCheckbox.setLabel(Model.of("Include Dependencies of the Following Scopes:"));
             dependenciesCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {
@@ -182,10 +107,6 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
                 }
             });
         }
-
-        form.add(new DefaultSubmit("defaultSubmit", saveResultsLink, addResultsLink));
-
-        postInit(requestingAddon);
     }
 
     private MarkupContainer createScopesContainer() {
@@ -207,83 +128,10 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
                             return dependencies && super.isEnabled();
                         }
                     };
-            checkbox.setLabel(new Model<String>(scope));
+            checkbox.setLabel(Model.of(scope));
             scopesView.add(checkbox);
         }
         return scopesContainer;
-    }
-
-    /**
-     * Returns the result name combo box
-     *
-     * @param id the ID to assign to the combo box
-     * @return Result name combo box
-     */
-    protected ComboBox getResultComboBox(String id) {
-        return new ComboBox(id, new Model<String>(""), Lists.<String>newArrayList());
-    }
-
-    /**
-     * Executes any actions needed after initializing the panel components
-     *
-     * @param requestingAddon The addon that requests the panel
-     */
-    protected void postInit(AddonType requestingAddon) {
-        setAllEnable(false);
-        add(new DisabledAddonBehavior(requestingAddon));
-    }
-
-    /**
-     * Returns the save results link
-     *
-     * @param id    The ID to assign to the link
-     * @param title The title to assign to the link
-     * @return Save results link
-     */
-    protected Component createSaveResultsLink(String id, String title) {
-        return createDummyLink(id, title);
-    }
-
-    /**
-     * Returns the add results link
-     *
-     * @param id    The ID to assign to the link
-     * @param title The title to assign to the link
-     * @return Add results link
-     */
-    protected Component createAddResultsLink(String id, String title) {
-        return createDummyLink(id, title);
-    }
-
-    /**
-     * Returns the substract results link
-     *
-     * @param id    The ID to assign to the link
-     * @param title The title to assign to the link
-     * @return Substract results link
-     */
-    protected Component createSubtractResultsLink(String id, String title) {
-        return createDummyLink(id, title);
-    }
-
-    protected Component createIntersectResultsLink(String id, String title) {
-        return createDummyLink(id, title);
-    }
-
-    /**
-     * Updates the state of the panel according to different conditions
-     */
-    protected void updateState() {
-    }
-
-    /**
-     * Sets whether the panel should be enabled or disabled
-     *
-     * @param enabled True if the panel should be enabled
-     */
-    protected void setAllEnable(final boolean enabled) {
-        setEnabled(enabled);
-        visitChildren(new SetEnableVisitor(enabled));
     }
 
     /**
@@ -302,16 +150,4 @@ public class BuildSearchResultsPanel extends FieldSetPanel {
         form.add(new HelpBubble(id + ".help", helpMessage));
         return checkbox;
     }
-
-    /**
-     * Creates a dummy disabled link
-     *
-     * @param id    The ID to assign to the link
-     * @param title The title to assign to the link
-     * @return Disabled link
-     */
-    private Component createDummyLink(final String id, String title) {
-        return new BaseTitledLink(id, title).setEnabled(false);
-    }
-
 }

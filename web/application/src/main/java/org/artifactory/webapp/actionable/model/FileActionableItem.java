@@ -111,7 +111,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
             return;
         }
         //Has stats
-        tabs.add(new AbstractTab(new Model("Stats")) {
+        tabs.add(new AbstractTab(Model.of("Stats")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new StatsTabPanel(panelId, FileActionableItem.this);
@@ -120,7 +120,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
 
         if (isPomFile()) {
             // add pom view panel
-            tabs.add(new AbstractTab(new Model("Pom View")) {
+            tabs.add(new AbstractTab(Model.of("Pom View")) {
                 @Override
                 public Panel getPanel(String panelId) {
                     return new PomViewTabPanel(panelId, FileActionableItem.this);
@@ -131,7 +131,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
         if (isXmlFile() && !isPomFile()) {
             //xml tab
             final XmlViewTabPanel.XmlTypes xmlType = isIvyFile() ? IVY_XML : GENERAL_XML;
-            tabs.add(new AbstractTab(new Model(xmlType.getTabTitle())) {
+            tabs.add(new AbstractTab(Model.of(xmlType.getTabTitle())) {
 
                 @Override
                 public Panel getPanel(String panelId) {
@@ -141,7 +141,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
         }
 
         if (isJnlpFile()) {
-            tabs.add(new AbstractTab(new Model("JNLP")) {
+            tabs.add(new AbstractTab(Model.of("JNLP")) {
                 @Override
                 public Panel getPanel(String panelId) {
                     return new JnlpViewTabPanel(panelId, FileActionableItem.this);

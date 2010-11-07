@@ -83,6 +83,11 @@ public class MailServiceImpl implements MailService {
 
         verifyParameters(recipients, config);
 
+        if (!config.isEnabled()) {
+            log.debug("Ignoring requested mail delivery. The given configuration is disabled.");
+            return;
+        }
+
         boolean debugEnabled = log.isDebugEnabled();
 
         Properties properties = new Properties();

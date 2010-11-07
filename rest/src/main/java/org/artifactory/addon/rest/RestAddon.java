@@ -20,10 +20,13 @@ package org.artifactory.addon.rest;
 
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.license.LicenseStatus;
+import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.DownloadResource;
 import org.artifactory.rest.resource.artifact.SyncResource;
@@ -114,8 +117,8 @@ public interface RestAddon extends Addon {
      * @param progress       One to show transfer progress, Zero or other to show normal transfer completion message
      * @param mark           Every how many bytes to print a progress mark (when using progress tracking policy)
      * @param deleteExisting One to delete existing files which do not exist in the remote source, Zero to keep
-     * @param overwrite      Never for never replacing an existing file and force for replacing existing files
-     *                       (only if the local file is older than the target) and Null for default of force.
+     * @param overwrite      Never for never replacing an existing file and force for replacing existing files (only if
+     *                       the local file is older than the target) and Null for default of force.
      * @param httpResponse   Response to return once complete
      * @return Response
      */
@@ -174,8 +177,8 @@ public interface RestAddon extends Addon {
     Response deleteRepository(String repoKey);
 
     /**
-     * Get Repository configuration according to the repository key in conjunction with the media type to enforce
-     * a certain type of repository configuration.
+     * Get Repository configuration according to the repository key in conjunction with the media type to enforce a
+     * certain type of repository configuration.
      *
      * @param repoKey    The repokey of the repository.
      * @param mediaTypes The acceptable media types for this request
@@ -202,4 +205,26 @@ public interface RestAddon extends Addon {
      * @return The response for this command.
      */
     Response updateRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes);
+
+    /**
+     * Search for artifacts by their checksums
+     *
+     * @param md5Checksum   MD5 checksum value
+     * @param sha1Checksum  SHA1 checksum value
+     * @param reposToSearch Specific repositories to search in
+     * @return Set of repo paths matching the given checksum
+     */
+    Set<RepoPath> searchArtifactsByChecksum(String md5Checksum, String sha1Checksum, StringList reposToSearch);
+
+    /**
+     * Save properties on a certain path (which must be a valid {@link org.artifactory.repo.RepoPath})
+     *
+     * @param path       The path on which to set the properties
+     * @param recursive  Whether the property attachment should be recursive.
+     * @param properties The properties to attach as a list.
+     * @return The response of the operation
+     */
+    Response savePropertiesOnPath(String path, String recursive, KeyValueList properties);
+
+    ResponseCtx runPluginExecution(String executionName, Map params, boolean async);
 }

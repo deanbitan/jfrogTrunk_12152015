@@ -49,7 +49,7 @@ public class TextContentPanel extends Panel {
     public TextContentPanel setContent(String content) {
         // f**king wicket encoding, see RTFACT-2767 
         if (content != null) {
-            contentText.setDefaultModel(new Model(content.replaceAll("\\]", "&#93;")));
+            contentText.setDefaultModel(Model.of(content.replaceAll("\\]", "&#93;")));
         }
         return this;
     }

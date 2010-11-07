@@ -18,7 +18,11 @@
 
 package org.artifactory.api.version;
 
+import org.artifactory.api.repo.Async;
+
+import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  * Main interface for the Version Info Service
@@ -38,33 +42,15 @@ public interface VersionInfoService {
     static final String WIKI_DEFAULT = "http://wiki.jfrog.org/confluence/display/RTF";
 
     /**
-     * Get latest version number. If not yet retrieved from the remote server return SERVICE_UNAVAILABLE and retrieve
-     * the versioning in a background task.
+     * Get latest version information. If not yet retrieved from the remote server return SERVICE_UNAVAILABLE and
+     * retrieve the versioning in a background task.
      *
      * @param headersMap a map of the original http headers
      * @param release    True to get the latest stable version, False to get the latest version of any kind @return
      *                   String Latest version number
      */
-    public String getLatestVersion(Map<String, String> headersMap, boolean release);
-
-    /**
-     * Get latest revision number. If not yet retrieved from the remote server return SERVICE_UNAVAILABLE and retrieve
-     * the versioning in a background task.
-     *
-     * @param headersMap a map of the original http headers
-     * @param release    True - to get the latest stable revision, False - to get the latest revision of any kind
-     * @return String Latest revision number
-     */
-    public String getLatestRevision(Map<String, String> headersMap, boolean release);
-
-    /**
-     * Retunrs a URL that points to the latest wiki page
-     *
-     * @param headersMap a map of the original http headers
-     * @param release    True - to get the latest stable wiki url, False - to get the latest url of any kind
-     * @return String URL to latest wiki page
-     */
-    public String getLatestWikiUrl(Map<String, String> headersMap, boolean release);
+    @Nonnull
+    public VersionHolder getLatestVersion(Map<String, String> headersMap, boolean release);
 
     /**
      * Get latest version number from the cache. If doesn't exist will return NA.
@@ -72,11 +58,13 @@ public interface VersionInfoService {
      * @param release True to get the latest stable version, False to get the latest version of any kind
      * @return String Latest version number
      */
-    public String getLatestVersionFromCache(boolean release);
+    @Nonnull
+    public VersionHolder getLatestVersionFromCache(boolean release);
 
     /**
      * @param headersMap Client http header params
      * @return Artifactory versioning info from the remove jfrog service.
      */
-    ArtifactoryVersioning getRemoteVersioning(Map<String, String> headersMap);
+    @Async
+    Future<ArtifactoryVersioning> getRemoteVersioningAsync(Map<String, String> headersMap);
 }

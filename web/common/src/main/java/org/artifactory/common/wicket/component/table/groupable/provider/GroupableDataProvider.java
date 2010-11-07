@@ -18,6 +18,7 @@
 
 package org.artifactory.common.wicket.component.table.groupable.provider;
 
+import com.google.common.collect.Maps;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
@@ -28,20 +29,23 @@ import org.artifactory.common.wicket.component.table.groupable.cache.GroupSizeCa
 import org.artifactory.common.wicket.util.ListPropertySorter;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Yoav Aharoni
  */
-public class GroupableDataProvider<T extends Serializable> extends SortableDataProvider<T> implements IGroupStateLocator {
+public class GroupableDataProvider<T extends Serializable> extends SortableDataProvider<T>
+        implements IGroupStateLocator {
     private List<T> data;
-    private Map<String, IChoiceRenderer<T>> groupRenederMap = new HashMap<String, IChoiceRenderer<T>>();
+    private Map<String, IChoiceRenderer<T>> groupRendererMap = Maps.newHashMap();
     private GroupSizeCache groupSizeCache;
     private SortParam groupParam;
 
-    @SuppressWarnings({"unchecked"})
     public GroupableDataProvider() {
-        this((List<T>) Collections.EMPTY_LIST);
+        this(Collections.<T>emptyList());
     }
 
     public GroupableDataProvider(List<T> data) {
@@ -59,8 +63,7 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
         return data.size();
     }
 
-    @SuppressWarnings({"unchecked"})
-    public IModel model(T object) {
+    public IModel<T> model(T object) {
         return new Model<T>(object);
     }
 
@@ -77,7 +80,7 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
         SortParam groupParam = getGroupParam();
         if (groupSizeCache == null) {
             groupSizeCache =
-                    GroupSizeCache.getSizeCache(iterator(0, size()), getGroupReneder(groupParam.getProperty()));
+                    GroupSizeCache.getSizeCache(iterator(0, size()), getGroupRenderer(groupParam.getProperty()));
         }
         return groupSizeCache.getGroupSize(index);
     }
@@ -86,17 +89,17 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
         groupSizeCache = null;
     }
 
-    public final IChoiceRenderer<T> getGroupReneder(String property) {
-        IChoiceRenderer<T> choiceRenderer = groupRenederMap.get(property);
+    public final IChoiceRenderer<T> getGroupRenderer(String property) {
+        IChoiceRenderer<T> choiceRenderer = groupRendererMap.get(property);
         if (choiceRenderer == null) {
             choiceRenderer = new ChoiceRenderer<T>(property, property);
-            groupRenederMap.put(property, choiceRenderer);
+            groupRendererMap.put(property, choiceRenderer);
         }
         return choiceRenderer;
     }
 
-    public final void setGroupReneder(String property, IChoiceRenderer<T> choiceRenderer) {
-        groupRenederMap.put(property, choiceRenderer);
+    public final void setGroupRenderer(String property, IChoiceRenderer<T> choiceRenderer) {
+        groupRendererMap.put(property, choiceRenderer);
     }
 
     public List<T> getData() {

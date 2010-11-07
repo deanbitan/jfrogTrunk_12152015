@@ -34,6 +34,7 @@ import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
+import org.artifactory.api.search.artifact.ChecksumSearchControls;
 import org.artifactory.api.search.deployable.DeployableUnitSearchControls;
 import org.artifactory.api.search.deployable.DeployableUnitSearchResult;
 import org.artifactory.api.search.gavc.GavcSearchControls;
@@ -138,10 +139,10 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
-    public Set<RepoPath> searchArtifactsByChecksum(String sha1, String md5) {
+    public Set<RepoPath> searchArtifactsByChecksum(ChecksumSearchControls searchControls) {
         ArtifactSearcher searcher = new ArtifactSearcher();
         try {
-            return searcher.searchArtifactsByChecksum(sha1, md5);
+            return searcher.searchArtifactsByChecksum(searchControls);
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException(e);
         }

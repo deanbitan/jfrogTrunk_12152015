@@ -53,7 +53,7 @@ public class SystemInfoPage extends AuthenticatedPage {
         TitledBorder border = new TitledBorder("border");
         add(border);
 
-        TextArea infoPanel = new TextArea("sysInfo", new Model(collectSystemInfo()));
+        TextArea<String> infoPanel = new TextArea<String>("sysInfo", Model.of(collectSystemInfo()));
         infoPanel.setEscapeModelStrings(true);
         border.add(infoPanel);
     }

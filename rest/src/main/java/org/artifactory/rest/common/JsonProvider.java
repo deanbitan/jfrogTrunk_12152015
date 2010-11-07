@@ -103,7 +103,8 @@ import javax.ws.rs.ext.Provider;
         ArtifactRestConstants.MT_COPY_MOVE_RESULT,
         SearchRestConstants.MT_PATTERN_SEARCH_RESULT,
         ArtifactRestConstants.MT_FILE_LIST,
-        ArtifactRestConstants.MT_ITEM_LAST_MODIFIED
+        ArtifactRestConstants.MT_ITEM_LAST_MODIFIED,
+        SearchRestConstants.MT_CHECKSUM_SEARCH_RESULT
 })
 public class JsonProvider extends JacksonJsonProvider implements ContextResolver<ObjectMapper> {
 

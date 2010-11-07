@@ -206,3 +206,32 @@ jobs {
   }
   */
 }
+
+/**
+ * A section for defining external executions.
+ * External executions are invoked via REST POST requests. For example:
+ * curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/multiply?params=msg=And+the+result+is:|no1=10|no2=15&async=0"
+ *
+ * Since:  2.3.1
+ */
+executions {
+
+  /**
+   * An execution definition.
+   * The first value is a unique name for the execution.
+   *
+   * Context variables:
+   * status (int) - a response status code. Defaults to -1 (unset). Not applicable for an async execution.
+   * message (java.lang.String) - a text message to return in the response body, replacing the response content.
+   *                              Defaults to null. Not applicable for an async execution.
+   *
+   *  Closure parameters:
+   * params (java.util.Map) - An execution takes a read-only key-value map that corresponds to the REST request
+   * parameter 'params'. Each entry in the map conatains an array of values.
+   */
+
+  /*
+  myExecution() { params ->
+  }
+  */
+}

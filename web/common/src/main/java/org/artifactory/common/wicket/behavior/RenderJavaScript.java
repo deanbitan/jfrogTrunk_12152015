@@ -34,7 +34,7 @@ public class RenderJavaScript extends AbstractBehavior {
     private IModel javascript;
 
     public RenderJavaScript(String javascript) {
-        this(new Model(javascript));
+        this(Model.of(javascript));
     }
 
     public RenderJavaScript(IModel javascript) {

@@ -28,11 +28,14 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WebApplicationAddon;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.security.login.LoginPage;
@@ -49,6 +52,9 @@ public class ForgotPasswordPanel extends TitledActionPanel {
     @SpringBean
     private AddonsManager addonsManager;
 
+    @SpringBean
+    private CentralConfigService centralConfigService;
+
     protected ForgotPasswordPanel(String id) {
         super(id);
 
@@ -57,7 +63,7 @@ public class ForgotPasswordPanel extends TitledActionPanel {
         forgotForm.add(new Label("description",
                 "Please enter your user name to receive a password reset link by email."));
 
-        final TextField usernameTextField = new TextField("username", new Model());
+        final TextField<String> usernameTextField = new TextField<String>("username", new Model<String>());
         usernameTextField.setRequired(true);
         forgotForm.add(usernameTextField);
 
@@ -68,7 +74,7 @@ public class ForgotPasswordPanel extends TitledActionPanel {
                 String username = usernameTextField.getValue();
                 //Check if username is valid
                 if (StringUtils.isEmpty(username)) {
-                    displayError("Please specifiy a valid username");
+                    displayError("Please specify a valid username");
                     return;
                 }
                 // if in aol mode then have to go to the dashboard to reset password
@@ -115,10 +121,21 @@ public class ForgotPasswordPanel extends TitledActionPanel {
      */
 
     private String getResetPasswordPageUrl() {
-        String servletContextUrl = RequestUtils.getWicketServletContextUrl();
-        CharSequence path = WicketUtils.mountPathForPage(ResetPasswordPage.class);
-        String resetPageUrl = servletContextUrl + "/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/" + path;
+        MutableCentralConfigDescriptor mutableCentralConfigDescriptor = centralConfigService.getMutableDescriptor();
+        MailServerDescriptor mailServer = mutableCentralConfigDescriptor.getMailServer();
+        String resetPageUrl;
+        if (mailServer != null && StringUtils.isNotBlank(mailServer.getArtifactoryUrl())) {
+            resetPageUrl = mailServer.getArtifactoryUrl() + "/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/resetpassword.html";
+        } else {
+            resetPageUrl = getForgotPasswordPageUrlFromRequest();
+        }
+
         return resetPageUrl;
     }
 
+    private String getForgotPasswordPageUrlFromRequest() {
+        String servletContextUrl = RequestUtils.getWicketServletContextUrl();
+        CharSequence path = WicketUtils.absoluteMountPathForPage(ResetPasswordPage.class);
+        return servletContextUrl + "/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/" + path;
+    }
 }

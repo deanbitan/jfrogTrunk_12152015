@@ -58,8 +58,14 @@ public class ArtifactoryHome {
     private static final InheritableThreadLocal<ArtifactoryHome> current =
             new InheritableThreadLocal<ArtifactoryHome>();
 
+    /**
+     * The current running version, discovered during runtime.
+     */
     private CompoundVersionDetails runningVersion;
-    private CompoundVersionDetails originalStorageVersion;
+    /**
+     * The initial version read from a properties file on startup. Effective only until the conversion starts.
+     */
+    private CompoundVersionDetails originalVersion;
 
     private MimeTypes mimeTypes;
     private ArtifactorySystemProperties artifactorySystemProperties;
@@ -111,11 +117,11 @@ public class ArtifactoryHome {
      * @return Original config version used when artifactory started. May be null if same as running version.
      */
     public CompoundVersionDetails getOriginalVersionDetails() {
-        return originalStorageVersion;
+        return originalVersion;
     }
 
     public boolean startedFromDifferentVersion() {
-        return (originalStorageVersion != null) && (!originalStorageVersion.isCurrent());
+        return (originalVersion != null) && (!originalVersion.isCurrent());
     }
 
     public File getDataDir() {
@@ -366,7 +372,7 @@ public class ArtifactoryHome {
      * Copy the system properties file and set its data as system properties
      */
     public void initAndLoadSystemPropertyFile() {
-        // Expose the properties inside artfactory.properties and artfactory.system.properties
+        // Expose the properties inside artifactory.properties and artifactory.system.properties
         // as system properties, available to ArtifactoryConstants
         File systemPropertiesFile = new File(etcDir, ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
         if (!systemPropertiesFile.exists()) {
@@ -390,7 +396,7 @@ public class ArtifactoryHome {
         if (artifactoryPropertiesFile.exists()) {
             CompoundVersionDetails storedStorageVersion = ArtifactoryVersionReader.read(artifactoryPropertiesFile);
             //Store the original version - may need to activate converters based on it
-            originalStorageVersion = storedStorageVersion;
+            originalVersion = storedStorageVersion;
             if (!runningVersion.equals(storedStorageVersion)) {
                 // the version written in the jar and the version read from the data directory are different
                 // make sure the version from the data directory is supported by the current deployed artifactory
@@ -398,7 +404,7 @@ public class ArtifactoryHome {
                         ConfigVersion.findCompatibleVersion(storedStorageVersion.getVersion());
                 //No compatible version -> conversion needed, but supported only from v4 onward
                 if (!actualConfigVersion.isCurrent()) {
-                    String msg = "The storage version for (" + storedStorageVersion.getVersion().getValue() + ") " +
+                    String msg = "The stored version for (" + storedStorageVersion.getVersion().getValue() + ") " +
                             "is not up-to-date with the currently deployed Artifactory (" +
                             runningVersion.getVersion().getValue() + ")";
                     if (!actualConfigVersion.isAutoUpdateCapable()) {

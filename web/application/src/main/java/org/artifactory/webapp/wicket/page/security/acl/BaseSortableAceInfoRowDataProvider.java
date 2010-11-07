@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * @author Yossi Shaul
  */
-public abstract class BaseSortableAceInfoRowDataProvider extends SortableDataProvider {
+public abstract class BaseSortableAceInfoRowDataProvider extends SortableDataProvider<AceInfoRow> {
     protected List<AceInfoRow> aces;
 
     public BaseSortableAceInfoRowDataProvider() {
@@ -38,7 +38,7 @@ public abstract class BaseSortableAceInfoRowDataProvider extends SortableDataPro
 
     public abstract void loadData();
 
-    public Iterator iterator(int first, int count) {
+    public Iterator<AceInfoRow> iterator(int first, int count) {
         ListPropertySorter.sort(aces, getSort());
         List<AceInfoRow> list = aces.subList(first, first + count);
         return list.iterator();
@@ -48,7 +48,7 @@ public abstract class BaseSortableAceInfoRowDataProvider extends SortableDataPro
         return aces.size();
     }
 
-    public IModel model(Object object) {
-        return new Model((AceInfoRow) object);
+    public IModel<AceInfoRow> model(AceInfoRow object) {
+        return new Model<AceInfoRow>(object);
     }
 }

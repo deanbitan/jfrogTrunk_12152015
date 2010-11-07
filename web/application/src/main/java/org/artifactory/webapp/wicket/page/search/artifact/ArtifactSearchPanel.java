@@ -64,7 +64,7 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
     protected void addSearchComponents(Form form) {
         searchControls = new ArtifactSearchControls();
 
-        TextField searchControl = new TextField("query", new PropertyModel(searchControls, "query"));
+        TextField searchControl = new TextField<String>("query", new PropertyModel<String>(searchControls, "query"));
         searchControl.setOutputMarkupId(true);
         form.add(searchControl);
 
@@ -103,12 +103,14 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new ActionsColumn(""));
+    protected void addColumns(List<IColumn<ActionableSearchResult<ArtifactSearchResult>>> columns) {
+        columns.add(new ActionsColumn<ActionableSearchResult<ArtifactSearchResult>>(""));
         columns.add(new BaseSearchPanel.ArtifactNameColumn());
-        columns.add(new GroupableColumn(new Model("Path"), "searchResult.relDirPath", "searchResult.relDirPath"));
+        columns.add(new GroupableColumn<ActionableSearchResult<ArtifactSearchResult>>(
+                Model.of("Path"), "searchResult.relDirPath", "searchResult.relDirPath"));
         columns.add(new LastModifiedColumn());
-        columns.add(new GroupableColumn(new Model("Repository"), "searchResult.repoKey", "searchResult.repoKey"));
+        columns.add(new GroupableColumn<ActionableSearchResult<ArtifactSearchResult>>(
+                Model.of("Repository"), "searchResult.repoKey", "searchResult.repoKey"));
     }
 
     @Override
@@ -148,11 +150,12 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
         return searchService.searchArtifacts(controlsCopy);
     }
 
-    private static class LastModifiedColumn extends GroupableColumn implements IChoiceRenderer {
+    private static class LastModifiedColumn extends GroupableColumn<ActionableSearchResult<ArtifactSearchResult>>
+            implements IChoiceRenderer<ActionableSearchResult<ArtifactSearchResult>> {
         private static final SimpleDateFormat DISPLAY_FORMAT = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
 
         private LastModifiedColumn() {
-            super(new Model("Modified"), "searchResult.lastModified", "searchResult.lastModifiedString");
+            super(Model.of("Modified"), "searchResult.lastModified", "searchResult.lastModifiedString");
         }
 
         @Override
@@ -160,18 +163,12 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
             return "searchResult.lastModifiedDay";
         }
 
-        public Object getDisplayValue(Object object) {
-            return DISPLAY_FORMAT.format(new Date(getSearchResult(object).getLastModified()));
+        public Object getDisplayValue(ActionableSearchResult<ArtifactSearchResult> object) {
+            return DISPLAY_FORMAT.format(new Date(object.getSearchResult().getLastModified()));
         }
 
-        public String getIdValue(Object object, int index) {
-            return getSearchResult(object).getLastModifiedDay();
+        public String getIdValue(ActionableSearchResult<ArtifactSearchResult> object, int index) {
+            return object.getSearchResult().getLastModifiedDay();
         }
-
-        @SuppressWarnings({"unchecked"})
-        private ArtifactSearchResult getSearchResult(Object object) {
-            return ((ActionableSearchResult<ArtifactSearchResult>) object).getSearchResult();
-        }
-
     }
 }

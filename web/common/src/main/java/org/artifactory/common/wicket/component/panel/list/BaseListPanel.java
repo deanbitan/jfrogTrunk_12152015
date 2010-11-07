@@ -18,6 +18,7 @@
 
 package org.artifactory.common.wicket.component.panel.list;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -50,19 +51,19 @@ import java.util.List;
  *
  * @author Noam Tenne
  */
-public abstract class BaseListPanel<T> extends TitledPanel {
+public abstract class BaseListPanel<T extends Serializable> extends TitledPanel {
     protected static final int DEFAULT_ROWS_PER_PAGE = 15;
 
     protected String defaultInitialSortProperty;
     protected TitledAjaxLink newItemLink;
-    protected SortableDataProvider dataProvider;
+    protected SortableDataProvider<T> dataProvider;
 
     protected BaseListPanel(String id) {
         super(id);
         dataProvider = new DefaultSortableDataProvider();
     }
 
-    protected BaseListPanel(String id, SortableDataProvider dataProvider) {
+    protected BaseListPanel(String id, SortableDataProvider<T> dataProvider) {
         super(id);
         this.dataProvider = dataProvider;
     }
@@ -82,7 +83,7 @@ public abstract class BaseListPanel<T> extends TitledPanel {
         add(exportItemLink);
 
         // add table
-        List<IColumn> columns = new ArrayList<IColumn>();
+        List<IColumn<T>> columns = Lists.newArrayList();
         addLinksColumn(columns);
         addColumns(columns);
         // by default use the sort property of the second column
@@ -94,13 +95,13 @@ public abstract class BaseListPanel<T> extends TitledPanel {
     }
 
     /**
-     * @return The property by which the table will initialy be sorted by.
+     * @return The property by which the table will initially be sorted by.
      */
     protected String getInitialSortProperty() {
         return defaultInitialSortProperty;
     }
 
-    protected void addLinksColumn(List<IColumn> columns) {
+    protected void addLinksColumn(List<? super IColumn<T>> columns) {
         columns.add(new LinksColumn<T>() {
             @Override
             protected Collection<? extends AbstractLink> getLinks(T rowObject, String linkId) {
@@ -125,7 +126,7 @@ public abstract class BaseListPanel<T> extends TitledPanel {
 
     protected abstract List<T> getList();
 
-    protected abstract void addColumns(List<IColumn> columns);
+    protected abstract void addColumns(List<? super IColumn<T>> columns);
 
     protected abstract String getDeleteConfirmationText(T itemObject);
 
@@ -141,14 +142,14 @@ public abstract class BaseListPanel<T> extends TitledPanel {
 
     protected abstract void onRowItemEvent(String id, int index, final IModel model, AjaxRequestTarget target);
 
-    private class DefaultSortableDataProvider extends SortableDataProvider {
+    private class DefaultSortableDataProvider extends SortableDataProvider<T> {
         private DefaultSortableDataProvider() {
             if (defaultInitialSortProperty != null) {
                 setSort(defaultInitialSortProperty, true);
             }
         }
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<? extends T> iterator(int first, int count) {
             List<T> items = getList();
             ListPropertySorter.sort(items, getSort());
             List<T> itemsSubList = items.subList(first, first + count);
@@ -159,8 +160,8 @@ public abstract class BaseListPanel<T> extends TitledPanel {
             return getList().size();
         }
 
-        public IModel model(Object object) {
-            return new Model((Serializable) object);
+        public IModel<T> model(T object) {
+            return new Model<T>(object);
         }
     }
 
@@ -168,17 +169,15 @@ public abstract class BaseListPanel<T> extends TitledPanel {
         return (SortableTable) get("table");
     }
 
-    private class MySortableTable extends SortableTable {
-        private MySortableTable(List<IColumn> columns, SortableDataProvider dataProvider) {
+    private class MySortableTable extends SortableTable<T> {
+        private MySortableTable(List<IColumn<T>> columns, SortableDataProvider<T> dataProvider) {
             super("table", columns, dataProvider, BaseListPanel.this.getRowsPerPage());
         }
 
-        @SuppressWarnings({"RefusedBequest"})
         @Override
-        protected Item newRowItem(final String id, final int index, final IModel model) {
-            Item item = super.newRowItem(id, index, model);
+        protected Item<T> newRowItem(final String id, final int index, final IModel<T> model) {
+            Item<T> item = super.newRowItem(id, index, model);
             item.add(new AjaxEventBehavior("ondblclick") {
-                @SuppressWarnings({"unchecked"})
                 @Override
                 protected void onEvent(AjaxRequestTarget target) {
                     onRowItemEvent(id, index, model, target);

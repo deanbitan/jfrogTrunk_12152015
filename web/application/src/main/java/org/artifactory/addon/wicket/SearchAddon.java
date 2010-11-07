@@ -18,7 +18,6 @@
 
 package org.artifactory.addon.wicket;
 
-import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.artifactory.addon.Addon;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
@@ -40,7 +39,7 @@ public interface SearchAddon extends Addon {
 
     MenuNode getBrowserSearchMenuNode();
 
-    String getSearchResultsPageMountPath(String resultToSelect);
+    String getSearchResultsPageAbsolutePath(String resultToSelect);
 
     /**
      * Returns the build save search results panel
@@ -49,7 +48,7 @@ public interface SearchAddon extends Addon {
      * @param build           Build to use for results
      * @return Build save search results panel
      */
-    Panel getBuildSearchResultsPanel(AddonType requestingAddon, Build build);
+    SaveSearchResultsPanel getBuildSearchResultsPanel(AddonType requestingAddon, Build build);
 
     /**
      * Returns a disclaimer about the fact that saved searches are not affected by reaching max results in user queries

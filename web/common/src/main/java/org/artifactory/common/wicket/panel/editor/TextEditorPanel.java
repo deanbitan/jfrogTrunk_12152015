@@ -40,7 +40,7 @@ public class TextEditorPanel extends TitledPanel {
     private String editorValue;
 
     public TextEditorPanel(String id, String title, String helpMessage) {
-        this(id, title, new Model<String>(helpMessage));
+        this(id, title, Model.of(helpMessage));
     }
 
     public TextEditorPanel(String id, String title, IModel helpModel) {

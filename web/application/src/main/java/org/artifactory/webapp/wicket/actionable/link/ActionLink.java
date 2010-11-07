@@ -42,7 +42,7 @@ public class ActionLink extends TitledAjaxLink {
     private ItemAction action;
 
     public ActionLink(String id, ItemAction action, ActionableItem actionableItem) {
-        super(id, new Model(action.getDisplayName(actionableItem)));
+        super(id, Model.of(action.getDisplayName(actionableItem)));
         this.action = action;
         this.actionableItem = actionableItem;
 

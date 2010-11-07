@@ -43,10 +43,10 @@ public class UsernamePanel extends Panel {
     @SpringBean
     private UserGroupService userGroupService;
 
-    public UsernamePanel(String id, IModel model) {
+    public UsernamePanel(String id, IModel<UserModel> model) {
         super(id);
         add(new SimpleAttributeModifier("class", "UserColumn"));
-        final UserModel userModel = (UserModel) model.getObject();
+        final UserModel userModel = model.getObject();
         final String username = userModel.getUsername();
         add(new Label("username", username));
 

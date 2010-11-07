@@ -37,7 +37,7 @@ import java.util.Set;
  *
  * @author Yossi Shaul
  */
-class UsersTableDataProvider extends SortableDataProvider {
+class UsersTableDataProvider extends SortableDataProvider<UserModel> {
     private List<UserModel> users;
 
     private UserGroupService userGroupService;
@@ -58,7 +58,7 @@ class UsersTableDataProvider extends SortableDataProvider {
         return users;
     }
 
-    public Iterator iterator(int first, int count) {
+    public Iterator<UserModel> iterator(int first, int count) {
         if (!previousSort.equals(getSort())) {
             sortUsers();
         }
@@ -70,8 +70,8 @@ class UsersTableDataProvider extends SortableDataProvider {
         return users.size();
     }
 
-    public IModel model(Object object) {
-        return new Model((UserModel) object);
+    public IModel<UserModel> model(UserModel userModel) {
+        return new Model<UserModel>(userModel);
     }
 
     public void recalcUsersList() {
@@ -91,12 +91,12 @@ class UsersTableDataProvider extends SortableDataProvider {
         Set<UserModel> selectedUsers = getSelectedUsers();
 
         List<UserInfo> allUsers = userGroupService.getAllUsers(true);
-        List<UserModel> users = new ArrayList<UserModel>();
+        List<UserModel> filtered = new ArrayList<UserModel>();
         for (UserInfo userInfo : allUsers) {
             //Don't list anonymous and excluded users
             if (!userInfo.isAnonymous() && includedByFilter(userInfo)) {
                 UserModel userModel = new UserModel(userInfo);
-                users.add(userModel);
+                filtered.add(userModel);
 
                 // persist selection
                 if (selectedUsers.contains(userModel)) {
@@ -104,7 +104,7 @@ class UsersTableDataProvider extends SortableDataProvider {
                 }
             }
         }
-        return users;
+        return filtered;
     }
 
     private Set<UserModel> getSelectedUsers() {

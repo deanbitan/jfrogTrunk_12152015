@@ -73,11 +73,11 @@ public class ResetPasswordPanel extends TitledActionPanel {
             resetForm.add(new LabeledValue("description",
                     "Please choose a new password."));
 
-            final PasswordTextField passwordTextField = new PasswordTextField("password", new Model());
+            final PasswordTextField passwordTextField = new PasswordTextField("password", new Model<String>());
             passwordTextField.setRequired(true);
             passwordTextField.add(PasswordStreangthValidator.getInstance());
             resetForm.add(passwordTextField);
-            PasswordTextField retypedPasswordTextField = new PasswordTextField("retypedPassword", new Model());
+            PasswordTextField retypedPasswordTextField = new PasswordTextField("retypedPassword", new Model<String>());
             retypedPasswordTextField.setRequired(true);
             resetForm.add(retypedPasswordTextField);
 

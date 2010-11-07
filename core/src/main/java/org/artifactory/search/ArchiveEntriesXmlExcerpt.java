@@ -18,6 +18,7 @@
 
 package org.artifactory.search;
 
+import com.google.common.collect.Maps;
 import org.apache.jackrabbit.core.query.lucene.DefaultXMLExcerpt;
 import org.apache.jackrabbit.core.query.lucene.Util;
 import org.apache.lucene.analysis.Token;
@@ -32,7 +33,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 /**
  * Overrides the default excerpt settings: <ul> <li>Enlarges the size and amount of fragments allowed to return.</li>
@@ -111,15 +111,14 @@ public class ArchiveEntriesXmlExcerpt extends DefaultXMLExcerpt {
      */
     private TermPositionVector createTermPositionVector(String text) {
         // term -> TermVectorOffsetInfo[]
-        final SortedMap termMap = new TreeMap();
+        final SortedMap<String, TermVectorOffsetInfo[]> termMap = Maps.newTreeMap();
         Reader r = new StringReader(text);
         TokenStream ts = index.getTextAnalyzer().tokenStream("", r);
         Token t = new Token();
         try {
             while ((t = ts.next(t)) != null) {
                 String termText = t.term();
-                TermVectorOffsetInfo[] info =
-                        (TermVectorOffsetInfo[]) termMap.get(termText);
+                TermVectorOffsetInfo[] info = termMap.get(termText);
                 if (info == null) {
                     info = new TermVectorOffsetInfo[1];
                 } else {

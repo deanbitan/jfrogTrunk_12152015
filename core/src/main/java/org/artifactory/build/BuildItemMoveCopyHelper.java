@@ -28,6 +28,8 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.search.SearchService;
+import org.artifactory.api.search.artifact.ChecksumSearchControls;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.StatusEntryLevel;
 import org.artifactory.repo.RepoPath;
@@ -153,8 +155,10 @@ public class BuildItemMoveCopyHelper {
      * @param buildFileBean Build file to locate
      */
     private void locateAndAddItem(Set<RepoPath> itemsToMove, BuildFileBean buildFileBean) {
-        Set<RepoPath> repoPaths = searchService.searchArtifactsByChecksum(buildFileBean.getSha1(),
-                buildFileBean.getMd5());
+        ChecksumSearchControls controls = new ChecksumSearchControls();
+        controls.addChecksum(ChecksumType.sha1, buildFileBean.getSha1());
+        controls.addChecksum(ChecksumType.md5, buildFileBean.getMd5());
+        Set<RepoPath> repoPaths = searchService.searchArtifactsByChecksum(controls);
         if (!repoPaths.isEmpty()) {
             itemsToMove.add(repoPaths.iterator().next());
         }

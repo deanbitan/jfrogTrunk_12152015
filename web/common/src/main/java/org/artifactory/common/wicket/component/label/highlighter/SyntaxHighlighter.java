@@ -57,7 +57,7 @@ public class SyntaxHighlighter extends WebComponent implements IHeaderContributo
     }
 
     public SyntaxHighlighter(String id, String code) {
-        this(id, new Model(code));
+        this(id, Model.of(code));
     }
 
     public SyntaxHighlighter(String id, IModel model) {
@@ -155,6 +155,7 @@ public class SyntaxHighlighter extends WebComponent implements IHeaderContributo
         return markup;
     }
 
+    @Override
     protected void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag) {
         final CharSequence markup = getMarkup();
         replaceComponentTagBody(markupStream, openTag, markup);

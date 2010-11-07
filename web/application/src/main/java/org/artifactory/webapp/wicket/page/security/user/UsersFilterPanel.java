@@ -55,7 +55,7 @@ public class UsersFilterPanel extends FieldSetPanel {
         Form form = new Form("usersFilterForm");
         add(form);
 
-        form.add(new TextField("usernameFilter", new PropertyModel(this, "usernameFilter")));
+        form.add(new TextField<String>("usernameFilter", new PropertyModel<String>(this, "usernameFilter")));
 
         TitledAjaxSubmitLink filterButton = new TitledAjaxSubmitLink("filter", "Filter", form) {
             @Override
@@ -70,7 +70,7 @@ public class UsersFilterPanel extends FieldSetPanel {
 
         // Drop-down choice of groups to filter by
         DropDownChoice groupDdc = new UsersPanel.FilterGroupDropDownChoice("groupFilter",
-                new PropertyModel(this, "groupFilter"), groupInfos);
+                new PropertyModel<GroupInfo>(this, "groupFilter"), groupInfos);
         groupDdc.add(new FilteringSelectBehavior());
         form.add(groupDdc);
     }

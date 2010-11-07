@@ -31,6 +31,8 @@ import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.common.StatusEntry;
+import org.artifactory.common.wicket.behavior.CssClass;
+import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonStyleModel;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
@@ -55,7 +57,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
     @SpringBean
     private RepositoryService repoService;
 
-    private DropDownChoice targetRepos;
+    private DropDownChoice<LocalRepoDescriptor> targetRepos;
 
     public MoveAndCopyBasePanel(String id) {
         super(id);
@@ -67,8 +69,9 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         add(form);
 
         List<LocalRepoDescriptor> localRepos = getDeployableLocalReposKeys();
-        targetRepos = new DropDownChoice("targetRepos", new Model(), localRepos);
-        targetRepos.setLabel(new Model("Target Repository"));
+        targetRepos = new DropDownChoice<LocalRepoDescriptor>(
+                "targetRepos", new Model<LocalRepoDescriptor>(), localRepos);
+        targetRepos.setLabel(Model.of("Target Repository"));
         targetRepos.setRequired(true);
         form.add(targetRepos);
 
@@ -78,8 +81,14 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         form.add(dryRunResult);
 
         form.add(new ModalCloseLink("cancel"));
-        form.add(createSubmitButton(form, "action"));
-        form.add(createDryRunButton(form, "dryRun"));
+
+        TitledAjaxSubmitLink actionButton = createSubmitButton(form, "action");
+        actionButton.add(new CssClass(new DefaultButtonStyleModel(actionButton)));
+        form.add(actionButton);
+
+        TitledAjaxSubmitLink dryRunButton = createDryRunButton(form, "dryRun");
+        dryRunButton.add(new CssClass(new DefaultButtonStyleModel(actionButton)));
+        form.add(dryRunButton);
     }
 
     protected String getSelectedTargetRepository() {

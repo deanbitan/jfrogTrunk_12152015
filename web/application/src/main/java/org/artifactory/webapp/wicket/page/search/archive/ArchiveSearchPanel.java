@@ -65,14 +65,14 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
         searchControls = new ArchiveSearchControls();
         getDataProvider().setGroupParam(new SortParam("searchResult.entry", true));
 
-        TextField searchControl = new TextField("query", new PropertyModel(searchControls, "query"));
+        TextField searchControl = new TextField<String>("query", new PropertyModel<String>(searchControls, "query"));
         searchControl.setOutputMarkupId(true);
         form.add(searchControl);
 
-        form.add(new StyledCheckbox("excludeInnerClasses", new PropertyModel(this, "excludeInnerClasses")));
+        form.add(new StyledCheckbox("excludeInnerClasses", new PropertyModel<Boolean>(this, "excludeInnerClasses")));
         form.add(new HelpBubble("excludeInnerClassesHelp", "Exclude inner classes from the list of results."));
 
-        form.add(new StyledCheckbox("allFileTypes", new PropertyModel(this, "searchAllTypes")));
+        form.add(new StyledCheckbox("allFileTypes", new PropertyModel<Boolean>(this, "searchAllTypes")));
         form.add(new HelpBubble("allFileTypesHelp", "Search through all types of files (including package names).\n" +
                 "Use the full file name including extension, e.g.: 'Driver.properties' or use wildcards.\n" +
                 "Please note: providing a search term which is too frequent in an archive, may yield\n" +
@@ -81,8 +81,9 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
         form.add(new HelpBubble("searchHelp", "Archive entry name.<br/>* and ? are accepted."));
 
         //Group entry names which are similar but have different character cases
-        getDataProvider().setGroupReneder("searchResult.entry", new ChoiceRenderer("searchResult.entry",
-                "searchResult.lowerCaseEntry"));
+        getDataProvider().setGroupRenderer("searchResult.entry",
+                new ChoiceRenderer<ActionableSearchResult<ArchiveSearchResult>>("searchResult.entry",
+                        "searchResult.lowerCaseEntry"));
     }
 
     @Override
@@ -117,12 +118,15 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new ActionsColumn(""));
-        columns.add(new GroupableColumn("Entry Name", "searchResult.entry", "searchResult.entryPath"));
+    protected void addColumns(List<IColumn<ActionableSearchResult<ArchiveSearchResult>>> columns) {
+        columns.add(new ActionsColumn<ActionableSearchResult<ArchiveSearchResult>>(""));
+        columns.add(new GroupableColumn<ActionableSearchResult<ArchiveSearchResult>>(
+                "Entry Name", "searchResult.entry", "searchResult.entryPath"));
         columns.add(new BaseSearchPanel.ArtifactNameColumn());
-        columns.add(new TitlePropertyColumn("Artifact Path", "searchResult.relDirPath", "searchResult.relDirPath"));
-        columns.add(new TitlePropertyColumn("Repository", "searchResult.repoKey", "searchResult.repoKey"));
+        columns.add(new TitlePropertyColumn<ActionableSearchResult<ArchiveSearchResult>>(
+                "Artifact Path", "searchResult.relDirPath", "searchResult.relDirPath"));
+        columns.add(new TitlePropertyColumn<ActionableSearchResult<ArchiveSearchResult>>(
+                "Repository", "searchResult.repoKey", "searchResult.repoKey"));
     }
 
     @Override

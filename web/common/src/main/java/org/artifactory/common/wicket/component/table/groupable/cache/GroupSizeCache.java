@@ -29,16 +29,16 @@ import java.util.List;
 /**
  * @author Yoav Aharoni
  */
-public class GroupSizeCache implements Serializable {
+public class GroupSizeCache<T> implements Serializable {
     private List<GroupMetaData> indicesList;
 
-    public GroupSizeCache(Iterator iterator, IChoiceRenderer renderer) {
+    public GroupSizeCache(Iterator<T> iterator, IChoiceRenderer<T> renderer) {
         indicesList = new ArrayList<GroupMetaData>();
         int index = 0;
         int beginIndex = 0;
         String prevId = null;
         while (iterator.hasNext()) {
-            Object o = iterator.next();
+            T o = iterator.next();
             String id = renderer.getIdValue(o, index);
             if (prevId != null && !prevId.equals(id)) {
                 indicesList.add(new GroupMetaData(beginIndex, index));
@@ -51,8 +51,8 @@ public class GroupSizeCache implements Serializable {
         indicesList.add(new GroupMetaData(beginIndex, index));
     }
 
-    public static GroupSizeCache getSizeCache(Iterator iterator, IChoiceRenderer renderer) {
-        return new GroupSizeCache(iterator, renderer);
+    public static <T> GroupSizeCache getSizeCache(Iterator<T> iterator, IChoiceRenderer<T> renderer) {
+        return new GroupSizeCache<T>(iterator, renderer);
     }
 
     public int getGroupSize(int index) {

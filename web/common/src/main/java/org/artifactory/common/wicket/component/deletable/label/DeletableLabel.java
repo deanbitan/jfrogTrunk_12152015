@@ -38,13 +38,14 @@ public abstract class DeletableLabel extends Panel {
     private boolean labelDeletable = false;
 
     public DeletableLabel(String id, String text) {
-        this(id, new Model(text));
+        this(id, Model.of(text));
     }
 
     public DeletableLabel(String id, IModel model) {
         super(id, model);
 
         add(new CssClass(new AbstractReadOnlyModel() {
+            @Override
             public Object getObject() {
                 return isLabelDeletable() ? "deletable" : "deletable undeletable";
             }
@@ -52,6 +53,7 @@ public abstract class DeletableLabel extends Panel {
 
         Label label = new Label("label", new DeletegeModel());
         label.add(new AjaxEventBehavior("onclick") {
+            @Override
             protected void onEvent(AjaxRequestTarget target) {
                 onLabelClicked(target);
             }
@@ -71,6 +73,7 @@ public abstract class DeletableLabel extends Panel {
         add(label);
 
         add(new AjaxLink("link") {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 onDeleteClicked(target);
             }
@@ -108,6 +111,7 @@ public abstract class DeletableLabel extends Panel {
     }
 
     private class DeletegeModel extends AbstractReadOnlyModel {
+        @Override
         public Object getObject() {
             return DeletableLabel.this.getDefaultModelObject();
         }

@@ -30,6 +30,7 @@ import org.artifactory.api.security.PermissionTargetInfo;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
+import org.artifactory.security.AccessLogger;
 
 import java.util.List;
 
@@ -64,9 +65,11 @@ public class PermissionTargetListPanel extends ModalListPanel<PermissionTargetIn
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new PropertyColumn(new Model("Permission Target Name"), "name", "name"));
-        columns.add(new PropertyColumn(new Model("Repositories"), "repoKeys", "repoKeys"));
+    protected void addColumns(List<? super IColumn<PermissionTargetInfo>> columns) {
+        columns.add(
+                new PropertyColumn<PermissionTargetInfo>(Model.of("Permission Target Name"), "name", "name"));
+        columns.add(
+                new PropertyColumn<PermissionTargetInfo>(Model.of("Repositories"), "repoKeys", "repoKeys"));
     }
 
     @Override
@@ -91,6 +94,7 @@ public class PermissionTargetListPanel extends ModalListPanel<PermissionTargetIn
     @Override
     protected void deleteItem(PermissionTargetInfo permissionTarget, AjaxRequestTarget target) {
         security.deleteAcl(permissionTarget);
+        AccessLogger.deleted("Permission Target " + permissionTarget.getName() + " was deleted successfully");
     }
 
 }

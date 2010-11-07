@@ -79,7 +79,6 @@ public class AsyncAdvice implements MethodInterceptor {
             }
         }
 
-        //noinspection ThrowableInstanceNeverThrown
         TraceableMethodInvocation traceableInvocation =
                 new TraceableMethodInvocation(invocation, Thread.currentThread().getName());
         log.trace("Adding: {}", traceableInvocation);

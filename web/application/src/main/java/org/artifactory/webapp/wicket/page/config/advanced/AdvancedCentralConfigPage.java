@@ -31,6 +31,7 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.panel.editor.TextEditorPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.security.AccessLogger;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.slf4j.Logger;
 
@@ -70,6 +71,7 @@ public class AdvancedCentralConfigPage extends AuthenticatedPage {
                 } else {
                     try {
                         centralConfigService.setConfigXml(editorValue);
+                        AccessLogger.configurationChanged();
                         info("Central configuration successfully saved.");
                     } catch (Exception e) {
                         log.debug("Error while manually saving the central configuration.", e);

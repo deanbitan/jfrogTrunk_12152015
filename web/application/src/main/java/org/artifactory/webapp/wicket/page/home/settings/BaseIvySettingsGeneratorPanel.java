@@ -75,7 +75,7 @@ public abstract class BaseIvySettingsGeneratorPanel extends BaseSettingsGenerato
                 "[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]", false, true);
 
         final TextField<String> ivyPatternTextField = addTextField("ivyPattern", this,
-                "[organisation]/[module]/ivy.xml", false, true);
+                "[organisation]/[module]/[revision]/ivy.xml", false, true);
 
         StyledCheckbox m2CompatibleCheckBox = new StyledCheckbox("m2Compatible",
                 new PropertyModel<Boolean>(this, "m2Compatible"));

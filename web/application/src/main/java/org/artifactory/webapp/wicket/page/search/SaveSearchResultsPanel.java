@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.search;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -36,7 +37,6 @@ import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.tooltip.TooltipBehavior;
-import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.combobox.ComboBox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.BaseTitledLink;
@@ -45,7 +45,6 @@ import org.artifactory.common.wicket.panel.defaultsubmit.DefaultSubmit;
 import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -67,20 +66,24 @@ public class SaveSearchResultsPanel extends FieldSetPanel {
     protected boolean completeVersion = true;
 
     private Model<String> messageModel;
+    private AddonType requestingAddon;
 
-    public SaveSearchResultsPanel(String id, IModel model) {
+    public SaveSearchResultsPanel(String id, IModel model, AddonType requestingAddon) {
         super(id, model);
+        this.requestingAddon = requestingAddon;
 
         setOutputMarkupId(true);
         add(new CssClass(new PropertyModel(this, "cssClass")));
+    }
 
+    public void init() {
         addSaveResultsForm();
         updateState();
     }
 
     private void addSaveResultsForm() {
         Form form = new Form("saveResultsForm");
-        messageModel = new Model<String>();
+        messageModel = Model.of();
         form.add(new TooltipBehavior(messageModel));
         add(form);
 
@@ -99,31 +102,34 @@ public class SaveSearchResultsPanel extends FieldSetPanel {
         form.add(createSubtractResultsLink("subtractResultsLink", "Subtract"));
         form.add(createIntersectResultsLink("intersectResultsLink", "Intersect"));
 
-        StyledCheckbox completeVersionCheckbox =
-                new StyledCheckbox("completeVersion", new PropertyModel<Boolean>(this, "completeVersion"));
-        completeVersionCheckbox.setDefaultModelObject(Boolean.FALSE);
-        form.add(completeVersionCheckbox);
-        form.add(new HelpBubble("completeVersion.help",
-                "For every artifact, aggregate all artifacts belonging to the same artifact version (and group) \n" +
-                        "under the saved search result, even if not directly found in the current search."));
-
         form.add(new DefaultSubmit("defaultSubmit", saveResultsLink, addResultsLink));
+
+        addAdditionalFields(form);
 
         postInit();
     }
 
+    public String getResultName() {
+        return resultName;
+    }
+
+    protected void addAdditionalFields(Form form) {
+    }
+
     protected Component newResultCombo(String id) {
-        return new ComboBox(id, new Model<String>(""), Collections.<String>emptyList());
+        return new ComboBox(id, Model.of(""), Collections.<String>emptyList());
     }
 
     protected void postInit() {
         setAllEnable(false);
-        add(new DisabledAddonBehavior(AddonType.SEARCH));
+        add(new DisabledAddonBehavior(requestingAddon));
     }
 
     public List<String> getSearchNameChoices() {
         Set<String> resultNames = ArtifactoryWebSession.get().getResultNames();
-        return new ArrayList<String>(resultNames);
+        List<String> resultNameList = Lists.newArrayList(resultNames);
+        Collections.sort(resultNameList);
+        return resultNameList;
     }
 
     protected Component createSubtractResultsLink(String id, String title) {
@@ -160,7 +166,7 @@ public class SaveSearchResultsPanel extends FieldSetPanel {
 
     public void setAllEnable(final boolean enabled) {
         setEnabled(enabled);
-        visitChildren(new SetEnableVisitor(enabled));
+        visitChildren(new SetEnableVisitor<Component>(enabled));
     }
 
     public class UpdateStateBehavior extends AjaxFormComponentUpdatingBehavior {

@@ -146,7 +146,7 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
      */
     public boolean scan() throws RepositoryException,
             IllegalStateException, IOException, ItemStateException {
-        // TODO: [by fsi] this test should always be true since the flow should be:
+        // This test should always be true since the flow should be:
         // 1. create a new GC object
         // 2. mark/scan/delete
         // 3. drop the GC object
@@ -157,8 +157,8 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
         info.dataStoreQueryTime = store.scanDataStore(System.nanoTime());
         info.initialSize = store.getDataStoreSize();
         info.initialCount = store.getDataStoreNbElements();
-        // TODO: remove true
-        if (true || pmList == null || !persistenceManagerScan) {
+        Boolean useIndex = Boolean.valueOf(System.getProperty("artifactory.gc.useIndex", "true"));
+        if (useIndex || pmList == null || !persistenceManagerScan) {
             scanningSessionList();
         } else {
             scanPersistenceManagers();
@@ -359,7 +359,6 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
 
     public void stopScan() throws RepositoryException {
         checkScanStarted();
-        // TODO: In parallel GC wait for all queries
         info.stopScanTimestamp = System.currentTimeMillis();
     }
 
@@ -404,7 +403,7 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
             try {
                 if (n.hasProperty(propertyName)) {
                     Property p = n.getProperty(propertyName);
-                    // TODO: FRED Stupid test
+                    // [by fsi] Stupid test since prop names should always be for binary entry
                     if (p.getType() == PropertyType.BINARY) {
                         if (p.getDefinition().isMultiple()) {
                             long[] lengths = p.getLengths();

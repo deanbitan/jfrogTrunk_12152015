@@ -18,9 +18,9 @@
   -->
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.4.5"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.5
-        http://www.jfrog.org/xsd/artifactory-v1_4_5.xsd">
+        xmlns="http://artifactory.jfrog.org/xsd/1.4.6"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.6
+        http://www.jfrog.org/xsd/artifactory-v1_4_6.xsd">
     <!--
     enable/disable anonymous downloads
     -->
@@ -66,37 +66,37 @@
     </indexer>
     <localRepositories>
         <localRepository>
-            <key>libs-releases-local</key>
+            <key>libs-release-local</key>
             <description>Local repository for in-house libraries</description>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
         </localRepository>
         <localRepository>
-            <key>libs-snapshots-local</key>
+            <key>libs-snapshot-local</key>
             <description>Local repository for in-house snapshots</description>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
         </localRepository>
         <localRepository>
-            <key>plugins-releases-local</key>
+            <key>plugins-release-local</key>
             <description>Local repository for plugins</description>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
         </localRepository>
         <localRepository>
-            <key>plugins-snapshots-local</key>
+            <key>plugins-snapshot-local</key>
             <description>Local repository for plugins snapshots</description>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
         </localRepository>
         <localRepository>
-            <key>ext-releases-local</key>
+            <key>ext-release-local</key>
             <description>Local repository for third party libraries</description>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
         </localRepository>
         <localRepository>
-            <key>ext-snapshots-local</key>
+            <key>ext-snapshot-local</key>
             <description>Local repository for third party snapshots</description>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
@@ -160,7 +160,7 @@
             <excludesPattern>org/apache/maven/**</excludesPattern>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <url>http://repo.jfrog.org/artifactory/libs-releases-local</url>
+            <url>http://repo.jfrog.org/artifactory/libs-release-local</url>
         </remoteRepository>
         <remoteRepository>
             <key>jfrog-plugins</key>
@@ -168,7 +168,7 @@
             <includesPattern>org/jfrog/**</includesPattern>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <url>http://repo.jfrog.org/artifactory/plugins-releases-local</url>
+            <url>http://repo.jfrog.org/artifactory/plugins-release-local</url>
         </remoteRepository>
         <remoteRepository>
             <key>jboss</key>
@@ -196,14 +196,6 @@
             <url>http://repository.springsource.com/maven/bundles/milestone</url>
         </remoteRepository>
         <remoteRepository>
-            <key>spring-snapshots</key>
-            <description>SpringSource in snapshot stage</description>
-            <includesPattern>org/springframework/**</includesPattern>
-            <handleReleases>false</handleReleases>
-            <handleSnapshots>true</handleSnapshots>
-            <url>http://repository.springsource.com/maven/bundles/snapshot</url>
-        </remoteRepository>
-        <remoteRepository>
             <key>spring-release</key>
             <description>SpringSource releases</description>
             <includesPattern>org/springframework/**</includesPattern>
@@ -219,7 +211,22 @@
             <handleSnapshots>false</handleSnapshots>
             <url>http://google-maven-repository.googlecode.com/svn/repository</url>
         </remoteRepository>
-
+        <remoteRepository>
+            <key>gradle-libs</key>
+            <description>Gradle libraries</description>
+            <includesPattern>**/*</includesPattern>
+            <handleReleases>true</handleReleases>
+            <handleSnapshots>false</handleSnapshots>
+            <url>http://gradle.artifactoryonline.com/gradle/libs</url>
+        </remoteRepository>
+        <remoteRepository>
+            <key>gradle-plugins</key>
+            <description>Gradle plugins</description>
+            <includesPattern>**/*</includesPattern>
+            <handleReleases>true</handleReleases>
+            <handleSnapshots>false</handleSnapshots>
+            <url>http://gradle.artifactoryonline.com/gradle/plugins</url>
+        </remoteRepository>
 
         <!-- A sample remote repository with all possible tunings -->
         <!--
@@ -292,43 +299,44 @@
                 <repositoryRef>jfrog-libs</repositoryRef>
                 <repositoryRef>jfrog-plugins</repositoryRef>
                 <repositoryRef>spring-milestone</repositoryRef>
-                <repositoryRef>spring-snapshots</repositoryRef>
                 <repositoryRef>spring-release</repositoryRef>
                 <repositoryRef>google-code</repositoryRef>
+                <repositoryRef>gradle-libs</repositoryRef>
+                <repositoryRef>gradle-plugins</repositoryRef>
             </repositories>
             <pomRepositoryReferencesCleanupPolicy>discard_active_reference</pomRepositoryReferencesCleanupPolicy>
         </virtualRepository>
         <virtualRepository>
-            <key>libs-releases</key>
+            <key>libs-release</key>
             <repositories>
-                <repositoryRef>libs-releases-local</repositoryRef>
-                <repositoryRef>ext-releases-local</repositoryRef>
+                <repositoryRef>libs-release-local</repositoryRef>
+                <repositoryRef>ext-release-local</repositoryRef>
                 <repositoryRef>remote-repos</repositoryRef>
             </repositories>
         </virtualRepository>
         <virtualRepository>
-            <key>plugins-releases</key>
+            <key>plugins-release</key>
             <repositories>
-                <repositoryRef>plugins-releases-local</repositoryRef>
-                <repositoryRef>ext-releases-local</repositoryRef>
-                <repositoryRef>remote-repos</repositoryRef>
-            </repositories>
-            <pomRepositoryReferencesCleanupPolicy>discard_active_reference</pomRepositoryReferencesCleanupPolicy>
-        </virtualRepository>
-        <virtualRepository>
-            <key>libs-snapshots</key>
-            <repositories>
-                <repositoryRef>libs-snapshots-local</repositoryRef>
-                <repositoryRef>ext-snapshots-local</repositoryRef>
+                <repositoryRef>plugins-release-local</repositoryRef>
+                <repositoryRef>ext-release-local</repositoryRef>
                 <repositoryRef>remote-repos</repositoryRef>
             </repositories>
             <pomRepositoryReferencesCleanupPolicy>discard_active_reference</pomRepositoryReferencesCleanupPolicy>
         </virtualRepository>
         <virtualRepository>
-            <key>plugins-snapshots</key>
+            <key>libs-snapshot</key>
             <repositories>
-                <repositoryRef>plugins-snapshots-local</repositoryRef>
-                <repositoryRef>ext-snapshots-local</repositoryRef>
+                <repositoryRef>libs-snapshot-local</repositoryRef>
+                <repositoryRef>ext-snapshot-local</repositoryRef>
+                <repositoryRef>remote-repos</repositoryRef>
+            </repositories>
+            <pomRepositoryReferencesCleanupPolicy>discard_active_reference</pomRepositoryReferencesCleanupPolicy>
+        </virtualRepository>
+        <virtualRepository>
+            <key>plugins-snapshot</key>
+            <repositories>
+                <repositoryRef>plugins-snapshot-local</repositoryRef>
+                <repositoryRef>ext-snapshot-local</repositoryRef>
                 <repositoryRef>remote-repos</repositoryRef>
             </repositories>
             <pomRepositoryReferencesCleanupPolicy>discard_active_reference</pomRepositoryReferencesCleanupPolicy>

@@ -252,6 +252,31 @@ public class MavenArtifactInfo implements UnitInfo {
     }
 
     /**
+     * Returns the maven artifact "id" in a "prettier" format.<br>
+     * {@link #toString()} will not omit fields like the classifier and type when
+     * they are not specified. This results in ugly artifact IDs.<br>
+     * This implementation will simply omit fields which are not specified.
+     *
+     * @return Summarized artifact info
+     */
+    public String getPrettyArtifactId() {
+        StringBuilder artifactIdBuilder = new StringBuilder(getGroupId()).append(":").
+                append(getArtifactId()).append(":").
+                append(getVersion());
+
+        String classifier = getClassifier();
+        if (StringUtils.isNotBlank(classifier) && !MavenArtifactInfo.NA.equals(classifier)) {
+            artifactIdBuilder.append(":").append(classifier);
+        }
+
+        String type = getType();
+        if (StringUtils.isNotBlank(type) && !MavenArtifactInfo.NA.equals(classifier)) {
+            artifactIdBuilder.append(":").append(type);
+        }
+        return artifactIdBuilder.toString();
+    }
+
+    /**
      * Builds a maven path according to the artifact's GAVC.
      *
      * @return The maven path according the artifact's GAVC.

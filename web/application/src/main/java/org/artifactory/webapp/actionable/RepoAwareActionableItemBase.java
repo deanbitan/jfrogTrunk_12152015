@@ -118,7 +118,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         AuthorizationService authService = ContextHelper.get().getAuthorizationService();
         boolean canAdminRepoPath = authService.canAdmin(repoPath);
 
-        tabs.add(new AbstractTab(new Model<String>("General")) {
+        tabs.add(new AbstractTab(Model.of("General")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new GeneralTabPanel(panelId, item);
@@ -140,7 +140,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         }
 
         // add metadata view panel
-        tabs.add(new AbstractTab(new Model<String>("Metadata")) {
+        tabs.add(new AbstractTab(Model.of("Metadata")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new MetadataTabPanel(panelId, item, canonicalRepoPath);
@@ -182,7 +182,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         private final RepoAwareActionableItem item;
 
         private PermissionsTab(RepoAwareActionableItem item) {
-            super(new Model<String>("Effective Permissions"));
+            super(Model.of("Effective Permissions"));
             this.item = item;
         }
 

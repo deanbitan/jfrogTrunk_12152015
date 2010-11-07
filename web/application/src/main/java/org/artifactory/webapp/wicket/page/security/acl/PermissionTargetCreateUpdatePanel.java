@@ -18,13 +18,15 @@
 
 package org.artifactory.webapp.wicket.page.security.acl;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
+import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
@@ -40,7 +42,13 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.security.*;
+import org.artifactory.api.security.AclInfo;
+import org.artifactory.api.security.AclService;
+import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.api.security.GroupInfo;
+import org.artifactory.api.security.PermissionTargetInfo;
+import org.artifactory.api.security.UserGroupService;
+import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -56,6 +64,7 @@ import org.artifactory.common.wicket.component.table.columns.checkbox.AjaxCheckb
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.security.AccessLogger;
 import org.artifactory.util.AlreadyExistsException;
 import org.artifactory.webapp.wicket.page.security.acl.tabs.PermissionPanel;
 import org.artifactory.webapp.wicket.page.security.acl.tabs.RepositoriesTabPanel;
@@ -102,7 +111,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
     private PermissionTargetAceInfoRowDataProvider usersDataProvider;
 
     public PermissionTargetCreateUpdatePanel(CreateUpdateAction action, PermissionTargetInfo target,
-                                             final Component targetsTable) {
+            final Component targetsTable) {
         super(action, target);
         add(new CssClass("permissions-panel"));
         setWidth(600);
@@ -193,6 +202,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
                 if (isCreate()) {
                     try {
                         aclService.createAcl(getAclInfo());
+                        AccessLogger.created("Permission target " + name + " was created successfully");
                     } catch (Exception e) {
                         String msg;
                         if (e instanceof AlreadyExistsException) {
@@ -211,7 +221,9 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
                     try {
                         getAclInfo().setPermissionTarget(entity);
                         save();
-                        getPage().info("Permission target '" + name + "' updated successfully.");
+                        String message = "Permission target '" + name + "' updated successfully.";
+                        AccessLogger.updated(message);
+                        getPage().info(message);
                         target.addComponent(PermissionTargetCreateUpdatePanel.this);
                     } catch (Exception e) {
                         String msg = "Failed to update permissions target: " + e.getMessage();
@@ -252,14 +264,14 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
     private void addTabs(TitledBorder border) {
         List<ITab> tabs = new ArrayList<ITab>(2);
 
-        tabs.add(new AbstractTab(new Model("Repositories")) {
+        tabs.add(new AbstractTab(Model.of("Repositories")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new RepositoriesTabPanel(panelId, PermissionTargetCreateUpdatePanel.this);
             }
         });
 
-        tabs.add(new AbstractTab(new Model("Users")) {
+        tabs.add(new AbstractTab(Model.of("Users")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new PermissionPanel(PermissionTargetCreateUpdatePanel.this, panelId, false);
@@ -267,7 +279,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
         });
 
         if (!groupsDataProvider.getGroups().isEmpty()) {
-            tabs.add(new AbstractTab(new Model("Groups")) {
+            tabs.add(new AbstractTab(Model.of("Groups")) {
                 @Override
                 public Panel getPanel(String panelId) {
                     return new PermissionPanel(PermissionTargetCreateUpdatePanel.this, panelId, true);
@@ -281,10 +293,11 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
     }
 
     public SortableTable getPermissionsTable(final boolean isGroup) {
-        List<IColumn> columns = new ArrayList<IColumn>();
-        columns.add(new PropertyColumn(new Model("Principal"), "principal", "principal") {
+        List<IColumn<AceInfoRow>> columns = Lists.newArrayList();
+        columns.add(new PropertyColumn<AceInfoRow>(Model.of("Principal"), "principal", "principal") {
             @Override
-            public void populateItem(Item item, String componentId, IModel model) {
+            public void populateItem(Item<ICellPopulator<AceInfoRow>> item, String componentId,
+                    IModel<AceInfoRow> model) {
                 super.populateItem(item, componentId, model);
                 if (isGroup) {
                     item.add(new CssClass("group"));
@@ -330,6 +343,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
                 super.onUpdate(checkbox, row, value, target);
                 if (sanityCheckAdmin()) {
                     row.setDelete(value);
+                    AccessLogger.deleted("Permission target" + row.getPrincipal() + " was successfully deleted");
                     onCheckboxUpdate(checkbox, target);
                 }
             }
@@ -367,11 +381,11 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
 
         PermissionTargetAceInfoRowDataProvider dataProvider = isGroup ? groupsDataProvider : usersDataProvider;
 
-        SortableTable table = new SortableTable("recipients", columns, dataProvider, 15);
+        SortableTable table = new SortableTable<AceInfoRow>("recipients", columns, dataProvider, 15);
         //Recipients header
         Label recipientsHeader = new Label("recipientsHeader");
         recipientsHeader.setDefaultModel(
-                new Model("Permissions for \"" + permissionTarget.getName() + "\""));
+                Model.of("Permissions for \"" + permissionTarget.getName() + "\""));
 
         return table;
     }
@@ -427,8 +441,8 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
         }
 
         @Override
-        protected FormComponent newCheckBox(String id, IModel model, AceInfoRow rowObject) {
-            final FormComponent component = super.newCheckBox(id, model, rowObject);
+        protected FormComponent<Boolean> newCheckBox(String id, IModel<Boolean> model, AceInfoRow rowObject) {
+            FormComponent<Boolean> component = super.newCheckBox(id, model, rowObject);
             component.setOutputMarkupId(true);
             return component;
         }
@@ -450,7 +464,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
         private boolean anyLocalRepository;
         private boolean anyCachedRepository;
         private final Boolean CACHE_REPO = Boolean.TRUE;
-        private MultiMap<Boolean, LocalRepoDescriptor> repoKeyMap = new MultiHashMap<Boolean, LocalRepoDescriptor>();
+        private Multimap<Boolean, LocalRepoDescriptor> repoKeyMap = HashMultimap.create();
 
         private RepoKeysData(PermissionTargetInfo info) {
             List<String> repoKeys = info.getRepoKeys();
@@ -527,6 +541,14 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
             for (LocalRepoDescriptor repoDescriptor : repoDescriptors) {
                 if (!repoKeyMap.containsValue(repoDescriptor)) {
                     repoKeyMap.put(repoDescriptor.isCache(), repoDescriptor);
+                }
+            }
+        }
+
+        public void removeRepoDescriptors(List<? extends LocalRepoDescriptor> repoDescriptors) {
+            for (LocalRepoDescriptor repoDescriptor : repoDescriptors) {
+                if (repoKeyMap.containsValue(repoDescriptor)) {
+                    repoKeyMap.remove(repoDescriptor.isCache(), repoDescriptor);
                 }
             }
         }

@@ -18,6 +18,7 @@
 
 package org.artifactory.jcr.fs;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -69,7 +70,10 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -121,7 +125,7 @@ public abstract class JcrFsItem<T extends InternalItemInfo> extends File impleme
             LinkedList<SetMetadataMessage> dumpTo = new LinkedList<SetMetadataMessage>();
             metadataToSave.drainTo(dumpTo);
             if (!dumpTo.isEmpty()) {
-                Map<String, String> toSave = new LinkedHashMap<String, String>();
+                Map<String, String> toSave = Maps.newLinkedHashMap();
                 for (SetMetadataMessage message : dumpTo) {
                     toSave.put(message.metadataName, message.xmlContent);
                 }

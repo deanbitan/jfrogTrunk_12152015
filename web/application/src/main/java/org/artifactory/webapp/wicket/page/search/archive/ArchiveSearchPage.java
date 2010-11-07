@@ -27,12 +27,6 @@ import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
  */
 public class ArchiveSearchPage extends BaseSearchPage {
 
-    /**
-     * Required for the initialization from the side menu
-     */
-    public ArchiveSearchPage() {
-    }
-
     @Override
     public int getSelectedTab() {
         return ARCHIVE_SEARCH_INDEX;

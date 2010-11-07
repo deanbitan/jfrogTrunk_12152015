@@ -27,7 +27,7 @@ import org.jdom.Verifier;
  *
  * @author Yossi Shaul
  */
-public class XsdNCNameValidator extends DefautlMessageStringValidator {
+public class XsdNCNameValidator extends DefaultMessageStringValidator {
 
     public XsdNCNameValidator() {
         this(null);

@@ -35,6 +35,7 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.security.AccessLogger;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 
 /**
@@ -46,7 +47,7 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
     private UserGroupService groupService;
 
     public GroupCreateUpdatePanel(CreateUpdateAction action, GroupInfo groupInfo,
-                                  GroupsListPanel groupsListPanel) {
+            GroupsListPanel groupsListPanel) {
         super(action, groupInfo);
         setWidth(440);
 
@@ -57,7 +58,7 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
         form.add(border);
 
         // Group name
-        RequiredTextField groupNameTf = new RequiredTextField("groupName");
+        RequiredTextField<String> groupNameTf = new RequiredTextField<String>("groupName");
         groupNameTf.add(StringValidator.maximumLength(100));
         groupNameTf.setEnabled(isCreate());// don't allow groupname update
         groupNameTf.add(new JcrNameValidator("Invalid group name '%s'"));
@@ -87,8 +88,10 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
                 boolean hasError = false;
                 if (isCreate()) {
                     hasError = onCreate();
+                    AccessLogger.created("Group " + getGroupInfo().getGroupName() + " was created successfully");
                 } else {
                     onUpdate();
+                    AccessLogger.updated("Group " + getGroupInfo().getGroupName() + " was updated successfully");
                 }
                 AjaxUtils.refreshFeedback(target);
                 if (!hasError) {

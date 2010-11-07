@@ -27,17 +27,20 @@ import org.artifactory.descriptor.mail.MailServerDescriptor;
  */
 public class MailServerConfiguration {
 
+    private boolean enabled;
     private String host;
     private int port;
     private String username;
     private String password;
     private String from;
     private String subjectPrefix;
+    private String artifactoryUrl;
     private boolean useTls;
     private boolean useSsl;
 
     public MailServerConfiguration(MailServerDescriptor mailServer) {
         if (mailServer != null) {
+            enabled = mailServer.isEnabled();
             host = mailServer.getHost();
             port = mailServer.getPort();
             username = mailServer.getUsername();
@@ -46,11 +49,13 @@ public class MailServerConfiguration {
             subjectPrefix = mailServer.getSubjectPrefix();
             useTls = mailServer.isTls();
             useSsl = mailServer.isSsl();
+            artifactoryUrl = mailServer.getArtifactoryUrl();
         }
     }
 
-    public MailServerConfiguration(String host, int port, String username, String password, String from,
-            String subjectPrefix, boolean useTls, boolean useSsl) {
+    public MailServerConfiguration(boolean enabled, String host, int port, String username, String password,
+            String from, String subjectPrefix, boolean useTls, boolean useSsl) {
+        this.enabled = enabled;
         this.host = host;
         this.port = port;
         this.username = username;
@@ -59,6 +64,10 @@ public class MailServerConfiguration {
         this.subjectPrefix = subjectPrefix;
         this.useTls = useTls;
         this.useSsl = useSsl;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 
     public String getHost() {
@@ -91,5 +100,9 @@ public class MailServerConfiguration {
 
     public boolean isUseSsl() {
         return useSsl;
+    }
+
+    public String getArtifactoryUrl() {
+        return artifactoryUrl;
     }
 }

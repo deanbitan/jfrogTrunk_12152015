@@ -151,7 +151,7 @@ public class PathHelper implements Serializable {
         return filesList;
     }
 
-    public boolean isParentOf(String parent, Folder child) {
+    public static boolean isParentOf(String parent, Folder child) {
         if (parent == null) {
             return true;
         }
@@ -160,11 +160,12 @@ public class PathHelper implements Serializable {
         return getCanonicalPath(child).startsWith(canonicalParent);
     }
 
-    public String getCanonicalPath(File file) {
+    public static String getCanonicalPath(File file) {
         try {
             return file.getCanonicalPath();
         } catch (IOException e) {
-            log.error(String.format("Could not get canonical path for \"%s\", using absolute path instead: %s", file.getAbsolutePath(), e.getMessage()), e);
+            log.error(String.format("Could not get canonical path for \"%s\", using absolute path instead: %s",
+                    file.getAbsolutePath(), e.getMessage()), e);
         }
         return file.getAbsolutePath();
     }

@@ -25,7 +25,7 @@ import javax.xml.bind.annotation.XmlID;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "LdapSettingType",
-        propOrder = {"key", "enabled", "ldapUrl", "userDnPattern", "search", "autoCreateUser"},
+        propOrder = {"key", "enabled", "ldapUrl", "userDnPattern", "search", "autoCreateUser", "emailAttribute"},
         namespace = Descriptor.NS)
 public class LdapSetting implements Descriptor {
 
@@ -44,6 +44,9 @@ public class LdapSetting implements Descriptor {
 
     @XmlElement(defaultValue = "true")
     private boolean autoCreateUser = true;
+
+    @XmlElement(defaultValue = "mail")
+    private String emailAttribute = "mail";
 
 
     public String getKey() {
@@ -92,6 +95,14 @@ public class LdapSetting implements Descriptor {
 
     public void setAutoCreateUser(boolean autoCreateUser) {
         this.autoCreateUser = autoCreateUser;
+    }
+
+    public String getEmailAttribute() {
+        return emailAttribute;
+    }
+
+    public void setEmailAttribute(String emailAttribute) {
+        this.emailAttribute = emailAttribute;
     }
 
     @Override

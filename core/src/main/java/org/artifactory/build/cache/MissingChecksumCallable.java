@@ -19,6 +19,8 @@
 package org.artifactory.build.cache;
 
 import org.artifactory.api.search.SearchService;
+import org.artifactory.api.search.artifact.ChecksumSearchControls;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.jcr.fs.FileInfoProxy;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.spring.InternalArtifactoryContext;
@@ -51,7 +53,10 @@ public class MissingChecksumCallable implements Callable<ChecksumPair> {
     public ChecksumPair call() throws Exception {
         InternalArtifactoryContext context = InternalContextHelper.get();
         SearchService searchService = context.beanForType(SearchService.class);
-        Set<RepoPath> artifactList = searchService.searchArtifactsByChecksum(sha1, md5);
+        ChecksumSearchControls controls = new ChecksumSearchControls();
+        controls.addChecksum(ChecksumType.md5, md5);
+        controls.addChecksum(ChecksumType.sha1, sha1);
+        Set<RepoPath> artifactList = searchService.searchArtifactsByChecksum(controls);
         if (!artifactList.isEmpty()) {
             RepoPath repoPath = artifactList.iterator().next();
             org.artifactory.fs.FileInfo fileInfo = new FileInfoProxy(repoPath);

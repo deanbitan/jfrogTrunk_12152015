@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.security.group.permission;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -75,24 +76,25 @@ public class GroupPermissionsPanel extends BaseModalPanel {
     }
 
     private SortableTable addTable() {
-        List<IColumn> columns = new ArrayList<IColumn>();
+        List<IColumn<PermissionsRow>> columns = Lists.newArrayList();
 
-        columns.add(new AbstractColumn(new Model("Permission Target"), "permissionTarget.name") {
+        columns.add(new AbstractColumn<PermissionsRow>(
+                Model.of("Permission Target"), "permissionTarget.name") {
             public void populateItem(Item cellItem, String componentId, IModel rowModel) {
                 cellItem.add(new LinkPanel(componentId, rowModel));
             }
         });
 
-        columns.add(new BooleanColumn("Admin", "admin", "admin"));
-        columns.add(new BooleanColumn("Delete", "delete", "delete"));
-        columns.add(new BooleanColumn("Deploy", "deploy", "deploy"));
-        columns.add(new BooleanColumn("Annotate", "annotate", "annotate"));
-        columns.add(new BooleanColumn("Read", "read", "read"));
+        columns.add(new BooleanColumn<PermissionsRow>("Admin", "admin", "admin"));
+        columns.add(new BooleanColumn<PermissionsRow>("Delete", "delete", "delete"));
+        columns.add(new BooleanColumn<PermissionsRow>("Deploy", "deploy", "deploy"));
+        columns.add(new BooleanColumn<PermissionsRow>("Annotate", "annotate", "annotate"));
+        columns.add(new BooleanColumn<PermissionsRow>("Read", "read", "read"));
         PermissionsTabTableDataProvider dataProvider = new PermissionsTabTableDataProvider(groupInfo);
-        return new SortableTable("userPermissionsTable", columns, dataProvider, 10);
+        return new SortableTable<PermissionsRow>("userPermissionsTable", columns, dataProvider, 10);
     }
 
-    class PermissionsTabTableDataProvider extends SortableDataProvider {
+    class PermissionsTabTableDataProvider extends SortableDataProvider<PermissionsRow> {
         private final GroupInfo groupInfo;
         private List<PermissionsRow> groupPermissions;
 
@@ -102,7 +104,7 @@ public class GroupPermissionsPanel extends BaseModalPanel {
             loadData();
         }
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<PermissionsRow> iterator(int first, int count) {
             ListPropertySorter.sort(groupPermissions, getSort());
             List<PermissionsRow> list = groupPermissions.subList(first, first + count);
             return list.iterator();
@@ -112,8 +114,8 @@ public class GroupPermissionsPanel extends BaseModalPanel {
             return groupPermissions.size();
         }
 
-        public IModel model(Object object) {
-            return new Model((PermissionsRow) object);
+        public IModel<PermissionsRow> model(PermissionsRow object) {
+            return new Model<PermissionsRow>(object);
         }
 
         private void loadData() {

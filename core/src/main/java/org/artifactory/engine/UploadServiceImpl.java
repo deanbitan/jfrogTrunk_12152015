@@ -30,6 +30,7 @@ import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.InternalArtifactoryRequest;
 import org.artifactory.api.security.AuthorizationService;
@@ -216,6 +217,9 @@ public class UploadServiceImpl implements InternalUploadService {
                     searchService.asyncIndex(repoPath);
                 }
             }
+        } catch (BadPomException bpe) {
+            response.sendError(HttpStatus.SC_CONFLICT, bpe.getMessage(), log);
+            return;
         } finally {
             IOUtils.closeQuietly(request.getInputStream());
         }
@@ -233,7 +237,7 @@ public class UploadServiceImpl implements InternalUploadService {
      * we have to locate the file and update it's 'original' checksum with the value read from the request body.
      */
     private void processChecksumUploadRequest(ArtifactoryRequest request,
-                                              ArtifactoryResponse response, LocalRepo repo) throws IOException {
+            ArtifactoryResponse response, LocalRepo repo) throws IOException {
 
         String checksumPath = request.getPath();
         MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(new RepoPathImpl(repo.getKey(), checksumPath));

@@ -28,6 +28,7 @@ import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.template.TemplateBehavior;
 import org.artifactory.common.wicket.behavior.template.loadingstrategy.InterpolatedTemplateStrategy;
+import org.artifactory.common.wicket.util.CookieUtils;
 
 /**
  * @author Yoav Aharoni
@@ -36,6 +37,7 @@ public class CollapsibleBehavior extends TemplateBehavior {
     private boolean expanded;
     private boolean resizeModal;
     private CollapsibleBehavior.ExpandAjaxBehavior expandEvent;
+    private String persistenceCookie;
 
     public CollapsibleBehavior() {
         super(CollapsibleBehavior.class);
@@ -88,6 +90,28 @@ public class CollapsibleBehavior extends TemplateBehavior {
             return expandEvent.getCallFunction();
         }
         return "null";
+    }
+
+    public CollapsibleBehavior setPersistenceCookie(String cookieName) {
+        this.persistenceCookie = cookieName;
+        return this;
+    }
+
+    public String getPersistenceCookie() {
+        return persistenceCookie;
+    }
+
+    @Override
+    public void beforeRender(Component component) {
+        restoreState();
+        super.beforeRender(component);
+    }
+
+    private void restoreState() {
+        if (persistenceCookie != null) {
+            String value = CookieUtils.getCookie(persistenceCookie);
+            expanded = StringUtils.isNotEmpty(value);
+        }
     }
 
     private class ExpandAjaxBehavior extends AjaxEventBehavior {

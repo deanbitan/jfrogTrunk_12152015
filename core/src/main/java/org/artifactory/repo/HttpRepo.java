@@ -31,19 +31,20 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
+import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
+import org.artifactory.addon.plugin.download.BeforeRemoteDownloadAction;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.io.NullResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
-import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
-import org.artifactory.addon.plugin.download.BeforeRemoteDownloadAction;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.NullRequestContext;
@@ -64,11 +65,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.zip.GZIPInputStream;
 
 public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(HttpRepo.class);
 
     private HttpClient client;
+    private boolean handleGzipResponse;
 
     public HttpRepo(
             InternalRepositoryService repositoryService, HttpRepoDescriptor descriptor, boolean globalOfflineMode,
@@ -79,6 +82,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     @Override
     public void init() {
         super.init();
+        handleGzipResponse = ConstantValues.httpAcceptEncodingGzip.getBoolean();
         if (!isOffline()) {
             this.client = createHttpClient();
         }
@@ -192,7 +196,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         //Found
         log.info("{}: Downloading content from '{}'...", this, fullUrl);
 
-        final InputStream is = method.getResponseBodyAsStream();
+        final InputStream is = getResponseStream(method);
+
         //Create a handle and return it
         ResourceStreamHandle handle = new ResourceStreamHandle() {
             public InputStream getInputStream() {
@@ -343,7 +348,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     @SuppressWarnings({"deprecation"})
-    private static void updateMethod(HttpMethod method) {
+    private void updateMethod(HttpMethod method) {
         //Explicitly force keep alive
         method.setRequestHeader("Connection", "Keep-Alive");
         //Set the current requestor
@@ -352,6 +357,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         method.setRequestHeader(ArtifactoryRequest.ORIGIN_ARTIFACTORY, PathUtils.getHostId());
         //Follow redirects
         method.setFollowRedirects(true);
+        //Set gzip encoding
+        if (handleGzipResponse) {
+            method.addRequestHeader("Accept-Encoding", "gzip");
+        }
     }
 
     private static long getLastModified(HttpMethod method) {
@@ -388,5 +397,18 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
         String contentLengthString = contentLengthHeader.getValue();
         return Long.parseLong(contentLengthString);
+    }
+
+    private InputStream getResponseStream(GetMethod method) throws IOException {
+        InputStream is = method.getResponseBodyAsStream();
+        if (handleGzipResponse) {
+            Header[] contentEncodings = method.getResponseHeaders("Content-Encoding");
+            for (int i = 0, n = contentEncodings.length; i < n; i++) {
+                if ("gzip".equalsIgnoreCase(contentEncodings[i].getValue())) {
+                    return new GZIPInputStream(is);
+                }
+            }
+        }
+        return is;
     }
 }

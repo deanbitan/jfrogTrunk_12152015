@@ -24,7 +24,6 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.validation.validator.RangeValidator;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -50,8 +49,8 @@ import static org.artifactory.descriptor.repo.SnapshotVersionBehavior.*;
  * @author Yossi Shaul
  */
 public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescriptor> {
-    private TextField maxUniqueSnapshots;
-    private DropDownChoice snapshotVersionDropDown;
+    private TextField<Integer> maxUniqueSnapshots;
+    private DropDownChoice<SnapshotVersionBehavior> snapshotVersionDropDown;
 
     public LocalRepoPanel(CreateUpdateAction action, LocalRepoDescriptor repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
@@ -145,7 +144,8 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
 
         // snapshotVersionBehavior
         SnapshotVersionBehavior[] versions = SnapshotVersionBehavior.values();
-        snapshotVersionDropDown = new DropDownChoice("snapshotVersionBehavior", Arrays.asList(versions)) {
+        snapshotVersionDropDown = new DropDownChoice<SnapshotVersionBehavior>(
+                "snapshotVersionBehavior", Arrays.asList(versions)) {
             @Override
             public boolean isEnabled() {
                 return getRepoDescriptor().isHandleSnapshots();
@@ -170,12 +170,9 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         advancedSettings.add(new StyledCheckbox("suppressPomConsistencyChecks"));
         advancedSettings.add(new SchemaHelpBubble("suppressPomConsistencyChecks.help"));
 
-        advancedSettings.add(new TextArea("notes"));
-        advancedSettings.add(new SchemaHelpBubble("notes.help"));
-
         // snapshotVersionBehavior
         LocalRepoChecksumPolicyType[] checksumPolicyTypes = LocalRepoChecksumPolicyType.values();
-        DropDownChoice checksumPolicyDropDown = new DropDownChoice("checksumPolicyType",
+        DropDownChoice checksumPolicyDropDown = new DropDownChoice<LocalRepoChecksumPolicyType>("checksumPolicyType",
                 Arrays.asList(checksumPolicyTypes), new ChecksumPolicyChoiceRenderer());
         advancedSettings.add(checksumPolicyDropDown);
         advancedSettings.add(new SchemaHelpBubble("localRepoChecksumPolicyType.help", "checksumPolicyType"));
@@ -199,19 +196,16 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         }
     }
 
-    private static class SnapshotVersionChoiceRenderer extends ChoiceRenderer {
+    private static class SnapshotVersionChoiceRenderer extends ChoiceRenderer<SnapshotVersionBehavior> {
         @Override
-        public Object getDisplayValue(Object object) {
-            if (object instanceof SnapshotVersionBehavior) {
-                return ((SnapshotVersionBehavior) object).getDisplayName();
-            }
+        public String getDisplayValue(SnapshotVersionBehavior object) {
             return WordUtils.capitalizeFully(object.toString());
         }
     }
 
-    private static class ChecksumPolicyChoiceRenderer extends ChoiceRenderer {
+    private static class ChecksumPolicyChoiceRenderer extends ChoiceRenderer<LocalRepoChecksumPolicyType> {
         @Override
-        public Object getDisplayValue(Object object) {
+        public String getDisplayValue(LocalRepoChecksumPolicyType object) {
             if (LocalRepoChecksumPolicyType.SERVER.equals(object)) {
                 return "Trust server generated checksums";
             } else {

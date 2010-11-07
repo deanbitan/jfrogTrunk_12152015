@@ -544,8 +544,15 @@ public class BuildServiceImpl implements InternalBuildService {
             for (Module module : build.getModules()) {
                 if (module.getDependencies() != null) {
                     for (Dependency dependency : module.getDependencies()) {
-                        if (dependency.getScopes() != null) {
-                            scopes.addAll(dependency.getScopes());
+                        List<String> dependencyScopes = dependency.getScopes();
+                        if (dependencyScopes != null) {
+                            for (String dependencyScope : dependencyScopes) {
+                                if (StringUtils.isBlank(dependencyScope)) {
+                                    scopes.add(UNSPECIFIED_SCOPE);
+                                } else {
+                                    scopes.add(dependencyScope);
+                                }
+                            }
                         }
                     }
                 }

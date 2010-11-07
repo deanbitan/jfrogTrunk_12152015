@@ -80,7 +80,7 @@ public class PermissionsTabPanel extends Panel {
     private void addTable() {
         List<IColumn> columns = new ArrayList<IColumn>();
 
-        columns.add(new PropertyColumn(new Model("Principal"), "principal", "principal") {
+        columns.add(new PropertyColumn(Model.of("Principal"), "principal", "principal") {
             @Override
             public void populateItem(Item item, String componentId, IModel model) {
                 super.populateItem(item, componentId, model);
@@ -93,10 +93,10 @@ public class PermissionsTabPanel extends Panel {
             }
         });
 
-        columns.add(new BooleanColumn(new Model("Delete"), "delete", "delete"));
-        columns.add(new BooleanColumn(new Model("Deploy"), "deploy", "deploy"));
-        columns.add(new BooleanColumn(new Model("Annotate"), "annotate", "annotate"));
-        columns.add(new BooleanColumn(new Model("Read"), "read", "read"));
+        columns.add(new BooleanColumn(Model.of("Delete"), "delete", "delete"));
+        columns.add(new BooleanColumn(Model.of("Deploy"), "deploy", "deploy"));
+        columns.add(new BooleanColumn(Model.of("Annotate"), "annotate", "annotate"));
+        columns.add(new BooleanColumn(Model.of("Read"), "read", "read"));
 
         PermissionsTabTableDataProvider dataProvider =
                 new PermissionsTabTableDataProvider(userGroupService, authService, repoPath);

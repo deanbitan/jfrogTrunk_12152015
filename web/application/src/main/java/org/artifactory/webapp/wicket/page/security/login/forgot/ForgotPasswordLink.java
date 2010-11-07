@@ -21,6 +21,7 @@ package org.artifactory.webapp.wicket.page.security.login.forgot;
 import org.apache.wicket.markup.ComponentTag;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.links.TitledLink;
+import org.artifactory.common.wicket.util.WicketUtils;
 
 /**
  * Forgot password link button.
@@ -42,6 +43,6 @@ public class ForgotPasswordLink extends TitledLink {
     protected void onComponentTag(ComponentTag tag) {
         super.onComponentTag(tag);
         tag.setName("a");
-        tag.put("href", urlFor(ForgotPasswordPage.class, null));
+        tag.put("href", WicketUtils.absoluteMountPathForPage(ForgotPasswordPage.class));
     }
 }

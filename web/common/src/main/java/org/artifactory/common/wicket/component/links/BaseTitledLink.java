@@ -52,7 +52,7 @@ public class BaseTitledLink extends AbstractLink implements Titled {
 
     public BaseTitledLink(String id, String title) {
         super(id);
-        setDefaultModel(new Model<String>(title));
+        setDefaultModel(Model.of(title));
     }
 
     protected void addOnClickOpenScript(ComponentTag tag) {

@@ -82,7 +82,7 @@ public class ExportRepoPanel extends TitledPanel {
         Form exportForm = new Form("exportForm");
         add(exportForm);
 
-        IModel sourceRepoModel = new PropertyModel(this, "sourceRepoKey");
+        IModel<String> sourceRepoModel = new PropertyModel<String>(this, "sourceRepoKey");
         List<LocalRepoDescriptor> localRepos = repositoryService.getLocalAndCachedRepoDescriptors();
         final List<String> repoKeys = new ArrayList<String>(localRepos.size() + 1);
         //Add the "All" pseudo repository
@@ -91,12 +91,12 @@ public class ExportRepoPanel extends TitledPanel {
             String key = localRepo.getKey();
             repoKeys.add(key);
         }
-        DropDownChoice sourceRepoDdc = new DropDownChoice("sourceRepo", sourceRepoModel, repoKeys);
+        DropDownChoice sourceRepoDdc = new DropDownChoice<String>("sourceRepo", sourceRepoModel, repoKeys);
         //Needed because get getDefaultChoice does not update the actual selection object
         sourceRepoDdc.setDefaultModelObject(ImportExportReposPage.ALL_REPOS);
         exportForm.add(sourceRepoDdc);
 
-        PropertyModel pathModel = new PropertyModel(this, "exportToPath");
+        PropertyModel<File> pathModel = new PropertyModel<File>(this, "exportToPath");
         final PathAutoCompleteTextField exportToPathTf = new PathAutoCompleteTextField("exportToPath", pathModel);
         exportToPathTf.setMask(PathMask.FOLDERS);
         exportToPathTf.setRequired(true);
@@ -124,7 +124,7 @@ public class ExportRepoPanel extends TitledPanel {
         StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose"));
         verboseCheckbox.setRequired(false);
         exportForm.add(verboseCheckbox);
-        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+        String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
         exportForm.add(new HelpBubble("verboseHelp", "Lowers the log level to debug and redirects the output from the "
                 + "standard log to the import-export log." +
                 "\nHint: You can monitor the log in the <a href=\"" + systemLogsPage + "\">'System Logs'</a> page."));
@@ -147,7 +147,7 @@ public class ExportRepoPanel extends TitledPanel {
                     }
                     List<StatusEntry> warnings = status.getWarnings();
                     if (!warnings.isEmpty()) {
-                        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                        String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                         warn(warnings.size() + " Warnings have been produces during the export. Please review the " +
                                 "<a href=\"" + systemLogsPage + "\">log</a> for further information.");
                     }

@@ -106,11 +106,11 @@ public abstract class BaseBuildsTabPanel extends Panel {
 
         List<IColumn> artifactColumns = Lists.newArrayList();
         artifactColumns.add(new ItemActionsColumn());
-        artifactColumns.add(new PropertyColumn(new Model<String>("Build Name"), "master.name", "master.name"));
-        artifactColumns.add(new PropertyColumn(new Model<String>("Build Number"), "master.number", "master.number"));
-        artifactColumns.add(new FormattedDateColumn(new Model<String>("Build Started"), "master.startedDate",
+        artifactColumns.add(new PropertyColumn(Model.of("Build Name"), "master.name", "master.name"));
+        artifactColumns.add(new PropertyColumn(Model.of("Build Number"), "master.number", "master.number"));
+        artifactColumns.add(new FormattedDateColumn(Model.of("Build Started"), "master.startedDate",
                 "master.started", centralConfigService, Build.STARTED_FORMAT));
-        artifactColumns.add(new PropertyColumn(new Model<String>("Module ID"), "detail.moduleId", "detail.moduleId"));
+        artifactColumns.add(new PropertyColumn(Model.of("Module ID"), "detail.moduleId", "detail.moduleId"));
 
         artifactsBorder.add(new ProducedByTable("artifactBuilds", artifactColumns));
 
@@ -120,10 +120,10 @@ public abstract class BaseBuildsTabPanel extends Panel {
 
         List<IColumn> dependencyColumns = Lists.newArrayList();
         dependencyColumns.add(new ItemActionsColumn());
-        dependencyColumns.add(new PropertyColumn(new Model<String>("Build Name"), "master.name", "master.name"));
-        dependencyColumns.add(new PropertyColumn(new Model<String>("Build Number"), "master.number", "master.number"));
-        dependencyColumns.add(new PropertyColumn(new Model<String>("Module ID"), "detail.moduleId", "detail.moduleId"));
-        dependencyColumns.add(new PropertyColumn(new Model<String>("Scope"), "detail.scope", "detail.scope"));
+        dependencyColumns.add(new PropertyColumn(Model.of("Build Name"), "master.name", "master.name"));
+        dependencyColumns.add(new PropertyColumn(Model.of("Build Number"), "master.number", "master.number"));
+        dependencyColumns.add(new PropertyColumn(Model.of("Module ID"), "detail.moduleId", "detail.moduleId"));
+        dependencyColumns.add(new PropertyColumn(Model.of("Scope"), "detail.scope", "detail.scope"));
 
         dependenciesBorder.add(new UsedByTable("dependencyBuilds", dependencyColumns));
     }

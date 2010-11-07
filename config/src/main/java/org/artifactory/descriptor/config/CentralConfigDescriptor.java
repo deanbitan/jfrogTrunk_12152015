@@ -18,7 +18,6 @@
 
 package org.artifactory.descriptor.config;
 
-import org.apache.commons.collections15.OrderedMap;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
@@ -33,6 +32,7 @@ import org.artifactory.descriptor.security.SecurityDescriptor;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 /**
@@ -43,11 +43,11 @@ import java.util.TimeZone;
 public interface CentralConfigDescriptor extends Descriptor {
     TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
-    OrderedMap<String, LocalRepoDescriptor> getLocalRepositoriesMap();
+    Map<String, LocalRepoDescriptor> getLocalRepositoriesMap();
 
-    OrderedMap<String, RemoteRepoDescriptor> getRemoteRepositoriesMap();
+    Map<String, RemoteRepoDescriptor> getRemoteRepositoriesMap();
 
-    OrderedMap<String, VirtualRepoDescriptor> getVirtualRepositoriesMap();
+    Map<String, VirtualRepoDescriptor> getVirtualRepositoriesMap();
 
     List<ProxyDescriptor> getProxies();
 

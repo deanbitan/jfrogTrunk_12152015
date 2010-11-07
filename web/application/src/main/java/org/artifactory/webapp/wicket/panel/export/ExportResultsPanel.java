@@ -82,7 +82,7 @@ public class ExportResultsPanel extends FieldSetPanel {
     private static final Logger log = LoggerFactory.getLogger(ExportResultsPanel.class);
 
     public ExportResultsPanel(String id, final ActionableItem actionableItem) {
-        super(id, new Model<String>("Export to Path"));
+        super(id, Model.of("Export to Path"));
         searchResultName = actionableItem.getDisplayName();
         Form exportForm = new Form("exportForm");
         add(exportForm);
@@ -129,7 +129,7 @@ public class ExportResultsPanel extends FieldSetPanel {
                     repoService.exportSearchResults(searchResults, baseSettings);
                     List<StatusEntry> warnings = status.getWarnings();
                     if (!warnings.isEmpty()) {
-                        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                        String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                         warn(warnings.size() + " warning(s) reported during the export. Please review the " +
                                 "<a href=\"" + systemLogsPage + "\">log</a> for further information.");
                     }

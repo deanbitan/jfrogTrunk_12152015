@@ -106,7 +106,7 @@ public class BuildTabbedPanel extends TitledPanel {
         tabList.add(getGeneralInfoTab("General Build Info", hasDeployOnLocal));
 
         if (!targetSpecificModule) {
-            tabList.add(new AbstractTab(new Model("Published Modules")) {
+            tabList.add(new AbstractTab(Model.of("Published Modules")) {
                 @Override
                 public Panel getPanel(String panelId) {
                     return new PublishedModulesTabPanel(panelId, build);

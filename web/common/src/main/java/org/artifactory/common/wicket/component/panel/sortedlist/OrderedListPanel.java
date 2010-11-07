@@ -45,7 +45,7 @@ import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.columns.panel.links.LinksColumnPanel;
 import org.artifactory.common.wicket.component.template.HtmlTemplate;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
-import org.artifactory.common.wicket.model.DelegetedModel;
+import org.artifactory.common.wicket.model.DelegatedModel;
 import org.artifactory.common.wicket.resources.basewidget.BaseWidget;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
@@ -59,14 +59,15 @@ import static java.lang.String.format;
 /**
  * @author Yoav Aharoni
  */
-public abstract class OrderedListPanel<T> extends TitledPanel {
+public abstract class OrderedListPanel<T extends Serializable> extends TitledPanel {
     private static final Logger log = LoggerFactory.getLogger(OrderedListPanel.class);
 
+    @SuppressWarnings({"unchecked"})
     protected OrderedListPanel(String id, List<T> list) {
-        this(id, new Model<Serializable>((Serializable) list));
+        this(id, new Model((Serializable) list));
     }
 
-    protected OrderedListPanel(String id, IModel listModel) {
+    protected OrderedListPanel(String id, IModel<List<T>> listModel) {
         super(id, listModel);
         init();
     }
@@ -111,9 +112,9 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
         add(container);
 
         // add ListView
-        ListView listView = new ListView("item", new DelegetedModel(this)) {
+        ListView listView = new ListView<T>("item", new DelegatedModel<List<T>>(this)) {
             @Override
-            protected void populateItem(ListItem item) {
+            protected void populateItem(ListItem<T> item) {
                 OrderedListPanel.this.populateItem(item);
                 item.add(new CssClass(item.getIndex() % 2 == 0 ? "even" : "odd"));
                 item.add(new JavascriptEvent("onclick", ""));
@@ -183,12 +184,11 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
 
     protected abstract List<? extends AbstractLink> getItemActions(T itemObject, String linkId);
 
-    @SuppressWarnings({"unchecked"})
-    protected void populateItem(ListItem item) {
+    protected void populateItem(ListItem<T> item) {
         item.add(new AttributeModifier("dndType", true, new DndTypeModel()));
         item.add(new CssClass("dojoDndItem"));
 
-        T itemObject = (T) item.getDefaultModelObject();
+        T itemObject = item.getModelObject();
         item.add(new Label("name", getItemDisplayValue(itemObject)));
 
         LinksColumnPanel linksPanel = new LinksColumnPanel("actions");
@@ -229,9 +229,9 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
         }
     }
 
-    private class IndicesHiddenField extends HiddenField {
+    private class IndicesHiddenField extends HiddenField<T> {
         private IndicesHiddenField(String id) {
-            super(id, new Model());
+            super(id, Model.<T>of());
         }
 
         @Override
@@ -262,7 +262,7 @@ public abstract class OrderedListPanel<T> extends TitledPanel {
             String indicesString = value.toString();
             String[] strings = indicesString.split(",");
 
-            // senity
+            // sanity
             if (strings.length != getList().size()) {
                 log.error("Indices list size mismatch model list size (reorder ignored).");
                 return null;

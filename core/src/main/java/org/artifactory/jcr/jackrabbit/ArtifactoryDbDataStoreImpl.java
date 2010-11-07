@@ -19,6 +19,7 @@
 package org.artifactory.jcr.jackrabbit;
 
 import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentSkipListMap;
+import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.core.data.db.TempFileInputStream;
@@ -36,6 +37,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.sql.ResultSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -181,7 +183,8 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
                                 record.markAccessed();
                                 if (filesystemLRUCache.cachedFilesCount.get() % 500 == 0) {
                                     log.info(
-                                            "Scanned " + filesystemLRUCache.cachedFilesCount.get() + " cached files in " +
+                                            "Scanned " + filesystemLRUCache.cachedFilesCount.get() +
+                                                    " cached files in " +
                                                     (System.currentTimeMillis() - start) + "ms");
                                 }
                             }
@@ -294,6 +297,37 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
         this.blobsCacheDir = blobsCacheDir;
     }
 
+    public void exportData(String destDir) throws Exception {
+        super.scanDataStore(System.currentTimeMillis());
+        Collection<ArtifactoryDbDataRecord> entries = getAllEntries();
+        File binariesFolder = getBinariesFolder();
+        String binariesFolderAbsolutePath = binariesFolder.getAbsolutePath();
+        for (ArtifactoryDbDataRecord entry : entries) {
+            File src = null;
+            try {
+                src = getOrCreateFile(entry.getIdentifier(), entry.getLength());
+            } catch (DataStoreException e) {
+                String msg = "Bad identifier: " + entry.getIdentifier();
+                log.error(msg);
+                if (log.isDebugEnabled()) {
+                    log.debug(msg, e);
+                }
+                continue;
+            }
+            String absPath = src.getAbsolutePath();
+            File dest;
+            if (absPath.startsWith(binariesFolderAbsolutePath)) {
+                String suffix = absPath.substring(binariesFolderAbsolutePath.length());
+                dest = new File(destDir, suffix);
+            } else {
+                dest = new File(destDir, src.getName());
+            }
+            if (!src.getAbsolutePath().equals(dest.getAbsolutePath())) {
+                FileUtils.copyFile(src, dest);
+            }
+        }
+    }
+
     public static class FilesLRUCache {
         /**
          * Maximum cache size in bytes. The cache can still grow above this number, but it will trigger a cleanup.
@@ -345,8 +379,8 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
 
         /**
          * Called when the record last access time was modified. In such a case the record should be removed and
-         * re-added because the last access time is the key of the lru cache. This is not atomic but it's ok for
-         * the needs of this cache (the cache files deletion are protected elsewhere).
+         * re-added because the last access time is the key of the lru cache. This is not atomic but it's ok for the
+         * needs of this cache (the cache files deletion are protected elsewhere).
          *
          * @param record             The record for whom the last access time was changed
          * @param previousAccessTime The previous access time of this record (in nanoseconds)

@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.config.general;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.IResourceListener;
+import org.apache.wicket.Page;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -62,7 +63,7 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         fileUploadLogo = new DefaultFileUploadForm("logoPath", this);
         add(fileUploadLogo);
 
-        TextField urlLogo = new TextField("logo");
+        TextField<String> urlLogo = new TextField<String>("logo");
         urlLogo.add(new UriValidator("http", "https"));
         urlLogo.add(new UrlChangedBehavior());
         urlLogo.setOutputMarkupId(true);
@@ -153,14 +154,14 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         }
 
         @Override
-        protected Class getLinkPage() {
+        protected Class<? extends Page> getLinkPage() {
             return null;
         }
 
         @Override
         protected String getLogoUrl() {
-            final CustomizingPanel parent = (CustomizingPanel) findParent(CustomizingPanel.class);
-            final String logo = parent.getDescriptor().getLogo();
+            CustomizingPanel parent = findParent(CustomizingPanel.class);
+            String logo = parent.getDescriptor().getLogo();
             if (logo != null) {
                 return logo;
             }

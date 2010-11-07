@@ -43,4 +43,6 @@ public interface StorageService {
      * @return GC task token. Might be null in case of exception
      */
     String manualGarbageCollect(MultiStatusHolder statusHolder);
+
+    void exportDbDataStore(String destDir);
 }

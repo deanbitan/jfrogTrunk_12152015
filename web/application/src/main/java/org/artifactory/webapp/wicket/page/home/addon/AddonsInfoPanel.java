@@ -61,7 +61,7 @@ public class AddonsInfoPanel extends TitledPanel {
      * @param enabledAddonNames   Name list of enabled addons
      */
     public AddonsInfoPanel(String id, final List<String> installedAddonNames,
-                           final Collection<String> enabledAddonNames) {
+            final Collection<String> enabledAddonNames) {
         super(id);
         add(new CssClass("addons-table"));
 
@@ -74,7 +74,7 @@ public class AddonsInfoPanel extends TitledPanel {
         addonTable.setVisible(!noAddons);
         addonTable.setOutputMarkupId(true);
 
-        Component listView = new ListView("addonItem", installedAddonNames) {
+        Component listView = new ListView<String>("addonItem", installedAddonNames) {
             @Override
             protected void populateItem(ListItem item) {
                 final String addonName = item.getDefaultModelObjectAsString();
@@ -99,7 +99,7 @@ public class AddonsInfoPanel extends TitledPanel {
 
         add(new Label("noAddons", "No add-ons currently installed.").setVisible(noAddons));
 
-        CharSequence licensePage = WicketUtils.mountPathForPage(LicensePage.class);
+        String licensePage = WicketUtils.absoluteMountPathForPage(LicensePage.class);
         Label noLicenseKeyLabel = new Label("noLicenseKey", String.format("Add-ons are currently disabled. To enable " +
                 "add-ons you need to enter your <a href='%s'>License Key</a> first.", licensePage));
         noLicenseKeyLabel.setVisible(

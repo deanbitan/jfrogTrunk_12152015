@@ -20,12 +20,18 @@ package org.artifactory.addon.plugin;
 
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class PluginsAddonDefaultImpl implements PluginsAddon {
 
 
     public <C> void execPluginActions(Class<? extends PluginAction> type, C context, Object... args) {
         //Nothing to do in the default impl
+    }
+
+    public ResponseCtx execute(String executionName, Map params, boolean async) {
+        throw new UnsupportedOperationException("Executing plugin actions requires Artifactory Pro.");
     }
 
     public boolean isDefault() {

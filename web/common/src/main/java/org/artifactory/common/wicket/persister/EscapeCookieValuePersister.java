@@ -29,6 +29,7 @@ import org.apache.wicket.markup.html.form.persistence.CookieValuePersister;
  */
 public class EscapeCookieValuePersister extends CookieValuePersister {
 
+    @SuppressWarnings({"unchecked"})
     @Override
     public void load(FormComponent component) {
         Object prevInput = component.getConvertedInput();

@@ -35,42 +35,22 @@ import java.text.SimpleDateFormat;
  * @author Tomer Cohen
  * @see org.artifactory.api.config.CentralConfigService#getDateFormatter()
  */
-public class FormattedDateColumn extends PropertyColumn {
+public class FormattedDateColumn<T> extends PropertyColumn<T> {
     private CentralConfigService centralConfigService;
     private String originalFormat;
-    private String targetFormat;
 
-
-    public FormattedDateColumn(IModel displayModel, String sortProperty, String propertyExpression,
+    public FormattedDateColumn(IModel<String> displayModel, String sortProperty, String propertyExpression,
             CentralConfigService centralConfigService, String originalFormat) {
         super(displayModel, sortProperty, propertyExpression);
         this.centralConfigService = centralConfigService;
         this.originalFormat = originalFormat;
     }
 
-    public FormattedDateColumn(IModel displayModel, String sortProperty, String propertyExpression,
-            CentralConfigService centralConfigService, String originalFormat, String targetFormat) {
-        super(displayModel, sortProperty, propertyExpression);
-        this.centralConfigService = centralConfigService;
-        this.originalFormat = originalFormat;
-        this.targetFormat = targetFormat;
-    }
-
-    public FormattedDateColumn(IModel displayModel, String propertyExpression, String targetFormat) {
-        super(displayModel, propertyExpression);
-        this.targetFormat = targetFormat;
-    }
-
     @Override
-    protected IModel createLabelModel(IModel embeddedModel) {
-        IModel model = super.createLabelModel(embeddedModel);
-        String dateAsString = (String) model.getObject();
-        DateFormat formatter;
-        if (StringUtils.isNotBlank(targetFormat)) {
-            formatter = new SimpleDateFormat(targetFormat);
-        } else {
-            formatter = centralConfigService.getDateFormatter();
-        }
+    protected IModel<String> createLabelModel(IModel<T> embeddedModel) {
+        IModel<String> model = (IModel<String>) super.createLabelModel(embeddedModel);
+        String dateAsString = model.getObject();
+        DateFormat formatter = centralConfigService.getDateFormatter();
         DateFormat simpleDateFormat;
         if (StringUtils.isNotBlank(originalFormat)) {
             simpleDateFormat = new SimpleDateFormat(originalFormat);
@@ -78,7 +58,7 @@ public class FormattedDateColumn extends PropertyColumn {
             simpleDateFormat = centralConfigService.getDateFormatter();
         }
         try {
-            return new Model(formatter.format(simpleDateFormat.parse(dateAsString)));
+            return Model.of(formatter.format(simpleDateFormat.parse(dateAsString)));
         } catch (ParseException e) {
             e.printStackTrace();
         }

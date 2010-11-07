@@ -63,10 +63,10 @@ public class LdapsListPanel extends ModalListPanel<LdapSetting> {
     }
 
     @Override
-    protected void addColumns(List<IColumn> columns) {
-        columns.add(new PropertyColumn(new Model<String>("LDAP Key"), "key", "key"));
-        columns.add(new PropertyColumn(new Model<String>("URL"), "ldapUrl", "ldapUrl"));
-        columns.add(new BooleanColumn(new Model("Enabled"), "enabled", "enabled"));
+    protected void addColumns(List<? super IColumn<LdapSetting>> columns) {
+        columns.add(new PropertyColumn<LdapSetting>(Model.of("LDAP Key"), "key", "key"));
+        columns.add(new PropertyColumn<LdapSetting>(Model.of("URL"), "ldapUrl", "ldapUrl"));
+        columns.add(new BooleanColumn<LdapSetting>(Model.of("Enabled"), "enabled", "enabled"));
     }
 
     @Override

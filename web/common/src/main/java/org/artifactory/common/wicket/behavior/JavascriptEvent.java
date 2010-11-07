@@ -27,7 +27,7 @@ import org.apache.wicket.model.Model;
  */
 public class JavascriptEvent extends AttributeAppender {
     public JavascriptEvent(String event, String javascript) {
-        this(event, new Model(javascript));
+        this(event, Model.of(javascript));
     }
 
     public JavascriptEvent(String event, IModel javascriptModel) {

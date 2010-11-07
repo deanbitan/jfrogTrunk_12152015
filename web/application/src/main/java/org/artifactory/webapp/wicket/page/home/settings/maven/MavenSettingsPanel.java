@@ -95,8 +95,8 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
         addChoice("pluginSnapshots", false, true, true, false);
 
         final DropDownChoice mirrorDropDownChoice =
-                new DropDownChoice("mirrorAnySelection", new PropertyModel(this, "mirrorAnySelection"),
-                        virtualRepoEntries);
+                new DropDownChoice<VirtualRepoEntry>("mirrorAnySelection",
+                        new PropertyModel<VirtualRepoEntry>(this, "mirrorAnySelection"), virtualRepoEntries);
         mirrorDropDownChoice.setOutputMarkupId(true);
         if (!virtualRepoEntries.isEmpty()) {
             mirrorDropDownChoice.setDefaultModelObject(getDefaultChoice(false, false, false, true));
@@ -156,7 +156,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
                 log.error("Maven settings generator error", ioe);
                 String logs;
                 if (authorizationService.isAdmin()) {
-                    CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                    String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                     logs = "<a href=\"" + systemLogsPage + "\">log</a>";
                 } else {
                     logs = "log";
@@ -277,7 +277,8 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
      * @param id Object ID
      */
     private void addChoice(String id, boolean isRelease, boolean isSnapshot, boolean isPlugin, boolean isRemote) {
-        DropDownChoice choice = new DropDownChoice(id, new PropertyModel(this, id), virtualRepoEntries);
+        DropDownChoice<VirtualRepoEntry> choice = new DropDownChoice<VirtualRepoEntry>(
+                id, new PropertyModel<VirtualRepoEntry>(this, id), virtualRepoEntries);
         if (!virtualRepoEntries.isEmpty()) {
             choice.setDefaultModelObject(getDefaultChoice(isRelease, isSnapshot, isPlugin, isRemote));
         }

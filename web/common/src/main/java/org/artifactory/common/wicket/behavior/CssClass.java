@@ -31,6 +31,6 @@ public class CssClass extends AttributeAppender {
     }
 
     public CssClass(String cssClass) {
-        this(new Model<String>(cssClass));
+        this(Model.of(cssClass));
     }
 }

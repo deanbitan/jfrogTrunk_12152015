@@ -16,30 +16,14 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.common.wicket.model;
+package org.artifactory.addon.plugin.execution;
 
-import org.apache.wicket.Component;
-import org.apache.wicket.model.IModel;
+import com.google.common.collect.SetMultimap;
+import org.artifactory.addon.plugin.PluginAction;
 
 /**
- * @author Yoav Aharoni
+ * @author Yoav Landman
  */
-public class DelegetedModel<T> implements IModel<T> {
-    private Component component;
-
-    public DelegetedModel(Component component) {
-        this.component = component;
-    }
-
-    @SuppressWarnings({"unchecked"})
-    public T getObject() {
-        return (T) component.getDefaultModelObject();
-    }
-
-    public void setObject(T object) {
-        component.setDefaultModelObject(object);
-    }
-
-    public void detach() {
-    }
+public interface ExecuteAction extends PluginAction {
+    void execute(SetMultimap<String, String> params);
 }

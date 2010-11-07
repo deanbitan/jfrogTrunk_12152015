@@ -18,8 +18,7 @@
 
 package org.artifactory.descriptor.repo.jaxb;
 
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
+import com.google.common.collect.Maps;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -29,18 +28,19 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Yoav Landman
  */
 public class RemoteRepositoriesMapAdapter extends
-        XmlAdapter<RemoteRepositoriesMapAdapter.Wrappper, OrderedMap<String, RemoteRepoDescriptor>> {
+        XmlAdapter<RemoteRepositoriesMapAdapter.Wrappper, Map<String, RemoteRepoDescriptor>> {
 
 
-    public OrderedMap<String, RemoteRepoDescriptor> unmarshal(Wrappper wrapper)
+    @Override
+    public Map<String, RemoteRepoDescriptor> unmarshal(Wrappper wrapper)
             throws Exception {
-        OrderedMap<String, RemoteRepoDescriptor> remoteRepositoriesMap =
-                new ListOrderedMap<String, RemoteRepoDescriptor>();
+        Map<String, RemoteRepoDescriptor> remoteRepositoriesMap = Maps.newLinkedHashMap();
         for (RemoteRepoDescriptor repository : wrapper.getList()) {
             String key = repository.getKey();
             RemoteRepoDescriptor repo = remoteRepositoriesMap.put(key, repository);
@@ -54,8 +54,9 @@ public class RemoteRepositoriesMapAdapter extends
         return remoteRepositoriesMap;
     }
 
+    @Override
     public RemoteRepositoriesMapAdapter.Wrappper marshal(
-            OrderedMap<String, RemoteRepoDescriptor> map)
+            Map<String, RemoteRepoDescriptor> map)
             throws Exception {
         return new RemoteRepositoriesMapAdapter.Wrappper(map);
     }
@@ -70,7 +71,7 @@ public class RemoteRepositoriesMapAdapter extends
         public Wrappper() {
         }
 
-        public Wrappper(OrderedMap<String, RemoteRepoDescriptor> map) {
+        public Wrappper(Map<String, RemoteRepoDescriptor> map) {
             for (RemoteRepoDescriptor repo : map.values()) {
                 list.add((HttpRepoDescriptor) repo);
             }

@@ -122,7 +122,7 @@ public class SystemLogsViewPanel extends Panel {
      */
     private void addLogComboBox() {
         final DropDownChoice logsDropDownChoice =
-                new DropDownChoice<String>("logs", new Model<String>(LOGS.get(0)), LOGS) {
+                new DropDownChoice<String>("logs", Model.of(LOGS.get(0)), LOGS) {
 
                     @Override
                     protected boolean wantOnSelectionChangedNotifications() {

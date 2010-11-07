@@ -160,6 +160,18 @@ public class ArtifactoryLdapAuthenticationProvider implements AuthenticationProv
             UserInfo userInfo =
                     userGroupService.findOrCreateExternalAuthUser(userName, !usedLdapSetting.isAutoCreateUser());
 
+            String emailAttribute = usedLdapSetting.getEmailAttribute();
+            if (StringUtils.isNotBlank(emailAttribute)) {
+                String email = user.getStringAttribute(emailAttribute);
+                if (StringUtils.isNotBlank(email)) {
+                    log.debug("User '{}' has email address '{}'", userName, email);
+                    if (StringUtils.isBlank(userInfo.getEmail()) && !userInfo.isTransientUser()) {
+                        userInfo.setEmail(email);
+                        userGroupService.updateUser(userInfo);
+                    }
+                }
+            }
+
             log.debug("Loading LDAP groups");
             ldapGroupAddon.populateGroups(user, userInfo);
             log.debug("Finished Loading LDAP groups");

@@ -19,9 +19,8 @@
 package org.artifactory.repo.virtual;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.fs.InternalFileInfo;
 import org.artifactory.api.fs.InternalFolderInfo;
@@ -44,7 +43,13 @@ import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
-import org.artifactory.repo.*;
+import org.artifactory.repo.LocalCacheRepo;
+import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RealRepo;
+import org.artifactory.repo.RemoteRepo;
+import org.artifactory.repo.Repo;
+import org.artifactory.repo.RepoBase;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.jcr.StoringRepoMixin;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -59,15 +64,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements StoringRepo<VirtualRepoDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(VirtualRepo.class);
 
-    private OrderedMap<String, LocalRepo> localRepositoriesMap = newOrderedMap();
-    private OrderedMap<String, RemoteRepo> remoteRepositoriesMap = newOrderedMap();
-    private OrderedMap<String, LocalCacheRepo> localCacheRepositoriesMap = newOrderedMap();
-    private OrderedMap<String, VirtualRepo> virtualRepositoriesMap = newOrderedMap();
+    private Map<String, LocalRepo> localRepositoriesMap = Maps.newLinkedHashMap();
+    private Map<String, RemoteRepo> remoteRepositoriesMap = Maps.newLinkedHashMap();
+    private Map<String, LocalCacheRepo> localCacheRepositoriesMap = Maps.newLinkedHashMap();
+    private Map<String, VirtualRepo> virtualRepositoriesMap = Maps.newLinkedHashMap();
 
     StoringRepo<VirtualRepoDescriptor> storageMixin = new StoringRepoMixin<VirtualRepoDescriptor>(this, null);
 
@@ -86,8 +92,8 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
      * Special ctor for the default global repo
      */
     public VirtualRepo(InternalRepositoryService service, VirtualRepoDescriptor descriptor,
-                       OrderedMap<String, LocalRepo> localRepositoriesMap,
-                       OrderedMap<String, RemoteRepo> remoteRepositoriesMap) {
+            Map<String, LocalRepo> localRepositoriesMap,
+            Map<String, RemoteRepo> remoteRepositoriesMap) {
         super(service);
         this.localRepositoriesMap = localRepositoriesMap;
         this.remoteRepositoriesMap = remoteRepositoriesMap;
@@ -208,19 +214,19 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return virtualRepositoriesMap.get(key);
     }
 
-    public OrderedMap<String, LocalRepo> getLocalRepositoriesMap() {
+    public Map<String, LocalRepo> getLocalRepositoriesMap() {
         return localRepositoriesMap;
     }
 
-    public OrderedMap<String, LocalCacheRepo> getLocalCacheRepositoriesMap() {
+    public Map<String, LocalCacheRepo> getLocalCacheRepositoriesMap() {
         return localCacheRepositoriesMap;
     }
 
-    public OrderedMap<String, RemoteRepo> getRemoteRepositoriesMap() {
+    public Map<String, RemoteRepo> getRemoteRepositoriesMap() {
         return remoteRepositoriesMap;
     }
 
-    public OrderedMap<String, VirtualRepo> getVirtualRepositoriesMap() {
+    public Map<String, VirtualRepo> getVirtualRepositoriesMap() {
         return virtualRepositoriesMap;
     }
 
@@ -396,10 +402,6 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     public boolean isCache() {
         return false;
-    }
-
-    private <K, V> OrderedMap<K, V> newOrderedMap() {
-        return new ListOrderedMap<K, V>();
     }
 
     /**

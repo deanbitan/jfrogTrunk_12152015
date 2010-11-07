@@ -66,11 +66,7 @@ public class JcrCacheRepoTest extends ArtifactoryHomeBoundTest {
         EasyMock.replay(context);
 
         JcrCacheRepo cacheRepo = new JcrCacheRepo(remoteRepo, null);
- try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
         assertFalse(cacheRepo.isExpired(releaseRes));
         assertTrue(cacheRepo.isExpired(snapRes));
         assertFalse(cacheRepo.isExpired(uniqueSnapRes));

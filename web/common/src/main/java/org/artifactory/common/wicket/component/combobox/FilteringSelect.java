@@ -34,41 +34,25 @@ import java.util.List;
  * @author Yoav Aharoni
  * @see FilteringSelect#getAjaxTargetMarkupId()
  */
-public class FilteringSelect extends DropDownChoice {
+public class FilteringSelect<T> extends DropDownChoice<T> {
     public FilteringSelect(String id) {
         super(id);
     }
 
-    public FilteringSelect(String id, List choices) {
+    public FilteringSelect(String id, List<? extends T> choices) {
         super(id, choices);
     }
 
-    public FilteringSelect(String id, List data, IChoiceRenderer renderer) {
+    public FilteringSelect(String id, List<? extends T> data, IChoiceRenderer<T> renderer) {
         super(id, data, renderer);
     }
 
-    public FilteringSelect(String id, IModel model, List choices) {
+    public FilteringSelect(String id, IModel<T> model, List<? extends T> choices) {
         super(id, model, choices);
     }
 
-    public FilteringSelect(String id, IModel model, List data, IChoiceRenderer renderer) {
+    public FilteringSelect(String id, IModel<T> model, List<? extends T> data, IChoiceRenderer<T> renderer) {
         super(id, model, data, renderer);
-    }
-
-    public FilteringSelect(String id, IModel choices) {
-        super(id, choices);
-    }
-
-    public FilteringSelect(String id, IModel model, IModel choices) {
-        super(id, model, choices);
-    }
-
-    public FilteringSelect(String id, IModel choices, IChoiceRenderer renderer) {
-        super(id, choices, renderer);
-    }
-
-    public FilteringSelect(String id, IModel model, IModel choices, IChoiceRenderer renderer) {
-        super(id, model, choices, renderer);
     }
 
     {

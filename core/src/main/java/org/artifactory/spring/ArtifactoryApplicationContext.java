@@ -121,6 +121,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         return ManagementFactory.getPlatformMBeanServer();
     }
 
+    @SuppressWarnings({"unchecked"})
     public <T> T getArtifactoryMBean(Class<T> mbeanIfc, String mbeanProps) {
         ObjectName mbeanName = createArtifactoryMBeanName(mbeanIfc, mbeanProps);
         MBeanProxyFactoryBean factory = new MBeanProxyFactoryBean();
@@ -131,7 +132,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             throw new IllegalStateException("Unexpected failure when using an existing object name instance.", e);
         }
         factory.afterPropertiesSet();
-        //noinspection unchecked
         return (T) factory.getObject();
         /*
         Use this once we are JDK 6+ only
@@ -233,10 +233,11 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 }
                 log.debug("Initialized {}", beanIfc);
             }
-            //After all converters have run we can declare we are running on the latest version. We always update the
-            //bundled version props to reflect revision changes, even if the version itself is current.
-            artifactoryHome.writeBundledArtifactoryProperties();
-            if (startedFormDifferentVersion) {
+            // if we started from a different version OR from a (snapshot) version that doesn't match the running version
+            // we must save the version properties file and reload all the system properties
+            if (startedFormDifferentVersion || !artifactoryHome.getRunningVersionDetails().equals(
+                    artifactoryHome.getOriginalVersionDetails())) {
+                artifactoryHome.writeBundledArtifactoryProperties();
                 artifactoryHome.initAndLoadSystemPropertyFile();
             }
             setReady(true);
@@ -390,7 +391,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
     @SuppressWarnings("unchecked")
     public <T> T beanForType(Class<T> type) {
-        //No sych needed. Synch is done on write, so in the worst case we might end up with
+        //No sync needed. Sync is done on write, so in the worst case we might end up with
         //a bean with the same value, which is fine
         T bean = (T) beansForType.get(type);
         if (bean == null) {
@@ -475,7 +476,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     public void exportTo(ExportSettings settings) {
         MultiStatusHolder status = settings.getStatusHolder();
         status.setStatus("Beginning full system export...", log);
-        status.setStatus("Creating export directory", log);
         String timestamp;
         boolean incremental = settings.isIncremental();
         if (!incremental) {
@@ -499,9 +499,10 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 FileUtils.deleteDirectory(tmpExportDir);
             } catch (IOException e) {
                 throw new RuntimeException(
-                        "Failed to delete temp export directory: " + tmpExportDir.getAbsolutePath(), e);
+                        "Failed to delete old temp export directory: " + tmpExportDir.getAbsolutePath(), e);
             }
         }
+        status.setStatus("Creating temp export directory: " + tmpExportDir.getAbsolutePath(), log);
         try {
             FileUtils.forceMkdir(tmpExportDir);
         } catch (IOException e) {

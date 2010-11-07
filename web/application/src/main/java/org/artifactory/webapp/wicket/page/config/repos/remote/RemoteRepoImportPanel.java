@@ -19,8 +19,7 @@
 package org.artifactory.webapp.wicket.page.config.repos.remote;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
+import com.google.common.collect.Maps;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.Session;
@@ -108,7 +107,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
 
         loadBorder.add(new HelpBubble("urlHelp",
                 "Enter the base URL of another Artifactory server you wish to import repository definitions from."));
-        FormComponent urlTextField = new TextField("url", new PropertyModel(this, "url"));
+        FormComponent<String> urlTextField = new TextField<String>("url", new PropertyModel<String>(this, "url"));
         urlTextField.add(new UriValidator("http", "https"));
         urlTextField.setPersistent(true);
         urlTextField.setOutputMarkupId(true);
@@ -198,14 +197,14 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
                             cachingDescriptorHelper.getModelMutableDescriptor();
 
                     //Validate selected repo lists
-                    OrderedMap<String, RemoteRepoDescriptor> reposToImport =
+                    Map<String, RemoteRepoDescriptor> reposToImport =
                             validatedAndReturnSelection(importableRepos);
 
                     //Add new imported repositories if the list isn't empty
                     if (!reposToImport.isEmpty()) {
 
                         int selectedRepoCount = reposToImport.size();
-                        OrderedMap<String, RemoteRepoDescriptor> existingRepos =
+                        Map<String, RemoteRepoDescriptor> existingRepos =
                                 mutableCentralConfigDescriptor.getRemoteRepositoriesMap();
                         Collection<RepoPath> reposToZap = new ArrayList<RepoPath>();
 
@@ -267,9 +266,9 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
      * @param importableRepos List of importable repositories
      * @return repos map
      */
-    private OrderedMap<String, RemoteRepoDescriptor> validatedAndReturnSelection(Collection<ImportableRemoteRepo>
+    private Map<String, RemoteRepoDescriptor> validatedAndReturnSelection(Collection<ImportableRemoteRepo>
             importableRepos) {
-        OrderedMap<String, RemoteRepoDescriptor> map = new ListOrderedMap<String, RemoteRepoDescriptor>();
+        Map<String, RemoteRepoDescriptor> map = Maps.newLinkedHashMap();
 
         if (importableRepos.isEmpty()) {
             error("Please select at least one repository to import.");
@@ -346,7 +345,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
      */
     private void createRepositoryList(MarkupContainer listBorder) {
         provider = new RepoDataProvider();
-        repoTable = new SortableTable("repoTable", getColumns(), provider, 10);
+        repoTable = new SortableTable<ImportableRemoteRepo>("repoTable", getColumns(), provider, 10);
         repoTable.setOutputMarkupId(true);
         listBorder.add(repoTable);
     }
@@ -356,9 +355,8 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
      *
      * @return Columns list
      */
-    private List<IColumn> getColumns() {
-        List<IColumn> columns = Lists.newArrayList();
-
+    private List<IColumn<ImportableRemoteRepo>> getColumns() {
+        List<IColumn<ImportableRemoteRepo>> columns = Lists.newArrayList();
         columns.add(new SelectAllCheckboxColumn<ImportableRemoteRepo>("", "selected", null) {
             @Override
             protected void onUpdate(FormComponent checkbox, ImportableRemoteRepo rowObject, boolean value,
@@ -374,8 +372,9 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
             }
         });
         columns.add(new KeyTextFieldColumn());
-        columns.add(new TooltipLabelColumn(new Model("Url"), "repoUrl", "repoUrl", 50));
-        columns.add(new TooltipLabelColumn(new Model("Description"), "repoDescription", "repoDescription", 25));
+        columns.add(new TooltipLabelColumn<ImportableRemoteRepo>(Model.of("Url"), "repoUrl", "repoUrl", 50));
+        columns.add(new TooltipLabelColumn<ImportableRemoteRepo>(
+                Model.of("Description"), "repoDescription", "repoDescription", 25));
         return columns;
     }
 
@@ -384,13 +383,14 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
      */
     private class KeyTextFieldColumn extends TextFieldColumn<ImportableRemoteRepo> {
         private KeyTextFieldColumn() {
-            super("Key", "repoKey", "repoKey");
+            super("Key", "repoKey");
         }
 
         @Override
-        protected FormComponent newTextField(String id, IModel model, final ImportableRemoteRepo rowObject) {
-            FormComponent textField = super.newTextField(id, model, rowObject);
-            textField.setLabel(new Model("Key"));
+        protected TextField<String> newTextField(String id, IModel<String> valueModel,
+                final ImportableRemoteRepo rowObject) {
+            TextField<String> textField = super.newTextField(id, valueModel, rowObject);
+            textField.setLabel(Model.of("Key"));
             textField.setOutputMarkupId(true);
             textField.setRequired(true);
             textField.add(new JcrNameValidator("Invalid repository key '%s'."));
@@ -421,7 +421,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
     /**
      * The importable repository data provider
      */
-    private static class RepoDataProvider extends SortableDataProvider {
+    private static class RepoDataProvider extends SortableDataProvider<ImportableRemoteRepo> {
 
         /**
          * Main content list
@@ -435,7 +435,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
             setSort("repoKey", true);
         }
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<ImportableRemoteRepo> iterator(int first, int count) {
             ListPropertySorter.sort(list, getSort());
             List<ImportableRemoteRepo> listToReturn = list.subList(first, first + count);
             return listToReturn.iterator();
@@ -445,8 +445,8 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
             return list.size();
         }
 
-        public IModel model(Object object) {
-            return new Model((ImportableRemoteRepo) object);
+        public IModel<ImportableRemoteRepo> model(ImportableRemoteRepo object) {
+            return new Model<ImportableRemoteRepo>(object);
         }
 
         /**

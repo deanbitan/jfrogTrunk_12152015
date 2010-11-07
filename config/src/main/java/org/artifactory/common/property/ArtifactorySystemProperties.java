@@ -26,8 +26,6 @@ import org.artifactory.log.BootstrapLogger;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -253,14 +251,6 @@ public class ArtifactorySystemProperties {
      */
     public String removeProperty(String propertyName) {
         return (String) artifactoryProperties.remove(propertyName);
-    }
-
-    public void store(OutputStream out) {
-        try {
-            artifactoryProperties.store(out, "");
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
-        }
     }
 
     public String getProperty(ConstantValues property) {

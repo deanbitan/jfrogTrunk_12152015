@@ -18,8 +18,9 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.action;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
@@ -77,17 +78,17 @@ public class DeleteVersionsPanel extends Panel {
         Form form = new Form("form");
         add(form);
 
-        MultiMap<String, DeployableUnit> duGroupAndVersion = aggregateByGroupAndVersion(deployableUnits);
+        Multimap<String, DeployableUnit> duGroupAndVersion = aggregateByGroupAndVersion(deployableUnits);
 
         dataProvider = new DeployableUnitsDataProvider(duGroupAndVersion);
 
-        List<IColumn> columns = new ArrayList<IColumn>();
+        List<IColumn<DeployableUnitModel>> columns = Lists.newArrayList();
         columns.add(new SelectAllCheckboxColumn<DeployableUnitModel>("", "selected", null));
-        columns.add(new PropertyColumn(new Model("Group Id"), "groupId", "groupId"));
-        columns.add(new PropertyColumn(new Model("Version"), "version", "version"));
-        columns.add(new PropertyColumn(new Model("Directories Count"), "count"));
+        columns.add(new PropertyColumn<DeployableUnitModel>(Model.of("Group Id"), "groupId", "groupId"));
+        columns.add(new PropertyColumn<DeployableUnitModel>(Model.of("Version"), "version", "version"));
+        columns.add(new PropertyColumn<DeployableUnitModel>(Model.of("Directories Count"), "count"));
 
-        SortableTable table = new SortableTable("deployableUnits", columns, dataProvider, 20);
+        SortableTable table = new SortableTable<DeployableUnitModel>("deployableUnits", columns, dataProvider, 20);
         form.add(table);
 
         form.add(new ModalCloseLink("cancel"));
@@ -95,8 +96,8 @@ public class DeleteVersionsPanel extends Panel {
     }
 
 
-    private MultiMap<String, DeployableUnit> aggregateByGroupAndVersion(List<DeployableUnit> units) {
-        MultiMap<String, DeployableUnit> multiMap = new MultiHashMap<String, DeployableUnit>();
+    private Multimap<String, DeployableUnit> aggregateByGroupAndVersion(List<DeployableUnit> units) {
+        Multimap<String, DeployableUnit> multiMap = HashMultimap.create();
         for (DeployableUnit unit : units) {
             MavenArtifactInfo info = unit.getMavenInfo();
             String unitKey = toGroupVersionKey(info);
@@ -167,11 +168,11 @@ public class DeleteVersionsPanel extends Panel {
         return submit;
     }
 
-    private class DeployableUnitsDataProvider extends SortableDataProvider {
-        private MultiMap<String, DeployableUnit> duGroupAndVersion;
+    private class DeployableUnitsDataProvider extends SortableDataProvider<DeployableUnitModel> {
+        private Multimap<String, DeployableUnit> duGroupAndVersion;
         protected List<DeployableUnitModel> duModels;
 
-        private DeployableUnitsDataProvider(MultiMap<String, DeployableUnit> duGroupAndVersion) {
+        private DeployableUnitsDataProvider(Multimap<String, DeployableUnit> duGroupAndVersion) {
             this.duGroupAndVersion = duGroupAndVersion;
             Set<String> groupVersionKeys = duGroupAndVersion.keySet();
             duModels = new ArrayList<DeployableUnitModel>(groupVersionKeys.size());
@@ -181,7 +182,7 @@ public class DeleteVersionsPanel extends Panel {
             setSort("groupId", true);
         }
 
-        public Iterator iterator(int first, int count) {
+        public Iterator<DeployableUnitModel> iterator(int first, int count) {
             ListPropertySorter.sort(duModels, getSort());
             List<DeployableUnitModel> dusSubList = duModels.subList(first, first + count);
             return dusSubList.iterator();
@@ -191,8 +192,8 @@ public class DeleteVersionsPanel extends Panel {
             return duModels.size();
         }
 
-        public IModel model(Object object) {
-            return new Model((DeployableUnitModel) object);
+        public IModel<DeployableUnitModel> model(DeployableUnitModel object) {
+            return new Model<DeployableUnitModel>(object);
         }
 
         public List<RepoPath> getSelectedRepoPaths() {

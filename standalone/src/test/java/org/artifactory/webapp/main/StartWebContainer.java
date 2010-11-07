@@ -54,14 +54,16 @@ public class StartWebContainer {
         System.setProperty(ConstantValues.pluginScriptsRefreshIntervalSecs.getPropertyName(), "20");
         File standalone = new File(prefix + "/open/standalone/src").getCanonicalFile();
         File artHome = new File(prefix + "/devenv/.artifactory").getCanonicalFile();
-        if (!artHome.exists()) {
-            if (!artHome.mkdirs()) {
-                throw new RuntimeException("Failed to create home dir: " + artHome.getAbsolutePath());
-            }
+        if (!artHome.exists() && !artHome.mkdirs()) {
+            throw new RuntimeException("Failed to create home dir: " + artHome.getAbsolutePath());
         }
         System.setProperty(ArtifactoryHome.SYS_PROP, artHome.getAbsolutePath());
 
         copyNewerDevResources(standalone, artHome);
+
+        // set the logback.xml
+        System.setProperty("logback.configurationFile", new File(artHome + "/etc/logback.xml").getAbsolutePath());
+
         //updateDefaultResources(new File(standalone, "etc"));
 
         //Manually set the selector (needed explicitly here before any logger kicks in)

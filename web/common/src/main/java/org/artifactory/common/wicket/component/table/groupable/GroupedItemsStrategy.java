@@ -18,7 +18,6 @@
 
 package org.artifactory.common.wicket.component.table.groupable;
 
-import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.repeater.IItemFactory;
@@ -40,13 +39,14 @@ public class GroupedItemsStrategy implements IItemReuseStrategy {
         this.table = table;
     }
 
-    public Iterator getItems(final IItemFactory factory, final Iterator newModels, Iterator existingItems) {
-        return new Iterator() {
+    public <T> Iterator<Item<T>> getItems(final IItemFactory<T> factory, final Iterator<IModel<T>> newModels,
+            Iterator<Item<T>> existingItems) {
+        return new Iterator<Item<T>>() {
             private int index = 0;
 
             private Object lastGroupValue;
-            private Item lastGroupItem;
-            private IModel lastGroupModel;
+            private Item<T> lastGroupItem;
+            private IModel<T> lastGroupModel;
 
             public void remove() {
                 throw new UnsupportedOperationException();
@@ -56,29 +56,25 @@ public class GroupedItemsStrategy implements IItemReuseStrategy {
                 return lastGroupModel != null || newModels.hasNext();
             }
 
-            public Object next() {
+            @SuppressWarnings({"unchecked"})
+            public Item<T> next() {
                 // returned group item in last iteration, return saved model item
                 if (lastGroupModel != null) {
-                    Item item = newRowItem(lastGroupModel);
+                    Item<T> item = newRowItem(lastGroupModel);
                     lastGroupModel = null;
                     return item;
                 }
 
-                Object next = newModels.next();
-                if (next != null && !(next instanceof IModel)) {
-                    throw new WicketRuntimeException("Expecting an instance of " +
-                            IModel.class.getName() + ", got " + next.getClass().getName());
-                }
-                final IModel model = (IModel) next;
+                IModel<T> model = newModels.next();
 
                 // check if grouped
-                final GroupableDataProvider provider = table.getGroupableDataProvider();
+                GroupableDataProvider provider = table.getGroupableDataProvider();
                 SortParam groupParam = provider.getGroupParam();
                 if (groupParam != null && model != null) {
                     String property = groupParam.getProperty();
-                    IChoiceRenderer reneder = provider.getGroupReneder(property);
-                    Object modelObject = model.getObject();
-                    Object value = reneder.getIdValue(modelObject, index);
+                    IChoiceRenderer renderer = provider.getGroupRenderer(property);
+                    T modelObject = model.getObject();
+                    Object value = renderer.getIdValue(modelObject, index);
                     if (!value.equals(lastGroupValue)) {
                         lastGroupValue = value;
                         lastGroupModel = model;
@@ -94,8 +90,9 @@ public class GroupedItemsStrategy implements IItemReuseStrategy {
                 return newRowItem(model);
             }
 
-            private Item newRowItem(IModel model) {
-                Item item = factory.newItem(index, model);
+            @SuppressWarnings({"unchecked"})
+            private Item<T> newRowItem(IModel<T> model) {
+                Item<T> item = factory.newItem(index, model);
                 if (lastGroupItem != null && !table.isGroupExpanded(lastGroupItem) &&
                         table.getGroupableDataProvider().getGroupParam() != null) {
                     item.add(new CssClass("row-collapsed"));

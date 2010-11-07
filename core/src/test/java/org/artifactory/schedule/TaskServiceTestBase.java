@@ -18,7 +18,7 @@
 
 package org.artifactory.schedule;
 
-import org.apache.commons.collections15.map.LinkedMap;
+import com.google.common.collect.Maps;
 import org.artifactory.api.cache.CacheService;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.cache.CacheServiceImpl;
@@ -54,13 +54,13 @@ public class TaskServiceTestBase {
         CentralConfigDescriptor ccd = EasyMock.createMock(CentralConfigDescriptor.class);
         EasyMock.expect(
                 ccd.getLocalRepositoriesMap())
-                .andReturn(new LinkedMap<String, LocalRepoDescriptor>()).anyTimes();
+                .andReturn(Maps.<String, LocalRepoDescriptor>newLinkedHashMap()).anyTimes();
         EasyMock.expect(
                 ccd.getRemoteRepositoriesMap())
-                .andReturn(new LinkedMap<String, RemoteRepoDescriptor>()).anyTimes();
+                .andReturn(Maps.<String, RemoteRepoDescriptor>newLinkedHashMap()).anyTimes();
         EasyMock.expect(
                 ccd.getVirtualRepositoriesMap())
-                .andReturn(new LinkedMap<String, VirtualRepoDescriptor>()).anyTimes();
+                .andReturn(Maps.<String, VirtualRepoDescriptor>newLinkedHashMap()).anyTimes();
         EasyMock.expect(cc.getDescriptor()).andReturn(ccd).anyTimes();
 
         //Put the cache service into the context

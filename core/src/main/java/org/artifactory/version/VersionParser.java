@@ -37,7 +37,7 @@ public abstract class VersionParser {
     }
 
     /**
-     * Parses the recieved input string info an ArtifactoryVersioning object
+     * Parses the received input string info an ArtifactoryVersioning object
      *
      * @param input String containing the XML of the versioning info file
      * @return ArtifactoryVersioning - Object representation of the versioning info xml
@@ -67,8 +67,7 @@ public abstract class VersionParser {
         }
 
         if ((latest == null) || (release == null)) {
-            throw new RuntimeException(
-                    "Latest and stable version and revisions are not defined properly");
+            throw new IllegalArgumentException("Latest and stable version and revisions are not defined properly");
         }
 
         return new ArtifactoryVersioning(latest, release);

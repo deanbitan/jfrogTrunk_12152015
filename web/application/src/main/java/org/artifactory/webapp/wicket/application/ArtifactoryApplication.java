@@ -73,6 +73,7 @@ import org.artifactory.webapp.wicket.page.error.AccessDeniedPage;
 import org.artifactory.webapp.wicket.page.error.InternalErrorPage;
 import org.artifactory.webapp.wicket.page.error.PageExpiredErrorPage;
 import org.artifactory.webapp.wicket.page.home.HomePage;
+import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
 import org.artifactory.webapp.wicket.page.security.login.LoginPage;
 import org.artifactory.webapp.wicket.page.security.login.LogoutPage;
 import org.artifactory.webapp.wicket.page.security.login.forgot.ForgotPasswordPage;
@@ -372,6 +373,8 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         mountPage(ProfilePage.class);
         mountPage(ResetPasswordPage.class);
         mountPage(ForgotPasswordPage.class);
+
+        mountPage("/search/artifact", ArtifactSearchPage.class);
 
         for (MenuNode pageNode : siteMap.getPages()) {
             if (pageNode.getMountUrl() != null) {

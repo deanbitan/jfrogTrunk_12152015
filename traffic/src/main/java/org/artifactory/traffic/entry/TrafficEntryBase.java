@@ -66,11 +66,7 @@ public abstract class TrafficEntryBase implements TrafficEntry {
      * @param o Entry to compare to
      * @return int - Date comparison result
      */
-    public int compareTo(Object o) {
-        if (!(o instanceof TrafficEntry)) {
-            throw new IllegalArgumentException("A traffic entry can only be compared to another traffic entry.");
-        }
-        final TrafficEntry that = (TrafficEntry) o;
+    public int compareTo(TrafficEntry that) {
         Date dateToCompare = that.getDate();
         return date.compareTo(dateToCompare);
     }

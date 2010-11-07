@@ -39,7 +39,12 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 
-import javax.servlet.*;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -134,7 +139,7 @@ public class AccessFilter extends DelayedFilterBase {
 
 
     private void authenticateAndExecute(HttpServletRequest request, HttpServletResponse response,
-                                        FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
+            FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
         // Try to see if authentication in cache based on the hashed header and client ip
         AuthCacheKey authCacheKey = new AuthCacheKey(authFilter.getCacheKey(request), request.getRemoteAddr());
         Authentication authentication = nonUiAuthCache.get(authCacheKey);
@@ -169,7 +174,7 @@ public class AccessFilter extends DelayedFilterBase {
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     private void useAnonymousIfPossible(HttpServletRequest request, HttpServletResponse response,
-                                        FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
+            FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
         boolean anonAccessEnabled = context.getAuthorizationService().isAnonAccessEnabled();
         if (anonAccessEnabled) {
             log.debug("Using anonymous");
@@ -207,7 +212,7 @@ public class AccessFilter extends DelayedFilterBase {
     }
 
     private void useAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-                                   Authentication authentication, SecurityContext securityContext) throws IOException, ServletException {
+            Authentication authentication, SecurityContext securityContext) throws IOException, ServletException {
         try {
             securityContext.setAuthentication(authentication);
             chain.doFilter(request, response);

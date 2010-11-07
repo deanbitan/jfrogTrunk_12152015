@@ -94,7 +94,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
 
     private void addRepoKeysCheckboxes() {
         final StyledCheckbox anyLocalRepositoryCheckbox = new StyledCheckbox("anyLocalRepository",
-                new PropertyModel(parent.getRepoKeysData(), "anyLocalRepository"));
+                new PropertyModel<Boolean>(parent.getRepoKeysData(), "anyLocalRepository"));
         anyLocalRepositoryCheckbox.setEnabled(isSystemAdmin());
         add(anyLocalRepositoryCheckbox);
 
@@ -109,6 +109,8 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
                 PermissionTargetCreateUpdatePanel.RepoKeysData repoKeysData = parent.getRepoKeysData();
                 if (repoKeysData.isAnyLocalRepository()) {
                     repoKeysData.addRepoDescriptors(parent.getLocalRepositoryDescriptors());
+                } else {
+                    repoKeysData.removeRepoDescriptors(parent.getLocalRepositoryDescriptors());
                 }
                 target.addComponent(RepositoriesTabPanel.this.get("repoKeys"));
                 target.appendJavascript("PermissionTabPanel.resize();");
@@ -117,7 +119,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
         });
 
         final StyledCheckbox anyCachedRepositoryCheckbox = new StyledCheckbox("anyCachedRepository",
-                new PropertyModel(parent.getRepoKeysData(), "anyCachedRepository"));
+                new PropertyModel<Boolean>(parent.getRepoKeysData(), "anyCachedRepository"));
         anyCachedRepositoryCheckbox.setEnabled(isSystemAdmin());
         add(anyCachedRepositoryCheckbox);
 
@@ -132,6 +134,8 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
                 PermissionTargetCreateUpdatePanel.RepoKeysData repoKeysData = parent.getRepoKeysData();
                 if (repoKeysData.isAnyCachedRepository()) {
                     repoKeysData.addRepoDescriptors(parent.getCachedRepositoryDescriptors());
+                } else {
+                    repoKeysData.removeRepoDescriptors(parent.getCachedRepositoryDescriptors());
                 }
                 target.addComponent(RepositoriesTabPanel.this.get("repoKeys"));
                 target.appendJavascript("PermissionTabPanel.resize();");
@@ -141,7 +145,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
     }
 
     private void addIncludesPatternFields(StringResourceModel helpMessage,
-                                          final List<CommonPathPattern> includesExcludesSuggestions) {
+            final List<CommonPathPattern> includesExcludesSuggestions) {
         TextArea includesTa = new TextArea("includesPattern");
         includesTa.setEnabled(isSystemAdmin());
         includesTa.setOutputMarkupId(true);
@@ -149,8 +153,9 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
 
         add(new HelpBubble("includesHelp", helpMessage));
 
-        Model include = new Model();
-        DropDownChoice includesSuggest = new DropDownChoice("includesSuggest", include, includesExcludesSuggestions);
+        Model<CommonPathPattern> include = new Model<CommonPathPattern>();
+        DropDownChoice<CommonPathPattern> includesSuggest = new DropDownChoice<CommonPathPattern>(
+                "includesSuggest", include, includesExcludesSuggestions);
         if (!includesExcludesSuggestions.isEmpty()) {
             includesSuggest.setDefaultModelObject(includesExcludesSuggestions.get(0));
         }
@@ -163,7 +168,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
     }
 
     private void addExcludesPatternFields(StringResourceModel helpMessage,
-                                          final List<CommonPathPattern> includesExcludesSuggestions) {
+            final List<CommonPathPattern> includesExcludesSuggestions) {
         TextArea excludesTa = new TextArea("excludesPattern");
         excludesTa.setEnabled(isSystemAdmin());
         excludesTa.setOutputMarkupId(true);
@@ -172,8 +177,9 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
         add(new HelpBubble("excludesHelp", helpMessage));
 
         //Excludes suggestions
-        Model exclude = new Model();
-        DropDownChoice excludesSuggest = new DropDownChoice("excludesSuggest", exclude, includesExcludesSuggestions);
+        Model<CommonPathPattern> exclude = new Model<CommonPathPattern>();
+        DropDownChoice<CommonPathPattern> excludesSuggest = new DropDownChoice<CommonPathPattern>(
+                "excludesSuggest", exclude, includesExcludesSuggestions);
         if (!includesExcludesSuggestions.isEmpty()) {
             excludesSuggest.setDefaultModelObject(includesExcludesSuggestions.get(0));
         }
@@ -183,10 +189,10 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
     }
 
     private static class UpdatePatternsBehavior extends AjaxFormComponentUpdatingBehavior {
-        private final Model comboBoxModel;
+        private final Model<CommonPathPattern> comboBoxModel;
         private final Component textArea;
 
-        private UpdatePatternsBehavior(Model comboBoxModel, TextArea textArea) {
+        private UpdatePatternsBehavior(Model<CommonPathPattern> comboBoxModel, TextArea textArea) {
             super("onChange");
             this.comboBoxModel = comboBoxModel;
             this.textArea = textArea;
@@ -194,7 +200,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
 
         @Override
         protected void onUpdate(AjaxRequestTarget target) {
-            CommonPathPattern commonPathPattern = (CommonPathPattern) comboBoxModel.getObject();
+            CommonPathPattern commonPathPattern = comboBoxModel.getObject();
             String pattern = commonPathPattern.getPattern();
             String existingPattern = textArea.getDefaultModelObjectAsString();
             if (CommonPathPattern.NONE.equals(commonPathPattern) ||
@@ -209,8 +215,8 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
 
     private class RepoDragDropSelection extends SortedRepoDragDropSelection<LocalRepoDescriptor> {
         private RepoDragDropSelection(String id, PermissionTargetCreateUpdatePanel.RepoKeysData repoKeysData,
-                                      List<LocalRepoDescriptor> repos) {
-            super(id, new PropertyModel(repoKeysData, "repoDescriptors"), repos);
+                List<LocalRepoDescriptor> repos) {
+            super(id, new PropertyModel<LocalRepoDescriptor>(repoKeysData, "repoDescriptors"), repos);
         }
 
         @Override

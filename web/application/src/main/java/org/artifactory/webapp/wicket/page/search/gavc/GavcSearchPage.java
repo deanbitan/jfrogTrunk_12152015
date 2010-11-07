@@ -27,12 +27,6 @@ import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
  */
 public class GavcSearchPage extends BaseSearchPage {
 
-    /**
-     * Required for the initialization from the side menu
-     */
-    public GavcSearchPage() {
-    }
-
     @Override
     public int getSelectedTab() {
         return GAVC_SEARCH_INDEX;

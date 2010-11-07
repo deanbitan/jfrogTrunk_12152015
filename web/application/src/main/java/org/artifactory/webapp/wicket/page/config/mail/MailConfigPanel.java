@@ -19,40 +19,46 @@
 package org.artifactory.webapp.wicket.page.config.mail;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
+import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.validation.IValidator;
 import org.apache.wicket.validation.validator.EmailAddressValidator;
+import org.apache.wicket.validation.validator.UrlValidator;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.mail.MailServerConfiguration;
 import org.artifactory.api.mail.MailService;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonStyleModel;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.EmailException;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.artifactory.webapp.wicket.util.validation.PortNumberValidator;
 import org.slf4j.Logger;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
- * Displays the different fields required for the mail server configuration
+ * Displays the different fields required for the mail server configuration.
  *
  * @author Noam Tenne
  */
@@ -66,46 +72,54 @@ public class MailConfigPanel extends TitledPanel {
     @SpringBean
     private MailService mailService;
 
-    private TextField testRecipientTextField;
+    private TextField<String> testRecipientTextField;
 
-    private Form form;
+    private Form<MailServerDescriptor> form;
 
     public MailConfigPanel(String id) {
         super(id);
         MailServerDescriptor descriptor = getMailServerDescriptor();
-        CompoundPropertyModel<MailServerDescriptor> compoundPropertyModel =
-                new CompoundPropertyModel<MailServerDescriptor>(descriptor);
-        form = new Form<MailServerDescriptor>("form", compoundPropertyModel);
+        form = new Form<MailServerDescriptor>("form", new CompoundPropertyModel<MailServerDescriptor>(descriptor));
 
-        addField("host", null, true, false, null, descriptor);
-        final TextField portTextField = addField("port", null, true, true, new PortNumberValidator(), descriptor);
-        addField("username", null, false, false, null, descriptor);
-        PasswordTextField passwordTextField =
-                new PasswordTextField("password", new PropertyModel<String>(descriptor, "password"));
-        passwordTextField.setResetPassword(false);
-        passwordTextField.setRequired(false);
-        form.add(passwordTextField);
-        addField("from", null, false, false, EmailAddressValidator.getInstance(), descriptor);
-        addField("subjectPrefix", null, false, false, null, descriptor);
-        form.add(new StyledCheckbox("tls", new PropertyModel<Boolean>(descriptor, "tls")));
+        form.add(new StyledCheckbox("enabled"));
+        form.add(new SchemaHelpBubble("enabled.help"));
+
+        form.add(new TextField<String>("host").setRequired(true));
+        form.add(new SchemaHelpBubble("host.help"));
+
+        form.add(new RequiredTextField<Integer>("port").add(new PortNumberValidator()).setOutputMarkupId(true));
+        form.add(new SchemaHelpBubble("port.help"));
+
+        form.add(new TextField<String>("username"));
+        form.add(new SchemaHelpBubble("username.help"));
+
+        form.add(new PasswordTextField("password").setResetPassword(false).setRequired(false));
+        form.add(new SchemaHelpBubble("password.help"));
+
+        form.add(new TextField<String>("from").add(EmailAddressValidator.getInstance()));
+        form.add(new SchemaHelpBubble("from.help"));
+
+        form.add(new TextField<String>("subjectPrefix"));
+        form.add(new SchemaHelpBubble("subjectPrefix.help"));
+
+        form.add(new TextField<String>("artifactoryUrl").add(new UrlValidator()));
+        form.add(new SchemaHelpBubble("artifactoryUrl.help"));
+
+        form.add(new StyledCheckbox("tls"));
+        form.add(new SchemaHelpBubble("tls.help"));
+
         final StyledCheckbox sslCheckbox = new StyledCheckbox("ssl", new PropertyModel<Boolean>(descriptor, "ssl"));
-
         //Add behavior that auto-switches the port to default SSL or normal values
         sslCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                if (sslCheckbox.isChecked()) {
-                    portTextField.setDefaultModelObject(465);
-                } else {
-                    portTextField.setDefaultModelObject(25);
-                }
+                form.getModelObject().setPort(sslCheckbox.isChecked() ? 465 : 25);
+                Component portTextField = form.get("port");
                 target.addComponent(portTextField);
             }
         });
-        form.add(sslCheckbox);
 
-        form.add(new SchemaHelpBubble("password.help"));
-        form.add(new SchemaHelpBubble("tls.help"));
+        form.add(sslCheckbox);
         form.add(new SchemaHelpBubble("ssl.help"));
 
         TitledBorder borderTest = new TitledBorder("testBorder");
@@ -162,7 +176,8 @@ public class MailConfigPanel extends TitledPanel {
                 MailServerDescriptor descriptor = (MailServerDescriptor) form.getDefaultModelObject();
                 MailServerConfiguration mailServerConfiguration = new MailServerConfiguration(descriptor);
                 if (!validateConfig(mailServerConfiguration)) {
-                    displayError(target, "Sending a test message requires host and port properties, at least.");
+                    displayError(target, "Sending a test message requires the configuration to be enabled with " +
+                            "defined host and port properties, at least.");
                     return;
                 }
 
@@ -177,7 +192,7 @@ public class MailConfigPanel extends TitledPanel {
                     hasPort = (mailServerConfiguration.getPort() > 0);
                 }
 
-                return hasHost && hasPort;
+                return hasHost && hasPort && mailServerConfiguration.isEnabled();
             }
 
             private void sendMail(AjaxRequestTarget target, MailServerConfiguration configuration) {
@@ -185,8 +200,8 @@ public class MailConfigPanel extends TitledPanel {
                 //Sanity check (has validator): If the recipient field is empty, alert
                 if (!StringUtils.isEmpty(testRecipient)) {
                     try {
-                        mailService.sendMail(new String[]{testRecipient}, "Test",
-                                "This is a test message from Artifactory", configuration);
+                        mailService.sendMail(new String[]{testRecipient}, "Test", createTestMessage(configuration),
+                                configuration);
                         String confirmMessage = "A test message has been sent successfully to '" + testRecipient + "'";
                         info(confirmMessage);
                         log.info(confirmMessage);
@@ -197,7 +212,7 @@ public class MailConfigPanel extends TitledPanel {
                             message = "An error has occurred while sending an e-mail.";
                         }
                         log.error(message, e);
-                        CharSequence systemLogsPage = WicketUtils.mountPathForPage(SystemLogsPage.class);
+                        String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                         message += " Please review the <a href=\"" + systemLogsPage + "\">log</a> for further details.";
                         displayError(target, message);
                     }
@@ -211,7 +226,31 @@ public class MailConfigPanel extends TitledPanel {
                 AjaxUtils.refreshFeedback(target);
             }
         };
+        searchButton.add(new CssClass(new DefaultButtonStyleModel(searchButton)));
         return searchButton;
+    }
+
+    // Create a test message for the mailer, if an Artifactory URL is configured the mail will have a link
+    // pointing to the Artifactory instance URL.
+
+    private String createTestMessage(MailServerConfiguration configuration) {
+        StringBuilder message = new StringBuilder();
+        message.append("This is a test message from Artifactory").append("<br/>");
+        String artifactoryUrl = configuration.getArtifactoryUrl();
+        if (StringUtils.isNotBlank(artifactoryUrl)) {
+            String artifactoryLink = createArtifactoryLinkFromUrl(artifactoryUrl);
+            message.append("Your Artifactory base URL is: ").append(artifactoryLink);
+        } else {
+            message.append("No Artifactory base URL is configured");
+        }
+        return message.toString();
+    }
+
+    private String createArtifactoryLinkFromUrl(String artifactoryUrl) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<a href=").append(artifactoryUrl).append(" target=\"blank\"").append(">")
+                .append(artifactoryUrl).append("<a/>");
+        return builder.toString();
     }
 
     /**
@@ -224,34 +263,14 @@ public class MailConfigPanel extends TitledPanel {
         MailServerDescriptor mailServerDescriptor = centralConfig.getMailServer();
         if (mailServerDescriptor == null) {
             mailServerDescriptor = new MailServerDescriptor();
+            // if the descriptor does not exist, set the preliminary Artifactory URL from the UI request.
+            setArtifactoryUrlInDescriptor(mailServerDescriptor);
         }
         return mailServerDescriptor;
     }
 
-    /**
-     * Adds a new text field and a help bubble
-     *
-     * @param id             The ID the new text field will recieve
-     * @param type           The Class of the input type - can be null
-     * @param required       Is the field required
-     * @param outputMarkupId Should field output the markup id
-     * @param validator      A validator to add to the field - can be null
-     * @param descriptor     The descriptor
-     * @return TextField - The newly created and added text field
-     */
-    private TextField addField(String id, Class type, boolean required, boolean outputMarkupId, IValidator validator,
-            Descriptor descriptor) {
-        TextField textField = (type != null) ? new TextField(id, type) : new TextField(id);
-        textField.setOutputMarkupId(outputMarkupId);
-        textField.setRequired(required);
-        if (validator != null) {
-            textField.add(validator);
-        }
-        textField.setDefaultModel(new PropertyModel(descriptor, id));
-
-        form.add(textField);
-        form.add(new SchemaHelpBubble(id + ".help"));
-
-        return textField;
+    private void setArtifactoryUrlInDescriptor(MailServerDescriptor mailServerDescriptor) {
+        HttpServletRequest httpServletRequest = WicketUtils.getWebRequest().getHttpServletRequest();
+        mailServerDescriptor.setArtifactoryUrl(HttpUtils.getServletContextUrl(httpServletRequest));
     }
 }

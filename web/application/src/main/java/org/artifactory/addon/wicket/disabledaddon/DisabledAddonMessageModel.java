@@ -30,10 +30,10 @@ public class DisabledAddonMessageModel extends StringResourceModel {
     private static final String MESSAGE_KEY = "addon.disabled";
 
     public DisabledAddonMessageModel(AddonType addon) {
-        super(MESSAGE_KEY, null, new Model(addon));
+        super(MESSAGE_KEY, null, Model.of(addon));
     }
 
     public DisabledAddonMessageModel(AddonInfo addon) {
-        super(MESSAGE_KEY, null, new Model(addon));
+        super(MESSAGE_KEY, null, Model.of(addon));
     }
 }

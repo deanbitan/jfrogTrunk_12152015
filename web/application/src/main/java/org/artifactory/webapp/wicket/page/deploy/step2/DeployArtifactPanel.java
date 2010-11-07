@@ -33,7 +33,11 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.model.*;
+import org.apache.wicket.model.CompoundPropertyModel;
+import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.artifact.ArtifactInfo;
 import org.artifactory.api.artifact.UnitInfo;
@@ -74,7 +78,12 @@ import org.artifactory.webapp.wicket.panel.tabbed.PersistentTabbedPanel;
 import org.artifactory.webapp.wicket.util.validation.DeployTargetPathValidator;
 import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
 
@@ -172,8 +181,8 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
             TextEditorPanel pomEditPanel = new TextEditorPanel("pomEditPanel", "POM Editor", helpMessage) {
                 @Override
-                protected IModel newTextModel() {
-                    return new PropertyModel(model, "pomXml");
+                protected IModel<String> newTextModel() {
+                    return new PropertyModel<String>(model, "pomXml");
                 }
 
                 @Override
@@ -190,7 +199,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             FormComponent checkbox = new StyledCheckbox("deployPom");
             checkbox.setOutputMarkupId(true);
             checkbox.setVisible(!isPomArtifact());
-            checkbox.setLabel(new Model("Also Deploy Jar's Internal POM/Generate Default POM"));
+            checkbox.setLabel(Model.of("Also Deploy Jar's Internal POM/Generate Default POM"));
             checkbox.add(new OnGeneratePomChangeBehavior());
             return checkbox;
         }
@@ -220,7 +229,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
 
         private void addPathField() {
-            FormComponent path = new TextField("targetPath") {
+            FormComponent<String> path = new TextField<String>("targetPath") {
                 @Override
                 public boolean isEnabled() {
                     return !model.isMavenArtifact;
@@ -242,7 +251,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
 
         private void addTargetRepoDropDown() {
-            FormComponent targetRepo = new DropDownChoice(TARGET_REPO, model.repos);
+            FormComponent targetRepo = new DropDownChoice<LocalRepoDescriptor>(TARGET_REPO, model.repos);
             targetRepo.setPersistent(true);
             targetRepo.setRequired(true);
             add(targetRepo);
@@ -545,7 +554,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 }
 
                 //Using request parameters instead of wicket's page parameters. See RTFACT-2843
-                urlBuilder.append(WicketUtils.mountPathForPage(BrowseRepoPage.class)).append("?").
+                urlBuilder.append(WicketUtils.absoluteMountPathForPage(BrowseRepoPage.class)).append("?").
                         append(BrowseRepoPage.PATH_ID_PARAM).append("=").append(encodedPathId);
                 if (StringUtils.isNotBlank(metadataName)) {
                     urlBuilder.append("&").append(PersistentTabbedPanel.SELECT_TAB_PARAM).append("=Metadata");

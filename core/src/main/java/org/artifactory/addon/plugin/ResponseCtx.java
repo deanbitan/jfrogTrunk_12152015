@@ -16,7 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.addon.plugin.download;
+package org.artifactory.addon.plugin;
 
 public class ResponseCtx {
 
@@ -31,5 +31,13 @@ public class ResponseCtx {
 
     public String getMessage() {
         return message;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

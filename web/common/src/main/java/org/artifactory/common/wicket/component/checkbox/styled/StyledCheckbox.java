@@ -35,7 +35,7 @@ import org.apache.wicket.util.string.Strings;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.DelegateEventBehavior;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
-import org.artifactory.common.wicket.model.DelegetedModel;
+import org.artifactory.common.wicket.model.DelegatedModel;
 import org.artifactory.common.wicket.model.Titled;
 
 /**
@@ -185,7 +185,8 @@ public class StyledCheckbox extends FormComponentPanel<Boolean> implements Title
             return Strings.toBoolean(tmp);
         }
         catch (StringValueConversionException e) {
-            final ConversionException conversionException = new ConversionException(String.format("Invalid boolean input value posted \"%s\"", tmp), e);
+            final ConversionException conversionException = new ConversionException(
+                    String.format("Invalid boolean input value posted \"%s\"", tmp), e);
             conversionException.setTargetType(Boolean.class);
             throw conversionException;
         }
@@ -220,7 +221,8 @@ public class StyledCheckbox extends FormComponentPanel<Boolean> implements Title
                 tag.put("onmouseout", "StyledCheckbox.onmouseout(this);");
                 tag.put("onclick", "StyledCheckbox.onclick(this);");
                 if (submitButton != null) {
-                    tag.put("onkeydown", String.format("return StyledCheckbox.onkeydown('%s',event);", submitButton.getMarkupId()));
+                    tag.put("onkeydown",
+                            String.format("return StyledCheckbox.onkeydown('%s',event);", submitButton.getMarkupId()));
                 }
             }
         }
@@ -245,7 +247,7 @@ public class StyledCheckbox extends FormComponentPanel<Boolean> implements Title
 
     private class MyCheckBox extends CheckBox {
         public MyCheckBox(String id) {
-            super(id, new DelegetedModel<Boolean>(StyledCheckbox.this));
+            super(id, new DelegatedModel<Boolean>(StyledCheckbox.this));
         }
 
         @Override

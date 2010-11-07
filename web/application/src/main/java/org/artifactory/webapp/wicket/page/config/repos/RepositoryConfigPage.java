@@ -18,8 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.config.repos;
 
-import org.apache.commons.collections15.OrderedMap;
-import org.apache.commons.collections15.map.ListOrderedMap;
+import com.google.common.collect.Maps;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -63,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static org.artifactory.common.wicket.component.CreateUpdateAction.CREATE;
 import static org.artifactory.common.wicket.component.CreateUpdateAction.UPDATE;
@@ -116,12 +116,11 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
             @Override
             protected void reOrderReposList(List<LocalRepoDescriptor> repos) {
-                OrderedMap<String, LocalRepoDescriptor> currentLocalReposMap =
+                Map<String, LocalRepoDescriptor> currentLocalReposMap =
                         mutableDescriptor.getLocalRepositoriesMap();
                 assertLegalReorderedList(repos, currentLocalReposMap.values());
 
-                ListOrderedMap<String, LocalRepoDescriptor> localReposMap =
-                        new ListOrderedMap<String, LocalRepoDescriptor>();
+                Map<String, LocalRepoDescriptor> localReposMap = Maps.newLinkedHashMap();
                 for (LocalRepoDescriptor localRepo : repos) {
                     localReposMap.put(localRepo.getKey(), localRepo);
                 }
@@ -206,12 +205,11 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
             @Override
             protected void reOrderReposList(List<RemoteRepoDescriptor> repos) {
-                OrderedMap<String, RemoteRepoDescriptor> currentReposMap =
+                Map<String, RemoteRepoDescriptor> currentReposMap =
                         mutableDescriptor.getRemoteRepositoriesMap();
                 assertLegalReorderedList(repos, currentReposMap.values());
 
-                ListOrderedMap<String, RemoteRepoDescriptor> remoteReposMap =
-                        new ListOrderedMap<String, RemoteRepoDescriptor>();
+                Map<String, RemoteRepoDescriptor> remoteReposMap = Maps.newLinkedHashMap();
                 for (RemoteRepoDescriptor remoteRepo : repos) {
                     remoteReposMap.put(remoteRepo.getKey(), remoteRepo);
                 }
@@ -285,12 +283,11 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
             @Override
             protected void reOrderReposList(List<VirtualRepoDescriptor> repos) {
-                OrderedMap<String, VirtualRepoDescriptor> currentReposMap =
+                Map<String, VirtualRepoDescriptor> currentReposMap =
                         mutableDescriptor.getVirtualRepositoriesMap();
                 assertLegalReorderedList(repos, currentReposMap.values());
 
-                ListOrderedMap<String, VirtualRepoDescriptor> virtualReposMap =
-                        new ListOrderedMap<String, VirtualRepoDescriptor>();
+                Map<String, VirtualRepoDescriptor> virtualReposMap = Maps.newLinkedHashMap();
                 for (VirtualRepoDescriptor virtualRepo : repos) {
                     virtualReposMap.put(virtualRepo.getKey(), virtualRepo);
                 }
