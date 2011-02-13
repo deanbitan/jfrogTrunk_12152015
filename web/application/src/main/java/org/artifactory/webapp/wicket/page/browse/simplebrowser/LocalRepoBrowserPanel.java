@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,13 +27,16 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
+import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.common.wicket.behavior.CssClass;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
-import org.artifactory.webapp.wicket.util.ItemCssClass;
+import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -43,28 +46,39 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 /**
  * @author Yoav Landman
  */
-public class LocalRepoBrowserPanel extends TitledPanel {
+public class LocalRepoBrowserPanel extends BaseRepoBrowserPanel {
+    private static final Logger log = LoggerFactory.getLogger(LocalRepoBrowserPanel.class);
 
     private static final long serialVersionUID = 1L;
 
     @SpringBean
     private RepositoryService repoService;
 
+    @SpringBean
+    private RepositoryBrowsingService repoBrowseService;
+
     public LocalRepoBrowserPanel(String id, final RepoPath repoPath) {
         super(id);
 
         add(new BreadCrumbsPanel("breadCrumbs", repoPath.getId()));
 
-        List<BrowsableItem> dirItems = repoService.getBrowsableChildren(repoPath, true);
-        if (dirItems == null) {
-            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
+        List<BaseBrowsableItem> dirItems;
+        try {
+            dirItems = repoBrowseService.getLocalRepoBrowsableChildren(repoPath);
+        } catch (Exception e) {
+            log.debug("Exception occurred while trying to get browsable children for repo path " + repoPath, e);
+            log.error("Exception occurred while trying to get browsable children for repo path '{}', '{}", repoPath,
+                    e.getMessage());
+            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
         }
+        dirItems.add(0, getPseudoUpLink(repoPath));
+
         final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
-        add(new ListView<BrowsableItem>("items", dirItems) {
+        add(new ListView<BaseBrowsableItem>("items", dirItems) {
 
             @Override
-            protected void populateItem(ListItem<BrowsableItem> listItem) {
-                BrowsableItem browsableItem = listItem.getModelObject();
+            protected void populateItem(ListItem<BaseBrowsableItem> listItem) {
+                BaseBrowsableItem browsableItem = listItem.getModelObject();
 
                 String itemRelativePath = browsableItem.getRelativePath();
                 if ("/".equals(itemRelativePath)) {
@@ -82,8 +96,7 @@ public class LocalRepoBrowserPanel extends TitledPanel {
                 } else {
                     link = new ExternalLink("link", href, browsableItem.getName());
                 }
-                link.add(new org.artifactory.common.wicket.behavior.CssClass(
-                        getCssClass(browsableItem)));
+                link.add(new CssClass(getCssClass(browsableItem)));
                 listItem.add(link);
             }
 
@@ -98,11 +111,5 @@ public class LocalRepoBrowserPanel extends TitledPanel {
         });
     }
 
-    public String getCssClass(BrowsableItem browsableItem) {
-        if (browsableItem.isFolder()) {
-            return ItemCssClass.folder.name();
-        } else {
-            return ItemCssClass.getFileCssClass(browsableItem.getRelativePath()).name();
-        }
-    }
+
 }

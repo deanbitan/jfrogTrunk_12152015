@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -94,5 +94,16 @@ public class PathMatcherTest {
         File file = new File("/work/tmp/t2/20080810.145407/repositories/repo1-cache/.DS_Store");
         assertTrue(PathMatcher.matches(file, PathMatcher.getDefaultExcludes(), null));
         assertTrue(PathMatcher.isInDefaultExcludes(file));
+    }
+
+    public void subPathIncludes() {
+        List<String> includes = Arrays.asList("apath1/sub1/**", "apath1/sub2/**", "apath2/sub1/**");
+        assertFalse(PathMatcher.matches("apath", includes, null));
+        assertTrue(PathMatcher.matches("apath1", includes, null));
+        assertTrue(PathMatcher.matches("apath2", includes, null));
+        assertFalse(PathMatcher.matches("apath1/sub", includes, null));
+        assertTrue(PathMatcher.matches("apath1/sub1", includes, null));
+        assertTrue(PathMatcher.matches("apath1/sub1/t", includes, null));
+        assertTrue(PathMatcher.matches("apath1/sub1/toto/tutu", includes, null));
     }
 }

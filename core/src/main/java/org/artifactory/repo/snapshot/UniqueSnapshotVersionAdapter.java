@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,13 +24,16 @@ import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.module.ModuleInfo;
+import org.artifactory.api.module.ModuleInfoUtils;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.resource.ArtifactResource;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
@@ -45,11 +48,9 @@ import java.util.List;
 public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
     private static final Logger log = LoggerFactory.getLogger(UniqueSnapshotVersionAdapter.class);
 
-    public String adaptSnapshotPath(RepoPath repoPath) {
-        String path = repoPath.getPath();
-        if (!isApplicableOn(path)) {
-            return path;
-        }
+    @Override
+    protected String adapt(MavenSnapshotVersionAdapterContext context) {
+        String path = context.getRepoPath().getPath();
 
         String fileName = PathUtils.getName(path);
         if (MavenNaming.isUniqueSnapshotFileName(fileName)) {
@@ -57,8 +58,7 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
             return path;
         }
 
-        MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(repoPath);
-        String pathBaseVersion = MavenNaming.getNonUniqueSnapshotBaseVersion(mavenInfo.getVersion());
+        String pathBaseVersion = context.getModuleInfo().getBaseRevision();
         if (!fileName.contains(pathBaseVersion + "-" + MavenNaming.SNAPSHOT)) {
             log.debug("File '{}' doesn't contain the non-unique snapshot version {}. " +
                     "Returning the original path.", fileName, pathBaseVersion);
@@ -66,19 +66,88 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
         }
 
         // Replace 'SNAPSHOT' with version timestamp for unique snapshot repo
-        return adjustNonUniqueSnapshotToUnique(repoPath, mavenInfo);
+        return adjustNonUniqueSnapshotToUnique(context);
     }
 
-    private String adjustNonUniqueSnapshotToUnique(RepoPath repoPath, MavenArtifactInfo mavenInfo) {
+    private String adjustNonUniqueSnapshotToUnique(MavenSnapshotVersionAdapterContext context) {
+        long timestamp = context.getTimestamp();
+        if (timestamp > 0) {
+            return adjustUsingClientTimestamp(context);
+        } else if (MavenNaming.isChecksum(context.getRepoPath().getPath())) {
+            return adjustChecksum(context);
+        } else {
+            return adjustUsingServerData(context);
+        }
+    }
+
+    private String adjustChecksum(MavenSnapshotVersionAdapterContext context) {
+        // find latest unique file matching the checksum coordinates
+        RepositoryService repoService = ContextHelper.get().getRepositoryService();
+        RepoPath parentRepoPath = context.getRepoPath().getParent();
+        RepoDescriptor repoDescriptor = repoService.repoDescriptorByKey(parentRepoPath.getRepoKey());
+        RepoLayout repoLayout = repoDescriptor.getRepoLayout();
+
+        String latestMatching = null;
+
+        String originalChecksumRequestPath = context.getRepoPath().getPath();
+        String originalRequestPathWithNoChecksum = PathUtils.stripExtension(originalChecksumRequestPath);
+
+        if (repoService.exists(parentRepoPath)) {
+            List<String> children = repoService.getChildrenNames(parentRepoPath);
+            for (String child : children) {
+                if (MavenNaming.isUniqueSnapshotFileName(child)) {
+
+                    ModuleInfo childModule = repoService.getItemModuleInfo(new RepoPathImpl(parentRepoPath, child));
+                    String fileRevisionIntegration = childModule.getFileIntegrationRevision();
+
+                    //Try to construct a new non-unique path as a descriptor
+                    String nonUniquePath = replaceIntegration(
+                            ModuleInfoUtils.constructDescriptorPath(childModule, repoLayout, true),
+                            fileRevisionIntegration);
+
+                    //If the path as a descriptor doesn't match, perhaps it's an artifact path
+                    if (!nonUniquePath.equals(originalRequestPathWithNoChecksum)) {
+                        //Try to construct a new non-unique path as an artifact
+                        nonUniquePath = replaceIntegration(
+                                ModuleInfoUtils.constructArtifactPath(childModule, repoLayout),
+                                fileRevisionIntegration);
+                    }
+
+                    if (nonUniquePath.equals(originalRequestPathWithNoChecksum)) {
+                        if (latestMatching == null ||
+                                MavenNaming.getUniqueSnapshotVersionBuildNumber(latestMatching) <
+                                        MavenNaming.getUniqueSnapshotVersionBuildNumber(child)) {
+                            latestMatching = child;
+                        }
+                    }
+                }
+            }
+        }
+
+        // if latest not found, return invalid path which will fail and return a message to the client
+        String timestamp = latestMatching != null ?
+                MavenNaming.getUniqueSnapshotVersionTimestamp(latestMatching) : System.currentTimeMillis() + "";
+        int buildNumber = latestMatching != null ?
+                MavenNaming.getUniqueSnapshotVersionBuildNumber(latestMatching) : 0;
+
+        // use the timestamp and build number from it. if not found return something that will fail?
+        return buildUniqueSnapshotFileName(originalChecksumRequestPath, buildNumber, timestamp);
+    }
+
+    private String replaceIntegration(String constructedPath, String artifactRevision) {
+        return constructedPath.replace(artifactRevision, "SNAPSHOT");
+    }
+
+    private String adjustUsingServerData(MavenSnapshotVersionAdapterContext context) {
         //Get the latest build number from the metadata
-        String filePath = repoPath.getPath();
-        int metadataBuildNumber = getLastBuildNumber(repoPath);
+        String filePath = context.getRepoPath().getPath();
+        int metadataBuildNumber = getLastBuildNumber(context.getRepoPath());
         int nextBuildNumber = metadataBuildNumber + 1;
 
-        RepoPath parentPath = repoPath.getParent();
+        RepoPath parentPath = context.getRepoPath().getParent();
 
         // determine if the next build number should be the one read from the metadata
-        String classifier = mavenInfo.getClassifier();
+        String classifier = context.getModuleInfo().getClassifier();
         boolean isPomChecksum = MavenNaming.isChecksum(filePath) && MavenNaming.isPom(
                 PathUtils.stripExtension(filePath));
         if (metadataBuildNumber > 0 && (StringUtils.isNotBlank(classifier) || isPomChecksum)) {
@@ -90,10 +159,10 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
             // the metadata might already represent an existing main artifact (in case the
             // maven-metadata.xml was deployed after the main artifact and before the pom/classifier)
             // so first check if there's already a file with the next build number
-            if (getSnapshotFile(parentPath, metadataBuildNumber + 1) == null) {
+            if (findSnapshotFileByBuildNumber(parentPath, metadataBuildNumber + 1) == null) {
                 // no files deployed with the next build number so either this is a pom deployment (parent pom)
                 // or this is a pom of a main artifact for which the maven-metadata.xml was deployed before this pom
-                if (getSnapshotPomFile(parentPath, metadataBuildNumber) == null) {
+                if (findSnapshotPomFile(parentPath, metadataBuildNumber) == null) {
                     // this is a pom attached to a main artifact deployed after maven-metadata.xml
                     nextBuildNumber = metadataBuildNumber;
                 }
@@ -105,7 +174,25 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
             // probably the first deployed file for this build, use now for the timestamp
             timestamp = MavenModelUtils.dateToUniqueSnapshotTimestamp(new Date());
         }
+        return buildUniqueSnapshotFileName(filePath, nextBuildNumber, timestamp);
+    }
 
+    private String adjustUsingClientTimestamp(MavenSnapshotVersionAdapterContext context) {
+        // artifact was uploaded with a timestamp, we use it for the unique snapshot timestamp and to locate build number
+        long timestamp = context.getTimestamp();
+        String uniqueTimestamp = MavenModelUtils.dateToUniqueSnapshotTimestamp(new Date(timestamp));
+        String existingArtifact = findSnapshotFileByTimestamp(context.getRepoPath().getParent(), uniqueTimestamp);
+        int buildNumber;
+        if (existingArtifact != null) {
+            buildNumber = MavenNaming.getUniqueSnapshotVersionBuildNumber(existingArtifact);
+        } else {
+            buildNumber = getLastBuildNumber(context.getRepoPath()) + 1;
+        }
+
+        return buildUniqueSnapshotFileName(context.getRepoPath().getPath(), buildNumber, uniqueTimestamp);
+    }
+
+    private String buildUniqueSnapshotFileName(String filePath, int nextBuildNumber, String timestamp) {
         // replace the SNAPSHOT string with timestamp-buildNumber
         String fileName = PathUtils.getName(filePath);
         String adaptedFileName = fileName.replace(MavenNaming.SNAPSHOT, timestamp + "-" + nextBuildNumber);
@@ -121,12 +208,9 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
             // get the parent path which should contains the maven-metadata
             RepoPath parentRepoPath = repoPath.getParent();
             RepositoryService repoService = ContextHelper.get().getRepositoryService();
-            String mavenMetadataStr = null;
             if (repoService.exists(parentRepoPath) &&
                     repoService.hasMetadata(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME)) {
-                mavenMetadataStr = repoService.getXmlMetadata(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME);
-            }
-            if (mavenMetadataStr != null) {
+                String mavenMetadataStr = repoService.getXmlMetadata(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME);
                 Metadata metadata = MavenModelUtils.toMavenMetadata(mavenMetadataStr);
                 Versioning versioning = metadata.getVersioning();
                 if (versioning != null) {
@@ -147,66 +231,81 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
 
     /**
      * @param snapshotDirectoryPath Path to a repository snapshot directory (eg, /a/path/1.0-SNAPSHOT)
-     * @param buildNum              The file with build number to search for
+     * @param buildNumber           The file with build number to search for
      * @return The path of the first unique snapshot file with the input build number.
      */
-    private String getSnapshotFile(RepoPath snapshotDirectoryPath, int buildNum) {
-        return getSnapshotFile(snapshotDirectoryPath, buildNum, null);
+    private String findSnapshotFileByBuildNumber(RepoPath snapshotDirectoryPath, int buildNumber) {
+        return findSnapshotFile(snapshotDirectoryPath, buildNumber, null, null);
     }
 
     /**
      * @param snapshotDirectoryPath Path to a repository snapshot directory (eg, /a/path/1.0-SNAPSHOT)
-     * @param buildNum              The file with build number to search for
+     * @param timestamp             The file with timestamp to search for
+     * @return The path of the first unique snapshot file with the input timestamp.
+     */
+    private String findSnapshotFileByTimestamp(RepoPath snapshotDirectoryPath, String timestamp) {
+        return findSnapshotFile(snapshotDirectoryPath, 0, timestamp, null);
+    }
+
+    /**
+     * @param snapshotDirectoryPath Path to a repository snapshot directory (eg, /a/path/1.0-SNAPSHOT)
+     * @param buildNumber           The file with build number to search for
      * @return The path of the unique snapshot pom file with the input build number.
      */
-    private String getSnapshotPomFile(RepoPath snapshotDirectoryPath, int buildNum) {
-        return getSnapshotFile(snapshotDirectoryPath, buildNum, "pom");
+    private String findSnapshotPomFile(RepoPath snapshotDirectoryPath, int buildNumber) {
+        return findSnapshotFile(snapshotDirectoryPath, buildNumber, null, "pom");
     }
 
     /**
      * @param snapshotDirectoryPath Path to a repository snapshot directory (eg, /a/path/1.0-SNAPSHOT)
-     * @param buildNum              The file with build number to search for
-     * @param fileType              The file type to search for. Use null for any type
+     * @param buildNumber           The file with build number to search for or 0 if doesn't matter
+     * @param timestamp             The file with timestamp to search for or null if doesn't matter
+     * @param fileExtension         The file type to search for. Use null for any type
      * @return The path of the first unique snapshot file with the input build number.
      */
-    private String getSnapshotFile(RepoPath snapshotDirectoryPath, int buildNum, String fileType) {
-        log.debug("Searching for unique snapshot file in {} with build number {}",
-                snapshotDirectoryPath, buildNum);
+    private String findSnapshotFile(RepoPath snapshotDirectoryPath, int buildNumber, String timestamp,
+            String fileExtension) {
+        log.debug("Searching for unique snapshot file in {} with build number {} and timestamp {}",
+                new Object[]{snapshotDirectoryPath, buildNumber, timestamp});
         RepositoryService repoService = ContextHelper.get().getRepositoryService();
         if (repoService.exists(snapshotDirectoryPath)) {
             List<String> children = repoService.getChildrenNames(snapshotDirectoryPath);
             for (String child : children) {
-                if ((fileType == null || fileType.equals(PathUtils.getExtension(child))) &&
-                        //In all cases - child must be a unique snapshot for the build number extraction
-                        MavenNaming.isUniqueSnapshotFileName(child)) {
-                    int childBuildNumber = MavenNaming.getUniqueSnapshotVersionBuildNumber(child);
-                    if (childBuildNumber == buildNum) {
-                        log.debug("Found unique snapshot with build number {}: {}", buildNum, child);
+                if (MavenNaming.isUniqueSnapshotFileName(child)) {
+                    // now match against all the conditions
+                    boolean buildNumberMatches = buildNumber == 0 || buildNumber == MavenNaming
+                            .getUniqueSnapshotVersionBuildNumber(child);
+                    boolean timestampMatches = timestamp == null || timestamp
+                            .equals(MavenNaming.getUniqueSnapshotVersionTimestamp(child));
+                    boolean typeMatches = fileExtension == null || fileExtension.equals(PathUtils.getExtension(child));
+                    if (buildNumberMatches && timestampMatches && typeMatches) {
+                        // passed all the search requirements...
+                        log.debug("Found unique snapshot: {}", child);
                         return child;
                     }
                 }
             }
         }
-        log.debug("Unique snapshot file not found in {} for build number {}", snapshotDirectoryPath, buildNum);
+        log.debug("Unique snapshot file not found in {} for build number {}", snapshotDirectoryPath, buildNumber);
         return null;
     }
 
     /**
      * @param snapshotDirectoryPath Path to a repository snapshot directory (eg, /a/path/1.0-SNAPSHOT)
-     * @param buildNum              The file with build number to search for
+     * @param buildNumber           The file with build number to search for
      * @return The timestamp of the unique snapshot file with the input build number.
      */
-    private String getSnapshotTimestamp(RepoPath snapshotDirectoryPath, int buildNum) {
-        String snapshotFile = getSnapshotFile(snapshotDirectoryPath, buildNum);
+    private String getSnapshotTimestamp(RepoPath snapshotDirectoryPath, int buildNumber) {
+        String snapshotFile = findSnapshotFileByBuildNumber(snapshotDirectoryPath, buildNumber);
         if (snapshotFile != null) {
             int childBuildNumber = MavenNaming.getUniqueSnapshotVersionBuildNumber(snapshotFile);
-            if (childBuildNumber == buildNum) {
+            if (childBuildNumber == buildNumber) {
                 String timestamp = MavenNaming.getUniqueSnapshotVersionTimestamp(snapshotFile);
                 log.debug("Extracted timestamp {} from {}", timestamp, snapshotFile);
                 return timestamp;
             }
         }
-        log.debug("Snapshot timestamp not found in {} for build number {}", snapshotDirectoryPath, buildNum);
+        log.debug("Snapshot timestamp not found in {} for build number {}", snapshotDirectoryPath, buildNumber);
         return null;
     }
 

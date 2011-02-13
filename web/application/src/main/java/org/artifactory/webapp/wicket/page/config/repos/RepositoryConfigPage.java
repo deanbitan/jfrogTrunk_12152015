@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +20,8 @@ package org.artifactory.webapp.wicket.page.config.repos;
 
 import com.google.common.collect.Maps;
 import org.apache.wicket.Component;
+import org.apache.wicket.PageParameters;
+import org.apache.wicket.ajax.AbstractAjaxTimerBehavior;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
@@ -28,6 +30,7 @@ import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.util.time.Duration;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.config.CentralConfigService;
@@ -49,13 +52,18 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpModel;
-import org.artifactory.webapp.wicket.page.config.repos.remote.RemoteRepoImportPanel;
+import org.artifactory.webapp.wicket.page.config.repos.local.LocalRepoPanel;
+import org.artifactory.webapp.wicket.page.config.repos.remote.HttpRepoPanel;
+import org.artifactory.webapp.wicket.page.config.repos.remote.importer.RemoteRepoImportPanel;
+import org.artifactory.webapp.wicket.page.config.repos.virtual.VirtualRepoPanel;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -89,14 +97,32 @@ public class RepositoryConfigPage extends AuthenticatedPage {
     private MutableCentralConfigDescriptor mutableDescriptor;
     private CachingDescriptorHelper cachingDescriptorHelper;
 
-    public RepositoryConfigPage() {
+    public static final String REPO_ID = "repoKey";
+
+    public RepositoryConfigPage(PageParameters parameters) {
         mutableDescriptor = refreshDescriptor();
         cachingDescriptorHelper = new CachingDescriptorHelper(mutableDescriptor);
-
-        addLocalReposList();
-        addRemoteReposList();
-        addVirtualReposList();
+        RepoBaseDescriptor descriptor = null;
+        if (parameters.containsKey(REPO_ID)) {
+            String repoKey = parameters.get(REPO_ID).toString();
+            descriptor = getDescriptorFromRepoKey(repoKey);
+        }
+        addLocalReposList(descriptor);
+        addRemoteReposList(descriptor);
+        addVirtualReposList(descriptor);
     }
+
+    private RepoBaseDescriptor getDescriptorFromRepoKey(String repoKey) {
+        RepoBaseDescriptor descriptor = mutableDescriptor.getLocalRepositoriesMap().get(repoKey);
+        if (descriptor == null) {
+            descriptor = mutableDescriptor.getRemoteRepositoriesMap().get(repoKey);
+            if (descriptor == null) {
+                descriptor = mutableDescriptor.getVirtualRepositoriesMap().get(repoKey);
+            }
+        }
+        return descriptor;
+    }
+
 
     protected MutableCentralConfigDescriptor refreshDescriptor() {
         return centralConfigService.getMutableDescriptor();
@@ -107,7 +133,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
         return "Configure Repositories";
     }
 
-    private void addLocalReposList() {
+    private void addLocalReposList(final RepoBaseDescriptor descriptor) {
         final IModel repoListModel = new RepoListModel<LocalRepoDescriptor>() {
             @Override
             protected Collection<LocalRepoDescriptor> getRepos() {
@@ -128,7 +154,8 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             }
         };
 
-        add(new RepoListPanel<LocalRepoDescriptor>("localRepos", repoListModel) {
+        final RepoListPanel<LocalRepoDescriptor> panel = new RepoListPanel<LocalRepoDescriptor>("localRepos",
+                repoListModel) {
             @Override
             protected void saveItems(AjaxRequestTarget target) {
                 try {
@@ -157,6 +184,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             @Override
             protected BaseModalPanel newCreateItemPanel() {
                 LocalRepoDescriptor repoDescriptor = new LocalRepoDescriptor();
+                repoDescriptor.setRepoLayout(RepoLayoutUtils.MAVEN_2_DEFAULT);
                 LicensesAddon licensesAddon = addons.addonByType(LicensesAddon.class);
                 licensesAddon.addPropertySetToRepository(repoDescriptor);
                 return new LocalRepoPanel(CREATE, repoDescriptor, cachingDescriptorHelper);
@@ -192,11 +220,14 @@ public class RepositoryConfigPage extends AuthenticatedPage {
                     }
                 }
             }
-        });
-
+        };
+        add(panel);
+        if (descriptor != null && descriptor instanceof LocalRepoDescriptor) {
+            panel.addAjaxTimer((LocalRepoDescriptor) descriptor);
+        }
     }
 
-    private void addRemoteReposList() {
+    private void addRemoteReposList(final RepoBaseDescriptor descriptor) {
         final IModel repoListModel = new RepoListModel<RemoteRepoDescriptor>() {
             @Override
             protected Collection<RemoteRepoDescriptor> getRepos() {
@@ -217,7 +248,8 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             }
         };
 
-        add(new RepoListPanel<RemoteRepoDescriptor>("remoteRepos", repoListModel) {
+        final RepoListPanel<RemoteRepoDescriptor> panel = new RepoListPanel<RemoteRepoDescriptor>(
+                "remoteRepos", repoListModel) {
             @Override
             protected void saveItems(AjaxRequestTarget target) {
                 try {
@@ -247,6 +279,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             @Override
             protected BaseModalPanel newCreateItemPanel() {
                 HttpRepoDescriptor repoDescriptor = new HttpRepoDescriptor();
+                repoDescriptor.setRepoLayout(RepoLayoutUtils.MAVEN_2_DEFAULT);
                 LicensesAddon licensesAddon = addons.addonByType(LicensesAddon.class);
                 licensesAddon.addPropertySetToRepository(repoDescriptor);
                 return new HttpRepoPanel(CREATE, repoDescriptor, cachingDescriptorHelper);
@@ -271,10 +304,14 @@ public class RepositoryConfigPage extends AuthenticatedPage {
                     }
                 };
             }
-        });
+        };
+        add(panel);
+        if (descriptor != null && descriptor instanceof RemoteRepoDescriptor) {
+            panel.addAjaxTimer((RemoteRepoDescriptor) descriptor);
+        }
     }
 
-    private void addVirtualReposList() {
+    private void addVirtualReposList(final RepoBaseDescriptor descriptor) {
         final IModel repoListModel = new RepoListModel<VirtualRepoDescriptor>() {
             @Override
             protected Collection<VirtualRepoDescriptor> getRepos() {
@@ -295,7 +332,8 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             }
         };
 
-        add(new RepoListPanel<VirtualRepoDescriptor>("virtualRepos", repoListModel) {
+        final RepoListPanel<VirtualRepoDescriptor> panel = new RepoListPanel<VirtualRepoDescriptor>(
+                "virtualRepos", repoListModel) {
             @Override
             protected void saveItems(AjaxRequestTarget target) {
                 try {
@@ -324,7 +362,8 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
             @Override
             protected BaseModalPanel newCreateItemPanel() {
-                return new VirtualRepoPanel(CREATE, new VirtualRepoDescriptor(), cachingDescriptorHelper);
+                VirtualRepoDescriptor repoDescriptor = new VirtualRepoDescriptor();
+                return new VirtualRepoPanel(CREATE, repoDescriptor, cachingDescriptorHelper);
             }
 
             @Override
@@ -338,7 +377,11 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             protected Component newToolbar(String id) {
                 return new SchemaHelpBubble(id, getHelpModel("virtualRepositoriesMap"));
             }
-        });
+        };
+        add(panel);
+        if (descriptor != null && descriptor instanceof VirtualRepoDescriptor) {
+            panel.addAjaxTimer((VirtualRepoDescriptor) descriptor);
+        }
     }
 
     private SchemaHelpModel getHelpModel(String property) {
@@ -433,6 +476,18 @@ public class RepositoryConfigPage extends AuthenticatedPage {
         }
 
         protected abstract BaseModalPanel newUpdateItemPanel(T itemObject);
+
+        protected void addAjaxTimer(final T itemObject) {
+            add(new AbstractAjaxTimerBehavior(Duration.milliseconds(1)) {
+                @Override
+                protected void onTimer(AjaxRequestTarget target) {
+                    stop(); // don't fire again
+                    ModalHandler modalHandler = ModalHandler.getInstanceFor(RepoListPanel.this);
+                    modalHandler.setModalPanel(newUpdateItemPanel(itemObject));
+                    modalHandler.show(target);
+                }
+            });
+        }
 
         @Override
         protected void populateItem(final ListItem item) {

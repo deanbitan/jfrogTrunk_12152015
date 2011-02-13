@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,15 +24,17 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.addon.plugin.download.AltResponseAction;
+import org.artifactory.addon.plugin.download.BeforeDownloadAction;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.cache.InternalCacheService;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.StringResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.Repo;
@@ -41,6 +43,7 @@ import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.DownloadRequestContext;
 import org.artifactory.request.RemoteRequestException;
+import org.artifactory.request.Request;
 import org.artifactory.request.RequestContext;
 import org.artifactory.request.RequestResponseHelper;
 import org.artifactory.resource.ChecksumResource;
@@ -59,6 +62,7 @@ import org.springframework.stereotype.Service;
 
 import javax.jcr.RepositoryException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InterruptedIOException;
 
 /**
@@ -67,7 +71,7 @@ import java.io.InterruptedIOException;
 
 @Service
 @Reloadable(beanClass = InternalDownloadService.class,
-        initAfter = {InternalRepositoryService.class, InternalCacheService.class})
+        initAfter = {InternalRepositoryService.class})
 public class DownloadServiceImpl implements InternalDownloadService {
 
     private static final Logger log = LoggerFactory.getLogger(DownloadServiceImpl.class);
@@ -181,13 +185,18 @@ public class DownloadServiceImpl implements InternalDownloadService {
     private void respond(RequestContext requestContext, ArtifactoryResponse response, RepoResource resource)
             throws IOException {
         try {
-            ArtifactoryRequest request = requestContext.getRequest();
+            Request request = requestContext.getRequest();
+
             if (!resource.isFound()) {
                 respondResourceNotFound(response, resource);
-            } else if (request.isHeadOnly() && !request.isChecksum()) {
-                //Send head response if that's what were asked for
+            } else if (request.isHeadOnly() && !request.isChecksum() && isRepoNotRemoteOrDoesntStoreLocally(resource)) {
+                /**
+                 * Send head response only if the file isn't a checksum. Also, if the repo is a remote, only respond
+                 * like this if we don't store artifacts locally (so that the whole artifact won't be requested twice),
+                 * otherwise download the artifact normally and return the full info for the head request
+                 */
                 requestResponseHelper.sendHeadResponse(response, resource);
-            } else if (request.isNewerThanResource(resource.getLastModified())) {
+            } else if (request.isNewerThan(resource.getLastModified())) {
                 requestResponseHelper.sendNotModifiedResponse(response, resource);
             } else if (request.isChecksum()) {
                 respondForChecksumRequest(request, response, resource);
@@ -199,6 +208,12 @@ public class DownloadServiceImpl implements InternalDownloadService {
         }
     }
 
+    private boolean isRepoNotRemoteOrDoesntStoreLocally(RepoResource resource) {
+        RemoteRepoDescriptor remoteRepoDescriptor = repositoryService.remoteRepoDescriptorByKey(
+                resource.getRepoPath().getRepoKey());
+        return (remoteRepoDescriptor == null) || !remoteRepoDescriptor.isStoreArtifactsLocally();
+    }
+
     private void respondFoundResource(RequestContext requestContext, ArtifactoryResponse response,
             RepoResource resource) throws IOException {
         //Get the actual repository the resource is in
@@ -206,35 +221,33 @@ public class DownloadServiceImpl implements InternalDownloadService {
         String repoKey = responseRepoPath.getRepoKey();
 
         //Send the resource file back (will update the cache for remote repositories)
-        ResourceStreamHandle handle = null;
-
-        //See if we need to return an alternate response
-        AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
-        PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
-        ResponseCtx responseCtx = new ResponseCtx();
-        pluginAddon.execPluginActions(AltResponseAction.class, responseCtx, responseRepoPath);
-        int status = responseCtx.getStatus();
-        String message = responseCtx.getMessage();
-        if (status != ResponseCtx.UNSET_STATUS) {
-            if (HttpUtils.isSuccessfulResponseCode(status)) {
-                response.setStatus(status);
-                if (message != null) {
-                    handle = new StringResourceStreamHandle(message);
-                }
-            } else {
-                response.sendError(status, message, log);
-                return;
-            }
+        ResourceStreamHandle handle = getAlternateHandle(requestContext, response, responseRepoPath);
+        if (response.isError()) {
+            return;
         }
 
-        Repo repository = repositoryService.repositoryByKey(repoKey);
+        Repo responseRepo = repositoryService.repositoryByKey(repoKey);
 
         try {
             if (handle == null) {
-                handle = repositoryService.getResourceStreamHandle(requestContext, repository, resource);
+                //Only if we didn't already set an alternate response
+                handle = repositoryService.getResourceStreamHandle(requestContext, responseRepo, resource);
             }
-            //Streaming the file is done outside a tx, so there is a chance that the content will change!
-            requestResponseHelper.sendBodyResponse(response, resource, handle);
+            AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
+            PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
+            pluginAddon.execPluginActions(BeforeDownloadAction.class, null, requestContext.getRequest(),
+                    responseRepoPath);
+
+            if (requestContext.getRequest().isHeadOnly()) {
+                /**
+                 * If we should response to a head, make sure repo is a remote and that stores locally (to save the
+                 * double artifact downloads)
+                 */
+                requestResponseHelper.sendHeadResponse(response, resource);
+            } else {
+                //Streaming the file is done outside a tx, so there is a chance that the content will change!
+                requestResponseHelper.sendBodyResponse(response, resource, handle);
+            }
         } catch (RepoRejectException rre) {
             String msg = "Rejected artifact download request: " + rre.getMessage();
             response.sendError(rre.getErrorCode(), msg, log);
@@ -249,6 +262,43 @@ public class DownloadServiceImpl implements InternalDownloadService {
                 handle.close();
             }
         }
+    }
+
+    /**
+     * Executes any subscribing user plugin routines and returns an alternate resource handle if given
+     *
+     * @param requestContext   Context
+     * @param response         Response to return
+     * @param responseRepoPath Actual repo path of the requested artifact
+     * @return Stream handle if return by plugins. Null if not.
+     */
+    private ResourceStreamHandle getAlternateHandle(RequestContext requestContext, ArtifactoryResponse response,
+            RepoPath responseRepoPath) throws IOException {
+        //See if we need to return an alternate response
+
+        AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
+        PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
+        ResponseCtx responseCtx = new ResponseCtx();
+        pluginAddon.execPluginActions(AltResponseAction.class, responseCtx, requestContext.getRequest(),
+                responseRepoPath);
+        int status = responseCtx.getStatus();
+        String message = responseCtx.getMessage();
+        if (status != ResponseCtx.UNSET_STATUS) {
+            if (HttpUtils.isSuccessfulResponseCode(status)) {
+                response.setStatus(status);
+                if (message != null) {
+                    return new StringResourceStreamHandle(message);
+                }
+            } else {
+                response.sendError(status, message, log);
+                return null;
+            }
+        }
+        InputStream is = responseCtx.getInputStream();
+        if (is != null) {
+            return new SimpleResourceStreamHandle(is, responseCtx.getSize());
+        }
+        return null;
     }
 
     private void respondResourceNotFound(ArtifactoryResponse response, RepoResource resource) throws IOException {
@@ -284,21 +334,24 @@ public class DownloadServiceImpl implements InternalDownloadService {
      * found. If for any reason we don't have the checksum we return http 404 to the client and let the client decide
      * how to proceed.
      */
-    private void respondForChecksumRequest(ArtifactoryRequest request, ArtifactoryResponse response,
+    private void respondForChecksumRequest(Request request, ArtifactoryResponse response,
             RepoResource resource) throws IOException {
 
-        String checksumFilePath = request.getPath();
-        ChecksumType checksumType = ChecksumType.forFilePath(checksumFilePath);
+        RepoPath requestRepoPath = request.getRepoPath();
+        String requestChecksumFilePath = requestRepoPath.getPath();
+        ChecksumType checksumType = ChecksumType.forFilePath(requestChecksumFilePath);
         if (checksumType == null) {
-            response.sendError(HttpStatus.SC_NOT_FOUND, "Checksum not found: " + checksumFilePath, log);
+            response.sendError(HttpStatus.SC_NOT_FOUND, "Checksum not found: " + requestChecksumFilePath, log);
             return;
         }
 
-        String repoKey = resource.getResponseRepoPath().getRepoKey();
+        RepoPath responseRepoPath = resource.getResponseRepoPath();
+        String repoKey = responseRepoPath.getRepoKey();
+        String responsePath = responseRepoPath.getPath();
         Repo repository = repositoryService.repositoryByKey(repoKey);
-        String checksum = repository.getChecksum(checksumFilePath, resource);
+        String checksum = repository.getChecksum(responsePath + checksumType.ext(), resource);
         if (checksum == null) {
-            response.sendError(HttpStatus.SC_NOT_FOUND, "Checksum not found for " + checksumFilePath, log);
+            response.sendError(HttpStatus.SC_NOT_FOUND, "Checksum not found for " + responsePath, log);
             return;
         }
 
@@ -307,9 +360,12 @@ public class DownloadServiceImpl implements InternalDownloadService {
             ChecksumResource checksumResource = new ChecksumResource((FileResource) resource, checksumType, checksum);
             requestResponseHelper.sendHeadResponse(response, checksumResource);
         } else {
+            AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
+            PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
+            pluginAddon.execPluginActions(BeforeDownloadAction.class, null, request, responseRepoPath);
             // send the checksum as the response body, use the original repo path (the checksum path,
             // not the file) from the request
-            requestResponseHelper.sendBodyResponse(response, request.getRepoPath(), checksum);
+            requestResponseHelper.sendBodyResponse(response, requestRepoPath, checksum);
         }
     }
 

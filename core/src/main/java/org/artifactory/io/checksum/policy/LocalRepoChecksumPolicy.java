@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,27 +18,57 @@
 
 package org.artifactory.io.checksum.policy;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
+import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.util.Set;
 
 /**
- * This is the checksum policy used by local non-cahce repositories. This class is not supposed to be used by the cache
- * repositories and it doesn't verify the checksums.
+ * This is the checksum policy used by local non-cache repositories. This class is not supposed to be used by the cache
+ * repositories.
  *
  * @author Yossi Shaul
  */
 public class LocalRepoChecksumPolicy implements ChecksumPolicy, Serializable {
+    private static final Logger log = LoggerFactory.getLogger(LocalRepoChecksumPolicy.class);
+
     private LocalRepoChecksumPolicyType policyType = LocalRepoChecksumPolicyType.CLIENT;
 
+    /**
+     * Verify client (original) checksums vs. calculated checksums when the original is not null. This method usually
+     * called while saving file to jcr (just after the actual checksums are calculated). This check is only applied if there
+     * are original checksums (ie, the client sends the checksum info with the deployed file).
+     *
+     * @param checksums The resource checksums
+     * @return True if it the checksums are ok according to the policy.
+     */
     public boolean verify(Set<ChecksumInfo> checksums) {
+        boolean checksumsMatch = true;
+        for (ChecksumInfo checksum : checksums) {
+            // check only if the client checksum info exist
+            if (StringUtils.isNotBlank(checksum.getOriginal())) {
+                checksumsMatch &= checksum.checksumsMatch();
+            }
+        }
+
+        // fail only if there's real mismatch and the policy is client checksums
+        if (!checksumsMatch) {
+            if (LocalRepoChecksumPolicyType.CLIENT == policyType) {
+                return false;
+            } else {
+                log.debug("Checksum mismatch: %s", checksums);
+            }
+        }
         return true;
     }
+
 
     public String getChecksum(ChecksumType checksumType, Set<ChecksumInfo> checksums) {
         return getChecksum(checksumType, checksums, null);
@@ -78,5 +108,33 @@ public class LocalRepoChecksumPolicy implements ChecksumPolicy, Serializable {
 
     public LocalRepoChecksumPolicyType getPolicyType() {
         return policyType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalRepoChecksumPolicy that = (LocalRepoChecksumPolicy) o;
+
+        if (policyType != that.policyType) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return policyType.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "LocalRepoChecksumPolicy: " + policyType;
     }
 }

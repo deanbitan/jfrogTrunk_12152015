@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.descriptor.security.sso;
 
+import org.apache.commons.lang.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -44,7 +45,7 @@ public class CrowdSettingsTest {
         assertEquals(crowdSettings.getSessionValidationInterval(), 0L,
                 "Default session validation interval should be 0.");
         assertFalse(crowdSettings.isEnableIntegration(), "Integration should not be enabled by default.");
-        assertFalse(crowdSettings.isNoAutoUserCreation(), "No Auto user creation should not be enabled by default.");
+        assertTrue(crowdSettings.isNoAutoUserCreation(), "Auto user creation should not be enabled by default.");
         assertFalse(crowdSettings.isUseDefaultProxy(),
                 "Use of default proxy configuration should not be enabled by default.");
     }
@@ -69,7 +70,7 @@ public class CrowdSettingsTest {
         Assert.assertTrue(configurationProperties.isEmpty(),
                 "Generated configuration properties should be empty since the integration is not enabled.");
 
-        //Now "enable" the intergration and test the properties
+        //Now "enable" the integration and test the properties
         crowdSettings.setEnableIntegration(true);
         configurationProperties = crowdSettings.getConfigurationProperties();
         assertEquals(configurationProperties.getProperty("crowd.server.url"), serverUrl
@@ -80,5 +81,11 @@ public class CrowdSettingsTest {
                 "Unexpected password property value");
         assertEquals(Long.parseLong(configurationProperties.getProperty("session.validationinterval")),
                 sessionValidationInterval, "Unexpected session validation interval property value");
+        assertTrue(StringUtils.isNotBlank(configurationProperties.getProperty("session.isauthenticated")),
+                "session.isauthenticated session attribute key must have a value.");
+        assertTrue(StringUtils.isNotBlank(configurationProperties.getProperty("session.tokenkey")),
+                "session.tokenkey session attribute key must have a value.");
+        assertTrue(StringUtils.isNotBlank(configurationProperties.getProperty("session.lastvalidation")),
+                "session.lastvalidation session attribute key must have a value.");
     }
 }

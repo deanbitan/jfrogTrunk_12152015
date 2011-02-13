@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,23 +22,22 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.repo.BaseBrowsableItem;
+import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
-import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
 import org.slf4j.Logger;
@@ -53,7 +52,13 @@ import org.xml.sax.InputSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -62,16 +67,20 @@ import java.util.List;
 import java.util.TimeZone;
 
 /**
- * User: freds Date: Jul 27, 2008 Time: 9:27:12 PM
+ * Service class to handle webdav protocol.<p/>
+ * Webdav RFCc at: <a href="http://www.ietf.org/rfc/rfc2518.txt">rfc2518</a>,
+ * <a href="http://www.ietf.org/rfc/rfc4918.txt">rfc4918</a>.
+ *
+ * @author Yossi Shaul
  */
 @Service
 public class WebdavServiceImpl implements WebdavService {
     private static final Logger log = LoggerFactory.getLogger(WebdavServiceImpl.class);
 
     /**
-     * Default depth is infite.
+     * Default depth is infinity. And it is limited no purpose to 3 level deep.
      */
-    private static final int INFINITY = 3;// To limit tree browsing a bit
+    private static final int INFINITY = 3;
 
     /**
      * PROPFIND - Specify a property mask.
@@ -110,11 +119,12 @@ public class WebdavServiceImpl implements WebdavService {
     @Autowired
     private InternalRepositoryService repoService;
 
+    @Autowired
+    private RepositoryBrowsingService repoBrowsing;
+
     @SuppressWarnings({"OverlyComplexMethod"})
     public void handlePropfind(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         // Retrieve the resources
-        RepoPath repoPath = request.getRepoPath();
-        String path = repoPath.getPath();
         int depth = INFINITY;
         String depthStr = request.getHeader("Depth");
         if (depthStr != null) {
@@ -135,6 +145,7 @@ public class WebdavServiceImpl implements WebdavService {
             try {
                 Document document = documentBuilder.parse(
                         new InputSource(request.getInputStream()));
+                logWebdavRequest(document);
                 // Get the root element of the document
                 Element rootElement = document.getDocumentElement();
                 NodeList childList = rootElement.getChildNodes();
@@ -171,29 +182,43 @@ public class WebdavServiceImpl implements WebdavService {
         response.setContentType("text/xml; charset=UTF-8");
 
         // Create multistatus object
-        //Writer writer = new StringWriter();
         Writer writer = response.getWriter();
+        if (log.isDebugEnabled()) {
+            writer = new StringWriter(); // write to memory so we'll be able to log the result as string
+        }
         XmlWriter generatedXml = new XmlWriter(writer);
         generatedXml.writeXMLHeader();
         generatedXml.writeElement(null, "multistatus xmlns=\"" + DEFAULT_NAMESPACE + "\"", XmlWriter.OPENING);
-        if (depth > 0) {
-            recursiveParseProperties(
-                    request, response, generatedXml, path, propertyFindType, properties, depth);
+        BrowsableItem rootItem = repoBrowsing.getLocalRepoBrowsableItem(request.getRepoPath());
+        if (rootItem != null) {
+            recursiveParseProperties(request, response, generatedXml, rootItem, propertyFindType, properties, depth);
         } else {
-            parseProperties(request, response, generatedXml, path, propertyFindType, properties);
+            log.warn("Folder '" + request.getRepoPath() + "' not found.");
         }
         generatedXml.writeElement(null, "multistatus", XmlWriter.CLOSING);
         generatedXml.sendData();
+        if (log.isDebugEnabled()) {
+            log.debug("Webdav response:\n" + writer.toString());
+            //response.setContentLength(writer.toString().getBytes().length);
+            response.getWriter().append(writer.toString());
+        }
         response.flush();
     }
 
     public void handleMkcol(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         RepoPath repoPath = request.getRepoPath();
-        final LocalRepo repo = getLocalRepo(request, response);
-        //Return 405 if folder exists
+        String repoKey = request.getRepoKey();
+        LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoKey);
+        if (repo == null) {
+            response.sendError(HttpStatus.SC_NOT_FOUND, "Could not find repo '" + repoKey + "'.", log);
+            return;
+        }
+
+        //Return 405 if called on root or the folder already exists
         String path = repoPath.getPath();
-        if (repo.itemExists(path)) {
-            response.setStatus(HttpStatus.SC_METHOD_NOT_ALLOWED);
+        if (StringUtils.isBlank(path) || repo.itemExists(path)) {
+            response.sendError(HttpStatus.SC_METHOD_NOT_ALLOWED,
+                    "MKCOL can only be executed on non-existent resource: " + repoPath, log);
             return;
         }
         //Check that we are allowed to write
@@ -203,9 +228,22 @@ public class WebdavServiceImpl implements WebdavService {
             response.sendError(rre.getErrorCode(), rre.getMessage(), log);
             return;
         }
+
+        // make sure the parent exists
+        JcrFolder parentFolder = repo.getLockedJcrFolder(repoPath.getParent(), false);
+        if (parentFolder == null) {
+            response.sendError(HttpStatus.SC_CONFLICT,
+                    "Directory cannot be created: parent doesn't exist: " + repoPath.getParent(), log);
+            return;
+        }
+
         JcrFolder targetFolder = repo.getLockedJcrFolder(repoPath, true);
-        targetFolder.mkdirs();
-        //Return 201 when an element is created
+        boolean created = targetFolder.mkdirs();
+        if (!created) {
+            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                    "Directory cannot be created: " + repoPath, log);
+            return;
+        }
         response.setStatus(HttpStatus.SC_CREATED);
     }
 
@@ -214,11 +252,6 @@ public class WebdavServiceImpl implements WebdavService {
         String repoKey = repoPath.getRepoKey();
         LocalRepo localRepository = repoService.localOrCachedRepositoryByKey(repoKey);
         if (localRepository == null) {
-            if (repoService.virtualRepoDescriptorByKey(repoKey) != null) {
-                response.setStatus(HttpStatus.SC_METHOD_NOT_ALLOWED);
-                response.setHeader("Allow", "GET");
-                return;
-            }
             response.setStatus(HttpStatus.SC_NOT_FOUND);
             return;
         }
@@ -241,7 +274,6 @@ public class WebdavServiceImpl implements WebdavService {
     public void handleOptions(ArtifactoryResponse response) throws IOException {
         response.setHeader("DAV", "1,2");
         response.setHeader("Allow", WEBDAV_METHODS_LIST);
-        //response.setHeader("Allow", "OPTIONS, MKCOL, PUT, GET, HEAD, POST, DELETE, PROPFIND, MOVE");
         response.setHeader("MS-Author-Via", "DAV");
         response.sendSuccess();
     }
@@ -335,35 +367,21 @@ public class WebdavServiceImpl implements WebdavService {
         return properties;
     }
 
-    /**
-     * Propfind helper method.
-     *
-     * @param generatedXml           XML response to the Propfind request
-     * @param path                   Path of the current resource
-     * @param type                   Propfind type
-     * @param propertiesList<String> If the propfind type is find properties by name, then this List<String> contains
-     *                               those properties
-     */
     @SuppressWarnings({"OverlyComplexMethod"})
-    private void parseProperties(ArtifactoryRequest request, ArtifactoryResponse response, XmlWriter generatedXml,
-                                 final String path, int type, List<String> propertiesList) throws IOException {
-        JcrFsItem item = getJcrFsItem(request, response, path);
-        if (item == null) {
-            log.warn("Item '" + path + "' not found.");
-            return;
-        }
-        String creationDate = getIsoCreationDate(item.getCreated());
-        boolean isFolder = item.isDirectory();
-        String lastModified =
-                getIsoCreationDate(isFolder ? 0 : ((JcrFile) item).getLastModified());
-        String resourceLength = isFolder ? "0" : (((JcrFile) item).getSize() + "");
+    private void parseProperties(ArtifactoryRequest request, XmlWriter xmlResponse,
+            BaseBrowsableItem item, int type, List<String> propertiesList) throws IOException {
+        RepoPath repoPath = item.getRepoPath();
+        String creationDate = getIsoDate(item.getCreated());
+        boolean isFolder = item.isFolder();
+        String lastModified = getIsoDate(item.getLastModified());
+        String resourceLength = item.getSize() + "";
 
-        generatedXml.writeElement(null, "response", XmlWriter.OPENING);
+        xmlResponse.writeElement(null, "response", XmlWriter.OPENING);
         String status = "HTTP/1.1 " + WebdavStatus.SC_OK + " " +
                 WebdavStatus.getStatusText(WebdavStatus.SC_OK);
 
         //Generating href element
-        generatedXml.writeElement(null, "href", XmlWriter.OPENING);
+        xmlResponse.writeElement(null, "href", XmlWriter.OPENING);
         String origPath = request.getPath();
         String uri = request.getUri();
         String hrefBase = uri;
@@ -374,14 +392,18 @@ public class WebdavServiceImpl implements WebdavService {
                 hrefBase = uri.substring(0, idx);
             }
         }
+        String path = repoPath.getPath();
+        if (StringUtils.isNotBlank(path) && !hrefBase.endsWith("/")) {
+            hrefBase += "/";
+        }
         String href = hrefBase + path;
         /*if (isFolder && !href.endsWith("/")) {
             href += "/";
         }*/
 
         //String encodedHref = encoder.encode(href);
-        generatedXml.writeText(href);
-        generatedXml.writeElement(null, "href", XmlWriter.CLOSING);
+        xmlResponse.writeText(href);
+        xmlResponse.writeElement(null, "href", XmlWriter.CLOSING);
 
         String resourceName = path;
         int lastSlash = path.lastIndexOf('/');
@@ -391,123 +413,123 @@ public class WebdavServiceImpl implements WebdavService {
 
         switch (type) {
             case FIND_ALL_PROP:
-                generatedXml.writeElement(null, "propstat", XmlWriter.OPENING);
-                generatedXml.writeElement(null, "prop", XmlWriter.OPENING);
+                xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
+                xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);
 
-                generatedXml.writeProperty(null, "creationdate", creationDate);
-                generatedXml.writeElement(null, "displayname", XmlWriter.OPENING);
-                generatedXml.writeData(resourceName);
-                generatedXml.writeElement(null, "displayname", XmlWriter.CLOSING);
+                xmlResponse.writeProperty(null, "creationdate", creationDate);
+                xmlResponse.writeElement(null, "displayname", XmlWriter.OPENING);
+                xmlResponse.writeData(resourceName);
+                xmlResponse.writeElement(null, "displayname", XmlWriter.CLOSING);
                 if (!isFolder) {
-                    generatedXml.writeProperty(null, "getlastmodified", lastModified);
-                    generatedXml.writeProperty(null, "getcontentlength", resourceLength);
+                    xmlResponse.writeProperty(null, "getlastmodified", lastModified);
+                    xmlResponse.writeProperty(null, "getcontentlength", resourceLength);
 
                     MimeType ct = NamingUtils.getMimeType(path);
                     if (ct != null) {
-                        generatedXml.writeProperty(null, "getcontenttype", ct.getType());
+                        xmlResponse.writeProperty(null, "getcontenttype", ct.getType());
                     }
-                    generatedXml.writeProperty(
+                    xmlResponse.writeProperty(
                             null, "getetag", getEtag(resourceLength, lastModified));
-                    generatedXml.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
+                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
                 } else {
-                    generatedXml.writeElement(null, "resourcetype", XmlWriter.OPENING);
-                    generatedXml.writeElement(null, "collection", XmlWriter.NO_CONTENT);
-                    generatedXml.writeElement(null, "resourcetype", XmlWriter.CLOSING);
+                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.OPENING);
+                    xmlResponse.writeElement(null, "collection", XmlWriter.NO_CONTENT);
+                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.CLOSING);
                 }
-                generatedXml.writeProperty(null, "source", "");
-                generatedXml.writeElement(null, "prop", XmlWriter.CLOSING);
-                generatedXml.writeElement(null, "status", XmlWriter.OPENING);
-                generatedXml.writeText(status);
-                generatedXml.writeElement(null, "status", XmlWriter.CLOSING);
-                generatedXml.writeElement(null, "propstat", XmlWriter.CLOSING);
+                xmlResponse.writeProperty(null, "source", "");
+                xmlResponse.writeElement(null, "prop", XmlWriter.CLOSING);
+                xmlResponse.writeElement(null, "status", XmlWriter.OPENING);
+                xmlResponse.writeText(status);
+                xmlResponse.writeElement(null, "status", XmlWriter.CLOSING);
+                xmlResponse.writeElement(null, "propstat", XmlWriter.CLOSING);
                 break;
             case FIND_PROPERTY_NAMES:
-                generatedXml.writeElement(null, "propstat", XmlWriter.OPENING);
-                generatedXml.writeElement(null, "prop", XmlWriter.OPENING);
-                generatedXml.writeElement(null, "creationdate", XmlWriter.NO_CONTENT);
-                generatedXml.writeElement(null, "displayname", XmlWriter.NO_CONTENT);
+                xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
+                xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);
+                xmlResponse.writeElement(null, "creationdate", XmlWriter.NO_CONTENT);
+                xmlResponse.writeElement(null, "displayname", XmlWriter.NO_CONTENT);
                 if (!isFolder) {
-                    generatedXml.writeElement(null, "getcontentlanguage", XmlWriter.NO_CONTENT);
-                    generatedXml.writeElement(null, "getcontentlength", XmlWriter.NO_CONTENT);
-                    generatedXml.writeElement(null, "getcontenttype", XmlWriter.NO_CONTENT);
-                    generatedXml.writeElement(null, "getetag", XmlWriter.NO_CONTENT);
-                    generatedXml.writeElement(null, "getlastmodified", XmlWriter.NO_CONTENT);
+                    xmlResponse.writeElement(null, "getcontentlanguage", XmlWriter.NO_CONTENT);
+                    xmlResponse.writeElement(null, "getcontentlength", XmlWriter.NO_CONTENT);
+                    xmlResponse.writeElement(null, "getcontenttype", XmlWriter.NO_CONTENT);
+                    xmlResponse.writeElement(null, "getetag", XmlWriter.NO_CONTENT);
+                    xmlResponse.writeElement(null, "getlastmodified", XmlWriter.NO_CONTENT);
                 }
-                generatedXml.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
-                generatedXml.writeElement(null, "source", XmlWriter.NO_CONTENT);
-                generatedXml.writeElement(null, "lockdiscovery", XmlWriter.NO_CONTENT);
-                generatedXml.writeElement(null, "prop", XmlWriter.CLOSING);
-                generatedXml.writeElement(null, "status", XmlWriter.OPENING);
-                generatedXml.writeText(status);
-                generatedXml.writeElement(null, "status", XmlWriter.CLOSING);
-                generatedXml.writeElement(null, "propstat", XmlWriter.CLOSING);
+                xmlResponse.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
+                xmlResponse.writeElement(null, "source", XmlWriter.NO_CONTENT);
+                xmlResponse.writeElement(null, "lockdiscovery", XmlWriter.NO_CONTENT);
+                xmlResponse.writeElement(null, "prop", XmlWriter.CLOSING);
+                xmlResponse.writeElement(null, "status", XmlWriter.OPENING);
+                xmlResponse.writeText(status);
+                xmlResponse.writeElement(null, "status", XmlWriter.CLOSING);
+                xmlResponse.writeElement(null, "propstat", XmlWriter.CLOSING);
                 break;
             case FIND_BY_PROPERTY:
                 //noinspection MismatchedQueryAndUpdateOfCollection
                 List<String> propertiesNotFound = new ArrayList<String>();
                 // Parse the list of properties
-                generatedXml.writeElement(null, "propstat", XmlWriter.OPENING);
-                generatedXml.writeElement(null, "prop", XmlWriter.OPENING);
+                xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
+                xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);
                 for (String property : propertiesList) {
                     if ("creationdate".equals(property)) {
-                        generatedXml.writeProperty(null, "creationdate", creationDate);
+                        xmlResponse.writeProperty(null, "creationdate", creationDate);
                     } else if ("displayname".equals(property)) {
-                        generatedXml.writeElement(null, "displayname", XmlWriter.OPENING);
-                        generatedXml.writeData(resourceName);
-                        generatedXml.writeElement(null, "displayname", XmlWriter.CLOSING);
+                        xmlResponse.writeElement(null, "displayname", XmlWriter.OPENING);
+                        xmlResponse.writeData(resourceName);
+                        xmlResponse.writeElement(null, "displayname", XmlWriter.CLOSING);
                     } else if ("getcontentlanguage".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
-                            generatedXml.writeElement(
+                            xmlResponse.writeElement(
                                     null, "getcontentlanguage", XmlWriter.NO_CONTENT);
                         }
                     } else if ("getcontentlength".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
-                            generatedXml.writeProperty(null, "getcontentlength", resourceLength);
+                            xmlResponse.writeProperty(null, "getcontentlength", resourceLength);
                         }
                     } else if ("getcontenttype".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
-                            generatedXml.writeProperty(null, "getcontenttype",
+                            xmlResponse.writeProperty(null, "getcontenttype",
                                     NamingUtils.getMimeTypeByPathAsString(path));
                         }
                     } else if ("getetag".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
-                            generatedXml.writeProperty(null, "getetag",
+                            xmlResponse.writeProperty(null, "getetag",
                                     getEtag(resourceLength, lastModified));
                         }
                     } else if ("getlastmodified".equals(property)) {
                         if (isFolder) {
                             propertiesNotFound.add(property);
                         } else {
-                            generatedXml.writeProperty(null, "getlastmodified", lastModified);
+                            xmlResponse.writeProperty(null, "getlastmodified", lastModified);
                         }
                     } else if ("source".equals(property)) {
-                        generatedXml.writeProperty(null, "source", "");
+                        xmlResponse.writeProperty(null, "source", "");
                     } else {
                         propertiesNotFound.add(property);
                     }
                 }
                 //Always include resource type
                 if (isFolder) {
-                    generatedXml.writeElement(null, "resourcetype", XmlWriter.OPENING);
-                    generatedXml.writeElement(null, "collection", XmlWriter.NO_CONTENT);
-                    generatedXml.writeElement(null, "resourcetype", XmlWriter.CLOSING);
+                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.OPENING);
+                    xmlResponse.writeElement(null, "collection", XmlWriter.NO_CONTENT);
+                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.CLOSING);
                 } else {
-                    generatedXml.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
+                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
                 }
 
-                generatedXml.writeElement(null, "prop", XmlWriter.CLOSING);
-                generatedXml.writeElement(null, "status", XmlWriter.OPENING);
-                generatedXml.writeText(status);
-                generatedXml.writeElement(null, "status", XmlWriter.CLOSING);
-                generatedXml.writeElement(null, "propstat", XmlWriter.CLOSING);
+                xmlResponse.writeElement(null, "prop", XmlWriter.CLOSING);
+                xmlResponse.writeElement(null, "status", XmlWriter.OPENING);
+                xmlResponse.writeText(status);
+                xmlResponse.writeElement(null, "status", XmlWriter.CLOSING);
+                xmlResponse.writeElement(null, "propstat", XmlWriter.CLOSING);
 
                 // TODO: [by fsi] Find out what this is for?
                 /*
@@ -530,60 +552,31 @@ public class WebdavServiceImpl implements WebdavService {
                 break;
 
         }
-        generatedXml.writeElement(null, "response", XmlWriter.CLOSING);
+        xmlResponse.writeElement(null, "response", XmlWriter.CLOSING);
     }
 
     /**
      * goes recursive through all folders. used by propfind
      */
     private void recursiveParseProperties(ArtifactoryRequest request, ArtifactoryResponse response,
-                                          XmlWriter generatedXml, String currentPath, int propertyFindType, List<String> properties, int depth)
+            XmlWriter generatedXml, BaseBrowsableItem currentItem, int propertyFindType, List<String> properties,
+            int depth)
             throws IOException {
-        parseProperties(request, response, generatedXml, currentPath, propertyFindType, properties);
-        JcrFsItem item = getJcrFsItem(request, response, currentPath);
-        if (item == null) {
-            log.warn("Folder '" + currentPath + "' not found.");
+
+        parseProperties(request, generatedXml, currentItem, propertyFindType, properties);
+
+        if (depth <= 0) {
             return;
         }
-        if (depth > 0 && item.isDirectory()) {
-            JcrFolder folder = (JcrFolder) item;
-            List<JcrFsItem> children = folder.getItems();
-            for (JcrFsItem child : children) {
-                String newPath = child.getRelativePath();
-                recursiveParseProperties(
-                        request, response, generatedXml, newPath,
+
+        if (currentItem.isFolder()) {
+            List<BaseBrowsableItem> browsableChildren = repoBrowsing.getLocalRepoBrowsableChildren(
+                    currentItem.getRepoPath());
+            for (BaseBrowsableItem child : browsableChildren) {
+                recursiveParseProperties(request, response, generatedXml, child,
                         propertyFindType, properties, depth - 1);
             }
         }
-    }
-
-    private JcrFsItem getJcrFsItem(ArtifactoryRequest request, ArtifactoryResponse response, String path)
-            throws IOException {
-        final StoringRepo repo = getLocalRepo(request, response);
-        String repoKey = request.getRepoKey();
-        RepoPath repoPath = new RepoPathImpl(repoKey, path);
-        if (repo.isReal()) {
-            StatusHolder status = ((RealRepo) repo).checkDownloadIsAllowed(repoPath);
-            //Check that we are allowed to read
-            if (status.isError()) {
-                String msg = status.getStatusMsg();
-                response.sendError(status.getStatusCode(), msg, log);
-                throw new RuntimeException(msg);
-            }
-        }
-        JcrFsItem item = repo.getJcrFsItem(repoPath);
-        return item;
-    }
-
-    private LocalRepo getLocalRepo(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
-        String repoKey = request.getRepoKey();
-        final LocalRepo repo = repoService.localRepositoryByKey(repoKey);
-        if (repo == null) {
-            String msg = "Could not find repo '" + repoKey + "'.";
-            response.sendError(HttpStatus.SC_NOT_FOUND, msg, log);
-            throw new RuntimeException(msg);
-        }
-        return repo;
     }
 
     /**
@@ -597,9 +590,16 @@ public class WebdavServiceImpl implements WebdavService {
     /**
      * Get creation date in ISO format.
      */
-    private static synchronized String getIsoCreationDate(long creationDate) {
-        StringBuffer creationDateValue = new StringBuffer(creationDateFormat.format(new Date(creationDate)));
-        return creationDateValue.toString();
+    private static synchronized String getIsoDate(long creationDate) {
+        return creationDateFormat.format(new Date(creationDate));
     }
 
+    private void logWebdavRequest(Document document) throws TransformerException {
+        if (log.isDebugEnabled()) {
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            StringWriter writer = new StringWriter();
+            transformer.transform(new DOMSource(document), new StreamResult(writer));
+            log.debug("Webdav request body:\n" + writer.toString());
+        }
+    }
 }

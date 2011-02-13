@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -64,6 +64,11 @@ public interface UserGroupService {
     List<GroupInfo> getAllExternalGroups();
 
     /**
+     * @return A list of <b>internal</b> groups only
+     */
+    List<GroupInfo> getInternalGroups();
+
+    /**
      * @return A set of all the groups names that should be added by default to newly created users.
      */
     Set<String> getNewUserDefaultGroupsNames();
@@ -107,9 +112,9 @@ public interface UserGroupService {
     String resetPassword(String userName, String remoteAddress, String resetPageUrl);
 
     /**
-     * For use with external authentication methods only (CAS\LDAP\SSO) tries to locate a user with the given name. When
-     * can't be found a new user will be created. The user will have no defined email, will not be an admin, and will
-     * not have an updatable profile.
+     * For use with external authentication methods only (CAS/LDAP/SSO/Crowd) tries to locate a user with the given
+     * name. When can't be found a new user will be created. The user will have no defined email, will not be an admin,
+     * and will not have an updatable profile.
      *
      * @param username      The username to find/create
      * @param transientUser If true a transient user will be created and will cease to exists when the session ends. If

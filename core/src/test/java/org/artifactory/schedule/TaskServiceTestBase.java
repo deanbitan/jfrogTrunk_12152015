@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,9 +19,7 @@
 package org.artifactory.schedule;
 
 import com.google.common.collect.Maps;
-import org.artifactory.api.cache.CacheService;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.cache.CacheServiceImpl;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -63,10 +61,6 @@ public class TaskServiceTestBase {
                 .andReturn(Maps.<String, VirtualRepoDescriptor>newLinkedHashMap()).anyTimes();
         EasyMock.expect(cc.getDescriptor()).andReturn(ccd).anyTimes();
 
-        //Put the cache service into the context
-        CacheServiceImpl cacheService = new CacheServiceImpl();
-        EasyMock.expect(context.beanForType(CacheService.class)).andReturn(cacheService).anyTimes();
-
         //Put the task service into the context
         taskService = new TaskServiceImpl();
         taskService.onContextReady();
@@ -82,8 +76,5 @@ public class TaskServiceTestBase {
 
         //Charge the mocks
         EasyMock.replay(context, cc, ccd);
-
-        //Init
-        cacheService.init();
     }
 }

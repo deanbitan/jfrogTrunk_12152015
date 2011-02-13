@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,8 +26,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
-import org.artifactory.api.cache.ArtifactoryCache;
-import org.artifactory.api.cache.CacheService;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
@@ -39,6 +37,7 @@ import org.artifactory.api.mail.MailService;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.*;
+import org.artifactory.api.security.ldap.LdapService;
 import org.artifactory.api.util.SerializablePair;
 import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.config.ConfigurationException;
@@ -55,6 +54,8 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.security.interceptor.SecurityConfigurationChangesInterceptors;
+import org.artifactory.security.jcr.JcrAclManager;
+import org.artifactory.security.jcr.JcrUserGroupManager;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
@@ -75,7 +76,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.jcr.Session;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -114,6 +120,8 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     private InternalArtifactoryContext context;
 
+    private TreeSet<SecurityListener> securityListeners = new TreeSet<SecurityListener>();
+
     @Autowired
     private void setApplicationContext(ApplicationContext context) throws BeansException {
         this.context = (InternalArtifactoryContext) context;
@@ -132,6 +140,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     public void reload(CentralConfigDescriptor oldDescriptor) {
         // TODO: Change the PermissionTarget repoKey according to new config
+        clearSecurityListeners();
     }
 
     public void destroy() {
@@ -416,6 +425,12 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return externalGroups;
     }
 
+    public List<GroupInfo> getInternalGroups() {
+        List<GroupInfo> allGroups = getAllGroups();
+        allGroups.removeAll(getAllExternalGroups());
+        return allGroups;
+    }
+
     public Set<String> getNewUserDefaultGroupsNames() {
         Set<GroupInfo> defaultGroups = getNewUserDefaultGroups();
         Set<String> defaultGroupsNames = new HashSet<String>(defaultGroups.size());
@@ -434,6 +449,10 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     private void addUserToGroup(String username, String groupName) {
         SimpleUser user = userGroupManager.loadUserByUsername(username);
+        Group group = userGroupManager.findGroup(groupName);
+        if (group.isExternal()) {
+            throw new IllegalArgumentException("Cannot assign external  group " + groupName + "to an internal user");
+        }
         UserInfo userInfo = user.getDescriptor();
         if (!userInfo.isInGroup(groupName)) {
             // don't update if already in group
@@ -621,7 +640,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     public void updateUserLastLogin(String username, String clientIp, long loginTimeMillis) {
         /**
-         * Avoid throwing a UsernameNotFoundException by check if the user exists, since we are in an an
+         * Avoid throwing a UsernameNotFoundException by checking if the user exists, since we are in an
          * async-transactional method, and any unchecked exception thrown will fire a rollback and an ugly exception
          * stacktrace print
          */
@@ -655,7 +674,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     public void updateUserLastAccess(String username, String clientIp, long accessTimeMillis,
-                                     long acessUpdatesResolutionMillis) {
+            long acessUpdatesResolutionMillis) {
         UserInfo userInfo;
         try {
             userInfo = findUser(username);
@@ -920,7 +939,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     private List<PermissionTargetInfo> getPermissionTargets(ArtifactoryPermission artifactoryPermission,
-                                                            SimpleUser user) {
+            SimpleUser user) {
         Permission permission = permissionFor(artifactoryPermission);
         return getPermissionTargetsByPermission(permission, user);
     }
@@ -1119,7 +1138,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     public void importSecurityData(SecurityInfo securityInfo) {
         interceptors.onBeforeSecurityImport(securityInfo);
-        removeAllSecurityData();
+        clearSecurityData();
         List<GroupInfo> groups = securityInfo.getGroups();
         if (groups != null) {
             for (GroupInfo group : groups) {
@@ -1147,14 +1166,21 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
-    private void removeAllSecurityData() {
+    private void clearSecurityData() {
         //Respect order for clean removal
         //Clean up all acls
         internalAclManager.deleteAllAcls();
         //Remove all existing groups
         userGroupManager.deleteAllGroupsAndUsers();
-        // Clear authentication cache
-        InternalContextHelper.get().beanForType(CacheService.class).getCache(ArtifactoryCache.authentication).clear();
+        clearSecurityListeners();
+    }
+
+    public void addListener(SecurityListener listener) {
+        securityListeners.add(listener);
+    }
+
+    public void removeListener(SecurityListener listener) {
+        securityListeners.remove(listener);
     }
 
     public MultiStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
@@ -1169,6 +1195,13 @@ public class SecurityServiceImpl implements InternalSecurityService {
     public boolean userPasswordMatches(String passwordToCheck) {
         Authentication authentication = AuthenticationHelper.getAuthentication();
         return authentication != null && passwordToCheck.equals(authentication.getCredentials());
+    }
+
+    private void clearSecurityListeners() {
+        //Notify security listeners
+        for (SecurityListener listener : securityListeners) {
+            listener.onClearSecurity();
+        }
     }
 
     private static boolean isAdmin(Authentication authentication) {

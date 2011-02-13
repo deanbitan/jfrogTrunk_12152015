@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +18,10 @@
 
 package org.artifactory.api.rest.artifact;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import org.testng.annotations.Test;
 
-import java.util.Set;
+import java.util.List;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -42,7 +42,7 @@ public class FileListTest {
         FileList fileList = new FileList();
 
         assertNull(fileList.getCreated(), "Default created time should be null.");
-        assertNull(fileList.getFiles(), "Default file set should be null.");
+        assertNull(fileList.getFiles(), "Default file list should be null.");
         assertNull(fileList.getUri(), "Default URI should be null.");
     }
 
@@ -52,15 +52,17 @@ public class FileListTest {
     @Test
     public void testFullConstructor() throws Exception {
         String uri = "uri";
-        FileListElement fileListElement = new FileListElement("uri", 324234L, "lastModified");
-        Set<FileListElement> files = Sets.newHashSet(fileListElement);
+        FileListElement folder = new FileListElement("uri", 324234L, "lastModified", true);
+        FileListElement file = new FileListElement("uri", 324234L, "lastModified", false);
+        List<FileListElement> files = Lists.newArrayList(folder, file);
         String created = "created";
 
         FileList fileList = new FileList(uri, created, files);
 
         assertEquals(fileList.getCreated(), created, "Unexpected created time value.");
-        assertEquals(fileList.getFiles(), files, "Unexpected file set value.");
-        assertEquals(fileList.getFiles().iterator().next(), fileListElement, "Unexpected file set content value.");
+        assertEquals(fileList.getFiles(), files, "Unexpected file list value.");
+        assertEquals(fileList.getFiles().get(0), folder, "Unexpected list content value.");
+        assertEquals(fileList.getFiles().get(1), file, "Unexpected list content value.");
     }
 
     /**
@@ -69,8 +71,9 @@ public class FileListTest {
     @Test
     public void testSetters() throws Exception {
         String uri = "uri";
-        FileListElement fileListElement = new FileListElement("uri", 324234L, "lastModified");
-        Set<FileListElement> files = Sets.newHashSet(fileListElement);
+        FileListElement folder = new FileListElement("uri", 324234L, "lastModified", true);
+        FileListElement file = new FileListElement("uri", 324234L, "lastModified", false);
+        List<FileListElement> files = Lists.newArrayList(folder, file);
         String created = "created";
 
         FileList fileList = new FileList();
@@ -80,7 +83,8 @@ public class FileListTest {
         fileList.setUri(uri);
 
         assertEquals(fileList.getCreated(), created, "Unexpected created time value.");
-        assertEquals(fileList.getFiles(), files, "Unexpected file set value.");
-        assertEquals(fileList.getFiles().iterator().next(), fileListElement, "Unexpected file set content value.");
+        assertEquals(fileList.getFiles(), files, "Unexpected file list value.");
+        assertEquals(fileList.getFiles().get(0), folder, "Unexpected list content value.");
+        assertEquals(fileList.getFiles().get(1), file, "Unexpected list content value.");
     }
 }

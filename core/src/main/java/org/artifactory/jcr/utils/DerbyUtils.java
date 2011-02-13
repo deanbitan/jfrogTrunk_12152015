@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,6 @@ import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.jackrabbit.core.config.WorkspaceConfig;
 import org.apache.jackrabbit.core.fs.FileSystem;
 import org.apache.jackrabbit.core.fs.db.DatabaseFileSystem;
-import org.apache.jackrabbit.core.persistence.bundle.ConnectionRecoveryManager;
 import org.apache.jackrabbit.core.persistence.pool.DerbyPersistenceManager;
 import org.apache.jackrabbit.core.util.db.ArtifactoryConnectionHelper;
 import org.apache.jackrabbit.core.util.db.ConnectionHelper;
@@ -36,9 +35,12 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
 
-import javax.jcr.RepositoryException;
 import java.lang.reflect.Field;
-import java.sql.*;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 
@@ -195,7 +197,7 @@ public abstract class DerbyUtils {
      * @throws SQLException
      */
     private static void executeCall(Connection connection, String command, String schemaName, String tableName,
-                                    int paramLength) throws SQLException {
+            int paramLength) throws SQLException {
         CallableStatement cs = connection.prepareCall(command);
         cs.setString(1, schemaName);
         cs.setString(2, tableName);
@@ -223,7 +225,7 @@ public abstract class DerbyUtils {
         for (Object workspaceInfoName : wsInfos.keySet()) {
             Object workspaceInfo = wsInfos.get(workspaceInfoName);
             if ((workspaceInfo instanceof DerbyPersistenceManager) ||
-                    (workspaceInfo instanceof org.apache.jackrabbit.core.persistence.bundle.DerbyPersistenceManager)) {
+                    (workspaceInfo instanceof DerbyPersistenceManager)) {
                 ConnectionWrapper connectionWrapper = null;
                 try {
                     connectionWrapper = getWsConnection(workspaceInfo);
@@ -277,24 +279,18 @@ public abstract class DerbyUtils {
         Object persistenceManager = persistenceManagerField.get(workspaceInfo);
         Class clazz = persistenceManager.getClass().getSuperclass();
 
-        ConnectionWrapper connectionWrapper = null;
         if (persistenceManager instanceof DerbyPersistenceManager) {
 
             Field connectionField = clazz.getDeclaredField("conHelper");
             connectionField.setAccessible(true);
             ConnectionHelper ch = (ConnectionHelper) connectionField.get(persistenceManager);
             ArtifactoryConnectionHelper helper = new ArtifactoryConnectionHelper(ch);
-            connectionWrapper = ConnectionWrapper.getInstance(helper);
-        } else if (persistenceManager instanceof
-                org.apache.jackrabbit.core.persistence.bundle.DerbyPersistenceManager) {
-
-            Field connectionField = clazz.getDeclaredField("connectionManager");
-            connectionField.setAccessible(true);
-            ConnectionRecoveryManager crm = (ConnectionRecoveryManager) connectionField.get(persistenceManager);
-            connectionWrapper = ConnectionWrapper.getInstance(crm);
+            ConnectionWrapper connectionWrapper = ConnectionWrapper.getInstance(helper);
+            return connectionWrapper;
+        } else {
+            throw new IllegalArgumentException("Derby persistence manager is not of the expected type (" +
+                    persistenceManager.getClass().getName());
         }
-
-        return connectionWrapper;
     }
 
     /**
@@ -339,18 +335,8 @@ public abstract class DerbyUtils {
             this.artifactoryConnectionHelper = artifactoryConnectionHelper;
         }
 
-        private ConnectionWrapper(ConnectionRecoveryManager connectionRecoveryManager)
-                throws RepositoryException, SQLException {
-            this.connection = connectionRecoveryManager.getConnection();
-        }
-
         private static ConnectionWrapper getInstance(ArtifactoryConnectionHelper artifactoryConnectionHelper) {
             return new ConnectionWrapper(artifactoryConnectionHelper);
-        }
-
-        private static ConnectionWrapper getInstance(ConnectionRecoveryManager connectionRecoveryManager)
-                throws RepositoryException, SQLException {
-            return new ConnectionWrapper(connectionRecoveryManager);
         }
 
         private Connection getConnection() {

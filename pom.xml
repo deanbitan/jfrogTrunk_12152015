@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2010 JFrog Ltd.
+  ~ Copyright (C) 2011 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -25,14 +25,14 @@
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>2.3.1</version>
+    <version>2.3.2</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
     <scm>
         <connection>scm:svn:http://subversion.jfrog.org/artifactory/trunk</connection>
         <developerConnection>scm:svn:http://subversion.jfrog.org/artifactory/trunk</developerConnection>
-        <url>http://subversion.jfrog.org/artifactory/</url>
+        <url>http://subversion.jfrog.org/artifactory</url>
     </scm>
 
     <issueManagement>
@@ -52,16 +52,16 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sourceforgeId>175347</sourceforgeId>
         <sourceforgeName>artifactory</sourceforgeName>
-        <spring.version>3.0.4.RELEASE</spring.version>
-        <spring.security.version>3.0.3.RELEASE</spring.security.version>
-        <artifactory.version>2.3.1</artifactory.version>
-        <build.info.version>1.4.6</build.info.version>
+        <spring.version>3.0.5.RELEASE</spring.version>
+        <spring.security.version>3.0.5.RELEASE</spring.security.version>
+        <artifactory.version>2.3.2</artifactory.version>
+        <build.info.version>1.4.9</build.info.version>
         <wicket.version>1.4.10</wicket.version>
         <jetty.version>7.0.2.v20100331</jetty.version>
         <maven.version>2.2.1</maven.version>
         <jersey.version>1.1.5.1</jersey.version>
         <slf4j.version>1.5.10</slf4j.version>
-        <jackson.version>1.5.5</jackson.version>
+        <jackson.version>1.6.2</jackson.version>
     </properties>
 
     <mailingLists>
@@ -231,8 +231,7 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-profiler</artifactId>
-                <version>1.0.1</version>
-                <scope>runtime</scope>
+                <version>1.0.2a</version>
             </dependency>
 
             <dependency>
@@ -265,18 +264,24 @@
                 <artifactId>jersey-client</artifactId>
                 <version>${jersey.version}</version>
             </dependency>
+            <!--This dependency is used for GF3 see RTFACT-3288-->
+            <dependency>
+                <groupId>com.sun.jersey.contribs</groupId>
+                <artifactId>jersey-multipart</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy</artifactId>
-                <version>1.7.5</version>
+                <version>1.7.7</version>
                 <optional>true</optional>
             </dependency>
 
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
-                <version>1.7.5</version>
+                <version>1.7.7</version>
             </dependency>
 
             <dependency>
@@ -431,7 +436,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>r07</version>
+                <version>r08</version>
             </dependency>
 
             <dependency>
@@ -449,7 +454,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>1.4</version>
+                <version>2.0</version>
             </dependency>
 
             <dependency>
@@ -489,8 +494,20 @@
             </dependency>
 
             <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-component-annotations</artifactId>
+                <version>1.2.1</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
+                <version>${maven.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-artifact-manager</artifactId>
                 <version>${maven.version}</version>
             </dependency>
 
@@ -526,10 +543,6 @@
                     <exclusion>
                         <groupId>org.apache.maven</groupId>
                         <artifactId>maven-profile</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.maven</groupId>
-                        <artifactId>maven-artifact-manager</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.maven</groupId>
@@ -606,14 +619,14 @@
             <dependency>
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
-                <version>10.6.1.0</version>
+                <version>10.7.1.1</version>
                 <scope>runtime</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.jackrabbit</groupId>
                 <artifactId>jackrabbit-core-jfrog</artifactId>
-                <version>2.1.0a</version>
+                <version>2.2.1</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.lucene</groupId>
@@ -627,19 +640,23 @@
                         <groupId>org.apache.pdfbox</groupId>
                         <artifactId>pdfbox</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>edu.ucar</groupId>
+                        <artifactId>netcdf</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.jackrabbit</groupId>
                 <artifactId>jackrabbit-spi</artifactId>
-                <version>2.1.0</version>
+                <version>2.2.1</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.jackrabbit</groupId>
                 <artifactId>jackrabbit-jcr-server</artifactId>
-                <version>2.1.0</version>
+                <version>2.2.1</version>
                 <exclusions>
                     <exclusion>
                         <groupId>commons-fileupload</groupId>
@@ -655,13 +672,13 @@
             <dependency>
                 <groupId>org.apache.jackrabbit</groupId>
                 <artifactId>jackrabbit-webdav</artifactId>
-                <version>2.1.0</version>
+                <version>2.2.1</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.jackrabbit</groupId>
                 <artifactId>jackrabbit-jcr-commons</artifactId>
-                <version>2.1.0</version>
+                <version>2.2.1</version>
             </dependency>
 
             <dependency>
@@ -883,7 +900,7 @@
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>woodstox-core-lgpl</artifactId>
-                <version>4.0.8</version>
+                <version>4.0.9</version>
                 <exclusions>
                     <exclusion>
                         <groupId>stax</groupId>
@@ -893,29 +910,17 @@
             </dependency>
 
             <dependency>
-                <groupId>org.sonatype.nexus</groupId>
-                <artifactId>nexus-indexer</artifactId>
-                <version>2.0.4</version>
+                <groupId>org.apache.maven.indexer</groupId>
+                <artifactId>indexer-core</artifactId>
+                <version>3.1.0</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>org.apache.maven.artifact</groupId>
-                        <artifactId>maven-artifact</artifactId>
+                        <groupId>org.apache.lucene</groupId>
+                        <artifactId>lucene-highlighter</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>dom4j</groupId>
-                        <artifactId>dom4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jmock</groupId>
-                        <artifactId>jmock</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.plexus</groupId>
-                        <artifactId>plexus-velocity</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.maven.archetype</groupId>
-                        <artifactId>archetype-common</artifactId>
+                        <groupId>org.sonatype.sisu</groupId>
+                        <artifactId>sisu-inject-plexus</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.lucene</groupId>
@@ -933,7 +938,7 @@
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
-                <version>5.14</version>
+                <version>5.14.6</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -989,10 +994,17 @@
                 <artifactId>jdom</artifactId>
                 <version>1.1</version>
             </dependency>
+
             <dependency>
                 <groupId>javax.mail</groupId>
                 <artifactId>mail</artifactId>
                 <version>1.4.3</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.code.atinject</groupId>
+                <artifactId>atinject</artifactId>
+                <version>1.0.0-rev3</version>
             </dependency>
 
             <dependency>
@@ -1104,7 +1116,7 @@
             <dependency>
                 <groupId>com.atlassian.crowd</groupId>
                 <artifactId>crowd-integration-client</artifactId>
-                <version>2.0.7</version>
+                <version>2.1.1</version>
                 <exclusions>
                     <exclusion>
                         <groupId>jdom</groupId>
@@ -1158,6 +1170,30 @@
                         <groupId>jaxen</groupId>
                         <artifactId>jaxen</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.xfire</groupId>
+                <artifactId>xfire-aegis</artifactId>
+                <version>1.2.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.xfire</groupId>
+                <artifactId>xfire-java5</artifactId>
+                <version>1.2.6</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.xfire</groupId>
+                        <artifactId>xfire-annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xfire</groupId>
+                        <artifactId>xfire-jsr181-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
         </dependencies>
@@ -1198,7 +1234,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.0-beta-1</version>
+                <version>1.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -1283,7 +1319,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-war-plugin</artifactId>
-                    <version>2.1-beta-1</version>
+                    <version>2.1.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1313,7 +1349,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>buildnumber-maven-plugin</artifactId>
-                    <version>1.0-beta-3</version>
+                    <version>1.0-beta-4</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1446,6 +1482,11 @@
 
         <profile>
             <id>artifactory</id>
+            <activation>
+                <file>
+                    <missing>.svn</missing>
+                </file>
+            </activation>
             <repositories>
                 <repository>
                     <id>jfrog-libs-releases</id>

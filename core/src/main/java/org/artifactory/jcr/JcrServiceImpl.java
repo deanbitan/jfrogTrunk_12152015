@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.jcr;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -37,7 +37,6 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.RepoRejectException;
@@ -52,10 +51,11 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.io.NonClosingInputStream;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumInputStream;
-import org.artifactory.jcr.fs.FolderTreeNode;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.jcr.fs.JcrTreeNode;
+import org.artifactory.jcr.fs.JcrTreeNodeFileFilter;
 import org.artifactory.jcr.gc.JcrGarbageCollector;
 import org.artifactory.jcr.lock.aop.LockingAdvice;
 import org.artifactory.jcr.md.MetadataDefinitionService;
@@ -68,7 +68,6 @@ import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.resource.ResourceStreamHandle;
-import org.artifactory.schedule.TaskService;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalArtifactoryContext;
@@ -88,7 +87,15 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import javax.annotation.PostConstruct;
-import javax.jcr.*;
+import javax.jcr.Binary;
+import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.Workspace;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
@@ -99,12 +106,16 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 import static org.apache.jackrabbit.JcrConstants.*;
 import static org.artifactory.jcr.JcrTypes.*;
-import static org.artifactory.repo.jcr.JcrHelper.safeGetNode;
 
 /**
  * Spring based session factory for tx jcr sessions
@@ -135,9 +146,6 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
 
     @Autowired
     private InternalRepositoryService repositoryService;
-
-    @Autowired
-    private TaskService taskService;
 
     @Autowired
     private InternalSearchService searchService;
@@ -631,7 +639,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
     }
 
     public void setString(Node parent, String nodeName, String value, String mimeType, String userId,
-                          boolean saveXmlHierarchy
+            boolean saveXmlHierarchy
     ) {
         InputStream stringStream = null;
         try {
@@ -651,7 +659,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
      * NOTE: Caller is expected to close the provided stream.
      */
     public void setStream(Node parent, String nodeName, InputStream value, String mimeType, String userId,
-                          boolean saveXmlHierarchy) {
+            boolean saveXmlHierarchy) {
         try {
             Node metadataNode;
             Node stringNode;
@@ -732,82 +740,54 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public FolderTreeNode getFolderTreeNode(RepoPath folder, BasicStatusHolder status) {
-        Node node = getNode(JcrPath.get().getAbsolutePath(folder));
-        if (node == null || !JcrHelper.isFolder(node)) {
-            status.setError("No folder found in " + folder, log);
+    public JcrTreeNode getTreeNode(RepoPath itemPath, MultiStatusHolder multiStatusHolder,
+            JcrTreeNodeFileFilter fileFilter) {
+        Node itemNode = getNode(JcrPath.get().getAbsolutePath(itemPath));
+        if (itemNode == null) {
             return null;
         }
-        return processFolder(node, status);
+
+        return processTreeNodeRecursively(itemNode, multiStatusHolder, fileFilter);
     }
 
-    /**
-     * Scan folders recursively, to create the data tree of folders and pom names
-     */
-    private FolderTreeNode processFolder(Node folder, BasicStatusHolder status) {
-        List<FolderTreeNode> childFolders = Lists.newArrayList();
-        List<String> childPoms = Lists.newArrayList();
-        NodeIterator nodeIterator;
-        String folderName;
-        Calendar created;
+    private JcrTreeNode processTreeNodeRecursively(Node itemNode, MultiStatusHolder multiStatusHolder,
+            JcrTreeNodeFileFilter fileFilter) {
+
         try {
-            folderName = folder.getName();
-            if (folder.hasProperty(JcrTypes.PROP_ARTIFACTORY_CREATED)) {
-                created = folder.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getDate();
-            } else {
-                created = Calendar.getInstance();
-                log.info("Folder {} property artifactory:created is missing.");
-            }
-            nodeIterator = folder.getNodes();
-        } catch (RepositoryException e) {
-            status.setError("Error while reading folder node " + JcrHelper.display(folder) + ".", e, log);
-            return null;
-        }
-        boolean hasMavenPlugins = false;
-        while (nodeIterator.hasNext()) {
-            Node childNode = nodeIterator.nextNode();
-            if (JcrHelper.isFolder(childNode)) {
-                FolderTreeNode childFolder = processFolder(childNode, status);
-                if (childFolder != null) {
-                    hasMavenPlugins |= childFolder.hasMavenPlugins;
-                    childFolders.add(childFolder);
-                }
-            } else {
-                String childNodeName = null;
-                try {
-                    childNodeName = childNode.getName();
-                } catch (RepositoryException e) {
-                    status.setError("Error while reading file name " + JcrHelper.display(childNode) + ".", e,
-                            log);
-                }
-                if (childNodeName != null && JcrHelper.isFile(childNode) && MavenNaming.isPom(childNodeName)) {
-                    childPoms.add(childNodeName);
-                    // If already found a maven plugin no need to continue searching
-                    if (!hasMavenPlugins) {
-                        Node packagingNodeText =
-                                safeGetNode(childNode, "artifactory:xml", "project", "packaging", "jcr:xmltext");
-                        if (packagingNodeText != null) {
-                            try {
-                                log.debug("Found Maven Plugin pom at '{}'", childNode.getPath());
-                                if (packagingNodeText.hasProperty("jcr:xmlcharacters")) {
-                                    hasMavenPlugins |= "maven-plugin"
-                                            .equals(packagingNodeText.getProperty("jcr:xmlcharacters").getString());
-                                }
-                            } catch (RepositoryException e) {
-                                status.setError("Error while reading pom packaging value for " +
-                                        JcrHelper.display(childNode) + ".", e, log);
-                            }
-                        }
+            String absolutePath = itemNode.getPath();
+            boolean isFolder = JcrHelper.isFolder(itemNode);
+
+            RepoPath repoPath = JcrPath.get().getRepoPath(absolutePath);
+            if (isFolder) {
+                Set<JcrTreeNode> children = Sets.newHashSet();
+                NodeIterator childNodes = itemNode.getNodes();
+
+                while (childNodes.hasNext()) {
+                    Node childNode = childNodes.nextNode();
+                    JcrTreeNode childTreeNode = processTreeNodeRecursively(childNode, multiStatusHolder, fileFilter);
+                    if (childTreeNode != null) {
+                        children.add(childTreeNode);
                     }
                 }
+
+                return new JcrTreeNode(repoPath, isFolder, getCreated(itemNode), children);
+            } else if (JcrHelper.isFile(itemNode) && ((fileFilter == null) || fileFilter.acceptsFile(repoPath))) {
+                return new JcrTreeNode(repoPath, isFolder, getCreated(itemNode), null);
             }
+        } catch (RepositoryException e) {
+            multiStatusHolder.setError("Error while processing tree node " + JcrHelper.display(itemNode) + ".", log);
         }
-        return new FolderTreeNode(folderName, created,
-                childFolders.toArray(new FolderTreeNode[childFolders.size()]),
-                childPoms.toArray(new String[childPoms.size()]), hasMavenPlugins);
+
+        return null;
+    }
+
+    private Calendar getCreated(Node itemNode) throws RepositoryException {
+        if (itemNode.hasProperty(JcrTypes.PROP_ARTIFACTORY_CREATED)) {
+            return itemNode.getProperty(JcrTypes.PROP_ARTIFACTORY_CREATED).getDate();
+        } else {
+            log.info("Item's {} artifactory:created property is missing.", itemNode.getPath());
+            return Calendar.getInstance();
+        }
     }
 
     private void setChecksums(Node metadataNode, Checksum[] checksums, boolean override) {

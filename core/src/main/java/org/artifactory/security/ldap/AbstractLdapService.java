@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,11 +22,14 @@ import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.springframework.ldap.*;
+import org.springframework.ldap.AuthenticationException;
+import org.springframework.ldap.BadLdapGrammarException;
+import org.springframework.ldap.CommunicationException;
+import org.springframework.ldap.InvalidNameException;
+import org.springframework.ldap.NameNotFoundException;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Tomer Cohen
@@ -36,7 +39,7 @@ public class AbstractLdapService {
 
 
     protected void handleException(Exception e, BasicStatusHolder status, String username,
-                                   boolean isSearchAndBindActive) {
+            boolean isSearchAndBindActive) {
         log.debug("LDAP connection test failed with exception", e);
         if (e instanceof CommunicationException) {
             status.setError("Failed connecting to the server (probably wrong url or port)", e, log);
@@ -62,10 +65,8 @@ public class AbstractLdapService {
             status.setError("Failed to parse R\\DN", e, log);
         } else {
             String message = "Error connecting to the LDAP server: ";
-            if (StringUtils.hasText(e.getMessage())) {
-                message += ": " + e.getMessage();
-            }
-            status.setError(message, e, log);
+            log.error(message, e);
+            status.setError(message, log);
         }
     }
 

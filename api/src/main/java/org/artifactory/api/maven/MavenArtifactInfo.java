@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -124,10 +124,6 @@ public class MavenArtifactInfo implements UnitInfo {
         return true;
     }
 
-    public boolean isSnapshot() {
-        return MavenNaming.isNonUniqueSnapshotVersion(version);
-    }
-
     public String getClassifier() {
         if (!hasClassifier()) {
             return null;
@@ -234,7 +230,7 @@ public class MavenArtifactInfo implements UnitInfo {
             //Extract the type
             String versionInName = version;
             if (snapshot && MavenNaming.isUniqueSnapshotFileName(name)) {
-                //For uniqueVersion snapshots extract the version pattern for calulating the type
+                //For uniqueVersion snapshots extract the version pattern for calculating the type
                 versionInName = MavenNaming.getUniqueSnapshotVersionTimestampAndBuildNumber(name);
             }
             int versionEndIdx = name.lastIndexOf(versionInName) + versionInName.length();

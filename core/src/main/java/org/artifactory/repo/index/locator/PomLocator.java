@@ -11,11 +11,11 @@
 
 package org.artifactory.repo.index.locator;
 
+import org.apache.maven.index.artifact.Gav;
+import org.apache.maven.index.artifact.GavCalculator;
+import org.apache.maven.index.locator.GavHelpedLocator;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFsItem;
-import org.sonatype.nexus.artifact.Gav;
-import org.sonatype.nexus.artifact.GavCalculator;
-import org.sonatype.nexus.index.locator.GavHelpedLocator;
 
 import java.io.File;
 import java.util.List;

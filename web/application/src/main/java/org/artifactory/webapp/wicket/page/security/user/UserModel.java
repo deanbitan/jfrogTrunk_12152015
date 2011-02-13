@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,13 +19,12 @@
 package org.artifactory.webapp.wicket.page.security.user;
 
 import com.ocpsoft.pretty.time.PrettyTime;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.webapp.wicket.page.security.profile.ProfileModel;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,14 +33,15 @@ import java.util.Set;
 public class UserModel extends ProfileModel {
 
     private String username;
-    private boolean disableInternalPassword;
+    private boolean disableInternalPassword = false;
     private boolean admin;
     private boolean updatableProfile;
     private boolean selected;
     private Set<UserInfo.UserGroupInfo> groups;
     private long lastLoginTimeMillis;
     private long lastAccessTimeMillis;
-    private Map<String, Status> statuses;
+    private Status status;
+    private String realm;
 
     public UserModel(Set<String> defaultGroupsNames) {
         super();
@@ -49,7 +49,6 @@ public class UserModel extends ProfileModel {
         updatableProfile = true;
         selected = false;
         groups = UserInfo.UserGroupInfo.getInternalGroups(defaultGroupsNames);
-        statuses = new HashMap<String, Status>();
     }
 
     public UserModel(UserInfo userInfo) {
@@ -62,7 +61,7 @@ public class UserModel extends ProfileModel {
         disableInternalPassword = !admin && userInfo.hasInvalidPassword();
         lastLoginTimeMillis = userInfo.getLastLoginTimeMillis();
         lastAccessTimeMillis = userInfo.getLastAccessTimeMillis();
-        statuses = new HashMap<String, Status>();
+        realm = userInfo.getRealm();
     }
 
     public void removeGroup(UserInfo.UserGroupInfo group) {
@@ -87,6 +86,14 @@ public class UserModel extends ProfileModel {
 
     public void setPassword(String password) {
         setNewPassword(password);
+    }
+
+    public String getRealm() {
+        return realm;
+    }
+
+    public void setRealm(String realm) {
+        this.realm = realm;
     }
 
     public boolean isAdmin() {
@@ -133,6 +140,9 @@ public class UserModel extends ProfileModel {
     }
 
     public String getLastLoginString() {
+        if (isAnonymous()) {
+            return "";
+        }
         if (lastLoginTimeMillis == 0) {
             return "Never";
         }
@@ -149,7 +159,7 @@ public class UserModel extends ProfileModel {
     }
 
     public String getLastAccessString() {
-        if (lastAccessTimeMillis == 0) {
+        if (isAnonymous() || (lastAccessTimeMillis == 0)) {
             return "N/A";
         }
         PrettyTime prettyTime = new PrettyTime();
@@ -161,15 +171,18 @@ public class UserModel extends ProfileModel {
         this.lastAccessTimeMillis = lastAccessTimeMillis;
     }
 
-    public Map<String, Status> getStatuses() {
-        return statuses;
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
     public enum Status {
-        ACTIVE_USER("User exists in Artifactory and LDAP"),
-        INACTIVE_USER("Artifactory user does not exist in LDAP or has no password."),
-        NOT_LDAP_USER(""),
-        NO_SEARCH_FILTER("No search filter defined, cannot synchronize users."),
+        ACTIVE_USER("User exists in Artifactory and in external realm"),
+        INACTIVE_USER("Artifactory user not found in external realm."),
+        NOT_EXTERNAL_USER("User is not external"),
         UNKNOWN("");
 
         private String description;
@@ -208,5 +221,9 @@ public class UserModel extends ProfileModel {
                 ", admin=" + admin +
                 ", updatableProfile=" + updatableProfile +
                 '}';
+    }
+
+    public boolean isAnonymous() {
+        return StringUtils.isNotBlank(username) && UserInfo.ANONYMOUS.equals(username);
     }
 }

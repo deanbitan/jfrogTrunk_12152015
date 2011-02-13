@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -99,7 +99,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         } else {
             LoggingUtils.warnOrDebug(logger, msg);
         }
-        state = State.FAILURE;
+        state = State.ERROR;
         this.status = statusCode;
         sendErrorInternal(statusCode, reason);
     }
@@ -122,7 +122,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
             logger.debug(makeDebugMessage(status, reason), exception);
             logger.error(message);
         }
-        state = State.FAILURE;
+        state = State.ERROR;
         sendErrorInternal(status, reason);
     }
 
@@ -130,12 +130,16 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         return state == State.SUCCESS;
     }
 
+    public boolean isError() {
+        return state == State.ERROR;
+    }
+
     public Exception getException() {
         return exception;
     }
 
     public void setException(Exception exception) {
-        this.state = State.FAILURE;
+        this.state = State.ERROR;
         this.exception = exception;
     }
 
@@ -150,6 +154,15 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     public void setContentLength(long length) {
         //Cache the content length locally
         this.contentLength = length;
+    }
+
+    public void clearState() {
+        state = State.UNSET;
+        clearException();
+    }
+
+    private void clearException() {
+        this.exception = null;
     }
 
     protected abstract void sendErrorInternal(int code, String reason) throws IOException;

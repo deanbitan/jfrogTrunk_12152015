@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.security.ldap;
 
-import org.artifactory.api.security.LdapUser;
+import org.artifactory.api.security.ldap.LdapUser;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 
@@ -34,7 +34,7 @@ public class UserContextMapper extends AbstractContextMapper {
      * Method to map user from ldap attributes
      *
      * @param ctx The ldap context
-     * @return The mapped ldap user {@link LdapUser}
+     * @return The mapped ldap user {@link org.artifactory.api.security.ldap.LdapUser}
      */
     @Override
     protected LdapUser doMapFromContext(DirContextOperations ctx) {

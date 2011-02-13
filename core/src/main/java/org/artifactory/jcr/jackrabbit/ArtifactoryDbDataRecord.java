@@ -248,9 +248,10 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
 
     /**
      * This is called at the beginning of GC scan.<br/><ol> <li>If the entry is new (first time in GC), it will be
-     * changed.</li> <li>If the entry is in db used it will be marked as "found" and so not eligible for deletion at the end
-     * of GC.</li> <li>If the entry is mark for deletion it's an error (last GC should have clean it or set to error).
-     * so set to error.</li> <li>If the entry is deleted or error it should be removed from the global map.</li></ol>
+     * changed.</li> <li>If the entry is in db used it will be marked as "found" and so not eligible for deletion at the
+     * end of GC.</li> <li>If the entry is mark for deletion it's an error (last GC should have clean it or set to
+     * error). so set to error.</li> <li>If the entry is deleted or error it should be removed from the global
+     * map.</li></ol>
      *
      * @return true if the init went well, false if element in error or delete state and should be removed from the map
      */
@@ -423,7 +424,6 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
                         RepositoryRuntimeException ex = new RepositoryRuntimeException(
                                 "Cannot insert new record " + ArtifactoryDbDataRecord.this +
                                         " since the old one is in invalid state", error);
-                        ex.initCause(error);
                         throw ex;
                     case DELETED:
                         // Reset it to NEW for reuse

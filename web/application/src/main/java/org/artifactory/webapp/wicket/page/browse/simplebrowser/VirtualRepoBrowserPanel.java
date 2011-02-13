@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@ import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.OrderByBorder;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
@@ -38,13 +39,17 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.repo.BaseBrowsableItem;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.VirtualBrowsableItem;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
+import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
@@ -54,12 +59,16 @@ import java.util.List;
 /**
  * @author Yoav Landman
  */
-public class VirtualRepoBrowserPanel extends TitledPanel {
+public class VirtualRepoBrowserPanel extends BaseRepoBrowserPanel {
+    private static final Logger log = LoggerFactory.getLogger(VirtualRepoBrowserPanel.class);
 
     private static final long serialVersionUID = 1L;
 
     @SpringBean
     private RepositoryService repoService;
+
+    @SpringBean
+    private RepositoryBrowsingService repoBrowsingService;
 
     public VirtualRepoBrowserPanel(String id, RepoPath repoPath) {
         super(id);
@@ -68,21 +77,25 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
 
         final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
         //Try to get a virtual repo
-        List<VirtualBrowsableItem> browsableChildren = repoService.getVirtualBrowsableChildren(repoPath, true);
-        if (browsableChildren == null) {
-            //Return a 404
+        List<BaseBrowsableItem> browsableChildren;
+        try {
+            browsableChildren = repoBrowsingService.getVirtualRepoBrowsableChildren(repoPath);
+        } catch (Exception e) {
+            log.debug("Exception occurred while trying to get browsable children for repo path " + repoPath, e);
+            log.error("Exception occurred while trying to get browsable children for repo path '{}', '{}", repoPath,
+                    e.getMessage());
             throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }
-
+        browsableChildren.add(getPseudoUpLink(repoPath));
         final String repoKey = repoPath.getRepoKey();
 
         //Add a table for the dirItems
         DirectoryItemsDataProvider dataProvider = new DirectoryItemsDataProvider(Lists.newArrayList(browsableChildren));
-        DataView table = new DataView<VirtualBrowsableItem>("items", dataProvider) {
+        DataView table = new DataView<BaseBrowsableItem>("items", dataProvider) {
 
             @Override
-            protected void populateItem(final Item<VirtualBrowsableItem> listItem) {
-                VirtualBrowsableItem browsableItem = listItem.getModelObject();
+            protected void populateItem(final Item<BaseBrowsableItem> listItem) {
+                VirtualBrowsableItem browsableItem = (VirtualBrowsableItem) listItem.getModelObject();
 
                 String relativePath = browsableItem.getRelativePath();
                 if ("/".equals(relativePath)) {
@@ -96,9 +109,8 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
                     //Up link to the list of repositories
                     itemLink = new BookmarkablePageLink<Class>("link", SimpleBrowserRootPage.class);
                 } else {
-                    StringBuilder hrefBuilder = new StringBuilder(hrefPrefix).append("/").append(repoKey).
-                            append("/").append(relativePath);
-
+                    StringBuilder hrefBuilder = new StringBuilder(hrefPrefix).append("/");
+                    hrefBuilder.append(repoKey).append("/").append(relativePath);
                     //Make sure to add a slash at the end of the URI so we always reach the browser
                     if (browsableItem.isFolder() &&
                             ((!StringUtils.isBlank(relativePath)) && (!StringUtils.endsWith(relativePath, "/")))) {
@@ -108,6 +120,11 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
                 }
                 itemLink.add(new CssClass(getCssClass(browsableItem)));
                 listItem.add(itemLink);
+                WebMarkupContainer globe = new WebMarkupContainer("globe");
+                listItem.add(globe);
+                if (!browsableItem.isRemote()) {
+                    globe.setVisible(false);
+                }
 
                 final List<String> repoKeys = browsableItem.getRepoKeys();
                 final String finalRelativePath = relativePath;
@@ -136,7 +153,37 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
         add(table);
     }
 
-    private String getCssClass(VirtualBrowsableItem browsableItem) {
+    /**
+     * Creates a virtual repo "up directory"\.. browsable item
+     *
+     * @param startingRelativePath Relative path of starting point
+     * @return Virtual up-dir Browsable item
+     */
+    @Override
+    protected BaseBrowsableItem getPseudoUpLink(RepoPath repoPath) {
+        String startingRelativePath = repoPath.getPath();
+        VirtualBrowsableItem upDirItem;
+        if (org.apache.commons.lang.StringUtils.isNotBlank(startingRelativePath)) {
+            int upDirIdx = startingRelativePath.lastIndexOf('/');
+            String upDirPath;
+            if (upDirIdx > 0) {
+                upDirPath = startingRelativePath.substring(0, upDirIdx);
+            } else {
+                upDirPath = "";
+            }
+            upDirItem = new VirtualBrowsableItem(VirtualBrowsableItem.UP, true, 0, 0, 0,
+                    new RepoPathImpl("", upDirPath), Lists.<String>newArrayList());
+        } else {
+            // up link for the root repo dir
+            upDirItem = new VirtualBrowsableItem(VirtualBrowsableItem.UP, true, 0, 0, 0,
+                    new RepoPathImpl("", VirtualBrowsableItem.UP), Lists.<String>newArrayList());
+        }
+        return upDirItem;
+    }
+
+
+    @Override
+    public String getCssClass(BaseBrowsableItem browsableItem) {
         String cssClass;
         if (browsableItem.isFolder()) {
             cssClass = "folder";
@@ -154,36 +201,35 @@ public class VirtualRepoBrowserPanel extends TitledPanel {
                 cssClass = "doc";
             }
         }
-
         return cssClass;
     }
 
-    private static class DirectoryItemsDataProvider extends SortableDataProvider<VirtualBrowsableItem> {
-        private List<VirtualBrowsableItem> browsableChildren;
+    private static class DirectoryItemsDataProvider extends SortableDataProvider<BaseBrowsableItem> {
+        private List<BaseBrowsableItem> browsableChildren;
 
-        private DirectoryItemsDataProvider(List<VirtualBrowsableItem> browsableChildren) {
+        private DirectoryItemsDataProvider(List<BaseBrowsableItem> browsableChildren) {
             this.browsableChildren = browsableChildren;
             //Set the initial sort direction
             ISortState state = getSortState();
             state.setPropertySortOrder("name", ISortState.ASCENDING);
         }
 
-        public Iterator<? extends VirtualBrowsableItem> iterator(int first, int count) {
+        public Iterator<? extends BaseBrowsableItem> iterator(int first, int count) {
             SortParam sortParam = getSort();
             if (sortParam.isAscending()) {
                 Collections.sort(browsableChildren);
             } else {
                 Collections.sort(browsableChildren, Collections.reverseOrder());
                 // now put the up dir first
-                VirtualBrowsableItem up = browsableChildren.remove(browsableChildren.size() - 1);
+                BaseBrowsableItem up = browsableChildren.remove(browsableChildren.size() - 1);
                 browsableChildren.add(0, up);
             }
-            List<VirtualBrowsableItem> list = browsableChildren.subList(first, first + count);
+            List<BaseBrowsableItem> list = browsableChildren.subList(first, first + count);
             return list.iterator();
         }
 
-        public IModel<VirtualBrowsableItem> model(VirtualBrowsableItem object) {
-            return new Model<VirtualBrowsableItem>(object);
+        public IModel<BaseBrowsableItem> model(BaseBrowsableItem object) {
+            return new Model<BaseBrowsableItem>(object);
         }
 
         public int size() {

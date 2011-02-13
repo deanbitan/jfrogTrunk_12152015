@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,11 +22,11 @@ import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.api.security.UserInfoBuilder;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.security.RealmAwareAuthenticationProvider;
 import org.artifactory.security.SimpleUser;
 import org.artifactory.security.UserGroupManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -40,7 +40,7 @@ import java.util.Set;
  *
  * @author Fred Simon
  */
-public abstract class ArtifactoryAuthenticationProviderBase implements AuthenticationProvider {
+public abstract class ArtifactoryAuthenticationProviderBase implements RealmAwareAuthenticationProvider {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryAuthenticationProviderBase.class);
 
     @Autowired

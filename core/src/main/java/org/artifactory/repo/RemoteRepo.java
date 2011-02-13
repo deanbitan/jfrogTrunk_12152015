@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,13 +21,14 @@ package org.artifactory.repo;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.md.Properties;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
 
+import javax.annotation.Nonnull;
 import javax.jcr.RepositoryException;
 import java.io.IOException;
+import java.util.List;
 
 public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> {
     long getRetrievalCachePeriodSecs();
@@ -68,8 +69,6 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
 
     boolean isOffline();
 
-    RepoType getType();
-
     /**
      * Performs the actual remote download of the artifact.
      *
@@ -83,5 +82,20 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
      *
      */
     ResourceStreamHandle downloadAndSave(RequestContext requestContext, RepoResource remoteResource,
-                                         RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectException;
+            RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectException;
+
+    /**
+     * List remote resources from a remote path.
+     *
+     * @param directoryRepoPath The path of the remote repository listing
+     * @return A list of URLs that represent the remote hrefs of the remote resources.
+     * @throws IOException On any communication of parsing exception
+     */
+    @Nonnull
+    List<String> listRemoteResources(RepoPath directoryRepoPath) throws IOException;
+
+    /**
+     * @return True if this repo supports listing remote directories AND it's not offline AND it's not blacklisted.
+     */
+    boolean isListRemoteFolderItems();
 }

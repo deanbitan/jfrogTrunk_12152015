@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,10 +28,8 @@ import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.List;
 
-@XmlType(name = "VirtualRepoType",
-        propOrder = {"artifactoryRequestsCanRetrieveRemoteArtifacts", "repositories", "keyPair",
-                "pomRepositoryReferencesCleanupPolicy"},
-        namespace = Descriptor.NS)
+@XmlType(name = "VirtualRepoType", propOrder = {"artifactoryRequestsCanRetrieveRemoteArtifacts", "repositories",
+        "keyPair", "pomRepositoryReferencesCleanupPolicy"}, namespace = Descriptor.NS)
 public class VirtualRepoDescriptor extends RepoBaseDescriptor {
 
     public static final String GLOBAL_VIRTUAL_REPO_KEY = "repo";

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,8 @@
 
 package org.artifactory.maven.versioning;
 
-import org.artifactory.jcr.fs.FolderTreeNode;
+import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.jcr.fs.JcrTreeNode;
 import org.testng.annotations.Test;
 
 import java.util.Calendar;
@@ -37,11 +38,11 @@ public class CreationDateMavenMetadataVersionComparatorTest {
         CreationDateMavenMetadataVersionComparator comparator = new CreationDateMavenMetadataVersionComparator();
 
         Calendar cal1 = Calendar.getInstance();
-        FolderTreeNode older = new FolderTreeNode("2.0", cal1, null, null, false);
+        JcrTreeNode older = new JcrTreeNode(new RepoPathImpl("repo", "2.0"), false, cal1, null);
 
         Calendar cal2 = Calendar.getInstance();
         cal2.add(Calendar.HOUR, 2);
-        FolderTreeNode newer = new FolderTreeNode("1.1", cal2, null, null, false);
+        JcrTreeNode newer = new JcrTreeNode(new RepoPathImpl("repo", "1.1"), false, cal2, null);
 
         assertEquals(comparator.compare(older, newer), -1, "The comparison should be time based");
 

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,11 +22,15 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.PatternResultFileSet;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.LocalCacheRepo;
+import org.artifactory.repo.Repo;
+import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.rest.util.RestUtils;
 import org.slf4j.Logger;
 
@@ -51,14 +55,15 @@ public class PatternSearchResource {
     private static final Logger log = LoggerFactory.getLogger(PatternSearchResource.class);
 
     private AuthorizationService authorizationService;
-
+    private RepositoryService repositoryService;
     private RestAddon restAddon;
     private HttpServletRequest request;
     private HttpServletResponse response;
 
-    public PatternSearchResource(AuthorizationService authorizationService, RestAddon restAddon,
-            HttpServletRequest request, HttpServletResponse response) {
+    public PatternSearchResource(AuthorizationService authorizationService, RepositoryService repositoryService,
+            RestAddon restAddon, HttpServletRequest request, HttpServletResponse response) {
         this.authorizationService = authorizationService;
+        this.repositoryService = repositoryService;
         this.restAddon = restAddon;
         this.request = request;
         this.response = response;
@@ -103,8 +108,14 @@ public class PatternSearchResource {
         Set<String> matchingArtifacts = restAddon.searchArtifactsByPattern(pattern);
 
         String[] patternTokens = StringUtils.split(pattern, ":", 2);
+        String requestedRepoKey = patternTokens[0];
+        Repo repo = ((InternalRepositoryService) repositoryService).repositoryByKey(requestedRepoKey);
+        if ((repo != null) && repo.isCache()) {
+            requestedRepoKey = ((LocalCacheRepo) repo).getRemoteRepo().getKey();
+        }
+
         String repoUri = new StringBuilder().append(RestUtils.getServletContextUrl(request)).append("/").
-                append(patternTokens[0]).toString();
+                append(requestedRepoKey).toString();
 
         PatternResultFileSet fileSet = new PatternResultFileSet(repoUri, pattern, matchingArtifacts);
         return fileSet;

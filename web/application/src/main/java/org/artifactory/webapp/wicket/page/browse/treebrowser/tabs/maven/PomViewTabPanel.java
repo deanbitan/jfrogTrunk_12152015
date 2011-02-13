@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,6 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven;
 
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
@@ -51,7 +50,6 @@ public class PomViewTabPanel extends Panel {
         add(new CssClass("veiw-tab"));
 
         org.artifactory.fs.FileInfo fileInfo = repoItem.getFileInfo();
-        MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(fileInfo.getRepoPath());
         addPomContent(fileInfo);
     }
 

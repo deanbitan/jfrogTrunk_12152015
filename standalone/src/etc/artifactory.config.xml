@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2010 JFrog Ltd.
+  ~ Copyright (C) 2011 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -17,8 +17,8 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<config xmlns="http://artifactory.jfrog.org/xsd/1.4.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.6 http://www.jfrog.org/xsd/artifactory-v1_4_6.xsd">
+<config xmlns="http://artifactory.jfrog.org/xsd/1.4.7" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.7 http://www.jfrog.org/xsd/artifactory-v1_4_7.xsd">
 
     <security>
         <anonAccessEnabled>true</anonAccessEnabled>
@@ -35,51 +35,56 @@
         </backup>
     </backups>
     <!-- The interval at which to activate the m2eclipse indexer. -->
-    <!--
     <indexer>
         <indexingIntervalHours>24</indexingIntervalHours>
     </indexer>
-    -->
     <localRepositories>
         <localRepository>
             <key>libs-releases-local</key>
             <description>Local repository for in-house libraries</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>libs-snapshots-local</key>
             <description>Local repository for in-house snapshots</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>plugins-releases-local</key>
             <description>Local repository for plugins</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>plugins-snapshots-local</key>
             <description>Local repository for plugins snapshots</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>ext-releases-local</key>
             <description>Local repository for third party libraries</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>ext-snapshots-local</key>
             <description>Local repository for third party snapshots</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>UNIQUE</key>
             <includesPattern>**/*</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <blackedOut>false</blackedOut>
             <handleReleases>true</handleReleases>
             <handleSnapshots>true</handleSnapshots>
@@ -89,6 +94,7 @@
         <localRepository>
             <key>NONUNIQUE</key>
             <includesPattern>**/*</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <blackedOut>false</blackedOut>
             <handleReleases>true</handleReleases>
             <handleSnapshots>true</handleSnapshots>
@@ -98,6 +104,7 @@
         <localRepository>
             <key>DEPLOYER</key>
             <includesPattern>**/*</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <blackedOut>false</blackedOut>
             <handleReleases>true</handleReleases>
             <handleSnapshots>true</handleSnapshots>
@@ -110,6 +117,7 @@
         <remoteRepository>
             <key>remote-repo</key>
             <excludesPattern>org/artifactory/**,org/jfrog/**</excludesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <url>http://repo.jfrog.org/artifactory/remote-repos</url>
@@ -172,4 +180,39 @@
             <pomRepositoryReferencesCleanupPolicy>discard_active_reference</pomRepositoryReferencesCleanupPolicy>
         </virtualRepository>
     </virtualRepositories>
+
+    <repoLayouts>
+        <repoLayout>
+            <name>maven-2-default</name>
+            <artifactPathPattern>[orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]</artifactPathPattern>
+            <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
+            <descriptorPathPattern>[orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).pom</descriptorPathPattern>
+            <folderIntegrationRevisionRegExp>SNAPSHOT</folderIntegrationRevisionRegExp>
+            <fileIntegrationRevisionRegExp>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+))</fileIntegrationRevisionRegExp>
+        </repoLayout>
+        <repoLayout>
+            <name>ivy-default</name>
+            <artifactPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[type]s/[module](-[classifier])-[baseRev](-[fileItegRev]).[ext]</artifactPathPattern>
+            <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
+            <descriptorPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[type]s/ivy-[baseRev](-[fileItegRev]).xml</descriptorPathPattern>
+            <folderIntegrationRevisionRegExp>\d{14}</folderIntegrationRevisionRegExp>
+            <fileIntegrationRevisionRegExp>\d{14}</fileIntegrationRevisionRegExp>
+        </repoLayout>
+        <repoLayout>
+            <name>gradle-default</name>
+            <artifactPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]</artifactPathPattern>
+            <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
+            <descriptorPathPattern>[org]/[module]/ivy-[baseRev](-[fileItegRev]).xml</descriptorPathPattern>
+            <folderIntegrationRevisionRegExp>\d{14}</folderIntegrationRevisionRegExp>
+            <fileIntegrationRevisionRegExp>\d{14}</fileIntegrationRevisionRegExp>
+        </repoLayout>
+        <repoLayout>
+            <name>maven-1-default</name>
+            <artifactPathPattern>[org]/[type]s/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]</artifactPathPattern>
+            <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
+            <descriptorPathPattern>[org]/[type]s/[module]-[baseRev](-[fileItegRev]).pom</descriptorPathPattern>
+            <folderIntegrationRevisionRegExp>.+</folderIntegrationRevisionRegExp>
+            <fileIntegrationRevisionRegExp>.+</fileIntegrationRevisionRegExp>
+        </repoLayout>
+    </repoLayouts>
 </config>

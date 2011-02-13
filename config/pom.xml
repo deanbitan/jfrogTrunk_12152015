@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2010 JFrog Ltd.
+  ~ Copyright (C) 2011 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -29,11 +29,12 @@
     <parent>
         <artifactId>artifactory-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.3.1</version>
+        <version>2.3.2</version>
     </parent>
 
     <properties>
         <project.version.prop>${project.version}</project.version.prop>
+        <!--<buildNumber.prop>${timestamp}</buildNumber.prop>-->
     </properties>
 
     <dependencies>
@@ -80,8 +81,9 @@
 
     <build>
         <plugins>
+            <!-- the only usage of the buildnumber plugin is to generate timestamp variable which we use in
+                artifactory.properties filtering -->
             <plugin>
-                <!-- Using this instead of the scm plugin since it allows for offline building -->
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
                 <executions>
@@ -93,11 +95,14 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <useLastCommittedRevision>true</useLastCommittedRevision>
-                    <scmDirectory>../</scmDirectory>
+                    <doCheck>false</doCheck>
+                    <doUpdate>false</doUpdate>
+                    <format>{0,time,long}</format>
+                    <items>
+                        <item>timestamp</item>
+                    </items>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

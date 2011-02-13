@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.message;
 
+import com.google.common.collect.MapMaker;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
@@ -26,9 +27,6 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.cache.ArtifactoryCache;
-import org.artifactory.api.cache.Cache;
-import org.artifactory.api.cache.CacheService;
 import org.artifactory.api.message.ArtifactoryUpdatesService;
 import org.artifactory.api.message.Message;
 import org.artifactory.common.ConstantValues;
@@ -46,6 +44,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.httpclient.params.HttpMethodParams.RETRY_HANDLER;
 
@@ -59,19 +59,19 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
     private static final Message ERROR_MESSAGE = new Message("na", "");
 
     @Autowired
-    private CacheService cacheService;
-
-    @Autowired
     private TaskService taskService;
+
+    private Map<String, Message> cache =
+            new MapMaker().initialCapacity(1).
+                    expireAfterWrite(ConstantValues.artifactoryUpdatesRefreshIntervalSecs.getLong(),
+                            TimeUnit.SECONDS).makeMap();
 
     public void fetchMessage() {
         final Message message = getRemoteMessage();
-        Cache<String, Message> cache = cacheService.getCache(ArtifactoryCache.artifactoryUpdates);
         cache.put(MESSAGE_CACHE_KEY, message);
     }
 
     public Message getCachedMessage() {
-        Cache<String, Message> cache = cacheService.getCache(ArtifactoryCache.artifactoryUpdates);
         return cache.get(MESSAGE_CACHE_KEY);
     }
 

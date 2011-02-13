@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -127,7 +127,8 @@ public abstract class NamingUtils {
 
     /**
      * @param path The path to check
-     * @return True if the path represents a checksum for metadata (ie metadata path and ends with checksum file extension)
+     * @return True if the path represents a checksum for metadata (ie metadata path and ends with checksum file
+     *         extension)
      */
     public static boolean isMetadataChecksum(String path) {
         if (isChecksum(path)) {
@@ -189,16 +190,13 @@ public abstract class NamingUtils {
      */
     public static String getMetadataParentPath(String path) {
         String metadataName = getMetadataName(path);
-        return path.substring(0, path.lastIndexOf(metadataName) - 1);
-    }
-
-    public static boolean isSnapshotMetadata(String path) {
-        //*-SNAPSHOT/*maven-metadata.xml or *-SNAPSHOT#maven-metadata.xml
-        if (!isMetadata(path)) {
-            return false;
+        // the root repository may have metadata checksums (i.e. repo1), and it will not have a parent.
+        // if it doesn't check the relative path without stripping.
+        int index = path.lastIndexOf(metadataName) - 1;
+        if (index < 0) {
+            return metadataName;
         }
-        String parent = getMetadataParentPath(path);
-        return parent != null && parent.endsWith("-SNAPSHOT");
+        return path.substring(0, index);
     }
 
     @SuppressWarnings({"UnusedDeclaration"})

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.dependency;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 
 /**
@@ -33,19 +33,25 @@ public class GradleDependencyDeclarationProvider implements DependencyDeclaratio
         return Syntax.groovy;
     }
 
-    public String getDependencyDeclaration(MavenArtifactInfo artifactInfo) {
-        StringBuilder sb = new StringBuilder("compile(group: '").append(artifactInfo.getGroupId()).append("', name: '").
-                append(artifactInfo.getArtifactId()).append("', version: '").append(artifactInfo.getVersion()).
-                append("'");
+    public String getDependencyDeclaration(ModuleInfo moduleInfo) {
+        StringBuilder sb = new StringBuilder("compile(group: '").append(moduleInfo.getOrganization()).
+                append("', name: '").append(moduleInfo.getModule()).append("', version: '").
+                append(moduleInfo.getBaseRevision());
 
-        String classifier = artifactInfo.getClassifier();
+        String artifactRevisionIntegration = moduleInfo.getFileIntegrationRevision();
+        if (StringUtils.isNotBlank(artifactRevisionIntegration)) {
+            sb.append("-").append(artifactRevisionIntegration);
+        }
+        sb.append("'");
+
+        String classifier = moduleInfo.getClassifier();
         if (StringUtils.isNotBlank(classifier)) {
             sb.append(", classifier: '").append(classifier).append("'");
         }
 
-        String type = artifactInfo.getType();
-        if (StringUtils.isNotBlank(type) && !"jar".equalsIgnoreCase(type)) {
-            sb.append(", ext: '").append(type).append("'");
+        String ext = moduleInfo.getExt();
+        if (StringUtils.isNotBlank(ext) && !"jar".equalsIgnoreCase(ext)) {
+            sb.append(", ext: '").append(ext).append("'");
         }
         return sb.append(")").toString();
     }

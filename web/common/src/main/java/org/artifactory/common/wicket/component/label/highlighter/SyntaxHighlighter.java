@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -148,8 +148,7 @@ public class SyntaxHighlighter extends WebComponent implements IHeaderContributo
         final StringBuilder markup = new StringBuilder();
         markup.append("<pre id=\"code-").append(getMarkupId()).append("\">");
 
-        // performance fix (wicket encoding), see RTFACT-2767
-        markup.append(code.replaceAll("\\]", "&#93;"));
+        markup.append(code);
 
         markup.append("</pre>");
         return markup;

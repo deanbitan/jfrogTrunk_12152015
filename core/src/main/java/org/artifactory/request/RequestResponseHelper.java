@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,12 +24,11 @@ import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.resource.ArtifactResource;
+import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.traffic.InternalTrafficService;
 import org.artifactory.traffic.entry.DownloadEntry;
-import org.joda.time.Duration;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
@@ -43,8 +42,6 @@ public final class RequestResponseHelper {
     private static final Logger log = LoggerFactory.getLogger(RequestResponseHelper.class);
 
     private InternalTrafficService trafficService;
-
-    private static final long CACHE_YEAR_SECS = Duration.standardDays(365).getStandardSeconds();
 
     public RequestResponseHelper(InternalTrafficService service) {
         trafficService = service;
@@ -132,18 +129,11 @@ public final class RequestResponseHelper {
             response.setContentLength(res.getSize());
         }
         response.setLastModified(res.getLastModified());
-        response.setEtag(res.getInfo().getSha1());
-
-        //TODO: [by yl] Should be in a HttpRequestInterceptor instance #processResponse
-        if (res instanceof ArtifactResource) {
-            boolean snapshot = ((ArtifactResource) res).getMavenInfo().isSnapshot();
-            if (snapshot) {
-                //Do not cache snapshot artifacts
-                response.setHeader("Cache-Control", "no-cache");
-            } else {
-                //Set the cache in the far future for releases
-                response.setHeader("Cache-Control", "public, max-age=" + CACHE_YEAR_SECS);
-            }
-        }
+        RepoResourceInfo info = res.getInfo();
+        // set the sha1 as the eTag and the sha1 header
+        response.setEtag(info.getSha1());
+        response.setSha1(info.getSha1());
+        // set the md5 header
+        response.setMd5(info.getMd5());
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2010 JFrog Ltd.
+  ~ Copyright (C) 2011 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -17,6 +17,7 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
+<!-- This file is used when unit tests are executed -->
 <configuration>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
@@ -24,19 +25,19 @@
         </layout>
     </appender>
     <logger name="org.artifactory">
-        <level value="WARN"/>
+        <level value="warn"/>
     </logger>
     <logger name="org.artifactory.schedule.TaskBase">
-        <level value="ERROR"/>
+        <level value="error"/>
     </logger>
     <logger name="org.artifactory.schedule.TaskCallback">
-        <level value="ERROR"/>
+        <level value="error"/>
     </logger>
     <logger name="org.artifactory.schedule.TaskServiceImpl">
-        <level value="ERROR"/>
+        <level value="error"/>
     </logger>
     <root>
-        <level value="WARN"/>
+        <level value="warn"/>
         <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>

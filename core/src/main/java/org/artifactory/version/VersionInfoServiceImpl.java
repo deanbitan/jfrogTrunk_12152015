@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.version;
 
+import com.google.common.collect.MapMaker;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
@@ -26,9 +27,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.cache.ArtifactoryCache;
-import org.artifactory.api.cache.Cache;
-import org.artifactory.api.cache.CacheService;
+import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.version.ArtifactoryVersioning;
 import org.artifactory.api.version.VersionHolder;
@@ -36,7 +35,6 @@ import org.artifactory.api.version.VersionInfoService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.schedule.TaskService;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.HttpUtils;
@@ -48,6 +46,7 @@ import org.springframework.stereotype.Service;
 import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Main implementation of the Version Info Service. Can be used to retrieve the latest version and revision numbers.
@@ -66,18 +65,18 @@ public class VersionInfoServiceImpl implements VersionInfoService {
      * Key to use in version information cache
      */
     static final String CACHE_KEY = "versioning";
-    /**
-     * An instance of the cache service
-     */
-    @Autowired
-    private CacheService cacheService;
 
     @Autowired
-    private TaskService taskService;
+    private AddonsManager addonsManager;
 
-    private static final String PARAM_VM_VERSION = "java.vm.version";
+    private Map<String, ArtifactoryVersioning> cache =
+            new MapMaker().initialCapacity(3).expireAfterWrite(ConstantValues.versioningQueryIntervalSecs.getLong(),
+                    TimeUnit.SECONDS).makeMap();
+
+    private static final String PARAM_JAVA_VERSION = "java.version";
     private static final String PARAM_OS_ARCH = "os.arch";
     private static final String PARAM_OS_NAME = "os.name";
+    private static final String PARAM_HASH = "artifactory.hash";
 
     /**
      * {@inheritDoc}
@@ -120,7 +119,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     }
 
     private ArtifactoryVersioning getVersioningFromCache() {
-        return getCache().get(CACHE_KEY);
+        return cache.get(CACHE_KEY);
     }
 
     /**
@@ -134,9 +133,10 @@ public class VersionInfoServiceImpl implements VersionInfoService {
         NameValuePair[] httpMethodParams = new NameValuePair[]{
                 new NameValuePair(ConstantValues.artifactoryVersion.getPropertyName(),
                         ConstantValues.artifactoryVersion.getString()),
-                new NameValuePair(PARAM_VM_VERSION, System.getProperty(PARAM_VM_VERSION)),
+                new NameValuePair(PARAM_JAVA_VERSION, System.getProperty(PARAM_JAVA_VERSION)),
                 new NameValuePair(PARAM_OS_ARCH, System.getProperty(PARAM_OS_ARCH)),
-                new NameValuePair(PARAM_OS_NAME, System.getProperty(PARAM_OS_NAME))
+                new NameValuePair(PARAM_OS_NAME, System.getProperty(PARAM_OS_NAME)),
+                new NameValuePair(PARAM_HASH, addonsManager.getLicenseKeyHash())
         };
         getMethod.setQueryString(httpMethodParams);
         //Append headers
@@ -176,7 +176,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
             result = createServiceUnavailableVersioning();
         }
 
-        getCache().put(VersionInfoServiceImpl.CACHE_KEY, result);
+        cache.put(VersionInfoServiceImpl.CACHE_KEY, result);
         return new AsyncResult<ArtifactoryVersioning>(result);
     }
 
@@ -212,10 +212,6 @@ public class VersionInfoServiceImpl implements VersionInfoService {
         }
         headerVal += "/" + HttpUtils.getArtifactoryUserAgent();
         return headerVal;
-    }
-
-    private Cache<Object, ArtifactoryVersioning> getCache() {
-        return cacheService.getCache(ArtifactoryCache.versioning);
     }
 
     private ArtifactoryVersioning createServiceUnavailableVersioning() {

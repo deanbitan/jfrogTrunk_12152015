@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,10 +19,12 @@
 package org.artifactory.addon.wicket;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
+import org.apache.wicket.markup.html.link.AbstractLink;
 import org.artifactory.addon.Addon;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
-import org.artifactory.common.wicket.component.links.TitledAjaxLink;
+import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.EditValueButtonRefreshBehavior;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.repo.RepoPath;
 import org.jfrog.build.api.Build;
@@ -59,9 +61,21 @@ public interface LicensesWebAddon extends Addon {
      */
     LabeledValue getLicenseLabel(String id, RepoPath repoPath);
 
-    TitledAjaxLink getEditLicenseLink(String id, RepoPath path, String currentValues, LabeledValue licensesLabel);
+    AbstractLink getEditLicenseLink(String id, RepoPath path, String currentValues, LabeledValue licensesLabel);
 
-    TitledAjaxLink getAddLicenseLink(String id, RepoPath path, String currentValues, LabeledValue licensesLabel);
+    AbstractLink getAddLicenseLink(String id, RepoPath path, String currentValues, LabeledValue licensesLabel);
 
-    TitledAjaxLink getDeleteLink(String id, RepoPath path, String currentValues, FieldSetBorder border);
+    AbstractLink getDeleteLink(String id, RepoPath path, String currentValues, FieldSetBorder border);
+
+    /**
+     * Get the the panel to change the panel on an artifact according to its current values, and all licenses
+     * defined in Artifactory
+     *
+     * @param refreshBehavior The behavior to refresh a panel after the update has taken place.
+     * @param path            The {@link RepoPath} of the artifact that should have its license updated.
+     * @param currentValues   The current license names that are attached to the artifact now (if any)
+     * @return A Drag and drop panel to change the current license on the artifact.
+     */
+    BaseModalPanel getChangeLicensePanel(EditValueButtonRefreshBehavior refreshBehavior, RepoPath path,
+            String currentValues);
 }

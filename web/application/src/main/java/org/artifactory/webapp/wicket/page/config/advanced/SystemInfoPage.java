@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInstantiation;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.model.Model;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
@@ -68,11 +71,16 @@ public class SystemInfoPage extends AuthenticatedPage {
 
         infoBuilder.append("System Properties:").append("\n");
         Properties properties = System.getProperties();
+        // add the JCR config dir to the properties, will be alphabetically sorted later.
+        String jcrConfigHome = ConstantValues.jcrConfigDir.getString();
+        if (StringUtils.isBlank(jcrConfigHome)) {
+            jcrConfigHome = ContextHelper.get().getArtifactoryHome().getEtcDir() + "/" + ArtifactoryHome.ARTIFACTORY_JCR_CONFIG_DIR_DEFAULT;
+        }
+        properties.setProperty(ConstantValues.jcrConfigDir.getPropertyName(), jcrConfigHome);
         TreeSet keys = new TreeSet<Object>(properties.keySet());
         for (Object key : keys) {
             addInfo(infoBuilder, String.valueOf(key), String.valueOf(properties.get(key)));
         }
-
         infoBuilder.append("\n").append("General JVM Info:").append("\n");
         OperatingSystemMXBean systemBean = ManagementFactory.getOperatingSystemMXBean();
         addInfo(infoBuilder, "Available Processors", Integer.toString(systemBean.getAvailableProcessors()));

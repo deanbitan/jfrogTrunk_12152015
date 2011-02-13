@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,6 @@
 package org.artifactory.jcr.version;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.io.FileUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.version.v150.JcrMetadataConverter;
@@ -29,15 +28,12 @@ import org.artifactory.jcr.version.v210.RepoConfigConverterV210;
 import org.artifactory.jcr.version.v211.LatestBuildPropertyConverter;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.ArtifactoryVersion;
-import org.artifactory.version.CompoundVersionDetails;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
 import org.artifactory.version.converter.ConfigurationConverter;
 import org.slf4j.Logger;
 
 import javax.jcr.Session;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,8 +93,6 @@ public enum JcrVersion implements SubConfigElementVersion {
      * @param artifactoryHome
      */
     public void preInitConvert(ArtifactoryHome artifactoryHome) {
-        //Always perform this when a version changes
-        backupCurrentWorkspaces(artifactoryHome);
 
         // First create the list of converters to apply
         List<ConfigurationConverter<ArtifactoryHome>> converters = Lists.newArrayList();
@@ -157,31 +151,5 @@ public enum JcrVersion implements SubConfigElementVersion {
 
     public VersionComparator getComparator() {
         return comparator;
-    }
-
-    /**
-     * Should be called on every version change.<br> Renames the existing workspaces dir so that a new one will be
-     * created by reading the updated repo.xml.
-     *
-     * @param artifactoryHome Artifactory Home
-     */
-    private static void backupCurrentWorkspaces(ArtifactoryHome artifactoryHome) {
-        CompoundVersionDetails originalStorageVersion = artifactoryHome.getOriginalVersionDetails();
-        //Make the loaded repo.xml overwrite any existing workspace by clearing data/workspaces
-        String origVersionValue = originalStorageVersion.getVersion().getValue();
-        File origWorkspacesDir = new File(artifactoryHome.getDataDir(), "workspaces." + origVersionValue + ".orig");
-        try {
-            FileUtils.deleteDirectory(origWorkspacesDir);
-        } catch (IOException e) {
-            log.warn("Failed to remove original workspaces at {}.", origWorkspacesDir.getAbsolutePath());
-        }
-        File workspacesDir = new File(artifactoryHome.getDataDir(), "workspaces");
-        try {
-            FileUtils.copyDirectory(workspacesDir, origWorkspacesDir);
-        } catch (IOException e) {
-            log.warn("Failed to backup original workspaces from {} to {}.", workspacesDir.getAbsolutePath(),
-                    origWorkspacesDir.getAbsolutePath());
-        }
-        //Workspaces removal is always done in the jcr init
     }
 }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,13 +20,15 @@ package org.artifactory.descriptor.repo;
 
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.util.PathUtils;
+import org.artifactory.util.RepoLayoutUtils;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlID;
+import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
-@XmlType(name = "RepoType", propOrder = {"key", "description", "notes", "type", "includesPattern", "excludesPattern"},
-        namespace = Descriptor.NS)
+@XmlType(name = "RepoType", propOrder = {"key", "description", "notes", "includesPattern", "excludesPattern",
+        "repoLayout"}, namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     @XmlID
@@ -39,14 +41,15 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
     @XmlElement(required = false)
     private String notes;
 
-    @XmlElement(defaultValue = "maven2", required = false)
-    private RepoType type = RepoType.maven2;
-
     @XmlElement(defaultValue = "**/*", required = false)
     private String includesPattern = "**/*";
 
     @XmlElement(defaultValue = "", required = false)
     private String excludesPattern;
+
+    @XmlIDREF
+    @XmlElement(name = "repoLayoutRef")
+    private RepoLayout repoLayout;
 
     public String getKey() {
         return key;
@@ -72,14 +75,6 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
         this.notes = notes;
     }
 
-    public RepoType getType() {
-        return type;
-    }
-
-    public void setType(RepoType type) {
-        this.type = type;
-    }
-
     public String getIncludesPattern() {
         return includesPattern;
     }
@@ -96,15 +91,25 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
         this.excludesPattern = excludesPattern;
     }
 
+    public RepoLayout getRepoLayout() {
+        return repoLayout;
+    }
+
+    public void setRepoLayout(RepoLayout repoLayout) {
+        this.repoLayout = repoLayout;
+    }
+
+    public boolean isMavenRepoLayout() {
+        return RepoLayoutUtils.isDefaultM2(repoLayout);
+    }
+
     public boolean identicalCache(RepoDescriptor oldDescriptor) {
         if (!(oldDescriptor instanceof RepoBaseDescriptor)) {
             return false;
         }
         RepoBaseDescriptor old = (RepoBaseDescriptor) oldDescriptor;
-        if (!type.equals(old.type) ||
-                !PathUtils.safeStringEquals(old.excludesPattern, excludesPattern) ||
-                !PathUtils.safeStringEquals(old.includesPattern, includesPattern)
-                ) {
+        if (!PathUtils.safeStringEquals(old.excludesPattern, excludesPattern) ||
+                !PathUtils.safeStringEquals(old.includesPattern, includesPattern)) {
             return false;
         }
         return true;

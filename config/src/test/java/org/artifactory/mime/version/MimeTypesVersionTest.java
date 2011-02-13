@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,11 +18,12 @@
 
 package org.artifactory.mime.version;
 
+import org.artifactory.mime.MimeTypes;
+import org.artifactory.mime.MimeTypesReader;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.*;
 
 /**
  * Tests {@link MimeTypesVersion}.
@@ -45,5 +46,24 @@ public class MimeTypesVersionTest {
         String fakeVersion = ResourceUtils.getResourceAsString("/org/artifactory/mime/version/mimetypes-v1.xml");
         fakeVersion = fakeVersion.replace("version=\"1\"", "version=\"789456\"");
         MimeTypesVersion.findVersion(fakeVersion);
+    }
+
+    public void versionString() {
+        assertEquals(MimeTypesVersion.v1.versionString(), "1");
+        assertEquals(MimeTypesVersion.v2.versionString(), "2");
+    }
+
+    public void convertVersion1() {
+        String version1 = ResourceUtils.getResourceAsString("/org/artifactory/mime/version/mimetypes-v1.xml");
+
+        String latest = MimeTypesVersion.getCurrent().convert(version1);
+
+        assertEquals(MimeTypesVersion.findVersion(latest), MimeTypesVersion.getCurrent(), "Not current version");
+        assertTrue(latest.contains("<mimetypes version=\"" + MimeTypesVersion.getCurrent().versionString()
+                + "\">"), "Unexpected converted string: " + latest);
+
+        // make sure the result is readable
+        MimeTypes mimeTypes = new MimeTypesReader().read(latest);
+        assertNotNull(mimeTypes);
     }
 }

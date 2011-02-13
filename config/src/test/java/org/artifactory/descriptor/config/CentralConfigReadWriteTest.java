@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.reader.CentralConfigReader;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.jaxb.JaxbHelper;
@@ -65,8 +66,16 @@ public class CentralConfigReadWriteTest {
         desc.setServerName("mymy");
         desc.setDateFormat("dd-MM-yy HH:mm:ss z");
 
+        RepoLayout repoLayout = new RepoLayout();
+        repoLayout.setName("layout");
+        repoLayout.setArtifactPathPattern("artifactPathPattern");
+        repoLayout.setDistinctiveDescriptorPathPattern(true);
+        repoLayout.setDescriptorPathPattern("descriptorPathPattern");
+        desc.addRepoLayout(repoLayout);
+
         LocalRepoDescriptor local1 = new LocalRepoDescriptor();
         local1.setKey("local1");
+        local1.setRepoLayout(repoLayout);
         local1.setBlackedOut(false);
         local1.setDescription("local repo 1");
         local1.setNotes("note1");
@@ -77,6 +86,7 @@ public class CentralConfigReadWriteTest {
 
         LocalRepoDescriptor local2 = new LocalRepoDescriptor();
         local2.setKey("local2");
+        local2.setRepoLayout(repoLayout);
         local2.setBlackedOut(false);
         local2.setDescription("local repo 2");
         local2.setNotes("note2");
@@ -175,9 +185,17 @@ public class CentralConfigReadWriteTest {
     public void defaultConfigElements() throws FileNotFoundException {
         CentralConfigDescriptorImpl cc = new CentralConfigDescriptorImpl();
 
+        RepoLayout repoLayout = new RepoLayout();
+        repoLayout.setName("repoLayout");
+        repoLayout.setArtifactPathPattern("artifactPathPattern");
+        repoLayout.setDistinctiveDescriptorPathPattern(true);
+        repoLayout.setDescriptorPathPattern("descriptorPathPattern");
+        cc.addRepoLayout(repoLayout);
+
         // at least one local repository
         LocalRepoDescriptor localRepo = new LocalRepoDescriptor();
         localRepo.setKey("abc");
+        localRepo.setRepoLayout(repoLayout);
         cc.addLocalRepository(localRepo);
 
         File outputConfig = new File(testDir, "config.defaults.test.xml");

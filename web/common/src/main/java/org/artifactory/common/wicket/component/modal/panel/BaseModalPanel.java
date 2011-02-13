@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -179,11 +179,10 @@ public class BaseModalPanel<E extends Serializable> extends Panel implements Tit
     }
 
     /**
-     * onClose event hanlder. Override onClose to run your code uppon closing the modal panel.
+     * onClose event handler. Override onClose to run your code upon closing the modal panel.
      *
      * @param target AjaxRequestTarget
      */
-    @SuppressWarnings({"UnusedDeclaration"})
     public void onClose(AjaxRequestTarget target) {
     }
 

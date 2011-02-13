@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,7 +22,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
@@ -42,7 +41,6 @@ import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MimeType;
-import org.artifactory.repo.index.InternalIndexerService;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalArtifactoryContext;
@@ -79,16 +77,10 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     private String serverName;
 
     @Autowired
-    private AddonsManager addonsManager;
-
-    @Autowired
     private AuthorizationService authService;
 
     @Autowired
     private InternalRepositoryService repositoryService;
-
-    @Autowired
-    private InternalIndexerService indexer;
 
     @Autowired
     private ConfigurationChangesInterceptors interceptors;

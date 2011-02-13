@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,8 @@
 
 package org.artifactory.api.repo;
 
+import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
@@ -30,24 +32,24 @@ import org.artifactory.repo.RepoPathFactory;
  *
  * @author Noam Y. Tenne
  */
-public class BrowsableItem extends BaseBrowsableItem<BrowsableItem> {
+public class BrowsableItem extends BaseBrowsableItem {
 
     private static final long serialVersionUID = 1L;
 
     private RepoPath repoPath;
 
     /**
-     * Main constructor.<br>
-     * Please use factory methods for normal object creation.
+     * Main constructor.<br> Please use factory methods for normal object creation.
      *
      * @param name         Item display name
      * @param folder       True if the item represents a folder
+     * @param created
      * @param lastModified Item last modified time
      * @param size         Item size (applicable only to files)
      * @param repoPath     Item repo path
      */
-    public BrowsableItem(String name, boolean folder, long lastModified, long size, RepoPath repoPath) {
-        super(name, folder, lastModified, size);
+    public BrowsableItem(String name, boolean folder, long created, long lastModified, long size, RepoPath repoPath) {
+        super(name, folder, created, lastModified, size);
         this.repoPath = repoPath;
     }
 
@@ -60,10 +62,11 @@ public class BrowsableItem extends BaseBrowsableItem<BrowsableItem> {
      */
     public static <T extends ItemInfo> BrowsableItem getItem(T itemInfo) {
         if (itemInfo.isFolder()) {
-            return new BrowsableItem(itemInfo.getName(), true, itemInfo.getLastModified(), 0, itemInfo.getRepoPath());
+            return new BrowsableItem(itemInfo.getName(), true, itemInfo.getCreated(),
+                    itemInfo.getLastModified(), 0, itemInfo.getRepoPath());
         }
-        return new BrowsableItem(itemInfo.getName(), false, itemInfo.getLastModified(), ((FileInfo) itemInfo).getSize(),
-                itemInfo.getRepoPath()
+        return new BrowsableItem(itemInfo.getName(), false, itemInfo.getCreated(),
+                itemInfo.getLastModified(), ((FileInfo) itemInfo).getSize(), itemInfo.getRepoPath()
         );
     }
 
@@ -74,9 +77,12 @@ public class BrowsableItem extends BaseBrowsableItem<BrowsableItem> {
      * @return Browsable item
      */
     public static BrowsableItem getMetadataItem(MetadataInfo metadataInfo) {
-        return new BrowsableItem(metadataInfo.getName(), false, metadataInfo.getLastModified(), metadataInfo.getSize(),
-                metadataInfo.getRepoPath()
-        );
+        //TODO: [by ys] ugly hack to display standard maven-metadata url. check for existing code that does that
+        RepoPath parent = new RepoPathImpl(metadataInfo.getRepoPath().getRepoKey(),
+                NamingUtils.stripMetadataFromPath(metadataInfo.getRepoPath().getPath()));
+        return new BrowsableItem(metadataInfo.getName(), false, metadataInfo.getCreated(),
+                metadataInfo.getLastModified(), metadataInfo.getSize(),
+                new RepoPathImpl(parent.getRepoKey(), parent.getPath() + "/" + MavenNaming.MAVEN_METADATA_NAME));
     }
 
     /**
@@ -93,8 +99,8 @@ public class BrowsableItem extends BaseBrowsableItem<BrowsableItem> {
         RepoPath repoPath = RepoPathFactory.create(browsableItem.getRepoKey(),
                 browsableItem.getRelativePath() + checksumType.ext());
 
-        return new BrowsableItem(checksumItemName, false, browsableItem.getLastModified(), checksumValueLength,
-                repoPath);
+        return new BrowsableItem(checksumItemName, false, browsableItem.getCreated(),
+                browsableItem.getLastModified(), checksumValueLength, repoPath);
     }
 
     @Override
@@ -112,7 +118,7 @@ public class BrowsableItem extends BaseBrowsableItem<BrowsableItem> {
         return repoPath.getPath();
     }
 
-    public int compareTo(BrowsableItem o) {
+    public int compareTo(BaseBrowsableItem o) {
         if (name.equals(o.name)) {
             return 0;
         }

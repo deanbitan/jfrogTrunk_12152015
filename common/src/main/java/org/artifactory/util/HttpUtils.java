@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.request.ArtifactoryRequest;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -95,15 +96,18 @@ public abstract class HttpUtils {
         String baseUrl = centralConfigService.getDescriptor().getUrlBase();
 
         if (!StringUtils.isEmpty(baseUrl)) {
-            url = baseUrl;
-        } else {
-            int port = httpRequest.getServerPort();
-            String scheme = httpRequest.getScheme();
-            String portString = isDefaultPort(scheme, port) ? "" : ":" + port;
-            url = scheme + "://" + httpRequest.getServerName() + portString + httpRequest.getContextPath();
+            return baseUrl;
         }
+        return getServerUrl(httpRequest) + httpRequest.getContextPath();
+    }
 
-        return url;
+    public static String getServerUrl(HttpServletRequest httpRequest) {
+        int port = httpRequest.getServerPort();
+        String scheme = httpRequest.getScheme();
+        if (isDefaultPort(scheme, port)) {
+            return scheme + "://" + httpRequest.getServerName();
+        }
+        return scheme + "://" + httpRequest.getServerName() + ":" + port;
     }
 
     public static boolean isDefaultPort(String scheme, int port) {
@@ -115,6 +119,23 @@ public abstract class HttpUtils {
             default:
                 return false;
         }
+    }
+
+    public static String getSha1Checksum(ArtifactoryRequest request) {
+        return request.getHeader(ArtifactoryRequest.CHECKSUM_SHA1);
+    }
+
+    public static boolean isExpectedContinue(ArtifactoryRequest request) {
+        String expectHeader = request.getHeader("Expect");
+        if (StringUtils.isBlank(expectHeader)) {
+            return false;
+        }
+        // some clients make the C lowercase even when passed uppercase
+        return expectHeader.contains("100-continue") || expectHeader.contains("100-Continue");
+    }
+
+    public static String getMd5Checksum(ArtifactoryRequest request) {
+        return request.getHeader(ArtifactoryRequest.CHECKSUM_MD5);
     }
 
     public synchronized static String getContextId(ServletContext servletContext) {

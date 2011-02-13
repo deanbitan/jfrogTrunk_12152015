@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,9 +52,11 @@ public class MoveResource {
     /**
      * Move an item (file or folder) from one path to another.
      *
-     * @param path   The source path.
-     * @param target The target path.
-     * @param dryRun Flag whether to perform a dry run before executing the actual move.
+     * @param path            The source path.
+     * @param target          The target path.
+     * @param dryRun          Flag whether to perform a dry run before executing the actual move.
+     * @param suppressLayouts Flag to indicate whether path translation across different layouts is should be
+     *                        suppressed.
      * @return The operation result
      * @throws Exception
      */
@@ -67,8 +69,10 @@ public class MoveResource {
             // The target path to to move/copy the item.
             @QueryParam(ArtifactRestConstants.PARAM_TARGET) String target,
             // Flag to indicate whether to perform a dry run first. default false
-            @QueryParam(ArtifactRestConstants.PARAM_DRY_RUN) int dryRun) throws Exception {
+            @QueryParam(ArtifactRestConstants.PARAM_DRY_RUN) int dryRun,
+            // Flag to indicate whether path translation across different layouts is should be suppressed. default false
+            @QueryParam(ArtifactRestConstants.PARAM_SUPPRESS_LAYOUTS) int suppressLayouts) throws Exception {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-        return addonsManager.addonByType(RestAddon.class).move(path, target, dryRun);
+        return addonsManager.addonByType(RestAddon.class).move(path, target, dryRun, suppressLayouts);
     }
 }

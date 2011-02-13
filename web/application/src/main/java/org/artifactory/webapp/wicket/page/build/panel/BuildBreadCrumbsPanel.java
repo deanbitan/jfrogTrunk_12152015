@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,15 +40,15 @@ public class BuildBreadCrumbsPanel extends Panel {
 
     /**
      * Main constructor
-     *
-     * @param pageParameters Build browser page parameters
      */
-    public BuildBreadCrumbsPanel(PageParameters pageParameters) {
+    public BuildBreadCrumbsPanel() {
         super("buildBreadCrumbs");
         setOutputMarkupId(true);
 
         add(new CssClass("bread-crumbs nice-bread-crumbs"));
+    }
 
+    public void addCrumbs(PageParameters pageParameters) {
         RepeatingView items = new RepeatingView("item");
         add(items);
 

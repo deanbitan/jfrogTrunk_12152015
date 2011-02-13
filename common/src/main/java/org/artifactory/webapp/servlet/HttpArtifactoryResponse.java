@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +20,7 @@ package org.artifactory.webapp.servlet;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.ArtifactoryResponseBase;
 import org.slf4j.Logger;
 
@@ -46,6 +47,22 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
             response.setHeader("ETag", etag);
         } else {
             log.debug("Could not register a null etag with the response.");
+        }
+    }
+
+    public void setMd5(String md5) {
+        if (md5 != null) {
+            response.setHeader(ArtifactoryRequest.CHECKSUM_MD5, md5);
+        } else {
+            log.debug("Could not register a null md5 tag with the response.");
+        }
+    }
+
+    public void setSha1(String sha1) {
+        if (sha1 != null) {
+            response.setHeader(ArtifactoryRequest.CHECKSUM_SHA1, sha1);
+        } else {
+            log.debug("Could not register a null sha1 tag with the response.");
         }
     }
 

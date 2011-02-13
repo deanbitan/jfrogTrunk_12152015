@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,7 +17,7 @@
  */
 
 var DisabledAddon = {
-    create: function(id) {
+    create: function(id, position) {
         // create only once
         var node = dojo.byId(id);
         if (node.DisabledAddon) {
@@ -26,7 +26,10 @@ var DisabledAddon = {
         node.DisabledAddon = true;
 
         // add tooltip
-        DojoUtils.instantiate(id + '_bubble');
+        var widgets = DojoUtils.instantiate(id + '_bubble');
+        if (position) {
+            widgets[0].position = position;
+        }
 
         // add icon
         var icon = document.createElement('span');

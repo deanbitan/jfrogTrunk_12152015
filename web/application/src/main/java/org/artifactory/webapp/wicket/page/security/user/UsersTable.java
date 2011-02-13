@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,10 +28,10 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.LdapService;
-import org.artifactory.api.security.LdapUser;
+import org.artifactory.api.security.UserAwareAuthenticationProvider;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -42,9 +42,10 @@ import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.component.table.columns.TooltipLabelColumn;
 import org.artifactory.common.wicket.component.table.columns.checkbox.SelectAllCheckboxColumn;
-import org.artifactory.descriptor.security.ldap.LdapSetting;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.page.security.user.column.UserColumn;
 import org.artifactory.webapp.wicket.page.security.user.permission.UserPermissionsPanel;
 import org.slf4j.Logger;
@@ -68,10 +69,10 @@ public class UsersTable extends ModalListPanel<UserModel> {
     private AuthorizationService authorizationService;
 
     @SpringBean
-    private LdapService ldapService;
+    private AddonsManager addonsManager;
 
     @SpringBean
-    private CentralConfigService centralConfigService;
+    private UserAwareAuthenticationProvider provider;
 
     private UsersTableDataProvider dataProvider;
 
@@ -92,53 +93,66 @@ public class UsersTable extends ModalListPanel<UserModel> {
 
     @Override
     protected void addColumns(List<? super IColumn<UserModel>> columns) {
-        columns.add(new SelectAllCheckboxColumn<UserModel>("", "selected", null));
+        columns.add(new SelectAllCheckboxColumn<UserModel>("", "selected", null) {
+
+            @Override
+            protected boolean isEnabled(UserModel userModel) {
+                //Enable the user's individual checkbox only if it's not anonymous
+                return !userModel.isAnonymous();
+            }
+
+            @Override
+            protected boolean canChangeItemSelectionState(UserModel userModel) {
+                //Make the user's selection state affected by the select all checkbox only if it's not anonymous
+                return !userModel.isAnonymous();
+            }
+        });
         columns.add(new UserColumn("User Name"));
-        List<LdapSetting> ldapSettings = centralConfigService.getDescriptor().getSecurity().getEnabledLdapSettings();
-        for (LdapSetting ldapSetting : ldapSettings) {
-            columns.add(createExternalStatusColumn(ldapSetting));
-        }
+        columns.add(createExternalStatusColumn());
         columns.add(new BooleanColumn<UserModel>("Admin", "admin", "admin"));
         columns.add(new PropertyColumn<UserModel>(Model.of("Last Login"), "lastLoginTimeMillis",
                 "lastLoginString"));
     }
 
-    private TooltipLabelColumn<UserModel> createExternalStatusColumn(final LdapSetting ldapSetting) {
-        final String ldapSettingKey = ldapSetting.getKey();
-        return new TooltipLabelColumn<UserModel>(Model.of("External " + ldapSettingKey), "status",
-                "statuses." + ldapSettingKey, 0) {
+    @Override
+    protected boolean canAddRowItemDoubleClickBehavior(IModel<UserModel> model) {
+        //Respond to double clicks on the row only if it's not anonymous
+        return !model.getObject().isAnonymous();
+    }
+
+    private TooltipLabelColumn<UserModel> createExternalStatusColumn() {
+        return new TooltipLabelColumn<UserModel>(Model.of("Realm"), "realm", "status.description", 0) {
             @Override
             public void populateItem(Item<ICellPopulator<UserModel>> item, String componentId,
-                    IModel<UserModel> model) {
+                    final IModel<UserModel> model) {
                 item.add(new TooltipLabel(componentId, createLabelModel(model), 0) {
                     @Override
                     protected void onBeforeRender() {
                         super.onBeforeRender();
-                        setText("");
+                        UserModel userModel = model.getObject();
+
+                        if (userModel.isAnonymous()) {
+                            setText("");
+                        } else if (StringUtils.isBlank(userModel.getRealm())) {
+                            setText("Will be updated on next login");
+                            add(new CssClass("gray-listed-label"));
+                        } else {
+                            setText(StringUtils.capitalize(userModel.getRealm()));
+                        }
                     }
                 });
                 UserModel user = model.getObject();
-                if (UserModel.Status.NOT_LDAP_USER.equals(user.getStatuses().get(ldapSettingKey))) {
-                    log.debug("User {} is not an LDAP user", user.getUsername());
-                    return;
-                }
-                if ((ldapSetting.getSearch() == null ||
-                        StringUtils.isBlank(ldapSetting.getSearch().getSearchFilter()))) {
-                    item.add(new CssClass("WarnColumn"));
-                    item.add(new CssClass("warn"));
-                    user.getStatuses().put(ldapSettingKey, UserModel.Status.NO_SEARCH_FILTER);
-                    return;
-                }
-                if (user.isDisableInternalPassword()) {
-                    LdapUser ldapUser = ldapService.getDnFromUserName(ldapSetting, user.getUsername());
-                    if (ldapUser == null) {
-                        item.add(new CssClass("WarnColumn"));
-                        item.add(new CssClass("warn"));
-                        user.getStatuses().put(ldapSettingKey, UserModel.Status.INACTIVE_USER);
+                log.debug("User '{}' is from realm '{}'", user.getUsername(), user.getRealm());
+                if ("internal".equals(user.getRealm())) {
+                    user.setStatus(UserModel.Status.NOT_EXTERNAL_USER);
+                } else if ("system".equals(user.getRealm())) {
+                    user.setStatus(UserModel.Status.ACTIVE_USER);
+                } else {
+                    if (provider.userExists(user.getUsername(), user.getRealm())) {
+                        user.setStatus(UserModel.Status.ACTIVE_USER);
                     } else {
-                        item.add(new CssClass("BooleanColumn"));
-                        item.add(new CssClass("true"));
-                        user.getStatuses().put(ldapSettingKey, UserModel.Status.ACTIVE_USER);
+                        user.setStatus(UserModel.Status.INACTIVE_USER);
+                        item.add(new CssClass("black-listed-label"));
                     }
                 }
             }
@@ -173,14 +187,23 @@ public class UsersTable extends ModalListPanel<UserModel> {
             error("Action cancelled. You are logged-in as the user you have selected for removal.");
             return;
         }
-        userGroupService.deleteUser(selectedUsername);
-        AccessLogger.deleted("User " + selectedUsername + " was deleted successfully");
+        CoreAddons addons = addonsManager.addonByType(CoreAddons.class);
+        if (!addons.isAolDashboardAdmin(selectedUsername, HttpUtils.getRemoteClientAddress(
+                WicketUtils.getWebRequest().getHttpServletRequest()))) {
+            userGroupService.deleteUser(selectedUsername);
+            AccessLogger.deleted("User " + selectedUsername + " was deleted successfully");
+        } else {
+            warn("Action cancelled, " + selectedUsername + " is an un-deletable user");
+        }
         refreshUsersList(target);
     }
 
     @Override
     protected void addLinks(List<AbstractLink> links, final UserModel userModel, String linkId) {
-        super.addLinks(links, userModel, linkId);
+        //Do not add the delete and edit links to the anonymous user
+        if (!userModel.isAnonymous()) {
+            super.addLinks(links, userModel, linkId);
+        }
         // add view user permissions link
         ModalShowLink viewPermissionsLink = new ModalShowLink(linkId, "Permissions") {
             @Override

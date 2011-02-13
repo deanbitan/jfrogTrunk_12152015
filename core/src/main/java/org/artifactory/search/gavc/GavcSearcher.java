@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,15 +21,15 @@ package org.artifactory.search.gavc;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
+import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.resource.ArtifactResource;
 import org.artifactory.search.SearcherBase;
 
 import javax.jcr.Node;
@@ -105,17 +105,19 @@ public class GavcSearcher extends SearcherBase<GavcSearchControls, GavcSearchRes
         while (nodes.hasNext() && (!controls.isLimitSearchResults() || (results.size() < getMaxResults()))) {
             Node artifactNode = nodes.nextNode();
             RepoPath repoPath = JcrPath.get().getRepoPath(artifactNode.getPath());
-            if ((repoPath == null) || !isResultRepoPathValid(repoPath)) {
+
+            String repoKey = repoPath.getRepoKey();
+            LocalRepo localRepo = getRepoService().localOrCachedRepositoryByKey(repoKey);
+            if (!isResultAcceptable(repoPath, localRepo)) {
                 continue;
             }
 
             FileInfoProxy fileInfo = new FileInfoProxy(repoPath);
-            ArtifactResource artifact = new ArtifactResource(fileInfo.getRepoPath());
-            boolean canRead = getAuthService().canRead(fileInfo.getRepoPath());
-            MavenArtifactInfo mavenInfo = artifact.getMavenInfo();
-            if (canRead && mavenInfo.isValid()) {
-                GavcSearchResult result = new GavcSearchResult(fileInfo, mavenInfo);
-                results.add(result);
+
+            ModuleInfo moduleInfo = localRepo.getItemModuleInfo(repoPath.getPath());
+
+            if (moduleInfo.isValid()) {
+                results.add(new GavcSearchResult(fileInfo, moduleInfo));
             }
         }
 

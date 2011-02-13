@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,13 +35,15 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.home.settings.BaseSettingsGeneratorPanel;
+import org.artifactory.webapp.wicket.page.home.settings.DefaultOptionSelector;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Enables the user to select several virtual repos that are configured in the system, and generate from his selection A
@@ -54,31 +56,34 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
     private static final Logger log = LoggerFactory.getLogger(MavenSettingsPanel.class);
 
     @WicketProperty
-    private VirtualRepoEntry releases;
+    private VirtualRepoDescriptor releases;
 
     @WicketProperty
-    private VirtualRepoEntry snapshots;
+    private VirtualRepoDescriptor snapshots;
 
     @WicketProperty
-    private VirtualRepoEntry pluginReleases;
+    private VirtualRepoDescriptor pluginReleases;
 
     @WicketProperty
-    private VirtualRepoEntry pluginSnapshots;
+    private VirtualRepoDescriptor pluginSnapshots;
 
     @WicketProperty
     private boolean mirrorAny;
 
     @WicketProperty
-    private VirtualRepoEntry mirrorAnySelection;
+    private VirtualRepoDescriptor mirrorAnySelection;
+    private final List<VirtualRepoDescriptor> virtualRepoDescriptors;
 
     /**
      * Default Constructor
      *
-     * @param id                Panel ID
-     * @param virtualRepoKeyMap Map of virtual repo keys and descriptions
+     * @param id                     Panel ID
+     * @param servletContextUrl      Servlet context URL
+     * @param virtualRepoDescriptors List of virtual repository descriptors
      */
-    public MavenSettingsPanel(String id, String servletContextUrl, Map<String, String> virtualRepoKeyMap) {
-        super(id, servletContextUrl, virtualRepoKeyMap);
+    public MavenSettingsPanel(String id, String servletContextUrl, List<VirtualRepoDescriptor> virtualRepoDescriptors) {
+        super(id, servletContextUrl);
+        this.virtualRepoDescriptors = virtualRepoDescriptors;
 
         init();
     }
@@ -94,11 +99,10 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
         addChoice("pluginReleases", true, false, true, false);
         addChoice("pluginSnapshots", false, true, true, false);
 
-        final DropDownChoice mirrorDropDownChoice =
-                new DropDownChoice<VirtualRepoEntry>("mirrorAnySelection",
-                        new PropertyModel<VirtualRepoEntry>(this, "mirrorAnySelection"), virtualRepoEntries);
+        final DropDownChoice mirrorDropDownChoice = new DropDownChoice<VirtualRepoDescriptor>("mirrorAnySelection",
+                new PropertyModel<VirtualRepoDescriptor>(this, "mirrorAnySelection"), virtualRepoDescriptors);
         mirrorDropDownChoice.setOutputMarkupId(true);
-        if (!virtualRepoEntries.isEmpty()) {
+        if (!virtualRepoDescriptors.isEmpty()) {
             mirrorDropDownChoice.setDefaultModelObject(getDefaultChoice(false, false, false, true));
         }
         mirrorDropDownChoice.setEnabled(false);
@@ -117,7 +121,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
         });
         form.add(mirrorAnyCheckbox);
 
-        TitledAjaxSubmitLink generateButton = getGenerateButton(servletContextUrl);
+        TitledAjaxSubmitLink generateButton = getGenerateButton();
 
         form.add(new DefaultButtonBehavior(generateButton));
         border.add(form);
@@ -138,7 +142,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
         this.mirrorAny = mirrorAny;
     }
 
-    public String generateSettings(String servletContextUrl) {
+    public String generateSettings() {
         //Make sure URL ends with slash
         if (!servletContextUrl.endsWith("/")) {
             servletContextUrl += "/";
@@ -231,7 +235,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
      * @return String - Release repo key
      */
     private String getReleasesRepoKey() {
-        return releases.getRepoKey();
+        return releases.getKey();
     }
 
     /**
@@ -240,7 +244,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
      * @return String - Snapshot repo key
      */
     private String getSnapshotsRepoKey() {
-        return snapshots.getRepoKey();
+        return snapshots.getKey();
     }
 
     /**
@@ -249,7 +253,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
      * @return String - Plugin releases repo key
      */
     private String getPluginReleasesRepoKey() {
-        return pluginReleases.getRepoKey();
+        return pluginReleases.getKey();
     }
 
     /**
@@ -258,7 +262,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
      * @return String - Plugin snapshots repo key
      */
     private String getPluginSnapshotsRepoKey() {
-        return pluginSnapshots.getRepoKey();
+        return pluginSnapshots.getKey();
     }
 
     /**
@@ -267,7 +271,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
      * @return String - Mirror any repo key
      */
     private String getMirrorAnyKey() {
-        return mirrorAnySelection.getRepoKey();
+        return mirrorAnySelection.getKey();
     }
 
     /**
@@ -277,42 +281,53 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
      * @param id Object ID
      */
     private void addChoice(String id, boolean isRelease, boolean isSnapshot, boolean isPlugin, boolean isRemote) {
-        DropDownChoice<VirtualRepoEntry> choice = new DropDownChoice<VirtualRepoEntry>(
-                id, new PropertyModel<VirtualRepoEntry>(this, id), virtualRepoEntries);
-        if (!virtualRepoEntries.isEmpty()) {
+        DropDownChoice<VirtualRepoDescriptor> choice = new DropDownChoice<VirtualRepoDescriptor>(
+                id, new PropertyModel<VirtualRepoDescriptor>(this, id), virtualRepoDescriptors);
+        if (!virtualRepoDescriptors.isEmpty()) {
             choice.setDefaultModelObject(getDefaultChoice(isRelease, isSnapshot, isPlugin, isRemote));
         }
         form.add(choice);
         form.add(new HelpBubble(id + ".help", new ResourceModel(id + ".help")));
     }
 
-    private VirtualRepoEntry getDefaultChoice(boolean isRelease, boolean isSnapshot, boolean isPlugin,
-            boolean isRemote) {
-        for (VirtualRepoEntry virtualEntry : virtualRepoEntries) {
-            boolean canBeDefault = true;
-            String key = virtualEntry.getRepoKey();
-            if (isRelease && !repoKeyContains(key, "release")) {
-                canBeDefault = false;
-            }
-            if (isSnapshot && !repoKeyContains(key, "snapshot")) {
-                canBeDefault = false;
-            }
-            if (isPlugin && !repoKeyContains(key, "plugin")) {
-                canBeDefault = false;
-            }
-            if (isRemote && !repoKeyContains(key, "remote")) {
-                canBeDefault = false;
+
+    private VirtualRepoDescriptor getDefaultChoice(final boolean isRelease, final boolean isSnapshot,
+            final boolean isPlugin, final boolean isRemote) {
+
+        DefaultOptionSelector<VirtualRepoDescriptor> selector = new DefaultOptionSelector<VirtualRepoDescriptor>() {
+
+            @Override
+            public boolean acceptedAsDefault(VirtualRepoDescriptor virtualRepoDescriptor) {
+                boolean canBeDefault = true;
+                String key = virtualRepoDescriptor.getKey();
+                if (isRelease && !repoKeyContains(key, "release")) {
+                    canBeDefault = false;
+                }
+                if (isSnapshot && !repoKeyContains(key, "snapshot")) {
+                    canBeDefault = false;
+                }
+                if (isPlugin && !repoKeyContains(key, "plugin")) {
+                    canBeDefault = false;
+                }
+                if (isRemote && !repoKeyContains(key, "remote")) {
+                    canBeDefault = false;
+                }
+
+                return canBeDefault;
             }
 
-            if (canBeDefault) {
-                return virtualEntry;
+            private boolean repoKeyContains(String repoKey, String idText) {
+                return StringUtils.containsIgnoreCase(repoKey, idText);
+            }
+        };
+
+        for (VirtualRepoDescriptor virtualRepoDescriptor : virtualRepoDescriptors) {
+            if (selector.acceptedAsDefault(virtualRepoDescriptor)) {
+                return virtualRepoDescriptor;
             }
         }
 
-        return virtualRepoEntries.get(0);
+        return virtualRepoDescriptors.get(0);
     }
 
-    private boolean repoKeyContains(String repoKey, String idText) {
-        return StringUtils.containsIgnoreCase(repoKey, idText);
-    }
 }

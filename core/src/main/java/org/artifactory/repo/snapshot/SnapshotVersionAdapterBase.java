@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,25 +18,20 @@
 
 package org.artifactory.repo.snapshot;
 
-import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.resource.ArtifactResource;
-import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
 /**
- * Base abstract class for {@link SnapshotVersionAdapter}s.
+ * Base abstract class for {@link MavenSnapshotVersionAdapter}s.
  *
  * @author Yossi Shaul
  */
-public abstract class SnapshotVersionAdapterBase implements SnapshotVersionAdapter {
+public abstract class SnapshotVersionAdapterBase implements MavenSnapshotVersionAdapter {
     private static final Logger log = LoggerFactory.getLogger(SnapshotVersionAdapterBase.class);
 
-    public static SnapshotVersionAdapter getByType(SnapshotVersionBehavior type) {
+    public static MavenSnapshotVersionAdapter getByType(SnapshotVersionBehavior type) {
         switch (type) {
             case DEPLOYER:
                 return new DeployerSnapshotVersionAdapter();
@@ -49,35 +44,45 @@ public abstract class SnapshotVersionAdapterBase implements SnapshotVersionAdapt
         }
     }
 
+    public final String adaptSnapshotPath(MavenSnapshotVersionAdapterContext context) {
+        String path = context.getRepoPath().getPath();
+        if (!isApplicableOn(context)) {
+            return path;
+        }
+
+        return adapt(context);
+    }
+
+    protected String adapt(MavenSnapshotVersionAdapterContext context) {
+        return context.getRepoPath().getPath();
+    }
+
     /**
      * Shared method for inheriting adapters to determine if a certain path is eligible for path adapters.
      *
-     * @param path The path to check
+     * @param context
      */
-    protected boolean isApplicableOn(String path) {
+    protected boolean isApplicableOn(MavenSnapshotVersionAdapterContext context) {
         // don't modify metadata paths
+        String path = context.getRepoPath().getPath();
         boolean metadataArtifact = NamingUtils.isMetadata(path) || NamingUtils.isMetadataChecksum(path);
+
         if (metadataArtifact) {
             log.debug("Not applying snapshot policy on metadata path: {}", path);
             return false;
         }
 
         // don't modify files that are not snapshots according to the file name (RTFACT-3049)
-        String fileName = PathUtils.getName(path);
-        boolean snapshotVersionFile = MavenNaming.isSnapshot(fileName) ||
-                MavenNaming.isUniqueSnapshotFileName(fileName);
-        if (!snapshotVersionFile) {
+        if (!context.getModuleInfo().isIntegration()) {
             log.debug("Not applying snapshot policy on non snapshot file: {}", path);
             return false;
         }
 
-        MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(new RepoPathImpl("repo", path));
-        if (!mavenInfo.isValid()) {
+        if (!context.getModuleInfo().isValid()) {
             log.debug("{} is not a valid maven GAV path. Not applying snapshot policy.", path);
             return false;
         }
 
         return true;
     }
-
 }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,14 +34,13 @@ import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
 import org.artifactory.addon.plugin.download.BeforeRemoteDownloadAction;
 import org.artifactory.api.fs.RepoResource;
-import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.io.NullResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
@@ -65,6 +64,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
@@ -73,9 +73,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private HttpClient client;
     private boolean handleGzipResponse;
 
-    public HttpRepo(
-            InternalRepositoryService repositoryService, HttpRepoDescriptor descriptor, boolean globalOfflineMode,
-            RemoteRepo oldRemoteRepo) {
+    public HttpRepo(InternalRepositoryService repositoryService, HttpRepoDescriptor descriptor,
+            boolean globalOfflineMode, RemoteRepo oldRemoteRepo) {
         super(repositoryService, descriptor, globalOfflineMode, oldRemoteRepo);
     }
 
@@ -85,6 +84,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         handleGzipResponse = ConstantValues.httpAcceptEncodingGzip.getBoolean();
         if (!isOffline()) {
             this.client = createHttpClient();
+            urlLister = new ApacheURLLister(client);
         }
     }
 
@@ -161,8 +161,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     public ResourceStreamHandle downloadResource(final String relPath, Properties requestProperties)
             throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
-        RepoType repoType = getType();
-        String fullPath = pathConvert(repoType, relPath) + PropertiesImpl.encodeForRequest(requestProperties);
+        String fullPath = convertRequestPathIfNeeded(relPath) + PropertiesImpl.encodeForRequest(requestProperties);
         final String fullUrl = getUrl() + "/" + fullPath;
 
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
@@ -237,10 +236,9 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     @Override
     protected RepoResource retrieveInfo(String path, Properties requestProperties) {
         assert !isOffline() : "Should never be called in offline mode";
-        RepoType repoType = getType();
         RepoPath repoPath = new RepoPathImpl(this.getKey(), path);
 
-        String fullUrl = getUrl() + "/" + pathConvert(repoType, path);
+        String fullUrl = getUrl() + "/" + convertRequestPathIfNeeded(path);
 
         HeadMethod method = null;
         try {
@@ -280,8 +278,14 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 log.debug(this + ": Retrieved " + res + " info at '" + fullUrl + "'.");
             }
             return res;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed retrieving resource from " + fullUrl + ": " + e.getMessage(), e);
+        } catch (IOException e) {
+            StringBuilder messageBuilder = new StringBuilder("Failed retrieving resource from ").append(fullUrl).
+                    append(": ");
+            if (e instanceof UnknownHostException) {
+                messageBuilder.append("Unknown host - ");
+            }
+            messageBuilder.append(e.getMessage());
+            throw new RuntimeException(messageBuilder.toString(), e);
         } finally {
             //Released the connection back to the connection manager
             if (method != null) {
@@ -377,20 +381,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
     }
 
-    private static String pathConvert(RepoType repoType, String path) {
-        switch (repoType) {
-            case maven2:
-                return path;
-            case maven1:
-                return MavenNaming.toMaven1Path(path);
-            case obr:
-                return path;
-        }
-        // Cannot reach here
-        return path;
-    }
-
-    private static long getContentLength(HeadMethod method) {
+    static long getContentLength(HttpMethod method) {
         Header contentLengthHeader = method.getResponseHeader("Content-Length");
         if (contentLengthHeader == null) {
             return -1;
@@ -410,5 +401,22 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             }
         }
         return is;
+    }
+
+    @Override
+    protected List<URL> getChildUrls(URL dirUrl) throws IOException {
+        return urlLister.listAll(dirUrl);
+    }
+
+    /**
+     * Converts the given path to the remote repo's layout if defined
+     *
+     * @param path Path to convert
+     * @return Converted path if required and conversion was successful, given path if not
+     */
+    public String convertRequestPathIfNeeded(String path) {
+        HttpRepoDescriptor descriptor = getDescriptor();
+        return ModuleInfoUtils.
+                translateArtifactPath(descriptor.getRepoLayout(), descriptor.getRemoteRepoLayout(), path);
     }
 }

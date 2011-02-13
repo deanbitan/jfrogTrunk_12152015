@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -146,21 +146,17 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
         for (LocalCacheRepoDescriptor cachedRepoDescriptor : cachedRepoDescriptors) {
             RemoteRepoDescriptor remoteRepoDescriptor = cachedRepoDescriptor.getRemoteRepo();
 
-            //If the remote repo is configured to auto clean
-            if (remoteRepoDescriptor.isUnusedArtifactsCleanupEnabled()) {
-                int periodHours = remoteRepoDescriptor.getUnusedArtifactsCleanupPeriodHours();
-
-                //If the period hours are valid
-                if (periodHours > 0) {
-                    long interval = getHoursInMillies(cleanupIntervalHours);
-                    QuartzTask task = new QuartzTask(ArtifactCleanupJob.class, interval, 0);
-                    String cachedRepoKey = cachedRepoDescriptor.getKey();
-                    task.addAttribute(ArtifactCleanupJob.REPO_KEY, cachedRepoKey);
-                    task.addAttribute(ArtifactCleanupJob.PERIOD_MILLIS, getHoursInMillies(periodHours));
-                    taskService.startTask(task);
-                    log.info("Scheduled auto-cleanup to run every {} hours on {}.", cleanupIntervalHours,
-                            cachedRepoKey);
-                }
+            //If the remote repo is configured to auto clean and period hours are valid
+            int periodHours = remoteRepoDescriptor.getUnusedArtifactsCleanupPeriodHours();
+            if (periodHours > 0) {
+                long interval = getHoursInMillies(cleanupIntervalHours);
+                QuartzTask task = new QuartzTask(ArtifactCleanupJob.class, interval, 0);
+                String cachedRepoKey = cachedRepoDescriptor.getKey();
+                task.addAttribute(ArtifactCleanupJob.REPO_KEY, cachedRepoKey);
+                task.addAttribute(ArtifactCleanupJob.PERIOD_MILLIS, getHoursInMillies(periodHours));
+                taskService.startTask(task);
+                log.info("Scheduled auto-cleanup to run every {} hours on {}.", cleanupIntervalHours,
+                        cachedRepoKey);
             }
         }
     }

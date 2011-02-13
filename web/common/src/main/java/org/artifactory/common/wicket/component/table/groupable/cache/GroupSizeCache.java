@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,8 +22,8 @@ import org.apache.wicket.markup.html.form.IChoiceRenderer;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -32,14 +32,13 @@ import java.util.List;
 public class GroupSizeCache<T> implements Serializable {
     private List<GroupMetaData> indicesList;
 
-    public GroupSizeCache(Iterator<T> iterator, IChoiceRenderer<T> renderer) {
+    public GroupSizeCache(Collection<T> collection, IChoiceRenderer<T> renderer) {
         indicesList = new ArrayList<GroupMetaData>();
         int index = 0;
         int beginIndex = 0;
         String prevId = null;
-        while (iterator.hasNext()) {
-            T o = iterator.next();
-            String id = renderer.getIdValue(o, index);
+        for (T element : collection) {
+            String id = renderer.getIdValue(element, index);
             if (prevId != null && !prevId.equals(id)) {
                 indicesList.add(new GroupMetaData(beginIndex, index));
                 beginIndex = index;
@@ -51,8 +50,8 @@ public class GroupSizeCache<T> implements Serializable {
         indicesList.add(new GroupMetaData(beginIndex, index));
     }
 
-    public static <T> GroupSizeCache getSizeCache(Iterator<T> iterator, IChoiceRenderer<T> renderer) {
-        return new GroupSizeCache<T>(iterator, renderer);
+    public static <T> GroupSizeCache getSizeCache(Collection<T> collection, IChoiceRenderer<T> renderer) {
+        return new GroupSizeCache<T>(collection, renderer);
     }
 
     public int getGroupSize(int index) {

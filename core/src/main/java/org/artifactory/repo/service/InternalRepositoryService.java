@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,7 +28,13 @@ import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.repo.*;
+import org.artifactory.jcr.fs.JcrTreeNode;
+import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RealRepo;
+import org.artifactory.repo.RemoteRepo;
+import org.artifactory.repo.Repo;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.RepoRepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.request.RequestContext;
@@ -36,6 +42,8 @@ import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.spring.ReloadableBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nullable;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import java.io.IOException;
@@ -59,6 +67,7 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
 
     VirtualRepo virtualRepositoryByKey(String key);
 
+    @Nullable
     LocalRepo localOrCachedRepositoryByKey(String key);
 
     /**
@@ -109,14 +118,14 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
 
     @Lock(transactional = true)
     <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(RequestContext requestContext,
-                                                                          RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException, RepoRejectException;
+            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException, RepoRejectException;
 
     @Lock(transactional = true)
     RepoResource unexpireIfExists(LocalRepo localCacheRepo, String path);
 
     @Lock(transactional = true)
     ResourceStreamHandle unexpireAndRetrieveIfExists(RequestContext requestContext, LocalRepo localCacheRepo,
-                                                     String path) throws IOException, RepositoryException, RepoRejectException;
+            String path) throws IOException, RepositoryException, RepoRejectException;
 
     @Lock(transactional = true)
     ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, Repo repo, RepoResource res)
@@ -144,11 +153,11 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * @param basePath Repo path to remove the mark from. Must be a local non-cache repository path.
      */
     @Lock(transactional = true)
-    void removeMarkForMavenMetadataRecalculation(RepoPath basePath);
+    void removeMarkForMavenMetadataRecalculation(RepoPath basePath) throws ItemNotFoundException;
 
     /**
      * Asynchronous method called at the end of the transaction to acquire a write lock on the repo path and activate
-     * the automatic save. The write will be acquire only if the fs item is not already write locked.
+     * the automatic save. The write will be acquired only if the fs item is not already write locked.
      *
      * @param repoPath The RepoPath of the item with dirty state.
      */
@@ -164,4 +173,9 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     void setXmlMetadataLater(RepoPath repoPath, String metadataName, String metadataContent);
 
     StatusHolder deploy(RepoPath repoPath, InputStream inputStream);
+
+    @Lock(transactional = true)
+    boolean treeNodeContainsMavenPlugins(JcrTreeNode treeNode);
+
+    RepoPath getExplicitDescriptorPathByArtifact(RepoPath repoPath);
 }

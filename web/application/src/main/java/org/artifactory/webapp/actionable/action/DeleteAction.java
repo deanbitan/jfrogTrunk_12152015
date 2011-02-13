@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -60,7 +60,7 @@ public class DeleteAction extends RepoAwareItemAction {
 
     protected void deleteItem(RepoAwareItemEvent e) {
         RepoPath repoPath = e.getRepoPath();
-        StatusHolder status = getRepoService().undeploy(repoPath);
+        StatusHolder status = callUndeploy(repoPath);
         removeNodePanel(e);
         notifyListeners(e);
 
@@ -71,6 +71,10 @@ public class DeleteAction extends RepoAwareItemAction {
             Session.get().info(getDeleteSuccessMessage(repoPath));
         }
         AjaxUtils.refreshFeedback(e.getTarget());
+    }
+
+    protected StatusHolder callUndeploy(RepoPath repoPath) {
+        return getRepoService().undeploy(repoPath);
     }
 
     protected String getDeleteSuccessMessage(RepoPath repoPath) {
@@ -91,8 +95,8 @@ public class DeleteAction extends RepoAwareItemAction {
     }
 
     private void removeNodePanel(ItemEvent event) {
-        WebMarkupContainer nodaPanelContainer = event.getTargetComponents().getNodePanelContainer();
-        TreeBrowsePanel browseRepoPanel = (TreeBrowsePanel) nodaPanelContainer.getParent();
+        WebMarkupContainer nodePanelContainer = event.getTargetComponents().getNodePanelContainer();
+        TreeBrowsePanel browseRepoPanel = (TreeBrowsePanel) nodePanelContainer.getParent();
         browseRepoPanel.removeNodePanel(event.getTarget());
     }
 }

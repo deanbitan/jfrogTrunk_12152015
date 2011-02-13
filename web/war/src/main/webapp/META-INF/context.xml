@@ -1,6 +1,6 @@
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2010 JFrog Ltd.
+  ~ Copyright (C) 2011 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -19,5 +19,7 @@
 <!-- Tomcat context config -->
 <Context>
     <!-- Turn off session serialization to the filesystem -->
-    <Manager className="org.apache.catalina.session.StandardManager"/>
+    <!-- The empty pathName variable disables the serialization of the session info to disk:
+    http://tomcat.apache.org/tomcat-6.0-doc/config/manager.html#Standard_Implementation -->
+    <Manager className="org.apache.catalina.session.StandardManager" pathName=""/>
 </Context> 

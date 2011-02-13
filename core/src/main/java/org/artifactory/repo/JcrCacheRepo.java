@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -31,8 +31,9 @@ import org.artifactory.io.checksum.policy.ChecksumPolicyBase;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.jcr.JcrRepoBase;
-import org.artifactory.repo.snapshot.SnapshotVersionAdapter;
+import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.request.Request;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ExpiredRepoResource;
 import org.slf4j.Logger;
@@ -51,9 +52,13 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         LocalCacheRepoDescriptor descriptor = new LocalCacheRepoDescriptor();
         descriptor.setDescription(remoteRepo.getDescription() + " (local file cache)");
         descriptor.setKey(remoteRepo.getKey() + PATH_SUFFIX);
-        descriptor.setRemoteRepo(remoteRepo.getDescriptor());
+
+        RemoteRepoDescriptor remoteRepoDescriptor = remoteRepo.getDescriptor();
+
+        descriptor.setRemoteRepo(remoteRepoDescriptor);
+        descriptor.setRepoLayout(remoteRepoDescriptor.getRepoLayout());
         setDescriptor(descriptor);
-        ChecksumPolicyType checksumPolicyType = remoteRepo.getDescriptor().getChecksumPolicyType();
+        ChecksumPolicyType checksumPolicyType = remoteRepoDescriptor.getChecksumPolicyType();
         checksumPolicy = ChecksumPolicyBase.getByType(checksumPolicyType);
     }
 
@@ -64,7 +69,7 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
             //Check for expiry
 
             boolean forceDownloadIfNewer = false;
-            ArtifactoryRequest request = context.getRequest();
+            Request request = context.getRequest();
             if (request != null) {
                 String forcePropValue = request.getParameter(ArtifactoryRequest.FORCE_DOWNLOAD_IF_NEWER);
                 if (StringUtils.isNotBlank(forcePropValue)) {
@@ -134,13 +139,14 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
     /**
      * Check that the item has not expired yet, unless it's a release which never expires or a unique snapshot.
      *
-     * @param repoResource The resource to check for expiery
+     * @param repoResource The resource to check for expiry
      * @return boolean - True if resource is expired. False if not
      */
     protected boolean isExpired(RepoResource repoResource) {
         String path = repoResource.getRepoPath().getPath();
-        //Never expire releases, unique snapshots and non-snapshot metadata
-        if (MavenNaming.isRelease(path)) {
+        //Never expire releases, maven index files & unique snapshots
+        if (!MavenNaming.isMavenMetadata(path) && !MavenNaming.isIndex(path) &&
+                !getItemModuleInfo(path).isIntegration()) {
             return false;
         } else if (MavenNaming.isUniqueSnapshot(path)) {
             return false;
@@ -164,7 +170,7 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         return retrievalCachePeriodMillis;
     }
 
-    public SnapshotVersionAdapter getSnapshotVersionAdapter() {
+    public MavenSnapshotVersionAdapter getMavenSnapshotVersionAdapter() {
         throw new UnsupportedOperationException("Local cache repositories doesn't have snapshot version adapter");
     }
 }

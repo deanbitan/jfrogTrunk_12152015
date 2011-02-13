@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2010 JFrog Ltd.
+  ~ Copyright (C) 2011 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -24,16 +24,28 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-profiler</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2a</version>
     <packaging>jar</packaging>
     <name>Artifactory Runtime Profiler</name>
+
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License, Version 3</name>
+            <url>http://www.gnu.org/licenses/lgpl-3.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.5.10</version>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>3.0.5.RELEASE</version>
         </dependency>
     </dependencies>
 

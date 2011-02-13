@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,8 +24,10 @@ import com.google.common.collect.Multimap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
+import org.apache.wicket.extensions.markup.html.basic.SmartLinkLabel;
 import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
@@ -66,6 +68,7 @@ import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.util.AlreadyExistsException;
+import org.artifactory.webapp.wicket.page.config.security.general.SecurityGeneralConfigPage;
 import org.artifactory.webapp.wicket.page.security.acl.tabs.PermissionPanel;
 import org.artifactory.webapp.wicket.page.security.acl.tabs.RepositoriesTabPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
@@ -298,7 +301,27 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
             @Override
             public void populateItem(Item<ICellPopulator<AceInfoRow>> item, String componentId,
                     IModel<AceInfoRow> model) {
-                super.populateItem(item, componentId, model);
+
+                //If the item is an anonymous user and the access is disabled, warn
+                String username = model.getObject().getPrincipal();
+                if (UserInfo.ANONYMOUS.equals(username) && !authService.isAnonAccessEnabled()) {
+                    CharSequence pageUrl = urlFor(SecurityGeneralConfigPage.class, PageParameters.NULL);
+
+                    StringBuilder usernameLabelBuilder = new StringBuilder(username).append(" (");
+                    if (authService.isAdmin()) {
+                        usernameLabelBuilder.append("<a href=\"").append(pageUrl).append("\">");
+                    }
+                    usernameLabelBuilder.append("disabled");
+                    if (authService.isAdmin()) {
+                        usernameLabelBuilder.append("</a>");
+                    }
+                    usernameLabelBuilder.append(")");
+                    item.add(new SmartLinkLabel(componentId, usernameLabelBuilder.toString()).
+                            setEscapeModelStrings(false));
+                } else {
+                    super.populateItem(item, componentId, model);
+                }
+
                 if (isGroup) {
                     item.add(new CssClass("group"));
                 } else {
@@ -324,17 +347,9 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
 
                 String currentUsername = authService.currentUsername();
                 String username = row.getPrincipal();
-                if (username.equals(currentUsername)) {
-                    //Do not allow admin user to change (revoke) his admin bit
-                    return false;
-                }
+                //Do not allow admin user to change (revoke) his admin bit
+                return !username.equals(currentUsername);
 
-                if (UserInfo.ANONYMOUS.equals(username)) {
-                    // Do not admin permissions to the anonymous user
-                    return false;
-                }
-
-                return true;
             }
         });
         columns.add(new RoleCheckboxColumn("Delete", "delete") {
@@ -449,12 +464,6 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
 
         @Override
         protected boolean isEnabled(AceInfoRow row) {
-            // disable checkbox for anonymous user if anonymous access is disabled
-            String username = row.getPrincipal();
-            if (UserInfo.ANONYMOUS.equals(username) && !authService.isAnonAccessEnabled()) {
-                return false;
-            }
-
             return true;
         }
     }

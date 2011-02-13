@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,9 +35,7 @@ import org.apache.wicket.validation.validator.UrlValidator;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.mail.MailServerConfiguration;
 import org.artifactory.api.mail.MailService;
-import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
-import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonStyleModel;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -226,7 +224,6 @@ public class MailConfigPanel extends TitledPanel {
                 AjaxUtils.refreshFeedback(target);
             }
         };
-        searchButton.add(new CssClass(new DefaultButtonStyleModel(searchButton)));
         return searchButton;
     }
 

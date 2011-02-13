@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,13 +36,14 @@ public class RemoteRepoDescriptorTest {
         assertEquals(remote.getIncludesPattern(), "**/*");
         assertNull(remote.getExcludesPattern());
         assertNull(remote.getDescription());
+        assertNull(remote.getRepoLayout());
         assertEquals(remote.getFailedRetrievalCachePeriodSecs(), 30);
         assertEquals(remote.getMaxUniqueSnapshots(), 0);
         assertEquals(remote.getMissedRetrievalCachePeriodSecs(), 7200);
         assertEquals(remote.getRetrievalCachePeriodSecs(), 43200);
-        assertEquals(remote.getType(), RepoType.maven2);
         assertEquals(remote.getChecksumPolicyType(), ChecksumPolicyType.GEN_IF_ABSENT);
         assertNull(remote.getUrl());
+        assertNull(remote.getRemoteRepoLayout());
         assertFalse(remote.isOffline());
         assertFalse(remote.isBlackedOut());
         assertFalse(remote.isCache());
@@ -53,7 +54,6 @@ public class RemoteRepoDescriptorTest {
         assertFalse(remote.isFetchSourcesEagerly());
         assertFalse(remote.isSuppressPomConsistencyChecks(),
                 "Default should not supress pom consistency checks");
-        assertFalse(remote.isUnusedArtifactsCleanupEnabled());
         assertEquals(remote.getUnusedArtifactsCleanupPeriodHours(), 0);
         assertFalse(remote.isShareConfiguration());
         assertNotNull(remote.getPropertySets(), "Property sets list should not be null");

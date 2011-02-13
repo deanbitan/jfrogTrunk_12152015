@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,7 @@ package org.artifactory.request;
 import java.io.IOException;
 
 /**
- * A custom exception that enables retaining an error status code recieved from a remote request exception
+ * A custom exception that enables retaining an error status code received from a remote request exception
  *
  * @author Noam Y. Tenne
  */

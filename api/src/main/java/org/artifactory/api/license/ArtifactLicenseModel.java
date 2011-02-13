@@ -18,9 +18,8 @@ public class ArtifactLicenseModel implements Serializable {
     private String longName;
     private String url;
     private String comments;
-    private String status;
     private String regexp;
-    private boolean isApproved;
+    private boolean approved;
 
     public ArtifactLicenseModel() {
     }
@@ -29,10 +28,9 @@ public class ArtifactLicenseModel implements Serializable {
         this.comments = licenseInfo.getComments();
         this.longName = licenseInfo.getLongName();
         this.name = licenseInfo.getName();
-        this.status = licenseInfo.isApproved() ? APPROVED : UNAPPROVED;
         this.url = licenseInfo.getUrl();
         this.regexp = licenseInfo.getRegexp();
-        this.isApproved = licenseInfo.isApproved();
+        this.approved = licenseInfo.isApproved();
     }
 
     public String getComments() {
@@ -60,11 +58,7 @@ public class ArtifactLicenseModel implements Serializable {
     }
 
     public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
+        return isApproved() ? APPROVED : UNAPPROVED;
     }
 
     public String getUrl() {
@@ -83,27 +77,24 @@ public class ArtifactLicenseModel implements Serializable {
         this.regexp = regexp;
     }
 
-    public void changeStatus() {
-        if (APPROVED.equalsIgnoreCase(getStatus())) {
-            setApproved(false);
-            setStatus(UNAPPROVED);
-        } else {
-            setApproved(true);
-            setStatus(APPROVED);
-        }
-    }
-
     public boolean isApproved() {
-        return isApproved;
+        return approved;
     }
 
     public void setApproved(boolean approved) {
-        isApproved = approved;
+        this.approved = approved;
+    }
+
+    /**
+     * Changes the license status from approved to unapproved or vice versa.
+     */
+    public void changeStatus() {
+        setApproved(!isApproved());
     }
 
     public LicenseInfo buildLicenseInfo() {
         LicenseInfo info = new LicenseInfo();
-        info.setApproved(isApproved);
+        info.setApproved(approved);
         info.setName(name);
         info.setLongName(longName);
         info.setComments(comments);

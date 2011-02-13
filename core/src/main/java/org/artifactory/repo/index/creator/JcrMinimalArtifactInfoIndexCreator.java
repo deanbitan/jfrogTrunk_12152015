@@ -10,6 +10,12 @@
 
 package org.artifactory.repo.index.creator;
 
+import org.apache.maven.index.ArtifactAvailablility;
+import org.apache.maven.index.ArtifactContext;
+import org.apache.maven.index.ArtifactInfo;
+import org.apache.maven.index.artifact.Gav;
+import org.apache.maven.index.creator.MinimalArtifactInfoIndexCreator;
+import org.apache.maven.index.locator.Locator;
 import org.apache.maven.model.Model;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.jcr.fs.JcrFile;
@@ -22,12 +28,6 @@ import org.artifactory.spring.InternalContextHelper;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
-import org.sonatype.nexus.artifact.Gav;
-import org.sonatype.nexus.index.ArtifactAvailablility;
-import org.sonatype.nexus.index.ArtifactContext;
-import org.sonatype.nexus.index.ArtifactInfo;
-import org.sonatype.nexus.index.creator.MinimalArtifactInfoIndexCreator;
-import org.sonatype.nexus.index.locator.Locator;
 
 import java.io.File;
 import java.io.IOException;

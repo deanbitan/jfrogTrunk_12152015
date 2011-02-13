@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,6 +29,7 @@ import org.artifactory.api.build.BuildService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
+import org.artifactory.webapp.wicket.page.browse.home.RememberPageBehavior;
 import org.artifactory.webapp.wicket.page.build.panel.AllBuildsPanel;
 import org.artifactory.webapp.wicket.page.build.panel.BuildBreadCrumbsPanel;
 import org.artifactory.webapp.wicket.page.build.panel.BuildTabbedPanel;
@@ -68,6 +69,8 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * @param pageParameters Page parameters include with request
      */
     public BuildBrowserRootPage(PageParameters pageParameters) {
+        add(new RememberPageBehavior());
+
         this.pageParameters = pageParameters;
         setOutputMarkupId(true);
         Panel panelToAdd;
@@ -86,7 +89,9 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
         }
 
         add(panelToAdd);
-        add(new BuildBreadCrumbsPanel(pageParameters));
+        BuildBreadCrumbsPanel breadCrumbsPanel = new BuildBreadCrumbsPanel();
+        add(breadCrumbsPanel);
+        breadCrumbsPanel.addCrumbs(pageParameters);
     }
 
 

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,7 @@ import org.apache.jackrabbit.ocm.mapper.impl.annotation.Field;
 import org.apache.jackrabbit.ocm.mapper.impl.annotation.Node;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.jcr.ocm.OcmStorable;
+import org.artifactory.security.jcr.JcrUserGroupManager;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -93,6 +94,15 @@ public class User implements OcmStorable {
 
     public void setEmail(String email) {
         info.setEmail(email);
+    }
+
+    @Field
+    public String getRealm() {
+        return info.getRealm();
+    }
+
+    public void setRealm(String realm) {
+        info.setRealm(realm);
     }
 
     @Field

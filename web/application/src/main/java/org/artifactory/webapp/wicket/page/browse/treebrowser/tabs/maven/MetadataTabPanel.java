@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,7 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.PropertiesAddon;
+import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
@@ -54,7 +54,7 @@ public class MetadataTabPanel extends Panel {
     public MetadataTabPanel(String id, RepoAwareActionableItem item, RepoPath canonicalRepoPath) {
         super(id);
         //Add properties panel
-        PropertiesAddon propertiesAddon = addonsManager.addonByType(PropertiesAddon.class);
+        PropertiesWebAddon propertiesWebAddon = addonsManager.addonByType(PropertiesWebAddon.class);
         ItemInfo info;
         if (item instanceof FolderActionableItem) {
             // take the last element if folder compacted compacted
@@ -63,7 +63,7 @@ public class MetadataTabPanel extends Panel {
             info = item.getItemInfo();
         }
 
-        add(propertiesAddon.getTreeItemPropertiesPanel("propertiesPanel", info));
+        add(propertiesWebAddon.getTreeItemPropertiesPanel("propertiesPanel", info));
 
         List<String> metadataTypeList = getMetadataNames(canonicalRepoPath);
         if (metadataTypeList.isEmpty()) {

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,33 +18,16 @@
 
 package org.artifactory.webapp.wicket.page.config.repos;
 
-import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
-import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
-import org.artifactory.webapp.wicket.util.validation.ReservedPathPrefixValidator;
-import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
-import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
 
 /**
  * @author Yoav Aharoni
  */
 public class RepoGeneralSettingsPanel extends Panel {
-    public RepoGeneralSettingsPanel(String id, boolean create, CachingDescriptorHelper cachingDescriptorHelper) {
+    public RepoGeneralSettingsPanel(String id) {
         super(id);
-        // Repository name
-        RequiredTextField<String> repoKeyField = new RequiredTextField<String>("key");
-        repoKeyField.setEnabled(create);// don't allow key update
-        if (create) {
-            repoKeyField.add(new JcrNameValidator("Invalid repository key '%s'."));
-            repoKeyField.add(new XsdNCNameValidator("Invalid repository key '%s'."));
-            repoKeyField.add(new UniqueXmlIdValidator(cachingDescriptorHelper.getModelMutableDescriptor()));
-            repoKeyField.add(new ReservedPathPrefixValidator());
-        }
-
-        add(repoKeyField);
-        add(new SchemaHelpBubble("key.help"));
 
         // Repository description
         add(new TextArea("description"));

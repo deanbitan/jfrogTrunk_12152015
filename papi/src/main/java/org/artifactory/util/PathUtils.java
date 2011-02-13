@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -102,25 +102,6 @@ public class PathUtils {
             buf.deleteCharAt(buf.length() - 1);
         }
         return buf.toString();
-    }
-
-    public static String getPathFirstPart(String path) {
-        String pathPrefix = null;
-        if (path != null) {
-            int pathPrefixEnd = path.indexOf('/', 1);
-            if (pathPrefixEnd > 0) {
-                if (path.startsWith("/")) {
-                    pathPrefix = path.substring(1, pathPrefixEnd);
-                } else {
-                    pathPrefix = path.substring(0, pathPrefixEnd);
-                }
-            } else if (path.startsWith("/")) {
-                pathPrefix = path.substring(1);
-            } else {
-                pathPrefix = path;
-            }
-        }
-        return pathPrefix;
     }
 
     /**
@@ -393,18 +374,18 @@ public class PathUtils {
     }
 
     /**
-     * Returns the first path elements of the input path.
+     * Returns the first path element of the input path.
      * <pre>
-     * getFirstPathElements("/a/b/c") = "a"
-     * getFirstPathElements("a/b/c") = "a"
-     * getFirstPathElements("a") = "a"
-     * getFirstPathElements("") = ""
+     * getFirstPathElement("/a/b/c") = "a"
+     * getFirstPathElement("a/b/c") = "a"
+     * getFirstPathElement("a") = "a"
+     * getFirstPathElement("") = ""
      * </pre>
      *
      * @param path The path to parse (can be absolute or relative)
      * @return The path's path elements
      */
-    public static String getFirstPathElements(String path) {
+    public static String getFirstPathElement(String path) {
         if (path == null) {
             return null;
         }
@@ -413,6 +394,34 @@ public class PathUtils {
             return elements[0];
         } else {
             return "";
+        }
+    }
+
+    /**
+     * Strips the first path element from the input path.
+     * <pre>
+     * stripFirstPathElement("/a/b/c") = "b/c"
+     * stripFirstPathElement("a/b/c/") = "b/c/"
+     * stripFirstPathElement("a") = ""
+     * stripFirstPathElement("/") = ""
+     * stripFirstPathElement("") = ""
+     * stripFirstPathElement(null) = null
+     * </pre>
+     *
+     * @param path The path to strip from (can be absolute or relative)
+     * @return The path without the first path element
+     */
+    public static String stripFirstPathElement(String path) {
+        if (path == null) {
+            return null;
+        }
+
+        path = trimLeadingSlashes(path);
+        int indexOfFirstSlash = path.indexOf('/');
+        if (indexOfFirstSlash < 0) {
+            return "";
+        } else {
+            return path.substring(indexOfFirstSlash + 1);
         }
     }
 

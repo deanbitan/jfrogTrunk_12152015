@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,6 +32,7 @@ import org.artifactory.api.search.artifact.ChecksumSearchControls;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.StatusEntryLevel;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
@@ -72,11 +73,12 @@ public class BuildItemMoveCopyHelper {
      * @param artifacts      True if the build artifacts should be moved\copied
      * @param dependencies   True if the build dependencies should be moved\copied
      * @param scopes         Scopes of dependencies to copy (agnostic if null or empty)
-     * @param dryRun         True if the action should run dry (simulate)
-     * @return Result of action
+     * @param properties
+     * @param dryRun         True if the action should run dry (simulate)  @return Result of action
      */
     public MoveCopyResult moveOrCopy(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
-            boolean artifacts, boolean dependencies, List<String> scopes, boolean dryRun) {
+            boolean artifacts, boolean dependencies, List<String> scopes, Properties properties,
+            boolean dryRun) {
         Build build = buildService.getBuild(basicBuildInfo.getName(), basicBuildInfo.getNumber(),
                 basicBuildInfo.getStarted());
 
@@ -86,7 +88,7 @@ public class BuildItemMoveCopyHelper {
 
         if (move) {
             try {
-                MoveMultiStatusHolder moveMultiStatusHolder = move(itemsToMove, targetRepoKey, dryRun);
+                MoveMultiStatusHolder moveMultiStatusHolder = move(itemsToMove, targetRepoKey, properties, dryRun);
                 appendMessages(result, moveMultiStatusHolder);
             } catch (Exception e) {
                 result.messages.add(new MoveCopyResult.MoveCopyMessages(StatusEntryLevel.ERROR,
@@ -95,7 +97,7 @@ public class BuildItemMoveCopyHelper {
             }
         } else {
             try {
-                MoveMultiStatusHolder moveMultiStatusHolder = copy(itemsToMove, targetRepoKey, dryRun);
+                MoveMultiStatusHolder moveMultiStatusHolder = copy(itemsToMove, targetRepoKey, properties, dryRun);
                 appendMessages(result, moveMultiStatusHolder);
             } catch (Exception e) {
                 result.messages.add(new MoveCopyResult.MoveCopyMessages(StatusEntryLevel.ERROR,
@@ -169,11 +171,12 @@ public class BuildItemMoveCopyHelper {
      *
      * @param itemsToMove   Collection of items to move
      * @param targetRepoKey Key of target repository to move to
-     * @param dryRun        True if the action should run dry (simulate)
-     * @return Result status holder
+     * @param properties
+     * @param dryRun        True if the action should run dry (simulate)  @return Result status holder
      */
-    private MoveMultiStatusHolder move(Set<RepoPath> itemsToMove, String targetRepoKey, boolean dryRun) {
-        return repositoryService.move(itemsToMove, targetRepoKey, dryRun);
+    private MoveMultiStatusHolder move(Set<RepoPath> itemsToMove, String targetRepoKey,
+            Properties properties, boolean dryRun) {
+        return repositoryService.move(itemsToMove, targetRepoKey, properties, dryRun);
     }
 
     /**
@@ -181,11 +184,12 @@ public class BuildItemMoveCopyHelper {
      *
      * @param itemsToCopy   Collection of items to copy
      * @param targetRepoKey Key of target repository to copy to
-     * @param dryRun        True if the action should run dry (simulate)
-     * @return Result status holder
+     * @param properties
+     * @param dryRun        True if the action should run dry (simulate)  @return Result status holder
      */
-    private MoveMultiStatusHolder copy(Set<RepoPath> itemsToCopy, String targetRepoKey, boolean dryRun) {
-        return repositoryService.copy(itemsToCopy, targetRepoKey, dryRun);
+    private MoveMultiStatusHolder copy(Set<RepoPath> itemsToCopy, String targetRepoKey,
+            Properties properties, boolean dryRun) {
+        return repositoryService.copy(itemsToCopy, targetRepoKey, properties, dryRun);
     }
 
     /**

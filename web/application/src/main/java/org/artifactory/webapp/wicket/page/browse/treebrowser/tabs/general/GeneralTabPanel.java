@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -56,9 +56,9 @@ public class GeneralTabPanel extends Panel {
         add(new GeneralInfoPanel("generalInfoPanel", repoItem));
 
         if (shouldDisplayDistributionManagement()) {
-            add(new DistributionManagementPanel("ditributionManagament", repoItem));
+            add(new DistributionManagementPanel("distributionManagement", repoItem));
         } else {
-            add(new WebMarkupContainer("ditributionManagament"));
+            add(new WebMarkupContainer("distributionManagement"));
         }
 
         add(checksumInfo());
@@ -70,9 +70,12 @@ public class GeneralTabPanel extends Panel {
 
         org.artifactory.fs.ItemInfo itemInfo = repoItem.getItemInfo();
         if (!itemInfo.isFolder()) {
-            MavenArtifactInfo artifactInfo = repositoryService.getMavenArtifactInfo(itemInfo);
-            if (artifactInfo.isValid()) {
-                this.replace(new DependencyDeclarationPanel(markupContainer.getId(), artifactInfo));
+
+            ModuleInfo moduleInfo = repositoryService.getItemModuleInfo(itemInfo.getRepoPath());
+
+            if (moduleInfo.isValid()) {
+                this.replace(new DependencyDeclarationPanel(markupContainer.getId(), moduleInfo,
+                        repoItem.getRepo().getRepoLayout()));
             }
         }
 

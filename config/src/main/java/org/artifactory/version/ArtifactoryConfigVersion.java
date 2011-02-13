@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,6 +40,9 @@ import org.artifactory.version.converter.v142.RepoIncludeExcludePatternsConverte
 import org.artifactory.version.converter.v143.RemoteChecksumPolicyConverter;
 import org.artifactory.version.converter.v144.MultiLdapXmlConverter;
 import org.artifactory.version.converter.v144.ServerIdXmlConverter;
+import org.artifactory.version.converter.v147.DefaultRepoLayoutConverter;
+import org.artifactory.version.converter.v147.JfrogRemoteRepoUrlConverter;
+import org.artifactory.version.converter.v147.UnusedArtifactCleanupSwitchConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -132,6 +135,11 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
     v146("http://artifactory.jfrog.org/xsd/1.4.6",
             "http://www.jfrog.org/xsd/artifactory-v1_4_6.xsd",
             ArtifactoryVersion.v231,
+            ArtifactoryVersion.v231, new JfrogRemoteRepoUrlConverter(), new DefaultRepoLayoutConverter(),
+            new UnusedArtifactCleanupSwitchConverter()),
+    v147("http://artifactory.jfrog.org/xsd/1.4.7",
+            "http://www.jfrog.org/xsd/artifactory-v1_4_7.xsd",
+            ArtifactoryVersion.v232,
             ArtifactoryVersion.getCurrent());
 
     private final String xsdUri;

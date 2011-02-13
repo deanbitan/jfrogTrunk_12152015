@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,11 @@
 
 package org.artifactory.webapp.wicket.page.home.settings;
 
+import org.apache.wicket.Component;
+import org.apache.wicket.markup.html.link.Link;
+import org.apache.wicket.request.target.resource.ResourceStreamRequestTarget;
+import org.apache.wicket.util.resource.IResourceStream;
+import org.apache.wicket.util.resource.StringResourceStream;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.modal.panel.bordered.CodeModalPanel;
@@ -29,9 +34,25 @@ import org.artifactory.common.wicket.component.modal.panel.bordered.CodeModalPan
  * @author Noam Y. Tenne
  */
 public class SettingsModalPanel extends CodeModalPanel {
-    public SettingsModalPanel(final String settings, Syntax syntax) {
+    public SettingsModalPanel(final String settings, Syntax syntax, final String mimeType,
+            final String saveToFileName) {
         super(new SyntaxHighlighter("content", settings, syntax));
         setWidth(700);
+
+        Component exportLink = new Link("export") {
+            @Override
+            public void onClick() {
+                IResourceStream resourceStream =
+                        new StringResourceStream(settings, mimeType);
+                getRequestCycle().setRequestTarget(new ResourceStreamRequestTarget(resourceStream) {
+                    @Override
+                    public String getFileName() {
+                        return saveToFileName;
+                    }
+                });
+            }
+        };
+        add(exportLink);
     }
 
     @Override

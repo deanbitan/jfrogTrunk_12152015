@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,7 +30,8 @@ public enum AddonType {
     LDAP("ldapgroup", "LDAP Group Synchronization"),
     AOL("aol", "Artifactory Online"),
     BUILD("build", "Build Integration"),
-    LICENSES("license", "License Control");
+    LICENSES("license", "License Control"),
+    LAYOUTS("layouts", "Repository Layouts");
 
     private String addonName;
     private String addonDisplayName;

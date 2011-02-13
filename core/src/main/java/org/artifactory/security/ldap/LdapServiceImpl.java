@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,8 +20,8 @@ package org.artifactory.security.ldap;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.security.LdapService;
-import org.artifactory.api.security.LdapUser;
+import org.artifactory.api.security.ldap.LdapService;
+import org.artifactory.api.security.ldap.LdapUser;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.log.LoggerFactory;

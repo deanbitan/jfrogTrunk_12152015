@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -119,7 +119,7 @@ public class AllBuildsPanel extends TitledPanel {
          * @param latestBuildsByName Latest build by name to display
          */
         public BuildsDataProvider(Set<BasicBuildInfo> latestBuildsByName) {
-            setSort("name", true);
+            setSort("startedDate", false);
             this.buildList = Lists.newArrayList(latestBuildsByName);
         }
 
@@ -166,7 +166,8 @@ public class AllBuildsPanel extends TitledPanel {
         }
 
         public void populateItem(Item cellItem, String componentId, IModel rowModel) {
-            LatestBuildByNameActionableItem info = (LatestBuildByNameActionableItem) cellItem.getParent().getParent().getDefaultModelObject();
+            LatestBuildByNameActionableItem info =
+                    (LatestBuildByNameActionableItem) cellItem.getParent().getParent().getDefaultModelObject();
             final String buildName = info.getName();
             Component link = new Label(componentId, buildName);
             link.add(new CssClass("item-link"));

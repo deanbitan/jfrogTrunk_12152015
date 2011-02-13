@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,12 @@ package org.artifactory.webapp.wicket.page.config.repos;
 import org.apache.wicket.injection.web.InjectorHolder;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 
 import java.io.Serializable;
 
@@ -65,7 +70,7 @@ public class CachingDescriptorHelper implements Serializable {
         return modelMutableDescriptor;
     }
 
-    protected void syncAndSaveLocalRepositories() {
+    public void syncAndSaveLocalRepositories() {
         MutableCentralConfigDescriptor configDescriptor = getDescriptor();
         configDescriptor.setLocalRepositoriesMap(modelMutableDescriptor.getLocalRepositoriesMap());
         saveDescriptor(configDescriptor);
@@ -77,7 +82,7 @@ public class CachingDescriptorHelper implements Serializable {
         saveDescriptor(configDescriptor);
     }
 
-    protected void syncAndSaveVirtualRepositories() {
+    public void syncAndSaveVirtualRepositories() {
         MutableCentralConfigDescriptor configDescriptor = getDescriptor();
         configDescriptor.setVirtualRepositoriesMap(modelMutableDescriptor.getVirtualRepositoriesMap());
         saveDescriptor(configDescriptor);
@@ -96,5 +101,27 @@ public class CachingDescriptorHelper implements Serializable {
 
     private MutableCentralConfigDescriptor getDescriptor() {
         return centralConfigService.getMutableDescriptor();
+    }
+
+    /**
+     * reload this repo descriptor in case user canceled (will work also for save)
+     */
+    public void reloadRepository(String repoKey) {
+        CentralConfigDescriptor cc = centralConfigService.getMutableDescriptor();
+
+        RepoDescriptor repoToReload = cc.getLocalRepositoriesMap().get(repoKey);
+        if (repoToReload != null) {
+            modelMutableDescriptor.getLocalRepositoriesMap().put(repoKey, (LocalRepoDescriptor) repoToReload);
+            return;
+        }
+        repoToReload = cc.getRemoteRepositoriesMap().get(repoKey);
+        if (repoToReload != null) {
+            modelMutableDescriptor.getRemoteRepositoriesMap().put(repoKey, (RemoteRepoDescriptor) repoToReload);
+            return;
+        }
+        repoToReload = cc.getVirtualRepositoriesMap().get(repoKey);
+        if (repoToReload != null) {
+            modelMutableDescriptor.getVirtualRepositoriesMap().put(repoKey, (VirtualRepoDescriptor) repoToReload);
+        }
     }
 }

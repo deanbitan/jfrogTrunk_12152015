@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2010 JFrog Ltd.
+  ~ Copyright (C) 2011 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -18,9 +18,9 @@
   -->
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.4.6"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.6
-        http://www.jfrog.org/xsd/artifactory-v1_4_6.xsd">
+        xmlns="http://artifactory.jfrog.org/xsd/1.4.7"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.7
+        http://www.jfrog.org/xsd/artifactory-v1_4_7.xsd">
     <!--
     enable/disable anonymous downloads
     -->
@@ -68,36 +68,42 @@
         <localRepository>
             <key>libs-release-local</key>
             <description>Local repository for in-house libraries</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>libs-snapshot-local</key>
             <description>Local repository for in-house snapshots</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>plugins-release-local</key>
             <description>Local repository for plugins</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>plugins-snapshot-local</key>
             <description>Local repository for plugins snapshots</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>ext-release-local</key>
             <description>Local repository for third party libraries</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
         </localRepository>
         <localRepository>
             <key>ext-snapshot-local</key>
             <description>Local repository for third party snapshots</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
         </localRepository>
@@ -134,6 +140,7 @@
         <remoteRepository>
             <key>repo1</key>
             <description>Central Maven 2 repository</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <url>http://repo1.maven.org/maven2</url>
@@ -142,6 +149,7 @@
             <key>java.net.m2</key>
             <description>java.net Maven2 Format</description>
             <excludesPattern>commons-*,org/apache/**</excludesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>true</handleSnapshots>
             <url>http://download.java.net/maven/2</url>
@@ -149,31 +157,35 @@
         <remoteRepository>
             <key>java.net.m1</key>
             <description>java.net Maven1 Format</description>
-            <type>maven1</type>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>true</handleSnapshots>
             <url>http://download.java.net/maven/1</url>
+            <remoteRepoLayoutRef>maven-1-default</remoteRepoLayoutRef>
         </remoteRepository>
         <remoteRepository>
             <key>jfrog-libs</key>
             <description>JFrog libraries releases</description>
             <excludesPattern>org/apache/maven/**</excludesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <url>http://repo.jfrog.org/artifactory/libs-release-local</url>
+            <url>http://repo.jfrog.org/artifactory/libs-releases-local</url>
         </remoteRepository>
         <remoteRepository>
             <key>jfrog-plugins</key>
             <description>JFrog plugins releases</description>
             <includesPattern>org/jfrog/**</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <url>http://repo.jfrog.org/artifactory/plugins-release-local</url>
+            <url>http://repo.jfrog.org/artifactory/plugins-releases-local</url>
         </remoteRepository>
         <remoteRepository>
             <key>jboss</key>
             <description>JBoss Maven2 releases</description>
             <includesPattern>org/jboss/**,org/hibernate/**,org/richfaces/**,org/drools/**</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <url>http://repository.jboss.org/nexus/content/groups/public-jboss</url>
@@ -183,6 +195,7 @@
             <description>Codehaus Maven2 releases</description>
             <includesPattern>org/**,com/**,net/**</includesPattern>
             <excludesPattern>org/apache/**,commons-*,org/artifactory/**,org/jfrog/**</excludesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <url>http://repository.codehaus.org</url>
@@ -191,6 +204,7 @@
             <key>spring-milestone</key>
             <description>SpringSource in milestone version</description>
             <includesPattern>org/springframework/**</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <url>http://repository.springsource.com/maven/bundles/milestone</url>
@@ -199,6 +213,7 @@
             <key>spring-release</key>
             <description>SpringSource releases</description>
             <includesPattern>org/springframework/**</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <url>http://repository.springsource.com/maven/bundles/release</url>
@@ -207,6 +222,7 @@
             <key>google-code</key>
             <description>Google's open source releases</description>
             <includesPattern>com/google/**</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <url>http://google-maven-repository.googlecode.com/svn/repository</url>
@@ -215,6 +231,7 @@
             <key>gradle-libs</key>
             <description>Gradle libraries</description>
             <includesPattern>**/*</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <url>http://gradle.artifactoryonline.com/gradle/libs</url>
@@ -223,6 +240,7 @@
             <key>gradle-plugins</key>
             <description>Gradle plugins</description>
             <includesPattern>**/*</includesPattern>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
             <url>http://gradle.artifactoryonline.com/gradle/plugins</url>
@@ -356,4 +374,38 @@
         </proxies>
     -->
 
+    <repoLayouts>
+        <repoLayout>
+            <name>maven-2-default</name>
+            <artifactPathPattern>[orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]</artifactPathPattern>
+            <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
+            <descriptorPathPattern>[orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).pom</descriptorPathPattern>
+            <folderIntegrationRevisionRegExp>SNAPSHOT</folderIntegrationRevisionRegExp>
+            <fileIntegrationRevisionRegExp>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+))</fileIntegrationRevisionRegExp>
+        </repoLayout>
+        <repoLayout>
+            <name>ivy-default</name>
+            <artifactPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[type]s/[module](-[classifier])-[baseRev](-[fileItegRev]).[ext]</artifactPathPattern>
+            <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
+            <descriptorPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[type]s/ivy-[baseRev](-[fileItegRev]).xml</descriptorPathPattern>
+            <folderIntegrationRevisionRegExp>\d{14}</folderIntegrationRevisionRegExp>
+            <fileIntegrationRevisionRegExp>\d{14}</fileIntegrationRevisionRegExp>
+        </repoLayout>
+        <repoLayout>
+            <name>gradle-default</name>
+            <artifactPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]</artifactPathPattern>
+            <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
+            <descriptorPathPattern>[org]/[module]/ivy-[baseRev](-[fileItegRev]).xml</descriptorPathPattern>
+            <folderIntegrationRevisionRegExp>\d{14}</folderIntegrationRevisionRegExp>
+            <fileIntegrationRevisionRegExp>\d{14}</fileIntegrationRevisionRegExp>
+        </repoLayout>
+        <repoLayout>
+            <name>maven-1-default</name>
+            <artifactPathPattern>[org]/[type]s/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]</artifactPathPattern>
+            <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
+            <descriptorPathPattern>[org]/[type]s/[module]-[baseRev](-[fileItegRev]).pom</descriptorPathPattern>
+            <folderIntegrationRevisionRegExp>.+</folderIntegrationRevisionRegExp>
+            <fileIntegrationRevisionRegExp>.+</fileIntegrationRevisionRegExp>
+        </repoLayout>
+    </repoLayouts>
 </config>

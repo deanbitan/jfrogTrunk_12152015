@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -101,7 +101,7 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         add(searchBorder);
 
         // Results table
-        dataProvider = new GroupableDataProvider<ActionableSearchResult<T>>();
+        dataProvider = new SearchDataProvider();
 
         dataProvider.setSort(new SortParam(RESULT_NAME_PROPERTY, true));
 
@@ -342,4 +342,10 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         }
     }
 
+    private class SearchDataProvider extends GroupableDataProvider<ActionableSearchResult<T>> {
+
+        public SearchDataProvider() {
+            super(Collections.<ActionableSearchResult<T>>emptyList());
+        }
+    }
 }

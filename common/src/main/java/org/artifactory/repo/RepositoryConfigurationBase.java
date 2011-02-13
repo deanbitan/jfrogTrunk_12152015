@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +21,7 @@ package org.artifactory.repo;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import javax.xml.bind.annotation.XmlEnumValue;
@@ -40,6 +41,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private String notes = "";
     private String includesPattern = "";
     private String excludesPattern = "";
+    private String repoLayoutRef;
 
     protected RepositoryConfigurationBase() {
     }
@@ -62,6 +64,10 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
         String includesPattern = repoDescriptor.getIncludesPattern();
         if (StringUtils.isNotBlank(includesPattern)) {
             setIncludesPattern(includesPattern);
+        }
+        RepoLayout repoLayout = repoDescriptor.getRepoLayout();
+        if (repoLayout != null) {
+            setRepoLayoutRef(repoLayout.getName());
         }
     }
 
@@ -112,6 +118,14 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public String getRepoLayoutRef() {
+        return repoLayoutRef;
+    }
+
+    public void setRepoLayoutRef(String repoLayoutRef) {
+        this.repoLayoutRef = repoLayoutRef;
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,8 +45,6 @@ public interface RepoDescriptor extends Descriptor, Comparable {
      */
     boolean isReal();
 
-    RepoType getType();
-
     /**
      * Compare the parameters influencing the cache behavior, and return true if this and old descriptor have the same
      * behavior toward cache management.
@@ -55,4 +53,8 @@ public interface RepoDescriptor extends Descriptor, Comparable {
      * @return true if the cache can be use as is, false if the cache needs to be cleaned
      */
     boolean identicalCache(RepoDescriptor oldDescriptor);
+
+    RepoLayout getRepoLayout();
+
+    boolean isMavenRepoLayout();
 }

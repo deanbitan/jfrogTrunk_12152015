@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,6 @@ package org.artifactory.maven;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor;
 import org.apache.ivy.core.module.id.ModuleRevisionId;
 import org.apache.maven.artifact.repository.metadata.Metadata;
@@ -35,7 +34,6 @@ import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
-import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.ivy.IvyNaming;
 import org.artifactory.ivy.IvyService;
 import org.artifactory.log.LoggerFactory;
@@ -64,81 +62,12 @@ import java.util.jar.JarInputStream;
  */
 public abstract class MavenModelUtils {
     private static final Logger log = LoggerFactory.getLogger(MavenModelUtils.class);
-    private static final String UTF8 = "utf-8";
+    public static final String UTF8 = "utf-8";
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
     private static final String UTC_TIMESTAMP_PATTERN = "yyyyMMdd.HHmmss";
 
     private MavenModelUtils() {
         // utility class
-    }
-
-    public static void validatePomTargetPath(InputStream in, String relPath, boolean suppressPomConsistencyChecks)
-            throws IOException {
-        MavenXpp3Reader reader = new MavenXpp3Reader();
-        try {
-            Model model = reader.read(new InputStreamReader(in, UTF8));
-            String groupId = model.getGroupId();
-            if (StringUtils.isBlank(groupId)) {
-                Parent parent = model.getParent();
-                if (parent != null) {
-                    groupId = parent.getGroupId();
-                }
-            }
-            if (StringUtils.isNotBlank(groupId)) {
-                //Do not verify if the pom's groupid does not exist
-                String modelVersion = model.getVersion();
-                //Version may come from the parent
-                if (StringUtils.isBlank(modelVersion)) {
-                    Parent parent = model.getParent();
-                    if (parent != null) {
-                        modelVersion = parent.getVersion();
-                    }
-                }
-                //For snapshots with unique snapshot version, do not include the model version in the path
-                boolean snapshot = MavenNaming.isSnapshot(relPath);
-                boolean versionSnapshot = MavenNaming.isNonUniqueSnapshotVersion(modelVersion);
-                String pathPrefix = null;
-                if (snapshot && !versionSnapshot) {
-                    pathPrefix = groupId.replace('.', '/') + "/" + model.getArtifactId() + "/";
-                } else if (StringUtils.isNotBlank(modelVersion)) {
-                    pathPrefix = groupId.replace('.', '/') + "/" + model.getArtifactId() + "/" +
-                            modelVersion;
-                }
-                //Do not validate paths that contain property references
-                if (pathPrefix != null && !pathPrefix.contains("${")
-                        && !StringUtils.startsWithIgnoreCase(relPath, pathPrefix)) {
-                    final String msg = "The target deployment path '" + relPath +
-                            "' does not match the POM's expected path prefix '" + pathPrefix +
-                            "'. Please verify your POM content for correctness and make sure the source path is a " +
-                            "valid Maven 2 repository root path.";
-                    if (suppressPomConsistencyChecks) {
-                        log.error(msg +
-                                " POM consistency checks are suppressed. Broken artifacts might have been " +
-                                "stored in the repository - please resolve this manually.");
-                    } else {
-                        throw new BadPomException(msg);
-                    }
-                }
-            }
-        } catch (XmlPullParserException e) {
-            if (log.isDebugEnabled()) {
-                try {
-                    in.reset();
-                    InputStreamReader isr = new InputStreamReader(in, UTF8);
-                    String s = readString(isr);
-                    log.debug("Could not parse bad POM for '{}'. Bad POM content:\n{}\n", relPath, s);
-                } catch (Exception ex) {
-                    log.trace("Could not extract bad POM content for '{}': {}.", relPath, e.getMessage());
-                }
-            }
-            String message = "Failed to read POM for '" + relPath + "': " + e.getMessage() + ".";
-            if (suppressPomConsistencyChecks) {
-                log.error(message + " POM consistency checks are suppressed. Broken artifacts might have been " +
-                        "stored in the repository - please resolve this manually.");
-            } else {
-                throw new BadPomException(message);
-            }
-        }
     }
 
     /**
@@ -469,14 +398,5 @@ public abstract class MavenModelUtils {
                 (MavenArtifactInfo.NA.equals(result.getType()) || MavenArtifactInfo.JAR.equals(result.getType()))) {
             result.setType(extension);
         }
-    }
-
-    private static String readString(Reader reader) throws IOException {
-        final StringBuffer buffer = new StringBuffer(2048);
-        int value;
-        while ((value = reader.read()) != -1) {
-            buffer.append((char) value);
-        }
-        return buffer.toString();
     }
 }

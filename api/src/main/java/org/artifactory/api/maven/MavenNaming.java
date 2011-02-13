@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -103,13 +103,6 @@ public abstract class MavenNaming {
         return version.endsWith("-" + SNAPSHOT);
     }
 
-    public static String getNonUniqueSnapshotBaseVersion(String nonUniqueVersion) {
-        if (!isNonUniqueSnapshotVersion(nonUniqueVersion)) {
-            throw new IllegalArgumentException("Version is not a non-unique maven version: " + nonUniqueVersion);
-        }
-        return nonUniqueVersion.substring(0, nonUniqueVersion.lastIndexOf("-" + SNAPSHOT));
-    }
-
     /**
      * @param path Path to a file
      * @return True if the path is of a non-unique snapshot version file
@@ -152,15 +145,6 @@ public abstract class MavenNaming {
         return result;
     }
 
-    public static boolean isRelease(String path) {
-        return !isSnapshot(path) && !NamingUtils.isMetadata(path) && !isChecksum(path) && !isIndex(path);
-    }
-
-    public static boolean isMetadataChecksum(String path) {
-        String name = PathUtils.getName(path);
-        return isChecksum(name) && name.startsWith(METADATA_PREFIX);
-    }
-
     public static boolean isChecksum(String path) {
         return NamingUtils.isChecksum(path);
     }
@@ -175,10 +159,6 @@ public abstract class MavenNaming {
      */
     public static String getChecksumTargetFile(String filePath) {
         return PathUtils.stripExtension(filePath);
-    }
-
-    public static boolean isHidden(String path) {
-        return path.startsWith(".");
     }
 
     /**

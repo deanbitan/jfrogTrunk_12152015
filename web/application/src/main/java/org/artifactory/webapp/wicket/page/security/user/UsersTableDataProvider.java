@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -93,8 +93,8 @@ class UsersTableDataProvider extends SortableDataProvider<UserModel> {
         List<UserInfo> allUsers = userGroupService.getAllUsers(true);
         List<UserModel> filtered = new ArrayList<UserModel>();
         for (UserInfo userInfo : allUsers) {
-            //Don't list anonymous and excluded users
-            if (!userInfo.isAnonymous() && includedByFilter(userInfo)) {
+            //Don't list excluded users
+            if (includedByFilter(userInfo)) {
                 UserModel userModel = new UserModel(userInfo);
                 filtered.add(userModel);
 

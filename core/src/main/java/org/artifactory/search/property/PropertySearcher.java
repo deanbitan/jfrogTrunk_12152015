@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -188,19 +188,16 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
                     String artifactPath = path.substring(0, path.lastIndexOf("/" + JcrTypes.NODE_ARTIFACTORY_METADATA));
                     Node artifactNode = (Node) getJcrService().getManagedSession().getItem(artifactPath);
                     RepoPath repoPath = JcrPath.get().getRepoPath(artifactNode.getPath());
-                    if ((repoPath == null) || !isResultRepoPathValid(repoPath)) {
+                    if (!isResultAcceptable(repoPath)) {
                         continue;
                     }
 
                     ItemInfo itemInfo = getProxyItemInfo(artifactNode);
-                    boolean canRead = getAuthService().canRead(itemInfo.getRepoPath());
-                    if (canRead) {
-                        PropertySearchResult searchResult = new PropertySearchResult(itemInfo);
+                    PropertySearchResult searchResult = new PropertySearchResult(itemInfo);
 
-                        //Make sure that we don't get any double results
-                        if (!currentSearchResults.contains(searchResult)) {
-                            currentSearchResults.add(searchResult);
-                        }
+                    //Make sure that we don't get any double results
+                    if (!currentSearchResults.contains(searchResult)) {
+                        currentSearchResults.add(searchResult);
                     }
                 }
             } catch (RepositoryException re) {

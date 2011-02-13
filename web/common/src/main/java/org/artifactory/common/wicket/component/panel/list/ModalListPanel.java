@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +20,7 @@ package org.artifactory.common.wicket.component.panel.list;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
+import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.model.IModel;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
@@ -46,8 +47,8 @@ public abstract class ModalListPanel<T extends Serializable> extends BaseListPan
     }
 
     @Override
-    protected TitledAjaxLink getNewItemLink() {
-        return new ModalShowLink("newItemLink", "New") {
+    protected AbstractLink getNewItemLink(String linkId, String linkTitle) {
+        return new ModalShowLink(linkId, linkTitle) {
             @Override
             protected BaseModalPanel getModelPanel() {
                 return newCreateItemPanel();

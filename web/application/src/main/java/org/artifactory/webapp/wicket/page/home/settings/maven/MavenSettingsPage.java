@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,8 +21,6 @@ package org.artifactory.webapp.wicket.page.home.settings.maven;
 import org.artifactory.webapp.wicket.page.home.settings.BaseSettingsGeneratorPanel;
 import org.artifactory.webapp.wicket.page.home.settings.BaseSettingsPage;
 
-import java.util.Map;
-
 /**
  * The Maven implementation of the settings generator page
  *
@@ -31,9 +29,8 @@ import java.util.Map;
 public class MavenSettingsPage extends BaseSettingsPage {
 
     @Override
-    protected BaseSettingsGeneratorPanel getSettingsPanel(String id, String servletContextUrl,
-            Map<String, String> virtualRepoMap) {
-        return new MavenSettingsPanel(id, servletContextUrl, virtualRepoMap);
+    protected BaseSettingsGeneratorPanel getSettingsPanel(String id, String servletContextUrl) {
+        return new MavenSettingsPanel(id, servletContextUrl, virtualRepoDescriptors);
     }
 
     @Override

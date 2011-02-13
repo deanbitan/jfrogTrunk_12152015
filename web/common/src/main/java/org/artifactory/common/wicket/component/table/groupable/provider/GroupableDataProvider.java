@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +29,6 @@ import org.artifactory.common.wicket.component.table.groupable.cache.GroupSizeCa
 import org.artifactory.common.wicket.util.ListPropertySorter;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,10 +42,6 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
     private Map<String, IChoiceRenderer<T>> groupRendererMap = Maps.newHashMap();
     private GroupSizeCache groupSizeCache;
     private SortParam groupParam;
-
-    public GroupableDataProvider() {
-        this(Collections.<T>emptyList());
-    }
 
     public GroupableDataProvider(List<T> data) {
         this.data = data;
@@ -79,8 +74,9 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
     public int getGroupSize(int index) {
         SortParam groupParam = getGroupParam();
         if (groupSizeCache == null) {
-            groupSizeCache =
-                    GroupSizeCache.getSizeCache(iterator(0, size()), getGroupRenderer(groupParam.getProperty()));
+            List<T> toSort = getData();
+            ListPropertySorter.sort(toSort, getGroupParam(), getSort());
+            groupSizeCache = GroupSizeCache.getSizeCache(toSort, getGroupRenderer(groupParam.getProperty()));
         }
         return groupSizeCache.getGroupSize(index);
     }

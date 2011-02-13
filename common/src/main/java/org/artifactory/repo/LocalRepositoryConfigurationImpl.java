@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,7 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
+import org.artifactory.util.RepoLayoutUtils;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 import javax.annotation.Nonnull;
@@ -37,9 +38,11 @@ import java.util.Map;
  * @see org.artifactory.descriptor.repo.LocalRepoDescriptor
  */
 @JsonPropertyOrder(
-        {"key", RepositoryConfigurationBase.TYPE_KEY, "description", "notes", "includesPattern", "excludesPattern", "checksumPolicyType",
-                "handleReleases", "handleSnapshots", "maxUniqueSnapshots", "snapshotVersionBehavior", "suppressPomConsistencyChecks",
-                "blackedOut", "propertySets"})
+        {"key", RepositoryConfigurationBase.TYPE_KEY, "description", "notes", "includesPattern", "excludesPattern",
+                "checksumPolicyType",
+                "handleReleases", "handleSnapshots", "maxUniqueSnapshots", "snapshotVersionBehavior",
+                "suppressPomConsistencyChecks",
+                "blackedOut", "propertySets", "repoLayoutRef"})
 public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBase
         implements LocalRepositoryConfiguration {
 
@@ -53,6 +56,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
     private List<String> propertySets;
 
     public LocalRepositoryConfigurationImpl() {
+        setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
     }
 
     public LocalRepositoryConfigurationImpl(LocalRepoDescriptor localRepoDescriptor) {
@@ -64,7 +68,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         setMaxUniqueSnapshots(localRepoDescriptor.getMaxUniqueSnapshots());
         Map<String, String> snapshotBehaviours = extractXmlValueFromEnumAnnotations(SnapshotVersionBehavior.class);
         for (Map.Entry<String, String> annotationToField : snapshotBehaviours.entrySet()) {
-            if (annotationToField.getKey().equals(localRepoDescriptor.getSnapshotVersionBehavior().name())) {
+            if (annotationToField.getValue().equals(localRepoDescriptor.getSnapshotVersionBehavior().name())) {
                 setSnapshotVersionBehavior(annotationToField.getKey());
             }
         }

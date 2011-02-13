@@ -11,7 +11,7 @@
 
 package org.artifactory.repo.index.locator;
 
-import org.sonatype.nexus.index.locator.Locator;
+import org.apache.maven.index.locator.Locator;
 
 import java.io.File;
 

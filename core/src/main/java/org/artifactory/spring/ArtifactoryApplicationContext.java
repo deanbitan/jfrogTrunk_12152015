@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -654,10 +654,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             return;
         }
         try {
-            // copy the etc directory from the backup dir
-            FileUtils.copyDirectory(sourceBackupDir, artifactoryHome.getEtcDir());
-            // re-initialize the mime types mapping
-            artifactoryHome.initAndLoadMimeTypes();
+            // copy only the logo.
+            FileUtils.copyDirectory(new File(sourceBackupDir, "ui"), artifactoryHome.getLogoDir());
             // refresh the addons manager
             beanForType(AddonsManager.class).refresh();
         } catch (Exception e) {

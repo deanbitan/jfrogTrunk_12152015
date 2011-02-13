@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +27,7 @@ import org.artifactory.resource.MetadataResource;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.mock.MockUtils;
+import org.artifactory.util.RepoLayoutUtils;
 import org.easymock.EasyMock;
 import org.testng.annotations.Test;
 
@@ -64,7 +65,11 @@ public class JcrCacheRepoTest extends ArtifactoryHomeBoundTest {
 
         InternalArtifactoryContext context = MockUtils.getThreadBoundedMockContext();
         EasyMock.replay(context);
-
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         JcrCacheRepo cacheRepo = new JcrCacheRepo(remoteRepo, null);
 
         assertFalse(cacheRepo.isExpired(releaseRes));
@@ -87,6 +92,7 @@ public class JcrCacheRepoTest extends ArtifactoryHomeBoundTest {
         EasyMock.expect(remoteRepo.getRepositoryService()).andReturn(null).anyTimes();
         HttpRepoDescriptor httpRepoDescriptor = new HttpRepoDescriptor();
         httpRepoDescriptor.setChecksumPolicyType(ChecksumPolicyType.FAIL);
+        httpRepoDescriptor.setRepoLayout(RepoLayoutUtils.MAVEN_2_DEFAULT);
         EasyMock.expect(remoteRepo.getDescriptor()).andReturn(httpRepoDescriptor).anyTimes();
         EasyMock.expect(remoteRepo.getDescription()).andReturn("desc").anyTimes();
         EasyMock.expect(remoteRepo.getKey()).andReturn("repox").anyTimes();

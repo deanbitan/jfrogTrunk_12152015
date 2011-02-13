@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
 package org.artifactory.api.rest.artifact;
 
 import java.io.Serializable;
-import java.util.Set;
+import java.util.List;
 
 /**
  * File list REST command result object
@@ -30,7 +30,7 @@ public class FileList implements Serializable {
 
     String uri;
     String created;
-    Set<FileListElement> files;
+    List<FileListElement> files;
 
     /**
      * Default constructor
@@ -43,9 +43,9 @@ public class FileList implements Serializable {
      *
      * @param uri     URI of request sent by user
      * @param created The ISO8601 time the result was assembled
-     * @param files   Set of files found
+     * @param files   List of folders found
      */
-    public FileList(String uri, String created, Set<FileListElement> files) {
+    public FileList(String uri, String created, List<FileListElement> files) {
         this.uri = uri;
         this.created = created;
         this.files = files;
@@ -88,20 +88,20 @@ public class FileList implements Serializable {
     }
 
     /**
-     * Returns the set of files found
+     * Returns the list of files found
      *
-     * @return Found file set
+     * @return Found file list
      */
-    public Set<FileListElement> getFiles() {
+    public List<FileListElement> getFiles() {
         return files;
     }
 
     /**
-     * Sets the set of files found
+     * List of files found
      *
-     * @param files Found file set
+     * @param files Found file list
      */
-    public void setFiles(Set<FileListElement> files) {
+    public void setFiles(List<FileListElement> files) {
         this.files = files;
     }
 }

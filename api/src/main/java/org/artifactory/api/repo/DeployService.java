@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +21,7 @@ package org.artifactory.api.repo;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -41,9 +42,8 @@ public interface DeployService {
 
     @Request
     @Lock(transactional = true)
-    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo,
-                File fileToDeploy, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy)
-            throws RepoRejectException;
+    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy, String pomString,
+            boolean forceDeployPom, boolean partOfBundleDeploy) throws RepoRejectException;
 
     @Request
     void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status);
@@ -53,11 +53,12 @@ public interface DeployService {
      *
      * @param pomContent                   Pom content to validate
      * @param relPath                      Relative deployment path of the pom
+     * @param moduleInfo                   POM module info
      * @param suppressPomConsistencyChecks If true will not throw an exception is pom consistency fails (eg, groupId
      *                                     doesn't match target relative path)
      * @throws IOException If pom is invalid
      */
-    void validatePom(String pomContent, String relPath, boolean suppressPomConsistencyChecks)
+    void validatePom(String pomContent, String relPath, ModuleInfo moduleInfo, boolean suppressPomConsistencyChecks)
             throws IOException;
 
 

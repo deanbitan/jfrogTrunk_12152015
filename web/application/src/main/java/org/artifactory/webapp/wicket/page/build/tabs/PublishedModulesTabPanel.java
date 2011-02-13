@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -85,7 +85,7 @@ public class PublishedModulesTabPanel extends Panel {
 
         ModulesDataProvider dataProvider = new ModulesDataProvider(build.getModules());
 
-        add(new SortableTable<Module>("modules", columns, dataProvider, 10));
+        add(new SortableTable<Module>("modules", columns, dataProvider, 50));
     }
 
     /**

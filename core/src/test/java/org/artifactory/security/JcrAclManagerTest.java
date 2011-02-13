@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,14 +18,13 @@
 
 package org.artifactory.security;
 
-import org.artifactory.api.cache.ArtifactoryCache;
-import org.artifactory.api.cache.Cache;
+import com.google.common.collect.MapMaker;
 import org.artifactory.api.security.AceInfo;
 import org.artifactory.api.security.AclInfo;
 import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.PermissionTargetInfo;
-import org.artifactory.cache.BaseCache;
 import org.artifactory.jcr.JcrService;
+import org.artifactory.security.jcr.JcrAclManager;
 import org.easymock.EasyMock;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
@@ -35,6 +34,7 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.testng.Assert.*;
@@ -55,7 +55,7 @@ public class JcrAclManagerTest {
     public void setUp() {
         manager = new JcrAclManager();
         DummyOcm dummyOcm = new DummyOcm();
-        Cache<String, Acl> cache = new BaseCache<String, Acl>(ArtifactoryCache.acl);
+        Map<String, Acl> cache = new MapMaker().initialCapacity(30).makeMap();
         ReflectionTestUtils.setField(manager, "acls", cache);
         testAcls = createTestAcls();
 

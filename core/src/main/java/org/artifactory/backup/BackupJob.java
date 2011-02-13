@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,8 +41,12 @@ public class BackupJob extends QuartzCommand {
 
     @Override
     protected void onExecute(JobExecutionContext jobContext) throws JobExecutionException {
-        final int backupIndex = jobContext.getJobDetail().getJobDataMap().getInt("index");
         InternalArtifactoryContext context = InternalContextHelper.get();
+        if (!context.isReady()) {
+            log.debug("Skipping execution of '{}', sever is not ready yet", BackupJob.class.getName());
+            return;
+        }
+        final int backupIndex = jobContext.getJobDetail().getJobDataMap().getInt("index");
         InternalBackupService backup = context.beanForType(InternalBackupService.class);
         Date fireTime = jobContext.getFireTime();
         MultiStatusHolder jobStatus = new MultiStatusHolder();

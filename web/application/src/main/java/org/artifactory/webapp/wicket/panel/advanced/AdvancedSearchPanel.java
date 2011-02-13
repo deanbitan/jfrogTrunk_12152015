@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,8 +28,12 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -58,11 +62,29 @@ public class AdvancedSearchPanel extends WhiteTitlePanel {
 
     private List<String> getOrderdRepoKeys() {
         List<RepoDescriptor> repoSet = Lists.newArrayList();
-        repoSet.addAll(repoService.getLocalAndCachedRepoDescriptors());
+        List<LocalRepoDescriptor> localAndCachedRepoDescriptors = repoService.getLocalAndCachedRepoDescriptors();
+        Collections.sort(localAndCachedRepoDescriptors, new LocalAndCachedDescriptorsComparator());
+        repoSet.addAll(localAndCachedRepoDescriptors);
         List<String> repoKeys = Lists.newArrayList();
         for (RepoDescriptor descriptor : repoSet) {
             repoKeys.add(descriptor.getKey());
         }
         return repoKeys;
+    }
+
+    /**
+     * Comparator that compares local and cached repositories according to their type (local or cached local) and then
+     * internally sorting them by their key.
+     */
+    private static class LocalAndCachedDescriptorsComparator implements Comparator<RepoDescriptor> {
+        public int compare(RepoDescriptor o1, RepoDescriptor o2) {
+            if (o1 instanceof LocalCacheRepoDescriptor && !(o2 instanceof LocalCacheRepoDescriptor)) {
+                return 1;
+            } else if (!(o1 instanceof LocalCacheRepoDescriptor) && (o2 instanceof LocalCacheRepoDescriptor)) {
+                return -1;
+            } else {
+                return o1.getKey().toLowerCase().compareTo(o2.getKey().toLowerCase());
+            }
+        }
     }
 }

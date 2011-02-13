@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -72,9 +72,12 @@ public abstract class AbstractPersistenceHandler<T> implements MetadataPersisten
     }
 
     protected void markModified(Node metadataNode) {
+        markModified(metadataNode, Calendar.getInstance());
+    }
+
+    protected void markModified(Node metadataNode, Calendar lastModified) {
         try {
             //Update the last modified on the specific metadata
-            Calendar lastModified = Calendar.getInstance();
             metadataNode.setProperty(JcrTypes.PROP_ARTIFACTORY_LAST_MODIFIED, lastModified);
             metadataNode.setProperty(JcrTypes.PROP_ARTIFACTORY_LAST_MODIFIED_BY,
                     getAuthorizationService().currentUsername());

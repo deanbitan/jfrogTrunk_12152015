@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,11 +28,14 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.PropertyModel;
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.wicket.WicketProperty;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.util.CookieUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.descriptor.repo.RepoLayout;
+import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.dependency.DependencyDeclarationProvider;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.dependency.DependencyDeclarationProviderType;
 
@@ -48,22 +51,26 @@ public class DependencyDeclarationPanel extends Panel {
     @WicketProperty
     private DependencyDeclarationProviderType selectedDependencyDeclaration;
 
-    private MavenArtifactInfo artifactInfo;
-
     private FieldSetBorder declarationBorder;
+    private ModuleInfo moduleInfo;
 
     /**
      * Main constructor
      *
-     * @param id           Panel ID
-     * @param artifactInfo Valid maven info of the selected artifact
+     * @param id         Panel ID
+     * @param moduleInfo Module info
+     * @param repoLayout
      */
-    public DependencyDeclarationPanel(String id, MavenArtifactInfo artifactInfo) {
+    public DependencyDeclarationPanel(String id, ModuleInfo moduleInfo, final RepoLayout repoLayout) {
         super(id);
-        this.artifactInfo = artifactInfo;
+        this.moduleInfo = moduleInfo;
 
         declarationBorder = new FieldSetBorder("dependencyDeclarationBorder");
         declarationBorder.add(new Label("buildToolSelectorLabel", "Build Tool:"));
+        final Label mavenWarningLabel = new Label("mavenWarningLabel", "Maven might not be able to resolve " +
+                "this artifact since the repository isn't configured to use the Maven layout.");
+        mavenWarningLabel.add(new CssClass("warn")).setOutputMarkupId(true);
+        declarationBorder.add(mavenWarningLabel);
 
         DropDownChoice<DependencyDeclarationProviderType> buildToolSelector =
                 new DropDownChoice<DependencyDeclarationProviderType>("buildToolSelector",
@@ -73,12 +80,15 @@ public class DependencyDeclarationPanel extends Panel {
 
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                DependencyDeclarationProvider dependencyDeclarationProvider =
-                        getSelectedDependencyDeclaration().getDeclarationProvider();
+                DependencyDeclarationProviderType selectedType = getSelectedDependencyDeclaration();
+                DependencyDeclarationProvider dependencyDeclarationProvider = selectedType.getDeclarationProvider();
 
-                CookieUtils.setCookie(COOKIE_NAME, getSelectedDependencyDeclaration().name());
+                CookieUtils.setCookie(COOKIE_NAME, selectedType.name());
                 onBuildToolSelectionChange(dependencyDeclarationProvider);
+
+                mavenWarningLabel.setVisible(shouldDisplayMavenWarning(selectedType, repoLayout));
                 target.addComponent(declarationBorder);
+                target.addComponent(mavenWarningLabel);
             }
         });
         declarationBorder.add(buildToolSelector);
@@ -89,11 +99,33 @@ public class DependencyDeclarationPanel extends Panel {
 
         String lastSelectedBuildTool = CookieUtils.getCookie(COOKIE_NAME);
         if (StringUtils.isNotBlank(lastSelectedBuildTool)) {
-            setSelectedDependencyDeclaration(DependencyDeclarationProviderType.valueOf(lastSelectedBuildTool));
-        } else {
-            setSelectedDependencyDeclaration(DependencyDeclarationProviderType.MAVEN);
+            try {
+                setSelectedDependencyDeclaration(DependencyDeclarationProviderType.valueOf(lastSelectedBuildTool));
+            } catch (IllegalArgumentException e) {
+                setSelectedDependencyDeclaration(null);
+                CookieUtils.clearCookie(COOKIE_NAME);
+            }
         }
-        onBuildToolSelectionChange(getSelectedDependencyDeclaration().getDeclarationProvider());
+        if (getSelectedDependencyDeclaration() == null) {
+            setSelectedDependencyDeclaration(guessDependencyDeclarationByRepoLayout(repoLayout));
+        }
+        DependencyDeclarationProviderType selectedType = getSelectedDependencyDeclaration();
+        onBuildToolSelectionChange(selectedType.getDeclarationProvider());
+        mavenWarningLabel.setVisible(shouldDisplayMavenWarning(selectedType, repoLayout));
+    }
+
+    private DependencyDeclarationProviderType guessDependencyDeclarationByRepoLayout(RepoLayout repoLayout) {
+        if (repoLayout.equals(RepoLayoutUtils.IVY_DEFAULT)) {
+            return DependencyDeclarationProviderType.IVY;
+        } else if (repoLayout.equals(RepoLayoutUtils.GRADLE_DEFAULT)) {
+            return DependencyDeclarationProviderType.GRADLE;
+        }
+
+        return DependencyDeclarationProviderType.MAVEN;
+    }
+
+    private boolean shouldDisplayMavenWarning(DependencyDeclarationProviderType selectedType, RepoLayout repoLayout) {
+        return DependencyDeclarationProviderType.MAVEN.equals(selectedType) && !RepoLayoutUtils.isDefaultM2(repoLayout);
     }
 
     public DependencyDeclarationProviderType getSelectedDependencyDeclaration() {
@@ -111,7 +143,7 @@ public class DependencyDeclarationPanel extends Panel {
      */
     private void onBuildToolSelectionChange(DependencyDeclarationProvider dependencyDeclarationProvider) {
         Component syntaxHighlighter = WicketUtils.getSyntaxHighlighter("dependencyDeclaration",
-                dependencyDeclarationProvider.getDependencyDeclaration(artifactInfo),
+                dependencyDeclarationProvider.getDependencyDeclaration(moduleInfo),
                 dependencyDeclarationProvider.getSyntaxType());
         syntaxHighlighter.setOutputMarkupId(true);
         declarationBorder.replace(syntaxHighlighter);

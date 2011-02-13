@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,16 +24,21 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.config.ImportableExportable;
-import org.artifactory.api.fs.DeployableUnit;
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.fs.VersionUnit;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.api.tree.fs.ZipEntriesTree;
 import org.artifactory.common.StatusHolder;
-import org.artifactory.descriptor.repo.*;
+import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.md.MetadataInfo;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 
 import javax.annotation.Nonnull;
@@ -47,33 +52,6 @@ import java.util.Set;
  * User: freds Date: Jul 21, 2008 Time: 8:07:50 PM
  */
 public interface RepositoryService extends ImportableExportable {
-    /**
-     * @param repoPath Path to a virtual repo item.
-     * @return Virtual repo item with all real repo keys the real item exists and accessible to the current user. Null
-     *         if not found or user has no permissions.
-     */
-    @Lock(transactional = true)
-    public VirtualRepoItem getVirtualRepoItem(RepoPath repoPath);
-
-    /**
-     * @param virtualFolderPath Path to a virtual repo folder.
-     * @return List of virtual items (files and folders) under the virtual folders. Will return empty list if item
-     *         doesn't exist, not a file of no permissions.
-     */
-    @Lock(transactional = true)
-    public List<VirtualRepoItem> getVirtualRepoItems(RepoPath virtualFolderPath);
-
-    /**
-     * Creates a list of local\cache repo children items for all the simple browsers.<br>
-     * This method is not to be used by non-ui clients for simple child discovery. Use {@link RepositoryService#getChildren(org.artifactory.repo.RepoPath)}
-     * instead.
-     *
-     * @param repoPath            Parent repo path
-     * @param withPseudoUpDirItem Should an "up directory" link be added
-     * @return Null if given a non-existent or non-folder repo path. Otherwise, the list of children
-     */
-    @Lock(transactional = true)
-    List<BrowsableItem> getBrowsableChildren(RepoPath repoPath, boolean withPseudoUpDirItem);
 
     List<LocalRepoDescriptor> getLocalRepoDescriptors();
 
@@ -82,7 +60,7 @@ public interface RepositoryService extends ImportableExportable {
     List<VirtualRepoDescriptor> getVirtualRepoDescriptors();
 
     /**
-     * @return Gets a list of local and remote repositories, no cahces
+     * @return Gets a list of local and remote repositories, no caches
      */
     List<RepoDescriptor> getLocalAndRemoteRepoDescriptors();
 
@@ -190,6 +168,7 @@ public interface RepositoryService extends ImportableExportable {
      * @throws IllegalArgumentException If given a blank metadata name
      */
     @Lock(transactional = true)
+    @Nullable
     String getXmlMetadata(RepoPath repoPath, String metadataName);
 
     /**
@@ -244,7 +223,11 @@ public interface RepositoryService extends ImportableExportable {
     BasicStatusHolder undeploy(RepoPath repoPath, boolean calcMavenMetadata);
 
     @Request
-    StatusHolder undeployPaths(List<RepoPath> repoPath);
+    @Lock(transactional = true)
+    BasicStatusHolder undeploy(RepoPath repoPath, boolean calcMavenMetadata, boolean pruneEmptyFolders);
+
+    @Request
+    StatusHolder undeployVersionUnits(Set<VersionUnit> versionUnits);
 
     /**
      * Moves repository path (pointing to a folder) to another local repository. The move will only move paths the user
@@ -265,13 +248,13 @@ public interface RepositoryService extends ImportableExportable {
      * has permissions to move and paths that are accepted by the target repository. Maven metadata will be recalculated
      * for both the source and target folders.
      *
-     * @param repoPath   Repository path to move. This path must represent a folder in a local repository.
-     * @param targetPath The target local non-cached repository to move the path to.
-     * @param dryRun     If true the method will just report the expected result but will not move any file
+     * @param targetPath      The target local non-cached repository to move the path to.
+     * @param dryRun          If true the method will just report the expected result but will not move any file
+     * @param suppressLayouts If true, path translation across different layouts should be suppressed.
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
     @Lock(transactional = true)
-    MoveMultiStatusHolder move(RepoPath fromRepoPath, RepoPath targetPath, boolean dryRun);
+    MoveMultiStatusHolder move(RepoPath fromRepoPath, RepoPath targetPath, boolean dryRun, boolean suppressLayouts);
 
     /**
      * Moves set of paths to another local repository.
@@ -284,11 +267,12 @@ public interface RepositoryService extends ImportableExportable {
      *
      * @param pathsToMove   Paths to move, each pointing to file or folder.
      * @param targetRepoKey Key of the target local non-cached repository to move the path to.
-     * @param dryRun        If true the method will just report the expected result but will not move any file
-     * @return MoveMultiStatusHolder holding the errors and warnings
+     * @param properties
+     * @param dryRun        If true the method will just report the expected result but will not move any file  @return
      */
     @Lock(transactional = true)
-    MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetRepoKey, boolean dryRun);
+    MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetRepoKey, Properties properties,
+            boolean dryRun);
 
     /**
      * Copies repository path (pointing to a folder) to another local repository. The copy will only move paths the user
@@ -304,17 +288,18 @@ public interface RepositoryService extends ImportableExportable {
     MoveMultiStatusHolder copy(RepoPath fromRepoPath, String targetLocalRepoKey, boolean dryRun);
 
     /**
-     * Copies repository path (pointing to a folder) to another absolute path. The copy will only move paths the user
-     * has permissions to move and paths that are accepted by the target repository. Maven metadata will be recalculated
-     * for both the source and target folders.
+     * Copies repository path to another absolute path. The copy will only copy paths the user has permissions to read
+     * and paths that are accepted by the target repository. Maven metadata will be recalculated for both the source and
+     * target folders. Metadata is also copied.
      *
-     * @param fromRepoPath   Repository path to copy. This path must represent a folder in a local repository.
-     * @param targetRepoPath Path of the target local non-cached repository to copy the path to.
-     * @param dryRun         If true the method will just report the expected result but will not copy any file
+     * @param fromRepoPath    Repository path to copy. This path must represent a folder in a local repository.
+     * @param targetRepoPath  Path of the target local non-cached repository to copy the path to.
+     * @param dryRun          If true the method will just report the expected result but will not copy any file
+     * @param suppressLayouts If true, path translation across different layouts should be suppressed.
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
     @Lock(transactional = true)
-    MoveMultiStatusHolder copy(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun);
+    MoveMultiStatusHolder copy(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun, boolean suppressLayouts);
 
     /**
      * Copies a set of paths to another local repository.
@@ -327,11 +312,13 @@ public interface RepositoryService extends ImportableExportable {
      *
      * @param pathsToCopy        Paths to copy, each pointing to file or folder.
      * @param targetLocalRepoKey Key of the target local non-cached repository to move the path to.
+     * @param properties
      * @param dryRun             If true the method will just report the expected result but will not copy any file
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
     @Lock(transactional = true)
-    MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey, boolean dryRun);
+    MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey,
+            Properties properties, boolean dryRun);
 
     /**
      * Expire expirable resources (folders, snapshot artifacts, maven metadata, etc.)
@@ -342,9 +329,6 @@ public interface RepositoryService extends ImportableExportable {
      */
     @Lock(transactional = true)
     int zap(RepoPath repoPath);
-
-    @Lock(transactional = true)
-    MavenArtifactInfo getMavenArtifactInfo(org.artifactory.fs.ItemInfo itemInfo);
 
     @Lock(transactional = true)
     List<org.artifactory.fs.FolderInfo> getWithEmptyChildren(FolderInfo folderInfo);
@@ -371,16 +355,16 @@ public interface RepositoryService extends ImportableExportable {
      */
     @Lock(transactional = true)
     MultiStatusHolder exportSearchResults(SavedSearchResults searchResults,
-                                          ExportSettings baseSettings);
+            ExportSettings baseSettings);
 
     /**
-     * Returns all the deployable units under a certain path.
+     * Returns all the version units under a certain path.
      *
      * @param repoPath The repository path (might be repository root with no sub-path)
-     * @return deployable units under a certain path
+     * @return version units under a certain path
      */
     @Lock(transactional = true)
-    List<DeployableUnit> getDeployableUnitsUnder(RepoPath repoPath);
+    List<VersionUnit> getVersionUnitsUnder(RepoPath repoPath);
 
     /**
      * Returns the number of artifacts currently being served
@@ -407,6 +391,15 @@ public interface RepositoryService extends ImportableExportable {
     boolean isLocalRepoPathHandled(RepoPath repoPath);
 
     boolean isLocalRepoPathAccepted(RepoPath repoPath);
+
+    /**
+     * Indicates whether the repo path can be displayed, permission and repo-acceptance-wise
+     *
+     * @param repoPath Repo path to check
+     * @return True if the the current user can read the path and the path is accepted by the repo. When the path is not
+     *         accepted, the method will return true if the user has annotate permissions or higher
+     */
+    boolean isLocalRepoPathDisplayable(RepoPath repoPath);
 
     /**
      * Note: you should call the markBaseForMavenMetadataRecalculation() before calling this method to recover in case
@@ -504,18 +497,11 @@ public interface RepositoryService extends ImportableExportable {
     @Lock(transactional = true)
     List<ItemInfo> getChildren(RepoPath repoPath);
 
-    /**
-     * Creates a list of virtual repo children items for all the simple browsers.<br>
-     * This method is not to be used by non-ui clients for simple child discovery. Use {@link RepositoryService#getVirtualRepoItems(org.artifactory.repo.RepoPath)}
-     * instead.
-     *
-     * @param repoPath            Parent repo path
-     * @param withPseudoUpDirItem Should an "up directory" link be added
-     * @return Null if given a non-existent or non-folder repo path. Otherwise, the list of children
-     */
-    @Lock(transactional = true)
-    List<VirtualBrowsableItem> getVirtualBrowsableChildren(RepoPath repoPath, boolean withPseudoUpDirItem);
-
     @Lock(transactional = true)
     List<ItemInfo> getChildrenDeeply(RepoPath path);
+
+    ModuleInfo getItemModuleInfo(RepoPath repoPath);
+
+    @Lock(transactional = true)
+    boolean mkdirs(RepoPath folderRepoPath);
 }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -69,7 +69,7 @@ public abstract class PathMatcher {
     }
 
     public static boolean matches(String path, List<String> includes, List<String> excludes) {
-        if (!Utils.isNullOrEmpty(excludes)) {
+        if (!CollectionUtils.isNullOrEmpty(excludes)) {
             for (String exclude : excludes) {
                 boolean match = antPathMatcher.match(exclude, path);
                 if (match) {
@@ -82,8 +82,14 @@ public abstract class PathMatcher {
         if ("".equals(path) || "/".equals(path)) {
             return true;
         }
-        if (!Utils.isNullOrEmpty(includes)) {
+        if (!CollectionUtils.isNullOrEmpty(includes)) {
             for (String include : includes) {
+                // If path is smaller than include verify if it's a sub path then return true
+                if (path.length() < include.length() &&
+                        include.startsWith(path) &&
+                        include.charAt(path.length()) == '/') {
+                    return true;
+                }
                 boolean match = antPathMatcher.match(include, path);
                 if (match) {
                     return true;

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,10 +34,10 @@ import java.util.Set;
 public interface InternalIndexerService extends IndexerService, ReloadableBean {
 
     @Lock(transactional = true)
-    void saveIndexFiles(RepoIndexManager repoIndexManager);
+    void saveIndexFiles(MavenIndexManager mavenIndexManager);
 
     @Lock(transactional = true)
-    void fetchOrCreateIndex(RepoIndexManager repoIndexManager, Date fireTime);
+    void fetchOrCreateIndex(MavenIndexManager mavenIndexManager, Date fireTime);
 
     @Lock(transactional = true)
     void mergeVirtualRepoIndexes(Set<? extends RepoDescriptor> excludedRepositories, List<RealRepo> repos);

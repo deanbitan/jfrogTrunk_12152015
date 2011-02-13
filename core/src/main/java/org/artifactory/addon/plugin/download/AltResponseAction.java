@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,10 +20,11 @@ package org.artifactory.addon.plugin.download;
 
 import org.artifactory.addon.plugin.PluginAction;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.request.Request;
 
 /**
  * @author Yoav Landman
  */
 public interface AltResponseAction extends PluginAction {
-    void altResponse(RepoPath repoPath);
+    void altResponse(Request request, RepoPath responseRepoPath);
 }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,7 +32,7 @@ import java.util.List;
  *
  * @author Noam Y. Tenne
  */
-public class VirtualBrowsableItem extends BaseBrowsableItem<VirtualBrowsableItem> {
+public class VirtualBrowsableItem extends BaseBrowsableItem {
 
     private static final long serialVersionUID = 1L;
 
@@ -40,19 +40,20 @@ public class VirtualBrowsableItem extends BaseBrowsableItem<VirtualBrowsableItem
     private List<String> repoKeys;
 
     /**
-     * Main constructor.<br>
-     * Please use factory methods for normal object creation.
+     * Main constructor.<br> Please use factory methods for normal object creation.
      *
      * @param name         Item display name
      * @param folder       True if the item represents a folder
+     * @param created      Item creation time
      * @param lastModified Item last modified time
      * @param size         Item size (applicable only to files)
      * @param repoPath     Item repo path
      * @param repoKeys     List of keys of the repos that the item appears in
      */
-    public VirtualBrowsableItem(String name, boolean folder, long lastModified, long size, RepoPath repoPath,
+    public VirtualBrowsableItem(String name, boolean folder, long created, long lastModified, long size,
+            RepoPath repoPath,
             List<String> repoKeys) {
-        super(name, folder, lastModified, size);
+        super(name, folder, created, lastModified, size);
         this.repoPath = repoPath;
         this.repoKeys = repoKeys;
     }
@@ -68,10 +69,10 @@ public class VirtualBrowsableItem extends BaseBrowsableItem<VirtualBrowsableItem
     public static <T extends ItemInfo> VirtualBrowsableItem getItem(RepoPath repoPath, T itemInfo,
             List<String> repoKeys) {
         if (itemInfo.isFolder()) {
-            return new VirtualBrowsableItem(itemInfo.getName(), true, itemInfo.getLastModified(), 0, repoPath,
-                    repoKeys);
+            return new VirtualBrowsableItem(itemInfo.getName(), true, itemInfo.getCreated(),
+                    itemInfo.getLastModified(), 0, repoPath, repoKeys);
         }
-        return new VirtualBrowsableItem(itemInfo.getName(), false, itemInfo.getLastModified(),
+        return new VirtualBrowsableItem(itemInfo.getName(), false, itemInfo.getCreated(), itemInfo.getLastModified(),
                 ((FileInfo) itemInfo).getSize(), repoPath, repoKeys);
     }
 
@@ -85,8 +86,8 @@ public class VirtualBrowsableItem extends BaseBrowsableItem<VirtualBrowsableItem
      */
     public static VirtualBrowsableItem getMetadataItem(RepoPath repoPath, MetadataInfo metadataInfo,
             List<String> repoKeys) {
-        return new VirtualBrowsableItem(metadataInfo.getName(), false, metadataInfo.getLastModified(),
-                metadataInfo.getSize(), repoPath, repoKeys);
+        return new VirtualBrowsableItem(metadataInfo.getName(), false, metadataInfo.getCreated(),
+                metadataInfo.getLastModified(), metadataInfo.getSize(), repoPath, repoKeys);
     }
 
     /**
@@ -102,8 +103,9 @@ public class VirtualBrowsableItem extends BaseBrowsableItem<VirtualBrowsableItem
         RepoPath repoPath = RepoPathFactory.create(virtualBrowsableItem.getRepoKey(),
                 virtualBrowsableItem.getRelativePath() + checksumType.ext());
 
-        return new VirtualBrowsableItem(checksumItemName, false, virtualBrowsableItem.getLastModified(),
-                checksumValueLength, repoPath, virtualBrowsableItem.getRepoKeys());
+        return new VirtualBrowsableItem(checksumItemName, false, virtualBrowsableItem.getCreated(),
+                virtualBrowsableItem.getLastModified(), checksumValueLength, repoPath,
+                virtualBrowsableItem.getRepoKeys());
     }
 
     @Override
@@ -114,6 +116,10 @@ public class VirtualBrowsableItem extends BaseBrowsableItem<VirtualBrowsableItem
     @Override
     public String getRepoKey() {
         return repoPath.getRepoKey();
+    }
+
+    public void addRepoKey(String repoKey) {
+        repoKeys.add(repoKey);
     }
 
     @Override
@@ -142,7 +148,7 @@ public class VirtualBrowsableItem extends BaseBrowsableItem<VirtualBrowsableItem
         return repoPath.getPath().hashCode();
     }
 
-    public int compareTo(VirtualBrowsableItem o) {
+    public int compareTo(BaseBrowsableItem o) {
 
         if (name.equals(UP) || (isFolder() && !o.isFolder())) {
             return -1;

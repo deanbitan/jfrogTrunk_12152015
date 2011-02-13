@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,18 +26,11 @@ import org.artifactory.webapp.actionable.action.RepoAwareItemAction;
 /**
  * @author yoavl
  */
-public class RepoAwareItemEvent extends ItemEvent {
+public class RepoAwareItemEvent extends ItemEvent<RepoAwareActionableItem> {
 
     public RepoAwareItemEvent(RepoAwareActionableItem source, RepoAwareItemAction action,
             AjaxRequestTarget target) {
         super(source, action);
-    }
-
-    @Override
-    public RepoAwareActionableItem getSource() {
-        RepoAwareActionableItem source = (RepoAwareActionableItem) super.getSource();
-        assert source != null;
-        return source;
     }
 
     public RepoPath getRepoPath() {

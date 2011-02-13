@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,6 +17,10 @@
  */
 
 package org.artifactory.test;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import org.artifactory.log.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -98,6 +102,15 @@ public class TestUtils {
             searchType = searchType.getSuperclass();
         }
         return null;
+    }
+
+    public static void setLoggingLevel(Class clazz, Level level) {
+        setLoggingLevel(clazz.getName(), level);
+    }
+
+    public static void setLoggingLevel(String name, Level level) {
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        lc.getLogger(name).setLevel(level);
     }
 
 }

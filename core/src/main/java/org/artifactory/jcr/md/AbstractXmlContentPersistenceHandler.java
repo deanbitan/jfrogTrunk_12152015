@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,9 +23,11 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.artifactory.api.fs.MetadataInfoImpl;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.jcr.JcrTypes;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.repo.jcr.JcrHelper;
+import org.slf4j.Logger;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -38,6 +40,7 @@ import java.util.Calendar;
  * @author freds
  */
 public abstract class AbstractXmlContentPersistenceHandler<T> extends AbstractMetadataPersistenceHandler<T> {
+    private static final Logger log = LoggerFactory.getLogger(AbstractXmlContentPersistenceHandler.class);
 
     protected AbstractXmlContentPersistenceHandler(XmlMetadataProvider<T> xmlProvider) {
         super(xmlProvider);
@@ -73,12 +76,24 @@ public abstract class AbstractXmlContentPersistenceHandler<T> extends AbstractMe
     }
 
     protected void setXml(MetadataAware metadataAware, String xmlData) {
-        getJcr().setString(getOrCreateMetadataContainer(metadataAware),
+        Node metadataNode = getOrCreateMetadataContainer(metadataAware);
+        getJcr().setString(metadataNode,
                 getMetadataName(),
                 xmlData,
                 MimeType.applicationXml,
                 getAuthorizationService().currentUsername(),
                 shouldSaveXmlHierarchy());
+        markModified(metadataNode);
+    }
+
+    public boolean markModified(MetadataAware metadataAware, Calendar modified) {
+        Node metadataNode = getMetadataNode(metadataAware, false);
+        if (metadataNode == null) {
+            log.warn("Metadata node doesn't exist: {}", metadataAware);
+            return false;
+        }
+        super.markModified(metadataNode, modified);
+        return true;
     }
 
     public MetadataInfo getMetadataInfo(MetadataAware metadataAware) {

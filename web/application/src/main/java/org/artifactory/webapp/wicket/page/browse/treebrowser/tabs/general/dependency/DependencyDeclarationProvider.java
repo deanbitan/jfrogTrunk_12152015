@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.dependency;
 
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 
 /**
@@ -29,7 +29,7 @@ import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 public interface DependencyDeclarationProvider {
 
     /**
-     * The syntax type of the declaration content. To be used for the syntax highligher
+     * The syntax type of the declaration content. To be used for the syntax highlighter
      *
      * @return Content syntax type
      */
@@ -38,8 +38,8 @@ public interface DependencyDeclarationProvider {
     /**
      * Returns the dependency declaration of the build tool
      *
-     * @param artifactInfo Valid maven artifact info to generate from
+     * @param moduleInfo Module info
      * @return Dependency declaration text
      */
-    String getDependencyDeclaration(MavenArtifactInfo artifactInfo);
+    String getDependencyDeclaration(ModuleInfo moduleInfo);
 }

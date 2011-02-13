@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,6 +29,7 @@ import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.DownloadResource;
 import org.artifactory.rest.resource.artifact.SyncResource;
+import org.jfrog.build.api.BuildRetention;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
@@ -50,11 +51,11 @@ public class RestAddonDefaultImpl implements RestAddon {
         return true;
     }
 
-    public MoveCopyResult copy(String path, String target, int dryRun) throws Exception {
+    public MoveCopyResult copy(String path, String target, int dryRun, int suppressLayouts) throws Exception {
         throw new MissingRestAddonException();
     }
 
-    public MoveCopyResult move(String path, String target, int dryRun) throws Exception {
+    public MoveCopyResult move(String path, String target, int dryRun, int suppressLayouts) throws Exception {
         throw new MissingRestAddonException();
     }
 
@@ -68,11 +69,11 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     public MoveCopyResult moveOrCopyBuildItems(boolean move, String buildName, String buildNumber, String started,
-            String to, int arts, int deps, StringList scopes, int dry) {
+            String to, int arts, int deps, StringList scopes, KeyValueList properties, int dry) {
         throw new MissingRestAddonException();
     }
 
-    public FileList getFileList(String uri, String path, int deep) {
+    public FileList getFileList(String uri, String path, int deep, int listFolders) {
         throw new MissingRestAddonException();
     }
 
@@ -91,6 +92,10 @@ public class RestAddonDefaultImpl implements RestAddon {
 
     public void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers) {
         throw new MissingRestAddonException();
+    }
+
+    public void discardOldBuilds(String name, BuildRetention discard) {
+        // nop
     }
 
     public ItemInfo getLastModified(String pathToSearch) {
@@ -122,7 +127,11 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
-    public Response savePropertiesOnPath(String path, String recursive, KeyValueList properties) {
+    public Response savePathProperties(String path, String recursive, KeyValueList properties) {
+        throw new MissingRestAddonException();
+    }
+
+    public Response deletePathProperties(String path, String recursive, StringList properties) {
         throw new MissingRestAddonException();
     }
 

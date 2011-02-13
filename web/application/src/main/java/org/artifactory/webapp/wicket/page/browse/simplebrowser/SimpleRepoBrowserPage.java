@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,8 +22,8 @@ import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebRequestCycle;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RepoFilter;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
@@ -54,17 +54,18 @@ public class SimpleRepoBrowserPage extends AuthenticatedPage {
         }
 
         String repoKey = repoPath.getRepoKey();
-        if (repoService.remoteRepoDescriptorByKey(repoKey) != null) {
-            warn("Remote repositories are not directly browsable - browsing the remote repository cache.");
-            // switch the repo path and key to the cache repo
-            repoKey = repoKey + "-cache";
-            repoPath = new RepoPathImpl(repoKey, repoPath.getPath());
+        RemoteRepoDescriptor remoteRepoDescriptor = repoService.remoteRepoDescriptorByKey(repoKey);
+        if (remoteRepoDescriptor != null && !remoteRepoDescriptor.isListRemoteFolderItems()) {
+            warn("Remote content browsing is disabled for this repository.\n" +
+                    " You can turn on remote browsing by enabling the 'List Remote Folder Items' flag for this repository");
         }
 
-        if (repoService.localOrCachedRepoDescriptorByKey(repoKey) != null) {
-            add(new LocalRepoBrowserPanel("browseRepoPanel", repoPath));
+        if (repoService.remoteRepoDescriptorByKey(repoKey) != null) {
+            add(new RemoteRepoBrowserPanel("browseRepoPanel", repoPath));
         } else if (repoService.virtualRepoDescriptorByKey(repoKey) != null) {
             add(new VirtualRepoBrowserPanel("browseRepoPanel", repoPath));
+        } else if (repoService.localOrCachedRepoDescriptorByKey(repoKey) != null) {
+            add(new LocalRepoBrowserPanel("browseRepoPanel", repoPath));
         } else {
             throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }

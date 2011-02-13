@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -64,6 +64,7 @@ import org.artifactory.util.PathUtils;
 import org.artifactory.util.ZipUtils;
 import org.slf4j.Logger;
 
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -91,7 +92,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     }
 
     protected JcrRepoBase(InternalRepositoryService repositoryService, T descriptor,
-                          StoringRepo<T> oldStoringRepo) {
+            StoringRepo<T> oldStoringRepo) {
         super(repositoryService, descriptor);
         storageMixin = new StoringRepoMixin<T>(this, oldStoringRepo);
     }
@@ -110,7 +111,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         return false;
     }
 
-    public SnapshotVersionBehavior getSnapshotVersionBehavior() {
+    public SnapshotVersionBehavior getMavenSnapshotVersionBehavior() {
         return getDescriptor().getSnapshotVersionBehavior();
     }
 
@@ -119,7 +120,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     }
 
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
-        BasicStatusHolder status = assertValidPath(repoPath);
+        BasicStatusHolder status = assertValidPath(repoPath.getPath());
         if (status.isError()) {
             return status;
         }
@@ -205,7 +206,12 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
                 getRepositoryService().calculateMavenMetadata(this.getRootFolder().getRepoPath());
             } catch (Exception e) {
                 // remove the maven metadata recalculation mark to not try it over and over again
-                getRepositoryService().removeMarkForMavenMetadataRecalculation(rootRepoPath);
+                try {
+                    getRepositoryService().removeMarkForMavenMetadataRecalculation(rootRepoPath);
+                } catch (ItemNotFoundException infe) {
+                    //Action is async. Item might have been removed
+                    status.setDebug("Failed to remove maven metadata calculation mark: " + e.getMessage(), log);
+                }
                 status.setError("Failed to calculate maven metadata on imported repo: " + getKey(), e, log);
             }
         }
@@ -465,5 +471,9 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
 
     public Set<MetadataDefinition<?>> getAllMetadataDefinitions(boolean includeInternal) {
         return storageMixin.getAllMetadataDefinitions(includeInternal);
+    }
+
+    public void clearCaches() {
+        storageMixin.clearCaches();
     }
 }

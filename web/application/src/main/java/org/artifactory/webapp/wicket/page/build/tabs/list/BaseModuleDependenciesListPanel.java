@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -99,27 +99,21 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
      */
     private class ModuleDependenciesDataProvider extends GroupableDataProvider<ModuleDependencyActionableItem> {
 
-        private List<ModuleDependencyActionableItem> dependenciesList;
-
         public ModuleDependenciesDataProvider() {
+            super(getDependencies());
             setSort("dependencyScope", true);
             setGroupParam(new SortParam("dependencyScope", true));
             setGroupRenderer("dependencyScope", new ChoiceRenderer<ModuleDependencyActionableItem>(
                     "dependencyScope", "dependencyScope"));
-            this.dependenciesList = getDependencies();
         }
 
         @Override
         public Iterator<ModuleDependencyActionableItem> iterator(int first, int count) {
-            ListPropertySorter.sort(dependenciesList, getGroupParam(), getSort());
+            List<ModuleDependencyActionableItem> data = getData();
+            ListPropertySorter.sort(data, getGroupParam(), getSort());
             List<ModuleDependencyActionableItem> listToReturn =
-                    populateModuleDependencyActionableItem(dependenciesList.subList(first, first + count));
+                    populateModuleDependencyActionableItem(data.subList(first, first + count));
             return listToReturn.iterator();
-        }
-
-        @Override
-        public int size() {
-            return dependenciesList.size();
         }
 
         @Override

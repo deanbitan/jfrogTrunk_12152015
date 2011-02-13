@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +20,7 @@ package org.artifactory.descriptor.config;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
@@ -34,6 +35,7 @@ import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.repo.jaxb.LocalRepositoriesMapAdapter;
 import org.artifactory.descriptor.repo.jaxb.RemoteRepositoriesMapAdapter;
@@ -41,6 +43,7 @@ import org.artifactory.descriptor.repo.jaxb.VirtualRepositoriesMapAdapter;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.util.AlreadyExistsException;
 import org.artifactory.util.DoesNotExistException;
+import org.artifactory.util.RepoLayoutUtils;
 
 import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -59,7 +62,7 @@ import java.util.Map;
 @XmlType(name = "CentralConfigType",
         propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
                 "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
-                "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer"},
+                "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts"},
         namespace = Descriptor.NS)
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CentralConfigDescriptorImpl implements MutableCentralConfigDescriptor {
@@ -128,6 +131,10 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElement
     private String footer;
+
+    @XmlElementWrapper(name = "repoLayouts")
+    @XmlElement(name = "repoLayout", required = false)
+    private List<RepoLayout> repoLayouts = Lists.newArrayList();
 
     public Map<String, LocalRepoDescriptor> getLocalRepositoriesMap() {
         return localRepositoriesMap;
@@ -315,7 +322,8 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
                 isProxyExists(key) ||
                 isBackupExists(key) ||
                 isLdapExists(key) ||
-                isPropertySetExists(key));
+                isPropertySetExists(key) ||
+                isRepoLayoutExists(key));
     }
 
     public boolean isRepositoryExists(String repoKey) {
@@ -417,7 +425,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     private ProxyDescriptor findPreviousProxyDescriptor(final ProxyDescriptor proxyDescriptor) {
         return Iterables.find(proxies, new Predicate<ProxyDescriptor>() {
             public boolean apply(@Nullable ProxyDescriptor input) {
-                return input.isDefaultProxy() && !input.getKey().equals(proxyDescriptor.getKey());
+                return (input != null) && input.isDefaultProxy() && !input.getKey().equals(proxyDescriptor.getKey());
             }
         }, null);
     }
@@ -549,5 +557,77 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         if (!exists && shouldExist) {
             throw new DoesNotExistException("Repository " + repoKey + " does not exist");
         }
+    }
+
+    public List<RepoLayout> getRepoLayouts() {
+        return repoLayouts;
+    }
+
+    public boolean isRepoLayoutExists(String repoLayoutName) {
+        for (RepoLayout repoLayout : repoLayouts) {
+            if (repoLayout.getName().equals(repoLayoutName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void addRepoLayout(RepoLayout repoLayout) {
+        String repoLayoutName = repoLayout.getName();
+        if (isRepoLayoutExists(repoLayoutName)) {
+            throw new AlreadyExistsException("Repo Layout " + repoLayoutName + " already exists");
+        }
+        repoLayouts.add(repoLayout);
+    }
+
+    public RepoLayout removeRepoLayout(String repoLayoutName) {
+        RepoLayout repoLayout = getRepoLayout(repoLayoutName);
+        if (repoLayout == null) {
+            return null;
+        }
+
+        repoLayouts.remove(repoLayout);
+
+
+        Collection<LocalRepoDescriptor> localRepoDescriptorCollection = localRepositoriesMap.values();
+        for (LocalRepoDescriptor localRepoDescriptor : localRepoDescriptorCollection) {
+            if (repoLayout.equals(localRepoDescriptor.getRepoLayout())) {
+                localRepoDescriptor.setRepoLayout(RepoLayoutUtils.MAVEN_2_DEFAULT);
+            }
+        }
+
+        Collection<RemoteRepoDescriptor> remoteRepoDescriptors = remoteRepositoriesMap.values();
+        for (RemoteRepoDescriptor remoteRepoDescriptor : remoteRepoDescriptors) {
+            if (repoLayout.equals(remoteRepoDescriptor.getRepoLayout())) {
+                remoteRepoDescriptor.setRepoLayout(RepoLayoutUtils.MAVEN_2_DEFAULT);
+            }
+            if (repoLayout.equals(remoteRepoDescriptor.getRemoteRepoLayout())) {
+                remoteRepoDescriptor.setRemoteRepoLayout(null);
+            }
+        }
+
+        Collection<VirtualRepoDescriptor> virtualRepoDescriptors = virtualRepositoriesMap.values();
+        for (VirtualRepoDescriptor virtualRepoDescriptor : virtualRepoDescriptors) {
+            if (repoLayout.equals(virtualRepoDescriptor.getRepoLayout())) {
+                virtualRepoDescriptor.setRepoLayout(null);
+            }
+        }
+
+        return repoLayout;
+    }
+
+    public void setRepoLayouts(List<RepoLayout> repoLayouts) {
+        this.repoLayouts = repoLayouts;
+    }
+
+    public RepoLayout getRepoLayout(String repoLayoutName) {
+        for (RepoLayout repoLayout : repoLayouts) {
+            if (repoLayout.getName().equals(repoLayoutName)) {
+                return repoLayout;
+            }
+        }
+
+        return null;
     }
 }

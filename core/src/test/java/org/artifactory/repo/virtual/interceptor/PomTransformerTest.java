@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Profile;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.io.checksum.Checksum;
-import org.artifactory.io.checksum.ChecksumCalculator;
+import org.artifactory.io.checksum.Checksums;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.repo.virtual.interceptor.transformer.PomTransformer;
 import org.artifactory.util.ResourceUtils;
@@ -187,8 +187,8 @@ public class PomTransformerTest {
     private void compareChecksums(String a, String b, boolean shouldBeEqual) throws IOException {
         InputStream streamA = IOUtils.toInputStream(a);
         InputStream streamB = IOUtils.toInputStream(b);
-        Checksum[] checksumsA = ChecksumCalculator.calculateAll(streamA);
-        Checksum[] checksumsB = ChecksumCalculator.calculateAll(streamB);
+        Checksum[] checksumsA = Checksums.calculateAll(streamA);
+        Checksum[] checksumsB = Checksums.calculateAll(streamB);
         for (int i = 0; i < checksumsA.length; i++) {
             if (shouldBeEqual) {
                 assertEquals(checksumsA[i].getChecksum(), checksumsB[i].getChecksum(),

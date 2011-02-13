@@ -2,7 +2,7 @@
 
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2010 JFrog Ltd.
+  ~ Copyright (C) 2011 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -53,16 +53,21 @@
     <bean id="ldapAuthenticationProvider" class="org.artifactory.security.ldap.ArtifactoryLdapAuthenticationProvider"/>
     <bean id="crowdAuthenticationProviderAdapter"
           class="org.artifactory.security.crowd.CrowdAuthenticationProviderAdapter"/>
+    <bean id="jcrAuthenticationProvider" class="org.artifactory.security.jcr.JcrAuthenticationProvider">
+        <property name="userDetailsService" ref="userDetailsService"/>
+    </bean>
 
     <!-- authentication providers order is important. keep internal provider after ldap and sso -->
-    <security:authentication-manager alias="authenticationManager">
-        <security:authentication-provider ref="ldapAuthenticationProvider"/>
-        <security:authentication-provider ref="crowdAuthenticationProviderAdapter"/>
-        <security:authentication-provider user-service-ref="userDetailsService">
-            <security:password-encoder hash="md5"/>
-        </security:authentication-provider>
-        <security:authentication-provider ref="rememberMeAuthenticationProvider"/>
-    </security:authentication-manager>
+    <bean id="authenticationManager" class="org.artifactory.security.RealmAwareAuthenticationManager">
+        <property name="providers">
+            <list>
+                <ref bean="ldapAuthenticationProvider"/>
+                <ref bean="crowdAuthenticationProviderAdapter"/>
+                <ref bean="jcrAuthenticationProvider"/>
+                <ref bean="rememberMeAuthenticationProvider"/>
+            </list>
+        </property>
+    </bean>
 
     <bean id="rememberMeProcessingFilter"
           class="org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter">

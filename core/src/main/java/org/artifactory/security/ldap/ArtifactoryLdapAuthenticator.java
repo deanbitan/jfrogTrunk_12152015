@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -42,6 +42,8 @@ import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.stereotype.Component;
 
 import javax.naming.Context;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,8 +111,11 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
     }
 
     static LdapContextSource createSecurityContext(LdapSetting ldapSetting) {
-        DefaultSpringSecurityContextSource contextSource =
-                new DefaultSpringSecurityContextSource(ldapSetting.getLdapUrl());
+        String url = ldapSetting.getLdapUrl();
+        String scheme = getLdapScheme(url);
+        String baseUrl = getLdapBaseUrl(scheme, url);
+        DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(scheme + baseUrl);
+        contextSource.setBase(adjustBase(url.substring((scheme + baseUrl).length())));
         // set default connection timeout to 5 seconds
         HashMap<String, String> env = new HashMap<String, String>();
         //TODO: [by yl] check how timeout is set on other jdks
@@ -133,6 +138,44 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
             throw new RuntimeException(e);
         }
         return contextSource;
+    }
+
+    private static String getLdapBaseUrl(String scheme, String url) {
+        url = url.substring(scheme.length());
+        int index = url.indexOf('/');
+        if (index != -1) {
+            return url.substring(0, index);
+        } else {
+            return url;
+        }
+    }
+
+    private static String getLdapScheme(String url) {
+        String scheme = url.substring(0, url.indexOf("//") + 2);
+        return scheme.substring(0, url.indexOf('/')) + "//";
+    }
+
+    /**
+     * Adjust the base {@link org.springframework.ldap.core.DistinguishedName} of the {@link LdapContextSource} which is
+     * space escaped
+     *
+     * @param url The entire LDAP url
+     * @return The escaped base DN
+     */
+    private static String adjustBase(String url) {
+        url = url.replace(" ", "%20");
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Could not parse LDAP URL.", e);
+        }
+        String base = uri.getPath();
+        if (base.indexOf('/') == 0) {
+            return base.substring(1);
+        } else {
+            return base;
+        }
     }
 
     public DirContextOperations authenticate(Authentication authentication) {

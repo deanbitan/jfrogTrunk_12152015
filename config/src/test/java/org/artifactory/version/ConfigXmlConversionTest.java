@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.version;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
@@ -26,6 +27,8 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.EncryptionPolicy;
@@ -38,6 +41,7 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.ArtifactoryHomeStub;
 import org.artifactory.test.TestUtils;
+import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.version.converter.XmlConverter;
 import org.slf4j.Logger;
 import org.testng.annotations.Test;
@@ -95,7 +99,7 @@ public class ConfigXmlConversionTest extends ArtifactoryHomeBoundTest {
                 "Should have been converted from 'false' to 'non-unique'");
 
         LocalRepoDescriptor pluginsReleases = localRepos.get("plugins-releases");
-        assertEquals(pluginsReleases.getSnapshotVersionBehavior(), SnapshotVersionBehavior.NONUNIQUE,
+        assertEquals(pluginsReleases.getSnapshotVersionBehavior(), SnapshotVersionBehavior.UNIQUE,
                 "Should have kept the default");
     }
 
@@ -293,6 +297,49 @@ public class ConfigXmlConversionTest extends ArtifactoryHomeBoundTest {
     public void convert143WithServerId() throws Exception {
         // just removes an element, so if it passes it's ok
         transform("/config/test/config.1.4.3_with_serverId.xml", v143);
+    }
+
+    public void convert146() throws Exception {
+        CentralConfigDescriptor descriptor = transform("/config/test/config.1.4.6_wrong_url.xml", v146);
+
+        //Checks global repo layout definitions were added
+        List<RepoLayout> globalRepoLayouts = descriptor.getRepoLayouts();
+        assertNotNull(globalRepoLayouts, "Expected to find default global repo layouts after the conversion.");
+        assertFalse(globalRepoLayouts.isEmpty(), "Expected to find default global repo layouts after the conversion.");
+
+        assertTrue(EqualsBuilder.reflectionEquals(globalRepoLayouts.get(0), RepoLayoutUtils.MAVEN_2_DEFAULT),
+                "Expected first global repo layout to be Maven 2 default.");
+
+        assertTrue(EqualsBuilder.reflectionEquals(globalRepoLayouts.get(1), RepoLayoutUtils.IVY_DEFAULT),
+                "Expected second global repo layout to be Ivy default.");
+
+        assertTrue(EqualsBuilder.reflectionEquals(globalRepoLayouts.get(2), RepoLayoutUtils.GRADLE_DEFAULT),
+                "Expected third global repo layout to be Gradle default.");
+
+        assertTrue(EqualsBuilder.reflectionEquals(globalRepoLayouts.get(3), RepoLayoutUtils.MAVEN_1_DEFAULT),
+                "Expected fourth global repo layout to be Maven 1 default.");
+
+        //Checks local repo layout definitions were added
+        for (Map.Entry<String, LocalRepoDescriptor> localEntry : descriptor.getLocalRepositoriesMap().entrySet()) {
+            assertTrue(EqualsBuilder.reflectionEquals(localEntry.getValue().getRepoLayout(),
+                    RepoLayoutUtils.MAVEN_2_DEFAULT), "Expected default repo ('" + localEntry.getKey() +
+                    "') layout to be Maven 2 default.");
+        }
+
+        //Checks remote repo layout definitions were added
+        for (Map.Entry<String, RemoteRepoDescriptor> remoteEntry : descriptor.getRemoteRepositoriesMap().entrySet()) {
+            String repoKey = remoteEntry.getKey();
+            RemoteRepoDescriptor remoteDescriptor = remoteEntry.getValue();
+            assertTrue(EqualsBuilder.reflectionEquals(remoteDescriptor.getRepoLayout(),
+                    RepoLayoutUtils.MAVEN_2_DEFAULT), "Expected default repo ('" + repoKey +
+                    "') layout to be Maven 2 default.");
+
+            if ("java.net.m1".equals(repoKey)) {
+                assertTrue(EqualsBuilder.reflectionEquals(remoteDescriptor.getRemoteRepoLayout(),
+                        RepoLayoutUtils.MAVEN_1_DEFAULT), "Expected default remote repo ('" + repoKey +
+                        "') layout to be Maven 1 default.");
+            }
+        }
     }
 
     public void configVersionSanityCheck() {

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.Test;
@@ -168,23 +167,9 @@ public class MavenModelUtilsTest extends ArtifactoryHomeBoundTest {
         assertEquals(artifactInfo.getVersion(), "1.0.0");
     }
 
-    public void validatePomTargetValidPath() throws IOException {
-        InputStream inputStream = ResourceUtils.getResource("/org/artifactory/maven/yourpit-1.0.0-alpha2.pom");
-        String path = "yourpit/yourpit/1.0.0-alpha2";
-        MavenModelUtils.validatePomTargetPath(inputStream, path, false);
-    }
-
-    @Test(expectedExceptions = BadPomException.class)
-    public void validatePomTargetInValidPath() throws IOException {
-        InputStream inputStream = ResourceUtils.getResource("/org/artifactory/maven/yourpit-1.0.0-alpha2.pom");
-        String path = "blab/bla/1.0.0-alpha2";
-        MavenModelUtils.validatePomTargetPath(inputStream, path, false);
-    }
-
-
     public void readNewMaven3MetadataFormat() throws IOException {
         String newMaven3MetadataFormat = ResourceUtils.getResourceAsString(
                 "/org/artifactory/maven/maven3-metadata.xml");
-        Metadata metadata = MavenModelUtils.toMavenMetadata(newMaven3MetadataFormat);
+        MavenModelUtils.toMavenMetadata(newMaven3MetadataFormat);
     }
 }

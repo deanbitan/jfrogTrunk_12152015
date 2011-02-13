@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.repo;
 
 import org.artifactory.api.fs.RepoResource;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.DescriptorAware;
@@ -74,4 +75,14 @@ public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Seri
 
     ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, RepoResource res) throws IOException,
             FileExpectedException, RepositoryException, RepoRejectException;
+
+    ModuleInfo getItemModuleInfo(String itemPath);
+
+    ModuleInfo getDescriptorModuleInfo(String descriptorPath);
+
+    ModuleInfo getArtifactModuleInfo(String artifactPath);
+
+    RepoPath getRepoPath(String path);
+
+    T getDescriptor();
 }

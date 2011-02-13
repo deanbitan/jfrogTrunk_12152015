@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,12 +27,15 @@ import java.awt.event.ActionEvent;
 /**
  * @author yoavl
  */
-public class ItemEvent extends ActionEvent {
+public class ItemEvent<I extends ActionableItem> extends ActionEvent {
     private ItemAction action;
+    //Store a non-transient source locally
+    private I source;
 
-    public ItemEvent(ActionableItem source, ItemAction action) {
+    public ItemEvent(I source, ItemAction action) {
         super(source, 0, action.getName());
         this.action = action;
+        this.source = source;
     }
 
     public ItemAction getAction() {
@@ -45,8 +48,8 @@ public class ItemEvent extends ActionEvent {
     }
 
     @Override
-    public ActionableItem getSource() {
-        return (ActionableItem) super.getSource();
+    public I getSource() {
+        return source;
     }
 
     public AjaxRequestTarget getTarget() {

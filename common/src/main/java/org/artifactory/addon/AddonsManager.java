@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -71,6 +71,15 @@ public interface AddonsManager {
      * @return The currently installed license key.
      */
     String getLicenseKey();
+
+    /**
+     * Returns the hash of the license key (if installed) with an added char for indication of type
+     * (<b>t</b>rial \ <b>c</b>ommercial).<br/>
+     * <b>NOTE:</b> The returned hash will not be a valid one (inclusion of indication char).
+     *
+     * @return license hash + type indication
+     */
+    String getLicenseKeyHash();
 
     String getFooterMessage(boolean admin);
 

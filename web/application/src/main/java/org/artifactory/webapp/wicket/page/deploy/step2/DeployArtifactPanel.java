@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -44,6 +44,7 @@ import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
@@ -511,8 +512,10 @@ public class DeployArtifactPanel extends TitledActionPanel {
             }
 
             private void deployFileAndPom() throws IOException, RepoRejectException {
+                ModuleInfo moduleInfo = repoService.getItemModuleInfo(
+                        new RepoPathImpl(model.targetRepo.getKey(), model.getTargetPathFieldValue()));
                 deployService.validatePom(model.pomXml, model.getTargetPathFieldValue(),
-                        model.targetRepo.isSuppressPomConsistencyChecks());
+                        moduleInfo, model.targetRepo.isSuppressPomConsistencyChecks());
                 deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, model.pomXml, true, false);
             }
 

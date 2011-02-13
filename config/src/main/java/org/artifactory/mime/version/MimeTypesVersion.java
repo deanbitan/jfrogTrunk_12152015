@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.mime.version;
 
 import com.google.common.collect.Lists;
+import org.artifactory.mime.version.converter.LatestVersionConverter;
 import org.artifactory.mime.version.converter.v1.XmlIndexedConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
@@ -49,6 +50,12 @@ public enum MimeTypesVersion implements SubConfigElementVersion {
         this.converters = converters;
     }
 
+    /**
+     * Convert an xml string to this instance mime type version.
+     *
+     * @param mimeTypesXmlAsString The mime types xml string to convert
+     * @return XML string converted to this version
+     */
     public String convert(String mimeTypesXmlAsString) {
         // First create the list of converters to apply
         List<XmlConverter> converters = Lists.newArrayList();
@@ -60,6 +67,8 @@ public enum MimeTypesVersion implements SubConfigElementVersion {
                 converters.addAll(Arrays.asList(version.converters));
             }
         }
+        // Always add the converter that changes the version string
+        converters.add(new LatestVersionConverter());
 
         return XmlConverterUtils.convert(converters, mimeTypesXmlAsString);
     }
@@ -94,5 +103,12 @@ public enum MimeTypesVersion implements SubConfigElementVersion {
 
     public boolean isCurrent() {
         return this == getCurrent();
+    }
+
+    /**
+     * @return The version string associated to this version (the one written in the xml file)
+     */
+    public String versionString() {
+        return name().substring(1);
     }
 }

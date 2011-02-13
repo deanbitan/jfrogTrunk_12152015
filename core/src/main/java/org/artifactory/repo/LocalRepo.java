@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,15 +23,15 @@ import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.repo.jcr.StoringRepo;
-import org.artifactory.repo.snapshot.SnapshotVersionAdapter;
+import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
 
 import java.io.IOException;
 
 public interface LocalRepo<T extends LocalRepoDescriptor> extends RealRepo<T>, StoringRepo<T>, ImportableExportable {
 
-    SnapshotVersionBehavior getSnapshotVersionBehavior();
+    SnapshotVersionBehavior getMavenSnapshotVersionBehavior();
 
-    SnapshotVersionAdapter getSnapshotVersionAdapter();
+    MavenSnapshotVersionAdapter getMavenSnapshotVersionAdapter();
 
     String getTextFileContent(RepoPath repoPath);
 

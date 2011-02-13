@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,8 +19,8 @@
 package org.artifactory.repo;
 
 import org.artifactory.api.common.BasicStatusHolder;
-import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.IncludeExcludeException;
 import org.artifactory.api.repo.exception.SnapshotPolicyException;
@@ -63,13 +63,16 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
         return getDescriptor().getMaxUniqueSnapshots();
     }
 
-
-    public boolean handles(String path) {
-        // TODO: Refactor this using RepoPath
+    public boolean handlesReleaseSnapshot(String path) {
         if (NamingUtils.isMetadata(path) || NamingUtils.isChecksum(path) || NamingUtils.isSystem(path)) {
             return true;
         }
-        boolean snapshot = MavenNaming.isSnapshot(path);
+        ModuleInfo moduleInfo = getItemModuleInfo(path);
+        if (!moduleInfo.isValid()) {
+            log.debug("{} is not a valid module info -  '{}': not enforcing snapshot/release policy.", this, path);
+            return true;
+        }
+        boolean snapshot = moduleInfo.isIntegration();
         if (snapshot && !isHandleSnapshots()) {
             log.debug("{} rejected '{}': not handling snapshots.", this, path);
             return false;
@@ -85,17 +88,17 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    public BasicStatusHolder assertValidPath(RepoPath repoPath) {
+    public BasicStatusHolder assertValidPath(String path) {
         BasicStatusHolder statusHolder = new BasicStatusHolder();
         statusHolder.setActivateLogging(log.isDebugEnabled());
         if (isBlackedOut()) {
-            BlackedOutException exception = new BlackedOutException(this.getDescriptor(), repoPath);
+            BlackedOutException exception = new BlackedOutException(this.getDescriptor(), getRepoPath(path));
             statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
-        } else if (!handles(repoPath.getPath())) {
-            SnapshotPolicyException exception = new SnapshotPolicyException(this.getDescriptor(), repoPath);
+        } else if (!handlesReleaseSnapshot(path)) {
+            SnapshotPolicyException exception = new SnapshotPolicyException(this.getDescriptor(), getRepoPath(path));
             statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
-        } else if (!accepts(repoPath)) {
-            IncludeExcludeException exception = new IncludeExcludeException(this.getDescriptor(), repoPath);
+        } else if (!accepts(path)) {
+            IncludeExcludeException exception = new IncludeExcludeException(this.getDescriptor(), getRepoPath(path));
             statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
         }
         return statusHolder;

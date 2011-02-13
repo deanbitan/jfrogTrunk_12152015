@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,14 +25,17 @@ import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
- * This class delays successful responses until
- * {@link org.artifactory.webapp.servlet.DelayedHttpResponse#commitResponseCode()}. if manually called. Use it whenever
- * using http response inside a transaction that might fail after interacting with the response.<p/>
- * It assumes the clients will not call sendStream directly. When used, any writes to the output will be cached. So be
- * aware not to use it when responding with a lot of data.
+ * This class delays successful responses until {@link org.artifactory.webapp.servlet.DelayedHttpResponse#commitResponseCode()}.
+ * if manually called. Use it whenever using http response inside a transaction that might fail after interacting with
+ * the response.<p/> It assumes the clients will not call sendStream directly. When used, any writes to the output will
+ * be cached. So be aware not to use it when responding with a lot of data.
  *
  * @author Yossi Shaul
  */
@@ -52,8 +55,8 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
 
     /**
      * Call at the end of the <b>successful</b> request (after transaction commit or external processes are done) to
-     * commit the response back to the client.<p/>
-     * Unsuccessful requests are assumes to call sendError which will send the information without delay.
+     * commit the response back to the client.<p/> Unsuccessful requests are assumes to call sendError which will send
+     * the information without delay.
      *
      * @throws IOException If failed to write to the response stream.
      */
@@ -122,6 +125,14 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
 
     public void setEtag(String etag) {
         response.setEtag(etag);
+    }
+
+    public void setMd5(String md5) {
+        response.setMd5(md5);
+    }
+
+    public void setSha1(String sha1) {
+        response.setSha1(sha1);
     }
 
     @Override

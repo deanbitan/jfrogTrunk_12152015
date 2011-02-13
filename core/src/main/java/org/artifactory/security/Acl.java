@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,6 +28,7 @@ import org.artifactory.api.security.AceInfo;
 import org.artifactory.api.security.AclInfo;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.jcr.ocm.OcmStorable;
+import org.artifactory.security.jcr.JcrAclManager;
 import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.AccessControlEntry;
@@ -127,7 +128,7 @@ public class Acl implements MutableAcl, OcmStorable {
      * @param sid the principal id that need to be removed from permissions list
      * @return null If this ACL does not have any ACE with this principal, the new ACL without entry for the principal
      */
-    Acl removePrincipalAces(ArtifactorySid sid) {
+    public Acl removePrincipalAces(ArtifactorySid sid) {
         Ace toFind = new Ace(this, BasePermission.READ, sid);
         //There's a single ace for each principal on the acl
         if (aces.contains(toFind)) {

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,6 +34,7 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.RepoAccessException;
@@ -47,7 +48,9 @@ import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
+import org.artifactory.maven.PomTargetPathValidator;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.InternalArtifactoryResponse;
 import org.artifactory.search.InternalSearchService;
@@ -60,7 +63,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -90,9 +97,8 @@ public class DeployServiceImpl implements DeployService {
         deploy(targetRepo, artifactInfo, file, pomString, false, false);
     }
 
-    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo,
-                       final File fileToDeploy, String pomString, boolean forceDeployPom, boolean partOfBundleDeploy)
-            throws RepoRejectException {
+    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, final File fileToDeploy, String pomString,
+            boolean forceDeployPom, boolean partOfBundleDeploy) throws RepoRejectException {
 
         validatePath(artifactInfo);
 
@@ -220,13 +226,17 @@ public class DeployServiceImpl implements DeployService {
             });
             Iterables.removeAll(archiveContent, Lists.newArrayList(mavenMetadataFiles));
             List<File> deployFailedList = Lists.newArrayList();
+
+            Repo repo = repositoryService.repositoryByKey(targetRepo.getKey());
             for (File file : archiveContent) {
                 String parentPath = extractFolder.getAbsolutePath();
                 String pomPath = file.getAbsolutePath();
                 String relPath = PathUtils.getRelativePath(parentPath, pomPath);
+
+                ModuleInfo moduleInfo = repo.getItemModuleInfo(relPath);
                 if (MavenNaming.isPom(file.getName())) {
                     try {
-                        validatePom(file, relPath, targetRepo.isSuppressPomConsistencyChecks());
+                        validatePom(file, relPath, moduleInfo, targetRepo.isSuppressPomConsistencyChecks());
                     } catch (Exception e) {
                         String msg =
                                 "The pom: " + file.getName() +
@@ -344,24 +354,24 @@ public class DeployServiceImpl implements DeployService {
         return extractFolder;
     }
 
-    public void validatePom(String pomContent, String relPath, boolean suppressPomConsistencyChecks)
-            throws IOException {
+    public void validatePom(String pomContent, String relPath, ModuleInfo moduleInfo,
+            boolean suppressPomConsistencyChecks) throws IOException {
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
         File tempFile = File.createTempFile("pom.validation", ".tmp", artifactoryHome.getWorkTmpDir());
         try {
             FileUtils.writeStringToFile(tempFile, pomContent, "utf-8");
-            validatePom(tempFile, relPath, suppressPomConsistencyChecks);
+            validatePom(tempFile, relPath, moduleInfo, suppressPomConsistencyChecks);
         } finally {
             FileUtils.forceDelete(tempFile);
         }
     }
 
-    private static void validatePom(File pomFile, String relPath, boolean suppressPomConsistencyChecks)
-            throws BadPomException {
+    private static void validatePom(File pomFile, String relPath, ModuleInfo moduleInfo,
+            boolean suppressPomConsistencyChecks) throws BadPomException {
         InputStream inputStream = null;
         try {
             inputStream = new BufferedInputStream(new FileInputStream(pomFile));
-            MavenModelUtils.validatePomTargetPath(inputStream, relPath, suppressPomConsistencyChecks);
+            new PomTargetPathValidator(relPath, moduleInfo).validate(inputStream, suppressPomConsistencyChecks);
         } catch (Exception e) {
             String message = "Error while validating POM for path: " + relPath +
                     ". Please assure the validity of the POM file.";

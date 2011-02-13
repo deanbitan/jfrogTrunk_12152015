@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
 package org.artifactory.jcr;
 
 import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
-import org.artifactory.api.common.BasicStatusHolder;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
@@ -27,9 +27,10 @@ import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.storage.GarbageCollectorInfo;
 import org.artifactory.io.checksum.Checksum;
-import org.artifactory.jcr.fs.FolderTreeNode;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.jcr.fs.JcrTreeNode;
+import org.artifactory.jcr.fs.JcrTreeNodeFileFilter;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.spring.ReloadableBean;
@@ -205,7 +206,7 @@ public interface JcrService extends ReloadableBean {
     void reCreateJcrRepository() throws Exception;
 
     void setStream(Node parent, String nodeName, InputStream value, String mimeType, String userId,
-                   boolean saveXmlHierarchy);
+            boolean saveXmlHierarchy);
 
     /**
      * Get an input stream of the binary stored on the specified node.
@@ -222,13 +223,14 @@ public interface JcrService extends ReloadableBean {
     void saveChecksums(JcrFsItem fsItem, String metadataName, Checksum[] checksums);
 
     /**
-     * Extract in pure JCR the tree of folder (with their name) and pom file names. This method will recursively
-     * populate the whole tree.
+     * Extract in pure JCR the tree of folders and files. This method will recursively populate the whole tree.
      *
-     * @param folder The original folder epo path to start from
-     * @param status The status holder containing all error and message during tree building
-     * @return the fully populated tree node for the above folder or null on error
+     * @param itemPath          The original folder repo path to start from
+     * @param multiStatusHolder The status holder containing all error and message during tree building
+     * @param fileFilter        File acceptance filter. Can be null
+     * @return The fully populated tree node for the above folder or null on error
      */
     @Transactional
-    FolderTreeNode getFolderTreeNode(RepoPath folder, BasicStatusHolder status);
+    JcrTreeNode getTreeNode(RepoPath itemPath, MultiStatusHolder multiStatusHolder,
+            JcrTreeNodeFileFilter fileFilter);
 }

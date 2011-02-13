@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +27,7 @@ import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 
@@ -204,4 +205,12 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
     void setAddons(AddonSettings addonSettings);
 
     void setLogo(String logo);
+
+    boolean isRepoLayoutExists(String repoLayoutName);
+
+    void addRepoLayout(RepoLayout repoLayout);
+
+    RepoLayout removeRepoLayout(String repoLayoutName);
+
+    void setRepoLayouts(List<RepoLayout> repoLayouts);
 }

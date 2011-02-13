@@ -52,7 +52,7 @@ if [ -z "$hasMaxNewSize" ]; then
     JAVA_OPTIONS="$JAVA_OPTIONS -XX:MaxNewSize=180m"
 fi
 
-JAVA_OPTIONS="$JAVA_OPTIONS -Djetty.home=$ARTIFACTORY_HOME -Dartifactory.home=$ARTIFACTORY_HOME"
+JAVA_OPTIONS="$JAVA_OPTIONS -server -Djetty.home=$ARTIFACTORY_HOME -Dartifactory.home=$ARTIFACTORY_HOME -Dfile.encoding=UTF8"
 
 LIB_DIR=$ARTIFACTORY_HOME/lib
 CLASSPATH=$ARTIFACTORY_HOME/artifactory.jar

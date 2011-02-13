@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,10 +78,12 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
 
     private FileBrowserButton browserButton;
     private PathAutoCompleteTextField backupDir;
+    private BackupsListPanel backupsListPanel;
 
     public BackupCreateUpdatePanel(CreateUpdateAction action, BackupDescriptor backupDescriptor,
             BackupsListPanel backupsListPanel) {
         super(action, backupDescriptor);
+        this.backupsListPanel = backupsListPanel;
         createIncrementalBackup = backupDescriptor.isIncremental();
         setWidth(560);
 
@@ -187,6 +189,11 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         TitledAjaxSubmitLink submit = createSubmitButton(backupsListPanel);
         form.add(submit);
         form.add(new DefaultButtonBehavior(submit));
+    }
+
+    @Override
+    public void onClose(AjaxRequestTarget target) {
+        backupsListPanel.refresh(target);
     }
 
     private TitledAjaxSubmitLink createSubmitButton(final BackupsListPanel backupsListPanel) {

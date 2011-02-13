@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,13 +18,13 @@
 
 package org.artifactory.api.webdav;
 
+import com.google.common.collect.Sets;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.PathUtils;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -32,19 +32,18 @@ import java.util.Set;
  */
 public interface WebdavService {
 
-    Set<String> WEBDAV_METHODS = new HashSet<String>() {{
-        add("propfind");
-        add("mkcol");
-        add("move");
-        add("delete");
-        add("options");
-    }};
+    /**
+     * Supported web dav methods. (post method is not supported)
+     */
+    Set<String> WEBDAV_METHODS = Sets.newHashSet("propfind", "mkcol", "move", "delete", "options"/*, "post"*/);
+
+    /**
+     * The supported webdav methods as a comma separated list
+     */
     String WEBDAV_METHODS_LIST = PathUtils.collectionToDelimitedString(WEBDAV_METHODS);
 
     /**
      * PROPFIND Method.
-     *
-     * @throws java.io.IOException
      */
     @Lock(transactional = true)
     void handlePropfind(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;

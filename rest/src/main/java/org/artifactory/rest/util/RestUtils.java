@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -120,7 +120,7 @@ public abstract class RestUtils {
     }
 
     public static RepoPath calcRepoPathFromRequestPath(String path) {
-        String repoKey = PathUtils.getFirstPathElements(path);
+        String repoKey = PathUtils.getFirstPathElement(path);
         String relPath = PathUtils.getRelativePath(repoKey, path);
         if (relPath.endsWith("/")) {
             int index = relPath.length() - 1;

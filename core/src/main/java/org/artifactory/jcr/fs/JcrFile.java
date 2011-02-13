@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,6 +29,7 @@ import org.artifactory.api.fs.FileInfoImpl;
 import org.artifactory.api.fs.InternalFileInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.stat.StatsInfo;
@@ -48,7 +49,7 @@ import org.artifactory.jcr.jackrabbit.DataStoreRecordNotFoundException;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.jcr.md.MetadataPersistenceHandler;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.maven.MavenModelUtils;
+import org.artifactory.maven.PomTargetPathValidator;
 import org.artifactory.mime.MimeType;
 import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.RealRepoBase;
@@ -499,6 +500,7 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
          * Process the XML stream only if it's a real repo. Virtual repos don't needed the XML parsing and also may fall
          * On POM consistency checks
          */
+        //TODO: [by yl] Instead of checking for ivy file check that this is a module descriptor using module info
         if (getRepo().isReal() && (ct.isIndex() || IvyNaming.isIvyFileName(name))) {
             in = processXmlStream(node, resourceNode, name, in);
         }
@@ -542,7 +544,9 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
                 }
                 suppressPomConsistencyChecks = descriptor.isSuppressPomConsistencyChecks();
             }
-            MavenModelUtils.validatePomTargetPath(in, getRelativePath(), suppressPomConsistencyChecks);
+            String relativePath = getRelativePath();
+            ModuleInfo moduleInfo = storingRepo.getItemModuleInfo(relativePath);
+            new PomTargetPathValidator(relativePath, moduleInfo).validate(in, suppressPomConsistencyChecks);
             in.reset();
         }
         Node xmlNode = getJcrRepoService().getOrCreateUnstructuredNode(node, JcrTypes.NODE_ARTIFACTORY_XML);
@@ -557,11 +561,14 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
         //Check if needs to create checksum and not checksum file
         log.debug("Calculating checksums for '{}'.", getRepoPath());
         Checksum[] checksums = getChecksumsToCompute();
-        ChecksumInputStream resourceInputStream = new ChecksumInputStream(in, checksums);
+        ChecksumInputStream checksumInputStream = new ChecksumInputStream(in, checksums);
 
         //Do this after xml import: since Jackrabbit 1.4
         //org.apache.jackrabbit.core.value.BLOBInTempFile.BLOBInTempFile will close the stream
-        resourceNode.setProperty(JCR_DATA, resourceInputStream);
+        resourceNode.setProperty(JCR_DATA, checksumInputStream);
+
+        // make sure the stream is closed. Jackrabbit doesn't close the stream if the file is small (violating the contract)
+        IOUtils.closeQuietly(checksumInputStream);  // if close is failed we'll fail in setting the checksums
 
         org.artifactory.fs.FileInfo info = getInfo();
         // set the actual checksums on the file extra info
@@ -598,8 +605,7 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
             } else {
                 log.debug(checksumType + " checksum info not found for '" + info.getRepoPath().getPath() +
                         ". Creating one with empty original checksum.");
-                ChecksumInfo
-                        missingChecksumInfo = new ChecksumInfo(checksumType, null, calculatedChecksum);
+                ChecksumInfo missingChecksumInfo = new ChecksumInfo(checksumType, null, calculatedChecksum);
                 checksumsInfo.addChecksumInfo(missingChecksumInfo);
             }
         }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,6 +22,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.DownloadService;
@@ -80,20 +81,21 @@ public class RepoFilter extends DelayedFilterBase {
         execute(chain, request, response, servletPath);
     }
 
-    @SuppressWarnings({"OverlyComplexMethod", "StringEquality"})
+    @SuppressWarnings("OverlyComplexMethod")
     private void execute(FilterChain chain, final HttpServletRequest request, HttpServletResponse response,
             String servletPath) throws IOException, ServletException {
         if (log.isDebugEnabled()) {
             log.debug("Entering request {}.", requestDebugString(request));
         }
 
-        if (servletPath != null && servletPath.startsWith(ArtifactListPage.REQUEST_PREFIX)) {
+        if (servletPath != null && servletPath.startsWith("/" + ArtifactoryRequest.LIST_BROWSING_PATH)
+                && servletPath.endsWith("/")) {
             doRepoListing(request, response, servletPath);
             return;
         }
 
         String method = request.getMethod().toLowerCase().intern();
-        if (RequestUtils.isRepoRequest(request)) {
+        if (servletPath != null && RequestUtils.isRepoRequest(request)) {
             //Handle upload and download requests
             ArtifactoryRequest artifactoryRequest = new HttpArtifactoryRequest(request);
             ArtifactoryResponse artifactoryResponse = new HttpArtifactoryResponse(response);
@@ -138,7 +140,6 @@ public class RepoFilter extends DelayedFilterBase {
         }
     }
 
-    @SuppressWarnings({"StringEquality"})
     private void doWebDavMethod(HttpServletRequest request, HttpServletResponse response, String method,
             ArtifactoryRequest artifactoryRequest, ArtifactoryResponse artifactoryResponse) throws IOException {
         if ("propfind".equals(method)) {
@@ -178,7 +179,7 @@ public class RepoFilter extends DelayedFilterBase {
         //We expect either a url with the repo prefix and an optional repo-key@repo
         try {
             log.debug("Serving a download or info request.");
-            getDownloadEngine().process(artifactoryRequest, artifactoryResponse);
+            getDownloadService().process(artifactoryRequest, artifactoryResponse);
         } catch (FileExpectedException e) {
             //If we try to get a file but encountered a folder and the request does not end with a '/'
             // send a redirect that adds the slash with the request with a 302 status code. In the next request
@@ -207,9 +208,10 @@ public class RepoFilter extends DelayedFilterBase {
         log.debug("Forwarding internally to a directory browsing request.");
         //Expose the artifactory repository path as a request attribute
         final RepoPath repoPath = artifactoryRequest.getRepoPath();
-        if (checkForInvalidPath(response, repoPath)) {
-            return;
-        }
+        //TODO: [by ys] the virtual repo should throw and exception if no item doesn't exist
+        //if (checkForInvalidPath(response, repoPath)) {
+        //    return;
+        //}
         request.setAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH, repoPath);
 
         //Remove the forwarding URL (repo+path) as this is used by wicket to build
@@ -229,11 +231,13 @@ public class RepoFilter extends DelayedFilterBase {
             response.sendRedirect(HttpUtils.getServletContextUrl(request) + servletPath + "/");
             return;
         }
-        final String listPath = servletPath.substring(ArtifactListPage.REQUEST_PREFIX.length());
-        final RepoPath repoPath = RequestUtils.calculateRepoPath(listPath);
+        String listPath = PathUtils.stripFirstPathElement(servletPath);
+        RepoPath repoPath = RequestUtils.calculateRepoPath(listPath);
+        /*
         if (checkForInvalidPath(response, repoPath)) {
             return;
         }
+        */
         request.setAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH, repoPath);
 
         RequestDispatcher dispatcher =
@@ -242,18 +246,19 @@ public class RepoFilter extends DelayedFilterBase {
     }
 
     /**
-     * Check if the path that is being used for browsing (both simple and naked listing) is a valid path, and that
-     * the path that is being navigated to is a valid one, if it isn't then {@link HttpServletResponse#SC_NOT_FOUND}
-     * is being sent.
+     * Check if the path that is being used for browsing (both simple and naked listing) is a valid path, and that the
+     * path that is being navigated to is a valid one, if it isn't then {@link HttpServletResponse#SC_NOT_FOUND} is
+     * being sent.
      *
      * @param response The response that is being manipulated with the correct response code.
      * @param repoPath The repo path that is being checked.
      * @return True if the path is invalid, false if it's valid.
      */
     private boolean checkForInvalidPath(HttpServletResponse response, RepoPath repoPath) throws IOException {
-        List<VirtualRepoDescriptor> virtualRepoDescriptors = getContext().getRepositoryService().getVirtualRepoDescriptors();
+        List<VirtualRepoDescriptor> virtualRepoDescriptors =
+                getContext().getRepositoryService().getVirtualRepoDescriptors();
         if (Iterables.any(virtualRepoDescriptors, new VirtualDescriptorPredicate(repoPath.getRepoKey()))) {
-            if (getContext().getRepositoryService().getVirtualRepoItem(repoPath) == null) {
+            if (getContext().beanForType(RepositoryBrowsingService.class).getVirtualRepoItem(repoPath) == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return true;
             }
@@ -278,7 +283,7 @@ public class RepoFilter extends DelayedFilterBase {
         return getContext().beanForType(WebdavService.class);
     }
 
-    private DownloadService getDownloadEngine() {
+    private DownloadService getDownloadService() {
         return getContext().beanForType(DownloadService.class);
     }
 

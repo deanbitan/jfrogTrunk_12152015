@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,7 +22,7 @@ import org.apache.wicket.Page;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.LicensesWebAddon;
-import org.artifactory.addon.wicket.PropertiesAddon;
+import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.SearchAddon;
 import org.artifactory.addon.wicket.SsoAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
@@ -35,14 +35,15 @@ import org.artifactory.common.wicket.model.sitemap.SiteMap;
 import org.artifactory.common.wicket.model.sitemap.SiteMapBuilder;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.webapp.wicket.page.admin.AdminPage;
+import org.artifactory.webapp.wicket.page.browse.home.ArtifactsHomePage;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 import org.artifactory.webapp.wicket.page.deploy.DeployArtifactPage;
 import org.artifactory.webapp.wicket.page.deploy.fromzip.DeployFromZipPage;
 import org.artifactory.webapp.wicket.page.home.HomePage;
-import org.artifactory.webapp.wicket.page.home.settings.gradle.GradleInitScriptPage;
 import org.artifactory.webapp.wicket.page.home.settings.ivy.IvySettingsPage;
+import org.artifactory.webapp.wicket.page.home.settings.ivy.gradle.GradleInitScriptPage;
 import org.artifactory.webapp.wicket.page.home.settings.maven.MavenSettingsPage;
 import org.artifactory.webapp.wicket.page.search.archive.ArchiveSearchPage;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
@@ -83,7 +84,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         settingsGroup.addChild(new MenuNode("Gradle Init Script", GradleInitScriptPage.class));
         settingsGroup.addChild(new MenuNode("Ivy Settings", IvySettingsPage.class));
 
-        MenuNode browseRepoPage = new ArtifactsPageNode("Artifacts", BrowseRepoPage.class);
+        MenuNode browseRepoPage = new ArtifactsPageNode("Artifacts", ArtifactsHomePage.class);
         root.addChild(browseRepoPage);
 
         MenuNode browseGroup = new OpenedMenuNode("Browse");
@@ -100,8 +101,8 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         searchGroup.addChild(new ArtifactsPageNode("Quick Search", ArtifactSearchPage.class));
         searchGroup.addChild(new ArtifactsPageNode("Class Search", ArchiveSearchPage.class));
         searchGroup.addChild(new ArtifactsPageNode("GAVC Search", GavcSearchPage.class));
-        PropertiesAddon propertiesAddon = addons.addonByType(PropertiesAddon.class);
-        searchGroup.addChild(propertiesAddon.getPropertySearchMenuNode("Property Search"));
+        PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
+        searchGroup.addChild(propertiesWebAddon.getPropertySearchMenuNode("Property Search"));
         searchGroup.addChild(new ArtifactsPageNode("POM/XML Search", MetadataSearchPage.class));
 
         DeployArtifactPageNode deployPage = new DeployArtifactPageNode(DeployArtifactPage.class, "Deploy");
@@ -114,7 +115,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         MenuNode adminPage = new AdminPageNode("Admin");
         root.addChild(adminPage);
         LicensesWebAddon licensesWebAddon = addons.addonByType(LicensesWebAddon.class);
-        MenuNode adminConfiguration = applicationAddon.getConfigurationMenuNode(propertiesAddon, licensesWebAddon);
+        MenuNode adminConfiguration = applicationAddon.getConfigurationMenuNode(propertiesWebAddon, licensesWebAddon);
         adminPage.addChild(adminConfiguration);
 
         WebstartWebAddon webstartAddon = addons.addonByType(WebstartWebAddon.class);

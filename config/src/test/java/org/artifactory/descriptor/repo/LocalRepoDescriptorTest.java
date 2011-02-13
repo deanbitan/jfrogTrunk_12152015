@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,20 +32,17 @@ public class LocalRepoDescriptorTest {
 
     public void defaultConstructor() {
         LocalRepoDescriptor localRepo = new LocalRepoDescriptor();
-
         assertNull(localRepo.getKey(), "Key should be null");
         assertNull(localRepo.getDescription(), "Description should be null");
-        assertEquals(localRepo.getIncludesPattern(), "**/*",
-                "Includes pattern should be **/*");
+        assertEquals(localRepo.getIncludesPattern(), "**/*", "Includes pattern should be **/*");
         assertNull(localRepo.getExcludesPattern(), "Excludes pattern should be null");
-        assertEquals(localRepo.getMaxUniqueSnapshots(), 0,
-                "Max unique snapshot should be 0 by default");
-        assertEquals(localRepo.getSnapshotVersionBehavior(),
-                SnapshotVersionBehavior.NONUNIQUE,
+        assertNull(localRepo.getRepoLayout(), "Repo layout should be null");
+        assertEquals(localRepo.getMaxUniqueSnapshots(), 0, "Max unique snapshot should be 0 by default");
+        assertEquals(localRepo.getSnapshotVersionBehavior(), SnapshotVersionBehavior.UNIQUE,
                 "SnapshotVersionBehavior should be non-unique by default");
-        assertFalse(localRepo.isSuppressPomConsistencyChecks(),
-                "Default should not supress pom consistency checks");
+        assertFalse(localRepo.isSuppressPomConsistencyChecks(), "Default should not supress pom consistency checks");
         assertNotNull(localRepo.getPropertySets(), "Property sets list should not be null");
-        assertEquals(localRepo.getChecksumPolicyType(), LocalRepoChecksumPolicyType.CLIENT, "Client checksum should be the default");
+        assertEquals(localRepo.getChecksumPolicyType(), LocalRepoChecksumPolicyType.CLIENT,
+                "Client checksum should be the default");
     }
 }

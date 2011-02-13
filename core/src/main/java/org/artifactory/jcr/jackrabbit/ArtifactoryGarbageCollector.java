@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -100,7 +100,8 @@ public class ArtifactoryGarbageCollector implements JcrGarbageCollector {
      * @param list        the persistence managers
      * @param sessionList the sessions to access the workspaces
      */
-    public ArtifactoryGarbageCollector(JcrSession session, IterablePersistenceManager[] list, Session[] sessionList) {
+    public ArtifactoryGarbageCollector(JcrSession session, IterablePersistenceManager[] list, Session[] sessionList)
+            throws RepositoryException {
         RepositoryImpl rep = (RepositoryImpl) session.getRepository();
         store = rep.getDataStore();
         this.pmList = list;

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -73,10 +73,22 @@ public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
         Iterator<T> iterator = (Iterator<T>) dataProvider.iterator(0, dataProvider.size());
         while (iterator.hasNext()) {
             T rowObject = iterator.next();
-            PropertyResolver.setValue(getExpression(), rowObject, isSelectAll(), null);
+            if (canChangeItemSelectionState(rowObject)) {
+                PropertyResolver.setValue(getExpression(), rowObject, isSelectAll(), null);
+            }
         }
         onSelectAll(iterator, target);
         target.addComponent(table);
+    }
+
+    /**
+     * Indicates whether the given row item should respond to state changes from the select all column checkbox
+     *
+     * @param rowItem Row item to check
+     * @return True if the row item should be affected
+     */
+    protected boolean canChangeItemSelectionState(T rowItem) {
+        return true;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})

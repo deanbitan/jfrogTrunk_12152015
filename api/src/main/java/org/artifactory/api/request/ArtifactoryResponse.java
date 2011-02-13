@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,13 +30,19 @@ public interface ArtifactoryResponse {
 
     void setException(Exception exception);
 
+    boolean isError();
+
     enum State {
-        UNSET, SUCCESS, FAILURE
+        UNSET, SUCCESS, ERROR
     }
 
     void setLastModified(long lastModified);
 
     void setEtag(String etag);
+
+    void setSha1(String sha1);
+
+    void setMd5(String md5);
 
     void setContentLength(long length);
 

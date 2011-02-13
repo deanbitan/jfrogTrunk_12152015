@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,8 +22,8 @@ import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.SearchService;
-import org.artifactory.api.search.deployable.DeployableUnitSearchControls;
-import org.artifactory.api.search.deployable.DeployableUnitSearchResult;
+import org.artifactory.api.search.deployable.VersionUnitSearchControls;
+import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.spring.ReloadableBean;
@@ -55,12 +55,12 @@ public interface InternalSearchService extends SearchService, ReloadableBean {
     boolean markArchiveForIndexing(JcrFile newJcrFile, boolean force);
 
     /**
-     * Searches for deployable units within the given path
+     * Searches for version units within the given path
      *
      * @param controls Search controls
      * @return Search results
      */
     @Lock(transactional = true)
-    SearchResults<DeployableUnitSearchResult> searchDeployableUnits(DeployableUnitSearchControls controls)
+    SearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls)
             throws RepositoryException;
 }

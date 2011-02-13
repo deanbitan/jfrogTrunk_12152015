@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,10 +36,12 @@ import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.util.DoesNotExistException;
 import org.jfrog.build.api.Build;
+import org.jfrog.build.api.BuildRetention;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -201,6 +203,11 @@ public class BuildResource {
 
         buildService.addBuild(build);
         log.info("Added build '{} #{}'", build.getName(), build.getNumber());
+        BuildRetention retention = build.getBuildRetention();
+        if (retention != null) {
+            RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+            restAddon.discardOldBuilds(build.getName(), retention);
+        }
     }
 
     /**
@@ -222,8 +229,9 @@ public class BuildResource {
             @QueryParam("arts") @DefaultValue("1") int arts,
             @QueryParam("deps") int deps,
             @QueryParam("scopes") StringList scopes,
+            @QueryParam("properties") KeyValueList properties,
             @QueryParam("dry") int dry) throws IOException {
-        return moveOrCopy(started, to, arts, deps, scopes, dry);
+        return moveOrCopy(started, to, arts, deps, scopes, properties, dry);
     }
 
     /**
@@ -280,16 +288,17 @@ public class BuildResource {
     /**
      * Move or copy the artifacts and\or dependencies of the specified build
      *
-     * @param started Build started date. Can be null
-     * @param to      Key of target repository to move to
-     * @param arts    Zero or negative int if to exclude artifacts from the action take. Positive int to include
-     * @param deps    Zero or negative int if to exclude dependencies from the action take. Positive int to include
-     * @param scopes  Scopes of dependencies to copy (agnostic if null or empty)
-     * @param dry     Zero or negative int if to apply the selected action. Positive int to simulate
-     * @return Result of action
+     * @param started    Build started date. Can be null
+     * @param to         Key of target repository to move to
+     * @param arts       Zero or negative int if to exclude artifacts from the action take. Positive int to include
+     * @param deps       Zero or negative int if to exclude dependencies from the action take. Positive int to include
+     * @param scopes     Scopes of dependencies to copy (agnostic if null or empty)
+     * @param properties
+     * @param dry        Zero or negative int if to apply the selected action. Positive int to simulate  @return Result
+     *                   of action
      */
-    private MoveCopyResult moveOrCopy(String started, String to, int arts, int deps, StringList scopes, int dry)
-            throws IOException {
+    private MoveCopyResult moveOrCopy(String started, String to, int arts, int deps, StringList scopes,
+            KeyValueList properties, int dry) throws IOException {
         String[] pathElements = RestUtils.getBuildRestUrlPathElements(request);
 
         boolean move;
@@ -303,11 +312,13 @@ public class BuildResource {
                     "' is an unsupported operation. Please use 'move' or 'copy'.");
             return null;
         }
-
+        if (properties == null) {
+            properties = new KeyValueList("");
+        }
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
             return restAddon.moveOrCopyBuildItems(move, URLDecoder.decode(pathElements[1], "UTF-8"),
-                    URLDecoder.decode(pathElements[2], "UTF-8"), started, to, arts, deps, scopes, dry);
+                    URLDecoder.decode(pathElements[2], "UTF-8"), started, to, arts, deps, scopes, properties, dry);
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnee) {

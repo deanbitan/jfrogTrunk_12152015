@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -65,16 +65,12 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
             try {
                 Node artifactNode = nodes.nextNode();
                 RepoPath repoPath = JcrPath.get().getRepoPath(artifactNode.getPath());
-                if ((repoPath == null) || !isResultRepoPathValid(repoPath)) {
+                if (!isResultAcceptable(repoPath)) {
                     continue;
                 }
 
                 FileInfoProxy fileInfo = new FileInfoProxy(repoPath);
-                boolean canRead = getAuthService().canRead(fileInfo.getRepoPath());
-                if (canRead) {
-                    ArtifactSearchResult result = new ArtifactSearchResult(fileInfo);
-                    results.add(result);
-                }
+                results.add(new ArtifactSearchResult(fileInfo));
             } catch (RepositoryException re) {
                 handleNotFoundException(re);
             }

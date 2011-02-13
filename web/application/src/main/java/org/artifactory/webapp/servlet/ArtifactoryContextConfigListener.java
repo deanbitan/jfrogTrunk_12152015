@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -131,8 +131,8 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
                         "  / /\\ \\ | '__| __| |  _/ _` |/ __| __/ _ \\| '__| | | |\n" +
                         " / ____ \\| |  | |_| | || (_| | (__| || (_) | |  | |_| |\n" +
                         "/_/    \\_\\_|   \\__|_|_| \\__,_|\\___|\\__\\___/|_|   \\__, |\n" +
-                        String.format(" Version: %-19s Revision: %-9s __/ |\n", versionNumber, revision) +
-                        "                                                 |___/\n" +
+                        String.format(" Version:  %-39s__/ |\n", versionNumber) +
+                        String.format(" Revision: %-38s|___/\n", revision) +
                         " Artifactory Home: '" + artifactoryHome.getHomeDir().getAbsolutePath() + "'\n"
         );
 

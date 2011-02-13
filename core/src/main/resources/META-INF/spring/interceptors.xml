@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2010 JFrog Ltd.
+  ~ Copyright (C) 2011 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -25,8 +25,9 @@
 
     <!-- Default storage interceptors list -->
     <bean class="org.artifactory.repo.interceptor.PluginsInterceptor"/>
-    <bean class="org.artifactory.repo.interceptor.UniqueSnapshotsCleanerInterceptor"/>
+    <bean class="org.artifactory.repo.interceptor.IntegrationCleanerInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.MavenMetadataCalculationInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.ArchiveIndexingInterceptor"/>
+    <bean class="org.artifactory.repo.interceptor.AddPropertyAfterMoveOrCopyInterceptor"/>
 
 </beans>

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@ import org.apache.jackrabbit.util.ISO8601;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.JcrQuerySpec;
@@ -35,8 +36,8 @@ import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.artifact.ChecksumSearchControls;
-import org.artifactory.api.search.deployable.DeployableUnitSearchControls;
-import org.artifactory.api.search.deployable.DeployableUnitSearchResult;
+import org.artifactory.api.search.deployable.VersionUnitSearchControls;
+import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.api.search.property.PropertySearchControls;
@@ -60,6 +61,7 @@ import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RemoteRepoBase;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
@@ -68,7 +70,7 @@ import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.search.archive.ArchiveIndexer;
 import org.artifactory.search.archive.ArchiveSearcher;
 import org.artifactory.search.build.BuildSearcher;
-import org.artifactory.search.deployable.DeployableUnitSearcher;
+import org.artifactory.search.deployable.VersionUnitSearcher;
 import org.artifactory.search.gavc.GavcSearcher;
 import org.artifactory.search.property.PropertySearcher;
 import org.artifactory.search.version.SearchVersion;
@@ -116,6 +118,9 @@ public class SearchServiceImpl implements InternalSearchService {
 
     @Autowired
     private InternalRepositoryService repoService;
+
+    @Autowired
+    private RepositoryBrowsingService repoBrowsingService;
 
     @Autowired
     private AuthorizationService authService;
@@ -259,9 +264,9 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
-    public SearchResults<DeployableUnitSearchResult> searchDeployableUnits(DeployableUnitSearchControls controls)
+    public SearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls)
             throws RepositoryException {
-        DeployableUnitSearcher searcher = new DeployableUnitSearcher();
+        VersionUnitSearcher searcher = new VersionUnitSearcher();
         return searcher.doSearch(controls);
     }
 
@@ -318,17 +323,23 @@ public class SearchServiceImpl implements InternalSearchService {
 
         final String innerPattern = StringUtils.replace(patternTokens[1], "\\", "/");
 
-        final RepoPath repoPath = new RepoPathImpl(repoKey, "");
-
         Callable<Set<String>> callable = new Callable<Set<String>>() {
 
             public Set<String> call() throws Exception {
                 Set<String> pathsToReturn = Sets.newHashSet();
                 List<String> patternFragments = Lists.newArrayList(StringUtils.split(innerPattern, "/"));
-                if (repo.isLocal() && (repo.isReal() || repo.isCache())) {
-                    collectLocalRepoItemsRecursively(patternFragments, pathsToReturn, repoPath);
-                } else if (!repo.isLocal() && !repo.isReal()) {
-                    collectVirtualRepoItemsRecursively(patternFragments, pathsToReturn, repoPath);
+
+                if (repo.isReal()) {
+                    String repoKey;
+                    if (repo.isLocal() || repo.isCache()) {
+                        repoKey = repo.getKey();
+                    } else {
+                        repoKey = ((RemoteRepoBase) repo).getLocalCacheRepo().getKey();
+                    }
+                    collectLocalRepoItemsRecursively(patternFragments, pathsToReturn, new RepoPathImpl(repoKey, ""));
+                } else {
+                    collectVirtualRepoItemsRecursively(patternFragments, pathsToReturn,
+                            new RepoPathImpl(repo.getKey(), ""));
                 }
                 return pathsToReturn;
             }
@@ -540,7 +551,7 @@ public class SearchServiceImpl implements InternalSearchService {
     private void collectVirtualRepoItemsRecursively(List<String> patternFragments, Set<String> pathsToReturn,
             RepoPath repoPath) {
 
-        VirtualRepoItem itemInfo = repoService.getVirtualRepoItem(repoPath);
+        VirtualRepoItem itemInfo = repoBrowsingService.getVirtualRepoItem(repoPath);
 
         if (!patternFragments.isEmpty()) {
 
@@ -550,8 +561,8 @@ public class SearchServiceImpl implements InternalSearchService {
                 if (StringUtils.isBlank(firstFragment)) {
                     return;
                 }
-
-                for (VirtualRepoItem child : repoService.getVirtualRepoItems(repoPath)) {
+                //TODO: [by tc] should not use the remote children
+                for (VirtualRepoItem child : repoBrowsingService.getVirtualRepoItems(repoPath)) {
 
                     if (patternMatches(firstFragment, child.getName())) {
 

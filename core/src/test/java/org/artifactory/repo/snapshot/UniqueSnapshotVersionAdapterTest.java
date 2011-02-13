@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,11 +18,7 @@
 
 package org.artifactory.repo.snapshot;
 
-import org.artifactory.api.repo.RepoPathImpl;
-import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
 
 /**
  * Unit tests for {@link UniqueSnapshotVersionAdapter}.<p/> Only the easy to unit test are here, the rest are in the
@@ -31,48 +27,40 @@ import static org.testng.Assert.assertEquals;
  * @author Yossi Shaul
  */
 @Test
-public class UniqueSnapshotVersionAdapterTest extends ArtifactoryHomeBoundTest {
-    private UniqueSnapshotVersionAdapter uniqueAdapter = new UniqueSnapshotVersionAdapter();
+public class UniqueSnapshotVersionAdapterTest extends BaseSnapshotAdapterTest<UniqueSnapshotVersionAdapter> {
 
-    private final String SNAPSHOT_PATH = "groupPart1/groupPart2/artifactId/2.5-SNAPSHOT/";
+    private static final String SNAPSHOT_PATH = "groupPart1/groupPart2/artifactId/2.5-SNAPSHOT/";
+
+    public UniqueSnapshotVersionAdapterTest() {
+        super(new UniqueSnapshotVersionAdapter());
+    }
 
     public void alreadyUniqueArtifact() {
-        String uniqueVersionFile = "artifactId-2.5-20071014.090200-4.jar";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + uniqueVersionFile));
-        assertEquals(result, SNAPSHOT_PATH + uniqueVersionFile, "Unique snapshots shouldn't be touched");
+        String path = SNAPSHOT_PATH + "artifactId-2.5-20071014.090200-4.jar";
+        adapt(path, path, "Unique snapshots shouldn't be touched");
     }
 
     public void alreadyUniqueArtifactWithClassifier() {
-        String uniqueVersionFile = "artifactId-2.5-20071014.090200-4-classifier.jar";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + uniqueVersionFile));
-        assertEquals(result, SNAPSHOT_PATH + uniqueVersionFile, "Unique snapshots shouldn't be touched");
+        String path = SNAPSHOT_PATH + "artifactId-2.5-20071014.090200-4-classifier.jar";
+
+        adapt(path, path, "Unique snapshots shouldn't be touched");
     }
 
     public void alreadyUniqueChecksumArtifact() {
-        String uniqueVersionFile = "artifactId-2.5-20071014.090200-4.jar.sha1";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + uniqueVersionFile));
-        assertEquals(result, SNAPSHOT_PATH + uniqueVersionFile);
-    }
+        String path = SNAPSHOT_PATH + "artifactId-2.5-20071014.090200-4.jar.sha1";
 
-    public void nonUniqueArtifactWithDifferentVersion() {
-        String nonUniqueVersionFile = "artifactId-1.5-SNAPSHOT.jar";
-        String result =
-                uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + nonUniqueVersionFile));
-        assertEquals(result, SNAPSHOT_PATH + nonUniqueVersionFile, "When passing file with version " +
-                "other than the snapshot version from the path, nothing should be affected");
+        adapt(path, path);
     }
 
     public void artifactWithReleaseVersion() {
-        String uniqueVersionFile = "artifactId-1.4.ivy";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + uniqueVersionFile));
-        assertEquals(result, SNAPSHOT_PATH + uniqueVersionFile, "Files with release version should not be affected");
+        String path = SNAPSHOT_PATH + "artifactId-1.4.ivy";
+
+        adapt(path, path, "Files with release version should not be affected");
     }
 
     public void artifactWithNoMavenStructure() {
-        String nonMavenFile = "blabla.xml";
-        String result = uniqueAdapter.adaptSnapshotPath(new RepoPathImpl("local", SNAPSHOT_PATH + nonMavenFile));
-        assertEquals(result, SNAPSHOT_PATH + nonMavenFile, "Non-maven structured files with release version " +
-                "should not be affected");
-    }
+        String path = SNAPSHOT_PATH + "blabla.xml";
 
+        adapt(path, path, "Non-maven structured files with release version should not be affected");
+    }
 }

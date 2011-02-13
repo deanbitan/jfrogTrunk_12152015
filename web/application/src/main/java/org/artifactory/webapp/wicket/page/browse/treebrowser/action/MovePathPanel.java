@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,14 +54,12 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
     @SpringBean
     private RepositoryService repoService;
 
-    private final RepoPath pathToMove;
     private final Component componentToRefresh;
     private final TreeBrowsePanel browseRepoPanel;
 
     public MovePathPanel(String id, RepoPath pathToMove, Component componentToRefresh,
             TreeBrowsePanel browseRepoPanel) {
-        super(id);
-        this.pathToMove = pathToMove;
+        super(id, pathToMove);
         this.componentToRefresh = componentToRefresh;
         this.browseRepoPanel = browseRepoPanel;
         init();
@@ -74,10 +72,10 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 String targetRepoKey = getSelectedTargetRepository();
 
-                MoveMultiStatusHolder status = repoService.move(pathToMove, targetRepoKey, false);
+                MoveMultiStatusHolder status = repoService.move(sourceRepoPath, targetRepoKey, false);
 
                 if (!status.isError() && !status.hasWarnings()) {
-                    getPage().info("Successfully moved '" + pathToMove + "' to '" + targetRepoKey + "'.");
+                    getPage().info("Successfully moved '" + sourceRepoPath + "' to '" + targetRepoKey + "'.");
                 } else {
                     if (status.hasWarnings()) {
                         List<StatusEntry> warnings = status.getWarnings();
@@ -97,7 +95,7 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
                         if (exception != null) {
                             message = exception.getMessage();
                         }
-                        getPage().error("Failed to move '" + pathToMove + "': " + message);
+                        getPage().error("Failed to move '" + sourceRepoPath + "': " + message);
                     }
                 }
 
@@ -118,7 +116,7 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
             @Override
             protected IAjaxCallDecorator getAjaxCallDecorator() {
                 // add confirmation dialog when clicked
-                String message = String.format("Are you sure you wish to move '%s'?", pathToMove);
+                String message = String.format("Are you sure you wish to move '%s'?", sourceRepoPath);
                 return new ConfirmationAjaxCallDecorator(message);
             }
         };
@@ -126,11 +124,11 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
 
     @Override
     protected MoveMultiStatusHolder executeDryRun(String targetRepoKey) {
-        return repoService.move(pathToMove, targetRepoKey, true);
+        return repoService.move(sourceRepoPath, targetRepoKey, true);
     }
 
     @Override
     protected List<LocalRepoDescriptor> getDeployableLocalReposKeys() {
-        return getDeployableLocalReposKeysExcludingSource(pathToMove.getRepoKey());
+        return getDeployableLocalReposKeysExcludingSource(sourceRepoPath.getRepoKey());
     }
 }

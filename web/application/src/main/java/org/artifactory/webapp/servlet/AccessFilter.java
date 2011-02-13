@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,13 +18,16 @@
 
 package org.artifactory.webapp.servlet;
 
+import com.google.common.collect.MapMaker;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.artifactory.api.cache.ArtifactoryCache;
-import org.artifactory.api.cache.Cache;
-import org.artifactory.api.cache.CacheService;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.security.SecurityListener;
+import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserInfo;
+import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.HttpAuthenticationDetailsSource;
 import org.artifactory.webapp.servlet.authentication.ArtifactoryAuthenticationFilter;
@@ -49,8 +52,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-public class AccessFilter extends DelayedFilterBase {
+public class AccessFilter extends DelayedFilterBase implements SecurityListener {
     private static final Logger log = LoggerFactory.getLogger(AccessFilter.class);
 
     private ArtifactoryContext context;
@@ -59,7 +63,7 @@ public class AccessFilter extends DelayedFilterBase {
     /**
      * holds cached Authentication instances for the non ui requests based on the Authorization header and client ip
      */
-    private Cache<AuthCacheKey, Authentication> nonUiAuthCache;
+    private Map<AuthCacheKey, Authentication> nonUiAuthCache;
 
     @Override
     public void initLater(FilterConfig filterConfig) throws ServletException {
@@ -71,25 +75,38 @@ public class AccessFilter extends DelayedFilterBase {
         //TODO: [by yl] Support ordering...
         filterChain.addFilters(context.beansForType(ArtifactoryAuthenticationFilter.class).values());
         authFilter = filterChain;
-        initCaches();
+        initCaches(filterConfig);
         String usePathInfo = filterConfig.getInitParameter("usePathInfo");
         if (usePathInfo != null) {
             RequestUtils.setUsePathInfo(Boolean.parseBoolean(usePathInfo));
         }
         authFilter.init(filterConfig);
-
     }
 
-    @SuppressWarnings({"unchecked"})
-    private void initCaches() {
-        CacheService cacheService = context.beanForType(CacheService.class);
-        nonUiAuthCache = cacheService.getCache(ArtifactoryCache.authentication);
+    private void initCaches(FilterConfig filterConfig) {
+        ArtifactorySystemProperties properties =
+                ((ArtifactoryHome) filterConfig.getServletContext().getAttribute(ArtifactoryHome.SERVLET_CTX_ATTR))
+                        .getArtifactoryProperties();
+        ConstantValues idleTimeSecs = ConstantValues.securityAuthenticationCacheIdleTimeSecs;
+        Long cacheIdleSecs = properties.getLongProperty(idleTimeSecs.getPropertyName(), idleTimeSecs.getDefValue());
+        nonUiAuthCache = new MapMaker().softValues().initialCapacity(100).expireAfterWrite(cacheIdleSecs,
+                TimeUnit.SECONDS).makeMap();
+        SecurityService securityService = context.beanForType(SecurityService.class);
+        securityService.addListener(this);
+    }
+
+    public void onClearSecurity() {
+        nonUiAuthCache.clear();
     }
 
     public void destroy() {
         //May not be inited yet
         if (authFilter != null) {
             authFilter.destroy();
+        }
+        if (nonUiAuthCache != null) {
+            nonUiAuthCache.clear();
+            nonUiAuthCache = null;
         }
     }
 
@@ -141,8 +158,7 @@ public class AccessFilter extends DelayedFilterBase {
     private void authenticateAndExecute(HttpServletRequest request, HttpServletResponse response,
             FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
         // Try to see if authentication in cache based on the hashed header and client ip
-        AuthCacheKey authCacheKey = new AuthCacheKey(authFilter.getCacheKey(request), request.getRemoteAddr());
-        Authentication authentication = nonUiAuthCache.get(authCacheKey);
+        Authentication authentication = getNonUiCachedAuthentication(request);
         boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
         if (isAuthenticated && !authFilter.requiresReauthentication(request, authentication)) {
             log.debug("Header authentication {} found in cache.", authentication);
@@ -160,6 +176,8 @@ public class AccessFilter extends DelayedFilterBase {
                 } else {
                     // If it did not work use the header cache
                     // An authorization cache key with no header can only be used for Anonymous authentication
+                    AuthCacheKey authCacheKey = new AuthCacheKey(
+                            authFilter.getCacheKey(request), request.getRemoteAddr());
                     if ((UserInfo.ANONYMOUS.equals(newAuthentication.getName()) && authCacheKey.hasEmptyHeader()) ||
                             (!UserInfo.ANONYMOUS.equals(newAuthentication.getName()) &&
                                     !authCacheKey.hasEmptyHeader())) {
@@ -178,8 +196,7 @@ public class AccessFilter extends DelayedFilterBase {
         boolean anonAccessEnabled = context.getAuthorizationService().isAnonAccessEnabled();
         if (anonAccessEnabled) {
             log.debug("Using anonymous");
-            AuthCacheKey authCacheKey = new AuthCacheKey("", request.getRemoteAddr());
-            Authentication authentication = nonUiAuthCache.get(authCacheKey);
+            Authentication authentication = getNonUiCachedAuthentication(request);
             if (authentication == null) {
                 log.debug("Creating the Anonymous token");
                 final UsernamePasswordAuthenticationToken authRequest =
@@ -191,7 +208,9 @@ public class AccessFilter extends DelayedFilterBase {
                 AuthenticationManager authenticationManager =
                         context.beanForType("authenticationManager", AuthenticationManager.class);
                 authentication = authenticationManager.authenticate(authRequest);
-                if (authentication != null && authentication.isAuthenticated()) {
+                if (authentication != null && authentication.isAuthenticated() && !RequestUtils.isUiRequest(request)) {
+                    AuthCacheKey authCacheKey = new AuthCacheKey(authFilter.getCacheKey(request),
+                            request.getRemoteAddr());
                     nonUiAuthCache.put(authCacheKey, authentication);
                     log.debug("Added anonymous authentication {} to cache", authentication);
                 }
@@ -209,6 +228,13 @@ public class AccessFilter extends DelayedFilterBase {
                 chain.doFilter(request, response);
             }
         }
+    }
+
+    private Authentication getNonUiCachedAuthentication(HttpServletRequest request) {
+        // return cached authentication only if this is a non ui request (this guards the case when user accessed
+        // Artifactory both from external tool and from the ui)
+        AuthCacheKey authCacheKey = new AuthCacheKey(authFilter.getCacheKey(request), request.getRemoteAddr());
+        return RequestUtils.isUiRequest(request) ? null : nonUiAuthCache.get(authCacheKey);
     }
 
     private void useAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,

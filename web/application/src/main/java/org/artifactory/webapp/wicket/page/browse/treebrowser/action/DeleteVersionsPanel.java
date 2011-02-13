@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +21,7 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.action;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
@@ -32,8 +33,9 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
-import org.artifactory.api.fs.DeployableUnit;
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.fs.VersionUnit;
+import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.confirm.AjaxConfirm;
 import org.artifactory.common.wicket.component.confirm.ConfirmDialog;
@@ -52,7 +54,6 @@ import org.artifactory.webapp.wicket.actionable.tree.ActionableItemsTree;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -63,7 +64,7 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 public class DeleteVersionsPanel extends Panel {
-    private DeployableUnitsDataProvider dataProvider;
+    private VersionUnitsDataProvider dataProvider;
 
     @SpringBean
     private AddonsManager addonsManager;
@@ -71,43 +72,53 @@ public class DeleteVersionsPanel extends Panel {
     @SpringBean
     private RepositoryService repoService;
 
-    public DeleteVersionsPanel(String id, List<DeployableUnit> deployableUnits, TreeBrowsePanel browseRepoPanel,
+    public DeleteVersionsPanel(String id, List<VersionUnit> versionUnits, TreeBrowsePanel browseRepoPanel,
             RepoAwareActionableItem source) {
         super(id);
 
         Form form = new Form("form");
         add(form);
 
-        Multimap<String, DeployableUnit> duGroupAndVersion = aggregateByGroupAndVersion(deployableUnits);
+        Multimap<String, VersionUnit> vuGroupAndVersion = aggregateByGroupAndVersion(versionUnits);
 
-        dataProvider = new DeployableUnitsDataProvider(duGroupAndVersion);
+        dataProvider = new VersionUnitsDataProvider(vuGroupAndVersion);
 
-        List<IColumn<DeployableUnitModel>> columns = Lists.newArrayList();
-        columns.add(new SelectAllCheckboxColumn<DeployableUnitModel>("", "selected", null));
-        columns.add(new PropertyColumn<DeployableUnitModel>(Model.of("Group Id"), "groupId", "groupId"));
-        columns.add(new PropertyColumn<DeployableUnitModel>(Model.of("Version"), "version", "version"));
-        columns.add(new PropertyColumn<DeployableUnitModel>(Model.of("Directories Count"), "count"));
+        List<IColumn<VersionUnitModel>> columns = Lists.newArrayList();
+        columns.add(new SelectAllCheckboxColumn<VersionUnitModel>("", "selected", null));
+        columns.add(new PropertyColumn<VersionUnitModel>(Model.of("Group Id"), "groupId", "groupId"));
+        columns.add(new PropertyColumn<VersionUnitModel>(Model.of("Version"), "version", "version"));
+        columns.add(new PropertyColumn<VersionUnitModel>(Model.of("Directories Count"), "count"));
 
-        SortableTable table = new SortableTable<DeployableUnitModel>("deployableUnits", columns, dataProvider, 20);
+        SortableTable table = new SortableTable<VersionUnitModel>("deployableUnits", columns, dataProvider, 20);
         form.add(table);
 
         form.add(new ModalCloseLink("cancel"));
         form.add(createSubmitButton(form, browseRepoPanel, source));
     }
 
-
-    private Multimap<String, DeployableUnit> aggregateByGroupAndVersion(List<DeployableUnit> units) {
-        Multimap<String, DeployableUnit> multiMap = HashMultimap.create();
-        for (DeployableUnit unit : units) {
-            MavenArtifactInfo info = unit.getMavenInfo();
-            String unitKey = toGroupVersionKey(info);
+    private Multimap<String, VersionUnit> aggregateByGroupAndVersion(List<VersionUnit> units) {
+        Multimap<String, VersionUnit> multiMap = HashMultimap.create();
+        for (VersionUnit unit : units) {
+            ModuleInfo moduleInfo = unit.getModuleInfo();
+            String unitKey = toGroupVersionKey(moduleInfo);
             multiMap.put(unitKey, unit);
         }
         return multiMap;
     }
 
-    private String toGroupVersionKey(MavenArtifactInfo info) {
-        return info.getGroupId() + ":" + info.getVersion();
+    private String toGroupVersionKey(ModuleInfo info) {
+        StringBuilder groupVersionKeyBuilder =
+                new StringBuilder(info.getOrganization()).append(":").append(info.getBaseRevision());
+        if (info.isIntegration()) {
+
+            groupVersionKeyBuilder.append("-");
+            if (MavenNaming.SNAPSHOT.equals(info.getFolderIntegrationRevision())) {
+                groupVersionKeyBuilder.append(MavenNaming.SNAPSHOT);
+            } else {
+                groupVersionKeyBuilder.append("INTEGRATION");
+            }
+        }
+        return groupVersionKeyBuilder.toString();
     }
 
     private String groupFromGroupVersionKey(String groupVersionKey) {
@@ -123,21 +134,21 @@ public class DeleteVersionsPanel extends Panel {
         TitledAjaxSubmitLink submit = new TitledAjaxSubmitLink("submit", "Delete Selected", form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                final List<RepoPath> selectedRepoPaths = dataProvider.getSelectedRepoPaths();
-                if (selectedRepoPaths.isEmpty()) {
+                final Set<VersionUnit> selectedVersionUnits = dataProvider.getSelectedVersionUnits();
+                if (selectedVersionUnits.isEmpty()) {
                     error("No version selected for deletion");
                     return; // keep popup open
                 }
                 AjaxConfirm.get().confirm(new ConfirmDialog() {
                     public String getMessage() {
                         BuildAddon buildAddon = addonsManager.addonByType(BuildAddon.class);
-                        return buildAddon.getDeleteVersionsWarningMessage(selectedRepoPaths,
+                        return buildAddon.getDeleteVersionsWarningMessage(getVersionUnitParents(selectedVersionUnits),
                                 "Are you sure you wish to delete the selected versions?");
                     }
 
                     public void onConfirm(boolean approved, AjaxRequestTarget target) {
                         if (approved) {
-                            repoService.undeployPaths(selectedRepoPaths);
+                            repoService.undeployVersionUnits(selectedVersionUnits);
 
                             getPage().info("Selected versions deleted successfully");
                             AjaxUtils.refreshFeedback(target);
@@ -168,55 +179,65 @@ public class DeleteVersionsPanel extends Panel {
         return submit;
     }
 
-    private class DeployableUnitsDataProvider extends SortableDataProvider<DeployableUnitModel> {
-        private Multimap<String, DeployableUnit> duGroupAndVersion;
-        protected List<DeployableUnitModel> duModels;
+    private List<RepoPath> getVersionUnitParents(Set<VersionUnit> versionUnits) {
+        Set<RepoPath> parents = Sets.newHashSet();
 
-        private DeployableUnitsDataProvider(Multimap<String, DeployableUnit> duGroupAndVersion) {
-            this.duGroupAndVersion = duGroupAndVersion;
-            Set<String> groupVersionKeys = duGroupAndVersion.keySet();
-            duModels = new ArrayList<DeployableUnitModel>(groupVersionKeys.size());
+        for (VersionUnit versionUnit : versionUnits) {
+            parents.addAll(versionUnit.getParents());
+        }
+
+        return Lists.newArrayList(parents);
+    }
+
+    private class VersionUnitsDataProvider extends SortableDataProvider<VersionUnitModel> {
+        private Multimap<String, VersionUnit> vuGroupAndVersion;
+        protected List<VersionUnitModel> vuModels;
+
+        private VersionUnitsDataProvider(Multimap<String, VersionUnit> vuGroupAndVersion) {
+            this.vuGroupAndVersion = vuGroupAndVersion;
+            Set<String> groupVersionKeys = vuGroupAndVersion.keySet();
+            vuModels = Lists.newArrayListWithCapacity(groupVersionKeys.size());
             for (String key : groupVersionKeys) {
-                duModels.add(new DeployableUnitModel(key, duGroupAndVersion.get(key).size()));
+                vuModels.add(new VersionUnitModel(key, vuGroupAndVersion.get(key).size()));
             }
             setSort("groupId", true);
         }
 
-        public Iterator<DeployableUnitModel> iterator(int first, int count) {
-            ListPropertySorter.sort(duModels, getSort());
-            List<DeployableUnitModel> dusSubList = duModels.subList(first, first + count);
-            return dusSubList.iterator();
+        public Iterator<VersionUnitModel> iterator(int first, int count) {
+            ListPropertySorter.sort(vuModels, getSort());
+            List<VersionUnitModel> vusSubList = vuModels.subList(first, first + count);
+            return vusSubList.iterator();
         }
 
         public int size() {
-            return duModels.size();
+            return vuModels.size();
         }
 
-        public IModel<DeployableUnitModel> model(DeployableUnitModel object) {
-            return new Model<DeployableUnitModel>(object);
+        public IModel<VersionUnitModel> model(VersionUnitModel object) {
+            return new Model<VersionUnitModel>(object);
         }
 
-        public List<RepoPath> getSelectedRepoPaths() {
-            List<RepoPath> selectedDeploymentUnits = new ArrayList<RepoPath>();
-            for (DeployableUnitModel model : duModels) {
+        public Set<VersionUnit> getSelectedVersionUnits() {
+            Set<VersionUnit> selectedVersionUnits = Sets.newHashSet();
+            for (VersionUnitModel model : vuModels) {
                 if (model.isSelected()) {
-                    for (DeployableUnit deployableUnit : duGroupAndVersion.get(model.getKey())) {
-                        selectedDeploymentUnits.add(deployableUnit.getRepoPath());
+                    for (VersionUnit versionUnit : vuGroupAndVersion.get(model.getKey())) {
+                        selectedVersionUnits.add(versionUnit);
                     }
                 }
             }
-            return selectedDeploymentUnits;
+            return selectedVersionUnits;
         }
     }
 
-    private class DeployableUnitModel implements Serializable {
+    private class VersionUnitModel implements Serializable {
         private String key;
         private String groupId;
         private String version;
         private int count;
         private boolean selected;
 
-        private DeployableUnitModel(String key, int count) {
+        private VersionUnitModel(String key, int count) {
             this.key = key;
             this.count = count;
             this.groupId = groupFromGroupVersionKey(key);

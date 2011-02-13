@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,11 +18,9 @@
 
 package org.artifactory.util;
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.*;
 
 /**
  * Tests the PathUtils.
@@ -47,32 +45,32 @@ public class PathUtilsTest {
         assertEquals(formatted, "");
     }
 
-    public void stripSimpleExtension() {
+    public void stripExtensionSimple() {
         String result = PathUtils.stripExtension("file.ext");
         assertEquals(result, "file");
     }
 
-    public void stripMultipleExtension() {
+    public void stripExtensionMultipleExtensions() {
         String result = PathUtils.stripExtension("file.ext.ext2");
         assertEquals(result, "file.ext");
     }
 
-    public void stripPathWithNoExtension() {
+    public void stripExtensionPathWithNoExtension() {
         String result = PathUtils.stripExtension("file");
         assertEquals(result, "file");
     }
 
-    public void stripPathWithDotAtEnd() {
+    public void stripExtensionPathWithDotAtEnd() {
         String result = PathUtils.stripExtension("file.");
         assertEquals(result, "file");
     }
 
-    public void stripNullPath() {
+    public void stripExtensionNullPath() {
         String result = PathUtils.stripExtension(null);
-        Assert.assertNull(result);
+        assertNull(result);
     }
 
-    public void stripEmptyPath() {
+    public void stripExtensionEmptyPath() {
         String result = PathUtils.stripExtension("");
         assertEquals(result, "");
     }
@@ -148,28 +146,28 @@ public class PathUtilsTest {
     }
 
     public void getFirstPathElementsAbsolutePath() {
-        String result = PathUtils.getFirstPathElements("/a/b/c");
+        String result = PathUtils.getFirstPathElement("/a/b/c");
         assertEquals(result, "a");
     }
 
     public void getFirstPathElementsRelativePath() {
-        String result = PathUtils.getFirstPathElements("a/b/c");
+        String result = PathUtils.getFirstPathElement("a/b/c");
         assertEquals(result, "a");
     }
 
     public void getFirstPathElementsRootPath() {
-        String result = PathUtils.getFirstPathElements("/");
+        String result = PathUtils.getFirstPathElement("/");
         assertEquals(result, "");
     }
 
     public void getFirstPathElementsEmptyPath() {
-        String result = PathUtils.getFirstPathElements("");
+        String result = PathUtils.getFirstPathElement("");
         assertEquals(result, "");
     }
 
     public void getFirstPathElementsNullPath() {
-        String result = PathUtils.getFirstPathElements(null);
-        Assert.assertNull(result);
+        String result = PathUtils.getFirstPathElement(null);
+        assertNull(result);
     }
 
     public void trimLeadingSlashes() {
@@ -192,5 +190,14 @@ public class PathUtilsTest {
         CharSequence sequence = PathUtils.trimLeadingSlashesChars("////a/b/c");
         assertNotNull(sequence);
         assertEquals(sequence.toString(), "a/b/c");
+    }
+
+    public void stripFirstPathElement() {
+        assertEquals(PathUtils.stripFirstPathElement("/a/b/c"), "b/c");
+        assertEquals(PathUtils.stripFirstPathElement("a/b/c/"), "b/c/");
+        assertEquals(PathUtils.stripFirstPathElement("/a"), "");
+        assertEquals(PathUtils.stripFirstPathElement("/"), "");
+        assertEquals(PathUtils.stripFirstPathElement(""), "");
+        assertNull(PathUtils.stripFirstPathElement(null));
     }
 }

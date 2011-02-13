@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
+import org.artifactory.webapp.wicket.page.browse.home.RememberPageBehavior;
 
 import java.io.Serializable;
 
@@ -32,6 +33,8 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
     public static final String PATH_ID_PARAM = "pathId";
 
     public BrowseRepoPage() {
+        add(new RememberPageBehavior());
+
         //Using request parameters instead of wicket's page parameters. See RTFACT-2843
         RepoPath repoPath = null;
         String pathId = getRequest().getParameter(PATH_ID_PARAM);

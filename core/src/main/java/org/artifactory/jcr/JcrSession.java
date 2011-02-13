@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -140,7 +140,20 @@ public class JcrSession implements XASession {
     public void move(String srcAbsPath, String tgtAbsPath) {
         log.trace("Moving {} to {}", srcAbsPath, tgtAbsPath);
         try {
+            Node sourceNode = session.getNode(srcAbsPath);
+            String oldNodeName = sourceNode.getName();
+
             session.move(srcAbsPath, tgtAbsPath);
+
+            Node targetNode = session.getNode(tgtAbsPath);
+            String newNodeName = targetNode.getName();
+
+            if (!tgtAbsPath.startsWith(JcrPath.get().getTrashJcrRootPath()) && !oldNodeName.equals(newNodeName)) {
+                log.trace("The name of the artifact '{}' was changed to '{}' when it was moved. " +
+                        "Now updating the value if it's '{}' property.", new String[]{srcAbsPath, newNodeName,
+                        JcrTypes.PROP_ARTIFACTORY_NAME});
+                targetNode.setProperty(JcrTypes.PROP_ARTIFACTORY_NAME, newNodeName);
+            }
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException("Could not move '" + srcAbsPath + "' to '" + tgtAbsPath + "'.", e);
         }
@@ -151,6 +164,18 @@ public class JcrSession implements XASession {
         Workspace workspace = session.getWorkspace();
         try {
             workspace.copy(srcAbsPath, tgtAbsPath);
+
+            Node sourceNode = session.getNode(srcAbsPath);
+            String oldNodeName = sourceNode.getName();
+            Node targetNode = session.getNode(tgtAbsPath);
+            String newNodeName = targetNode.getName();
+
+            if (!oldNodeName.equals(newNodeName)) {
+                log.trace("The name of the artifact '{}' was changed to '{}' when it was copied. " +
+                        "Now updating the value if it's '{}' property.", new String[]{srcAbsPath, newNodeName,
+                        JcrTypes.PROP_ARTIFACTORY_NAME});
+                targetNode.setProperty(JcrTypes.PROP_ARTIFACTORY_NAME, newNodeName);
+            }
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException(
                     "Could not copy '" + srcAbsPath + "' to '" + tgtAbsPath + "': " + e.getMessage(), e);

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -125,7 +125,11 @@ public class ForgotPasswordPanel extends TitledActionPanel {
         MailServerDescriptor mailServer = mutableCentralConfigDescriptor.getMailServer();
         String resetPageUrl;
         if (mailServer != null && StringUtils.isNotBlank(mailServer.getArtifactoryUrl())) {
-            resetPageUrl = mailServer.getArtifactoryUrl() + "/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/resetpassword.html";
+            resetPageUrl = mailServer.getArtifactoryUrl();
+            if (resetPageUrl.endsWith("/")) {
+                resetPageUrl += "/";
+            }
+            resetPageUrl += RequestUtils.WEBAPP_URL_PATH_PREFIX + "/resetpassword.html";
         } else {
             resetPageUrl = getForgotPasswordPageUrlFromRequest();
         }
@@ -134,8 +138,6 @@ public class ForgotPasswordPanel extends TitledActionPanel {
     }
 
     private String getForgotPasswordPageUrlFromRequest() {
-        String servletContextUrl = RequestUtils.getWicketServletContextUrl();
-        CharSequence path = WicketUtils.absoluteMountPathForPage(ResetPasswordPage.class);
-        return servletContextUrl + "/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/" + path;
+        return WicketUtils.absoluteMountPathForPage(ResetPasswordPage.class);
     }
 }

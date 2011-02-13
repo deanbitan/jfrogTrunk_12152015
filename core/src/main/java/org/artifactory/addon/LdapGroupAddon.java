@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@ import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.springframework.ldap.core.DirContextOperations;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Used to populate the user with the groups that he belongs to.
@@ -30,6 +31,14 @@ import java.util.List;
  * @author Tomer Cohen
  */
 public interface LdapGroupAddon extends Addon {
+
+    /**
+     * Add external groups to an existing set of groups.
+     *
+     * @param userName The user name for which to find the external groups for.
+     * @param groups   The set of groups for which to add the external groups for.
+     */
+    void addExternalGroups(String userName, Set<UserInfo.UserGroupInfo> groups);
 
     /**
      * Populate the group for a certain user by his Distinguished Name (dn)

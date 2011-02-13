@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,8 +48,8 @@ public class CrowdSettings implements Descriptor {
     @XmlElement(defaultValue = "false")
     private boolean useDefaultProxy = false;
 
-    @XmlElement(defaultValue = "false")
-    private boolean noAutoUserCreation = false;
+    @XmlElement(defaultValue = "true")
+    private boolean noAutoUserCreation = true;
 
     public boolean isEnableIntegration() {
         return enableIntegration;
@@ -120,6 +120,9 @@ public class CrowdSettings implements Descriptor {
             if (sessionValidationInterval > 0) {
                 properties.setProperty("session.validationinterval", Long.toString(sessionValidationInterval));
             }
+            properties.setProperty("session.isauthenticated", "artifactory.crowd.session.isAuthenticated");
+            properties.setProperty("session.tokenkey", "artifactory.crowd.session.tokenKey");
+            properties.setProperty("session.lastvalidation", "artifactory.crowd.session.lastValidation");
         }
         return properties;
     }

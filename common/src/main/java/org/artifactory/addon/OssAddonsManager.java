@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -77,6 +77,10 @@ public class OssAddonsManager implements AddonsManager {
 
     public String getLicenseKey() {
         throw new UnsupportedOperationException();
+    }
+
+    public String getLicenseKeyHash() {
+        return "";
     }
 
     public String[] getLicenseDetails() {

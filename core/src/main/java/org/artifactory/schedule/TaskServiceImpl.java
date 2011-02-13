@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,6 @@
 
 package org.artifactory.schedule;
 
-import org.artifactory.cache.InternalCacheService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrService;
@@ -43,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author yoavl
  */
 @Service
-@Reloadable(beanClass = TaskService.class, initAfter = {InternalCacheService.class, JcrService.class})
+@Reloadable(beanClass = TaskService.class, initAfter = {JcrService.class})
 public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     private static final Logger log = LoggerFactory.getLogger(TaskServiceImpl.class);
 
@@ -62,7 +61,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         QuartzTask jcrGarbageCollectorTask = new QuartzTask(
                 JcrGarbageCollectorJob.class,
                 TimeUnit.SECONDS.toMillis(ConstantValues.gcIntervalSecs.getLong()),
-                TimeUnit.SECONDS.toMillis(10));
+                TimeUnit.SECONDS.toMillis(ConstantValues.gcDelaySecs.getLong()));
         jcrGarbageCollectorTask.setSingleton(true);
         startTask(jcrGarbageCollectorTask);
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -158,13 +158,8 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
                 String relativePath = pathItem.getRelPath();
 
                 RepoPath childRepoPath = new RepoPathImpl(pathItem.getRepoKey(), relativePath);
-                boolean childReader = authService.canRead(childRepoPath);
-                if (!childReader) {
-                    //Don't bother with stuff that we do not have read access to
-                    continue;
-                }
 
-                if (!repoService.isLocalRepoPathAccepted(childRepoPath) && !authService.canAnnotate(childRepoPath)) {
+                if (!repoService.isLocalRepoPathDisplayable(childRepoPath)) {
                     continue;
                 }
 
@@ -207,8 +202,7 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
                     repoPath = ((FolderActionableItem) repoAwareItem).getCanonicalPath();
                 }
                 RepositoryService repoService = getRepoService();
-                if (!repoService.exists(repoPath) ||
-                        (!repoService.isLocalRepoPathAccepted(repoPath) && !authService.canAnnotate(repoPath))) {
+                if (!repoService.exists(repoPath) || !repoService.isLocalRepoPathDisplayable(repoPath)) {
                     return false;
                 }
             }

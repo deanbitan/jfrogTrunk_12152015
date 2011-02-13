@@ -10,11 +10,11 @@
 
 package org.artifactory.repo.index.creator;
 
+import org.apache.maven.index.ArtifactContext;
+import org.apache.maven.index.ArtifactInfo;
+import org.apache.maven.index.creator.MavenArchetypeArtifactInfoIndexCreator;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrZipFile;
-import org.sonatype.nexus.index.ArtifactContext;
-import org.sonatype.nexus.index.ArtifactInfo;
-import org.sonatype.nexus.index.creator.MavenArchetypeArtifactInfoIndexCreator;
 
 import java.util.zip.ZipEntry;
 

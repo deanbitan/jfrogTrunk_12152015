@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,7 +38,6 @@ import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -70,18 +69,17 @@ public class IndexerConfigPanel extends TitledActionPanel {
     @SpringBean
     private IndexerService indexerService;
 
-    private IndexerDescriptor indexer;
+    private MutableCentralConfigDescriptor centralConfig;
 
     public IndexerConfigPanel(String id, Form form) {
         super(id);
 
-        CentralConfigDescriptor centralConfig = centralConfigService.getDescriptor();
-        indexer = centralConfig.getIndexer();
-        if (indexer == null) {
-            indexer = new IndexerDescriptor();
+        centralConfig = centralConfigService.getMutableDescriptor();
+        if (centralConfig.getIndexer() == null) {
+            centralConfig.setIndexer(new IndexerDescriptor());
         }
 
-        setDefaultModel(new CompoundPropertyModel(indexer));
+        setDefaultModel(new CompoundPropertyModel<IndexerDescriptor>(centralConfig.getIndexer()));
 
         add(new StyledCheckbox("enabled"));
         add(new SchemaHelpBubble("enabled.help"));
@@ -140,11 +138,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
         return new TitledAjaxSubmitLink("save", "Save", form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                // get the indexer configuration and if valid
-                IndexerDescriptor indexer = IndexerConfigPanel.this.indexer;
-                MutableCentralConfigDescriptor ccDescriptor = centralConfigService.getMutableDescriptor();
-                ccDescriptor.setIndexer(indexer);
-                centralConfigService.saveEditedDescriptorAndReload(ccDescriptor);
+                centralConfigService.saveEditedDescriptorAndReload(centralConfig);
                 info("Indexer service settings successfully updated.");
                 AjaxUtils.refreshFeedback(target);
                 target.addComponent(this);

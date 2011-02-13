@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,29 +27,42 @@ import java.io.Serializable;
  *
  * @author Noam Y. Tenne
  */
-public abstract class BaseBrowsableItem<T extends BaseBrowsableItem> implements Serializable, Comparable<T> {
+public abstract class BaseBrowsableItem implements Serializable, Comparable<BaseBrowsableItem> {
 
     private static final long serialVersionUID = 1L;
 
     public static final String UP = "..";
     protected String name;
     private boolean folder;
+    private long created;
     private long lastModified;
     private long size;
+    private boolean remote = false;
+
 
     /**
      * Main constructor
      *
      * @param name         Item display name
      * @param folder       True if the item represents a folder
+     * @param created
      * @param lastModified Item last modified time
      * @param size         Item size (applicable only to files)
      */
-    public BaseBrowsableItem(String name, boolean folder, long lastModified, long size) {
+    public BaseBrowsableItem(String name, boolean folder, long created, long lastModified, long size) {
         this.name = name;
         this.folder = folder;
+        this.created = created;
         this.lastModified = lastModified;
         this.size = size;
+    }
+
+    public boolean isRemote() {
+        return remote;
+    }
+
+    public void setRemote(boolean remote) {
+        this.remote = remote;
     }
 
     /**
@@ -89,6 +102,15 @@ public abstract class BaseBrowsableItem<T extends BaseBrowsableItem> implements 
      */
     public long getLastModified() {
         return lastModified;
+    }
+
+    /**
+     * Returns the creation time of the item
+     *
+     * @return Item creation time in millis
+     */
+    public long getCreated() {
+        return created;
     }
 
     /**

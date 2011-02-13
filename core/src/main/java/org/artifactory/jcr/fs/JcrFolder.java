@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,6 +41,8 @@ import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.lock.LockingHelper;
+import org.artifactory.jcr.md.AbstractXmlContentPersistenceHandler;
+import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataPersistenceHandler;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
@@ -60,6 +62,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -207,6 +210,7 @@ public class JcrFolder extends JcrFsItem<InternalFolderInfo> {
     public int zap(long expiredLastUpdated) {
         int result = 1;
         setLastUpdated(expiredLastUpdated);
+        updateMavenMetadataLastModifiedIfExists(expiredLastUpdated);
 
         // zap children
         List<JcrFsItem> children = getJcrRepoService().getChildren(this, true);
@@ -214,6 +218,35 @@ public class JcrFolder extends JcrFsItem<InternalFolderInfo> {
             result += child.zap(expiredLastUpdated);
         }
         return result;
+    }
+
+    @Override
+    public void unexpire() {
+        super.unexpire();
+        updateMavenMetadataLastModifiedIfExists(System.currentTimeMillis());
+    }
+
+    /**
+     * Maven metadata is an expirable resource, so we should change its last modified date whenever
+     * expiring(zapping)/un-expiring.
+     *
+     * @param lastModified The last modified date
+     */
+    private void updateMavenMetadataLastModifiedIfExists(long lastModified) {
+        try {
+            if (hasMetadata(MavenNaming.MAVEN_METADATA_NAME)) {
+                MetadataDefinition definition =
+                        getRepoGeneric().getMetadataDefinition(MavenNaming.MAVEN_METADATA_NAME, false);
+                MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
+                if (mdph instanceof AbstractXmlContentPersistenceHandler) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTimeInMillis(lastModified);
+                    ((AbstractXmlContentPersistenceHandler) mdph).markModified(this, cal);
+                }
+            }
+        } catch (RepositoryException e) {
+            log.error("Failed to set last modified on maven metadata: {}", e.getLocalizedMessage());
+        }
     }
 
     @Override
@@ -316,7 +349,7 @@ public class JcrFolder extends JcrFsItem<InternalFolderInfo> {
     }
 
     private boolean exportChildren(ExportSettings settings, BasicStatusHolder status, TaskService taskService,
-                                   List<JcrFsItem> list) {
+            List<JcrFsItem> list) {
         boolean shouldStop = false;
         for (JcrFsItem item : list) {
             //Check if we need to break/pause
@@ -364,7 +397,7 @@ public class JcrFolder extends JcrFsItem<InternalFolderInfo> {
     // remove files and folders from the incremental backup dir if they were deleted from the repository
 
     private void cleanupIncrementalBackupDirectory(List<JcrFsItem> currentJcrFolderItems, File targetDir,
-                                                   MultiStatusHolder status) {
+            MultiStatusHolder status) {
         //Metadata File filter
         IOFileFilter metadataFilter = new AbstractFileFilter() {
             @Override
@@ -446,7 +479,7 @@ public class JcrFolder extends JcrFsItem<InternalFolderInfo> {
      * @param status                Status holder
      */
     private void cleanMetadata(List<JcrFsItem> currentJcrFolderItems, Collection<File> metadataFiles,
-                               MultiStatusHolder status) {
+            MultiStatusHolder status) {
         for (File metadataFile : metadataFiles) {
             if ((metadataFile != null) && (metadataFile.isFile())) {
                 String metadataFolderPath = metadataFile.getParent();

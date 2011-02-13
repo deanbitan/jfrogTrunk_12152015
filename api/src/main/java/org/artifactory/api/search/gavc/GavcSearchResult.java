@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,10 @@
 
 package org.artifactory.api.search.gavc;
 
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
+import org.artifactory.fs.ItemInfo;
 
 /**
  * Holds GAVC search result data.
@@ -28,26 +30,32 @@ import org.artifactory.api.search.artifact.ArtifactSearchResult;
  */
 public class GavcSearchResult extends ArtifactSearchResult {
 
-    private MavenArtifactInfo artifact;
+    private ModuleInfo moduleInfo;
 
-    public GavcSearchResult(org.artifactory.fs.ItemInfo itemInfo, MavenArtifactInfo artifact) {
+    public GavcSearchResult(ItemInfo itemInfo, ModuleInfo moduleInfo) {
         super(itemInfo);
-        this.artifact = artifact;
+
+        this.moduleInfo = moduleInfo;
     }
 
     public String getGroupId() {
-        return artifact.getGroupId();
+        return moduleInfo.getOrganization();
     }
 
     public String getArtifactId() {
-        return artifact.getArtifactId();
+        return moduleInfo.getModule();
     }
 
     public String getVersion() {
-        return artifact.getVersion();
+        StringBuilder revisionBuilder = new StringBuilder(moduleInfo.getBaseRevision());
+        String artifactRevisionIntegration = moduleInfo.getFileIntegrationRevision();
+        if (StringUtils.isNotBlank(artifactRevisionIntegration)) {
+            revisionBuilder.append("-").append(artifactRevisionIntegration);
+        }
+        return revisionBuilder.toString();
     }
 
     public String getClassifier() {
-        return artifact.getClassifier();
+        return moduleInfo.getClassifier();
     }
 }

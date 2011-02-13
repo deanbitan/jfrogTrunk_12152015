@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -67,7 +67,8 @@ public enum ArtifactoryVersion {
     v224("2.2.4", 11256),
     v225("2.2.5", 11524),
     v230("2.3.0", 12450),
-    v231("2.3.1", Integer.MAX_VALUE);
+    v231("2.3.1", 12714),
+    v232("2.3.2", Integer.MAX_VALUE);
 
     public static ArtifactoryVersion getCurrent() {
         ArtifactoryVersion[] versions = ArtifactoryVersion.values();
@@ -103,7 +104,7 @@ public enum ArtifactoryVersion {
         return value;
     }
 
-    public int getRevision() {
+    public long getRevision() {
         return revision;
     }
 

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,6 +30,7 @@ import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.DownloadResource;
 import org.artifactory.rest.resource.artifact.SyncResource;
+import org.jfrog.build.api.BuildRetention;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
@@ -51,24 +52,26 @@ public interface RestAddon extends Addon {
     /**
      * Copy an artifact from one path to another.
      *
-     * @param path   The source path of the artifact.
-     * @param target The target repository where to copy/move the Artifact to.
-     * @param dryRun A flag to indicate whether to perform a dry run first before performing the actual action.
+     * @param path            The source path of the artifact.
+     * @param target          The target repository where to copy/move the Artifact to.
+     * @param dryRun          A flag to indicate whether to perform a dry run first before performing the actual action.
+     * @param suppressLayouts Indicates whether path translation across different layouts should be suppressed.
      * @return A JSON object of all the messages and errors that occurred during the action.
      * @throws Exception If an error occurred during the dry run or the actual action an exception is thrown.
      */
-    MoveCopyResult copy(String path, String target, int dryRun) throws Exception;
+    MoveCopyResult copy(String path, String target, int dryRun, int suppressLayouts) throws Exception;
 
     /**
      * Move an artifact from one path to another.
      *
-     * @param path   The source path of the artifact.
-     * @param target The target repository where to copy/move the Artifact to.
-     * @param dryRun A flag to indicate whether to perform a dry run first before performing the actual action.
+     * @param path            The source path of the artifact.
+     * @param target          The target repository where to copy/move the Artifact to.
+     * @param dryRun          A flag to indicate whether to perform a dry run first before performing the actual action.
+     * @param suppressLayouts Indicates whether path translation across different layouts should be suppressed.
      * @return A JSON object of all the messages and errors that occurred during the action.
      * @throws Exception If an error occurred during the dry run or the actual action an exception is thrown.
      */
-    MoveCopyResult move(String path, String target, int dryRun) throws Exception;
+    MoveCopyResult move(String path, String target, int dryRun, int suppressLayouts) throws Exception;
 
     Response download(String path, DownloadResource.Content content, int mark,
             HttpServletResponse response) throws Exception;
@@ -94,21 +97,21 @@ public interface RestAddon extends Addon {
      * @param arts        Zero if to exclude artifacts from the action take. One to include
      * @param deps        Zero if to exclude dependencies from the action take. One int to include
      * @param scopes      Scopes of dependencies to copy (agnostic if null or empty)
-     * @param dry         Zero if to apply the selected action. One to simulate
-     * @return Result of action
+     * @param properties  Properties to tag the moved or copied artifacts.
+     * @param dry         Zero if to apply the selected action. One to simulate  @return Result of action
      */
     MoveCopyResult moveOrCopyBuildItems(boolean move, String buildName, String buildNumber, String started,
-            String to, int arts, int deps, StringList scopes, int dry) throws ParseException;
+            String to, int arts, int deps, StringList scopes, KeyValueList properties, int dry) throws ParseException;
 
     /**
      * Returns a list of files under the given folder path
      *
-     * @param uri  Request URI as sent by the user
-     * @param path Path to search under
-     * @param deep Zero if the scanning should be shallow. One for deep
-     * @return File list object
+     * @param uri         Request URI as sent by the user
+     * @param path        Path to search under
+     * @param deep        Zero if the scanning should be shallow. One for deep
+     * @param listFolders Zero if folders should be excluded. One if they should be included
      */
-    FileList getFileList(String uri, String path, int deep);
+    FileList getFileList(String uri, String path, int deep, int listFolders);
 
     /**
      * Locally replicates the given remote path
@@ -150,6 +153,14 @@ public interface RestAddon extends Addon {
      * @param buildNumbers
      */
     void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers);
+
+    /**
+     * Discard old builds as according to count or date.
+     *
+     * @param name
+     * @param discard The discard object that holds a count or date.
+     */
+    void discardOldBuilds(String name, BuildRetention discard);
 
     /**
      * Returns the latest modified item of the given file or folder (recursively)
@@ -224,7 +235,9 @@ public interface RestAddon extends Addon {
      * @param properties The properties to attach as a list.
      * @return The response of the operation
      */
-    Response savePropertiesOnPath(String path, String recursive, KeyValueList properties);
+    Response savePathProperties(String path, String recursive, KeyValueList properties);
+
+    Response deletePathProperties(String path, String recursive, StringList properties);
 
     ResponseCtx runPluginExecution(String executionName, Map params, boolean async);
 }

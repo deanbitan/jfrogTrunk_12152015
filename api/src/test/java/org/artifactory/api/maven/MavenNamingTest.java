@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,26 +39,11 @@ public class MavenNamingTest extends ArtifactoryHomeBoundTest {
         assertFalse(MavenNaming.isNonUniqueSnapshotVersion("1.2SNAPSHOT"));
     }
 
-    public void nonUniqueSnapshotBaseVersion() {
-        assertEquals(MavenNaming.getNonUniqueSnapshotBaseVersion("1.2-SNAPSHOT"), "1.2");
-        assertEquals(MavenNaming.getNonUniqueSnapshotBaseVersion("ABC-SNAPSHOT"), "ABC");
-        assertEquals(MavenNaming.getNonUniqueSnapshotBaseVersion("1-2-3-SNAPSHOT"), "1-2-3");
-    }
-
     public void testIsNonUniqueSnapshotFilePath() {
         assertFalse(MavenNaming.isNonUniqueSnapshot("a/path/1.0-SNAPSHOT/1.0-SNAPSHOT"));
         assertTrue(MavenNaming.isNonUniqueSnapshot("a/path/1.0-SNAPSHOT/1.0-SNAPSHOT.pom"));
         assertTrue(MavenNaming.isNonUniqueSnapshot("a/path/1.0-SNAPSHOT/1.0-SNAPSHOT-sources.jar"));
         assertFalse(MavenNaming.isNonUniqueSnapshot("a/path/5.4-SNAPSHOT/path-5.4-20081214.090217-4.pom"));
-    }
-
-    public void testIsSnapshot() {
-        assertTrue(MavenNaming.isSnapshot("a/path/1.0-SNAPSHOT/1.0-SNAPSHOT"));
-        assertTrue(MavenNaming.isSnapshot("a/path/1.0-SNAPSHOT/1.0-SNAPSHOT.pom"));
-        assertTrue(MavenNaming.isSnapshot("a/path/1.0-SNAPSHOT/"));
-        assertTrue(MavenNaming.isSnapshot("a/path/1.0-SNAPSHOT"));
-        assertFalse(MavenNaming.isSnapshot("a/path/1.0-SNAPSHOT/sub/path"));
-        assertTrue(MavenNaming.isSnapshot("a/path/5.4-SNAPSHOT/path-5.4-20081214.090217-4.pom"));
     }
 
     public void testIsClientOrServerPom() {

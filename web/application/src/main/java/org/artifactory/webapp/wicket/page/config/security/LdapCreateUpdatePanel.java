@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.config.security;
 
+import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
@@ -33,9 +34,7 @@ import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.StatusEntryLevel;
 import org.artifactory.common.wicket.WicketProperty;
-import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
-import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonStyleModel;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
@@ -45,11 +44,13 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpModel;
+import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
@@ -179,6 +180,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         TitledAjaxSubmitLink submit = new TitledAjaxSubmitLink("submit", submitCaption, form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
+                Session.get().cleanupFeedbackMessages();
                 LdapSetting ldapSetting = (LdapSetting) form.getDefaultModelObject();
                 if (!validateAndUpdateLdapSettings(ldapSetting)) {
                     AjaxUtils.refreshFeedback(target);
@@ -209,21 +211,24 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         TitledAjaxSubmitLink submit = new TitledAjaxSubmitLink("testLdap", "Test Connection", form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
+                Session.get().cleanupFeedbackMessages();
                 LdapSetting ldapSetting = (LdapSetting) form.getDefaultModelObject();
                 if (!validateAndUpdateLdapSettings(ldapSetting)) {
                     AjaxUtils.refreshFeedback(target);
                     return;
                 }
 
-                if (!StringUtils.hasText(testUsername) || !StringUtils.hasText(testUsername)) {
-                    error("Please enter test username and password " +
-                            "to test the LDAP settings");
+                if (!StringUtils.hasText(testUsername) || !StringUtils.hasText(testPassword)) {
+                    error("Please enter test username and password to test the LDAP settings");
+                    AjaxUtils.refreshFeedback(target);
                     return;
                 }
                 MultiStatusHolder status = securityService.testLdapConnection(ldapSetting, testUsername, testPassword);
                 List<StatusEntry> infos = status.getEntries(StatusEntryLevel.INFO);
                 if (status.isError()) {
-                    error(status.getStatusMsg());
+                    String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
+                    error(status.getStatusMsg() + " Please see the <a href=\"" + systemLogsPage +
+                            "\">logs</a> page for more details");
                 }
                 for (StatusEntry info : infos) {
                     info(info.getMessage());
@@ -235,7 +240,6 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                 AjaxUtils.refreshFeedback(target);
             }
         };
-        submit.add(new CssClass(new DefaultButtonStyleModel(submit)));
         return submit;
     }
 

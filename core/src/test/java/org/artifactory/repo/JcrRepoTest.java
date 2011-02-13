@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +27,7 @@ import org.artifactory.repo.jcr.JcrLocalRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
+import org.artifactory.util.RepoLayoutUtils;
 import org.easymock.EasyMock;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
@@ -52,6 +53,7 @@ public class JcrRepoTest extends ArtifactoryHomeBoundTest {
 
         LocalRepoDescriptor lrd = new LocalRepoDescriptor();
         lrd.setKey("libs");
+        lrd.setRepoLayout(RepoLayoutUtils.MAVEN_2_DEFAULT);
         JcrLocalRepo jcrLocalRepo = new JcrLocalRepo(irs, lrd, null);
         ReflectionTestUtils.setField(jcrLocalRepo, "anonAccessEnabled", false);
         RepoPath path = new RepoPathImpl("libs", "jfrog/settings/jfrog-settings-sources.zip");

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.api.fs;
 
 import org.artifactory.repo.RepoPath;
+import org.artifactory.resource.RepoResourceInfo;
 
 import java.io.Serializable;
 
@@ -44,7 +45,7 @@ public interface RepoResource extends Serializable {
 
     void setResponseRepoPath(RepoPath responsePath);
 
-    org.artifactory.resource.RepoResourceInfo getInfo();
+    RepoResourceInfo getInfo();
 
     boolean isFound();
 

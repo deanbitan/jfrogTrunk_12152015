@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,6 +26,7 @@ import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.FolderExpectedException;
@@ -66,6 +67,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -109,7 +111,7 @@ public class ArtifactResource {
     private RepositoryService repositoryService;
 
     @Autowired
-    private AuthorizationService authorizationService;
+    private RepositoryBrowsingService repoBrowsingService;
 
     @GET
     @Path("{path: .+}")
@@ -120,12 +122,13 @@ public class ArtifactResource {
             @QueryParam("md") StringList md,
             @QueryParam("list") String list,
             @QueryParam("deep") int deep,
+            @QueryParam("listFolders") int listFolders,
             @QueryParam("properties") StringList properties,
             @QueryParam("lastModified") String lastModified) throws IOException {
 
         //Divert to file list request if the list param is mentioned
         if (list != null) {
-            return Response.ok(getFileList(path, deep), MT_FILE_LIST).build();
+            return Response.ok(getFileList(path, deep, listFolders), MT_FILE_LIST).build();
         }
 
         if (lastModified != null) {
@@ -177,14 +180,15 @@ public class ArtifactResource {
     /**
      * Returns a list of files under the given folder path
      *
-     * @param path Path to scan files for
-     * @param deep Zero if the scanning should be shallow. One for deep
+     * @param path        Path to scan files for
+     * @param deep        Zero if the scanning should be shallow. One for deep
+     * @param listFolders Zero if folders should not be included in the list. One if they should
      * @return File list object
      */
-    private FileList getFileList(String path, int deep) throws IOException {
+    private FileList getFileList(String path, int deep, int listFolders) throws IOException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
-            return restAddon.getFileList(request.getRequestURL().toString(), path, deep);
+            return restAddon.getFileList(request.getRequestURL().toString(), path, deep, listFolders);
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnee) {
@@ -328,7 +332,7 @@ public class ArtifactResource {
                 //no item found, will send 404
             }
         } else if (isVirtualRepo(repoKey)) {
-            VirtualRepoItem virtualRepoItem = repositoryService.getVirtualRepoItem(repoPath);
+            VirtualRepoItem virtualRepoItem = repoBrowsingService.getVirtualRepoItem(repoPath);
             if (virtualRepoItem == null) {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
@@ -454,7 +458,7 @@ public class ArtifactResource {
             }
             //for virtual repo
         } else {
-            List<VirtualRepoItem> virtualRepoItems = repositoryService.getVirtualRepoItems(folderRepoPath);
+            List<VirtualRepoItem> virtualRepoItems = repoBrowsingService.getVirtualRepoItems(folderRepoPath);
             for (VirtualRepoItem item : virtualRepoItems) {
                 folderInfo.children.add(new RestFolderInfo.DirItem("/" + item.getName(), item.isFolder()));
             }
@@ -485,9 +489,17 @@ public class ArtifactResource {
 
     @PUT
     @Path("{path: .+}")
-    public Response savePropertiesOnPath(@PathParam("path") String path, @QueryParam("recursive") String recursive,
+    public Response savePathProperties(@PathParam("path") String path, @QueryParam("recursive") String recursive,
             @QueryParam("properties") KeyValueList properties) {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return restAddon.savePropertiesOnPath(path, recursive, properties);
+        return restAddon.savePathProperties(path, recursive, properties);
+    }
+
+    @DELETE
+    @Path("{path: .+}")
+    public Response deletePathProperties(@PathParam("path") String path, @QueryParam("recursive") String recursive,
+            @QueryParam("properties") StringList properties) {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return restAddon.deletePathProperties(path, recursive, properties);
     }
 }

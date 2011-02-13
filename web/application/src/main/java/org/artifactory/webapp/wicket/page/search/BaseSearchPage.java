@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,10 +28,11 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.PropertiesAddon;
+import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.common.wicket.component.panel.sidemenu.SubMenuPanel;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
+import org.artifactory.webapp.wicket.page.browse.home.RememberPageBehavior;
 import org.artifactory.webapp.wicket.page.search.archive.ArchiveSearchPanel;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPanel;
 import org.artifactory.webapp.wicket.page.search.gavc.GavcSearchPanel;
@@ -64,6 +65,8 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
     private String searchQuery;
 
     public BaseSearchPage() {
+        add(new RememberPageBehavior());
+
         String requestQuery = getRequest().getParameter(QUERY_PARAM);
         if (StringUtils.isNotBlank(requestQuery)) {
             try {
@@ -105,8 +108,8 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
             }
         });
 
-        PropertiesAddon propertiesAddon = addons.addonByType(PropertiesAddon.class);
-        ITab searchPanel = propertiesAddon.getPropertySearchTabPanel(this, "Property Search");
+        PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
+        ITab searchPanel = propertiesWebAddon.getPropertySearchTabPanel(this, "Property Search");
         tabs.add(searchPanel);
 
         tabs.add(new AbstractTab(Model.of("POM/XML Search")) {

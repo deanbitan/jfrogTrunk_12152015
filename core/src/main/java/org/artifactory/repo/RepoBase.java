@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,8 +19,12 @@
 package org.artifactory.repo;
 
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.module.ModuleInfo;
+import org.artifactory.api.module.ModuleInfoUtils;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.jcr.md.MetadataAware;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
@@ -58,8 +62,38 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         return descriptor;
     }
 
+    public RepoPath getRepoPath(String path) {
+        return new RepoPathImpl(getKey(), path);
+    }
+
     public InternalRepositoryService getRepositoryService() {
         return repositoryService;
+    }
+
+    public ModuleInfo getItemModuleInfo(String itemPath) {
+        ModuleInfo moduleInfo = getDescriptorModuleInfo(itemPath);
+
+        if (!moduleInfo.isValid()) {
+            moduleInfo = getArtifactModuleInfo(itemPath);
+        }
+
+        return moduleInfo;
+    }
+
+    public ModuleInfo getArtifactModuleInfo(String artifactPath) {
+        RepoLayout repoLayout = getDescriptor().getRepoLayout();
+        if (org.apache.commons.lang.StringUtils.isBlank(artifactPath) || (repoLayout == null)) {
+            return new ModuleInfo();
+        }
+        return ModuleInfoUtils.moduleInfoFromArtifactPath(artifactPath, getDescriptor().getRepoLayout());
+    }
+
+    public ModuleInfo getDescriptorModuleInfo(String descriptorPath) {
+        RepoLayout repoLayout = getDescriptor().getRepoLayout();
+        if (org.apache.commons.lang.StringUtils.isBlank(descriptorPath) || (repoLayout == null)) {
+            return new ModuleInfo();
+        }
+        return ModuleInfoUtils.moduleInfoFromDescriptorPath(descriptorPath, repoLayout);
     }
 
     public String getKey() {
@@ -74,8 +108,7 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         return getDescriptor().isReal();
     }
 
-    public boolean accepts(RepoPath repoPath) {
-        String path = repoPath.getPath();
+    public boolean accepts(String path) {
         if (NamingUtils.isSystem(path)) {
             // includes/excludes should not affect system paths
             return true;

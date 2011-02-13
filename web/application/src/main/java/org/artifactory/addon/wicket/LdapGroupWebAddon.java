@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,6 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.security.GroupInfo;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
@@ -43,19 +42,6 @@ import java.util.Set;
  * @author Tomer Cohen
  */
 public interface LdapGroupWebAddon extends Addon {
-
-    /**
-     * The realm of LDAP groups.
-     */
-    String REALM = "ldap";
-
-    /**
-     * Add external groups to an existing set of groups.
-     *
-     * @param userName The user name for which to find the external groups for.
-     * @param groups   The set of groups for which to add the external groups for.
-     */
-    void addExternalGroups(String userName, Set<UserInfo.UserGroupInfo> groups);
 
     /**
      * Get the LDAP group create/update panel for the LDAP group addons.

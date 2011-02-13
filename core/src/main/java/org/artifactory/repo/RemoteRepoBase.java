@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,9 @@
 
 package org.artifactory.repo;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.common.collect.MapMaker;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -27,8 +30,6 @@ import org.artifactory.addon.plugin.download.AltRemoteContentAction;
 import org.artifactory.addon.plugin.download.AltRemotePathAction;
 import org.artifactory.addon.plugin.download.PathCtx;
 import org.artifactory.addon.plugin.download.ResourceStreamCtx;
-import org.artifactory.api.cache.ArtifactoryCache;
-import org.artifactory.api.cache.CacheService;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
@@ -44,7 +45,6 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.concurrent.ExpiringDelayed;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.jcr.fs.JcrFolder;
@@ -60,20 +60,28 @@ import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.jcr.RepositoryException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -86,13 +94,15 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     private RemoteRepoBase oldRemoteRepo;
     private Map<String, RepoResource> failedRetrievalsCache;
     private Map<String, RepoResource> missedRetrievalsCache;
-    private boolean globalOfflineMode;
+    private Map<RepoPath, List<String>> remoteResourceCache;
 
+    private boolean globalOfflineMode;
     private final HandleRefsTracker handleRefsTracker;
     private final ConcurrentMap<String, DownloadEntry> inTransit;
+    protected ApacheURLLister urlLister;
 
     protected RemoteRepoBase(InternalRepositoryService repositoryService, T descriptor, boolean globalOfflineMode,
-                             RemoteRepo oldRemoteRepo) {
+            RemoteRepo oldRemoteRepo) {
         super(repositoryService, descriptor);
         this.globalOfflineMode = globalOfflineMode;
         if (oldRemoteRepo instanceof RemoteRepoBase) {
@@ -131,10 +141,13 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
     }
 
-    private void initCaches() {
-        CacheService cacheService = InternalContextHelper.get().beanForType(CacheService.class);
-        failedRetrievalsCache = cacheService.getRepositoryCache(getKey(), ArtifactoryCache.failed);
-        missedRetrievalsCache = cacheService.getRepositoryCache(getKey(), ArtifactoryCache.missed);
+    protected void initCaches() {
+        failedRetrievalsCache = new MapMaker().initialCapacity(100).expireAfterWrite(
+                getDescriptor().getFailedRetrievalCachePeriodSecs(), TimeUnit.SECONDS).makeMap();
+        missedRetrievalsCache = new MapMaker().initialCapacity(500).expireAfterWrite(
+                getDescriptor().getMissedRetrievalCachePeriodSecs(), TimeUnit.SECONDS).makeMap();
+        remoteResourceCache = new MapMaker().initialCapacity(1000).softValues()
+                .expireAfterWrite(getDescriptor().getRetrievalCachePeriodSecs(), TimeUnit.SECONDS).makeMap();
     }
 
     private void logCacheInfo() {
@@ -143,7 +156,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             log.debug("{}: Retrieval cache will be enabled with period of {} seconds",
                     this, retrievalCachePeriodSecs);
         } else {
-            log.debug("{}: Retrieval cache will be disbaled.", this);
+            log.debug("{}: Retrieval cache will be disabled.", this);
         }
         long failedRetrievalCachePeriodSecs = getDescriptor().getFailedRetrievalCachePeriodSecs();
         if (failedRetrievalCachePeriodSecs > 0) {
@@ -159,10 +172,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         } else {
             log.debug("{}: Disabling misses retrieval cache", this);
         }
-    }
-
-    public RepoType getType() {
-        return getDescriptor().getType();
     }
 
     public boolean isStoreArtifactsLocally() {
@@ -183,6 +192,10 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     public boolean isOffline() {
         return getDescriptor().isOffline() || globalOfflineMode;
+    }
+
+    public boolean isListRemoteFolderItems() {
+        return getDescriptor().isListRemoteFolderItems() && !getDescriptor().isBlackedOut() && !isOffline();
     }
 
     public long getRetrievalCachePeriodSecs() {
@@ -261,7 +274,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         //not found in local cache - try to get it from the remote repository
         if (!isOffline()) {
             remoteResource = getRemoteResource(context, repoPath, foundExpiredInCache);
-            if ((!remoteResource.isFound()) && foundExpiredInCache) {
+            if (!remoteResource.isFound() && foundExpiredInCache) {
                 remoteResource = returnCachedResource(repoPath, cachedResource);
             }
             return remoteResource;
@@ -283,7 +296,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @param foundExpiredInCache True if the an expired item was found in the cache    @return Repo resource object
      */
     private RepoResource getRemoteResource(RequestContext context, RepoPath repoPath,
-                                           boolean foundExpiredInCache) {
+            boolean foundExpiredInCache) {
         String path = repoPath.getPath();
 
         if (!isRequestPropertyBoundAndPropertiesAreSynced(context, path)) {
@@ -350,12 +363,13 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     protected abstract RepoResource retrieveInfo(String path, Properties requestProperties);
 
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
-        StatusHolder status = assertValidPath(repoPath);
+        String path = repoPath.getPath();
+        StatusHolder status = assertValidPath(path);
         if (status.isError()) {
             return status;
         }
         if (localCacheRepo != null) {
-            repoPath = new RepoPathImpl(localCacheRepo.getKey(), repoPath.getPath());
+            repoPath = new RepoPathImpl(localCacheRepo.getKey(), path);
             status = localCacheRepo.checkDownloadIsAllowed(repoPath);
         }
         return status;
@@ -391,7 +405,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     public ResourceStreamHandle downloadAndSave(RequestContext context, RepoResource remoteResource,
-                                                RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectException {
+            RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectException {
         RepoPath remoteRepoPath = remoteResource.getRepoPath();
         String path = remoteRepoPath.getPath();
 
@@ -598,12 +612,41 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return localCacheRepo;
     }
 
+    public List<String> listRemoteResources(RepoPath directoryRepoPath) throws IOException {
+        assert !isOffline() : "Should never be called in offline mode";
+        List<String> cachedUrls = remoteResourceCache.get(directoryRepoPath);
+        if (CollectionUtils.notNullOrEmpty(cachedUrls)) {
+            return cachedUrls;
+        }
+        List<URL> urls = getChildUrls(new URL(getUrl() + "/" + directoryRepoPath.getPath()));
+        if (CollectionUtils.isNullOrEmpty(urls)) {
+            log.debug("No remote URLS where found for: ", getUrl() + "/" + directoryRepoPath.getPath());
+            return Lists.newArrayList();
+        }
+        List<String> urlsAsStrings = transformUrlsToStrings(urls);
+        remoteResourceCache.put(directoryRepoPath, urlsAsStrings);
+        return urlsAsStrings;
+    }
+
+    protected abstract List<URL> getChildUrls(URL dirUrl) throws IOException;
+
+    private List<String> transformUrlsToStrings(List<URL> urls) {
+        return Lists.transform(urls, new Function<URL, String>() {
+            public String apply(@Nonnull URL input) {
+                return input.toExternalForm();
+            }
+        });
+    }
+
     public void clearCaches() {
         if (failedRetrievalsCache != null) {
             failedRetrievalsCache.clear();
         }
         if (missedRetrievalsCache != null) {
             missedRetrievalsCache.clear();
+        }
+        if (remoteResourceCache != null) {
+            remoteResourceCache.clear();
         }
     }
 

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,9 +24,11 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.util.AlreadyExistsException;
+import org.artifactory.util.RepoLayoutUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -83,6 +85,14 @@ public class CentralConfigDescriptorImplTest {
         PropertySet set2 = new PropertySet();
         set2.setName("set2");
         cc.addPropertySet(set2);
+
+        RepoLayout repoLayout1 = new RepoLayout();
+        repoLayout1.setName("layout1");
+        cc.addRepoLayout(repoLayout1);
+
+        RepoLayout repoLayout2 = new RepoLayout();
+        repoLayout2.setName("layout2");
+        cc.addRepoLayout(repoLayout2);
     }
 
     public void defaultsTest() {
@@ -100,6 +110,7 @@ public class CentralConfigDescriptorImplTest {
         assertTrue(cc.getFileUploadMaxSizeMb() > 50,
                 "Default max file upload size should be bigger than 50mb");
         assertFalse(cc.isOfflineMode(), "Offline mode should be false by default");
+        assertNotNull(cc.getRepoLayouts(), "Repo layouts list should not be null");
     }
 
     public void uniqueKeyExistence() {
@@ -114,6 +125,9 @@ public class CentralConfigDescriptorImplTest {
         assertFalse(cc.isKeyAvailable("repo"));
 
         assertTrue(cc.isPropertySetExists("set2"));
+
+        assertFalse(cc.isKeyAvailable("layout1"));
+        assertTrue(cc.isRepoLayoutExists("layout2"));
     }
 
     public void repositoriesExistence() {
@@ -264,5 +278,40 @@ public class CentralConfigDescriptorImplTest {
         assertNull(remoteDescriptor.getPropertySet(setName),
                 "The property set should have been removed from the " +
                         "remote repo descriptor.");
+    }
+
+    public void repoLayoutExistence() {
+        assertEquals(cc.getRepoLayouts().size(), 2, "The config should contain 2 repository layouts");
+        assertTrue(cc.isRepoLayoutExists("layout1"), "The config should contain the repo layout: 'layout1'");
+        assertTrue(cc.isRepoLayoutExists("layout2"), "The config should contain the repo layout: 'layout2'");
+    }
+
+    public void removeRepoLayout() {
+        RepoLayout layoutToRemove = new RepoLayout();
+        String name = "toRemove";
+        layoutToRemove.setName(name);
+        cc.addRepoLayout(layoutToRemove);
+
+        LocalRepoDescriptor localDescriptor = cc.getLocalRepositoriesMap().get("local1");
+        localDescriptor.setRepoLayout(layoutToRemove);
+
+        RemoteRepoDescriptor remoteDescriptor = cc.getRemoteRepositoriesMap().get("remote1");
+        remoteDescriptor.setRepoLayout(layoutToRemove);
+
+        VirtualRepoDescriptor virtualDescriptor = cc.getVirtualRepositoriesMap().get("virtual1");
+        virtualDescriptor.setRepoLayout(layoutToRemove);
+
+        assertNotNull(localDescriptor.getRepoLayout(), "The descriptor should contain the added repo layout");
+
+        assertNotNull(cc.removeRepoLayout(name), "The repo layout should have been removed from the central " +
+                "config descriptor.");
+
+        assertEquals(localDescriptor.getRepoLayout(), RepoLayoutUtils.MAVEN_2_DEFAULT,
+                "The repo layout should have defaulted.");
+
+        assertEquals(remoteDescriptor.getRepoLayout(), RepoLayoutUtils.MAVEN_2_DEFAULT,
+                "The repo layout should have defaulted.");
+
+        assertNull(virtualDescriptor.getRepoLayout(), "The repo layout should have defaulted to null.");
     }
 }

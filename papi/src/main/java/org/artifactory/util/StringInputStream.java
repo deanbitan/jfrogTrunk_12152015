@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,8 @@
 
 package org.artifactory.util;
 
+import com.google.common.base.Charsets;
+
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 
@@ -29,7 +31,7 @@ import java.io.UnsupportedEncodingException;
 public class StringInputStream extends ByteArrayInputStream {
 
     public StringInputStream(String string) throws UnsupportedEncodingException {
-        this(string, "utf-8");
+        this(string, Charsets.UTF_8.displayName());
     }
 
     public StringInputStream(String string, String encoding) throws UnsupportedEncodingException {

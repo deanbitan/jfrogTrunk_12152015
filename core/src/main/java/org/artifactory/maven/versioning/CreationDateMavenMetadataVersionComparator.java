@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.maven.versioning;
 
-import org.artifactory.jcr.fs.FolderTreeNode;
+import org.artifactory.jcr.fs.JcrTreeNode;
 
 /**
  * A {@link MavenMetadataVersionComparator} that determines the latest and release versions based on the directory
@@ -27,7 +27,7 @@ import org.artifactory.jcr.fs.FolderTreeNode;
  * @author Yossi Shaul
  */
 public class CreationDateMavenMetadataVersionComparator implements MavenMetadataVersionComparator {
-    public int compare(FolderTreeNode o1, FolderTreeNode o2) {
-        return o1.created.compareTo(o2.created);
+    public int compare(JcrTreeNode o1, JcrTreeNode o2) {
+        return o1.getCreated().compareTo(o2.getCreated());
     }
 }

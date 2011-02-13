@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,6 +30,7 @@ import org.artifactory.addon.plugin.storage.BeforeDeleteAction;
 import org.artifactory.addon.plugin.storage.BeforeMoveAction;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 
 import javax.inject.Inject;
@@ -65,23 +66,28 @@ public class PluginsInterceptor extends StorageInterceptorAdapter {
     }
 
     @Override
-    public void beforeMove(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder) {
+    public void beforeMove(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
+            Properties properties) {
         getPluginsAddon().execPluginActions(BeforeMoveAction.class, null, sourceItem.getInfo(), targetRepoPath);
     }
 
+
     @Override
-    public void afterMove(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder) {
+    public void afterMove(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder,
+            Properties properties) {
         getPluginsAddon()
                 .execPluginActions(AfterMoveAction.class, null, sourceItem.getInfo(), nullOrRepoPath(targetItem));
     }
 
     @Override
-    public void beforeCopy(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder) {
+    public void beforeCopy(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
+            Properties properties) {
         getPluginsAddon().execPluginActions(BeforeCopyAction.class, null, sourceItem.getInfo(), targetRepoPath);
     }
 
     @Override
-    public void afterCopy(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder) {
+    public void afterCopy(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder,
+            Properties properties) {
         getPluginsAddon()
                 .execPluginActions(AfterCopyAction.class, null, sourceItem.getInfo(), nullOrRepoPath(targetItem));
     }

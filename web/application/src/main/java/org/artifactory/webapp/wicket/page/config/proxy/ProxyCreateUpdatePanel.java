@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -58,10 +58,12 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
     private CentralConfigService centralConfigService;
 
     private boolean defaultForAllRemotRepo;
+    private ProxiesListPanel proxiesListPanel;
 
     public ProxyCreateUpdatePanel(CreateUpdateAction action, ProxyDescriptor proxyDescriptor,
             ProxiesListPanel proxiesListPanel) {
         super(action, proxyDescriptor);
+        this.proxiesListPanel = proxiesListPanel;
         setWidth(410);
 
         add(form);
@@ -116,6 +118,12 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
     }
 
     @Override
+    public void onClose(AjaxRequestTarget target) {
+        super.onClose(target);
+        proxiesListPanel.refresh(target);
+    }
+
+    @Override
     public boolean isResizable() {
         return true;
     }
@@ -130,13 +138,13 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
                     return;
                 }
                 MutableCentralConfigDescriptor mutableCentralConfig = proxiesListPanel.getEditingDescriptor();
+                mutableCentralConfig.proxyChanged(entity, defaultForAllRemotRepo);
                 if (isCreate()) {
                     mutableCentralConfig.addProxy(entity, defaultForAllRemotRepo);
                     getPage().info("Proxy '" + entity.getKey() + "' successfully created.");
                 } else {
                     getPage().info("Proxy '" + entity.getKey() + "' successfully updated.");
                 }
-                mutableCentralConfig.proxyChanged(entity, defaultForAllRemotRepo);
                 centralConfigService.saveEditedDescriptorAndReload(mutableCentralConfig);
                 AjaxUtils.refreshFeedback(target);
                 target.addComponent(proxiesListPanel);
@@ -149,10 +157,10 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
         private SystemDefaultCheckbox(final boolean checked) {
             super("sysCheckbox", new Model<Boolean>(checked));
             setOutputMarkupId(true);
-
             add(new AjaxFormComponentUpdatingBehavior("onclick") {
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {
+                    entity.setDefaultProxy(isChecked());
                     if (isChecked()) {
                         AjaxConfirm.get().confirm(new ConfirmDialog() {
                             public String getMessage() {
@@ -160,21 +168,14 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
                             }
 
                             public void onConfirm(boolean approved, AjaxRequestTarget target) {
-                                update(approved, target);
+                                defaultForAllRemotRepo = approved;
                             }
                         });
                     } else {
-                        update(true, target);
+                        defaultForAllRemotRepo = false;
                     }
                 }
             });
-        }
-
-        private void update(boolean approved, AjaxRequestTarget target) {
-            boolean checked = isChecked();
-            defaultForAllRemotRepo = checked && approved;
-            entity.setDefaultProxy(checked);
-            target.addComponent(this);
         }
     }
 }

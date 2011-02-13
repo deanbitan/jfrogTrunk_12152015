@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,7 +54,9 @@ public enum ConstantValues {
     searchArchiveMinQueryLength("search.archive.minQueryLength", 3),
     searchForceArchiveIndexing("search.content.forceArchiveIndexing", FALSE),
     searchPatternTimeoutSecs("search.pattern.timeoutSecs", 30),
+    gcUseIndex("gc.useIndex", FALSE),
     gcIntervalSecs("gc.intervalSecs", Seconds.HOUR * 6),
+    gcDelaySecs("gc.delaySecs", Seconds.HOUR * 2),
     gcSleepBetweenNodesMillis("gc.sleepBetweenNodesMillis", 20),
     gcScanStartSleepingThresholdMillis("gc.scanStartSleepingThresholdMillis", 20000),
     gcScanSleepBetweenIterationsMillis("gc.scanSleepBetweenIterationsMillis", 200),
@@ -81,7 +83,8 @@ public enum ConstantValues {
     fileRollerMaxFilesToRetain("file.roller.maxFileToRetain", 10),
     backupFileExportSleepIterationMillis("backup.fileExportSleepIterationMillis", 2000),
     backupFileExportSleepMillis("backup.fileExportSleepMillis", 250),
-    httpAcceptEncodingGzip("http.acceptEncoding.gzip", true);
+    httpAcceptEncodingGzip("http.acceptEncoding.gzip", true),
+    useExpectContinue("http.expectContinue", false);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

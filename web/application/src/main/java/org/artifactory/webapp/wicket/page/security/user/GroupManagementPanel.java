@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,7 +52,7 @@ public class GroupManagementPanel extends FieldSetPanel {
         Form form = new Form("groupManagementForm");
         add(form);
 
-        List<GroupInfo> groupInfos = userGroupService.getAllGroups();
+        List<GroupInfo> groupInfos = userGroupService.getInternalGroups();
         // Drop-down choice of groups to add/remove users to/from
         DropDownChoice groupDdc = new UsersPanel.TargetGroupDropDownChoice("groupManagement",
                 new PropertyModel(this, "selectedGroup"), groupInfos) {
@@ -86,7 +86,7 @@ public class GroupManagementPanel extends FieldSetPanel {
                 if (selectedGroup != null && !selectedUsernames.isEmpty()) {
                     userGroupService.removeUsersFromGroup(
                             selectedGroup, selectedUsernames);
-                    info("Successfully removed selected users from group'" + selectedGroup + "'.");
+                    info("Successfully removed selected users from group '" + selectedGroup + "'.");
                     // refresh the users table
                     usersListPanel.refreshUsersList(target);
                     AjaxUtils.refreshFeedback(target);

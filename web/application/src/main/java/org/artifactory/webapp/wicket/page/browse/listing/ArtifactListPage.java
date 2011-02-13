@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -31,11 +31,12 @@ import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.BaseBrowsableItem;
+import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.storage.StorageUnit;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RepoFilter;
-import org.artifactory.webapp.servlet.RequestUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -53,10 +54,12 @@ import static org.apache.commons.lang.StringUtils.rightPad;
  */
 public class ArtifactListPage extends WebPage {
     public static final String PATH = "_list";
-    public static final String REQUEST_PREFIX = "/list";
 
     @SpringBean
     private RepositoryService repositoryService;
+
+    @SpringBean
+    private RepositoryBrowsingService repoBrowsingService;
 
     @SpringBean
     private CentralConfigService centralConfig;
@@ -123,13 +126,19 @@ public class ArtifactListPage extends WebPage {
 
     private List<? extends BaseBrowsableItem> getItems(RepoPath repoPath) {
         List<? extends BaseBrowsableItem> items = null;
-        if (repositoryService.localOrCachedRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
-            items = repositoryService.getBrowsableChildren(repoPath, false);
-        } else if (repositoryService.virtualRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
-            items = repositoryService.getVirtualBrowsableChildren(repoPath, false);
-        }
-        if (items == null) {
-            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
+        try {
+            if (repositoryService.remoteRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
+                RemoteRepoDescriptor remoteRepoDescriptor =
+                        centralConfig.getDescriptor().getRemoteRepositoriesMap().get(repoPath.getRepoKey());
+                items = repoBrowsingService.getRemoteRepoBrowsableChildren(repoPath,
+                        remoteRepoDescriptor.isListRemoteFolderItems());
+            } else if (repositoryService.localOrCachedRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
+                items = repoBrowsingService.getLocalRepoBrowsableChildren(repoPath);
+            } else if (repositoryService.virtualRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
+                items = repoBrowsingService.getVirtualRepoBrowsableChildren(repoPath);
+            }
+        } catch (Exception e) {
+            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
         }
         Collections.sort(items, new ItemInfoComparator());
         return items;
@@ -163,15 +172,9 @@ public class ArtifactListPage extends WebPage {
             for (BaseBrowsableItem item : items) {
                 String name = item.getName();
                 response.write("<a href=\"");
+                response.write(name);
                 if (item.isFolder()) {
-                    response.write(name);
-                    response.write("/");
-                } else {
-                    response.write(RequestUtils.getWicketServletContextUrl());
-                    response.write("/");
-                    response.write(item.getRepoKey());
-                    response.write("/");
-                    response.write(item.getRelativePath());
+                    response.write("/\"");
                 }
                 response.write("\">");
                 response.write(name);
@@ -179,8 +182,13 @@ public class ArtifactListPage extends WebPage {
                     response.write("/");
                 }
                 response.write("</a>");
-                response.write(StringUtils.repeat(" ", columnSize - name.length()));
-                response.write(DATE_FORMAT.format(item.getLastModified()));
+                if (item.isRemote()) {
+                    response.write("->");
+                }
+                response.write(StringUtils.repeat(" ", columnSize - (name.length() + (item.isRemote() ? 2 : 0))));
+                if (!item.isRemote()) {
+                    response.write(DATE_FORMAT.format(item.getLastModified()));
+                }
                 response.write("  ");
 
                 long size = item.getSize();

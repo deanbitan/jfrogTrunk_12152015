@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +27,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -46,6 +47,7 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ZipUtils;
+import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
 
@@ -62,6 +64,9 @@ public class ImportSystemPanel extends TitledPanel {
 
     @SpringBean
     private SearchService searchService;
+
+    @SpringBean
+    private CentralConfigService centralConfigService;
 
     @WicketProperty
     private File importFromPath;
@@ -214,6 +219,15 @@ public class ImportSystemPanel extends TitledPanel {
                     importSettings.setTrustServerChecksums(trustServerChecksums);
                     context.importFrom(importSettings);
                     List<StatusEntry> warnings = status.getWarnings();
+                    File logoDir = ArtifactoryHome.get().getLogoDir();
+                    File[] logoFiles = logoDir.listFiles();
+                    if (logoFiles != null && logoFiles.length == 1) {
+                        File logoFile = logoFiles[0];
+                        File dest = new File(logoDir, "logo");
+                        logoFile.renameTo(dest);
+                        target.addComponent(getPage().get("logo"));
+                        ArtifactoryApplication.get().updateLogo();
+                    }
                     if (!warnings.isEmpty()) {
                         String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                         warn(warnings.size() + " Warnings have been produces during the export. Please " +

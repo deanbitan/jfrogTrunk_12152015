@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,6 @@
 
 package org.artifactory.api.request;
 
-import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPathImpl;
@@ -61,11 +60,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
     }
 
     public boolean hasProperties() {
-        return properties.size() > 0;
-    }
-
-    public boolean isSnapshot() {
-        return MavenNaming.isSnapshot(getPath());
+        return !properties.isEmpty();
     }
 
     public boolean isMetadata() {
@@ -77,21 +72,10 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
     }
 
     public String getName() {
-        String path = getPath();
-        return PathUtils.getName(path);
+        return PathUtils.getName(getPath());
     }
 
-    public String getDir() {
-        String path = getPath();
-        int dirEndIdx = path.lastIndexOf('/');
-        if (dirEndIdx == -1) {
-            return null;
-        }
-
-        return path.substring(0, dirEndIdx);
-    }
-
-    public boolean isNewerThanResource(long resourceLastModified) {
+    public boolean isNewerThan(long resourceLastModified) {
         long modificationTime = getModificationTime();
         //Check that the resource has a modification time and that it is older than the request's one.
         //Since HTTP dates do not carry millisecond-level data compare with the value rounded-down to the nearest sec.
@@ -134,43 +118,57 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         return time;
     }
 
+    public String getParameter(String name) {
+        return null;
+    }
+
+    public String[] getParameterValues(String name) {
+        return new String[0];
+    }
+
     /**
      * Calculates a repoPath based on the given servlet path (path after the context root, including the repo prefix).
      */
     @SuppressWarnings({"deprecation"})
     protected RepoPath calculateRepoPath(String requestPath) {
-        String prefix = PathUtils.getPathFirstPart(requestPath);
-        //Support repository-level metadata requests
-        int startIdx;
-        if (NamingUtils.isMetadata(prefix)) {
-            prefix = NamingUtils.stripMetadataFromPath(prefix);
-            startIdx = prefix.length() + NamingUtils.METADATA_PREFIX.length();
+        String repoKey = PathUtils.getFirstPathElement(requestPath);
+        // index where the path to the file or directory starts (i.e., the request path after the repository key)
+        int pathStartIndex;
+        if (NamingUtils.isMetadata(repoKey)) {
+            //Support repository-level metadata requests
+            repoKey = NamingUtils.stripMetadataFromPath(repoKey);
+            pathStartIndex = repoKey.length() + NamingUtils.METADATA_PREFIX.length();
+        } else if (LIST_BROWSING_PATH.equals(repoKey)) {
+            int repoKeyStartIndex = requestPath.indexOf(LIST_BROWSING_PATH) + LIST_BROWSING_PATH.length() + 1;
+            repoKey = PathUtils.getFirstPathElement(requestPath.substring(repoKeyStartIndex));
+            pathStartIndex = repoKeyStartIndex + repoKey.length() + 1;
         } else {
-            startIdx = requestPath.startsWith("/") ? prefix.length() + 2 : prefix.length() + 1;
+            pathStartIndex = requestPath.startsWith("/") ? repoKey.length() + 2 : repoKey.length() + 1;
         }
 
         //REPO HANDLING
 
         //Look for the deprecated legacy format of repo-key@repo
-        int idx = prefix.indexOf(ArtifactoryRequest.LEGACY_REPO_SEP);
-        String targetRepo = idx > 0 ? prefix.substring(0, idx) : prefix;
+        int legacyRepoSeparatorIndex = repoKey.indexOf(ArtifactoryRequest.LEGACY_REPO_SEP);
+        repoKey = legacyRepoSeparatorIndex > 0 ? repoKey.substring(0, legacyRepoSeparatorIndex) : repoKey;
+
         //Calculate matrix params on the repo
-        targetRepo = processMatrixParamsIfExist(targetRepo);
+        repoKey = processMatrixParamsIfExist(repoKey);
+
         //Test if we need to substitute the targetRepo due to system prop existence
-        String substTargetRepo = ArtifactoryHome.get().getArtifactoryProperties().getSubstituteRepoKeys().get(
-                targetRepo);
+        String substTargetRepo = ArtifactoryHome.get().getArtifactoryProperties().getSubstituteRepoKeys().get(repoKey);
         if (substTargetRepo != null) {
-            targetRepo = substTargetRepo;
+            repoKey = substTargetRepo;
         }
 
         //PATH HANDLING
 
         //Strip any trailing '/'
-        int endIdx = (requestPath.endsWith("/") ? requestPath.length() - 1 : requestPath.length());
-        String path = startIdx < endIdx ? requestPath.substring(startIdx, endIdx) : "";
+        int pathEndIndex = requestPath.endsWith("/") ? requestPath.length() - 1 : requestPath.length();
+        String path = pathStartIndex < pathEndIndex ? requestPath.substring(pathStartIndex, pathEndIndex) : "";
         //Calculate matrix params on the path
         path = processMatrixParamsIfExist(path);
-        RepoPath repoPath = new RepoPathImpl(targetRepo, path);
+        RepoPath repoPath = new RepoPathImpl(repoKey, path);
         return repoPath;
     }
 

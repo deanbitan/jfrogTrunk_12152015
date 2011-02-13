@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +20,7 @@ package org.artifactory.repo.interceptor;
 
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 
 /**
@@ -39,15 +40,19 @@ public abstract class StorageInterceptorAdapter implements StorageInterceptor {
     public void afterDelete(JcrFsItem fsItem, MutableStatusHolder statusHolder) {
     }
 
-    public void beforeMove(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder) {
+    public void afterMove(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder,
+            Properties properties) {
     }
 
-    public void afterMove(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder) {
+    public void beforeCopy(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
+            Properties properties) {
     }
 
-    public void beforeCopy(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder) {
+    public void afterCopy(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder,
+            Properties properties) {
     }
 
-    public void afterCopy(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder) {
+    public void beforeMove(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
+            Properties properties) {
     }
 }

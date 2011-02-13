@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,7 +33,7 @@ import java.lang.management.ThreadMXBean;
 /**
  * @author Yoav Landman
  */
-public class ThreadDumper {
+class ThreadDumper {
 
     private static final Logger log = LoggerFactory.getLogger(ThreadDumper.class);
 

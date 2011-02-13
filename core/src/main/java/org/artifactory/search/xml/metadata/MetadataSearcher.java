@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -84,22 +84,17 @@ public class MetadataSearcher extends XmlSearcherBase<MetadataSearchResult> {
                     continue; // probably deleted
                 }
                 LocalRepo localRepo = getRepoService().localOrCachedRepositoryByKey(repoPath.getRepoKey());
-                if (!isRepoPathValid(repoPath, localRepo)) {
+                if (!isResultAcceptable(repoPath, localRepo)) {
                     continue;
                 }
 
-                boolean canRead = getAuthService().canRead(repoPath);
-                if (canRead) {
-                    JcrFsItem jcrFsItem = localRepo.getJcrFsItem(repoPath);
-                    Object xmlMetadataObject = null;
-                    Class mdObjectClass = controls.getMetadataObjectClass();
-                    if (mdObjectClass != null) {
-                        xmlMetadataObject = jcrFsItem.getMetadata(mdObjectClass);
-                    }
-                    MetadataSearchResult result =
-                            new MetadataSearchResult(jcrFsItem.getInfo(), metadataNameFromPath, xmlMetadataObject);
-                    results.add(result);
+                JcrFsItem jcrFsItem = localRepo.getJcrFsItem(repoPath);
+                Object xmlMetadataObject = null;
+                Class mdObjectClass = controls.getMetadataObjectClass();
+                if (mdObjectClass != null) {
+                    xmlMetadataObject = jcrFsItem.getMetadata(mdObjectClass);
                 }
+                results.add(new MetadataSearchResult(jcrFsItem.getInfo(), metadataNameFromPath, xmlMetadataObject));
                 //Release the read locks early
                 LockingHelper.releaseReadLock(repoPath);
             } catch (RepositoryException re) {

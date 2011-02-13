@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,6 +39,7 @@ public interface ArtifactRestConstants {
     String PATH_MOVE = "move";
     String PARAM_TARGET = "to";
     String PARAM_DRY_RUN = "dry";
+    String PARAM_SUPPRESS_LAYOUTS = "suppressLayouts";
 
     String PATH_DOWNLOAD = "download";
     String PARAM_CONTENT = "content";

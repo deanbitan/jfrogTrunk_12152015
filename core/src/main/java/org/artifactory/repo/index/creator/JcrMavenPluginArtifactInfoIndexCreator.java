@@ -10,15 +10,15 @@
 
 package org.artifactory.repo.index.creator;
 
+import org.apache.maven.index.ArtifactContext;
+import org.apache.maven.index.ArtifactInfo;
+import org.apache.maven.index.creator.MavenPluginArtifactInfoIndexCreator;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrZipFile;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.configuration.xml.XmlPlexusConfiguration;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
-import org.sonatype.nexus.index.ArtifactContext;
-import org.sonatype.nexus.index.ArtifactInfo;
-import org.sonatype.nexus.index.creator.MavenPluginArtifactInfoIndexCreator;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;

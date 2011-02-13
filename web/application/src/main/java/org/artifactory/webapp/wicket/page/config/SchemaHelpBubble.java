@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.config;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.model.IModel;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.descriptor.Descriptor;
@@ -29,6 +30,7 @@ import org.artifactory.descriptor.Descriptor;
  * @author Yossi Shaul
  */
 public class SchemaHelpBubble extends HelpBubble {
+    private static final String HTML_PREFIX = "(HTML)";
     private String property;
 
     /**
@@ -54,5 +56,17 @@ public class SchemaHelpBubble extends HelpBubble {
         IModel iModel = getParent().getInnermostModel();
         Descriptor descriptor = (Descriptor) iModel.getObject();
         return new SchemaHelpModel(descriptor, property);
+    }
+
+    @Override
+    protected String getTooltipMarkup() {
+        String html = getDefaultModelObjectAsString();
+        if (StringUtils.isEmpty(html)) {
+            return "";
+        }
+        if (html.startsWith(HTML_PREFIX)) {
+            return html.substring(HTML_PREFIX.length());
+        }
+        return getDefaultModelObjectAsString().replaceAll("\n", "<br/>");
     }
 }

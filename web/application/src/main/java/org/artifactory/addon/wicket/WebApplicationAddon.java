@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -115,11 +115,11 @@ public interface WebApplicationAddon extends Addon {
     /**
      * Returns an addon-customized configuration menu node
      *
-     * @param propertiesAddon  A properties addon instance
+     * @param propertiesWebAddon A properties addon instance
      * @param licensesWebAddon
      * @return Configuration menu node
      */
-    MenuNode getConfigurationMenuNode(PropertiesAddon propertiesAddon, LicensesWebAddon licensesWebAddon);
+    MenuNode getConfigurationMenuNode(PropertiesWebAddon propertiesWebAddon, LicensesWebAddon licensesWebAddon);
 
     /**
      * Returns an addon-customized advanced menu node

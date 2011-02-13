@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,6 +32,7 @@ import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Module;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -89,7 +90,8 @@ public interface BuildAddon extends Addon {
     Set<FileInfo> getArtifactFileInfo(Build build);
 
     /**
-     * Returns a list of build-dependency file info objects
+     * Returns a list of build-dependency file info objects, as well as their descriptor according to the layout
+     * if exists.
      *
      * @param build  Build to extract artifacts from
      * @param scopes Scopes to add. null = add all dependencies.
@@ -146,4 +148,24 @@ public interface BuildAddon extends Addon {
      */
     @Lock(transactional = true)
     void renameBuildNameProperty(String from, String to);
+
+    /**
+     * Discard old builds according to a maximum date. If a build is below the {@code minimumBuildDate} then that build
+     * will be discarded.
+     *
+     * @param buildName        The name of the build.
+     * @param minimumBuildDate The minimum date that a build should be retained, anything below that is discarded.
+     */
+    @Lock(transactional = true)
+    void discardOldBuildsByDate(String buildName, Date minimumBuildDate);
+
+    /**
+     * Discard old builds according to the maximum amount of builds that should be retained. if {@code count} is larger
+     * than the size of the set of builds, all builds will be retained.
+     *
+     * @param buildName The name of the build.
+     * @param count     The maximum number of builds that should be retained.
+     */
+    @Lock(transactional = true)
+    void discardOldBuildsByCount(String buildName, int count);
 }

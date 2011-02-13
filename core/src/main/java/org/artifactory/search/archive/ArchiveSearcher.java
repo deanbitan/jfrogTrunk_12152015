@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -103,39 +103,32 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
                 if (!controls.isLimitSearchResults() || (resultList.size() < getMaxResults())) {
                     String artifactPath = row.getValue(JcrConstants.JCR_PATH).getString();
                     RepoPath repoPath = JcrPath.get().getRepoPath(artifactPath);
-                    if ((repoPath == null) || !isResultRepoPathValid(repoPath)) {
+                    if (!isResultAcceptable(repoPath)) {
                         continue;
                     }
 
                     FileInfoProxy fileInfo = new FileInfoProxy(repoPath);
-                    boolean canRead = getAuthService().canRead(fileInfo.getRepoPath());
-                    if (canRead) {
+                    boolean shouldCalc = controls.shouldCalcEntries();
+                    boolean entriesNotEmpty = (entriesSize != 0);
 
-                        boolean shouldCalc = controls.shouldCalcEntries();
-                        boolean entriesNotEmpty = (entriesSize != 0);
-
-                        //If we need only the files (i.e. when saving), skip entries calculation to speed up things
-                        if (shouldCalc && entriesNotEmpty) {
-                            for (ArchiveSearchEntry entry : entriesToInclude) {
-                                String entryName = entry.getEntryName();
-                                if (StringUtils.isEmpty(entryName)) {
-                                    entryName = escapedExp;
-                                }
-                                ArchiveSearchResult result =
-                                        new ArchiveSearchResult(fileInfo, entryName, entry.getEntryPath());
-                                resultList.add(result);
+                    //If we need only the files (i.e. when saving), skip entries calculation to speed up things
+                    if (shouldCalc && entriesNotEmpty) {
+                        for (ArchiveSearchEntry entry : entriesToInclude) {
+                            String entryName = entry.getEntryName();
+                            if (StringUtils.isEmpty(entryName)) {
+                                entryName = escapedExp;
                             }
-                        } else {
-                            String noPathReason = "";
-
-                            if (!shouldCalc) {
-                                noPathReason = "Entry path calculation is disabled.";
-                            } else if (!entriesNotEmpty) {
-                                noPathReason = "Not available - too many results in archive.";
-                            }
-                            ArchiveSearchResult result = new ArchiveSearchResult(fileInfo, escapedExp, noPathReason);
-                            resultList.add(result);
+                            resultList.add(new ArchiveSearchResult(fileInfo, entryName, entry.getEntryPath()));
                         }
+                    } else {
+                        String noPathReason = "";
+
+                        if (!shouldCalc) {
+                            noPathReason = "Entry path calculation is disabled.";
+                        } else if (!entriesNotEmpty) {
+                            noPathReason = "Not available - too many results in archive.";
+                        }
+                        resultList.add(new ArchiveSearchResult(fileInfo, escapedExp, noPathReason));
                     }
                 }
             } catch (RepositoryException re) {

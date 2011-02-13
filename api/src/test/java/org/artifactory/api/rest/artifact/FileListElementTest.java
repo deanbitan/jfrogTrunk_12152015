@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,8 +20,7 @@ package org.artifactory.api.rest.artifact;
 
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import static org.testng.Assert.*;
 
 /**
  * Tests the behavior of the file list element object
@@ -40,6 +39,7 @@ public class FileListElementTest {
         assertNull(fileListElement.getLastModified(), "Default last modified time should be null.");
         assertEquals(fileListElement.getSize(), 0L, "Unexpected default size.");
         assertNull(fileListElement.getUri(), "Default URI should be null.");
+        assertFalse(fileListElement.isFolder(), "Default element should represent a file.");
     }
 
     /**
@@ -49,12 +49,14 @@ public class FileListElementTest {
         String uri = "uri";
         long size = 2323L;
         String lastModified = "lastModified";
+        boolean folder = true;
 
-        FileListElement fileListElement = new FileListElement(uri, size, lastModified);
+        FileListElement fileListElement = new FileListElement(uri, size, lastModified, folder);
 
         assertEquals(fileListElement.getLastModified(), lastModified, "Unexpected last modified value.");
         assertEquals(fileListElement.getSize(), size, "Unexpected size value.");
         assertEquals(fileListElement.getUri(), uri, "Unexpected URI value.");
+        assertTrue(fileListElement.isFolder(), "Unexpected Element type state.");
     }
 
     /**
@@ -64,15 +66,18 @@ public class FileListElementTest {
         String uri = "uri";
         long size = 2323L;
         String lastModified = "lastModified";
+        boolean folder = true;
 
         FileListElement fileListElement = new FileListElement();
 
         fileListElement.setLastModified(lastModified);
         fileListElement.setSize(size);
         fileListElement.setUri(uri);
+        fileListElement.setFolder(folder);
 
         assertEquals(fileListElement.getLastModified(), lastModified, "Unexpected last modified value.");
         assertEquals(fileListElement.getSize(), size, "Unexpected size value.");
         assertEquals(fileListElement.getUri(), uri, "Unexpected URI value.");
+        assertTrue(fileListElement.isFolder(), "Unexpected Element type state.");
     }
 }

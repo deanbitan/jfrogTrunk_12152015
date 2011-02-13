@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,7 @@ import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.jcr.JcrTypes;
+import org.artifactory.md.Properties;
 import org.jfrog.build.api.Build;
 
 import java.io.IOException;
@@ -42,8 +43,8 @@ public interface BuildService extends ImportableExportable {
     public static final String PROP_BUILD_LATEST_NUMBER = JcrTypes.PROP_BUILD_LATEST_NUMBER;
     public static final String PROP_BUILD_LATEST_START_TIME = JcrTypes.PROP_BUILD_LATEST_START_TIME;
     /**
-     * In case a dependency contains a {@code null} scope, fill it with an unspecified scope that will be used
-     * for filtering.
+     * In case a dependency contains a {@code null} scope, fill it with an unspecified scope that will be used for
+     * filtering.
      */
     public static final String UNSPECIFIED_SCOPE = "unspecified";
 
@@ -123,6 +124,11 @@ public interface BuildService extends ImportableExportable {
 
     Set<String> findScopes(Build build);
 
+    /**
+     * @return True if the build is not Ivy/Gradle/Maven.
+     */
+    boolean isGenericBuild(Build build);
+
     void importFrom(ImportSettings settings);
 
     /**
@@ -142,12 +148,13 @@ public interface BuildService extends ImportableExportable {
      * @param artifacts      True if the build artifacts should be moved\copied
      * @param dependencies   True if the build dependencies should be moved\copied
      * @param scopes         Scopes of dependencies to copy (agnostic if null or empty)
-     * @param dryRun         True if the action should run dry (simulate)
-     * @return Result of action
+     * @param properties
+     * @param dryRun         True if the action should run dry (simulate)  @return Result of action
      */
     @Lock(transactional = true)
     MoveCopyResult moveOrCopyBuildItems(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
-            boolean artifacts, boolean dependencies, List<String> scopes, boolean dryRun);
+            boolean artifacts, boolean dependencies, List<String> scopes, Properties properties,
+            boolean dryRun);
 
     /**
      * Renames the JCR structure and content of build info objects

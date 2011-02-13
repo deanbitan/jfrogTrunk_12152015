@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,11 @@
 
 package org.artifactory.version;
 
+import ch.qos.logback.classic.Level;
+import org.artifactory.test.TestUtils;
 import org.testng.Assert;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
@@ -85,7 +89,7 @@ public class ArtifactoryVersionReaderTest {
                 "Expected the current version to be returned");
     }
 
-    private InputStream createInputStream(String version, int revision) {
+    private InputStream createInputStream(String version, long revision) {
         return new ByteArrayInputStream(String.format("artifactory.version=%s%n" +
                 "artifactory.revision=%s%n", version, revision).getBytes());
     }
@@ -97,4 +101,13 @@ public class ArtifactoryVersionReaderTest {
                         "artifactory.timestamp=%s%n", version, revision, timestamp).getBytes());
     }
 
+    @BeforeClass
+    public void setup() {
+        TestUtils.setLoggingLevel(ArtifactoryVersionReader.class, Level.ERROR);
+    }
+
+    @AfterTest
+    public void tearDown() {
+        TestUtils.setLoggingLevel(ArtifactoryVersionReader.class, Level.INFO);
+    }
 }

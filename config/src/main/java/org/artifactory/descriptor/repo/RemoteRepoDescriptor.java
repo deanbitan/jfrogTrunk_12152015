@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,12 +22,14 @@ import org.artifactory.descriptor.Descriptor;
 import org.artifactory.util.PathUtils;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RemoteRepoBaseType", propOrder = {"url", "offline", "hardFail", "storeArtifactsLocally",
         "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "failedRetrievalCachePeriodSecs",
-        "missedRetrievalCachePeriodSecs", "checksumPolicyType", "unusedArtifactsCleanupEnabled",
-        "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties"}, namespace = Descriptor.NS)
+        "missedRetrievalCachePeriodSecs", "checksumPolicyType",
+        "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties", "listRemoteFolderItems",
+        "remoteRepoLayout"}, namespace = Descriptor.NS)
 public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(required = true)
@@ -60,9 +62,6 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     @XmlElement(name = "remoteRepoChecksumPolicyType", defaultValue = "generate-if-absent", required = false)
     private ChecksumPolicyType checksumPolicyType = ChecksumPolicyType.GEN_IF_ABSENT;
 
-    @XmlElement(defaultValue = "false", required = false)
-    protected boolean unusedArtifactsCleanupEnabled = false;
-
     @XmlElement(defaultValue = "0", required = false)
     private int unusedArtifactsCleanupPeriodHours = 0;
 
@@ -71,6 +70,13 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(defaultValue = "false", required = false)
     private boolean synchronizeProperties;
+
+    @XmlElement(defaultValue = "true", required = false)
+    private boolean listRemoteFolderItems = true;
+
+    @XmlIDREF
+    @XmlElement(name = "remoteRepoLayoutRef")
+    private RepoLayout remoteRepoLayout;
 
     public String getUrl() {
         return url;
@@ -152,14 +158,6 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
         this.checksumPolicyType = checksumPolicyType;
     }
 
-    public boolean isUnusedArtifactsCleanupEnabled() {
-        return unusedArtifactsCleanupEnabled;
-    }
-
-    public void setUnusedArtifactsCleanupEnabled(boolean unusedArtifactsCleanupEnabled) {
-        this.unusedArtifactsCleanupEnabled = unusedArtifactsCleanupEnabled;
-    }
-
     public int getUnusedArtifactsCleanupPeriodHours() {
         return unusedArtifactsCleanupPeriodHours;
     }
@@ -184,6 +182,22 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
         this.synchronizeProperties = synchronizeProperties;
     }
 
+    public boolean isListRemoteFolderItems() {
+        return listRemoteFolderItems;
+    }
+
+    public void setListRemoteFolderItems(boolean listRemoteFolderItems) {
+        this.listRemoteFolderItems = listRemoteFolderItems;
+    }
+
+    public RepoLayout getRemoteRepoLayout() {
+        return remoteRepoLayout;
+    }
+
+    public void setRemoteRepoLayout(RepoLayout remoteRepoLayout) {
+        this.remoteRepoLayout = remoteRepoLayout;
+    }
+
     @Override
     public boolean isLocal() {
         return false;
@@ -204,8 +218,7 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
                 this.storeArtifactsLocally != old.storeArtifactsLocally ||
                 this.retrievalCachePeriodSecs != old.retrievalCachePeriodSecs ||
                 this.failedRetrievalCachePeriodSecs != old.failedRetrievalCachePeriodSecs ||
-                this.missedRetrievalCachePeriodSecs != old.missedRetrievalCachePeriodSecs
-                ) {
+                this.missedRetrievalCachePeriodSecs != old.missedRetrievalCachePeriodSecs) {
             return false;
         }
         return true;

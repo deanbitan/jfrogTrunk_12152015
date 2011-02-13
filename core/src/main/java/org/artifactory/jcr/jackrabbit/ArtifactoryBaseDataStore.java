@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,8 +23,7 @@ import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataRecord;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.core.data.db.TempFileInputStream;
-import org.apache.jackrabbit.core.persistence.bundle.DerbyPersistenceManager;
-import org.apache.jackrabbit.core.util.TrackingInputStream;
+import org.apache.jackrabbit.core.persistence.pool.DerbyPersistenceManager;
 import org.apache.jackrabbit.core.util.db.ArtifactoryConnectionHelper;
 import org.apache.jackrabbit.core.util.db.CheckSchemaOperation;
 import org.apache.jackrabbit.core.util.db.ConnectionHelper;
@@ -160,14 +159,14 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
     public DataRecord addRecord(InputStream stream) throws DataStoreException {
         ArtifactoryDbDataRecord dataRecord = null;
         File tempFile = null;
+        DigestInputStream digestStream = null;
         try {
             // First create the temp file with checksum digest
             MessageDigest digest = getDigest();
-            DigestInputStream dIn = new DigestInputStream(stream, digest);
-            TrackingInputStream in = new TrackingInputStream(dIn);
+            digestStream = new DigestInputStream(stream, digest);
             //TODO: [by yl] For blob store - write a temp file directly to jcr and delete it from jcr if exists,
             //instead of using a real temp file as medium between the input stream and the jcr stream
-            tempFile = moveToTempFile(in);
+            tempFile = moveToTempFile(digestStream);
 
             // Then create the new DB record
             long now = System.currentTimeMillis();
@@ -217,6 +216,7 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
             }
             throw convert("Can not insert new record", e);
         } finally {
+            IOUtils.closeQuietly(digestStream);
             if (tempFile != null && tempFile.exists()) {
                 if (!tempFile.delete()) {
                     log.error("Could not delete temp file " + tempFile.getAbsolutePath());

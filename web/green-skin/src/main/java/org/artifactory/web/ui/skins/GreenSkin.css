@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -61,6 +61,7 @@ h2 {
 h3 {
     margin-top: 0;
     font-size: 13px;
+    color: #333333;
 }
 
 h4 {
@@ -186,6 +187,16 @@ pre {
 .field-row .field {
     float: left;
     padding: 0 15px 10px 0;
+}
+
+.field-row .repo-field {
+    float: left;
+    padding: 0 36px 10px 0;
+}
+
+.fieldset-border-wrapper .repo-field,
+.IE .field-row .repo-field {
+    padding-right: 12px;
 }
 
 .field-row .field button.row-button {
@@ -1082,7 +1093,6 @@ span.LinksColumn {
     background-repeat: no-repeat;
     background-position: left;
     display: block;
-
     height: 18px;
 }
 
@@ -1971,134 +1981,101 @@ div.quick-search-box .button:hover .button-right, div.quick-search-box .button:f
     text-decoration: none;
     position: relative;
     width: 138px;
+    height: 55px;
+    display: block;
+    background: url("images/header/top-tabs.png") -8px -38px no-repeat;
 }
 
 .top-menu a {
     cursor: pointer;
 }
 
-.top-menu a, .top-menu em, .top-menu .menu-center, .top-menu .menu-right, .top-menu .menu-left {
-    height: 55px;
-    display: block;
+.top-menu a:hover, .top-menu a:focus {
+    background-position: -171px -38px;
 }
 
-.top-menu .menu-center, .top-menu .menu-right, .top-menu .menu-left {
-    top: 0;
-    position: absolute;
-    background-image: url("images/header-tabs/top-tabs-bg.png");
+.top-menu a.selected, .top-menu a.opened {
+    background-position: -324px -38px;
 }
 
 .top-menu .item-name {
     font-size: 14px;
-    padding: 5px 0 0 38px;
     color: #FFFFFF;
-    background: url("images/header-tabs/top-tabs-icons.png") no-repeat;
     height: 25px;
     position: absolute;
-    top: 19px;
-    left: 21px;
+    top: 24px;
+    left: 59px;
 }
 
 .top-menu a.selected .item-name, .top-menu .opened .item-name {
     color: #000000;
 }
 
-.top-menu .disabled .item-name {
+.top-menu .menu-left {
+    position: absolute;
+    left: 24px;
+    top: 19px;
+    display: block;
+    width: 32px;
+    height: 32px;
+    background: url("images/header/top-tabs.png") no-repeat;
+}
+
+.top-menu .disabled .menu-left {
     opacity: 0.25;
     filter: alpha(opacity = 25);
 }
 
-.top-menu .menu-left {
-    width: 35px;
-    left: 0;
-    background-position: 0 0;
-    background-repeat: no-repeat;
+.top-menu .disabled .item-name {
+    color: #c0d0de;
 }
 
-.top-menu .menu-right {
-    width: 35px;
-    right: 0;
-    background-position: -35px 0;
-    background-repeat: no-repeat;
-}
-
-.top-menu .menu-center {
-    left: 35px;
-    width: 68px;
-    background-position: 0 -163px;
-    background-repeat: repeat-x;
-}
-
-.top-menu a:hover .menu-left, .top-menu a:focus .menu-left {
-    background-position: 0 -54px;
-}
-
-.top-menu a:hover .menu-right, .top-menu a:focus .menu-right {
-    background-position: -35px -54px;
-}
-
-.top-menu a:hover .menu-center, .top-menu a:focus .menu-center {
-    background-position: 0 -218px;
-}
-
-.top-menu a.selected .menu-left, .top-menu a.opened .menu-left {
-    background-position: 0 -108px;
-}
-
-.top-menu a.selected .menu-right, .top-menu a.opened .menu-right {
-    background-position: -35px -108px;
-}
-
-.top-menu a.selected .menu-center, .top-menu a.opened .menu-center {
-    background-position: 0 -272px;
-}
-
-.top-menu .HomePage .item-name {
+.top-menu .HomePage .menu-left {
     background-position: 0 0;
 }
 
-.top-menu .HomePage a:hover .item-name, .top-menu .HomePage a:focus .item-name {
-    background-position: 0 -30px;
+.top-menu .HomePage a:hover .menu-left, .top-menu .HomePage a:focus .menu-left {
+    background-position: -161px 0;
 }
 
-.top-menu .HomePage a.selected .item-name, .top-menu .HomePage a.opened .item-name {
-    background-position: 0 -60px;
+.top-menu .HomePage a.selected .menu-left, .top-menu .HomePage a.opened .menu-left {
+    background-position: -323px 0;
 }
 
-.top-menu .BrowseRepoPage .item-name {
-    background-position: 0 -93px;
+.top-menu .ArtifactsHomePage .menu-left {
+    background-position: -40px 0;
 }
 
-.top-menu .BrowseRepoPage a:hover .item-name, .top-menu .BrowseRepoPage a:focus .item-name {
-    background-position: 0 -123px;
+.top-menu .ArtifactsHomePage a:hover .menu-left, .top-menu .ArtifactsHomePage a:focus .menu-left {
+    background-position: -202px 0;
 }
 
-.top-menu .BrowseRepoPage a.selected .item-name, .top-menu .BrowseRepoPage a.opened .item-name {
-    background-position: 0 -153px;
+.top-menu .ArtifactsHomePage a.selected .menu-left, .top-menu .ArtifactsHomePage a.opened .menu-left {
+    background-position: -363px 0;
 }
 
-.top-menu .DeployArtifactPage .item-name {
-    background-position: 0 -185px;
+.top-menu .DeployArtifactPage .menu-left {
+    background-position: -81px 0;
 }
 
-.top-menu .DeployArtifactPage a:hover .item-name, .top-menu .DeployArtifactPage a:focus .item-name {
-    background-position: 0 -215px;
+.top-menu .DeployArtifactPage a:hover .menu-left, .top-menu .DeployArtifactPage a:focus .menu-left {
+    background-position: -242px 0;
 }
 
-.top-menu .DeployArtifactPage a.selected .item-name, .top-menu .DeployArtifactPage a.opened .item-name {
-    background-position: 0 -245px;
+.top-menu .DeployArtifactPage a.selected .menu-left, .top-menu .DeployArtifactPage a.opened .menu-left {
+    background-position: -404px 0;
 }
 
-.top-menu .AdminPage .item-name {
-    background-position: 0 -275px;
+.top-menu .AdminPage .menu-left {
+    background-position: -121px 0;
 }
 
-.top-menu .AdminPage a:hover .item-name, .top-menu .AdminPage a:focus .item-name {
-    background-position: 0 -305px;
+.top-menu .AdminPage a:hover .menu-left, .top-menu .AdminPage a:focus .menu-left {
+    background-position: -283px 0;
 }
 
-.top-menu .AdminPage a.selected .item-name, .top-menu .AdminPage a.opened .item-name {
-    background-position: 0 -335px;
+.top-menu .AdminPage a.selected .menu-left, .top-menu .AdminPage a.opened .menu-left {
+    background-position: -444px 0;
 }
 
 /*-- TitledPanel / TitledBorder --------------------------------------------------*/
@@ -2174,12 +2151,14 @@ div.quick-search-box .button:hover .button-right, div.quick-search-box .button:f
     zoom: 1;
 }
 
-.tab-panel .fieldset-border-wrapper {
-    min-width: 100%;
-}
-
 .IE-7 .tab-panel .fieldset-border-wrapper {
     min-width: 95%;
+}
+
+.tab-panel .fieldset-border-wrapper,
+.w_content .fieldset-border-wrapper,
+.w_content .tab-panel .fieldset-border-wrapper {
+    min-width: 100%;
 }
 
 .tab-panel .fieldset-border-content {
@@ -2452,40 +2431,49 @@ button.new-link .button-right, button.import-link .button-right {
     width: 40px;
 }
 
-div.list-panel-buttons .button .button-center {
+div.list-panel-buttons .button .button-center,
+.green-button .button-center {
     background-image: url("images/buttons/green-button/normal/BTN-green-center.gif");
 }
 
-div.list-panel-buttons .button .button-left {
+div.list-panel-buttons .button .button-left,
+.green-button .button-left {
     background-image: url("images/buttons/green-button/normal/BTN-green-left.gif");
 }
 
-div.list-panel-buttons .button .button-right {
+div.list-panel-buttons .button .button-right,
+.green-button .button-right {
     background-image: url("images/buttons/green-button/normal/BTN-green-right.gif");
     color: white;
 }
 
-div.list-panel-buttons .button:hover .button-center, div.list-panel-buttons .button:focus .button-center {
+div.list-panel-buttons .button:hover .button-center, div.list-panel-buttons .button:focus .button-center,
+.green-button:hover .button-center, .green-button:focus .button-center {
     background-image: url("images/buttons/green-button/mouseover/BTN-green-mouseover-center.gif");
 }
 
-div.list-panel-buttons .button:hover .button-left, div.list-panel-buttons .button:focus .button-left {
+div.list-panel-buttons .button:hover .button-left, div.list-panel-buttons .button:focus .button-left,
+.green-button:hover .button-left, .green-button:focus .button-left {
     background-image: url("images/buttons/green-button/mouseover/BTN-green-mouseover-left.gif");
 }
 
-div.list-panel-buttons .button:hover .button-right, div.list-panel-buttons .button:focus .button-right {
+div.list-panel-buttons .button:hover .button-right, div.list-panel-buttons .button:focus .button-right,
+.green-button:hover .button-right, .green-button:focus .button-right {
     background-image: url("images/buttons/green-button/mouseover/BTN-green-mouseover-right.gif");
 }
 
-div.list-panel-buttons .button-disabled .button-center, div.list-panel-buttons .button-disabled:hover .button-center {
+div.list-panel-buttons .button-disabled .button-center, div.list-panel-buttons .button-disabled:hover .button-center,
+.green-button.button-disabled .button-center, .green-button.button-disabled:hover .button-center {
     background-image: url("images/buttons/gray-button/disabled/BTN-gray-disabled-center.gif");
 }
 
-div.list-panel-buttons .button-disabled .button-left, div.list-panel-buttons .button-disabled:hover .button-left {
+div.list-panel-buttons .button-disabled .button-left, div.list-panel-buttons .button-disabled:hover .button-left,
+.green-button.button-disabled .button-left, .green-button.button-disabled:hover .button-left {
     background-image: url("images/buttons/gray-button/disabled/BTN-gray-disabled-left.gif");
 }
 
-div.list-panel-buttons .button-disabled .button-right, div.list-panel-buttons .button-disabled:hover .button-right {
+div.list-panel-buttons .button-disabled .button-right, div.list-panel-buttons .button-disabled:hover .button-right,
+.green-button.button-disabled .button-right, .green-button.button-disabled:hover .button-right {
     background-image: url("images/buttons/gray-button/disabled/BTN-gray-disabled-right.gif");
     color: #999999;
 }
@@ -2782,8 +2770,8 @@ div.w_content_scroll {
 
 .ldap-test-fields .button {
     position: absolute;
-    right: 23px;
-    top: 22px;
+    left: 300px;
+    top: 28px;
 }
 
 .password-field {
@@ -3890,6 +3878,10 @@ div.login-panel {
     padding-top: 10px;
 }
 
+.local-repos-list .icon-link {
+    display: inline-block;
+}
+
 /*-- DeletableLabel --*/
 
 .deletable {
@@ -4196,6 +4188,19 @@ td.true span {
 
 .settings-field-group {
     float: left;
+    width: 205px;
+}
+
+.settings-checkbox {
+    padding-top: 14px;
+}
+
+.Chrome .settings-checkbox {
+    padding-top: 19px;
+}
+
+.IE-8 .settings-checkbox {
+    padding-top: 19px;
 }
 
 /*--IvySettingsPanel-----------------------------------*/
@@ -4703,39 +4708,12 @@ div.field.checkbox-field {
 
 /*--MailConfigPanel--*/
 
-.IE .mail-config .mail-button {
-    display: inline-block;
-    margin-bottom: -8px;
-    margin-left: 6px;
-}
-
-.Safari .mail-config .mail-button {
-    margin-top: -5px;
-}
-
-.mail-config .mail-text {
-    display: block;
-    float: left;
-    margin-top: 6px;
-    padding-right: 16px;
-}
-
 .IE .mail-config .artifactory-url {
     width: 320px;
 }
 
 .mail-config .artifactory-url {
     width: 323px;
-}
-
-.IE-8 .mail-config .mail-text {
-    margin-top: 6px;
-    padding-right: 16px;
-}
-
-.Chrome .mail-config .mail-text {
-    margin-top: 6px;
-    padding-right: 16px;
 }
 
 .test-border {
@@ -5042,6 +5020,10 @@ table.data-table td.add-value-row {
 
 .addon-plugins {
     background: url(images/addons/16plugins.png) no-repeat left top;
+}
+
+.addon-layouts {
+    background: url(images/addons/16layouts.png) no-repeat left top;
 }
 
 /*-- ProfilePanel --*/
@@ -5383,6 +5365,11 @@ div.styled-tab-panel div.tab-row li.disabled-addon-last-tab span {
     z-index: 1;
 }
 
+.IE-7 .build-save-results {
+    width: auto;
+
+}
+
 /*-- HistoryComboBoxBehavior --*/
 
 .dijitMenu .sep {
@@ -5522,12 +5509,16 @@ td.warn span {
     width: 260px;
 }
 
-.local-repo-advanced-settings .field-row input.text {
-    width: 290px;
+.local-repo-config .field-row select {
+    width: 266px;
 }
 
-.http-repo-panell-advanced-settings .line-sep {
+.advanced-remote-repo .line-sep {
     height: 88px;
+}
+
+.advanced-remote-repo .fieldset-border-wrapper {
+    margin-bottom: 5px;
 }
 
 .virtual-repo-panel-advanced-settings .line-sep {
@@ -5645,7 +5636,7 @@ table.data-table {
 }
 
 /*CrowdConfigPanel*/
-.crowd-url-field {
+.crowd-fields .text {
     width: 255px;
 }
 
@@ -5656,4 +5647,74 @@ table.data-table {
 
 table.sep {
     margin-top: 7px;
+}
+
+/*HttpRepoPanel*/
+.http-repo-panel .basic-checkbox {
+    padding-left: 28px;
+}
+
+/*RemoteRepoBrowserPanel*/
+.local-repos-list .remote-repo-browser-panel {
+    background: url("images/icons/globe.gif") center center no-repeat;
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    position: relative;
+    top: 3px;
+}
+
+/*RepositoriesListPanel*/
+.repo-list-panel .field-border {
+    margin-bottom: 8px;
+}
+
+/*-- SchemaHelpBubble legend table --*/
+
+.legend-surrownding-text {
+    margin-left: 10px;
+}
+
+table.legend {
+    margin: 5px 5px 10px 10px;
+}
+
+table.legend, table.legend td {
+    border: solid 1px #cccccc;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+table.legend th {
+    background: #00008b;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
+table.legend .token {
+    background: #ffffe0;
+    font-family: "Courier New", Courier, monospace;
+    font-weight: bold;
+    padding: 1px 5px;
+}
+
+table.legend td, table.legend th {
+    padding: 1px 3px;
+    vertical-align: top;
+}
+
+table.legend .e-value {
+    color: #00008b;
+}
+
+.list-panel-buttons .addon-icon {
+    position: absolute;
+    left: 3px;
+    top: 5px;
+}
+
+/*HttpRepoAdvancedPanel*/
+.http-advanced-repo-panel .basic-checkbox {
+    padding-left: 28px;
 }

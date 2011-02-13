@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,10 +19,11 @@
 package org.artifactory.webapp.wicket.page.home.settings.ivy;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.webapp.wicket.page.home.settings.BaseIvySettingsGeneratorPanel;
+import org.artifactory.webapp.wicket.page.home.settings.ivy.base.BaseIvySettingsGeneratorPanel;
+import org.artifactory.webapp.wicket.page.home.settings.ivy.base.IvySettingsRepoSelectorPanel;
 import org.jdom.Comment;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -32,7 +33,7 @@ import org.slf4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Enables the user to select a virtual repo that are configured in the system and if needed, to modify resolver name,
@@ -43,28 +44,24 @@ import java.util.Map;
 public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
 
     private static final Logger log = LoggerFactory.getLogger(IvySettingsPanel.class);
-
-    @WicketProperty
-    private VirtualRepoEntry repository;
-
-    @WicketProperty
-    private String resolverName;
+    private IvySettingsRepoSelectorPanel resolverPanel;
 
     /**
      * Main constructor
      *
-     * @param id                ID to assign to the panel
-     * @param servletContextUrl Running context URL
-     * @param virtualRepoKeyMap Virtual repo key association map
+     * @param id                     ID to assign to the panel
+     * @param servletContextUrl      Running context URL
+     * @param virtualRepoDescriptors List of virtual repository descriptors
      */
-    protected IvySettingsPanel(String id, String servletContextUrl, Map<String, String> virtualRepoKeyMap) {
-        super(id, servletContextUrl, virtualRepoKeyMap);
+    public IvySettingsPanel(String id, String servletContextUrl, List<VirtualRepoDescriptor> virtualRepoDescriptors) {
+        super(id, servletContextUrl);
 
-        addRepoDropDown("repository", this, "libs");
-        addTextField("resolverName", this, "", true, false);
+        resolverPanel = new IvySettingsRepoSelectorPanel("resolverPanel", virtualRepoDescriptors, servletContextUrl,
+                IvySettingsRepoSelectorPanel.RepoType.LIBS);
+        form.add(resolverPanel);
     }
 
-    public String generateSettings(String servletContextUrl) {
+    public String generateSettings() {
         Document document = new Document();
         Element rootNode = new Element("ivy-settings");
 
@@ -74,19 +71,19 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
         rootNode.addContent(new Comment("Authentication required for publishing (deployment). 'Artifactory Realm' is " +
                 "the realm used by Artifactory so don't change it."));
 
-        Element credentialsElement = new Element("CREDENTIALS");
+        Element credentialsElement = new Element("credentials");
         try {
-            credentialsElement.setAttribute("HOST", new URL(servletContextUrl).getHost());
+            credentialsElement.setAttribute("host", new URL(servletContextUrl).getHost());
         } catch (MalformedURLException e) {
             String errorMessage =
                     "An error occurred while decoding the servlet context URL for the credentials host attribute: ";
             error(errorMessage + e.getMessage());
             log.error(errorMessage, e);
         }
-        credentialsElement.setAttribute("REALM", "Artifactory Realm");
+        credentialsElement.setAttribute("realm", "Artifactory Realm");
 
-        credentialsElement.setAttribute("USERNAME", authorizationService.currentUsername());
-        credentialsElement.setAttribute("PASSWD", "yourPassword");
+        credentialsElement.setAttribute("username", authorizationService.currentUsername());
+        credentialsElement.setAttribute("passwd", "yourPassword");
 
         rootNode.addContent(credentialsElement);
 
@@ -95,28 +92,29 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
         Element chainElement = new Element("chain");
         chainElement.setAttribute("name", "main");
 
-        String selectedRepoKey = getRepository().getRepoKey();
-        String resolverName = getResolverName();
+        String resolverName = resolverPanel.getResolverName();
         resolverName = StringUtils.isNotBlank(resolverName) ? resolverName : "public";
 
-        if (isM2Compatible()) {
+        if (resolverPanel.useIbiblioResolver()) {
 
             Element ibiblioElement = new Element("ibiblio");
             ibiblioElement.setAttribute("name", resolverName);
             ibiblioElement.setAttribute("m2compatible", Boolean.TRUE.toString());
-            ibiblioElement.setAttribute("root", getFullRepositoryUrl(selectedRepoKey));
+            ibiblioElement.setAttribute("root", resolverPanel.getFullRepositoryUrl());
             chainElement.addContent(ibiblioElement);
         } else {
 
             Element urlElement = new Element("url");
             urlElement.setAttribute("name", resolverName);
 
+            urlElement.setAttribute("m2compatible", Boolean.toString(resolverPanel.isM2Compatible()));
+
             Element artifactPatternElement = new Element("artifact");
-            artifactPatternElement.setAttribute("pattern", getFullArtifactPattern(selectedRepoKey));
+            artifactPatternElement.setAttribute("pattern", resolverPanel.getFullArtifactPattern());
             urlElement.addContent(artifactPatternElement);
 
             Element ivyPatternElement = new Element("ivy");
-            ivyPatternElement.setAttribute("pattern", getFullIvyPattern(selectedRepoKey));
+            ivyPatternElement.setAttribute("pattern", resolverPanel.getFullDescriptorPattern());
             urlElement.addContent(ivyPatternElement);
 
             chainElement.addContent(urlElement);
@@ -129,22 +127,6 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
         document.setRootElement(rootNode);
 
         return new XMLOutputter(Format.getPrettyFormat()).outputString(document);
-    }
-
-    public VirtualRepoEntry getRepository() {
-        return repository;
-    }
-
-    public void setRepository(VirtualRepoEntry repository) {
-        this.repository = repository;
-    }
-
-    public String getResolverName() {
-        return resolverName;
-    }
-
-    public void setResolverName(String resolverName) {
-        this.resolverName = resolverName;
     }
 
     @Override

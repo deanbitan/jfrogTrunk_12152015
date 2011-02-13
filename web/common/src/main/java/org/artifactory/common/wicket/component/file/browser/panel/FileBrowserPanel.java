@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -196,7 +196,7 @@ public class FileBrowserPanel extends BaseModalPanel {
 
     private static class OkButton extends BaseTitledLink {
         private OkButton(String id) {
-            super(id, "Ok");
+            super(id, "OK");
             add(new SimpleAttributeModifier("onclick", "FileBrowser.get().ok();"));
         }
     }

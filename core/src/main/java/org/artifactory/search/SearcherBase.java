@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -141,10 +141,6 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
         return repoService;
     }
 
-    public AuthorizationService getAuthService() {
-        return authService;
-    }
-
     //We can use this method to monitor the actions of the Lucene StandardAnalyzer
 
     @SuppressWarnings({"UnusedDeclaration"})
@@ -212,27 +208,33 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
     }
 
     /**
-     * Indicates whether the given result repo path is valid or not.<br> A repo path will stated as valid if it is
-     * originated in a local repository and if it is not a checksum file.
+     * Indicates whether the given result repo path is valid or not.<br> A repo path will stated as valid if the given
+     * origin local repo is not null, the path is readable (permission and repo-configuration-wise) and if it is not a
+     * checksum file.
      *
      * @param repoPath Repo path to validate
      * @return True if the repo path is valid
      */
-    protected boolean isResultRepoPathValid(RepoPath repoPath) {
+    protected boolean isResultAcceptable(RepoPath repoPath) {
+        if (repoPath == null) {
+            return false;
+        }
         LocalRepo localRepo = getRepoService().localOrCachedRepositoryByKey(repoPath.getRepoKey());
-        return isRepoPathValid(repoPath, localRepo);
+        return isResultAcceptable(repoPath, localRepo);
     }
 
     /**
      * Indicates whether the given result repo path is valid or not.<br> A repo path will stated as valid if the given
-     * origin local repo is not null and if it is not a checksum file.
+     * origin local repo is not null, the path is readable (permission and repo-configuration-wise) and if it is not a
+     * checksum file.
      *
      * @param repoPath        Repo path to validate
      * @param sourceLocalRepo Source local repo to assert as valid
      * @return True if the repo path is valid
      */
-    protected boolean isRepoPathValid(RepoPath repoPath, LocalRepo sourceLocalRepo) {
-        return (sourceLocalRepo != null) && (!NamingUtils.isChecksum(repoPath.getPath()));
+    protected boolean isResultAcceptable(RepoPath repoPath, LocalRepo sourceLocalRepo) {
+        return (sourceLocalRepo != null) && repoService.isLocalRepoPathDisplayable(repoPath) &&
+                (!NamingUtils.isChecksum(repoPath.getPath()));
     }
 
     /**

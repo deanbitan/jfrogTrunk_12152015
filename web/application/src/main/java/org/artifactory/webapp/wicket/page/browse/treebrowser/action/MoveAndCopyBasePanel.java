@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +21,7 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.action;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -31,15 +32,16 @@ import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.common.StatusEntry;
-import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonStyleModel;
+import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 
 import java.util.HashSet;
@@ -59,8 +61,20 @@ public abstract class MoveAndCopyBasePanel extends Panel {
 
     private DropDownChoice<LocalRepoDescriptor> targetRepos;
 
+    private LocalRepoDescriptor selectedTreeItemRepo;
+
+    protected RepoPath sourceRepoPath;
+
     public MoveAndCopyBasePanel(String id) {
+        this(id, null);
+    }
+
+    public MoveAndCopyBasePanel(String id, RepoPath sourceRepoPath) {
         super(id);
+        if (sourceRepoPath != null) {
+            this.sourceRepoPath = sourceRepoPath;
+            selectedTreeItemRepo = repoService.localRepoDescriptorByKey(sourceRepoPath.getRepoKey());
+        }
     }
 
     protected void init() {
@@ -69,11 +83,31 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         add(form);
 
         List<LocalRepoDescriptor> localRepos = getDeployableLocalReposKeys();
-        targetRepos = new DropDownChoice<LocalRepoDescriptor>(
-                "targetRepos", new Model<LocalRepoDescriptor>(), localRepos);
+        ChoiceRenderer<LocalRepoDescriptor> choiceRenderer = new ChoiceRenderer<LocalRepoDescriptor>() {
+            @Override
+            public Object getDisplayValue(LocalRepoDescriptor selectedTarget) {
+                StringBuilder displayValueBuilder = new StringBuilder();
+                if (!areLayoutsCompatible(selectedTarget)) {
+                    displayValueBuilder.append("! ");
+                }
+                displayValueBuilder.append(selectedTarget.getKey());
+                return displayValueBuilder.toString();
+            }
+        };
+        targetRepos = new DropDownChoice<LocalRepoDescriptor>("targetRepos", new Model<LocalRepoDescriptor>(),
+                localRepos, choiceRenderer);
         targetRepos.setLabel(Model.of("Target Repository"));
         targetRepos.setRequired(true);
         form.add(targetRepos);
+
+        StringBuilder targetRepoHelp = new StringBuilder("Selects the target repository for the transferred items.");
+        if (sourceRepoPath != null) {
+            targetRepoHelp.append("\nRepositories staring with an exclamation mark ('!') indicate that not all ").
+                    append("tokens\ncan be mapped between the layouts of the source repository and the marked ").
+                    append("repository.\nPath translations may not to work as expected.");
+        }
+        HelpBubble targetRepoHelpBubble = new HelpBubble("targetRepos.help", targetRepoHelp.toString());
+        form.add(targetRepoHelpBubble);
 
         Label dryRunResult = new Label("dryRunResult", "");
         dryRunResult.setVisible(false);
@@ -83,12 +117,18 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         form.add(new ModalCloseLink("cancel"));
 
         TitledAjaxSubmitLink actionButton = createSubmitButton(form, "action");
-        actionButton.add(new CssClass(new DefaultButtonStyleModel(actionButton)));
         form.add(actionButton);
 
         TitledAjaxSubmitLink dryRunButton = createDryRunButton(form, "dryRun");
-        dryRunButton.add(new CssClass(new DefaultButtonStyleModel(actionButton)));
         form.add(dryRunButton);
+    }
+
+    private boolean areLayoutsCompatible(LocalRepoDescriptor selectedTarget) {
+        RepoLayout sourceLayout = (selectedTreeItemRepo != null) ? selectedTreeItemRepo.getRepoLayout() : null;
+        RepoLayout targetRepo = (selectedTarget != null) ? selectedTarget.getRepoLayout() : null;
+
+        return ((sourceLayout == null) || (targetRepo == null) ||
+                RepoLayoutUtils.layoutsAreCompatible(sourceLayout, targetRepo));
     }
 
     protected String getSelectedTargetRepository() {

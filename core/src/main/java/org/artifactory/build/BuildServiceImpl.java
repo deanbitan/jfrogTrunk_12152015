@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.build;
 
 import com.gc.iotools.stream.is.InputStreamFromOutputStream;
+import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.XStream;
@@ -33,9 +34,6 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.ImportableExportableBuild;
-import org.artifactory.api.cache.ArtifactoryCache;
-import org.artifactory.api.cache.Cache;
-import org.artifactory.api.cache.CacheService;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
@@ -49,10 +47,10 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.build.cache.ChecksumPair;
 import org.artifactory.build.cache.MissingChecksumCallable;
-import org.artifactory.cache.InternalCacheService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.jcr.JcrPath;
@@ -73,7 +71,9 @@ import org.codehaus.jackson.JsonStreamContext;
 import org.codehaus.jackson.JsonToken;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jfrog.build.api.Build;
+import org.jfrog.build.api.BuildAgent;
 import org.jfrog.build.api.BuildFileBean;
+import org.jfrog.build.api.BuildType;
 import org.jfrog.build.api.Dependency;
 import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
@@ -100,7 +100,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_LASTMODIFIED;
 import static org.artifactory.jcr.JcrTypes.*;
@@ -112,7 +114,7 @@ import static org.artifactory.repo.jcr.JcrHelper.*;
  * @author Noam Y. Tenne
  */
 @Service
-@Reloadable(beanClass = InternalBuildService.class, initAfter = {JcrService.class, InternalCacheService.class})
+@Reloadable(beanClass = InternalBuildService.class, initAfter = {JcrService.class})
 public class BuildServiceImpl implements InternalBuildService {
     private static final Logger log = LoggerFactory.getLogger(BuildServiceImpl.class);
 
@@ -128,21 +130,22 @@ public class BuildServiceImpl implements InternalBuildService {
     private CachedThreadPoolTaskExecutor executor;
 
     @Autowired
-    private CacheService cacheService;
-
-    @Autowired
     private JcrService jcrService;
 
     /**
      * Keep a cache for each type of checksums because we can get requests for different types of checksum for the same
      * item
      */
-    private Cache<String, FutureTask<ChecksumPair>> md5Cache;
-    private Cache<String, FutureTask<ChecksumPair>> sha1Cache;
+    private ConcurrentMap<String, FutureTask<ChecksumPair>> md5Cache;
+    private ConcurrentMap<String, FutureTask<ChecksumPair>> sha1Cache;
 
     public void init() {
-        md5Cache = cacheService.getCache(ArtifactoryCache.buildItemMissingMd5);
-        sha1Cache = cacheService.getCache(ArtifactoryCache.buildItemMissingSha1);
+        md5Cache = new MapMaker().softValues()
+                .expireAfterWrite(ConstantValues.missingBuildChecksumCacheIdeTimeSecs.getLong(), TimeUnit.SECONDS)
+                .makeMap();
+        sha1Cache = new MapMaker().softValues()
+                .expireAfterWrite(ConstantValues.missingBuildChecksumCacheIdeTimeSecs.getLong(), TimeUnit.SECONDS)
+                .makeMap();
         //Create initial builds folder
         jcrService.getOrCreateUnstructuredNode(getJcrPath().getBuildsJcrRootPath());
     }
@@ -561,6 +564,18 @@ public class BuildServiceImpl implements InternalBuildService {
         return scopes;
     }
 
+    public boolean isGenericBuild(Build build) {
+        BuildAgent buildAgent = build.getBuildAgent();
+        if (buildAgent != null) {
+            String buildAgentName = buildAgent.getName();
+            return !"ivy".equalsIgnoreCase(buildAgentName) && !"maven".equalsIgnoreCase(buildAgentName) &&
+                    !"gradle".equalsIgnoreCase(buildAgentName);
+        }
+
+        BuildType type = build.getType();
+        return BuildType.ANT.equals(type) || BuildType.GENERIC.equals(type);
+    }
+
     public String getBuildCiServerUrl(BasicBuildInfo basicBuildInfo) throws IOException {
         String buildPath = getBuildPathFromParams(basicBuildInfo.getName(), basicBuildInfo.getNumber(),
                 basicBuildInfo.getStarted());
@@ -604,10 +619,10 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     public MoveCopyResult moveOrCopyBuildItems(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
-            boolean artifacts, boolean dependencies, List<String> scopes, boolean dryRun) {
+            boolean artifacts, boolean dependencies, List<String> scopes, Properties properties, boolean dryRun) {
         BuildItemMoveCopyHelper itemMoveCopyHelper = new BuildItemMoveCopyHelper();
         return itemMoveCopyHelper.moveOrCopy(move, basicBuildInfo, targetRepoKey, artifacts, dependencies, scopes,
-                dryRun);
+                properties, dryRun);
     }
 
     public void renameBuilds(String from, String to) {
@@ -750,21 +765,21 @@ public class BuildServiceImpl implements InternalBuildService {
      * @return Future that returns the value of the missing checksum search
      */
     private FutureTask<ChecksumPair> getFuture(BuildFileBean bean, String existingChecksum,
-            Cache<String, FutureTask<ChecksumPair>> existingChecksumCache) {
+            ConcurrentMap<String, FutureTask<ChecksumPair>> existingChecksumCache) {
 
         //Create callable and future tasks for checksum location
         Callable<ChecksumPair> callable = new MissingChecksumCallable(bean.getSha1(), bean.getMd5());
         FutureTask<ChecksumPair> future = new FutureTask<ChecksumPair>(callable);
 
         //Use the *put if absent* to make sure that a similar task has not been executed yet
-        // Note that our cache will return the same element if it doesn't exist (should be null is real putIfAbsent implementation)
-        FutureTask<ChecksumPair> cachedFuture = existingChecksumCache.put(existingChecksum, future);
-        if (cachedFuture == future) {
+        FutureTask<ChecksumPair> cachedFuture = existingChecksumCache.putIfAbsent(existingChecksum, future);
+        if (cachedFuture == null) {
             //Might try to run a ran task once more (cache concurrency issue), but future protects from this
             executor.submit(future);
+            return future;
+        } else {
+            return cachedFuture;
         }
-
-        return cachedFuture;
     }
 
     /**

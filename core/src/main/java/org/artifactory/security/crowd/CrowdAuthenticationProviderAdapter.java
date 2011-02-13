@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,19 +19,22 @@
 package org.artifactory.security.crowd;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.sso.ArtifactoryCrowdAuthenticator;
+import org.artifactory.addon.sso.CrowdAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.springframework.security.authentication.AuthenticationProvider;
+import org.artifactory.api.security.UserInfo;
+import org.artifactory.security.RealmAwareAuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
+import java.util.Set;
+
 /**
- * An authentication provider adapter that delegates the calls to the SSO addon.<br>
- * Needed since a provider cannot be added to the spring authentication manager while in an addon library.
+ * An authentication provider adapter that delegates the calls to the SSO addon.<br> Needed since a provider cannot be
+ * added to the spring authentication manager while in an addon library.
  *
  * @author Noam Y. Tenne
  */
-public class CrowdAuthenticationProviderAdapter implements AuthenticationProvider {
+public class CrowdAuthenticationProviderAdapter implements RealmAwareAuthenticationProvider {
 
     private AddonsManager addonsManager;
 
@@ -40,11 +43,22 @@ public class CrowdAuthenticationProviderAdapter implements AuthenticationProvide
     }
 
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        return addonsManager.addonByType(ArtifactoryCrowdAuthenticator.class).authenticateCrowd(authentication);
+        return addonsManager.addonByType(CrowdAddon.class).authenticateCrowd(authentication);
     }
 
-    public boolean supports(Class<? extends Object> authentication) {
-        return addonsManager.addonByType(ArtifactoryCrowdAuthenticator.class).isCrowdAuthenticationSupported(
-                authentication);
+    public boolean supports(Class<?> authentication) {
+        return addonsManager.addonByType(CrowdAddon.class).isCrowdAuthenticationSupported(authentication);
+    }
+
+    public String getRealm() {
+        return CrowdAddon.REALM;
+    }
+
+    public void addExternalGroups(String username, Set<UserInfo.UserGroupInfo> groups) {
+        addonsManager.addonByType(CrowdAddon.class).addExternalGroups(username, groups);
+    }
+
+    public boolean userExists(String username) {
+        return addonsManager.addonByType(CrowdAddon.class).findUser(username);
     }
 }

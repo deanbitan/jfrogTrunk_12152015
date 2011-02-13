@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,9 +28,11 @@ import org.artifactory.io.checksum.Checksum;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
+import org.artifactory.util.RepoLayoutUtils;
 import org.easymock.EasyMock;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -50,6 +52,11 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     HttpRepoDescriptor httpRepoDescriptor = new HttpRepoDescriptor();
     HttpRepo httpRepo = new HttpRepo(internalRepoService, httpRepoDescriptor, false, null);
     RepoPath repoPath = new RepoPathImpl("remote-repo-cache", "test/test/1.0/test-1.0.jar");
+
+    @BeforeClass
+    public void setup() {
+        httpRepoDescriptor.setRepoLayout(RepoLayoutUtils.MAVEN_2_DEFAULT);
+    }
 
     /**
      * Try to download with ordinary path

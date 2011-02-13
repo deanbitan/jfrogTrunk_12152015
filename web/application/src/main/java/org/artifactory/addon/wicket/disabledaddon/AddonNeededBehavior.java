@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.addon.wicket.disabledaddon;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.Request;
 import org.apache.wicket.RequestCycle;
@@ -29,6 +30,7 @@ import org.artifactory.addon.wicket.AddonType;
 import org.artifactory.common.wicket.behavior.template.TemplateBehavior;
 import org.artifactory.common.wicket.behavior.tooltip.TooltipBehavior;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
+import org.artifactory.common.wicket.util.JavaScriptUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.webapp.servlet.RequestUtils;
@@ -44,6 +46,7 @@ public class AddonNeededBehavior extends TemplateBehavior {
 
     private AddonType addon;
     private boolean enabled;
+    private String position;
 
     public AddonNeededBehavior(AddonType addon) {
         super(AddonNeededBehavior.class);
@@ -53,6 +56,7 @@ public class AddonNeededBehavior extends TemplateBehavior {
         resourcePackage.dependsOn(new ResourcePackage(TooltipBehavior.class).addJavaScript());
         resourcePackage.addJavaScript();
     }
+
 
     @Override
     public void beforeRender(Component component) {
@@ -69,6 +73,15 @@ public class AddonNeededBehavior extends TemplateBehavior {
         if (enabled) {
             super.onRendered(component);
         }
+    }
+
+    public String getPosition() {
+        return StringUtils.isEmpty(position) ? "null" : position;
+    }
+
+    public AddonNeededBehavior setPosition(String... position) {
+        this.position = JavaScriptUtils.jsParam(position);
+        return this;
     }
 
     @Override

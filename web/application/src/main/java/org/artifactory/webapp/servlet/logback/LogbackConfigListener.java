@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -72,7 +72,7 @@ public class LogbackConfigListener implements ServletContextListener {
         }
 
         //Configure and start the watchdog
-        configWatchDog = new LogbackConfigWatchDog(context);
+        configWatchDog = new LogbackConfigWatchDog(context, servletContext);
         configureWatchdog(servletContext);
         configWatchDog.start();
     }
@@ -105,19 +105,44 @@ public class LogbackConfigListener implements ServletContextListener {
         private final Logger log = LoggerFactory.getLogger(LogbackConfigListener.LogbackConfigWatchDog.class);
 
         private LoggerContext loggerContext;
+        private ServletContext servletContext;
+        private final boolean selectorUsed;
 
-        public LogbackConfigWatchDog(LoggerContext loggerContext) {
+        public LogbackConfigWatchDog(LoggerContext loggerContext, ServletContext servletContext) {
             super(home.getLogbackConfig(), false);
             setName("logback-watchdog");
+            this.selectorUsed = System.getProperty("logback.ContextSelector") != null;
+            this.servletContext = servletContext;
             this.loggerContext = loggerContext;
             checkAndConfigure();
         }
 
         @Override
         protected void doOnChange() {
-            LogbackContextHelper.configure(loggerContext, home);
-            //Log after reconfig, since this class logger is constucted before config with the default warn level
-            log.info("Reloaded logback config from: {}.", file.getAbsolutePath());
+            if (selectorUsed) {
+                // if the selector is used, then bind a new LoggerConfigInfo.
+                // see JFW-1180
+                bind(servletContext);
+            }
+            try {
+                LogbackContextHelper.configure(loggerContext, home);
+                //Log after re-config, since this class logger is constructed before config with the default warn level
+                log.info("Reloaded logback config from: {}.", file.getAbsolutePath());
+            } finally {
+                if (selectorUsed) {
+                    unbind();
+                }
+            }
+        }
+
+        private void bind(ServletContext servletContext) {
+            String contextId = HttpUtils.getContextId(servletContext);
+            LoggerConfigInfo configInfo = new LoggerConfigInfo(contextId, home);
+            LogbackContextSelector.bindConfig(configInfo);
+        }
+
+        private void unbind() {
+            LogbackContextSelector.unbind();
         }
     }
 }

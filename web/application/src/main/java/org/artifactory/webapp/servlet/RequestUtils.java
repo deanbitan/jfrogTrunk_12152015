@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,6 +30,7 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
@@ -89,9 +90,12 @@ public abstract class RequestUtils {
 
     public static boolean isRepoRequest(HttpServletRequest request) {
         String servletPath = getServletPathFromRequest(request);
-        String pathPrefix = PathUtils.getPathFirstPart(servletPath);
+        String pathPrefix = PathUtils.getFirstPathElement(servletPath);
         if (pathPrefix == null || pathPrefix.length() == 0) {
             return false;
+        }
+        if (ArtifactoryRequest.LIST_BROWSING_PATH.equals(pathPrefix)) {
+            pathPrefix = PathUtils.getFirstPathElement(servletPath.substring("list/".length()));
         }
         if (UI_PATH_PREFIXES.contains(pathPrefix)) {
             return false;
@@ -100,18 +104,18 @@ public abstract class RequestUtils {
             return false;
         }
         //Check that is a repository prefix with support for old repo sytax
-        String repoPrefix = pathPrefix.endsWith("@repo") ?
+        String repoKey = pathPrefix.endsWith("@repo") ?
                 pathPrefix.substring(0, pathPrefix.length() - 5) : pathPrefix;
         //Support repository-level metadata requests
-        repoPrefix = NamingUtils.stripMetadataFromPath(repoPrefix);
+        repoKey = NamingUtils.stripMetadataFromPath(repoKey);
         //Strip any matrix params
-        int paramsIdx = repoPrefix.indexOf(Properties.MATRIX_PARAMS_SEP);
+        int paramsIdx = repoKey.indexOf(Properties.MATRIX_PARAMS_SEP);
         if (paramsIdx > 0) {
-            repoPrefix = repoPrefix.substring(0, paramsIdx);
+            repoKey = repoKey.substring(0, paramsIdx);
         }
         RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
         Set<String> allRepos = repositoryService.getAllRepoKeys();
-        if (!allRepos.contains(repoPrefix)) {
+        if (!allRepos.contains(repoKey)) {
             log.warn("Request " + servletPath + " should be a repo request and does not match any repo key");
             return false;
         }
@@ -136,7 +140,7 @@ public abstract class RequestUtils {
         if (isWicketRequest(request)) {
             return true;
         }
-        String pathPrefix = PathUtils.getPathFirstPart(getServletPathFromRequest(request));
+        String pathPrefix = PathUtils.getFirstPathElement(getServletPathFromRequest(request));
         return isUiPathPrefix(pathPrefix);
     }
 
@@ -156,7 +160,8 @@ public abstract class RequestUtils {
     }
 
     public static boolean isReservedName(String pathPrefix) {
-        return UI_PATH_PREFIXES.contains(pathPrefix) || NON_UI_PATH_PREFIXES.contains(pathPrefix);
+        return UI_PATH_PREFIXES.contains(pathPrefix) || NON_UI_PATH_PREFIXES.contains(pathPrefix) ||
+                "list".equals(pathPrefix);
     }
 
     public static boolean isAuthHeaderPresent(HttpServletRequest request) {
@@ -246,10 +251,8 @@ public abstract class RequestUtils {
      * Calculates a repoPath based on the given servlet path (path after the context root, including the repo prefix).
      */
     public static RepoPath calculateRepoPath(String requestPath) {
-        String repoKey = PathUtils.getPathFirstPart(requestPath);
-        int startIdx = repoKey.length() + 2;
-        int endIdx = (requestPath.endsWith("/") ? requestPath.length() - 1 : requestPath.length());
-        String path = startIdx < endIdx ? requestPath.substring(startIdx, endIdx) : "";
+        String repoKey = PathUtils.getFirstPathElement(requestPath);
+        String path = PathUtils.stripFirstPathElement(requestPath);
         return new RepoPathImpl(repoKey, path);
     }
 

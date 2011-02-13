@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,10 +37,10 @@ import org.apache.wicket.util.time.Duration;
 import org.apache.wicket.validation.validator.EmailAddressValidator;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.LdapGroupWebAddon;
-import org.artifactory.api.context.ContextHelper;
+import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
+import org.artifactory.api.security.UserAwareAuthenticationProvider;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.api.security.UserInfoBuilder;
@@ -58,7 +58,9 @@ import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordStrengthComponentPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.security.AccessLogger;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
 import org.springframework.util.StringUtils;
@@ -83,14 +85,19 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
     @SpringBean
     private SecurityService securityService;
 
+    @SpringBean
+    private UserAwareAuthenticationProvider provider;
+
     PasswordTextField passwordField;
     PasswordTextField retypedPasswordField;
 
     StyledCheckbox adminCheckbox;
     StyledCheckbox updatableProfileCheckbox;
+    private final UsersTable usersListTable;
 
-    public UserCreateUpdatePanel(CreateUpdateAction action, UserModel user, final UsersTable usersListTable) {
+    public UserCreateUpdatePanel(CreateUpdateAction action, UserModel user, UsersTable usersListTable) {
         super(action, user);
+        this.usersListTable = usersListTable;
         setWidth(412);
         form.setOutputMarkupId(true);
         add(form);
@@ -116,6 +123,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         };
         passwordField.setRequired(create).setOutputMarkupId(true);
         passwordField.add(PasswordStreangthValidator.getInstance());
+        passwordField.setResetPassword(false);
         border.add(passwordField);
 
         final PasswordStrengthComponentPanel strength =
@@ -144,11 +152,18 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
 
         retypedPasswordField = new PasswordTextField("retypedPassword") {
             @Override
+            protected void onBeforeRender() {
+                super.onBeforeRender();
+                entity.setRetypedPassword(entity.getPassword());
+            }
+
+            @Override
             public boolean isEnabled() {
                 return !entity.isDisableInternalPassword();
             }
         };
         retypedPasswordField.setRequired(create).setOutputMarkupId(true);
+        retypedPasswordField.setResetPassword(false);
         border.add(retypedPasswordField);
 
         // validate password and retyped password
@@ -190,14 +205,17 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         final StyledCheckbox disableInternalPassword = new StyledCheckbox("disableInternalPassword") {
             @Override
             public boolean isEnabled() {
-                // disable if creating new user or it's an admin user
-                return !create && !entity.isAdmin();
+                // disable if it's an admin user
+                return !entity.isAdmin();
             }
         };
 
         disableInternalPassword.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
+                if (entity.isDisableInternalPassword()) {
+                    entity.setPassword("");
+                }
                 target.addComponent(passwordField);
                 target.addComponent(retypedPasswordField);
             }
@@ -226,10 +244,9 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
 
         // groups
         Set<UserInfo.UserGroupInfo> userGroups = user.getGroups();
+        user.getRealm();
         if (!create) {
-            LdapGroupWebAddon groupAddon =
-                    ContextHelper.get().beanForType(AddonsManager.class).addonByType(LdapGroupWebAddon.class);
-            groupAddon.addExternalGroups(user.getUsername(), userGroups);
+            provider.addExternalGroups(user.getUsername(), user.getRealm(), userGroups);
         }
 
         final DeletableLabelGroup<UserInfo.UserGroupInfo> groupsListView =
@@ -248,13 +265,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         addLastLoginLabel(border);
 
         //Cancel
-        form.add(new ModalCloseLink("cancel") {
-            @Override
-            public void onClick(AjaxRequestTarget target) {
-                usersListTable.refreshUsersList(target);    // make sure to reload the original model                
-                super.onClick(target);
-            }
-        });
+        form.add(new ModalCloseLink("cancel"));
 
         //Submit
         String submitCaption = create ? "Create" : "Save";
@@ -268,11 +279,18 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                     successful = createNewUser(username);
                     AccessLogger.created("User " + username + " was created successfully");
                 } else {
-                    updateUser(username);
-                    AccessLogger.updated("User " + username + " was updated successfully");
+                    CoreAddons coreAddons = addons.addonByType(CoreAddons.class);
+                    if (!coreAddons.isAolDashboardAdmin(username, HttpUtils.getRemoteClientAddress(
+                            WicketUtils.getWebRequest().getHttpServletRequest()))) {
+                        updateUser(username);
+                        AccessLogger.updated("User " + username + " was updated successfully");
+                    } else {
+                        warn("User " + username + " cannot be updated");
+                        AjaxUtils.refreshFeedback(target);
+                        return;
+                    }
                 }
                 if (successful) {
-                    usersListTable.refreshUsersList(target);
                     AjaxUtils.refreshFeedback(target);
                     ModalHandler.closeCurrent(target);
                 }
@@ -321,6 +339,13 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         };
         form.add(submit);
         form.add(new DefaultButtonBehavior(submit));
+    }
+
+    @Override
+    public void onClose(AjaxRequestTarget target) {
+        // we need to reload the model on both save and cancel
+        usersListTable.refreshUsersList(target);
+        super.close(target);
     }
 
     private void addLastLoginLabel(TitledBorder border) {

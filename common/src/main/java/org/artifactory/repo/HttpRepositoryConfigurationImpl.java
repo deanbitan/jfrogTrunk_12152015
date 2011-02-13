@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,8 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
+import org.artifactory.util.RepoLayoutUtils;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 import javax.annotation.Nonnull;
@@ -44,8 +46,9 @@ import java.util.Map;
                 "excludesPattern", "remoteRepoChecksumPolicyType", "handleReleases", "handleSnapshots", "maxUniqueSnapshots",
                 "suppressPomConsistencyChecks", "hardFail", "offline", "blackedOut", "storeArtifactsLocally", "socketTimeoutMillis",
                 "localAddress", "retrievalCachePeriodSecs", "failedRetrievalCachePeriodSecs", "missedRetrievalCachePeriodSecs",
-                "failedRetrievalCachePeriodSecs", "unusedArtifactsCleanupEnabled", "unusedArtifactsCleanupPeriodHours",
-                "fetchJarsEagerly", "fetchSourcesEagerly", "shareConfiguration", "synchronizeProperties", "propertySets"})
+                "failedRetrievalCachePeriodSecs", "unusedArtifactsCleanupPeriodHours",
+                "fetchJarsEagerly", "fetchSourcesEagerly", "shareConfiguration", "synchronizeProperties", "propertySets",
+                "repoLayoutRef", "remoteRepoLayoutRef"})
 public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         implements HttpRepositoryConfiguration {
 
@@ -66,7 +69,6 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private long retrievalCachePeriodSecs = 43200L;
     private long failedRetrievalCachePeriodSecs = 30L;
     private long missedRetrievalCachePeriodSecs = 7200L;
-    private boolean unusedArtifactsCleanupEnabled = false;
     private int unusedArtifactsCleanupPeriodHours = 0;
     private boolean fetchJarsEagerly = false;
     private boolean fetchSourcesEagerly = false;
@@ -74,8 +76,10 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private boolean synchronizeProperties = false;
     private int maxUniqueSnapshots = 0;
     private List<String> propertySets;
+    private String remoteRepoLayoutRef;
 
     public HttpRepositoryConfigurationImpl() {
+        setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
     }
 
     public HttpRepositoryConfigurationImpl(HttpRepoDescriptor repoDescriptor) {
@@ -119,7 +123,6 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         setRetrievalCachePeriodSecs(repoDescriptor.getRetrievalCachePeriodSecs());
         setFailedRetrievalCachePeriodSecs(repoDescriptor.getFailedRetrievalCachePeriodSecs());
         setMissedRetrievalCachePeriodSecs(repoDescriptor.getMissedRetrievalCachePeriodSecs());
-        setUnusedArtifactsCleanupEnabled(repoDescriptor.isUnusedArtifactsCleanupEnabled());
         setUnusedArtifactsCleanupPeriodHours(repoDescriptor.getUnusedArtifactsCleanupPeriodHours());
         setFetchJarsEagerly(repoDescriptor.isFetchJarsEagerly());
         setFetchSourcesEagerly(repoDescriptor.isFetchSourcesEagerly());
@@ -135,6 +138,10 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
             }));
         } else {
             setPropertySets(Lists.<String>newArrayList());
+        }
+        RepoLayout remoteRepoLayout = repoDescriptor.getRemoteRepoLayout();
+        if (remoteRepoLayout != null) {
+            setRemoteRepoLayoutRef(remoteRepoLayout.getName());
         }
     }
 
@@ -314,14 +321,6 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.synchronizeProperties = synchronizeProperties;
     }
 
-    public boolean isUnusedArtifactsCleanupEnabled() {
-        return unusedArtifactsCleanupEnabled;
-    }
-
-    public void setUnusedArtifactsCleanupEnabled(boolean unusedArtifactsCleanupEnabled) {
-        this.unusedArtifactsCleanupEnabled = unusedArtifactsCleanupEnabled;
-    }
-
     public int getUnusedArtifactsCleanupPeriodHours() {
         return unusedArtifactsCleanupPeriodHours;
     }
@@ -336,5 +335,13 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getRemoteRepoLayoutRef() {
+        return remoteRepoLayoutRef;
+    }
+
+    public void setRemoteRepoLayoutRef(String remoteRepoLayoutRef) {
+        this.remoteRepoLayoutRef = remoteRepoLayoutRef;
     }
 }

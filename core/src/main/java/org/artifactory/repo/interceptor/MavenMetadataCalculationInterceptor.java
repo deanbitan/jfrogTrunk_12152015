@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +21,7 @@ package org.artifactory.repo.interceptor;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
@@ -66,8 +67,11 @@ public class MavenMetadataCalculationInterceptor extends StorageInterceptorAdapt
         }
         // it's a local non-cache repository, check the snapshot behavior
         LocalRepo localRepo = (LocalRepo) storingRepo;
-        if (MavenNaming.isSnapshot(fsItem.getPath()) &&
-                SnapshotVersionBehavior.DEPLOYER.equals(localRepo.getSnapshotVersionBehavior())) {
+
+        String path = fsItem.getPath();
+        ModuleInfo moduleInfo = localRepo.getItemModuleInfo(path);
+        if (moduleInfo.isIntegration() &&
+                SnapshotVersionBehavior.DEPLOYER.equals(localRepo.getMavenSnapshotVersionBehavior())) {
             return false;
         }
 

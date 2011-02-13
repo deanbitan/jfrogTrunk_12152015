@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,7 +54,6 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
     @SpringBean
     private RepositoryService repoService;
 
-    private RepoPath pathToCopy;
     private Component componentToRefresh;
     private TreeBrowsePanel browseRepoPanel;
 
@@ -68,8 +67,7 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
      */
     public CopyPathPanel(String id, RepoPath pathToCopy, Component componentToRefresh,
             TreeBrowsePanel browseRepoPanel) {
-        super(id);
-        this.pathToCopy = pathToCopy;
+        super(id, pathToCopy);
         this.componentToRefresh = componentToRefresh;
         this.browseRepoPanel = browseRepoPanel;
         init();
@@ -82,10 +80,10 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 String targetRepoKey = getSelectedTargetRepository();
 
-                MoveMultiStatusHolder status = repoService.copy(pathToCopy, targetRepoKey, false);
+                MoveMultiStatusHolder status = repoService.copy(sourceRepoPath, targetRepoKey, false);
 
                 if (!status.isError() && !status.hasWarnings()) {
-                    getPage().info("Successfully copied '" + pathToCopy + "'." + " to '" + targetRepoKey + "'");
+                    getPage().info("Successfully copied '" + sourceRepoPath + "'." + " to '" + targetRepoKey + "'");
                 } else {
                     if (status.hasWarnings()) {
                         List<StatusEntry> warnings = status.getWarnings();
@@ -105,7 +103,7 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
                         if (exception != null) {
                             message = exception.getMessage();
                         }
-                        getPage().error("Failed to copy '" + pathToCopy + "': " + message);
+                        getPage().error("Failed to copy '" + sourceRepoPath + "': " + message);
                     }
                 }
 
@@ -126,7 +124,7 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
             @Override
             protected IAjaxCallDecorator getAjaxCallDecorator() {
                 //Add confirmation dialog when clicked
-                String message = String.format("Are you sure you wish to copy '%s'?", pathToCopy);
+                String message = String.format("Are you sure you wish to copy '%s'?", sourceRepoPath);
                 return new ConfirmationAjaxCallDecorator(message);
             }
         };
@@ -134,11 +132,11 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
 
     @Override
     protected List<LocalRepoDescriptor> getDeployableLocalReposKeys() {
-        return getDeployableLocalReposKeysExcludingSource(pathToCopy.getRepoKey());
+        return getDeployableLocalReposKeysExcludingSource(sourceRepoPath.getRepoKey());
     }
 
     @Override
     protected MoveMultiStatusHolder executeDryRun(String targetRepoKey) {
-        return repoService.copy(pathToCopy, targetRepoKey, true);
+        return repoService.copy(sourceRepoPath, targetRepoKey, true);
     }
 }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,6 +30,7 @@ public class FileListElement implements Serializable {
     String uri;
     long size;
     String lastModified;
+    boolean folder;
 
     /**
      * Default constructor
@@ -43,11 +44,13 @@ public class FileListElement implements Serializable {
      * @param uri          URI of file relative to the request path
      * @param size         Physical size of file in bytes
      * @param lastModified The ISO8601 time the file was last modified
+     * @param folder       True if item is a folder
      */
-    public FileListElement(String uri, long size, String lastModified) {
+    public FileListElement(String uri, long size, String lastModified, boolean folder) {
         this.uri = uri;
         this.size = size;
         this.lastModified = lastModified;
+        this.folder = folder;
     }
 
     /**
@@ -104,6 +107,24 @@ public class FileListElement implements Serializable {
         this.lastModified = lastModified;
     }
 
+    /**
+     * Indicates whether this element is a folder
+     *
+     * @return True if a folder
+     */
+    public boolean isFolder() {
+        return folder;
+    }
+
+    /**
+     * Sets the folder indication
+     *
+     * @param folder True if a folder
+     */
+    public void setFolder(boolean folder) {
+        this.folder = folder;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -115,6 +136,9 @@ public class FileListElement implements Serializable {
 
         FileListElement that = (FileListElement) o;
 
+        if (folder != that.folder) {
+            return false;
+        }
         if (size != that.size) {
             return false;
         }
@@ -133,6 +157,7 @@ public class FileListElement implements Serializable {
         int result = uri != null ? uri.hashCode() : 0;
         result = 31 * result + (int) (size ^ (size >>> 32));
         result = 31 * result + (lastModified != null ? lastModified.hashCode() : 0);
+        result = 31 * result + (folder ? 1 : 0);
         return result;
     }
 }

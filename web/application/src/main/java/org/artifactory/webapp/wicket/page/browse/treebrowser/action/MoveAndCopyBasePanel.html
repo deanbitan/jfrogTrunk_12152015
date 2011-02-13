@@ -2,7 +2,7 @@
     <style type="text/css">
         .dryRunResult {
             margin-top: 5px;
-            height:68px;
+            height: 68px;
         }
 
         .dryRunResult .title {
@@ -15,6 +15,7 @@
     <form wicket:id="form">
         Target Repository:
         <select wicket:id="targetRepos"/>
+        <span wicket:id="targetRepos.help"/>
 
         <wicket:enclosure>
             <div class="textbox dryRunResult">
@@ -22,9 +23,9 @@
             </div>
         </wicket:enclosure>
 
-        <div class="buttons">
-            <button type="submit" wicket:id="action"/>
-            <button type="submit" wicket:id="dryRun"/>
+        <div style="margin-top: 10px;">
+            <button type="submit" wicket:id="action" class="green-button"/>
+            <button type="submit" wicket:id="dryRun" class="green-button"/>
             <button type="button" wicket:id="cancel"/>
         </div>
     </form>

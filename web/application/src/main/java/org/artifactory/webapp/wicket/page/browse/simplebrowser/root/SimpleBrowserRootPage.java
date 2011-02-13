@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,9 +22,11 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
+import org.artifactory.webapp.wicket.page.browse.home.RememberPageBehavior;
 
 import java.util.Iterator;
 import java.util.List;
@@ -37,9 +39,13 @@ public class SimpleBrowserRootPage extends AuthenticatedPage {
     private AuthorizationService authorizationService;
 
     public SimpleBrowserRootPage() {
+        add(new RememberPageBehavior());
         List<VirtualRepoDescriptor> virtualRepos = repositoryService.getVirtualRepoDescriptors();
         removeNonPermissionRepositories(virtualRepos);
         add(new RepoListPanel("virtualRepositoriesPanel", virtualRepos));
+        List<RemoteRepoDescriptor> remoteRepos = repositoryService.getRemoteRepoDescriptors();
+        removeNonPermissionRepositories(remoteRepos);
+        add(new RepoListPanel("remoteRepositoriesPanel", remoteRepos));
         List<LocalRepoDescriptor> localRepos = repositoryService.getLocalAndCachedRepoDescriptors();
         removeNonPermissionRepositories(localRepos);
         add(new RepoListPanel("localRepositoriesPanel", localRepos));

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.dependency;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 
 /**
@@ -33,21 +33,27 @@ public class MavenDependencyDeclarationProvider implements DependencyDeclaration
         return Syntax.xml;
     }
 
-    public String getDependencyDeclaration(MavenArtifactInfo artifactInfo) {
+    public String getDependencyDeclaration(ModuleInfo moduleInfo) {
         StringBuilder sb = new StringBuilder();
         sb.append("<dependency>\n");
-        sb.append("    <groupId>").append(artifactInfo.getGroupId()).append("</groupId>\n");
-        sb.append("    <artifactId>").append(artifactInfo.getArtifactId()).append("</artifactId>\n");
-        sb.append("    <version>").append(artifactInfo.getVersion()).append("</version>\n");
+        sb.append("    <groupId>").append(moduleInfo.getOrganization()).append("</groupId>\n");
+        sb.append("    <artifactId>").append(moduleInfo.getModule()).append("</artifactId>\n");
+        sb.append("    <version>").append(moduleInfo.getBaseRevision());
 
-        String classifier = artifactInfo.getClassifier();
+        String artifactRevisionIntegration = moduleInfo.getFileIntegrationRevision();
+        if (StringUtils.isNotBlank(artifactRevisionIntegration)) {
+            sb.append("-").append(artifactRevisionIntegration);
+        }
+        sb.append("</version>\n");
+
+        String classifier = moduleInfo.getClassifier();
         if (StringUtils.isNotBlank(classifier)) {
             sb.append("    <classifier>").append(classifier).append("</classifier>\n");
         }
 
-        String type = artifactInfo.getType();
-        if (StringUtils.isNotBlank(type) && !"jar".equalsIgnoreCase(type)) {
-            sb.append("    <type>").append(artifactInfo.getType()).append("</type>\n");
+        String ext = moduleInfo.getExt();
+        if (StringUtils.isNotBlank(ext) && !"jar".equalsIgnoreCase(ext)) {
+            sb.append("    <type>").append(moduleInfo.getExt()).append("</type>\n");
         }
 
         return sb.append("</dependency>").toString();

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,9 +19,8 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.dependency;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
-import org.artifactory.util.PathUtils;
 
 /**
  * The Ivy dependency declaration generator
@@ -34,22 +33,27 @@ public class IvyDependencyDeclarationProvider implements DependencyDeclarationPr
         return Syntax.xml;
     }
 
-    public String getDependencyDeclaration(MavenArtifactInfo artifactInfo) {
-        String artifactId = artifactInfo.getArtifactId();
+    public String getDependencyDeclaration(ModuleInfo moduleInfo) {
+        String module = moduleInfo.getModule();
 
-        StringBuilder sb = new StringBuilder("<dependency org=\"").append(artifactInfo.getGroupId()).append("\" ")
-                .append("name=\"").append(artifactId).append("\" ")
-                .append("rev=\"").append(artifactInfo.getVersion()).append("\"");
+        StringBuilder sb = new StringBuilder("<dependency org=\"").append(moduleInfo.getOrganization()).append("\" ")
+                .append("name=\"").append(module).append("\" ").append("rev=\"").append(moduleInfo.getBaseRevision());
 
-        String classifier = artifactInfo.getClassifier();
-        String type = artifactInfo.getType();
+        String artifactRevisionIntegration = moduleInfo.getFileIntegrationRevision();
+        if (StringUtils.isNotBlank(artifactRevisionIntegration)) {
+            sb.append("-").append(artifactRevisionIntegration);
+        }
+        sb.append("\"");
+
+        String classifier = moduleInfo.getClassifier();
+        String type = moduleInfo.getType();
 
         boolean validClassifier = StringUtils.isNotBlank(classifier);
         boolean validType = StringUtils.isNotBlank(type);
 
         if (validClassifier || !"jar".equals(type)) {
             sb.append(">\n")
-                    .append("    <artifact name=\"").append(artifactId).append("\"");
+                    .append("    <artifact name=\"").append(module).append("\"");
 
             if (validType && (validClassifier || !"jar".equals(type))) {
                 sb.append(" type=\"").append(type).append("\"");
@@ -59,7 +63,7 @@ public class IvyDependencyDeclarationProvider implements DependencyDeclarationPr
                 sb.append(" m:classifier=\"").append(classifier).append("\"");
             }
 
-            sb.append(" ext=\"").append(PathUtils.getExtension(artifactInfo.getPath())).append("\"/>\n")
+            sb.append(" ext=\"").append(moduleInfo.getExt()).append("\"/>\n")
                     .append("</dependency>");
         } else {
             sb.append("/>");

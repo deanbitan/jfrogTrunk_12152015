@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,11 +78,15 @@ public class ChecksumsPanel extends Panel {
         } else {
             // if one is missing but the other is broken display the following
             StringBuilder message = new StringBuilder();
-            String repoClass = isLocalRepo ? "Uploaded" : "Remote";
             if (isAllChecksumsMissing(sha1Info, md5Info) || isOneMissingOtherMatches(sha1Info, md5Info)) {
-                message.append(" Remote checksum doesn't exist. <br/>");
+                if (isLocalRepo) {
+                    message.append(" Client did not publish a checksum value. <br/>");
+                } else {
+                    message.append(" Remote checksum doesn't exist. <br/>");
+                }
             } else if (isAllChecksumsBroken(sha1Info, md5Info) || isOneOkOtherMissing(sha1Info, md5Info) ||
                     isOneMissingOtherBroken(sha1Info, md5Info)) {
+                String repoClass = isLocalRepo ? "Uploaded" : "Remote";
                 message = new StringBuilder().append(repoClass).append(" checksum doesn't match the actual checksum. ")
                         .append("Please redeploy the artifact with a correct checksum.<br/>");
             }

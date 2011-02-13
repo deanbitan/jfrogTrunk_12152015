@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,8 +24,11 @@ import org.artifactory.addon.LdapGroupAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
+import org.artifactory.api.security.ldap.LdapService;
+import org.artifactory.api.security.ldap.LdapUser;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.security.RealmAwareAuthenticationProvider;
 import org.artifactory.security.SimpleUser;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
@@ -35,23 +38,23 @@ import org.springframework.context.MessageSourceAware;
 import org.springframework.ldap.AuthenticationException;
 import org.springframework.ldap.CommunicationException;
 import org.springframework.ldap.core.DirContextOperations;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.ldap.LdapUtils;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Custom LDAP authentication provider just for creating local users for newly ldap authenticated users.
  *
  * @author Yossi Shaul
  */
-public class ArtifactoryLdapAuthenticationProvider implements AuthenticationProvider, MessageSourceAware {
+public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenticationProvider, MessageSourceAware {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryLdapAuthenticationProvider.class);
 
     @Autowired
@@ -70,11 +73,17 @@ public class ArtifactoryLdapAuthenticationProvider implements AuthenticationProv
     @Autowired
     private InternalLdapAuthenticator authenticator;
 
+    @Autowired
+    private LdapService ldapService;
+
+    @Autowired
+    private AddonsManager addonsManager;
+
     /**
-     * Get the LDAP authentication providers, by iterating over all the bind authenticators and putting them in a map
-     * of the settings key.
+     * Get the LDAP authentication providers, by iterating over all the bind authenticators and putting them in a map of
+     * the settings key.
      *
-     * @return
+     * @return The LDAP authentication provers
      */
     public Map<String, LdapAuthenticationProvider> getLdapAuthenticationProviders() {
         if (ldapAuthenticationProviders == null) {
@@ -178,10 +187,8 @@ public class ArtifactoryLdapAuthenticationProvider implements AuthenticationProv
 
             SimpleUser simpleUser = new SimpleUser(userInfo);
             // create new authentication response containing the user and it's authorities
-            UsernamePasswordAuthenticationToken simpleUserAuthentication =
-                    new UsernamePasswordAuthenticationToken(simpleUser, authentication.getCredentials(),
-                            simpleUser.getAuthorities());
-            return simpleUserAuthentication;
+            return new LdapRealmAwareAuthentication(simpleUser, authentication.getCredentials(),
+                    simpleUser.getAuthorities());
         } catch (AuthenticationException e) {
             String message = String.format("Failed to authenticate user '%s' via LDAP: %s", userName, e.getMessage());
             log.debug(message);
@@ -211,5 +218,32 @@ public class ArtifactoryLdapAuthenticationProvider implements AuthenticationProv
                     "manager-based search, which are usually mutually exclusive. For AD leave the User DN Pattern " +
                     "field empty.", userName);
         }
+    }
+
+    public String getRealm() {
+        return LdapService.REALM;
+    }
+
+    public void addExternalGroups(String username, Set<UserInfo.UserGroupInfo> groups) {
+        addonsManager.addonByType(LdapGroupAddon.class).addExternalGroups(username, groups);
+    }
+
+    public boolean userExists(String username) {
+        List<LdapSetting> settings = centralConfig.getMutableDescriptor().getSecurity().getLdapSettings();
+        if (settings == null || settings.isEmpty()) {
+            log.debug("No LDAP settings defined");
+            return false;
+        }
+        for (LdapSetting setting : settings) {
+            if (setting.isEnabled()) {
+                log.debug("Trying to find user '{}' with LDAP settings '{}'", username, setting);
+                LdapUser ldapUser = ldapService.getDnFromUserName(setting, username);
+                if (ldapUser != null) {
+                    log.debug("Found user '{}' with LDAP settings '{}'", username, setting);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

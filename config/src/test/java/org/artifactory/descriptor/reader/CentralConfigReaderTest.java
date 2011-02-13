@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,12 +45,12 @@ import static org.testng.Assert.assertTrue;
 @Test
 public class CentralConfigReaderTest extends ArtifactoryHomeBoundTest {
 
-    public void readV6Config() throws Exception {
-        File oldConfigFile = ResourceUtils.getResourceAsFile("/config/install/config.1.4.1.xml");
+    public void readV7Config() throws Exception {
+        File oldConfigFile = ResourceUtils.getResourceAsFile("/config/install/config.1.4.7.xml");
         CentralConfigDescriptor newConfig =
                 new CentralConfigReader().read(oldConfigFile);
         Map<String, RemoteRepoDescriptor> descriptorOrderedMap = newConfig.getRemoteRepositoriesMap();
-        Assert.assertEquals(descriptorOrderedMap.size(), 16, "Should contain 16 remote repository");
+        Assert.assertEquals(descriptorOrderedMap.size(), 12, "Should contain 12 remote repository");
     }
 
     @SuppressWarnings("unchecked")

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -42,7 +42,6 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
         assertEquals(artifactInfo.getVersion(), "2.0");
         assertNull(artifactInfo.getClassifier());
         assertEquals(artifactInfo.getType(), "pom");
-        assertFalse(artifactInfo.isSnapshot(), "This is a release version");
     }
 
     public void fromPathWithClassifier() {
@@ -54,7 +53,6 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
         assertEquals(artifactInfo.getVersion(), "2.0");
         assertEquals(artifactInfo.getClassifier(), "sources");
         assertEquals(artifactInfo.getType(), "jar");
-        assertFalse(artifactInfo.isSnapshot(), "This is a release version");
     }
 
     public void fromPathNonUniqueSnapshotVersion() {
@@ -67,7 +65,6 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
         assertEquals(artifactInfo.getVersion(), "5.4-SNAPSHOT");
         assertEquals(artifactInfo.getClassifier(), "sources");
         assertEquals(artifactInfo.getType(), "jar");
-        assertTrue(artifactInfo.isSnapshot(), "This is a snapshot version");
     }
 
     public void fromPathUniqueSnapshotVersion() {
@@ -82,7 +79,6 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
         assertEquals(artifactInfo.getVersion(), "5.4-SNAPSHOT");
         assertEquals(artifactInfo.getClassifier(), "sources");
         assertEquals(artifactInfo.getType(), "jar");
-        assertTrue(artifactInfo.isSnapshot(), "This is a snapshot version");
     }
 
     public void fromPathUniqueMd5SnapshotVersion() {
@@ -96,7 +92,6 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
         assertEquals(artifactInfo.getVersion(), "5.4-SNAPSHOT");
         assertEquals(artifactInfo.getClassifier(), "sources");
         assertEquals(artifactInfo.getType(), "jar.md5");
-        assertTrue(artifactInfo.isSnapshot(), "This is a snapshot version");
     }
 
     public void fromInvalidPath() {

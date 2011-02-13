@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@ import org.artifactory.exception.CancelException;
 import org.artifactory.interceptor.Interceptors;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.spring.Reloadable;
 import org.springframework.stereotype.Service;
@@ -66,35 +67,39 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
         }
     }
 
-    public void beforeMove(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder) {
+    public void beforeMove(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
+            Properties properties) {
         try {
             for (StorageInterceptor storageInterceptor : this) {
-                storageInterceptor.beforeMove(sourceItem, targetRepoPath, statusHolder);
+                storageInterceptor.beforeMove(sourceItem, targetRepoPath, statusHolder, properties);
             }
         } catch (CancelException e) {
             statusHolder.setError("Move rejected: " + e.getMessage(), e.getErrorCode(), e);
         }
     }
 
-    public void afterMove(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder) {
+    public void afterMove(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder,
+            Properties properties) {
         for (StorageInterceptor storageInterceptor : this) {
-            storageInterceptor.afterMove(sourceItem, targetItem, statusHolder);
+            storageInterceptor.afterMove(sourceItem, targetItem, statusHolder, properties);
         }
     }
 
-    public void beforeCopy(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder) {
+    public void beforeCopy(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
+            Properties properties) {
         try {
             for (StorageInterceptor storageInterceptor : this) {
-                storageInterceptor.beforeCopy(sourceItem, targetRepoPath, statusHolder);
+                storageInterceptor.beforeCopy(sourceItem, targetRepoPath, statusHolder, properties);
             }
         } catch (CancelException e) {
             statusHolder.setError("Copy rejected: " + e.getMessage(), e.getErrorCode(), e);
         }
     }
 
-    public void afterCopy(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder) {
+    public void afterCopy(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder,
+            Properties properties) {
         for (StorageInterceptor storageInterceptor : this) {
-            storageInterceptor.afterCopy(sourceItem, targetItem, statusHolder);
+            storageInterceptor.afterCopy(sourceItem, targetItem, statusHolder, properties);
         }
     }
 }

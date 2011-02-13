@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -55,7 +55,7 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
     protected static final int DEFAULT_ROWS_PER_PAGE = 15;
 
     protected String defaultInitialSortProperty;
-    protected TitledAjaxLink newItemLink;
+    protected AbstractLink newItemLink;
     protected SortableDataProvider<T> dataProvider;
 
     protected BaseListPanel(String id) {
@@ -76,7 +76,7 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
         add(new CssClass("list-panel"));
 
         // add new item link
-        newItemLink = getNewItemLink();
+        newItemLink = getNewItemLink("newItemLink", "New");
         add(newItemLink);
 
         Component exportItemLink = newExportLink("export");
@@ -132,7 +132,7 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
 
     protected abstract void deleteItem(T itemObject, AjaxRequestTarget target);
 
-    protected abstract TitledAjaxLink getNewItemLink();
+    protected abstract AbstractLink getNewItemLink(String linkId, String linkTitle);
 
     protected Component newExportLink(String id) {
         return new PlaceHolder(id);
@@ -177,19 +177,33 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
         @Override
         protected Item<T> newRowItem(final String id, final int index, final IModel<T> model) {
             Item<T> item = super.newRowItem(id, index, model);
-            item.add(new AjaxEventBehavior("ondblclick") {
-                @Override
-                protected void onEvent(AjaxRequestTarget target) {
-                    onRowItemEvent(id, index, model, target);
-                }
+            if (canAddRowItemDoubleClickBehavior(model)) {
 
-                @Override
-                protected IAjaxCallDecorator getAjaxCallDecorator() {
-                    return new CancelDefaultDecorator();
-                }
-            });
+                item.add(new AjaxEventBehavior("ondblclick") {
+                    @Override
+                    protected void onEvent(AjaxRequestTarget target) {
+                        onRowItemEvent(id, index, model, target);
+                    }
+
+                    @Override
+                    protected IAjaxCallDecorator getAjaxCallDecorator() {
+                        return new CancelDefaultDecorator();
+                    }
+                });
+            }
+
             return item;
         }
+    }
+
+    /**
+     * Controls whether the double-click link behavior should be added the row item
+     *
+     * @param model Model to check with
+     * @return True if the double-click behavior should added to the given row item
+     */
+    protected boolean canAddRowItemDoubleClickBehavior(IModel<T> model) {
+        return true;
     }
 
     protected void addLinks(List<AbstractLink> links, final T itemObject, String linkId) {
@@ -200,19 +214,25 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
         links.add(editLink);
 
         // add delete link
-        TitledAjaxLink deleteLink = new TitledAjaxLink(linkId, "Delete") {
-            public void onClick(AjaxRequestTarget target) {
-                deleteItem(itemObject, target);
-                target.addComponent(BaseListPanel.this);
-            }
+        if (canAddDeleteItemLink(itemObject)) {
+            TitledAjaxLink deleteLink = new TitledAjaxLink(linkId, "Delete") {
+                public void onClick(AjaxRequestTarget target) {
+                    deleteItem(itemObject, target);
+                    target.addComponent(BaseListPanel.this);
+                }
 
-            @Override
-            protected IAjaxCallDecorator getAjaxCallDecorator() {
-                return new ConfirmationAjaxCallDecorator(getDeleteConfirmationText(itemObject));
-            }
-        };
-        deleteLink.add(new CssClass("icon-link"));
-        deleteLink.add(new CssClass("DeleteAction"));
-        links.add(deleteLink);
+                @Override
+                protected IAjaxCallDecorator getAjaxCallDecorator() {
+                    return new ConfirmationAjaxCallDecorator(getDeleteConfirmationText(itemObject));
+                }
+            };
+            deleteLink.add(new CssClass("icon-link"));
+            deleteLink.add(new CssClass("DeleteAction"));
+            links.add(deleteLink);
+        }
+    }
+
+    protected boolean canAddDeleteItemLink(T itemObject) {
+        return true;
     }
 }

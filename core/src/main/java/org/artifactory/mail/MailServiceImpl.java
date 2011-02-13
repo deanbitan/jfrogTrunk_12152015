@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -66,7 +66,12 @@ public class MailServiceImpl implements MailService {
      * @throws Exception
      */
     public void sendMail(String[] recipients, String subject, String body) throws EmailException {
-        sendMail(recipients, subject, body, getMailServerConfig());
+        MailServerConfiguration mailServerConfiguration = getMailServerConfig();
+        if (mailServerConfiguration == null) {
+            log.warn("Unable to send E-mail: No mail server configuration found.");
+            return;
+        }
+        sendMail(recipients, subject, body, mailServerConfiguration);
     }
 
     /**
@@ -178,18 +183,17 @@ public class MailServiceImpl implements MailService {
     /**
      * Return the mail configuration object based on the params from the descriptor
      *
-     * @return MailServerConfiguration - Configuration object
+     * @return MailServerConfiguration - Configuration object. Null if no descriptor exists
      */
     private MailServerConfiguration getMailServerConfig() {
         CentralConfigDescriptor descriptor = centralConfig.getDescriptor();
         MailServerDescriptor mailServer = descriptor.getMailServer();
 
         if (mailServer == null) {
-            throw new EmailException("No mail server configuration found.");
+            return null;
         }
-        MailServerConfiguration mailServerConfiguration = new MailServerConfiguration(mailServer);
 
-        return mailServerConfiguration;
+        return new MailServerConfiguration(mailServer);
     }
 
     private void verifyParameters(String[] recipients, MailServerConfiguration config) {

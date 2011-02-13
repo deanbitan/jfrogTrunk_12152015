@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -128,15 +128,15 @@ public class IndexerServiceImpl implements InternalIndexerService {
             if (taskService.pauseOrBreak()) {
                 return;
             }
-            RepoIndexManager repoIndexManager = new RepoIndexManager(indexedRepo);
+            MavenIndexManager mavenIndexManager = new MavenIndexManager(indexedRepo);
             try {
                 //Execute separate tasks in order to have shorter transactions - can be done in a more elegant way...
-                findOrCreateRepositoryIndex(fireTime, repoIndexManager);
+                findOrCreateRepositoryIndex(fireTime, mavenIndexManager);
                 //Check again if we need to stop/suspend
                 if (taskService.pauseOrBreak()) {
                     return;
                 }
-                saveIndex(repoIndexManager);
+                saveIndex(mavenIndexManager);
             } catch (Exception e) {
                 //If we failed to index because of a socket timeout, issue a terse warning instead of a complete stack
                 //trace
@@ -153,17 +153,17 @@ public class IndexerServiceImpl implements InternalIndexerService {
         log.info("Finished repositories indexing...");
     }
 
-    private void findOrCreateRepositoryIndex(Date fireTime, RepoIndexManager repoIndexManager) {
+    private void findOrCreateRepositoryIndex(Date fireTime, MavenIndexManager mavenIndexManager) {
         QuartzTask taskFindOrCreateIndex = new QuartzTask(FindOrCreateIndexJob.class, "FindOrCreateIndex");
-        taskFindOrCreateIndex.addAttribute(RepoIndexManager.class.getName(), repoIndexManager);
+        taskFindOrCreateIndex.addAttribute(MavenIndexManager.class.getName(), mavenIndexManager);
         taskFindOrCreateIndex.addAttribute(Date.class.getName(), fireTime);
         taskService.startTask(taskFindOrCreateIndex);
         taskService.waitForTaskCompletion(taskFindOrCreateIndex.getToken());
     }
 
-    private void saveIndex(RepoIndexManager repoIndexManager) {
+    private void saveIndex(MavenIndexManager mavenIndexManager) {
         QuartzTask saveIndexFileTask = new QuartzTask(SaveIndexFileJob.class, "SaveIndexFile");
-        saveIndexFileTask.addAttribute(RepoIndexManager.class.getName(), repoIndexManager);
+        saveIndexFileTask.addAttribute(MavenIndexManager.class.getName(), mavenIndexManager);
         taskService.startTask(saveIndexFileTask);
         //No real need to wait, but since other task are waiting for indexer completion, leaving it
         taskService.waitForTaskCompletion(saveIndexFileTask.getToken());
@@ -232,9 +232,9 @@ public class IndexerServiceImpl implements InternalIndexerService {
                     //Store the index into the virtual repo
                     //Get the last gz and props and store them - we need to return them or create them from the dir
                     ResourceStreamHandle indexHandle = indexer.createIndex(virtualIndexMergeDir, false);
-                    RepoIndexManager repoIndexManager =
-                            new RepoIndexManager(indexer.getRepo(), indexHandle, indexer.getProperties());
-                    repoIndexManager.saveIndexFiles();
+                    MavenIndexManager mavenIndexManager =
+                            new MavenIndexManager(indexer.getRepo(), indexHandle, indexer.getProperties());
+                    mavenIndexManager.saveIndexFiles();
                     virtualIndexMergeDir.close();
                 } finally {
                     org.apache.commons.io.FileUtils.deleteQuietly(dir);
@@ -314,11 +314,12 @@ public class IndexerServiceImpl implements InternalIndexerService {
         @Override
         protected void onExecute(JobExecutionContext callbackContext) {
             try {
-                RepoIndexManager repoIndexManager =
-                        (RepoIndexManager) callbackContext.getMergedJobDataMap().get(RepoIndexManager.class.getName());
+                MavenIndexManager mavenIndexManager =
+                        (MavenIndexManager) callbackContext.getMergedJobDataMap().get(
+                                MavenIndexManager.class.getName());
                 Date fireTime = (Date) callbackContext.getMergedJobDataMap().get(Date.class.getName());
                 InternalIndexerService indexer = InternalContextHelper.get().beanForType(InternalIndexerService.class);
-                indexer.fetchOrCreateIndex(repoIndexManager, fireTime);
+                indexer.fetchOrCreateIndex(mavenIndexManager, fireTime);
             } catch (Exception e) {
                 log.error("Fetching index files failed: {}.", e.getMessage());
             }
@@ -329,22 +330,23 @@ public class IndexerServiceImpl implements InternalIndexerService {
         @Override
         protected void onExecute(JobExecutionContext callbackContext) {
             try {
-                RepoIndexManager repoIndexManager =
-                        (RepoIndexManager) callbackContext.getMergedJobDataMap().get(RepoIndexManager.class.getName());
+                MavenIndexManager mavenIndexManager =
+                        (MavenIndexManager) callbackContext.getMergedJobDataMap().get(
+                                MavenIndexManager.class.getName());
                 InternalIndexerService indexer = getTransactionalMe();
-                indexer.saveIndexFiles(repoIndexManager);
+                indexer.saveIndexFiles(mavenIndexManager);
             } catch (Exception e) {
                 log.error("Saving index files failed.", e);
             }
         }
     }
 
-    public void fetchOrCreateIndex(RepoIndexManager repoIndexManager, Date fireTime) {
-        boolean remoteIndexExists = repoIndexManager.fetchRemoteIndex();
-        repoIndexManager.createLocalIndex(fireTime, remoteIndexExists);
+    public void fetchOrCreateIndex(MavenIndexManager mavenIndexManager, Date fireTime) {
+        boolean remoteIndexExists = mavenIndexManager.fetchRemoteIndex();
+        mavenIndexManager.createLocalIndex(fireTime, remoteIndexExists);
     }
 
-    public void saveIndexFiles(RepoIndexManager repoIndexManager) {
-        repoIndexManager.saveIndexFiles();
+    public void saveIndexFiles(MavenIndexManager mavenIndexManager) {
+        mavenIndexManager.saveIndexFiles();
     }
 }

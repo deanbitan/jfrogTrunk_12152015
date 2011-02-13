@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,8 +37,6 @@ public class UserInfo implements Info {
     private String username;
     private String password;
     private String email;
-    private String privateKey;
-    private String publicKey;
     private String genPasswordKey;
     private boolean admin;
     private boolean enabled;
@@ -46,6 +44,10 @@ public class UserInfo implements Info {
     private boolean accountNonExpired;
     private boolean credentialsNonExpired;
     private boolean accountNonLocked;
+
+    private String realm;
+    private String privateKey;
+    private String publicKey;
     private boolean transientUser;
 
     private Set<UserGroupInfo> groups = new HashSet<UserGroupInfo>();
@@ -74,6 +76,7 @@ public class UserInfo implements Info {
         this.credentialsNonExpired = user.isCredentialsNonExpired();
         this.accountNonLocked = user.isAccountNonLocked();
         this.transientUser = user.isTransientUser();
+        this.realm = user.getRealm();
 
         Set<UserGroupInfo> groups = user.getGroups();
         if (groups != null) {
@@ -185,6 +188,18 @@ public class UserInfo implements Info {
 
     public void setTransientUser(boolean transientUser) {
         this.transientUser = transientUser;
+    }
+
+    public String getRealm() {
+        return realm;
+    }
+
+    public boolean isExternal() {
+        return !SecurityService.DEFAULT_REALM.equals(realm);
+    }
+
+    public void setRealm(String realm) {
+        this.realm = realm;
     }
 
     public boolean isCredentialsNonExpired() {

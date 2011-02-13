@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,8 +27,8 @@ import javax.xml.bind.annotation.XmlType;
         namespace = Descriptor.NS)
 public class LocalRepoDescriptor extends RealRepoDescriptor {
 
-    @XmlElement(defaultValue = "non-unique", required = false)
-    private SnapshotVersionBehavior snapshotVersionBehavior = SnapshotVersionBehavior.NONUNIQUE;
+    @XmlElement(defaultValue = "unique", required = false)
+    private SnapshotVersionBehavior snapshotVersionBehavior = SnapshotVersionBehavior.UNIQUE;
 
     @XmlElement(name = "localRepoChecksumPolicyType", defaultValue = "client-checksums", required = false)
     private LocalRepoChecksumPolicyType checksumPolicyType = LocalRepoChecksumPolicyType.CLIENT;

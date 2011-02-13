@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,11 +23,10 @@ import org.artifactory.concurrent.LockingException;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.thread.ThreadDumpUtils;
 import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
-import org.springframework.core.JdkVersion;
 
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -234,21 +233,9 @@ class SessionLockEntry implements FsItemLockEntry {
                 StringBuilder msg =
                         new StringBuilder().append(mode).append(" lock on ").append(id).append(" not acquired in ")
                                 .append(ConstantValues.locksTimeoutSecs.getLong()).append(" seconds. Lock info: ")
-                                .append(lock)
-                                .append(".");
+                                .append(lock).append(".");
                 if (ConstantValues.locksDebugTimeouts.getBoolean()) {
-                    try {
-                        if (JdkVersion.getMajorJavaVersion() >= JdkVersion.JAVA_16) {
-                            Class<?> dumperClass = Class.forName("org.artifactory.thread.ThreadDumper");
-                            Object dumper = dumperClass.newInstance();
-                            Method method = dumperClass.getDeclaredMethod("dumpThreads");
-                            CharSequence dump = (CharSequence) method.invoke(dumper);
-                            log.info("Printing locking debug information...");
-                            msg.append("\n").append(dump);
-                        }
-                    } catch (Throwable t) {
-                        log.info("Could not dump threads", t);
-                    }
+                    ThreadDumpUtils.dumpThreads(msg);
                 }
                 //msg.append("Lock thread dump:\n").append(getThreadDump(rwLock));
                 throw new LockingException(msg.toString());

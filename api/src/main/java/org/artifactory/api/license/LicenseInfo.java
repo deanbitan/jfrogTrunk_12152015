@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 /**
  * This class represents a software license (e.g. apache, lgpl etc..) Each license is comprised of a name (which is a
- * must) a long name which desrcibes it, the URL where to find the full license content, a {@link
+ * must) a long name which describes it, the URL where to find the full license content, a {@link
  * java.util.regex.Pattern} which describes the license, and a boolean value whether this license is an approved one to
  * use.
  *

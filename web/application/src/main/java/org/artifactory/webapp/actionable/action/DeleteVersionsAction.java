@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,7 @@ package org.artifactory.webapp.actionable.action;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.artifactory.api.fs.DeployableUnit;
+import org.artifactory.api.fs.VersionUnit;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
@@ -47,14 +47,14 @@ public class DeleteVersionsAction extends RepoAwareItemAction {
         RepoAwareActionableItem source = event.getSource();
         org.artifactory.fs.ItemInfo info = source.getItemInfo();
         RepositoryService repositoryService = getRepoService();
-        List<DeployableUnit> deployableUnits = repositoryService.getDeployableUnitsUnder(info.getRepoPath());
+        List<VersionUnit> versionUnits = repositoryService.getVersionUnitsUnder(info.getRepoPath());
 
         ItemEventTargetComponents eventTargetComponents = event.getTargetComponents();
         ModalWindow modalWindow = eventTargetComponents.getModalWindow();
         WebMarkupContainer nodePanelContainer = eventTargetComponents.getNodePanelContainer();
         TreeBrowsePanel browseRepoPanel = (TreeBrowsePanel) nodePanelContainer.getParent();
 
-        DeleteVersionsPanel panel = new DeleteVersionsPanel(modalWindow.getContentId(), deployableUnits,
+        DeleteVersionsPanel panel = new DeleteVersionsPanel(modalWindow.getContentId(), versionUnits,
                 browseRepoPanel, event.getSource());
         BorderedModalPanel modelPanel = new BorderedModalPanel(panel);
         modelPanel.setTitle("Delete Versions");

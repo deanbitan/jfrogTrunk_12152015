@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,15 +18,15 @@
 
 package org.artifactory.repo.snapshot;
 
-import org.artifactory.repo.RepoPath;
-
 /**
  * This adapter doesn't modify in any way the input path.
  *
  * @author Yossi Shaul
  */
-public class DeployerSnapshotVersionAdapter implements SnapshotVersionAdapter {
-    public String adaptSnapshotPath(RepoPath repoPath) {
-        return repoPath.getPath();
+public class DeployerSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
+
+    @Override
+    protected boolean isApplicableOn(MavenSnapshotVersionAdapterContext context) {
+        return false;
     }
 }

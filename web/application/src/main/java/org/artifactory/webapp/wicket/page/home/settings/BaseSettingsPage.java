@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,6 @@
 package org.artifactory.webapp.wicket.page.home.settings;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
@@ -36,7 +35,6 @@ import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 
 /**
  * A basic implementation of a settings generator
@@ -51,7 +49,10 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
     @SpringBean
     private RepositoryService repositoryService;
 
+    protected List<VirtualRepoDescriptor> virtualRepoDescriptors;
+
     public BaseSettingsPage() {
+        virtualRepoDescriptors = getReadableVirtualRepoDescriptors();
         addSettingsPanel();
     }
 
@@ -62,8 +63,6 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
         //Add a markup container, in case we don't need to add the panel
         WebMarkupContainer markupContainer = new WebMarkupContainer("settingsPanel");
         add(markupContainer);
-
-        List<VirtualRepoDescriptor> virtualRepoDescriptors = getReadableVirtualRepoDescriptors();
 
         if (virtualRepoDescriptors.isEmpty()) {
             markupContainer.replaceWith(new Label("settingsPanel",
@@ -77,26 +76,18 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
                 servletContextUrl = StringUtils.removeEnd(servletContextUrl, "/");
             }
 
-            //Build map of virtual repo keys + descriptions
-            Map<String, String> virtualRepoMap = Maps.newHashMap();
-            for (VirtualRepoDescriptor virtualRepoDescriptor : virtualRepoDescriptors) {
-                virtualRepoMap.put(virtualRepoDescriptor.getKey(), virtualRepoDescriptor.getDescription());
-            }
-
-            markupContainer.replaceWith(getSettingsPanel("settingsPanel", servletContextUrl, virtualRepoMap));
+            markupContainer.replaceWith(getSettingsPanel("settingsPanel", servletContextUrl));
         }
     }
 
     /**
-     * Returns a constructued settings generator panel
+     * Returns a constructed settings generator panel
      *
      * @param id                ID to assign to the panel
      * @param servletContextUrl Running context URL
-     * @param virtualRepoMap    Virtual repo definition map
      * @return Initialized settings generator panel
      */
-    protected abstract BaseSettingsGeneratorPanel getSettingsPanel(String id, String servletContextUrl,
-            Map<String, String> virtualRepoMap);
+    protected abstract BaseSettingsGeneratorPanel getSettingsPanel(String id, String servletContextUrl);
 
     /**
      * Returns a list of virtual repositories that a readable by the current user

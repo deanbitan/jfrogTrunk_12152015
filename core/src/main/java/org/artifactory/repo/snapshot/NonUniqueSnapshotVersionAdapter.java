@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,11 +19,8 @@
 package org.artifactory.repo.snapshot;
 
 import org.apache.commons.io.FilenameUtils;
-import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.RepoPath;
-import org.artifactory.resource.ArtifactResource;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
@@ -35,11 +32,9 @@ import org.slf4j.Logger;
 public class NonUniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
     private static final Logger log = LoggerFactory.getLogger(NonUniqueSnapshotVersionAdapter.class);
 
-    public String adaptSnapshotPath(RepoPath repoPath) {
-        String path = repoPath.getPath();
-        if (!isApplicableOn(path)) {
-            return path;
-        }
+    @Override
+    protected String adapt(MavenSnapshotVersionAdapterContext context) {
+        String path = context.getRepoPath().getPath();
 
         String fileName = PathUtils.getName(path);
         if (!MavenNaming.isUniqueSnapshotFileName(fileName)) {
@@ -47,8 +42,7 @@ public class NonUniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase 
             return path;
         }
 
-        MavenArtifactInfo mavenInfo = ArtifactResource.getMavenInfo(repoPath);
-        String pathBaseVersion = MavenNaming.getNonUniqueSnapshotBaseVersion(mavenInfo.getVersion());
+        String pathBaseVersion = context.getModuleInfo().getBaseRevision();
         String timestampAndBuildNumber = MavenNaming.getUniqueSnapshotVersionTimestampAndBuildNumber(fileName);
         if (!fileName.contains(pathBaseVersion + "-" + timestampAndBuildNumber)) {
             log.debug("File '{}' version is not equals to the path base version '{}'. " +
@@ -58,8 +52,6 @@ public class NonUniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase 
 
         // replace the timestamp and build number part with 'SNAPSHOT' string
         String adaptedFileName = fileName.replace(timestampAndBuildNumber, MavenNaming.SNAPSHOT);
-        String adaptedPath = FilenameUtils.getPath(path) + adaptedFileName;
-        return adaptedPath;
+        return FilenameUtils.getPath(path) + adaptedFileName;
     }
-
 }

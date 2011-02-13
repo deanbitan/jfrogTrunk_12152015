@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,9 +18,8 @@
 
 package org.artifactory.repo.jcr;
 
+import com.google.common.collect.MapMaker;
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.cache.ArtifactoryCache;
-import org.artifactory.api.cache.Cache;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.fs.InternalFileInfo;
@@ -28,15 +27,16 @@ import org.artifactory.api.fs.InternalFolderInfo;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoRejectException;
-import org.artifactory.cache.InternalCacheService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.exception.CancelException;
@@ -88,6 +88,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T> {
     private static final Logger log = LoggerFactory.getLogger(StoringRepoMixin.class);
@@ -97,7 +99,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     private MetadataDefinition<InternalFileInfo> fileInfoMd;
     private MetadataDefinition<InternalFolderInfo> folderInfoMd;
     private String repoRootPath;
-    private Map<RepoPath, MonitoringReadWriteLock> locks;
+    private ConcurrentMap<RepoPath, MonitoringReadWriteLock> locks;
     private Map<RepoPath, JcrFsItem> fsItemCache;
     private StorageInterceptors interceptors;
     private JcrRepoService jcrRepoService;
@@ -108,6 +110,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
     private final StoringRepo<T> delegator;
     private StoringRepoMixin<T> oldStoringRepo;
+
 
     public StoringRepoMixin(StoringRepo<T> delegator, StoringRepo<T> oldStoringRepo) {
         this.delegator = delegator;
@@ -130,11 +133,9 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         this.trafficService = context.beanForType(InternalTrafficService.class);
 
         //init caches
-        InternalCacheService cacheService = context.beanForType(InternalCacheService.class);
         if (oldStoringRepo != null) {
             // The locks should be kept at all cost :)
-            cacheService
-                    .setRepositoryCache(oldStoringRepo.getKey(), ArtifactoryCache.locks, (Cache) oldStoringRepo.locks);
+            locks = oldStoringRepo.locks;
 
             // Copy the cached fsitems if the cache behavior in descriptors did not changed
             RepoDescriptor oldDescriptor = oldStoringRepo.getDescriptor();
@@ -144,16 +145,19 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                 IllegalStateException ex = new IllegalStateException("Current or Old Descriptors are null!");
                 log.warn(ex.getMessage(), ex);
             } else {
+                //Reuse the fsItem cache
                 if (currentDescriptor.identicalCache(oldDescriptor)) {
-                    cacheService
-                            .setRepositoryCache(oldStoringRepo.getKey(), ArtifactoryCache.fsItemCache,
-                                    (Cache) oldStoringRepo.fsItemCache);
+                    fsItemCache = oldStoringRepo.fsItemCache;
+                } else {
+                    fsItemCache = createFsItemCache();
                 }
             }
             oldStoringRepo = null;
+        } else {
+            fsItemCache = createFsItemCache();
+            locks = new MapMaker().softValues().initialCapacity(2000).expireAfterWrite(
+                    ConstantValues.fsItemCacheIdleTimeSecs.getLong(), TimeUnit.SECONDS).makeMap();
         }
-        this.fsItemCache = cacheService.getRepositoryCache(getKey(), ArtifactoryCache.fsItemCache);
-        this.locks = cacheService.getRepositoryCache(getKey(), ArtifactoryCache.locks);
 
         //Create the repo node if it doesn't exist
         if (!jcrService.itemNodeExists(JcrPath.get().getAbsolutePath(rootRepoPath))) {
@@ -199,6 +203,11 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
     public String getRepoRootPath() {
         return repoRootPath;
+    }
+
+    public void clearCaches() {
+        fsItemCache.clear();
+        locks.clear();
     }
 
     public <T> MetadataDefinition<T> getMetadataDefinition(Class<T> clazz) {
@@ -344,11 +353,6 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
             MetadataInfo mdi = mdph.getMetadataInfo(item);
             if (mdi != null) {
-                if (MavenNaming.isMavenMetadata(path)) {
-                    // this is hack (YS: at least I think so) for maven metadata use the last updated time of the folder.
-                    // the cache repo will use this value to determine if the resource is expired.
-                    mdi.setLastModified(item.getInfo().getLastUpdated());
-                }
                 localRes = new MetadataResource(mdi);
             } else {
                 return new UnfoundRepoResource(repoPath, "metadata " + metadataName + " not found for " + item);
@@ -423,6 +427,22 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             throw new IOException("Could not get resource stream from a folder " + res + ".");
         }
         return handle;
+    }
+
+    public ModuleInfo getItemModuleInfo(String itemPath) {
+        return delegator.getItemModuleInfo(itemPath);
+    }
+
+    public ModuleInfo getArtifactModuleInfo(String artifactPath) {
+        return delegator.getArtifactModuleInfo(artifactPath);
+    }
+
+    public ModuleInfo getDescriptorModuleInfo(String descriptorPath) {
+        return delegator.getDescriptorModuleInfo(descriptorPath);
+    }
+
+    public RepoPath getRepoPath(String path) {
+        return delegator.getRepoPath(path);
     }
 
     public String getChecksum(String checksumFileUrl, RepoResource resource) throws IOException {
@@ -510,12 +530,6 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                     }
                 }
                 String metadataName = res.getInfo().getName();
-                if (MavenNaming.isMavenMetadata(repoPath.getPath())) {
-                    // HACK: maven metadata age is taken from the containing folder (because currently metadata
-                    // doesn't have lastUpdated field) so we need to reset it whenever we deploy/download new
-                    // maven metadata
-                    jcrFsItem.unexpire();
-                }
                 jcrFsItem.setXmlMetadata(metadataName, IOUtils.toString(in, "utf-8"));
             } else {
                 //Create the parent folder if it does not exist
@@ -574,7 +588,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
                 /**
                  * If the artifact is not a non-unique snapshot and already exists but with a different checksum, remove
-                 * all the existing metadata 
+                 * all the existing metadata
                  */
                 if (!artifactNonUniqueSnapshot && fileExists && (existingChecksumsToCompare != null)) {
 
@@ -784,11 +798,9 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     private MonitoringReadWriteLock getLock(RepoPath path) {
-        MonitoringReadWriteLock lockEntry = locks.get(path);
-        if (lockEntry == null) {
-            lockEntry = locks.put(path, new MonitoringReadWriteLock());
-        }
-        return lockEntry;
+        MonitoringReadWriteLock newLock = new MonitoringReadWriteLock();
+        MonitoringReadWriteLock oldLock = locks.putIfAbsent(path, newLock);
+        return oldLock != null ? oldLock : newLock;
     }
 
     private JcrFsItem internalGetLockedJcrFsItem(JcrFsItemLocator locator) {
@@ -887,6 +899,11 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return item;
     }
 
+    private Map<RepoPath, JcrFsItem> createFsItemCache() {
+        return new MapMaker().softValues().initialCapacity(5000).expireAfterWrite(
+                ConstantValues.fsItemCacheIdleTimeSecs.getLong(), TimeUnit.SECONDS).makeMap();
+    }
+
     private class JcrFsItemLocator {
         private final RepoPath repoPath;
         private final Node node;
@@ -971,6 +988,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             }
             return fsItem;
         }
+
     }
 
     private static interface FsItemCreator<T extends JcrFsItem<? extends org.artifactory.fs.ItemInfo>> {
