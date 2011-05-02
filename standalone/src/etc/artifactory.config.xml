@@ -184,21 +184,15 @@
     <repoLayouts>
         <repoLayout>
             <name>maven-2-default</name>
-            <artifactPathPattern>
-                [orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]
-            </artifactPathPattern>
+            <artifactPathPattern>[orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]</artifactPathPattern>
             <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
-            <descriptorPathPattern>
-                [orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).pom
-            </descriptorPathPattern>
+            <descriptorPathPattern>[orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).pom</descriptorPathPattern>
             <folderIntegrationRevisionRegExp>SNAPSHOT</folderIntegrationRevisionRegExp>
             <fileIntegrationRevisionRegExp>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+))</fileIntegrationRevisionRegExp>
         </repoLayout>
         <repoLayout>
             <name>ivy-default</name>
-            <artifactPathPattern>
-                [org]/[module]/[baseRev](-[folderItegRev])/[type]s/[module](-[classifier])-[baseRev](-[fileItegRev]).[ext]
-            </artifactPathPattern>
+            <artifactPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[type]s/[module](-[classifier])-[baseRev](-[fileItegRev]).[ext]</artifactPathPattern>
             <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
             <descriptorPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[type]s/ivy-[baseRev](-[fileItegRev]).xml
             </descriptorPathPattern>
@@ -207,9 +201,7 @@
         </repoLayout>
         <repoLayout>
             <name>gradle-default</name>
-            <artifactPathPattern>
-                [org]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]
-            </artifactPathPattern>
+            <artifactPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]</artifactPathPattern>
             <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
             <descriptorPathPattern>[org]/[module]/ivy-[baseRev](-[fileItegRev]).xml</descriptorPathPattern>
             <folderIntegrationRevisionRegExp>\d{14}</folderIntegrationRevisionRegExp>
@@ -217,8 +209,7 @@
         </repoLayout>
         <repoLayout>
             <name>maven-1-default</name>
-            <artifactPathPattern>[org]/[type]s/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]
-            </artifactPathPattern>
+            <artifactPathPattern>[org]/[type]s/[module]-[baseRev](-[fileItegRev])(-[classifier]).[ext]</artifactPathPattern>
             <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
             <descriptorPathPattern>[org]/[type]s/[module]-[baseRev](-[fileItegRev]).pom</descriptorPathPattern>
             <folderIntegrationRevisionRegExp>.+</folderIntegrationRevisionRegExp>

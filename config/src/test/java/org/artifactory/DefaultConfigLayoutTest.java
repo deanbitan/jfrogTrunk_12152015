@@ -40,8 +40,8 @@ public class DefaultConfigLayoutTest {
 
     private void testLayoutsNotAutoFormatted(String resourcePath) {
         String configString = ResourceUtils.getResourceAsString(resourcePath);
-        Assert.assertTrue(configString.contains("<fileIntegrationRevisionRegExp>SNAPSHOT|" +
-                "(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+))</fileIntegrationRevisionRegExp>"),
+        Assert.assertTrue(configString.contains("<artifactPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/" +
+                "[type]s/[module](-[classifier])-[baseRev](-[fileItegRev]).[ext]</artifactPathPattern>"),
                 "It looks like the repo layouts have been auto formatted.");
     }
 }
