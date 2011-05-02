@@ -20,16 +20,19 @@ package org.artifactory.addon.rest;
 
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
+import org.artifactory.addon.replication.ReplicationSettings;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
+import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.DownloadResource;
-import org.artifactory.rest.resource.artifact.SyncResource;
 import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.release.Promotion;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
@@ -51,11 +54,13 @@ public class RestAddonDefaultImpl implements RestAddon {
         return true;
     }
 
-    public MoveCopyResult copy(String path, String target, int dryRun, int suppressLayouts) throws Exception {
+    public MoveCopyResult copy(String path, String target, int dryRun, int suppressLayouts, int failFast)
+            throws Exception {
         throw new MissingRestAddonException();
     }
 
-    public MoveCopyResult move(String path, String target, int dryRun, int suppressLayouts) throws Exception {
+    public MoveCopyResult move(String path, String target, int dryRun, int suppressLayouts, int failFast)
+            throws Exception {
         throw new MissingRestAddonException();
     }
 
@@ -73,12 +78,15 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
-    public FileList getFileList(String uri, String path, int deep, int listFolders) {
+    public PromotionResult promoteBuild(String buildName, String buildNumber, Promotion promotion) {
         throw new MissingRestAddonException();
     }
 
-    public Response replicate(String path, int progress, int mark, int deleteExisting, SyncResource.Overwrite overwrite,
-            HttpServletResponse httpResponse) {
+    public FileList getFileList(String uri, String path, int deep, int depth, int listFolders, int mdTimestamps) {
+        throw new MissingRestAddonException();
+    }
+
+    public Response replicate(ReplicationSettings replicationSettings) {
         throw new MissingRestAddonException();
     }
 
@@ -90,11 +98,11 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
-    public void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers) {
+    public void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers, int artifacts) {
         throw new MissingRestAddonException();
     }
 
-    public void discardOldBuilds(String name, BuildRetention discard) {
+    public void discardOldBuilds(String name, BuildRetention discard, MultiStatusHolder multiStatusHolder) {
         // nop
     }
 

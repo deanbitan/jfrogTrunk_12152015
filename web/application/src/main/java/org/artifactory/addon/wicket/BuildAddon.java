@@ -20,6 +20,8 @@ package org.artifactory.addon.wicket;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.artifactory.addon.Addon;
+import org.artifactory.addon.AddonType;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
@@ -30,9 +32,9 @@ import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
+import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.Module;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -87,17 +89,17 @@ public interface BuildAddon extends Addon {
      * @param build Build to extract artifacts from
      * @return Artifact file info list
      */
-    Set<FileInfo> getArtifactFileInfo(Build build);
+    Set<FileInfo> getNonStrictArtifactFileInfo(Build build);
 
     /**
-     * Returns a list of build-dependency file info objects, as well as their descriptor according to the layout
-     * if exists.
+     * Returns a list of build-dependency file info objects, as well as their descriptor according to the layout if
+     * exists.
      *
      * @param build  Build to extract artifacts from
      * @param scopes Scopes to add. null = add all dependencies.
      * @return Dependency file info list
      */
-    Set<FileInfo> getDependencyFileInfo(Build build, Set<String> scopes);
+    Set<FileInfo> getNonStrictDependencyFileInfo(Build build, Set<String> scopes);
 
     /**
      * Returns a list of build-artifact actionable items
@@ -135,10 +137,10 @@ public interface BuildAddon extends Addon {
      *
      * @param buildName   The name of the searched build
      * @param buildNumber The number of the searched build
-     * @param bean        File bean to get info for  @return Bean file info if found. Null if not
-     * @return file info
+     * @param bean        File bean to get info for
+     * @return file infos
      */
-    FileInfo getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean);
+    Set<FileInfo> getNonStrictBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean);
 
     /**
      * Searches for artifacts with build name properties that contain 'from' as a value and renames them to 'to'
@@ -153,19 +155,21 @@ public interface BuildAddon extends Addon {
      * Discard old builds according to a maximum date. If a build is below the {@code minimumBuildDate} then that build
      * will be discarded.
      *
-     * @param buildName        The name of the build.
-     * @param minimumBuildDate The minimum date that a build should be retained, anything below that is discarded.
+     * @param buildName         The name of the build.
+     * @param buildRetention    Build retention model that holds information about which build to discard
+     * @param multiStatusHolder Status holder
      */
     @Lock(transactional = true)
-    void discardOldBuildsByDate(String buildName, Date minimumBuildDate);
+    void discardOldBuildsByDate(String buildName, BuildRetention buildRetention, MultiStatusHolder multiStatusHolder);
 
     /**
      * Discard old builds according to the maximum amount of builds that should be retained. if {@code count} is larger
      * than the size of the set of builds, all builds will be retained.
      *
-     * @param buildName The name of the build.
-     * @param count     The maximum number of builds that should be retained.
+     * @param buildName         The name of the build.
+     * @param discard    Build retention model that holds information about which build to discard
+     * @param multiStatusHolder Status holder
      */
     @Lock(transactional = true)
-    void discardOldBuildsByCount(String buildName, int count);
+    void discardOldBuildsByCount(String buildName, BuildRetention discard, MultiStatusHolder multiStatusHolder);
 }

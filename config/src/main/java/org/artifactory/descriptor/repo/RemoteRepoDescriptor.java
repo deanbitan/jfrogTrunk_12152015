@@ -29,7 +29,7 @@ import javax.xml.bind.annotation.XmlType;
         "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "failedRetrievalCachePeriodSecs",
         "missedRetrievalCachePeriodSecs", "checksumPolicyType",
         "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties", "listRemoteFolderItems",
-        "remoteRepoLayout"}, namespace = Descriptor.NS)
+        "remoteRepoLayout", "rejectInvalidJars"}, namespace = Descriptor.NS)
 public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(required = true)
@@ -77,6 +77,9 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     @XmlIDREF
     @XmlElement(name = "remoteRepoLayoutRef")
     private RepoLayout remoteRepoLayout;
+
+    @XmlElement(defaultValue = "false", required = false)
+    private boolean rejectInvalidJars;
 
     public String getUrl() {
         return url;
@@ -196,6 +199,14 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     public void setRemoteRepoLayout(RepoLayout remoteRepoLayout) {
         this.remoteRepoLayout = remoteRepoLayout;
+    }
+
+    public boolean isRejectInvalidJars() {
+        return rejectInvalidJars;
+    }
+
+    public void setRejectInvalidJars(boolean rejectInvalidJars) {
+        this.rejectInvalidJars = rejectInvalidJars;
     }
 
     @Override

@@ -18,6 +18,7 @@
 
 package org.artifactory.resource;
 
+import org.artifactory.api.fs.FileInfoImpl;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.mime.MimeType;
@@ -37,7 +38,7 @@ public class ChecksumResourceTest extends ArtifactoryHomeBoundTest {
 
     public void checksumResource() {
         RepoPath fileRepoPath = new RepoPathImpl("test", "test.jar");
-        FileResource fileResource = new FileResource(fileRepoPath);
+        FileResource fileResource = new FileResource(new FileInfoImpl(fileRepoPath));
 
         ChecksumResource resource = new ChecksumResource(fileResource, ChecksumType.sha1, "456789");
 

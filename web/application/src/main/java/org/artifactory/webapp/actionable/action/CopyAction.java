@@ -21,7 +21,8 @@ package org.artifactory.webapp.actionable.action;
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.PanelNestingBorderedModal;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.event.ItemEventTargetComponents;
@@ -50,6 +51,7 @@ public class CopyAction extends RepoAwareItemAction {
         return "Copy...";
     }
 
+    @Override
     public void onAction(RepoAwareItemEvent event) {
         RepoPath repoPath = event.getRepoPath();
 
@@ -64,7 +66,7 @@ public class CopyAction extends RepoAwareItemAction {
         ModalWindow modalWindow = eventTargetComponents.getModalWindow();
         CopyPathPanel panel = new CopyPathPanel(modalWindow.getContentId(), repoPath, tree, browseRepoPanel);
 
-        BorderedModalPanel modalPanel = new BorderedModalPanel(panel);
+        BaseModalPanel modalPanel = new PanelNestingBorderedModal(panel);
         modalPanel.setWidth(500);
         modalPanel.setTitle(String.format("Copy '%s'", repoPath));
         modalWindow.setContent(modalPanel);

@@ -68,28 +68,30 @@ public class PluginsInterceptor extends StorageInterceptorAdapter {
     @Override
     public void beforeMove(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
             Properties properties) {
-        getPluginsAddon().execPluginActions(BeforeMoveAction.class, null, sourceItem.getInfo(), targetRepoPath);
+        getPluginsAddon().execPluginActions(BeforeMoveAction.class, null, sourceItem.getInfo(), targetRepoPath,
+                properties);
     }
 
 
     @Override
     public void afterMove(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder,
             Properties properties) {
-        getPluginsAddon()
-                .execPluginActions(AfterMoveAction.class, null, sourceItem.getInfo(), nullOrRepoPath(targetItem));
+        getPluginsAddon().execPluginActions(AfterMoveAction.class, null, sourceItem.getInfo(),
+                nullOrRepoPath(targetItem), properties);
     }
 
     @Override
     public void beforeCopy(JcrFsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
             Properties properties) {
-        getPluginsAddon().execPluginActions(BeforeCopyAction.class, null, sourceItem.getInfo(), targetRepoPath);
+        getPluginsAddon().execPluginActions(BeforeCopyAction.class, null, sourceItem.getInfo(), targetRepoPath,
+                properties);
     }
 
     @Override
     public void afterCopy(JcrFsItem sourceItem, JcrFsItem targetItem, MutableStatusHolder statusHolder,
             Properties properties) {
-        getPluginsAddon()
-                .execPluginActions(AfterCopyAction.class, null, sourceItem.getInfo(), nullOrRepoPath(targetItem));
+        getPluginsAddon().execPluginActions(AfterCopyAction.class, null, sourceItem.getInfo(),
+                nullOrRepoPath(targetItem), properties);
     }
 
     private RepoPath nullOrRepoPath(JcrFsItem targetItem) {

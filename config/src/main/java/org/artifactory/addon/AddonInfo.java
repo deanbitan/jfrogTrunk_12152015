@@ -26,13 +26,14 @@ import java.util.Properties;
  *
  * @author Noam Y. Tenne
  */
-public class AddonInfo implements Serializable {
+public class AddonInfo implements Comparable<AddonInfo>, Serializable {
 
     private String addonName;
     private String addonDisplayName;
     private String addonPath;
     private AddonState addonState = AddonState.INACTIVATED;
     private Properties addonProperties;
+    private long displayOrdinal;
 
     /**
      * Main constructor
@@ -42,13 +43,15 @@ public class AddonInfo implements Serializable {
      * @param addonPath        Path of addon xml file
      * @param addonState       State of addon
      * @param addonProperties  Addon properties
+     * @param displayOrdinal   The display-order weight of the addon
      */
     public AddonInfo(String addonName, String addonDisplayName, String addonPath, AddonState addonState,
-            Properties addonProperties) {
+            Properties addonProperties, long displayOrdinal) {
         this.addonName = addonName;
         this.addonDisplayName = addonDisplayName;
         this.addonPath = addonPath;
         this.addonState = addonState;
+        this.displayOrdinal = displayOrdinal;
         this.addonProperties = addonProperties != null ? addonProperties : new Properties();
     }
 
@@ -117,5 +120,51 @@ public class AddonInfo implements Serializable {
      */
     public String getAddonProperty(String propertyKey) {
         return addonProperties.getProperty(propertyKey);
+    }
+
+    /**
+     * Returns the addon's display-order weight
+     *
+     * @return Weight
+     */
+    public long getDisplayOrdinal() {
+        return displayOrdinal;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof AddonInfo)) {
+            return false;
+        }
+
+        AddonInfo addonInfo = (AddonInfo) o;
+
+        if (displayOrdinal != addonInfo.displayOrdinal) {
+            return false;
+        }
+        if (addonName != null ? !addonName.equals(addonInfo.addonName) : addonInfo.addonName != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = addonName != null ? addonName.hashCode() : 0;
+        result = 31 * result + (int) (displayOrdinal ^ (displayOrdinal >>> 32));
+        return result;
+    }
+
+    public int compareTo(AddonInfo o) {
+        if (getDisplayOrdinal() < o.getDisplayOrdinal()) {
+            return -1;
+        } else if (getDisplayOrdinal() > o.getDisplayOrdinal()) {
+            return 1;
+        }
+        return 0;
     }
 }

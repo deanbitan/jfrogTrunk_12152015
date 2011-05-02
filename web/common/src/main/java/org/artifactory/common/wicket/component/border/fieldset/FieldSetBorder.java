@@ -18,6 +18,7 @@
 
 package org.artifactory.common.wicket.component.border.fieldset;
 
+import org.apache.wicket.model.IModel;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 
 /**
@@ -26,5 +27,9 @@ import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 public class FieldSetBorder extends TitledBorder {
     public FieldSetBorder(String id) {
         super(id, "fieldset-border");
+    }
+
+    public FieldSetBorder(String id, IModel model) {
+        super(id, model, "fieldset-border");
     }
 }

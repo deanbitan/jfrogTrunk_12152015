@@ -18,6 +18,7 @@
 
 package org.artifactory.repo;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -35,21 +36,25 @@ import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
 import org.artifactory.addon.plugin.download.BeforeRemoteDownloadAction;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.md.PropertiesImpl;
-import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.io.NullResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
+import org.artifactory.repo.remote.browse.HtmlRepositoryBrowser;
+import org.artifactory.repo.remote.browse.RemoteItem;
+import org.artifactory.repo.remote.browse.RemoteRepositoryBrowser;
+import org.artifactory.repo.remote.browse.S3RepositoryBrowser;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.NullRequestContext;
 import org.artifactory.request.RemoteRequestException;
-import org.artifactory.resource.FileResource;
-import org.artifactory.resource.MetadataResource;
+import org.artifactory.resource.RemoteRepoResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.spring.InternalContextHelper;
@@ -65,6 +70,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
@@ -72,6 +78,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
     private HttpClient client;
     private boolean handleGzipResponse;
+    protected RemoteRepositoryBrowser remoteBrowser;
 
     public HttpRepo(InternalRepositoryService repositoryService, HttpRepoDescriptor descriptor,
             boolean globalOfflineMode, RemoteRepo oldRemoteRepo) {
@@ -84,7 +91,19 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         handleGzipResponse = ConstantValues.httpAcceptEncodingGzip.getBoolean();
         if (!isOffline()) {
             this.client = createHttpClient();
-            urlLister = new ApacheURLLister(client);
+        }
+    }
+
+    private synchronized void initRemoteRepositoryBrowser() {
+        if (remoteBrowser != null) {
+            return; // already initialized
+        }
+        boolean s3Repository = S3RepositoryBrowser.isS3Repository(getUrl(), client);
+        if (s3Repository) {
+            log.debug("Repository {} caches S3 repository", getKey());
+            remoteBrowser = new S3RepositoryBrowser(client);
+        } else {
+            remoteBrowser = new HtmlRepositoryBrowser(client);
         }
     }
 
@@ -161,9 +180,11 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     public ResourceStreamHandle downloadResource(final String relPath, Properties requestProperties)
             throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
-        String fullPath = convertRequestPathIfNeeded(relPath) + PropertiesImpl.encodeForRequest(requestProperties);
-        final String fullUrl = getUrl() + "/" + fullPath;
-
+        String fullPath = convertRequestPathIfNeeded(relPath);
+        if (getDescriptor().isSynchronizeProperties()) {
+            fullPath += PropertiesImpl.encodeForRequest(requestProperties);
+        }
+        final String fullUrl = appendAndGetUrl(convertRequestPathIfNeeded(fullPath));
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         final PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
 
@@ -227,9 +248,6 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
      * @throws IOException If the repository is offline or if any error occurs during the execution
      */
     public int executeMethod(HttpMethod method) throws IOException {
-        if (client == null) {
-            throw new IOException("Cannot execute a request when the repository is offline.");
-        }
         return client.executeMethod(method);
     }
 
@@ -238,11 +256,13 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         assert !isOffline() : "Should never be called in offline mode";
         RepoPath repoPath = new RepoPathImpl(this.getKey(), path);
 
-        String fullUrl = getUrl() + "/" + convertRequestPathIfNeeded(path);
+        String fullUrl = appendAndGetUrl(convertRequestPathIfNeeded(path));
 
         HeadMethod method = null;
         try {
-            fullUrl += PropertiesImpl.encodeForRequest(requestProperties);
+            if (getDescriptor().isSynchronizeProperties()) {
+                fullUrl += PropertiesImpl.encodeForRequest(requestProperties);
+            }
             log.debug("{}: Checking last modified time for {}", this, fullUrl);
             method = new HeadMethod(fullUrl);
             updateMethod(method);
@@ -262,20 +282,18 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 // send back unfound resource with 404 status
                 return new UnfoundRepoResource(repoPath, method.getStatusText());
             }
+
             long lastModified = getLastModified(method);
             log.debug("{}: Found last modified time '{}' for {}",
                     new Object[]{this, new Date(lastModified).toString(), fullUrl});
+
             long size = getContentLength(method);
-            RepoResource res;
-            if (NamingUtils.isMetadata(path)) {
-                res = new MetadataResource(repoPath);
-            } else {
-                res = new FileResource(repoPath);
-            }
-            res.getInfo().setLastModified(lastModified);
-            res.getInfo().setSize(size);
+
+            Set<ChecksumInfo> checksums = getChecksums(method);
+
+            RepoResource res = new RemoteRepoResource(repoPath, lastModified, size, checksums);
             if (log.isDebugEnabled()) {
-                log.debug(this + ": Retrieved " + res + " info at '" + fullUrl + "'.");
+                log.debug("{}: Retrieved {} info at '{}'.", new Object[]{this, res, fullUrl});
             }
             return res;
         } catch (IOException e) {
@@ -381,13 +399,39 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
     }
 
-    static long getContentLength(HttpMethod method) {
+    public static long getContentLength(HttpMethod method) {
         Header contentLengthHeader = method.getResponseHeader("Content-Length");
         if (contentLengthHeader == null) {
             return -1;
         }
         String contentLengthString = contentLengthHeader.getValue();
         return Long.parseLong(contentLengthString);
+    }
+
+    private static Set<ChecksumInfo> getChecksums(HeadMethod method) {
+        Set<ChecksumInfo> actualChecksums = Sets.newHashSet();
+
+        ChecksumInfo md5ChecksumInfo = getChecksumInfoObject(ChecksumType.md5,
+                method.getResponseHeader(ArtifactoryRequest.CHECKSUM_MD5));
+        if (md5ChecksumInfo != null) {
+            actualChecksums.add(md5ChecksumInfo);
+        }
+
+        ChecksumInfo sha1ChecksumInfo = getChecksumInfoObject(ChecksumType.sha1,
+                method.getResponseHeader(ArtifactoryRequest.CHECKSUM_SHA1));
+        if (sha1ChecksumInfo != null) {
+            actualChecksums.add(sha1ChecksumInfo);
+        }
+
+        return actualChecksums;
+    }
+
+    private static ChecksumInfo getChecksumInfoObject(ChecksumType type, Header checksumHeader) {
+        if (checksumHeader == null) {
+            return null;
+        }
+
+        return new ChecksumInfo(type, checksumHeader.getValue(), null);
     }
 
     private InputStream getResponseStream(GetMethod method) throws IOException {
@@ -404,8 +448,11 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     @Override
-    protected List<URL> getChildUrls(URL dirUrl) throws IOException {
-        return urlLister.listAll(dirUrl);
+    protected List<RemoteItem> getChildUrls(String dirUrl) throws IOException {
+        if (remoteBrowser == null) {
+            initRemoteRepositoryBrowser();
+        }
+        return remoteBrowser.listContent(dirUrl);
     }
 
     /**

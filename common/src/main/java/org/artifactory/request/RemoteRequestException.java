@@ -18,6 +18,7 @@
 
 package org.artifactory.request;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -28,14 +29,25 @@ import java.io.IOException;
 public class RemoteRequestException extends IOException {
 
     private int remoteReturnCode;
+    private String responseBody;
 
     /**
      * @param message          Exception message
      * @param remoteReturnCode Remote returned HTTP status code
      */
     public RemoteRequestException(String message, int remoteReturnCode) {
+        this(message, remoteReturnCode, null);
+    }
+
+    /**
+     * @param message          Exception message
+     * @param remoteReturnCode Remote returned HTTP status code
+     * @param responseBody     Optional response body
+     */
+    public RemoteRequestException(String message, int remoteReturnCode, String responseBody) {
         super(message);
         this.remoteReturnCode = remoteReturnCode;
+        this.responseBody = responseBody;
     }
 
     /**
@@ -45,5 +57,13 @@ public class RemoteRequestException extends IOException {
      */
     public int getRemoteReturnCode() {
         return remoteReturnCode;
+    }
+
+    /**
+     * @return The optional failed request response body.
+     */
+    @Nullable
+    public String getResponseBody() {
+        return responseBody;
     }
 }

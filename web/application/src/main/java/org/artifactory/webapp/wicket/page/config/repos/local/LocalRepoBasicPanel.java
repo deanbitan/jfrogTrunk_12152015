@@ -110,7 +110,6 @@ public class LocalRepoBasicPanel extends Panel {
         add(snapshotVersionDropDown);
         add(new SchemaHelpBubble("snapshotVersionBehavior.help"));
 
-
         final StyledCheckbox suppressPomConsistencyChecks = new StyledCheckbox("suppressPomConsistencyChecks");
         suppressPomConsistencyChecks.setOutputMarkupId(true);
         suppressPomConsistencyChecks.setEnabled(isMavenRepoLayout);
@@ -120,8 +119,10 @@ public class LocalRepoBasicPanel extends Panel {
 
         List<RepoLayout> layouts = centralConfigService.getDescriptor().getRepoLayouts();
 
-        final DropDownChoice<RepoLayout> repoLayout = new DropDownChoice<RepoLayout>("repoLayout", layouts,
+        DropDownChoice<RepoLayout> repoLayout = new DropDownChoice<RepoLayout>("repoLayout", layouts,
                 new ChoiceRenderer<RepoLayout>("name"));
+        repoLayout.setRequired(true);
+        repoLayout.setNullValid(false);
         if (repoDescriptor.getRepoLayout() == null) {
             repoLayout.setModel(new PropertyModel<RepoLayout>(repoDescriptor, "repoLayout"));
             repoLayout.setDefaultModelObject(RepoLayoutUtils.MAVEN_2_DEFAULT);

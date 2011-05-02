@@ -37,7 +37,7 @@ public abstract class ExpiringDelayed implements Delayed {
         this.expiry = expiry;
         if (log.isTraceEnabled()) {
             log.trace("Created delayed entry on {}, expiring on {} for {}.",
-                    new Object[]{System.currentTimeMillis(), expiry, toString()});
+                    new Object[]{System.currentTimeMillis(), expiry, getClass().getName()});
         }
     }
 

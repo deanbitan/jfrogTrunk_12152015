@@ -50,7 +50,7 @@ public abstract class Checksums {
      * Calculate checksum for the input type.
      *
      * @param in   Input streams for which checksums are calculated
-     * @param type Checksum types to calculate
+     * @param type Checksum type to calculate
      * @return The computed checksum
      * @throws IOException On any exception reading from the stream
      */
@@ -81,6 +81,17 @@ public abstract class Checksums {
         return checksums;
     }
 
+    /**
+     * Calculate checksum for the input type.
+     *
+     * @param in   File for which checksums are calculated
+     * @param type Checksum type to calculate
+     * @return The computed checksum
+     * @throws IOException On any exception reading from the stream
+     */
+    public static Checksum calculate(File file, ChecksumType type) throws IOException {
+        return calculate(file, new ChecksumType[]{type})[0];
+    }
 
     /**
      * Calculate checksums for all the input types.

@@ -24,7 +24,9 @@ import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.component.confirm.AjaxConfirm;
 import org.artifactory.common.wicket.component.confirm.ConfirmDialog;
 import org.artifactory.common.wicket.util.AjaxUtils;
@@ -36,6 +38,7 @@ import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
 import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 import org.slf4j.Logger;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -92,17 +95,28 @@ public class DeleteBuildAction extends ItemAction {
         String buildName = basicBuildInfo.getName();
         String buildNumber = basicBuildInfo.getNumber();
 
+        MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
         try {
-            buildService.deleteBuild(basicBuildInfo);
-            String info = String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber);
-            Session.get().info(info);
-            AjaxUtils.refreshFeedback(target);
+            buildService.deleteBuild(basicBuildInfo, false, multiStatusHolder);
+            multiStatusHolder.setStatus(String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber),
+                    log);
         } catch (Exception exception) {
             String error = String.format("Exception occurred while deleting build '%s' #%s", buildName, buildNumber);
-            log.error(error, e);
-            Session.get().error(error);
+            multiStatusHolder.setError(error, exception, log);
+        }
+
+        if (multiStatusHolder.hasErrors()) {
+            Session.get().error(multiStatusHolder.getLastError().getMessage());
             AjaxUtils.refreshFeedback(target);
             return;
+        } else if (multiStatusHolder.hasWarnings()) {
+            List<StatusEntry> warnings = multiStatusHolder.getWarnings();
+            Session.get().warn(warnings.get(warnings.size() - 1).getMessage());
+            AjaxUtils.refreshFeedback(target);
+            return;
+        } else {
+            Session.get().info(multiStatusHolder.getStatusMsg());
+            AjaxUtils.refreshFeedback(target);
         }
 
         Set<BasicBuildInfo> remainingBuilds = buildService.searchBuildsByName(buildName);

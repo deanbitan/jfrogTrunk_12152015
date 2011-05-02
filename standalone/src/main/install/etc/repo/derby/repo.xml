@@ -53,7 +53,7 @@
         <param name="schemaObjectPrefix" value="ds_"/>
         <!--<param name="tablePrefix" value=""/>-->
 
-        <param name="minRecordLength" value="512"/>
+        <param name="minRecordLength" value="0"/>
         <!-- Whether to use a cache blobs temporarily on the file system for faster reads -->
         <param name="cacheBlobs" value="true"/>
         <!-- The maximum size of the blobs cache in gigabytes (g), megabytes (m) or kilobytes (k) -->

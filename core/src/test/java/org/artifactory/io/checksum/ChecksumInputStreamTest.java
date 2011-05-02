@@ -51,6 +51,21 @@ public class ChecksumInputStreamTest {
         assertEquals(md5.getChecksum(), "098f6bcd4621d373cade4e832627b4f6");
     }
 
+    // RTFACT-4104 - wrong checksums are calculated if using read with offset
+    public void offsetInputStream() throws IOException {
+        ChecksumInputStream in = new ChecksumInputStream(new StringInputStream("test"),
+                new Checksum(ChecksumType.sha1), new Checksum(ChecksumType.md5));
+        byte[] tempBuff = new byte[4];  // 4 bytes in the string
+        int bytesRead = 0;
+        for (int i = 0; i < tempBuff.length && bytesRead != -1; i++) {
+            bytesRead = in.read(tempBuff, i, 1);
+        }
+        in.close();
+
+        assertEquals(in.getChecksums()[0].getChecksum(), "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
+        assertEquals(in.getChecksums()[1].getChecksum(), "098f6bcd4621d373cade4e832627b4f6");
+    }
+
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*not calculated.*")
     public void nonClosedStream() throws IOException {
         ChecksumInputStream in = new ChecksumInputStream(new StringInputStream("test"),

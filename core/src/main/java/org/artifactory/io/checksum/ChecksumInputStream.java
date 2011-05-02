@@ -18,6 +18,9 @@
 
 package org.artifactory.io.checksum;
 
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,9 +29,11 @@ import java.io.InputStream;
  * @author Yoav Landman
  */
 public class ChecksumInputStream extends BufferedInputStream {
+    private static final Logger log = LoggerFactory.getLogger(ChecksumInputStream.class);
 
     private final Checksum[] checksums;
     private boolean closed;
+    private long totalBytesRead;
 
     public ChecksumInputStream(InputStream is, Checksum... checksums) {
         super(is);
@@ -53,9 +58,11 @@ public class ChecksumInputStream extends BufferedInputStream {
     @Override
     public int read(byte b[], int off, int len) throws IOException {
         int bytesRead = super.read(b, off, len);
+        log.trace("{} bytes read from {}", bytesRead, in);
         if (bytesRead != -1) {
+            totalBytesRead += bytesRead;
             for (Checksum checksum : checksums) {
-                checksum.update(b, bytesRead);
+                checksum.update(b, off, bytesRead);
             }
         }
         return bytesRead;
@@ -65,8 +72,10 @@ public class ChecksumInputStream extends BufferedInputStream {
     public void close() throws IOException {
         super.close();
         if (!closed) {
+            log.trace("Total bytes read: {}", totalBytesRead);
             for (Checksum checksum : checksums) {
                 checksum.calc();
+                log.trace("Calculated checksum: '{}:{}'", checksum.getType(), checksum.getChecksum());
             }
             closed = true;
         }

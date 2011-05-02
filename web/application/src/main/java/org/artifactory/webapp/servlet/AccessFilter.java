@@ -52,6 +52,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 public class AccessFilter extends DelayedFilterBase implements SecurityListener {
@@ -63,7 +64,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
     /**
      * holds cached Authentication instances for the non ui requests based on the Authorization header and client ip
      */
-    private Map<AuthCacheKey, Authentication> nonUiAuthCache;
+    private ConcurrentMap<AuthCacheKey, Authentication> nonUiAuthCache;
 
     @Override
     public void initLater(FilterConfig filterConfig) throws ServletException {

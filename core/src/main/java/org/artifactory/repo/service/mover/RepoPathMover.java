@@ -46,11 +46,10 @@ public class RepoPathMover {
     private InternalRepositoryService repositoryService;
 
     @Request(aggregateEventsByTimeWindow = true)
-    public MoveMultiStatusHolder moveOrCopy(MoverConfig moverConfig) {
+    public void moveOrCopy(MoveMultiStatusHolder status, MoverConfig moverConfig) {
         boolean isDryRun = moverConfig.isDryRun();
         RepoPath fromRepoPath = moverConfig.getFromRepoPath();
 
-        MoveMultiStatusHolder status = new MoveMultiStatusHolder();
         // don't output to the logger if executing in dry run
         status.setActivateLogging(!isDryRun);
 
@@ -66,9 +65,9 @@ public class RepoPathMover {
         }
 
         if (fromRepoPath.equals(targetLocalRepoPath)) {
-            status.setError(String.format("Cannot move\\copy %s: Destination and source are the same",
+            status.setStatus(String.format("Skipping move\\copy %s: Destination and source are the same",
                     fromRepoPath), log);
-            return status;
+            return;
         }
 
         RepoRepoPath<LocalRepo> targetRrp = repositoryService.getRepoRepoPath(targetLocalRepoPath);
@@ -83,17 +82,12 @@ public class RepoPathMover {
                 RepoLayoutUtils.canCrossLayouts(sourceRepo.getDescriptor().getRepoLayout(),
                         targetLocalRepo.getDescriptor().getRepoLayout());
 
-        MoveMultiStatusHolder resultStatus;
         if (canCrossLayouts) {
-            resultStatus = new CrossLayoutRepoPathMover(moverConfig).moveOrCopy(sourceRepo, targetLocalRepo,
-                    fsItemToMove);
+            new CrossLayoutRepoPathMover(status, moverConfig).moveOrCopy(sourceRepo, targetLocalRepo, fsItemToMove);
         } else {
-            resultStatus = new DefaultRepoPathMover(moverConfig).moveOrCopy(fsItemToMove, targetLocalRepo,
-                    targetLocalRepoPath, targetRrp);
+            new DefaultRepoPathMover(status, moverConfig).moveOrCopy(fsItemToMove, targetLocalRepo, targetLocalRepoPath,
+                    targetRrp);
         }
-
-        status.merge(resultStatus);
-        return status;
     }
 
     private LocalRepo getLocalRepo(String repoKey) {

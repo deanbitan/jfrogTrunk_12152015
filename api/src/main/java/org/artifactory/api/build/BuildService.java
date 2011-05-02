@@ -18,14 +18,17 @@
 
 package org.artifactory.api.build;
 
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
+import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.md.Properties;
 import org.jfrog.build.api.Build;
+import org.jfrog.build.api.release.Promotion;
 
 import java.io.IOException;
 import java.util.List;
@@ -70,16 +73,20 @@ public interface BuildService extends ImportableExportable {
     /**
      * Removes all the builds of the given name
      *
-     * @param buildName Name of builds to remove
+     * @param buildName         Name of builds to remove
+     * @param deleteArtifacts   True if build artifacts should be deleted
+     * @param multiStatusHolder Status holder
      */
-    void deleteBuild(String buildName);
+    void deleteBuild(String buildName, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder);
 
     /**
      * Removes the build of the given details
      *
-     * @param basicBuildInfo
+     * @param basicBuildInfo    Build info details
+     * @param deleteArtifacts   True if build artifacts should be deleted
+     * @param multiStatusHolder Status holder
      */
-    void deleteBuild(BasicBuildInfo basicBuildInfo);
+    void deleteBuild(BasicBuildInfo basicBuildInfo, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder);
 
     /**
      * Returns the build of the given details
@@ -148,13 +155,26 @@ public interface BuildService extends ImportableExportable {
      * @param artifacts      True if the build artifacts should be moved\copied
      * @param dependencies   True if the build dependencies should be moved\copied
      * @param scopes         Scopes of dependencies to copy (agnostic if null or empty)
-     * @param properties
-     * @param dryRun         True if the action should run dry (simulate)  @return Result of action
+     * @param properties     The properties to tag the copied or move artifacts on their <b>destination</b> path
+     * @param dryRun         True if the action should run dry (simulate)
+     * @return Result of action
+     * @deprecated Use {@link org.artifactory.api.build.BuildService#promoteBuild} instead
      */
+    @Deprecated
     @Lock(transactional = true)
     MoveCopyResult moveOrCopyBuildItems(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
             boolean artifacts, boolean dependencies, List<String> scopes, Properties properties,
             boolean dryRun);
+
+    /**
+     * Promotes a build
+     *
+     * @param buildInfo Basic info of build to promote
+     * @param promotion Promotion settings
+     * @return Promotion result
+     */
+    @Lock(transactional = true)
+    PromotionResult promoteBuild(BasicBuildInfo buildInfo, Promotion promotion);
 
     /**
      * Renames the JCR structure and content of build info objects
@@ -163,4 +183,24 @@ public interface BuildService extends ImportableExportable {
      * @param to   Replacement build name
      */
     void renameBuilds(String from, String to);
+
+    /**
+     * Updates the content (jcr data) of the given build. Please note that this method does nothing apart from updating
+     * the JSON data. Other properties and data surrounding the build nodes (apart from mandatory) will not change
+     *
+     * @param build Updated content
+     */
+    @Lock(transactional = true)
+    void updateBuild(Build build);
+
+    /**
+     * Returns the build's latest release status
+     *
+     * @param buildName    Build name
+     * @param buildNumber  Build number
+     * @param buildStarted Build started
+     * @return Last release status if exists. Null if not
+     */
+    @Lock(transactional = true)
+    String getBuildLatestReleaseStatus(String buildName, String buildNumber, String buildStarted);
 }

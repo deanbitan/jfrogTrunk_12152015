@@ -47,15 +47,6 @@ public class MoveMultiStatusHolder extends MultiStatusHolder {
         return movedCounter;
     }
 
-    /**
-     * Returns a boolean value which indicates if no items have been moved at all
-     *
-     * @return True if not items have been moved. False if at least one item has been moved
-     */
-    public boolean noItemsMovedOrCopied() {
-        return movedCounter == 0;
-    }
-
     @Override
     public void merge(MultiStatusHolder toMerge) {
         super.merge(toMerge);

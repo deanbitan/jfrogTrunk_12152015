@@ -20,6 +20,9 @@ package org.artifactory.security;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -46,6 +49,8 @@ import java.security.spec.X509EncodedKeySpec;
  * @author Yossi Shaul
  */
 public abstract class CryptoHelper {
+    private static final Logger log = LoggerFactory.getLogger(CryptoHelper.class);
+
     static final String ASYM_ALGORITHM = "RSA";
     private static final String UTF8 = "UTF-8";
 
@@ -55,10 +60,11 @@ public abstract class CryptoHelper {
             (byte) 0xEB, (byte) 0xAB, (byte) 0xEF, (byte) 0xAC
     };
     private static final int PBE_ITERATION_COUNT = 20;
-    private static final String ENCRYPTION_PREFIX = "{DESede}";
+    private static final String DEFAULT_ENCRYPTION_PREFIX = "{DESede}";
     // since maven 2.1.0 the curly braces are treated as special characters and hence needs to be escaped
     // but still, maven sends the password with the escape characters. go figure...
-    private static final String ENCRYPTION_PREFIX_ESCAPED = "\\{DESede\\}";
+    private static final String ESCAPED_DEFAULT_ENCRYPTION_PREFIX = "\\{DESede\\}";
+    private static String encryptionPrefix;
 
     private CryptoHelper() {
         // utility class
@@ -108,7 +114,7 @@ public abstract class CryptoHelper {
     }
 
     public static String encrypt(String plainText, PublicKey publicKey) {
-        return ENCRYPTION_PREFIX + toBase64(cleanEncrypt(stringToBytes(plainText), publicKey));
+        return getEncryptionPrefix() + toBase64(cleanEncrypt(stringToBytes(plainText), publicKey));
     }
 
     private static byte[] cleanEncrypt(byte[] in, PublicKey publicKey) {
@@ -126,7 +132,7 @@ public abstract class CryptoHelper {
         if (!isEncrypted(encrypted)) {
             throw new IllegalArgumentException("Input string is not encrypted");
         }
-        String stripped = StringUtils.removeStart(encrypted, ENCRYPTION_PREFIX);
+        String stripped = StringUtils.removeStart(encrypted, getEncryptionPrefix());
         byte[] decoded = fromBase64(stripped);
         return bytesToString(cleanDecrypt((decoded), privateKey));
     }
@@ -146,7 +152,7 @@ public abstract class CryptoHelper {
             throw new IllegalArgumentException("Input cannot be null.");
         }
 
-        return in.startsWith(ENCRYPTION_PREFIX) || in.startsWith(ENCRYPTION_PREFIX_ESCAPED);
+        return in.startsWith(getEncryptionPrefix()) || in.startsWith(ESCAPED_DEFAULT_ENCRYPTION_PREFIX);
     }
 
     public static SecretKey generatePbeKey(String password) {
@@ -168,7 +174,7 @@ public abstract class CryptoHelper {
             PBEParameterSpec pbeParamSpec = new PBEParameterSpec(PBE_SALT, PBE_ITERATION_COUNT);
             pbeCipher.init(Cipher.ENCRYPT_MODE, pbeKey, pbeParamSpec);
             byte[] encrypted = pbeCipher.doFinal(stringToBytes(plainText));
-            return ENCRYPTION_PREFIX + toBase64(encrypted);
+            return getEncryptionPrefix() + toBase64(encrypted);
         } catch (Exception e) {
             throw new UnsupportedOperationException(e);
         }
@@ -176,7 +182,12 @@ public abstract class CryptoHelper {
 
     public static String decryptSymmetric(String encrypted, SecretKey pbeKey) {
         try {
-            String stripped = StringUtils.removeStart(escapeEncryptedPassword(encrypted), ENCRYPTION_PREFIX_ESCAPED);
+            String stripped;
+            if (encrypted.startsWith(ESCAPED_DEFAULT_ENCRYPTION_PREFIX)) {
+                stripped = StringUtils.removeStart(encrypted, ESCAPED_DEFAULT_ENCRYPTION_PREFIX);
+            } else {
+                stripped = StringUtils.removeStart(encrypted, getEncryptionPrefix());
+            }
             byte[] decoded = fromBase64(stripped);
 
             Cipher pbeCipher = Cipher.getInstance(SYM_ALGORITHM);
@@ -212,6 +223,31 @@ public abstract class CryptoHelper {
      * @return Escaped encrypted password.
      */
     public static String escapeEncryptedPassword(String encryptedPassword) {
-        return encryptedPassword.replace(ENCRYPTION_PREFIX, ENCRYPTION_PREFIX_ESCAPED);
+        if (encryptedPassword.startsWith(DEFAULT_ENCRYPTION_PREFIX)) {
+            return encryptedPassword.replace(DEFAULT_ENCRYPTION_PREFIX, ESCAPED_DEFAULT_ENCRYPTION_PREFIX);
+        }
+        return encryptedPassword;
+    }
+
+    public static boolean isEncryptedPasswordPrefixedWithDefault(String encryptedPassword) {
+        return encryptedPassword.startsWith(DEFAULT_ENCRYPTION_PREFIX);
+    }
+
+    private static String getEncryptionPrefix() {
+        if (StringUtils.isBlank(encryptionPrefix)) {
+            String surroundCharacters = ConstantValues.securityAuthenticationEncryptedPasswordSurroundChars.getString();
+            if ((surroundCharacters.length() % 2) != 0) {
+                log.error("Provided with an asymmetric pair of encrypted password prefix surrounding characters: " +
+                        "falling back to the default.");
+                surroundCharacters = ConstantValues.securityAuthenticationEncryptedPasswordSurroundChars.getDefValue();
+            }
+
+            int middle = surroundCharacters.length() / 2;
+            String opening = surroundCharacters.substring(0, middle);
+            String closing = surroundCharacters.substring(middle, surroundCharacters.length());
+            encryptionPrefix = new StringBuilder(opening).append("DESede").append(closing).toString();
+        }
+
+        return encryptionPrefix;
     }
 }

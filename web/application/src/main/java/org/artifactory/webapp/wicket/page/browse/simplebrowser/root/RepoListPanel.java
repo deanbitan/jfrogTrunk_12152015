@@ -26,6 +26,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
@@ -47,7 +48,8 @@ public class RepoListPanel extends TitledPanel {
                 RepoBaseDescriptor repo = item.getModelObject();
                 String key = repo.getKey();
 
-                Component browseLink = new ExternalLink("link", hrefPrefix + "/" + key + "/", key);
+                Component browseLink = new ExternalLink("link",
+                        hrefPrefix + "/" + ArtifactoryRequest.SIMPLE_BROWSING_PATH + "/" + key + "/", key);
                 String cssClass = ItemCssClass.getRepoDescriptorCssClass(repo);
                 browseLink.add(new CssClass(cssClass));
                 item.add(browseLink);

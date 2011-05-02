@@ -18,18 +18,23 @@
 
 package org.artifactory.repo.service.mover;
 
+import org.apache.commons.io.IOUtils;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.md.PropertiesImpl;
+import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.StatusEntry;
+import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.maven.PomTargetPathValidator;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
@@ -39,6 +44,8 @@ import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.InputStream;
 
 /**
  * The abstract repo path mover implementation
@@ -58,13 +65,15 @@ abstract class BaseRepoPathMover {
     protected final boolean copy;
     protected final boolean dryRun;
     protected final boolean executeMavenMetadataCalculation;
+    protected final boolean failFast;
     protected final Properties properties;
-    protected final MoveMultiStatusHolder status = new MoveMultiStatusHolder();
     protected final String targetLocalRepoKey;
 
     private final boolean searchResult;
+    protected final MoveMultiStatusHolder status;
 
-    protected BaseRepoPathMover(MoverConfig moverConfig) {
+    protected BaseRepoPathMover(MoveMultiStatusHolder status, MoverConfig moverConfig) {
+        this.status = status;
         authorizationService = ContextHelper.get().getAuthorizationService();
         jcrService = ContextHelper.get().beanForType(JcrService.class);
         jcrRepoService = ContextHelper.get().beanForType(JcrRepoService.class);
@@ -74,12 +83,13 @@ abstract class BaseRepoPathMover {
         copy = moverConfig.isCopy();
         dryRun = moverConfig.isDryRun();
         executeMavenMetadataCalculation = moverConfig.isExecuteMavenMetadataCalculation();
+        failFast = moverConfig.isFailFast();
         searchResult = moverConfig.isSearchResult();
         properties = initProperties(moverConfig);
         targetLocalRepoKey = moverConfig.getTargetLocalRepoKey();
 
         // don't output to the logger if executing in dry run
-        status.setActivateLogging(!dryRun);
+        this.status.setActivateLogging(!dryRun);
     }
 
     protected Properties initProperties(MoverConfig moverConfig) {
@@ -160,6 +170,21 @@ abstract class BaseRepoPathMover {
             status.setWarning("User doesn't have permissions to create '" + targetRepoPath + "'. " +
                     "Needs write permissions.", log);
             return false;
+        }
+
+        if (source.isFile() && NamingUtils.isPom(sourceRepoPath.getPath()) && NamingUtils.isPom(targetPath) &&
+                !((RealRepoDescriptor) targetRepo.getDescriptor()).isSuppressPomConsistencyChecks()) {
+            ModuleInfo moduleInfo = targetRepo.getItemModuleInfo(targetPath);
+            InputStream resourceStream = null;
+            try {
+                resourceStream = ((JcrFile) source).getStream();
+                new PomTargetPathValidator(targetPath, moduleInfo).validate(resourceStream, false);
+            } catch (Exception e) {
+                status.setWarning("Failed to validate target path of pom: " + targetPath, e, log);
+                return false;
+            } finally {
+                IOUtils.closeQuietly(resourceStream);
+            }
         }
 
         // all tests passed
@@ -349,5 +374,9 @@ abstract class BaseRepoPathMover {
                 }
             }
         }
+    }
+
+    protected boolean errorsOrWarningsOccurredAndFailFast() {
+        return (status.hasWarnings() || status.hasErrors()) && failFast;
     }
 }

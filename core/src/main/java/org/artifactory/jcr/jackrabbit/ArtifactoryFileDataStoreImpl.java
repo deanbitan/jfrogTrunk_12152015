@@ -21,6 +21,9 @@ package org.artifactory.jcr.jackrabbit;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.core.util.db.DatabaseAware;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.io.File;
 
@@ -28,6 +31,9 @@ import java.io.File;
  * @author freds
  */
 public class ArtifactoryFileDataStoreImpl extends ArtifactoryBaseDataStore implements DatabaseAware {
+
+    private static final Logger log = LoggerFactory.getLogger(ArtifactoryDbDataStoreImpl.class);
+
     private String fileStoreDir;
 
     private File binariesFolder;
@@ -42,10 +48,25 @@ public class ArtifactoryFileDataStoreImpl extends ArtifactoryBaseDataStore imple
         if (result.exists() && result.length() == expectedLength) {
             return result;
         }
-
-        throw new DataStoreRecordNotFoundException(
-                "Record not found: " + identifier + " as file " + result.getAbsolutePath() +
-                        " does not exists or has the wrong length!");
+        MissingOrInvalidDataStoreRecordException e = new MissingOrInvalidDataStoreRecordException(
+                "Record not found: '" + identifier + "' as file '" + result.getAbsolutePath() +
+                        "' does not exist or has wrong length.");
+        try {
+            //Delete if fix consistency flag is on
+            ArtifactoryDbDataRecord record = getFromAllEntries(identifier.toString());
+            if (ConstantValues.jcrFixConsistency.getBoolean()) {
+                if ((log.isDebugEnabled())) {
+                    log.debug("Deleting record " + record + ".", e);
+                } else {
+                    log.info("Deleting record " + record + " (cause: " + e.getMessage() + ").");
+                }
+                //rs.delete() will have no effect since we rollback the tx - do it in a separate tx
+                deleteEntry(record);
+            }
+        } catch (Exception deleteException) {
+            log.debug("Could not delete record with identifier '" + identifier + "'.", deleteException);
+        }
+        throw e;
     }
 
     @Override

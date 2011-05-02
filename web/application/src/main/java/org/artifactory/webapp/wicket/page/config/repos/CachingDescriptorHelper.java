@@ -23,6 +23,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.replication.ReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -79,6 +80,7 @@ public class CachingDescriptorHelper implements Serializable {
     public void syncAndSaveRemoteRepositories() {
         MutableCentralConfigDescriptor configDescriptor = getDescriptor();
         configDescriptor.setRemoteRepositoriesMap(modelMutableDescriptor.getRemoteRepositoriesMap());
+        configDescriptor.setReplications(modelMutableDescriptor.getReplications());
         saveDescriptor(configDescriptor);
     }
 
@@ -117,6 +119,10 @@ public class CachingDescriptorHelper implements Serializable {
         repoToReload = cc.getRemoteRepositoriesMap().get(repoKey);
         if (repoToReload != null) {
             modelMutableDescriptor.getRemoteRepositoriesMap().put(repoKey, (RemoteRepoDescriptor) repoToReload);
+            ReplicationDescriptor existingReplication = cc.getReplication(repoKey);
+            if (existingReplication != null) {
+                modelMutableDescriptor.updateReplication(existingReplication);
+            }
             return;
         }
         repoToReload = cc.getVirtualRepositoriesMap().get(repoKey);

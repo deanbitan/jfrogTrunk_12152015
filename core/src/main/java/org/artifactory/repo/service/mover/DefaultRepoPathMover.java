@@ -50,8 +50,8 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
 
     private InternalRepositoryService repositoryService;
 
-    DefaultRepoPathMover(MoverConfig moverConfig) {
-        super(moverConfig);
+    DefaultRepoPathMover(MoveMultiStatusHolder status, MoverConfig moverConfig) {
+        super(status, moverConfig);
         repositoryService = ContextHelper.get().beanForType(InternalRepositoryService.class);
     }
 
@@ -83,59 +83,66 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
 
     private void moveRecursive(JcrFsItem source, RepoRepoPath<LocalRepo> targetRrp) {
 
+        if (errorsOrWarningsOccurredAndFailFast()) {
+            return;
+        }
+
         if (source.isDirectory()) {
-            JcrFolder sourceFolder = (JcrFolder) source;
-            JcrFolder targetFolder = null;
-            RepoPath targetRepoPath = targetRrp.getRepoPath();
-            if (canMove(sourceFolder, targetRrp)) {
-                if (!dryRun) {
-                    StatusEntry lastError = status.getLastError();
-                    if (copy) {
-                        storageInterceptors.beforeCopy(sourceFolder, targetRepoPath, status, properties);
-                    } else {
-                        storageInterceptors.beforeMove(sourceFolder, targetRepoPath, status, properties);
-                    }
-                    if (status.getCancelException(lastError) != null) {
-                        return;
-                    }
-                    targetFolder = shallowCopyDirectory(sourceFolder, targetRrp);
-                }
-            } else if (!contains(targetRrp) ||
-                    targetRrp.getRepo().getJcrFsItem(targetRrp.getRepoPath()).isFile()) {
-                // target repo doesn't accept this path and it doesn't already contain it OR the target is a file
-                // so there is no point to continue to the children
-                status.setWarning("Cannot create/override the path '" + targetRrp.getRepoPath() + "'. " +
-                        "Skipping this path and all its children.", log);
-                return;
-            }
-
-            List<JcrFsItem> children = jcrRepoService.getChildren(sourceFolder, true);
-            RepoPath originalRepoPath = targetRrp.getRepoPath();
-            for (JcrFsItem child : children) {
-                // update the cached object with the child's repo path.
-                targetRrp = new RepoRepoPath<LocalRepo>(targetRrp.getRepo(),
-                        new RepoPathImpl(originalRepoPath, child.getName()));
-                // recursive call with the child
-                moveRecursive(child, targetRrp);
-            }
-
-            if (shouldRemoveSourceFolder(sourceFolder)) {
-                // folder is empty remove it immediately
-                // we don't use folder.delete() as it will move to trash and will fire additional events
-                storageInterceptors.afterMove(sourceFolder, targetFolder, status, properties);
-                sourceFolder.bruteForceDelete();
-            }
-
-            //If not containing any children and items have been moved (children have actually been moved)
-            if (!dryRun && targetFolder != null && !targetFolder.getRepoPath().isRoot() &&
-                    targetFolder.list().length == 0 && children.size() != 0) {
-                // folder is empty remove it immediately
-                // we don't use folder.delete() as it will move to trash and will fire additional events
-                targetFolder.bruteForceDelete();
-            }
+            handleDir((JcrFolder) source, targetRrp);
         } else {
             // the source is a file
             handleFile(source, targetRrp);
+        }
+    }
+
+    private void handleDir(JcrFolder source, RepoRepoPath<LocalRepo> targetRrp) {
+        JcrFolder targetFolder = null;
+        RepoPath targetRepoPath = targetRrp.getRepoPath();
+        if (canMove(source, targetRrp)) {
+            if (!dryRun) {
+                StatusEntry lastError = status.getLastError();
+                if (copy) {
+                    storageInterceptors.beforeCopy(source, targetRepoPath, status, properties);
+                } else {
+                    storageInterceptors.beforeMove(source, targetRepoPath, status, properties);
+                }
+                if (status.getCancelException(lastError) != null) {
+                    return;
+                }
+                targetFolder = shallowCopyDirectory(source, targetRrp);
+            }
+        } else if (!contains(targetRrp) ||
+                targetRrp.getRepo().getJcrFsItem(targetRrp.getRepoPath()).isFile()) {
+            // target repo doesn't accept this path and it doesn't already contain it OR the target is a file
+            // so there is no point to continue to the children
+            status.setWarning("Cannot create/override the path '" + targetRrp.getRepoPath() + "'. " +
+                    "Skipping this path and all its children.", log);
+            return;
+        }
+
+        List<JcrFsItem> children = jcrRepoService.getChildren(source, true);
+        RepoPath originalRepoPath = targetRrp.getRepoPath();
+        for (JcrFsItem child : children) {
+            // update the cached object with the child's repo path.
+            targetRrp = new RepoRepoPath<LocalRepo>(targetRrp.getRepo(),
+                    new RepoPathImpl(originalRepoPath, child.getName()));
+            // recursive call with the child
+            moveRecursive(child, targetRrp);
+        }
+
+        if (shouldRemoveSourceFolder(source)) {
+            // folder is empty remove it immediately
+            // we don't use folder.delete() as it will move to trash and will fire additional events
+            storageInterceptors.afterMove(source, targetFolder, status, properties);
+            source.bruteForceDelete();
+        }
+
+        //If not containing any children and items have been moved (children have actually been moved)
+        if (!dryRun && targetFolder != null && !targetFolder.getRepoPath().isRoot() &&
+                targetFolder.list().length == 0 && children.size() != 0) {
+            // folder is empty remove it immediately
+            // we don't use folder.delete() as it will move to trash and will fire additional events
+            targetFolder.bruteForceDelete();
         }
     }
 

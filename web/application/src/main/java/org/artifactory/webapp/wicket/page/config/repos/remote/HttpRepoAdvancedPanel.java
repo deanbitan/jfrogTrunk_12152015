@@ -108,6 +108,8 @@ public class HttpRepoAdvancedPanel extends Panel {
             repoLayout.setModel(new PropertyModel<RepoLayout>(repoDescriptor, "repoLayout"));
             repoLayout.setDefaultModelObject(RepoLayoutUtils.MAVEN_2_DEFAULT);
         }
+        repoLayout.setNullValid(false);
+        repoLayout.setRequired(true);
         repoLayout.setEnabled(CreateUpdateAction.CREATE.equals(action));
         layoutBorder.add(repoLayout);
         layoutBorder.add(new SchemaHelpBubble("repoLayout.help"));
@@ -206,10 +208,6 @@ public class HttpRepoAdvancedPanel extends Panel {
         cacheBorder.add(unusedCleanupTextField);
         cacheBorder.add(new SchemaHelpBubble("unusedArtifactsCleanupPeriodHours.help"));
 
-        /**
-         * These three fields require the minimum value of 1, since they are eventually inserted into a mapmaker
-         * that refuses 0 durations
-         */
         addDurationField(cacheBorder, "retrievalCachePeriodSecs");
         addDurationField(cacheBorder, "failedRetrievalCachePeriodSecs");
         addDurationField(cacheBorder, "missedRetrievalCachePeriodSecs");
@@ -217,11 +215,14 @@ public class HttpRepoAdvancedPanel extends Panel {
 
     private void addDurationField(WebMarkupContainer cacheBorder, String fieldName) {
         cacheBorder.add(new TextField<Long>(fieldName, Long.class).setRequired(true).
-                add(new MinimumValidator<Long>(1l)));
+                add(new MinimumValidator<Long>(0l)));
         cacheBorder.add(new SchemaHelpBubble(fieldName + ".help"));
     }
 
     private void addFlags(CreateUpdateAction action) {
+        add(new StyledCheckbox("rejectInvalidJars"));
+        add(new SchemaHelpBubble("rejectInvalidJars.help"));
+
         add(new StyledCheckbox("synchronizeProperties"));
         add(new SchemaHelpBubble("synchronizeProperties.help"));
 

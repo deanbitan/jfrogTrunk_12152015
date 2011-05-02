@@ -23,6 +23,7 @@ import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.replication.ReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -213,4 +214,12 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
     RepoLayout removeRepoLayout(String repoLayoutName);
 
     void setRepoLayouts(List<RepoLayout> repoLayouts);
+
+    void addReplication(ReplicationDescriptor replicationDescriptor);
+
+    void updateReplication(ReplicationDescriptor replicationDescriptor);
+
+    void removeReplication(ReplicationDescriptor replicationDescriptor);
+
+    void setReplications(List<ReplicationDescriptor> replicationDescriptors);
 }

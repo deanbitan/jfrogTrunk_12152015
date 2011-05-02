@@ -48,8 +48,8 @@ public class TranslatedArtifactoryRequest implements ArtifactoryRequest {
         return translatedRepoPath.getPath();
     }
 
-    public String getSourceDescription() {
-        return originalRequest.getSourceDescription();
+    public String getClientAddress() {
+        return originalRequest.getClientAddress();
     }
 
     public boolean isMetadata() {
@@ -134,7 +134,7 @@ public class TranslatedArtifactoryRequest implements ArtifactoryRequest {
 
     @Override
     public String toString() {
-        return "source=" + getSourceDescription()
+        return "source=" + getClientAddress()
                 + ", path=" + getPath() + ", lastModified=" + getLastModified()
                 + ", ifModifiedSince=" + getIfModifiedSince();
     }

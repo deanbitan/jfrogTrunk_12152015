@@ -25,7 +25,6 @@ import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.OrderByBorder;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
@@ -40,12 +39,13 @@ import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.BaseBrowsableItem;
+import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryBrowsingService;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.VirtualBrowsableItem;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
@@ -56,21 +56,20 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.artifactory.request.ArtifactoryRequest.SIMPLE_BROWSING_PATH;
+
 /**
  * @author Yoav Landman
  */
-public class VirtualRepoBrowserPanel extends BaseRepoBrowserPanel {
+public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
     private static final Logger log = LoggerFactory.getLogger(VirtualRepoBrowserPanel.class);
 
     private static final long serialVersionUID = 1L;
 
     @SpringBean
-    private RepositoryService repoService;
-
-    @SpringBean
     private RepositoryBrowsingService repoBrowsingService;
 
-    public VirtualRepoBrowserPanel(String id, RepoPath repoPath) {
+    public VirtualRepoBrowserPanel(String id, RepoPath repoPath, Properties requestProps) {
         super(id);
         add(new CssClass("virtual-repo-browser"));
         add(new BreadCrumbsPanel("breadCrumbs", repoPath.getId()));
@@ -79,11 +78,11 @@ public class VirtualRepoBrowserPanel extends BaseRepoBrowserPanel {
         //Try to get a virtual repo
         List<BaseBrowsableItem> browsableChildren;
         try {
-            browsableChildren = repoBrowsingService.getVirtualRepoBrowsableChildren(repoPath);
+            BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(repoPath).requestProperties(
+                    requestProps).build();
+            browsableChildren = repoBrowsingService.getVirtualRepoBrowsableChildren(criteria);
         } catch (Exception e) {
             log.debug("Exception occurred while trying to get browsable children for repo path " + repoPath, e);
-            log.error("Exception occurred while trying to get browsable children for repo path '{}', '{}", repoPath,
-                    e.getMessage());
             throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }
         browsableChildren.add(getPseudoUpLink(repoPath));
@@ -109,8 +108,8 @@ public class VirtualRepoBrowserPanel extends BaseRepoBrowserPanel {
                     //Up link to the list of repositories
                     itemLink = new BookmarkablePageLink<Class>("link", SimpleBrowserRootPage.class);
                 } else {
-                    StringBuilder hrefBuilder = new StringBuilder(hrefPrefix).append("/");
-                    hrefBuilder.append(repoKey).append("/").append(relativePath);
+                    StringBuilder hrefBuilder = new StringBuilder(hrefPrefix).append("/").append(SIMPLE_BROWSING_PATH)
+                            .append("/").append(repoKey).append("/").append(relativePath);
                     //Make sure to add a slash at the end of the URI so we always reach the browser
                     if (browsableItem.isFolder() &&
                             ((!StringUtils.isBlank(relativePath)) && (!StringUtils.endsWith(relativePath, "/")))) {
@@ -120,12 +119,7 @@ public class VirtualRepoBrowserPanel extends BaseRepoBrowserPanel {
                 }
                 itemLink.add(new CssClass(getCssClass(browsableItem)));
                 listItem.add(itemLink);
-                WebMarkupContainer globe = new WebMarkupContainer("globe");
-                listItem.add(globe);
-                if (!browsableItem.isRemote()) {
-                    globe.setVisible(false);
-                }
-
+                addGlobeIcon(listItem, browsableItem.isRemote());
                 final List<String> repoKeys = browsableItem.getRepoKeys();
                 final String finalRelativePath = relativePath;
                 ListView<String> repositoriesList = new ListView<String>("repositoriesList", repoKeys) {

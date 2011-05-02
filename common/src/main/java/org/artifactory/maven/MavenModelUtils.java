@@ -23,6 +23,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor;
 import org.apache.ivy.core.module.id.ModuleRevisionId;
 import org.apache.maven.artifact.repository.metadata.Metadata;
+import org.apache.maven.artifact.repository.metadata.Snapshot;
+import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.artifact.repository.metadata.io.xpp3.MetadataXpp3Reader;
 import org.apache.maven.artifact.repository.metadata.io.xpp3.MetadataXpp3Writer;
 import org.apache.maven.model.Model;
@@ -130,6 +132,30 @@ public abstract class MavenModelUtils {
         } finally {
             IOUtils.closeQuietly(reader);
         }
+    }
+
+    /**
+     * Build custom maven-metadata.xml according to a specific version.
+     *
+     * @param artifactInfo The original {@code MavenArtifactInfo} to assemble the maven metadata according to the same
+     *                     gid,aid,and version, {@link Versioning#setLastUpdatedTimestamp(Date)} is updated to now. and
+     *                     the build number and timestamp in the {@link Snapshot} is set according to the name.
+     * @param fileName     The file name
+     * @return The custom maven-metadata.xml
+     */
+    public static Metadata buildSnapshotMavenMetadata(MavenArtifactInfo artifactInfo, String fileName) {
+        Metadata metadata = new Metadata();
+        metadata.setGroupId(artifactInfo.getGroupId());
+        metadata.setArtifactId(artifactInfo.getArtifactId());
+        metadata.setVersion(artifactInfo.getVersion());
+        Versioning versioning = new Versioning();
+        metadata.setVersioning(versioning);
+        versioning.setLastUpdatedTimestamp(new Date());
+        Snapshot snapshot = new Snapshot();
+        versioning.setSnapshot(snapshot);
+        snapshot.setBuildNumber(MavenNaming.getUniqueSnapshotVersionBuildNumber(fileName));
+        snapshot.setTimestamp(MavenNaming.getUniqueSnapshotVersionTimestamp(fileName));
+        return metadata;
     }
 
     /**
@@ -295,7 +321,7 @@ public abstract class MavenModelUtils {
                     int size = (int) entry.getSize();
                     //Sanity check
                     if (size <= 0) {
-                        log.warn("Found pom.xml file with size {} inside the zip. Ignoring", size);
+                        log.warn("Found pom.xml file with size {} inside the zip. Ignoring.", size);
                         entry = null;
                     }
                     return entry;
@@ -320,7 +346,11 @@ public abstract class MavenModelUtils {
                 return IOUtils.toString(inputStream);
             }
         } catch (IOException e) {
-            log.warn("Unable to read JAR to extract the POM from it");
+            log.warn("Unable to read JAR to extract the POM from it.");
+            // If the file has a corrupt file, the following error will be thrown.
+            // See java.util.zip.ZipInputStream.getUTF8String()
+        } catch (IllegalArgumentException iae) {
+            log.warn("Unable to read JAR to extract the POM from it.");
         } finally {
             IOUtils.closeQuietly(inputStream);
         }

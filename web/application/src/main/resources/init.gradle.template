@@ -13,12 +13,12 @@ class ArtifactoryGradleSettings extends BuildAdapter implements BuildListener {
 
       buildscript {
         repositories {
-          ${plugins.repo}
+          ${plugins.repo}${plugins.creds}
         }
       }
 
       repositories {
-        ${libs.repo}
+        ${libs.repo}${libs.creds}
       }
     }
   }

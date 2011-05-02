@@ -19,9 +19,12 @@
 package org.artifactory.resource;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.repo.RepoPath;
 
-public class UnfoundRepoResource extends FileResource {
+public class UnfoundRepoResource implements RepoResource {
+
+    private final RepoPath repoPath;
     private final String reason;
     private final int statusCode;
 
@@ -30,14 +33,9 @@ public class UnfoundRepoResource extends FileResource {
     }
 
     public UnfoundRepoResource(RepoPath repoPath, String reason, int statusCode) {
-        super(repoPath);
+        this.repoPath = repoPath;
         this.reason = reason;
         this.statusCode = statusCode > 0 ? statusCode : HttpStatus.SC_NOT_FOUND;
-    }
-
-    @Override
-    public boolean isFound() {
-        return false;
     }
 
     public String getReason() {
@@ -46,5 +44,52 @@ public class UnfoundRepoResource extends FileResource {
 
     public int getStatusCode() {
         return statusCode;
+    }
+
+    public RepoPath getRepoPath() {
+        return repoPath;
+    }
+
+    public RepoPath getResponseRepoPath() {
+        return null;
+    }
+
+    public void setResponseRepoPath(RepoPath responsePath) {
+    }
+
+    public RepoResourceInfo getInfo() {
+        return null;
+    }
+
+    public boolean isFound() {
+        return false;
+    }
+
+    public boolean isExactQueryMatch() {
+        return false;
+    }
+
+    public boolean isExpired() {
+        return false;
+    }
+
+    public boolean isMetadata() {
+        return false;
+    }
+
+    public long getSize() {
+        return 0;
+    }
+
+    public long getCacheAge() {
+        return 0;
+    }
+
+    public long getLastModified() {
+        return 0;
+    }
+
+    public String getMimeType() {
+        return null;
     }
 }

@@ -22,6 +22,7 @@ import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.spring.injection.annot.SpringBean;
@@ -29,12 +30,12 @@ import org.artifactory.addon.AddonInfo;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.webapp.wicket.page.config.license.LicensePage;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -56,34 +57,33 @@ public class AddonsInfoPanel extends TitledPanel {
     /**
      * Main constructor
      *
-     * @param id                  ID to assign to panel
-     * @param installedAddonNames Name list of installed addons
-     * @param enabledAddonNames   Name list of enabled addons
+     * @param id              ID to assign to panel
+     * @param installedAddons Name list of installed addons
+     * @param noEnabledAddons True if no addons are enabled
      */
-    public AddonsInfoPanel(String id, final List<String> installedAddonNames,
-            final Collection<String> enabledAddonNames) {
+    public AddonsInfoPanel(String id, List<AddonInfo> installedAddons, boolean noEnabledAddons) {
         super(id);
         add(new CssClass("addons-table"));
 
         final boolean currentLicenseValid = addonsManager.isLicenseInstalled();
 
         MarkupContainer addonTable = new WebMarkupContainer("addonTable");
-        boolean noAddons = installedAddonNames.isEmpty();
+        boolean noAddons = installedAddons.isEmpty();
         boolean admin = authorizationService.isAdmin();
 
         addonTable.setVisible(!noAddons);
         addonTable.setOutputMarkupId(true);
 
-        Component listView = new ListView<String>("addonItem", installedAddonNames) {
+        Component listView = new ListView<AddonInfo>("addonItem", installedAddons) {
             @Override
-            protected void populateItem(ListItem item) {
-                final String addonName = item.getDefaultModelObjectAsString();
-                AddonInfo addonInfo = addonsManager.getAddonInfoByName(addonName);
+            protected void populateItem(ListItem<AddonInfo> item) {
+                AddonInfo addonInfo = item.getModelObject();
 
-                item.add(new Label("name", addonInfo.getAddonDisplayName()));
+                item.add(new ExternalLink("name", getAddonUrl(addonInfo.getAddonName()),
+                        addonInfo.getAddonDisplayName()));
                 item.add(new Label("image", "").add(new CssClass("addon-" + addonInfo.getAddonName())));
 
-                String addonState = addonInfo.getAddonState().getStateName();
+                String addonState = addonInfo.getAddonState().getName();
                 item.add(new Label("status", addonState));
                 if (item.getIndex() % 2 == 0) {
                     item.add(new CssClass("even"));
@@ -93,15 +93,14 @@ public class AddonsInfoPanel extends TitledPanel {
         addonTable.add(listView);
         add(addonTable);
 
-        boolean noEnabledAddons = enabledAddonNames.isEmpty();
         add(new Label("addonsDisabled", "All add-ons are disabled")
                 .setVisible(currentLicenseValid && !noAddons && noEnabledAddons));
 
         add(new Label("noAddons", "No add-ons currently installed.").setVisible(noAddons));
 
-        String licensePage = WicketUtils.absoluteMountPathForPage(LicensePage.class);
-        Label noLicenseKeyLabel = new Label("noLicenseKey", String.format("Add-ons are currently disabled. To enable " +
-                "add-ons you need to enter your <a href='%s'>License Key</a> first.", licensePage));
+        String licenseRequiredMessage = addonsManager.getLicenseRequiredMessage(
+                WicketUtils.absoluteMountPathForPage(LicensePage.class));
+        Label noLicenseKeyLabel = new Label("noLicenseKey", licenseRequiredMessage);
         noLicenseKeyLabel.setVisible(
                 admin && !currentLicenseValid && !noAddons && noEnabledAddons);
         noLicenseKeyLabel.setEscapeModelStrings(false);
@@ -111,6 +110,10 @@ public class AddonsInfoPanel extends TitledPanel {
 
     @Override
     public String getTitle() {
-        return "Installed Add-ons";
+        return "Pro Add-ons";
+    }
+
+    private String getAddonUrl(String addonId) {
+        return String.format(ConstantValues.addonsInfoUrl.getString(), addonId);
     }
 }

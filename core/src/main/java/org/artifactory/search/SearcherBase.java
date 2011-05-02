@@ -39,7 +39,7 @@ import org.artifactory.jcr.fs.FileInfoProxy;
 import org.artifactory.jcr.fs.FolderInfoProxy;
 import org.artifactory.jcr.fs.ItemInfoProxy;
 import org.artifactory.jcr.fs.JcrFile;
-import org.artifactory.jcr.jackrabbit.DataStoreRecordNotFoundException;
+import org.artifactory.jcr.jackrabbit.MissingOrInvalidDataStoreRecordException;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
@@ -254,7 +254,7 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
      * @throws RepositoryException Will be rethrown if the given exception isn't of an "unfound" type
      */
     protected void handleNotFoundException(RepositoryException re) throws RepositoryException {
-        Throwable notFound = ExceptionUtils.getCauseOfTypes(re, DataStoreRecordNotFoundException.class,
+        Throwable notFound = ExceptionUtils.getCauseOfTypes(re, MissingOrInvalidDataStoreRecordException.class,
                 PathNotFoundException.class, FileNotFoundException.class, ItemNotFoundException.class);
         if (notFound != null) {
             if (log.isDebugEnabled()) {

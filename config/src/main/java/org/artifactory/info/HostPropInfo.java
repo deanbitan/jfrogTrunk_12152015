@@ -18,6 +18,8 @@
 
 package org.artifactory.info;
 
+import com.google.common.collect.Maps;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
@@ -36,15 +38,15 @@ public class HostPropInfo extends BasePropInfoGroup {
     /**
      * Property map
      */
-    TreeMap<String, String> propertyMap;
+    private TreeMap<String, String> propertyMap;
     /**
      * Operating system bean
      */
-    OperatingSystemMXBean systemBean;
+    private OperatingSystemMXBean systemBean;
     /**
      * Memory bean
      */
-    MemoryMXBean memoryBean;
+    private MemoryMXBean memoryBean;
 
     /**
      * Main constructor
@@ -61,7 +63,7 @@ public class HostPropInfo extends BasePropInfoGroup {
      * Sets the map with all the host property names and values
      */
     private void setPropertyMap() {
-        propertyMap = new TreeMap<String, String>();
+        propertyMap = Maps.newTreeMap();
         propertyMap.put("os.arch", systemBean.getArch());
         propertyMap.put("os.name", systemBean.getName());
         propertyMap.put("os.version", systemBean.getVersion());
@@ -92,8 +94,7 @@ public class HostPropInfo extends BasePropInfoGroup {
 
         Set<String> keys = propertyMap.keySet();
         for (String key : keys) {
-            InfoObject infoObjcet = new InfoObject(key, propertyMap.get(key));
-            infoList.add(infoObjcet);
+            infoList.add(new InfoObject(key, propertyMap.get(key)));
         }
         return infoList.toArray(new InfoObject[infoList.size()]);
     }

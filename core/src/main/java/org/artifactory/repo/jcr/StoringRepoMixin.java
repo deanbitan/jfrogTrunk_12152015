@@ -19,7 +19,11 @@
 package org.artifactory.repo.jcr;
 
 import com.google.common.collect.MapMaker;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.FilteredResourcesAddon;
+import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.fs.InternalFileInfo;
@@ -38,6 +42,8 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
+import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.exception.CancelException;
 import org.artifactory.exception.IllegalNameException;
@@ -59,7 +65,6 @@ import org.artifactory.jcr.lock.MonitoringReadWriteLock;
 import org.artifactory.jcr.lock.aop.LockingAdvice;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionService;
-import org.artifactory.jcr.md.MetadataPersistenceHandler;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
@@ -68,7 +73,6 @@ import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.FileResource;
-import org.artifactory.resource.MetadataResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.security.AccessLogger;
@@ -90,6 +94,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 
 public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T> {
     private static final Logger log = LoggerFactory.getLogger(StoringRepoMixin.class);
@@ -106,11 +112,11 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     private JcrService jcrService;
     private InternalTrafficService trafficService;
     private MetadataDefinitionService mdDefService;
-    private RepoPath rootRepoPath;
+    private AddonsManager addonsManager;
 
+    private RepoPath rootRepoPath;
     private final StoringRepo<T> delegator;
     private StoringRepoMixin<T> oldStoringRepo;
-
 
     public StoringRepoMixin(StoringRepo<T> delegator, StoringRepo<T> oldStoringRepo) {
         this.delegator = delegator;
@@ -131,6 +137,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         this.jcrRepoService = context.getJcrRepoService();
         this.jcrService = context.getJcrService();
         this.trafficService = context.beanForType(InternalTrafficService.class);
+        addonsManager = context.beanForType(AddonsManager.class);
 
         //init caches
         if (oldStoringRepo != null) {
@@ -350,13 +357,13 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             } catch (IllegalNameException e) {
                 return new UnfoundRepoResource(repoPath, e.getMessage());
             }
-            MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
-            MetadataInfo mdi = mdph.getMetadataInfo(item);
-            if (mdi != null) {
-                localRes = new MetadataResource(mdi);
-            } else {
-                return new UnfoundRepoResource(repoPath, "metadata " + metadataName + " not found for " + item);
+            MetadataInfo info = definition.getPersistenceHandler().getMetadataInfo(item);
+            if (info == null) {
+                return new UnfoundRepoResource(repoPath, "metadata " + " not found for " + item);
             }
+
+            PropertiesAddon propertiesAddon = addonsManager.addonByType(PropertiesAddon.class);
+            localRes = propertiesAddon.assembleDynamicMetadata(info, item, context.getProperties(), repoPath);
         } else {
             if (item.isDirectory()) {
                 throw new FileExpectedException(repoPath);
@@ -371,11 +378,16 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                     exactMatch = false;
                     log.debug("File '{}' was found, but has no matching properties.", repoPath);
                 } else if (matchResult == Properties.MatchResult.CONFLICT) {
-                    return new UnfoundRepoResource(repoPath,
-                            "File '" + repoPath + "' was found, but mandatory properties do not match.");
+                    return new UnfoundRepoResource(repoPath, "File '" + repoPath +
+                            "' was found, but mandatory properties do not match.");
                 }
             }
-            localRes = new FileResource((InternalFileInfo) item.getInfo(), exactMatch);
+
+            localRes = getFilteredOrFileResource((JcrFile) item, repoPath, context, exactMatch);
+
+            if (!localRes.isFound()) {
+                return localRes;
+            }
         }
         //Release the read lock early
         RepoPath lockedRepoPath = RepoPathImpl.getLockingTargetRepoPath(repoPath);
@@ -506,8 +518,8 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
      * @param in         the stream to save at the location
      * @param properties A set of keyval metadata to attach to the (file) resource as part of this storage process
      */
-    public RepoResource saveResource(RepoResource res, final InputStream in, Properties properties)
-            throws IOException, RepoRejectException {
+    public RepoResource saveResource(RepoResource res, InputStream in, Properties properties) throws IOException,
+            RepoRejectException {
         RepoPath repoPath = new RepoPathImpl(getKey(), res.getRepoPath().getPath());
         try {
             if (res.isMetadata()) {
@@ -526,7 +538,8 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                     } else {
                         //If there is no container return un-found
                         return new UnfoundRepoResource(repoPath,
-                                "No metadata container exists: " + metadataContainerRepoPath);
+                                "No metadata container exists: " + metadataContainerRepoPath
+                        );
                     }
                 }
                 String metadataName = res.getInfo().getName();
@@ -538,81 +551,32 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                     throw new RepositoryException("Cannot save resource, no parent repo path exists");
                 }
 
+                BufferedInputStream bufferedIs = new BufferedInputStream(in);
+                validateArtifactIfRequired(bufferedIs, repoPath);
+
                 //Write lock auto upgrade supported LockingHelper.releaseReadLock(repoPath);
-
                 JcrFile jcrFile = getLockedJcrFile(repoPath, true);
-
-                //Test if beforeCreate caused cancellation
-                BasicStatusHolder statusHolder = new BasicStatusHolder();
-                interceptors.beforeCreate(jcrFile, statusHolder);
-                CancelException cancelException = statusHolder.getCancelException();
-                if (cancelException != null) {
-                    LockingHelper.removeLockEntry(repoPath);
-                    throw new RepoRejectException(cancelException);
-                }
-                if (!itemExists(parentPath.getPath())) {
-                    JcrFolder jcrFolder = getLockedJcrFolder(parentPath, true);
-                    jcrFolder.mkdirs();
-                }
+                onBeforeCreate(jcrFile);
+                createParentDir(parentPath);
 
                 /**
                  * If the file isn't a non-unique snapshot and it already exists, create a defensive of the checksums
                  * info for later comparison
                  */
                 boolean artifactNonUniqueSnapshot = MavenNaming.isNonUniqueSnapshot(repoPath.getId());
-                boolean fileExists = jcrFile.exists();
-                ChecksumsInfo existingChecksumsToCompare = null;
-                if (!artifactNonUniqueSnapshot && fileExists) {
-                    existingChecksumsToCompare = new ChecksumsInfo(jcrFile.getInfo().getChecksumsInfo());
-                }
+                ChecksumsInfo existingChecksumsToCompare = setResourceChecksums(res, jcrFile,
+                        artifactNonUniqueSnapshot);
 
-                // set the file extension checksums (only needed if the file is currently being downloaded)
-                Set<ChecksumInfo> resourceChecksums = ((FileResource) res).getInfo().getChecksums();
-                jcrFile.getInfo().setChecksums(resourceChecksums);
+                long dataFillStartTime = fillJcrFileData(res, bufferedIs, jcrFile);
 
-                //Deploy
-                long lastModified = res.getInfo().getLastModified();
-                BufferedInputStream bis = new BufferedInputStream(in);
-                final long start = System.currentTimeMillis();
-                try {
-                    jcrFile.fillData(lastModified, bis); //May throw a checksum error
-                } catch (Exception e) {
-                    //Make sure the file is not saved
-                    jcrFile.bruteForceDelete();
-                    throw e;
-                }
-
-                ChecksumsInfo newlyCalculatedChecksums = jcrFile.getInfo().getChecksumsInfo();
-                // update the resource with actual checksums (calculated in fillData) - RTFACT-3112
-                res.getInfo().setChecksums(newlyCalculatedChecksums.getChecksums());
-
-                /**
-                 * If the artifact is not a non-unique snapshot and already exists but with a different checksum, remove
-                 * all the existing metadata
-                 */
-                if (!artifactNonUniqueSnapshot && fileExists && (existingChecksumsToCompare != null)) {
-
-                    if (checksumsDiffer(existingChecksumsToCompare, newlyCalculatedChecksums)) {
-                        Set<MetadataDefinition<?>> metadataDefinitions = jcrFile.getExistingMetadata(false);
-                        for (MetadataDefinition<?> metadataDefinition : metadataDefinitions) {
-                            jcrFile.removeMetadata(metadataDefinition.getMetadataName());
-                        }
-                    }
-                }
+                setArtifactActualChecksums(res, jcrFile, artifactNonUniqueSnapshot, existingChecksumsToCompare);
 
                 //Save properties
                 if (properties != null) {
                     jcrFile.setMetadata(Properties.class, properties);
                 }
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Saved resource '{}' with length {} into repository '{}'.",
-                            new Object[]{res, jcrFile.getSize(), this});
-                }
-                onCreate(jcrFile);
-                final UploadEntry uploadEntry =
-                        new UploadEntry(repoPath.getId(), jcrFile.length(), System.currentTimeMillis() - start);
-                trafficService.handleTrafficEntry(uploadEntry);
+                createJcrFile(res, jcrFile, dataFillStartTime);
             }
             return res;
         } catch (Exception e) {
@@ -630,6 +594,133 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             }
             throw new RuntimeException("Failed to save resource '" + res.getRepoPath() + "'.", e);
         }
+    }
+
+    private void validateArtifactIfRequired(InputStream in, RepoPath repoPath) throws IOException, RepoRejectException {
+        if (!NamingUtils.isJarVariant(repoPath.getPath())) {
+            return;
+        }
+
+        RemoteRepoDescriptor remoteRepoDescriptor;
+
+        T repoDescriptor = getDescriptor();
+        if (repoDescriptor instanceof RemoteRepoDescriptor) {
+            remoteRepoDescriptor = ((RemoteRepoDescriptor) repoDescriptor);
+        } else if (repoDescriptor instanceof LocalCacheRepoDescriptor) {
+            remoteRepoDescriptor = ((LocalCacheRepoDescriptor) repoDescriptor).getRemoteRepo();
+        } else {
+            return;
+        }
+
+        if (!remoteRepoDescriptor.isRejectInvalidJars()) {
+            return;
+        }
+
+        String pathId = repoPath.getId();
+        try {
+            in.mark(Integer.MAX_VALUE);
+            log.info("Validating the content of '{}'.", pathId);
+            JarInputStream jarInputStream = new JarInputStream(in, true);
+            JarEntry entry = jarInputStream.getNextJarEntry();
+
+            if (entry == null) {
+
+                throw new IllegalStateException("Could to find entries within the archive.");
+            }
+            do {
+                log.trace("Found the entry '{}' validating the content of '{}'.", entry.getName(), pathId);
+            } while ((jarInputStream.available() == 1) && (entry = jarInputStream.getNextJarEntry()) != null);
+
+            log.info("Finished validating the content of '{}'.", pathId);
+        } catch (Exception e) {
+            String message = String.format("Failed to validate the content of '%s': %s", pathId, e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug(message, e);
+            } else {
+                log.error(message);
+            }
+            throw new RepoRejectException(message, HttpStatus.SC_CONFLICT);
+        } finally {
+            in.reset();
+        }
+    }
+
+    private void onBeforeCreate(JcrFile jcrFile) throws RepoRejectException {
+        //Test if beforeCreate caused cancellation
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
+        interceptors.beforeCreate(jcrFile, statusHolder);
+        CancelException cancelException = statusHolder.getCancelException();
+        if (cancelException != null) {
+            LockingHelper.removeLockEntry(jcrFile.getRepoPath());
+            throw new RepoRejectException(cancelException);
+        }
+    }
+
+    private void createParentDir(RepoPath parentPath) {
+        if (!itemExists(parentPath.getPath())) {
+            JcrFolder jcrFolder = getLockedJcrFolder(parentPath, true);
+            jcrFolder.mkdirs();
+        }
+    }
+
+    private ChecksumsInfo setResourceChecksums(RepoResource res, JcrFile jcrFile,
+            boolean artifactNonUniqueSnapshot) {
+        ChecksumsInfo existingChecksumsToCompare = null;
+        if (!artifactNonUniqueSnapshot && jcrFile.exists()) {
+            existingChecksumsToCompare = new ChecksumsInfo(jcrFile.getInfo().getChecksumsInfo());
+            log.debug("Overriding {} with checksums: {}", jcrFile.getRepoPath(), existingChecksumsToCompare);
+        }
+
+        // set the file extension checksums (only needed if the file is currently being downloaded)
+        Set<ChecksumInfo> resourceChecksums = res.getInfo().getChecksums();
+        jcrFile.getInfo().setChecksums(resourceChecksums);
+        return existingChecksumsToCompare;
+    }
+
+    private long fillJcrFileData(RepoResource res, BufferedInputStream in, JcrFile jcrFile) throws Exception {
+        //Deploy
+        long lastModified = res.getInfo().getLastModified();
+        final long start = System.currentTimeMillis();
+        try {
+            jcrFile.fillData(lastModified, in); //May throw a checksum error
+        } catch (Exception e) {
+            //Make sure the file is not saved
+            jcrFile.bruteForceDelete();
+            throw e;
+        }
+        return start;
+    }
+
+    private void setArtifactActualChecksums(RepoResource res, JcrFile jcrFile, boolean artifactNonUniqueSnapshot,
+            ChecksumsInfo existingChecksumsToCompare) throws RepositoryException {
+        ChecksumsInfo newlyCalculatedChecksums = jcrFile.getInfo().getChecksumsInfo();
+        // update the resource with actual checksums (calculated in fillData) - RTFACT-3112
+        res.getInfo().setChecksums(newlyCalculatedChecksums.getChecksums());
+
+        /**
+         * If the artifact is not a non-unique snapshot and already exists but with a different checksum, remove
+         * all the existing metadata
+         */
+        if (!artifactNonUniqueSnapshot && jcrFile.exists() && (existingChecksumsToCompare != null)) {
+
+            if (checksumsDiffer(existingChecksumsToCompare, newlyCalculatedChecksums)) {
+                Set<MetadataDefinition<?>> metadataDefinitions = jcrFile.getExistingMetadata(false);
+                for (MetadataDefinition<?> metadataDefinition : metadataDefinitions) {
+                    jcrFile.removeMetadata(metadataDefinition.getMetadataName());
+                }
+            }
+        }
+    }
+
+    private void createJcrFile(RepoResource res, JcrFile jcrFile, long dataFillStartTime) {
+        if (log.isDebugEnabled()) {
+            log.debug("Saved resource '{}' with length {} into repository '{}'.",
+                    new Object[]{res, jcrFile.getSize(), this});
+        }
+        onCreate(jcrFile);
+        final UploadEntry uploadEntry = new UploadEntry(jcrFile.getRepoPath().getId(), jcrFile.length(),
+                System.currentTimeMillis() - dataFillStartTime);
+        trafficService.handleTrafficEntry(uploadEntry);
     }
 
     /**
@@ -903,6 +994,21 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return new MapMaker().softValues().initialCapacity(5000).expireAfterWrite(
                 ConstantValues.fsItemCacheIdleTimeSecs.getLong(), TimeUnit.SECONDS).makeMap();
     }
+
+    private RepoResource getFilteredOrFileResource(JcrFile file, RepoPath repoPath, RequestContext context,
+            boolean exactMatch) {
+        if (file.getRepo().isReal()) {
+            FilteredResourcesAddon filteredResourcesAddon = addonsManager.addonByType(FilteredResourcesAddon.class);
+
+            if (filteredResourcesAddon.isFilteredResourceFile(repoPath)) {
+                return filteredResourcesAddon.
+                        getFilteredResource(context.getRequest(), file.getInfo(), file.getStream());
+
+            }
+        }
+        return new FileResource(file.getInfo(), exactMatch);
+    }
+
 
     private class JcrFsItemLocator {
         private final RepoPath repoPath;

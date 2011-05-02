@@ -21,7 +21,7 @@ package org.artifactory.addon.wicket.disabledaddon;
 import org.apache.wicket.Component;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.util.value.IValueMap;
-import org.artifactory.addon.wicket.AddonType;
+import org.artifactory.addon.AddonType;
 
 /**
  * @author Yoav Aharoni

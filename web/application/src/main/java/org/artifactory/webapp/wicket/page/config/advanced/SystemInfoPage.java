@@ -21,13 +21,13 @@ package org.artifactory.webapp.wicket.page.config.advanced;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInstantiation;
-import org.apache.wicket.markup.html.form.TextArea;
-import org.apache.wicket.model.Model;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
+import org.artifactory.common.wicket.component.label.highlighter.Syntax;
+import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
 import java.lang.management.ManagementFactory;
@@ -56,7 +56,7 @@ public class SystemInfoPage extends AuthenticatedPage {
         TitledBorder border = new TitledBorder("border");
         add(border);
 
-        TextArea<String> infoPanel = new TextArea<String>("sysInfo", Model.of(collectSystemInfo()));
+        SyntaxHighlighter infoPanel = new SyntaxHighlighter("sysInfo", collectSystemInfo(), Syntax.plain);
         infoPanel.setEscapeModelStrings(true);
         border.add(infoPanel);
     }
@@ -88,13 +88,13 @@ public class SystemInfoPage extends AuthenticatedPage {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemoryUsage = memoryBean.getHeapMemoryUsage();
 
-        addInfo(infoBuilder, "Heap Memory Usage-Commited", Long.toString(heapMemoryUsage.getCommitted()));
+        addInfo(infoBuilder, "Heap Memory Usage-Committed", Long.toString(heapMemoryUsage.getCommitted()));
         addInfo(infoBuilder, "Heap Memory Usage-Init", Long.toString(heapMemoryUsage.getInit()));
         addInfo(infoBuilder, "Heap Memory Usage-Max", Long.toString(heapMemoryUsage.getMax()));
         addInfo(infoBuilder, "Heap Memory Usage-Used", Long.toString(heapMemoryUsage.getUsed()));
 
         MemoryUsage nonHeapMemoryUsage = memoryBean.getNonHeapMemoryUsage();
-        addInfo(infoBuilder, "Non-Heap Memory Usage-Commited", Long.toString(nonHeapMemoryUsage.getCommitted()));
+        addInfo(infoBuilder, "Non-Heap Memory Usage-Committed", Long.toString(nonHeapMemoryUsage.getCommitted()));
         addInfo(infoBuilder, "Non-Heap Memory Usage-Init", Long.toString(nonHeapMemoryUsage.getInit()));
         addInfo(infoBuilder, "Non-Heap Memory Usage-Max", Long.toString(nonHeapMemoryUsage.getMax()));
         addInfo(infoBuilder, "Non-Heap Memory Usage-Used", Long.toString(nonHeapMemoryUsage.getUsed()));

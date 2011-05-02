@@ -18,10 +18,11 @@
 
 package org.artifactory.common.wicket.component.modal.panel.bordered;
 
-import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
+import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 
 import static java.lang.String.format;
@@ -29,22 +30,27 @@ import static java.lang.String.format;
 /**
  * @author Yoav Aharoni
  */
-public class BorderedModalPanel extends BaseModalPanel {
-    public BorderedModalPanel(Component content) {
-        MarkupContainer border = new TitledBorder("border");
-        add(border);
-        content.setOutputMarkupId(true);
-        border.add(content);
+public abstract class BorderedModalPanel extends BaseModalPanel {
+
+    protected final Form form = new Form("form");
+    protected final MarkupContainer border = new TitledBorder("border");
+
+    protected BorderedModalPanel() {
+        add(form);
+        form.add(border);
     }
 
     @Override
     public void onShow(AjaxRequestTarget target) {
-        String markupId = get("border:content").getMarkupId();
+        String markupId = get("form:border:content").getMarkupId();
         target.appendJavascript(format("ModalHandler.bindModalHeight(dojo.byId('%s'));", markupId));
+        ModalHandler.resizeAndCenterCurrent(target);
     }
 
     @Override
     public String getCookieName() {
         return null;
     }
+
+    protected abstract void addContentToBorder();
 }

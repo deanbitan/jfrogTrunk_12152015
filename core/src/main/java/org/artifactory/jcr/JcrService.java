@@ -18,6 +18,7 @@
 
 package org.artifactory.jcr;
 
+import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.ArtifactCount;
@@ -233,4 +234,7 @@ public interface JcrService extends ReloadableBean {
     @Transactional
     JcrTreeNode getTreeNode(RepoPath itemPath, MultiStatusHolder multiStatusHolder,
             JcrTreeNodeFileFilter fileFilter);
+
+    @Transactional
+    InputStream getDataStreamBySha1Checksum(String sha1) throws DataStoreException;
 }

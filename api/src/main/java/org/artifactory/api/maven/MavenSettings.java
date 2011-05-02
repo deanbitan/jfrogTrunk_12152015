@@ -44,7 +44,7 @@ public class MavenSettings {
     }
 
     /**
-     * Secondary costructor
+     * Secondary constructor
      *
      * @param url                Context URL
      * @param repositories       Release repository list

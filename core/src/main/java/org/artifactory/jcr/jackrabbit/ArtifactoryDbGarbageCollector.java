@@ -38,6 +38,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.gc.JcrGarbageCollector;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
 
 import javax.jcr.*;
@@ -343,7 +344,12 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
                             }
                         }
                     }
-                } catch (NoSuchItemStateException e) {
+                } catch (Exception e) {
+                    Throwable cause = ExceptionUtils
+                            .getCauseOfTypes(e, ItemNotFoundException.class, NoSuchItemStateException.class);
+                    if (cause == null) {
+                        throw new RepositoryException(e);
+                    }
                     // the node may have been deleted or moved in the meantime
                     // ignore it
                 }

@@ -57,7 +57,6 @@ public class BrowsableItem extends BaseBrowsableItem {
      * Creates a standard browsable item
      *
      * @param itemInfo Backing item info
-     * @param <T>      Any instance of item info
      * @return Browsable item
      */
     public static <T extends ItemInfo> BrowsableItem getItem(T itemInfo) {

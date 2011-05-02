@@ -47,7 +47,6 @@ import org.artifactory.request.Request;
 import org.artifactory.request.RequestContext;
 import org.artifactory.request.RequestResponseHelper;
 import org.artifactory.resource.ChecksumResource;
-import org.artifactory.resource.FileResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.spring.InternalContextHelper;
@@ -118,7 +117,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
      */
     public void process(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug("Request: source=" + request.getSourceDescription() + ", path=" + request.getPath() +
+            log.debug("Request: source=" + request.getClientAddress() + ", path=" + request.getPath() +
                     ", lastModified=" + centralConfig.format(request.getLastModified()) +
                     ", headOnly=" + request.isHeadOnly() + ", ifModifiedSince=" + request.getIfModifiedSince());
         }
@@ -357,7 +356,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
 
         if (request.isHeadOnly()) {
             // send head response using the checksum data
-            ChecksumResource checksumResource = new ChecksumResource((FileResource) resource, checksumType, checksum);
+            ChecksumResource checksumResource = new ChecksumResource(resource, checksumType, checksum);
             requestResponseHelper.sendHeadResponse(response, checksumResource);
         } else {
             AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);

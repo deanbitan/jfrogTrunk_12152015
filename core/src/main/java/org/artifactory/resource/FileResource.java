@@ -18,10 +18,9 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.api.fs.FileInfoImpl;
-import org.artifactory.api.fs.InternalFileInfo;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.repo.RepoPath;
 
@@ -30,21 +29,17 @@ import org.artifactory.repo.RepoPath;
  */
 public class FileResource implements RepoResource {
 
-    private final InternalFileInfo info;
+    private final FileInfo info;
     private RepoPath responseRepoPath;
     private boolean exactQueryMatch;
 
-    public FileResource(InternalFileInfo fileInfo) {
+    public FileResource(FileInfo fileInfo) {
         this(fileInfo, true);
     }
 
-    public FileResource(InternalFileInfo fileInfo, boolean exactQueryMatch) {
-        this.info = new FileInfoImpl(fileInfo);
+    public FileResource(FileInfo fileInfo, boolean exactQueryMatch) {
+        this.info = fileInfo;
         this.exactQueryMatch = exactQueryMatch;
-    }
-
-    public FileResource(RepoPath repoPath) {
-        this(new FileInfoImpl(repoPath));
     }
 
     public RepoPath getRepoPath() {
@@ -59,7 +54,7 @@ public class FileResource implements RepoResource {
         this.responseRepoPath = responsePath;
     }
 
-    public InternalFileInfo getInfo() {
+    public FileInfo getInfo() {
         return info;
     }
 

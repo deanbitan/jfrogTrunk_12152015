@@ -28,6 +28,7 @@ import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.spring.ReloadableBean;
 import org.jfrog.build.api.Build;
+import org.jfrog.build.api.BuildFileBean;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -51,16 +52,29 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
     Build getBuild(Node buildNode);
 
     /**
+     * Returns a file info object for a build file bean
+     *
+     * @param buildName      The name of the searched build
+     * @param buildNumber    The number of the searched build
+     * @param bean           File bean to get info for
+     * @param strictMatching True if the artifact finder should operate in strict mode
+     * @return file infos
+     */
+    Set<FileInfo> getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean,
+            boolean strictMatching);
+
+    /**
      * Returns the best matching file info object from the given results and criteria
      *
      * @param searchResults    File bean search results
      * @param resultProperties Search result property map
      * @param buildName        Build name to search for
      * @param buildNumber      Build number to search for
-     * @return The file info of a result that best matches the given criteria
+     * @param strictMatching   True if the artifact finder should operate in strict mode
+     * @return The file infos of a result that best match the given criteria
      */
-    FileInfo getBestMatchingResult(Set<RepoPath> searchResults, Map<RepoPath, Properties> resultProperties,
-            String buildName, String buildNumber);
+    Set<FileInfo> getBestMatchingResult(Set<RepoPath> searchResults, Map<RepoPath, Properties> resultProperties,
+            String buildName, String buildNumber, boolean strictMatching);
 
     /**
      * Locates builds that are named as the given name within a transaction

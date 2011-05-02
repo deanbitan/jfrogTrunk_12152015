@@ -20,7 +20,6 @@ package org.artifactory.repo.virtual;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
@@ -36,11 +35,8 @@ import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.TranslatedArtifactoryRequest;
-import org.artifactory.checksum.ChecksumInfo;
-import org.artifactory.checksum.ChecksumType;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.io.checksum.Checksum;
-import org.artifactory.io.checksum.Checksums;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
@@ -56,18 +52,17 @@ import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.DownloadRequestContext;
 import org.artifactory.request.NullRequestContext;
 import org.artifactory.request.RequestContext;
+import org.artifactory.resource.MetadataResource;
+import org.artifactory.resource.ResolvedResource;
 import org.artifactory.resource.ResourceStreamHandle;
-import org.artifactory.resource.StringResource;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.slf4j.Logger;
 
 import javax.jcr.RepositoryException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Default download strategy of a virtual repository.
@@ -234,13 +229,19 @@ public class VirtualRepoDownloadStrategy {
         // save forbidden unfound response
         UnfoundRepoResource forbidden = null;
         //Locate the resource matching the request
-        RepoResource closetMatch = null;
+        RepoResource closestMatch = null;
 
         for (RealRepo repo : repositories) {
             // Since we are in process standard, repositories that does not process releases should be skipped.
             // Now, checksums are always considered standard, even if executed against a snapshot repository.
             // So, we should not skip snapshots repositories for checksums.
-            if (!repo.isHandleReleases() && !NamingUtils.isChecksum(repoPath.getPath())) {
+            String path = repoPath.getPath();
+            if (!repo.isHandleReleases() && !NamingUtils.isChecksum(path)) {
+                log.debug("Repo '{}' not handling releases - skipping '{}'.", repo.getKey(), path);
+                continue;
+            }
+
+            if (closestMatch != null && isExactMatchRequired(repo)) {
                 continue;
             }
 
@@ -250,21 +251,25 @@ public class VirtualRepoDownloadStrategy {
             // release all read locks acquired by the repo during the getInfo
             LockingHelper.getSessionLockManager().unlockAllReadLocks(repo.getKey());
             if (res.isFound()) {
+                log.debug("Found resource '{}' found in repo '{}'.", path, repo.getKey());
                 updateResponseRepoPath(repo, res);
                 if (res.isExactQueryMatch()) {
                     //return the exact match
                     return res;
                 } else {
-                    closetMatch = res;
+                    closestMatch = res;
                 }
             } else if (forbidden == null) {
                 forbidden = checkIfForbidden(res);
+                if (log.isDebugEnabled() && forbidden != null) {
+                    log.debug("Resource '{}' forbidden by repo '{}'.", repoPath, repo.getKey());
+                }
             }
         }
 
         //If we didn't find an exact match return the first found resource (closest match)
-        if (closetMatch != null) {
-            return closetMatch;
+        if (closestMatch != null) {
+            return closestMatch;
         }
 
         // not found in any repo
@@ -293,7 +298,6 @@ public class VirtualRepoDownloadStrategy {
             if (shouldSkipSnapshotRepo(foundInLocalRepo, repo)) {
                 continue;
             }
-
             RequestContext translatedContext = translateRepoRequestContext(virtualRepo, repo, context);
             String translatedPath = translatedContext.getResourcePath();
 
@@ -301,8 +305,7 @@ public class VirtualRepoDownloadStrategy {
             if (res.isFound()) {
                 foundInLocalRepo = isSnapshotFoundInLocalRepo(foundInLocalRepo, repo, translatedPath);
                 if (log.isDebugEnabled()) {
-                    log.debug("{} last modified {}", res.getRepoPath(),
-                            centralConfig.format(res.getLastModified()));
+                    log.debug("{} last modified {}", res.getRepoPath(), centralConfig.format(res.getLastModified()));
                 }
 
                 //If we haven't found one yet
@@ -344,7 +347,7 @@ public class VirtualRepoDownloadStrategy {
             return true;
         }
         //Skip remote repos if found in local repo (including caches)
-        return foundInLocalRepo && !repo.isLocal();
+        return foundInLocalRepo && !repo.isLocal() && isExactMatchRequired(repo);
     }
 
     private boolean isSnapshotFoundInLocalRepo(boolean foundInLocalRepo, RealRepo repo, String requestPath) {
@@ -382,7 +385,6 @@ public class VirtualRepoDownloadStrategy {
                 // and expiry
                 continue;
             }
-
             RequestContext translatedContext = translateRepoRequestContext(virtualRepo, repo, context);
 
             RepoResource res = repo.getInfo(translatedContext);
@@ -392,7 +394,6 @@ public class VirtualRepoDownloadStrategy {
                 }
                 continue;
             }
-
             findAndMergeMavenMetadata(mergedMavenMetadata, repo, translatedContext, res);
         }   // end repositories iteration
 
@@ -474,17 +475,7 @@ public class VirtualRepoDownloadStrategy {
         MetadataInfo metadataInfo = new MetadataInfoImpl(mavenMetadataRepoPath);
         metadataInfo.setLastModified(mergedMavenMetadata.getLastModified());
         metadataInfo.setSize(metadataContent.length());
-        ByteArrayInputStream bais = new ByteArrayInputStream(metadataContent.getBytes("utf-8"));
-
-        Checksum[] checksums = Checksums.calculate(bais, ChecksumType.values());
-        Set<ChecksumInfo> checksumInfos = Sets.newHashSetWithExpectedSize(checksums.length);
-        for (Checksum checksum : checksums) {
-            ChecksumInfo checksumInfo =
-                    new ChecksumInfo(checksum.getType(), checksum.getChecksum(), checksum.getChecksum());
-            checksumInfos.add(checksumInfo);
-        }
-        metadataInfo.setChecksums(checksumInfos);
-        return new StringResource(metadataInfo, metadataContent);
+        return new ResolvedResource(new MetadataResource(metadataInfo), metadataContent);
     }
 
     /**
@@ -573,5 +564,9 @@ public class VirtualRepoDownloadStrategy {
         RepoLayout targetRepoLayout = target.getDescriptor().getRepoLayout();
 
         return ModuleInfoUtils.translateArtifactPath(sourceRepoLayout, targetRepoLayout, path);
+    }
+
+    private boolean isExactMatchRequired(RealRepo repo) {
+        return !repo.isLocal() && !((RemoteRepoDescriptor) repo.getDescriptor()).isSynchronizeProperties();
     }
 }

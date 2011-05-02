@@ -18,8 +18,11 @@
 
 package org.artifactory.addon;
 
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 
@@ -63,4 +66,11 @@ public interface PropertiesAddon extends Addon {
      * @param values      Property values (if null, will not add the property)
      */
     void addProperty(RepoPath repoPath, PropertySet propertySet, Property property, String... values);
+
+    /**
+     * Assemble a custom maven-metadata.xml according to the metadata definitions and matrix params in conjunction with
+     * the existing properties already on the node.
+     */
+    RepoResource assembleDynamicMetadata(MetadataInfo info, JcrFsItem<?> metadataHostingItem, Properties queryProps,
+            RepoPath metadataRepoPath);
 }

@@ -22,6 +22,15 @@
 
 <Repository>
 
+    <!--
+   ****************************************************** WARNING ******************************************************
+   MySQL buffers r/w blobs in RAM. This configuration which stores artifacts in blobs is therefore not
+   recommended in most cases since it incurs high memory consumption.
+   It is recommended to use the 'filesystem-mysql' over this configuration and keep binaries stored on the file system,
+   while metadata is managed in MySQL.
+   *********************************************************************************************************************
+    -->
+
     <!-- MySQL Datasource -->
     <DataSources>
         <DataSource name="ds">
@@ -58,7 +67,7 @@
         <param name="schemaObjectPrefix" value="ds_"/>
         <!--<param name="tablePrefix" value=""/>-->
 
-        <param name="minRecordLength" value="512"/>
+        <param name="minRecordLength" value="0"/>
         <!-- Whether to use a cache blobs temporarily on the file system for faster reads -->
         <param name="cacheBlobs" value="true"/>
         <!-- The maximum size of the blobs cache in gigabytes (g), megabytes (m) or kilobytes (k) -->

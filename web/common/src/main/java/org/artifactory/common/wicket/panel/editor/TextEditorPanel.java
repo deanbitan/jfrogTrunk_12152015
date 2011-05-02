@@ -19,9 +19,8 @@
 package org.artifactory.common.wicket.panel.editor;
 
 import org.apache.wicket.Component;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.behavior.AbstractBehavior;
-import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
@@ -76,34 +75,17 @@ public class TextEditorPanel extends TitledPanel {
     /**
      * Put the focus on the {@link TextArea} and place the caret inside
      */
-    public void addTextAreaFocusBehaviour() {
-        editorTextArea.add(new FocusBehavior());
+    public void focus() {
+        AjaxRequestTarget target = AjaxRequestTarget.get();
+        if (target != null) {
+            target.focusComponent(editorTextArea);
+        }
     }
 
     private void addTextArea() {
         editorTextArea = new TextArea<String>("editorTextArea", newTextModel());
+        editorTextArea.setOutputMarkupId(true);
         add(editorTextArea);
-    }
-
-    /**
-     * Behaviour to focus the window and place the caret inside a specific {@link Component}
-     */
-    private static class FocusBehavior extends AbstractBehavior {
-
-        private Component component;
-
-        @Override
-        public void bind(Component component) {
-            super.bind(component);
-            this.component = component;
-            component.setOutputMarkupId(true);
-        }
-
-        @Override
-        public void renderHead(IHeaderResponse response) {
-            super.renderHead(response);
-            response.renderOnLoadJavascript("document.getElementById('" + component.getMarkupId() + "').focus();");
-        }
     }
 
     protected IModel<String> newTextModel() {

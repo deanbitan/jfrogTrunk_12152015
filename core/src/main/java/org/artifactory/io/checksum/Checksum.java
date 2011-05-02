@@ -62,8 +62,8 @@ public class Checksum {
         return checksum;
     }
 
-    void update(byte[] bytes, int length) {
-        digest.update(bytes, 0, length);
+    void update(byte[] bytes, int off, int length) {
+        digest.update(bytes, off, length);
     }
 
     void calc() {

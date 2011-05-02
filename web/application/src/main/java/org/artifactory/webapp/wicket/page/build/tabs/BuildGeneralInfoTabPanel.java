@@ -24,8 +24,8 @@ import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
+import org.artifactory.addon.AddonType;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.AddonType;
 import org.artifactory.addon.wicket.SearchAddon;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
@@ -67,7 +67,6 @@ public class BuildGeneralInfoTabPanel extends Panel {
         FieldSetBorder infoBorder = new FieldSetBorder("infoBorder");
         add(infoBorder);
 
-        addLabeledValue(infoBorder, "version", "Version", build.getVersion(), true);
         addLabeledValue(infoBorder, "name", "Name", build.getName(), true);
         addLabeledValue(infoBorder, "number", "Number", build.getNumber(), true);
 

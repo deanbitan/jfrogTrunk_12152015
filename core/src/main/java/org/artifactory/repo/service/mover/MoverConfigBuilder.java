@@ -37,6 +37,7 @@ public class MoverConfigBuilder implements Builder<MoverConfig> {
     private boolean searchResult = false;
     private Properties properties;
     private boolean suppressLayouts = false;
+    private boolean failFast = false;
 
     /**
      * @param fromRepoPath       Source repo path
@@ -108,13 +109,24 @@ public class MoverConfigBuilder implements Builder<MoverConfig> {
     }
 
     /**
-     * Indicate whether path translation across different layouts is should be suppressed.
+     * Indicate whether path translation across different layouts should be suppressed.
      *
-     * @param suppressLayouts True if path translation is should be suppressed
+     * @param suppressLayouts True if path translation should be suppressed
      * @return MoverConfigBuilder
      */
     public MoverConfigBuilder suppressLayouts(boolean suppressLayouts) {
         this.suppressLayouts = suppressLayouts;
+        return this;
+    }
+
+    /**
+     * Indicate whether the operation should fail upon encountering an error.
+     *
+     * @param failFast True if the operation should fail upon encountering an error.
+     * @return MoverConfigBuilder
+     */
+    public MoverConfigBuilder failFast(boolean failFast) {
+        this.failFast = failFast;
         return this;
     }
 
@@ -124,7 +136,7 @@ public class MoverConfigBuilder implements Builder<MoverConfig> {
      * @return MoverConfig
      */
     public MoverConfig build() {
-        return new MoverConfig(fromRepoPath, targetLocalRepoPath, targetLocalRepoKey,
-                copy, dryRun, executeMavenMetadataCalculation, searchResult, properties, suppressLayouts);
+        return new MoverConfig(fromRepoPath, targetLocalRepoPath, targetLocalRepoKey, copy, dryRun,
+                executeMavenMetadataCalculation, searchResult, properties, suppressLayouts, failFast);
     }
 }

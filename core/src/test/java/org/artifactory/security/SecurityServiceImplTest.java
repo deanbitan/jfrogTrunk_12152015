@@ -32,6 +32,7 @@ import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.easymock.EasyMock;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,6 +46,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.easymock.EasyMock.*;
 import static org.testng.Assert.*;
@@ -66,6 +68,7 @@ public class SecurityServiceImplTest {
     private LocalRepo localRepoMock;
     private LocalRepo cacheRepoMock;
     private InternalCentralConfigService centralConfigServiceMock;
+    private UserGroupManager userGroupManager;
 
     @BeforeClass
     public void initArtifactoryRoles() {
@@ -73,6 +76,7 @@ public class SecurityServiceImplTest {
         internalAclManagerMock = createMock(InternalAclManager.class);
         repositoryServiceMock = createMock(InternalRepositoryService.class);
         centralConfigServiceMock = createMock(InternalCentralConfigService.class);
+        userGroupManager = createMock(UserGroupManager.class);
         localRepoMock = createLocalRepoMock();
         cacheRepoMock = createCacheRepoMock();
     }
@@ -86,9 +90,11 @@ public class SecurityServiceImplTest {
         // new service instance
         service = new SecurityServiceImpl();
         // set the aclManager mock on the security service
+        ReflectionTestUtils.setField(service, "userGroupManager", userGroupManager);
         ReflectionTestUtils.setField(service, "internalAclManager", internalAclManagerMock);
         ReflectionTestUtils.setField(service, "repositoryService", repositoryServiceMock);
         ReflectionTestUtils.setField(service, "centralConfig", centralConfigServiceMock);
+        ReflectionTestUtils.setField(service, "lastLoginBufferTime", TimeUnit.SECONDS.toMillis(2));
 
         // reset mocks
         reset(internalAclManagerMock, repositoryServiceMock, centralConfigServiceMock);
@@ -542,6 +548,42 @@ public class SecurityServiceImplTest {
         expect(internalAclManagerMock.getAllAcls(aryEq(sids))).andReturn(createAnyLocalAcl());
 
         verifyAnyRemoteOrAnyLocal(authentication, securedPath);
+    }
+
+    public void testUserLastLoginTimeUpdateBuffer() throws InterruptedException {
+        long firstLogin = System.currentTimeMillis();
+        UserInfo user = new UserInfoBuilder("user").build();
+        user.setLastLoginTimeMillis(0);
+        SimpleUser simpleUser = new SimpleUser(user);
+
+        expect(userGroupManager.userExists("user")).andReturn(true).once();
+        expect(userGroupManager.loadUserByUsername("user")).andReturn(simpleUser).once();
+        userGroupManager.updateUser(simpleUser);
+        EasyMock.expectLastCall();
+        replay(userGroupManager);
+
+        service.updateUserLastLogin("user", "momo", firstLogin);
+
+        verify(userGroupManager);
+        reset(userGroupManager);
+        user = new UserInfoBuilder("user").build();
+        user.setLastLoginTimeMillis(firstLogin);
+        simpleUser = new SimpleUser(user);
+        expect(userGroupManager.userExists("user")).andReturn(true).once();
+        expect(userGroupManager.loadUserByUsername("user")).andReturn(simpleUser).once();
+        replay(userGroupManager);
+
+        service.updateUserLastLogin("user", "momo", System.currentTimeMillis());
+
+        verify(userGroupManager);
+        reset(userGroupManager);
+        expect(userGroupManager.userExists("user")).andReturn(true).once();
+        expect(userGroupManager.loadUserByUsername("user")).andReturn(simpleUser).once();
+        userGroupManager.updateUser(simpleUser);
+        EasyMock.expectLastCall();
+        replay(userGroupManager);
+        Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+        service.updateUserLastLogin("user", "momo", System.currentTimeMillis() + 1l);
     }
 
     private void verifyAnyRemoteOrAnyLocal(Authentication authentication, RepoPath securedPath) {

@@ -172,6 +172,7 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
             long now = System.currentTimeMillis();
             DataIdentifier identifier = new DataIdentifier(digest.digest());
             String id = identifier.toString();
+            log.trace("Datastore checksum: 'MD5:{}", id);
             dataRecord = new ArtifactoryDbDataRecord(this, identifier, tempFile.length(), now);
 
             boolean isNew;
@@ -278,7 +279,7 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
     }
 
     /**
-     * Delte all unused Db entry from datastore
+     * Delete all unused Db entry from datastore
      *
      * @return the amount of elements on pos 0, pos 1 = the amount of bytes removed from DB
      * @throws DataStoreException
@@ -311,25 +312,25 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
      * @return the amount of bytes deleted
      * @throws DataStoreException
      */
-    private long deleteEntry(ArtifactoryDbDataRecord record) throws DataStoreException {
+    protected long deleteEntry(ArtifactoryDbDataRecord record) throws DataStoreException {
         try {
             long length = record.length;
             // DELETE FROM DATASTORE WHERE ID=? (toremove)
             int res = conHelper.update(deleteSQL, new Object[]{record.getIdentifier().toString()});
+            //record.setDeleted();
+            allEntries.remove(record.getIdentifier().toString());
             if (res != 1) {
                 log.error("Deleting record " + record + " returned " + res + " updated.");
                 // Mark as deleted anyway since no SQL exception means no entry
-                record.setDeleted();
+                return 0L;
             } else {
                 log.debug("Deleted record " + record + " from data store.");
-                record.setDeleted();
                 return length;
             }
         } catch (Exception e) {
             record.setInError(e);
             throw convert("Can not delete records", e);
         }
-        return 0L;
     }
 
     /**
@@ -425,7 +426,7 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
     public DataRecord getRecord(DataIdentifier identifier) throws DataStoreException {
         DataRecord record = getRecordIfStored(identifier);
         if (record == null) {
-            throw new DataStoreException("Record not found: " + identifier);
+            throw new DataStoreException("No such record: '" + identifier + "'.");
         }
         return record;
     }

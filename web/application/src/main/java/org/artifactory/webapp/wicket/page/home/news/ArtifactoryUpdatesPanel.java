@@ -30,6 +30,7 @@ import org.apache.wicket.util.time.Duration;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.message.ArtifactoryUpdatesService;
 import org.artifactory.api.message.Message;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.template.HtmlTemplate;
@@ -54,7 +55,7 @@ public class ArtifactoryUpdatesPanel extends Panel {
         setOutputMarkupPlaceholderTag(true);
 
         CentralConfigDescriptor configDescriptor = centralConfigService.getDescriptor();
-        if (configDescriptor.isOfflineMode()) {
+        if (ConstantValues.versionQueryEnabled.getBoolean() && configDescriptor.isOfflineMode()) {
             setVisible(false);
             return;
         }
@@ -135,7 +136,8 @@ public class ArtifactoryUpdatesPanel extends Panel {
 
         @Override
         public void renderHead(IHeaderResponse response) {
-            response.renderOnDomReadyJavascript(String.format("ArtifactoryUpdates.fadeIn('%s');", component.getMarkupId()));
+            response.renderOnDomReadyJavascript(
+                    String.format("ArtifactoryUpdates.fadeIn('%s');", component.getMarkupId()));
         }
     }
 }

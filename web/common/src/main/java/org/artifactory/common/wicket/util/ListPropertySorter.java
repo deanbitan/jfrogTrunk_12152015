@@ -59,27 +59,29 @@ public abstract class ListPropertySorter {
     }
 
     public static void sort(List listToSort, SortParam... sortParams) {
+        sort(listToSort, new DefaultListSorterOrderingStrategy(), sortParams);
+    }
+
+    public static void sort(List listToSort, ListSorterOrderingStrategy strategy, SortParam... sortParams) {
         if (listToSort.isEmpty()) {
             return;
         }
-        Ordering ordering = createOrdering(sortParams);
+        Ordering ordering = createOrdering(sortParams, strategy);
         if (ordering != null) {
             Collections.sort(listToSort, ordering);
         }
     }
 
-    private static Ordering createOrdering(SortParam[] sortParams) {
+    private static Ordering createOrdering(SortParam[] sortParams, ListSorterOrderingStrategy strategy) {
         Ordering ordering = null;
         for (SortParam sortParam : sortParams) {
             if (sortParam != null) {
                 final String property = sortParam.getProperty();
                 if (StringUtils.hasText(property)) {
-                    final SortDefinition sortDefinition = new MutableSortDefinition(property, true,
-                            sortParam.isAscending());
                     if (ordering == null) {
-                        ordering = Ordering.from(new PropertyComparator(sortDefinition));
+                        ordering = strategy.createOrdering(sortParam);
                     } else {
-                        ordering = ordering.compound(Ordering.from(new PropertyComparator(sortDefinition)));
+                        ordering = ordering.compound(strategy.createOrdering(sortParam));
                     }
                 }
             }

@@ -55,7 +55,7 @@ public class TranslatedArtifactoryRequestTest extends ArtifactoryHomeBoundTest {
     @BeforeClass
     public void setUp() throws Exception {
         ArtifactoryRequest artifactoryRequestMock = EasyMock.createMock(ArtifactoryRequest.class);
-        EasyMock.expect(artifactoryRequestMock.getSourceDescription()).andReturn("sourceDescription").anyTimes();
+        EasyMock.expect(artifactoryRequestMock.getClientAddress()).andReturn("sourceDescription").anyTimes();
         EasyMock.expect(artifactoryRequestMock.isRecursive()).andReturn(true).anyTimes();
         EasyMock.expect(artifactoryRequestMock.getModificationTime()).andReturn(2013944l).anyTimes();
         EasyMock.expect(artifactoryRequestMock.isFromAnotherArtifactory()).andReturn(false).anyTimes();
@@ -101,9 +101,9 @@ public class TranslatedArtifactoryRequestTest extends ArtifactoryHomeBoundTest {
 
     @Test
     public void testGetSourceDescription() throws Exception {
-        assertEquals(translatedArtifactoryRequest.getSourceDescription(), "sourceDescription");
-        assertEquals(translatedMetadataArtifactoryRequest.getSourceDescription(), "sourceDescription");
-        assertEquals(translatedChecksumArtifactoryRequest.getSourceDescription(), "sourceDescription");
+        assertEquals(translatedArtifactoryRequest.getClientAddress(), "sourceDescription");
+        assertEquals(translatedMetadataArtifactoryRequest.getClientAddress(), "sourceDescription");
+        assertEquals(translatedChecksumArtifactoryRequest.getClientAddress(), "sourceDescription");
     }
 
     @Test

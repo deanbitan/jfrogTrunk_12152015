@@ -22,12 +22,14 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.replication.ReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
@@ -62,8 +64,8 @@ import java.util.Map;
 @XmlType(name = "CentralConfigType",
         propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
                 "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
-                "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts"},
-        namespace = Descriptor.NS)
+                "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
+                "replications"}, namespace = Descriptor.NS)
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CentralConfigDescriptorImpl implements MutableCentralConfigDescriptor {
 
@@ -135,6 +137,10 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @XmlElementWrapper(name = "repoLayouts")
     @XmlElement(name = "repoLayout", required = false)
     private List<RepoLayout> repoLayouts = Lists.newArrayList();
+
+    @XmlElementWrapper(name = "replications")
+    @XmlElement(name = "replication", required = false)
+    private List<ReplicationDescriptor> replications = Lists.newArrayList();
 
     public Map<String, LocalRepoDescriptor> getLocalRepositoriesMap() {
         return localRepositoriesMap;
@@ -301,6 +307,13 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
             IndexerDescriptor indexer = getIndexer();
             if (indexer != null) {
                 indexer.removeExcludedRepository((RepoBaseDescriptor) removedRepo);
+            }
+        }
+
+        if (removedRepo instanceof HttpRepoDescriptor) {
+            ReplicationDescriptor existingReplication = getReplication(removedRepo.getKey());
+            if (existingReplication != null) {
+                removeReplication(existingReplication);
             }
         }
 
@@ -629,5 +642,45 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         }
 
         return null;
+    }
+
+    public List<ReplicationDescriptor> getReplications() {
+        return replications;
+    }
+
+    public ReplicationDescriptor getReplication(String replicatedRepoKey) {
+
+        if (StringUtils.isNotBlank(replicatedRepoKey)) {
+            for (ReplicationDescriptor replication : replications) {
+
+                if (replicatedRepoKey.equals(replication.getRepoKey())) {
+                    return replication;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public void addReplication(ReplicationDescriptor replicationDescriptor) {
+        if (replications.contains(replicationDescriptor)) {
+            throw new AlreadyExistsException("Replication for '" + replicationDescriptor.getRepoKey() +
+                    "' already exists");
+        }
+        replications.add(replicationDescriptor);
+    }
+
+    public void updateReplication(ReplicationDescriptor replicationDescriptor) {
+        ReplicationDescriptor replication = getReplication(replicationDescriptor.getRepoKey());
+        removeReplication(replication);
+        addReplication(replicationDescriptor);
+    }
+
+    public void removeReplication(ReplicationDescriptor replicationDescriptor) {
+        replications.remove(replicationDescriptor);
+    }
+
+    public void setReplications(List<ReplicationDescriptor> replicationDescriptors) {
+        replications = replicationDescriptors;
     }
 }

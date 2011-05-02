@@ -34,10 +34,12 @@ public enum ConstantValues {
     artifactoryRevision("revision"),
     artifactoryTimestamp("timestamp"),
     disabledAddons("addons.disabled", ""),
+    addonsInfoUrl("addons.info.url", "http://service.jfrog.org/artifactory/addons/info/%s"),
     springConfigDir("spring.configDir"),
     jcrConfigDir("jcr.configDir"),
     jcrFixConsistency("jcr.fixConsistency", FALSE),
     jcrAutoRemoveMissingBinaries("jcr.autoRemoveMissingBinaries", TRUE),
+    jcrCorePoolSize("jcr.corePoolSize", 6),
     versioningQueryIntervalSecs("versioningQueryIntervalSecs", Seconds.MINUTE * 12),
     logsViewRefreshRateSecs("logs.viewRefreshRateSecs", 10),
     locksTimeoutSecs("locks.timeoutSecs", 120),
@@ -55,7 +57,7 @@ public enum ConstantValues {
     searchForceArchiveIndexing("search.content.forceArchiveIndexing", FALSE),
     searchPatternTimeoutSecs("search.pattern.timeoutSecs", 30),
     gcUseIndex("gc.useIndex", FALSE),
-    gcIntervalSecs("gc.intervalSecs", Seconds.HOUR * 6),
+    gcIntervalSecs("gc.intervalSecs", Seconds.DAY),
     gcDelaySecs("gc.delaySecs", Seconds.HOUR * 2),
     gcSleepBetweenNodesMillis("gc.sleepBetweenNodesMillis", 20),
     gcScanStartSleepingThresholdMillis("gc.scanStartSleepingThresholdMillis", 20000),
@@ -67,9 +69,12 @@ public enum ConstantValues {
     trafficEntriesRetentionSecs("traffic.trafficEntriesRetentionSecs", Seconds.HOUR * 2),
     securityAuthenticationCacheIdleTimeSecs("security.authentication.cache.idleTimeSecs", Seconds.MINUTE * 5),
     userLastAccessUpdatesResolutionSecs("security.userLastAccessUpdatesResolutionSecs", Seconds.MINUTE),
+    securityAuthenticationEncryptedPasswordSurroundChars(
+            "security.authentication.encryptedPassword.surroundChars", "{}"),
     mvnCentralHostPattern("mvn.central.hostPattern", ".maven.org"),
     mvnCentralIndexerMaxQueryIntervalSecs("mvn.central.indexerMaxQueryIntervalSecs", Seconds.DAY),
     mvnMetadataVersionsComparator("mvn.metadataVersionsComparatorFqn"),
+    mvnDynamicMetadataCacheRetentionSecs("mvn.dynamicMetadata.cacheRetentionSecs", 10),
     buildMaxFoldersToScanForDeletionWarnings("build.maxFoldersToScanForDeletionWarnings", 2),
     missingBuildChecksumCacheIdeTimeSecs("build.checksum.cache.idleTimeSecs", Seconds.MINUTE * 5),
     artifactoryUpdatesRefreshIntervalSecs("updates.refreshIntervalSecs", Seconds.HOUR * 4),
@@ -84,7 +89,10 @@ public enum ConstantValues {
     backupFileExportSleepIterationMillis("backup.fileExportSleepIterationMillis", 2000),
     backupFileExportSleepMillis("backup.fileExportSleepMillis", 250),
     httpAcceptEncodingGzip("http.acceptEncoding.gzip", true),
-    useExpectContinue("http.expectContinue", false);
+    httpUseExpectContinue("http.useExpectContinue", false),
+    filteringResourceSizeKb("filtering.resourceSizeKb", 64),
+    searchForExistingResourceOnRemoteRequest("repo.remote.checkForExistingResourceOnRequest", TRUE),
+    versionQueryEnabled("version.query.enabled", true);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

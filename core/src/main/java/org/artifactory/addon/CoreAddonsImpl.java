@@ -20,13 +20,18 @@ package org.artifactory.addon;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.license.LicensesAddon;
+import org.artifactory.addon.replication.ReplicationSettings;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.config.ConfigurationException;
@@ -38,15 +43,25 @@ import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
+import org.artifactory.request.Request;
+import org.artifactory.resource.MetadataResource;
+import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.util.RepoLayoutUtils;
 import org.jfrog.build.api.Build;
+import org.slf4j.Logger;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.stereotype.Component;
 
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,7 +72,10 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 @Component
-public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon {
+public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
+        FilteredResourcesAddon, ReplicationAddon {
+
+    private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
     public boolean isDefault() {
         return true;
@@ -133,6 +151,31 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
         //nop
     }
 
+    public RepoResource assembleDynamicMetadata(MetadataInfo info, JcrFsItem<?> metadataHostingItem,
+            Properties queryProps, RepoPath metadataRepoPath) {
+        return new MetadataResource(info);
+    }
+
+    public boolean isFilteredResourceFile(RepoPath repoPath) {
+        return false;
+    }
+
+    public RepoResource getFilteredResource(Request request, FileInfo fileInfo, InputStream fileInputStream) {
+        return new UnfoundRepoResource(fileInfo.getRepoPath(),
+                "Creation of a filtered resource requires the Properties add-on.", HttpStatus.SC_FORBIDDEN);
+    }
+
+    public String filterResource(Request request, Properties contextProperties, Reader reader) throws Exception {
+        try {
+            return IOUtils.toString(reader);
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
+    }
+
+    public void toggleResourceFilterState(RepoPath repoPath, boolean filtered) {
+    }
+
     public void assertLayoutConfigurationsBeforeSave(CentralConfigDescriptor newDescriptor) {
         List<RepoLayout> repoLayouts = newDescriptor.getRepoLayouts();
         if ((repoLayouts == null) || repoLayouts.isEmpty()) {
@@ -165,5 +208,12 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
             throw new ConfigurationException("The configured repository layout '" + expectedLayout.getName() +
                     "' is different from the default configuration.");
         }
+    }
+
+    public MultiStatusHolder replicate(ReplicationSettings replicationSettings) {
+        MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
+        multiStatusHolder.setError("Error: the replication addon is required for this operation.",
+                HttpStatus.SC_BAD_REQUEST, log);
+        return multiStatusHolder;
     }
 }

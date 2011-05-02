@@ -57,7 +57,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     public void init() {
         //Start the initial tasks:
 
-        //Run the datastore gc every 12 hours after 10 seconds from startup
+        //Run the datastore gc once a day after 2 hours from startup
         QuartzTask jcrGarbageCollectorTask = new QuartzTask(
                 JcrGarbageCollectorJob.class,
                 TimeUnit.SECONDS.toMillis(ConstantValues.gcIntervalSecs.getLong()),

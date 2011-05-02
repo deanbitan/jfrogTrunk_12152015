@@ -24,31 +24,19 @@ package org.artifactory.addon;
  * @author Noam Y. Tenne
  */
 public enum AddonState {
-    ACTIVATED("activated", "Activated"),
-    DISABLED("disabled", "Disabled"),
-    INACTIVATED("inactivated", "Inactivated");
+    ACTIVATED("Activated"),
+    DISABLED("Disabled"),
+    INACTIVATED("Inactivated");
 
-    private String state;
-    private String stateName;
+    private String name;
 
     /**
      * Main constructor
      *
-     * @param state     State
-     * @param stateName State name
+     * @param name State name
      */
-    AddonState(String state, String stateName) {
-        this.state = state;
-        this.stateName = stateName;
-    }
-
-    /**
-     * Returns the state
-     *
-     * @return State
-     */
-    public String getState() {
-        return state;
+    AddonState(String name) {
+        this.name = name;
     }
 
     /**
@@ -56,7 +44,7 @@ public enum AddonState {
      *
      * @return State name
      */
-    public String getStateName() {
-        return stateName;
+    public String getName() {
+        return name;
     }
 }

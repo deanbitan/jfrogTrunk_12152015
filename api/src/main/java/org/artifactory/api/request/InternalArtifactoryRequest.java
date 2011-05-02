@@ -35,6 +35,8 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     private boolean forceDownloadIfNewer;
 
+    private Boolean searchForExistingResourceOnRemoteRequest;
+
     public InternalArtifactoryRequest(RepoPath repoPath) {
         setRepoPath(repoPath);
     }
@@ -50,7 +52,7 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         return false;
     }
 
-    public String getSourceDescription() {
+    public String getClientAddress() {
         return null;
     }
 
@@ -116,6 +118,10 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         this.forceDownloadIfNewer = forceDownloadIfNewer;
     }
 
+    public void setSearchForExistingResourceOnRemoteRequest(boolean searchForExistingResourceOnRemoteRequest) {
+        this.searchForExistingResourceOnRemoteRequest = searchForExistingResourceOnRemoteRequest;
+    }
+
     @Override
     public String getParameter(String name) {
         if (SKIP_JAR_INDEXING.equals(name)) {
@@ -123,6 +129,10 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         }
         if (FORCE_DOWNLOAD_IF_NEWER.equals(name)) {
             return String.valueOf(forceDownloadIfNewer);
+        }
+        if (SEARCH_FOR_EXISTING_RESOURCE_ON_REMOTE_REQUEST.equals(name) &&
+                searchForExistingResourceOnRemoteRequest != null) {
+            return String.valueOf(searchForExistingResourceOnRemoteRequest);
         }
         return null;
     }

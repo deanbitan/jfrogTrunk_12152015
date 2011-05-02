@@ -24,6 +24,7 @@ import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
+import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.exception.RepoRejectException;
@@ -67,8 +68,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 /**
- * Service class to handle webdav protocol.<p/>
- * Webdav RFCc at: <a href="http://www.ietf.org/rfc/rfc2518.txt">rfc2518</a>,
+ * Service class to handle webdav protocol.<p/> Webdav RFCc at: <a href="http://www.ietf.org/rfc/rfc2518.txt">rfc2518</a>,
  * <a href="http://www.ietf.org/rfc/rfc4918.txt">rfc4918</a>.
  *
  * @author Yossi Shaul
@@ -189,11 +189,17 @@ public class WebdavServiceImpl implements WebdavService {
         XmlWriter generatedXml = new XmlWriter(writer);
         generatedXml.writeXMLHeader();
         generatedXml.writeElement(null, "multistatus xmlns=\"" + DEFAULT_NAMESPACE + "\"", XmlWriter.OPENING);
-        BrowsableItem rootItem = repoBrowsing.getLocalRepoBrowsableItem(request.getRepoPath());
+
+        RepoPath repoPath = request.getRepoPath();
+        BrowsableItem rootItem = null;
+        if (repoService.exists(repoPath)) {
+            rootItem = repoBrowsing.getLocalRepoBrowsableItem(repoPath);
+        }
         if (rootItem != null) {
-            recursiveParseProperties(request, response, generatedXml, rootItem, propertyFindType, properties, depth);
+            recursiveParseProperties(request, response, generatedXml, rootItem, propertyFindType, properties,
+                    depth);
         } else {
-            log.warn("Folder '" + request.getRepoPath() + "' not found.");
+            log.warn("Item '" + request.getRepoPath() + "' not found.");
         }
         generatedXml.writeElement(null, "multistatus", XmlWriter.CLOSING);
         generatedXml.sendData();
@@ -570,8 +576,8 @@ public class WebdavServiceImpl implements WebdavService {
         }
 
         if (currentItem.isFolder()) {
-            List<BaseBrowsableItem> browsableChildren = repoBrowsing.getLocalRepoBrowsableChildren(
-                    currentItem.getRepoPath());
+            BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(currentItem.getRepoPath()).build();
+            List<BaseBrowsableItem> browsableChildren = repoBrowsing.getLocalRepoBrowsableChildren(criteria);
             for (BaseBrowsableItem child : browsableChildren) {
                 recursiveParseProperties(request, response, generatedXml, child,
                         propertyFindType, properties, depth - 1);

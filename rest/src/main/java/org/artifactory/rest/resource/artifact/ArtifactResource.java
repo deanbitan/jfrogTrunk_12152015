@@ -105,6 +105,9 @@ public class ArtifactResource {
     private HttpHeaders requestHeaders;
 
     @Autowired
+    private AuthorizationService authorizationService;
+
+    @Autowired
     private AddonsManager addonsManager;
 
     @Autowired
@@ -122,13 +125,19 @@ public class ArtifactResource {
             @QueryParam("md") StringList md,
             @QueryParam("list") String list,
             @QueryParam("deep") int deep,
+            @QueryParam("depth") int depth,
             @QueryParam("listFolders") int listFolders,
+            @QueryParam("mdTimestamps") int mdTimestamps,
             @QueryParam("properties") StringList properties,
             @QueryParam("lastModified") String lastModified) throws IOException {
 
         //Divert to file list request if the list param is mentioned
         if (list != null) {
-            return Response.ok(getFileList(path, deep, listFolders), MT_FILE_LIST).build();
+            if (authorizationService.isAnonymous()) {
+                return Response.status(HttpStatus.SC_FORBIDDEN).
+                        entity("This resource is available to authenticated users only.").build();
+            }
+            return Response.ok(getFileList(path, deep, depth, listFolders, mdTimestamps), MT_FILE_LIST).build();
         }
 
         if (lastModified != null) {
@@ -180,15 +189,17 @@ public class ArtifactResource {
     /**
      * Returns a list of files under the given folder path
      *
-     * @param path        Path to scan files for
-     * @param deep        Zero if the scanning should be shallow. One for deep
-     * @param listFolders Zero if folders should not be included in the list. One if they should
-     * @return File list object
+     * @param path         Path to scan files for
+     * @param deep         Zero if the scanning should be shallow. One for deep
+     * @param listFolders  Zero if folders should not be included in the list. One if they should
+     * @param mdTimestamps Zero if metadata last modified timestamps should not be included in the list. One if they should
      */
-    private FileList getFileList(String path, int deep, int listFolders) throws IOException {
+    private FileList getFileList(String path, int deep, int depth, int listFolders, int mdTimestamps)
+            throws IOException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
-            return restAddon.getFileList(request.getRequestURL().toString(), path, deep, listFolders);
+            return restAddon.getFileList(request.getRequestURL().toString(), path, deep, depth, listFolders,
+                    mdTimestamps);
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnee) {

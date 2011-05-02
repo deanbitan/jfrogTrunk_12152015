@@ -54,6 +54,7 @@ import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
 
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -461,7 +462,8 @@ public class JcrMetadataConverterExecutor {
                     new Checksum(ChecksumType.md5),
                     new Checksum(ChecksumType.sha1));
             //Save the data and calculate the checksums
-            resourceNode.setProperty(JCR_DATA, checksumInputStream);
+            Binary binary = resourceNode.getSession().getValueFactory().createBinary(checksumInputStream);
+            resourceNode.setProperty(JCR_DATA, binary);
             checksumInputStream.close();
 
             for (Checksum checksum : checksumInputStream.getChecksums()) {

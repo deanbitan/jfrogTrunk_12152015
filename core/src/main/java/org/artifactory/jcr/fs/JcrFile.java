@@ -45,7 +45,7 @@ import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.ChecksumPolicyException;
 import org.artifactory.ivy.IvyNaming;
 import org.artifactory.jcr.JcrTypes;
-import org.artifactory.jcr.jackrabbit.DataStoreRecordNotFoundException;
+import org.artifactory.jcr.jackrabbit.MissingOrInvalidDataStoreRecordException;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.jcr.md.MetadataPersistenceHandler;
 import org.artifactory.log.LoggerFactory;
@@ -60,6 +60,7 @@ import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -278,11 +279,12 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
             Node node = getNode();
             Node resNode = JcrHelper.getResourceNode(node);
             Value attachedDataValue = resNode.getProperty(JCR_DATA).getValue();
-            InputStream is = attachedDataValue.getStream();
+            InputStream is = attachedDataValue.getBinary().getStream();
             return is;
         } catch (RepositoryException e) {
             Throwable notFound = ExceptionUtils.getCauseOfTypes(e,
-                    DataStoreRecordNotFoundException.class, PathNotFoundException.class, FileNotFoundException.class);
+                    MissingOrInvalidDataStoreRecordException.class, PathNotFoundException.class,
+                    FileNotFoundException.class);
             if (notFound != null) {
                 log.warn("Jcr file node {} does not have binary content!", getPath());
                 if (ConstantValues.jcrAutoRemoveMissingBinaries.getBoolean()) {
@@ -471,6 +473,10 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
         return false;
     }
 
+    /**
+     * OVERIDDEN FROM java.io.File END
+     */
+
     public static boolean isFileNode(Node node) throws RepositoryException {
         NodeType primaryNodeType = node.getPrimaryNodeType();
         return JcrTypes.NT_ARTIFACTORY_FILE.equals(primaryNodeType.getName());
@@ -483,15 +489,11 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
         return !name.endsWith(METADATA_FOLDER) && !NamingUtils.isChecksum(name);
     }
 
-    /**
-     * OVERIDDEN FROM java.io.File END
-     */
-
     private void setResourceNode(InputStream in) throws RepositoryException, IOException, ChecksumPolicyException {
         Node node = getNode();
         Node resourceNode = getJcrRepoService().getOrCreateNode(node, JCR_CONTENT, NT_RESOURCE);
         String name = getName();
-        org.artifactory.fs.FileInfo info = getInfo();
+        FileInfo info = getInfo();
         MimeType ct = NamingUtils.getMimeType(name);
         info.setMimeType(ct.getType());
         /**
@@ -557,20 +559,27 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
     }
 
     private void fillJcrData(Node resourceNode, InputStream in) throws RepositoryException, ChecksumPolicyException {
-
         //Check if needs to create checksum and not checksum file
-        log.debug("Calculating checksums for '{}'.", getRepoPath());
+        log.debug("Calculating checksums of '{}'.", getRepoPath());
         Checksum[] checksums = getChecksumsToCompute();
         ChecksumInputStream checksumInputStream = new ChecksumInputStream(in, checksums);
 
         //Do this after xml import: since Jackrabbit 1.4
         //org.apache.jackrabbit.core.value.BLOBInTempFile.BLOBInTempFile will close the stream
-        resourceNode.setProperty(JCR_DATA, checksumInputStream);
+        Binary binary = resourceNode.getSession().getValueFactory().createBinary(checksumInputStream);
+        resourceNode.setProperty(JCR_DATA, binary);
 
         // make sure the stream is closed. Jackrabbit doesn't close the stream if the file is small (violating the contract)
         IOUtils.closeQuietly(checksumInputStream);  // if close is failed we'll fail in setting the checksums
+        if (log.isTraceEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            for (Checksum checksum : checksums) {
+                sb.append(checksum.getType()).append(":").append(checksum.getChecksum()).append(" ");
+            }
+            log.trace("Calculated checksums of '{}': {}", getRepoPath(), sb.toString());
+        }
 
-        org.artifactory.fs.FileInfo info = getInfo();
+        FileInfo info = getInfo();
         // set the actual checksums on the file extra info
         setFileActualChecksums(info, checksums);
 
@@ -588,6 +597,7 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
 
     private void setFileActualChecksums(org.artifactory.fs.FileInfo info, Checksum[] checksums) {
         ChecksumsInfo checksumsInfo = info.getChecksumsInfo();
+        log.trace("Updating checksum info of '{}'. Current checksums: {}", getRepoPath(), checksumsInfo);
         for (Checksum checksum : checksums) {
             ChecksumType checksumType = checksum.getType();
             String calculatedChecksum = checksum.getChecksum();
@@ -609,6 +619,7 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
                 checksumsInfo.addChecksumInfo(missingChecksumInfo);
             }
         }
+        log.trace("Updated checksum info of '{}'. Current checksums: {}", getRepoPath(), info.getChecksumsInfo());
     }
 
     private Checksum[] getChecksumsToCompute() {

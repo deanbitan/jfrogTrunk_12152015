@@ -147,4 +147,9 @@ public class ChecksumsInfo implements Info {
     public int hashCode() {
         return checksums != null ? checksums.hashCode() : 0;
     }
+
+    @Override
+    public String toString() {
+        return new StringBuilder("ChecksumsInfo").append("{checksums=").append(checksums).append('}').toString();
+    }
 }

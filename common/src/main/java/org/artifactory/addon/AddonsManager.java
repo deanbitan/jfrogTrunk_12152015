@@ -20,6 +20,7 @@ package org.artifactory.addon;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Provides addon factory by type.
@@ -32,7 +33,7 @@ public interface AddonsManager {
 
     <T extends Addon> T addonByType(Class<T> type);
 
-    List<String> getInstalledAddonNames();
+    List<AddonInfo> getInstalledAddons(Set<String> excludedAddonKeys);
 
     List<String> getEnabledAddonNames();
 
@@ -94,4 +95,6 @@ public interface AddonsManager {
     String[] getLicenseDetails();
 
     String getProductName();
+
+    String getLicenseRequiredMessage(String licensePageUrl);
 }

@@ -18,13 +18,16 @@
 
 package org.artifactory.common.wicket.util;
 
+import com.google.common.base.Function;
+import com.google.common.collect.MapMaker;
+import com.google.common.io.Closeables;
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Application;
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.protocol.http.RequestUtils;
-import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebRequestCycle;
 import org.apache.wicket.protocol.http.WebResponse;
@@ -32,25 +35,46 @@ import org.apache.wicket.util.io.Streams;
 import org.apache.wicket.util.lang.Packages;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
+import org.artifactory.api.util.Pair;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author yoavl
  */
 public abstract class WicketUtils {
+    private static Map<Pair<Class, String>, String> resourceCache = createResourceCache();
+
     private WicketUtils() {
         // utility class
+    }
+
+    private static Map<Pair<Class, String>, String> createResourceCache() {
+        MapMaker maker = new MapMaker().softValues().maximumSize(100);
+        String isDev = System.getProperty(ConstantValues.dev.getPropertyName());
+        if (StringUtils.isBlank(isDev)) {
+            isDev = System.getProperty("aol.devMode");
+        }
+        if (Boolean.parseBoolean(isDev)) {
+            maker.expireAfterWrite(30, TimeUnit.SECONDS);
+        }
+        return maker.makeComputingMap(new Function<Pair<Class, String>, String>() {
+            public String apply(@Nonnull Pair<Class, String> pair) {
+                return readResourceNoCache(pair.getFirst(), pair.getSecond());
+            }
+        });
     }
 
     /**
@@ -72,15 +96,6 @@ public abstract class WicketUtils {
      */
     public static String absoluteMountPathForPage(Class<? extends Page> pageClass, PageParameters pageParameters) {
         return RequestUtils.toAbsolutePath(RequestCycle.get().urlFor(pageClass, pageParameters).toString());
-    }
-
-    /**
-     * Returns the web application object
-     *
-     * @return WebApplication - application object
-     */
-    public static WebApplication getWebApplication() {
-        return (WebApplication) RequestCycle.get().getApplication();
     }
 
     public static WebRequest getWebRequest() {
@@ -118,18 +133,23 @@ public abstract class WicketUtils {
     }
 
     public static String readResource(Class scope, String file) {
+        return resourceCache.get(new Pair<Class, String>(scope, file));
+    }
+
+    private static String readResourceNoCache(Class scope, String file) {
+        InputStream inputStream = null;
         try {
             final String path = Packages.absolutePath(scope, file);
-            final IResourceStream resourceStream = Application.get()
-                    .getResourceSettings()
-                    .getResourceStreamLocator()
+            final IResourceStream resourceStream = Application.get().getResourceSettings().getResourceStreamLocator()
                     .locate(scope, path);
-            InputStream inputStream = resourceStream.getInputStream();
+            inputStream = resourceStream.getInputStream();
             return Streams.readString(inputStream, "utf-8");
         } catch (ResourceStreamNotFoundException e) {
             throw new RuntimeException(String.format("Can't find resource \"%s.%s\"", scope.getName(), file), e);
         } catch (IOException e) {
             throw new RuntimeException(String.format("Can't read resource \"%s.%s\"", scope.getName(), file), e);
+        } finally {
+            Closeables.closeQuietly(inputStream);
         }
     }
 

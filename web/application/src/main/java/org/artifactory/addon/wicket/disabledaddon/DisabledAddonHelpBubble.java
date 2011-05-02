@@ -18,7 +18,7 @@
 
 package org.artifactory.addon.wicket.disabledaddon;
 
-import org.artifactory.addon.wicket.AddonType;
+import org.artifactory.addon.AddonType;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 
 /**

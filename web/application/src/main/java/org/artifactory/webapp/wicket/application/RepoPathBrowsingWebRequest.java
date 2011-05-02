@@ -104,7 +104,7 @@ public class RepoPathBrowsingWebRequest extends ServletWebRequest {
             } else {
                 prefix.append("../");
             }
-            return prefix.toString();
+            return prefix.append("../").toString();
         } else {
             log.warn("Expected to find a repoPath on the request but none was found. " +
                     "Perhaps login redirection was required.");

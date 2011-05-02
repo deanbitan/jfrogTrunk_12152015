@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.7"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.7"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.8"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.8"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -166,6 +166,18 @@
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="repoLayout" type="RepoLayoutType" maxOccurs="unbounded" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="replications" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Configure scheduled repository replications.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="replication" type="ReplicationType" maxOccurs="unbounded" minOccurs="0"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -414,7 +426,7 @@
                     <xs:element name="url" type="xs:string">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                The url for the remote repository. Currently only HTTP urls are
+                                The URL for the remote repository. Currently only HTTP/S URLs are
                                 supported.
                             </xs:documentation>
                         </xs:annotation>
@@ -558,9 +570,16 @@
                                 Select the layout that best matches the layout used by remote repository for storing and
                                 identifying modules.
                                 Path-mapping will take place if the remote layout is different from the local layout -
-                                remote
-                                module artifatcs and descriptors will be stored according to the local repository layout
-                                (e.g., Maven 1->Maven 2, or Maven 2->Ivy).
+                                remote module artifacts and descriptors will be stored according to the local repository
+                                layout (e.g., Maven 1->Maven 2, or Maven 2->Ivy).
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="rejectInvalidJars" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Reject the caching of jar files that are found to be invalid. For example, pseudo jars
+                                retrieved behind a "captive portal".
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -1191,7 +1210,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                         <![CDATA[
                         A DN pattern that can be used to directly login users to LDAP.
                         This pattern is used for creating a DN string for 'direct' user
-                        authentication, where the pattern is relative to the base DN in the ldapUrl.
+                        authentication, where the pattern is relative to the base DN in the LDAP URL.
                         The pattern argument {0} will be replaced with the username.
                         This will work only if anonymous binding is allowed and a direct user DN can
                         be used, which is not the default case for Active Directory (use User DN
@@ -1329,7 +1348,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        Context name to search in, relative to the base DN in the ldapUrl.
+                        Context name to search in, relative to the base DN in the LDAP URL.
                         This parameter is optional.
                         ]]>
                     </xs:documentation>
@@ -1339,7 +1358,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        Enables deep search through the sub tree of the ldapUrl + searchBase. True by default.
+                        Enables deep search through the sub tree of the LDAP URL + searchBase. True by default.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1349,7 +1368,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                     <xs:documentation source="description">
                         <![CDATA[
                         Used only with "search" authentication method.
-                        It is the DN of the user who will bind to the LDAP server to perform the search.
+                        It is the full DN of the user who will bind to the LDAP server to perform user searches.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1720,6 +1739,55 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                         in Maven.
                         Note: please make sure not to introduce any regexp capturing groups within this expression.
                         If not applicable use '.*'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ReplicationType">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable active replication of this remote repoitory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="cronExp" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The cron expression by which replication frequency is determined. <a href="http://www.opensymphony.com/quartz/wikidocs/TutorialLesson6.html" target="_blank">More Info...</a>
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="syncDeletes" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Delete artifacts and folders that no longer exist in the remote repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="syncProperties" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Include metdata properties of remote files and folders as part of the replication.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="pathPrefix" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A subpath within the remote repository to limit replication to.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="repoKey" type="xs:string" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The replicated repository key.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

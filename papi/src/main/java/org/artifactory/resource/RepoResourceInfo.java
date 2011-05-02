@@ -20,6 +20,7 @@ package org.artifactory.resource;
 
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.common.Info;
+import org.artifactory.repo.RepoPath;
 
 import java.util.Set;
 
@@ -29,6 +30,8 @@ import java.util.Set;
  * @author yoavl
  */
 public interface RepoResourceInfo extends Info {
+
+    RepoPath getRepoPath();
 
     String getName();
 

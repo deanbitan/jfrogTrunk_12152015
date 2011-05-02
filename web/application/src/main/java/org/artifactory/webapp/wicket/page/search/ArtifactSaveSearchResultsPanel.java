@@ -21,7 +21,7 @@ package org.artifactory.webapp.wicket.page.search;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
-import org.artifactory.addon.wicket.AddonType;
+import org.artifactory.addon.AddonType;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 

@@ -67,9 +67,27 @@ public interface Security {
     boolean canAdmin(RepoPath path);
 
     /**
-     * @return The current logged in username.
+     * @return The current logged-in user name.
+     * @since 2.3.3
+     */
+    String getCurrentUsername();
+
+    /**
+     * The current logged in-user name.
+     *
+     * @return
+     * @deprecated Use  {@link #getCurrentUsername()} instead
      */
     String currentUsername();
+
+
+    /**
+     * The group names for the current logged-in user.
+     *
+     * @return A list of group names associated with the current user.
+     * @since 2.3.3
+     */
+    String[] getCurrentUserGroupNames();
 
     /**
      * @return True if the current is a system administrator.
@@ -82,4 +100,14 @@ public interface Security {
     boolean isAnonymous();
 
     boolean isAuthenticated();
+
+    /**
+     * @return The encrypted password of the current user
+     */
+    String getEncryptedPassword();
+
+    /**
+     * @return The encrypted password of the current user properly escaped for inclusion in xml settings
+     */
+    String getEscapedEncryptedPassword();
 }

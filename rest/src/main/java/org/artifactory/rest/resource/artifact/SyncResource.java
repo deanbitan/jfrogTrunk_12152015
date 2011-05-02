@@ -19,9 +19,14 @@
 package org.artifactory.rest.resource.artifact;
 
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ReplicationAddon;
+import org.artifactory.addon.replication.ReplicationSettings;
+import org.artifactory.addon.replication.ReplicationSettingsBuilder;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.repo.RepoPath;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -54,10 +59,6 @@ public class SyncResource {
     @Context
     HttpServletResponse httpResponse;
 
-    public enum Overwrite {
-        never, force
-    }
-
     /**
      * Locally replicates the given remote path
      *
@@ -77,9 +78,12 @@ public class SyncResource {
             @QueryParam(PARAM_PROGRESS) @DefaultValue("1") int progress,
             @QueryParam(PARAM_MARK) int mark,
             @QueryParam(PARAM_DELETE) int delete,
-            @QueryParam(PARAM_OVERWRITE) Overwrite overwrite) throws Exception {
+            @QueryParam(PARAM_OVERWRITE) ReplicationAddon.Overwrite overwrite) throws Exception {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-        return addonsManager.addonByType(RestAddon.class).replicate(path, progress, mark, delete, overwrite,
-                httpResponse);
+        RepoPath repoPath = RepoPathImpl.fromRepoPathPath(path);
+        ReplicationSettings settings = new ReplicationSettingsBuilder(repoPath, httpResponse.getWriter()).
+                deleteExisting(delete == 1).includeProperties(true).mark(mark).overwrite(overwrite).
+                progress(progress == 1).build();
+        return addonsManager.addonByType(RestAddon.class).replicate(settings);
     }
 }

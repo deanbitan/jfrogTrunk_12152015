@@ -47,7 +47,7 @@ public enum InfoWriter {
     /**
      * The format of the list to be printed
      */
-    private static String listFormat = "   %1$-60s| %2$s%n";
+    private static String listFormat = "   %1$-70s| %2$s%n";
 
     /**
      * Main constructor

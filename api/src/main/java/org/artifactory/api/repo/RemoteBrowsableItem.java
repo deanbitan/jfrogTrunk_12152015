@@ -19,6 +19,7 @@
 package org.artifactory.api.repo;
 
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.remote.browse.RemoteItem;
 
 /**
  * Represents an item on a remote server.
@@ -28,14 +29,14 @@ import org.artifactory.repo.RepoPath;
 public class RemoteBrowsableItem extends BrowsableItem {
 
     /**
-     * Creates a new remote item.
+     * Creates a new remote browsable item.
      *
-     * @param name     Item display name
-     * @param folder   True if the item represents a folder
-     * @param repoPath Item repo path
+     * @param remoteItem Remote item details
+     * @param repoPath   Item repo path
      */
-    public RemoteBrowsableItem(String name, boolean folder, RepoPath repoPath) {
-        super(name, folder, 0L, 0L, 0L, repoPath);
+    public RemoteBrowsableItem(RemoteItem remoteItem, RepoPath repoPath) {
+        super(remoteItem.getName(), remoteItem.isDirectory(), 0L,
+                remoteItem.getLastModified(), remoteItem.getSize(), repoPath);
         setRemote(true);
     }
 

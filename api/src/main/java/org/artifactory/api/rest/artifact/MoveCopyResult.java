@@ -30,6 +30,7 @@ import java.util.List;
  *
  * @author Tomer Cohen
  */
+@Deprecated
 public class MoveCopyResult {
 
     public List<MoveCopyMessages> messages = Lists.newArrayList();

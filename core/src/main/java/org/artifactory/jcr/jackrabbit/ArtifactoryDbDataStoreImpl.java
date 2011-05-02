@@ -72,19 +72,19 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
     /**
      * This LRU cache holds all the files cached in the filesystem and removes files whenever it reaches the max size.
      */
-    private FilesLRUCache filesystemLRUCache;
+    private FilesLruCache filesystemLruCache;
 
     @Override
     public void init(String homeDir) throws DataStoreException {
         initRootStoreDir(homeDir);
         initMaxCacheSize();
-        filesystemLRUCache = new FilesLRUCache(maxCacheSize);
+        filesystemLruCache = new FilesLruCache(maxCacheSize);
         super.init(homeDir);
     }
 
     @Override
     protected void accessed(ArtifactoryDbDataRecord record, long previousAccessTime) {
-        filesystemLRUCache.replace(record, previousAccessTime);
+        filesystemLruCache.replace(record, previousAccessTime);
     }
 
     /**
@@ -114,7 +114,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
                     // SELECT LENGTH, DATA FROM DATASTORE WHERE ID = ?
                     rs = conHelper.select(selectDataSQL, new Object[]{id});
                     if (!rs.next()) {
-                        throw new DataStoreRecordNotFoundException("Record not found: " + id);
+                        throw new MissingOrInvalidDataStoreRecordException("Record not found: " + id);
                     }
                     InputStream in = new BufferedInputStream(rs.getBinaryStream(2));
                     File parentFile = result.getParentFile();
@@ -126,7 +126,6 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
                     TempFileInputStream.writeToFileAndClose(in, result);
                     return result;
                 } catch (Exception e) {
-                    result.delete();
                     throw convert("Can not read identifier " + id, e);
                 } finally {
                     DbUtility.close(rs);
@@ -139,7 +138,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
     public long scanDataStore(long startScanNanos) {
         long result = super.scanDataStore(startScanNanos);
 
-        if (cacheBlobs && !filesystemLRUCache.initialized) {
+        if (cacheBlobs && !filesystemLruCache.initialized) {
             // initialize cache files LRU cache if blob cache is enabled
             scanAllCachedFiles();
         }
@@ -181,9 +180,9 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
                             } else {
                                 // mark the record as accessed, this action will also update the lru cache
                                 record.markAccessed();
-                                if (filesystemLRUCache.cachedFilesCount.get() % 500 == 0) {
+                                if (filesystemLruCache.cachedFilesCount.get() % 500 == 0) {
                                     log.info(
-                                            "Scanned " + filesystemLRUCache.cachedFilesCount.get() +
+                                            "Scanned " + filesystemLruCache.cachedFilesCount.get() +
                                                     " cached files in " +
                                                     (System.currentTimeMillis() - start) + "ms");
                                 }
@@ -193,9 +192,9 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
                 }
             }
         }
-        filesystemLRUCache.initialized();
+        filesystemLruCache.initialized();
         log.info("Finished scanning {} cached files in {} ms",
-                filesystemLRUCache.cachedFilesCount.get(), (System.currentTimeMillis() - start));
+                filesystemLruCache.cachedFilesCount.get(), (System.currentTimeMillis() - start));
     }
 
     @Override
@@ -303,7 +302,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
         File binariesFolder = getBinariesFolder();
         String binariesFolderAbsolutePath = binariesFolder.getAbsolutePath();
         for (ArtifactoryDbDataRecord entry : entries) {
-            File src = null;
+            File src;
             try {
                 src = getOrCreateFile(entry.getIdentifier(), entry.getLength());
             } catch (DataStoreException e) {
@@ -328,7 +327,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
         }
     }
 
-    public static class FilesLRUCache {
+    public static class FilesLruCache {
         /**
          * Maximum cache size in bytes. The cache can still grow above this number, but it will trigger a cleanup.
          */
@@ -354,7 +353,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
          */
         private boolean initialized;
 
-        private FilesLRUCache(long maxCacheSize) {
+        private FilesLruCache(long maxCacheSize) {
             this.maxCacheSize = maxCacheSize;
             cachedRecords = new ConcurrentSkipListMap();
         }
@@ -419,7 +418,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
             executor.submit(new Callable<Object>() {
                 public Object call() throws Exception {
                     try {
-                        // give a chance for open streams to close (also we don;t wan't to run this too often)
+                        // give a chance for open streams to close (also we don't want to run this too often)
                         Thread.sleep(500);
                         long scanStartTime = System.nanoTime();
                         log.debug("The cache folder contains {} files for a total of {} which is above the " +

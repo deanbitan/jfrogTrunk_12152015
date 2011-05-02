@@ -65,7 +65,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
     @SpringBean
     protected RepositoryService repositoryService;
 
-    private final CachingDescriptorHelper cachingDescriptorHelper;
+    protected final CachingDescriptorHelper cachingDescriptorHelper;
 
     @WicketProperty
     protected String key;

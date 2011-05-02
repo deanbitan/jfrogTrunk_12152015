@@ -23,7 +23,7 @@ goto :end
 
 :next
 
-%_JAVACMD% -server -Xmx400m -Djetty.home="%ARTIFACTORY_HOME%" -Dartifactory.home="%ARTIFACTORY_HOME%" -Dfile.encoding=UTF8 -cp "%CLASSPATH%" org.artifactory.standalone.main.Main %*
+%_JAVACMD% -server -Xmx512m -XX:MaxPermSize=128m -Djetty.home="%ARTIFACTORY_HOME%" -Dartifactory.home="%ARTIFACTORY_HOME%" -Dfile.encoding=UTF8 -cp "%CLASSPATH%" org.artifactory.standalone.main.Main %*
 
 @endlocal
 :end

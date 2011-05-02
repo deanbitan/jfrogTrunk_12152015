@@ -25,9 +25,11 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
+import org.artifactory.addon.wicket.ReplicationWebAddon;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.replication.ReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
@@ -42,16 +44,13 @@ import java.util.List;
 public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescriptor> {
 
     private final CreateUpdateAction action;
-    private final HttpRepoDescriptor repoDescriptor;
-    private final CachingDescriptorHelper cachingDescriptorHelper;
+    private ReplicationDescriptor replicationDescriptor;
 
     public HttpRepoPanel(CreateUpdateAction action, HttpRepoDescriptor repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor, cachingDescriptorHelper);
-        setWidth(610);
+        setWidth(640);
         this.action = action;
-        this.repoDescriptor = repoDescriptor;
-        this.cachingDescriptorHelper = cachingDescriptorHelper;
     }
 
     @Override
@@ -61,14 +60,14 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         tabs.add(new AbstractTab(Model.<String>of("Basic Settings")) {
             @Override
             public Panel getPanel(String panelId) {
-                return new HttpRepoBasicPanel(panelId, repoDescriptor);
+                return new HttpRepoBasicPanel(panelId, entity);
             }
         });
 
         tabs.add(new AbstractTab(Model.<String>of("Advanced Settings")) {
             @Override
             public Panel getPanel(String panelId) {
-                return new HttpRepoAdvancedPanel(panelId, action, repoDescriptor,
+                return new HttpRepoAdvancedPanel(panelId, action, entity,
                         cachingDescriptorHelper.getModelMutableDescriptor());
             }
         });
@@ -76,6 +75,14 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
         List<PropertySet> propertySets = getCachingDescriptorHelper().getModelMutableDescriptor().getPropertySets();
         tabs.add(propertiesWebAddon.getRepoConfigPropertySetsTab("Property Sets", entity, propertySets));
+
+        replicationDescriptor = cachingDescriptorHelper.getModelMutableDescriptor().getReplication(entity.getKey());
+        if (replicationDescriptor == null) {
+            replicationDescriptor = new ReplicationDescriptor();
+            replicationDescriptor.setRepoKey(entity.getKey());
+        }
+        ReplicationWebAddon replicationWebAddon = addons.addonByType(ReplicationWebAddon.class);
+        tabs.add(replicationWebAddon.getHttpRepoReplicationPanel("Replication", entity, replicationDescriptor));
 
         return tabs;
     }
@@ -86,11 +93,20 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
         repoDescriptor.setKey(key);
         mccd.addRemoteRepository(repoDescriptor);
+        if (replicationDescriptor.isEnabled()) {
+            if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
+                replicationDescriptor.setRepoKey(key);
+            }
+            mccd.addReplication(replicationDescriptor);
+        }
         helper.syncAndSaveRemoteRepositories();
     }
 
     @Override
     public void saveEditDescriptor(HttpRepoDescriptor repoDescriptor) {
+        MutableCentralConfigDescriptor modelMutableDescriptor =
+                getCachingDescriptorHelper().getModelMutableDescriptor();
+        modelMutableDescriptor.updateReplication(replicationDescriptor);
         getCachingDescriptorHelper().syncAndSaveRemoteRepositories();
     }
 

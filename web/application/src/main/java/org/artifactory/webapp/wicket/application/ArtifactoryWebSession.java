@@ -96,6 +96,18 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
             authenticated = authentication.isAuthenticated();
             if (authenticated) {
                 setAuthentication(authentication);
+                if (StringUtils.isNotBlank(username) && (!username.equals(UserInfo.ANONYMOUS))) {
+
+                    //Save the user's last login info in the web session so we can display it in the welcome page
+                    ArtifactoryContext context = ContextHelper.get();
+                    SecurityService securityService = context.beanForType(SecurityService.class);
+                    SerializablePair<String, Long> lastLoginInfo = securityService.getUserLastLoginInfo(username);
+                    ArtifactoryWebSession.get().setLastLoginInfo(lastLoginInfo);
+
+                    //Update the user's current login info in the database
+                    String remoteAddress = new HttpAuthenticationDetails(servletRequest).getRemoteAddress();
+                    securityService.updateUserLastLogin(username, remoteAddress, System.currentTimeMillis());
+                }
             }
         } catch (AuthenticationException e) {
             authenticated = false;
@@ -147,23 +159,6 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
             if (request != null) {
                 HttpServletRequest httpServletRequest = request.getHttpServletRequest();
                 RequestUtils.setAuthentication(httpServletRequest, authentication, true);
-
-                Object principal = authentication.getPrincipal();
-                if (principal != null) {
-                    String username = principal.toString();
-                    if (StringUtils.isNotBlank(username) && (!username.equals(UserInfo.ANONYMOUS))) {
-
-                        //Save the user's last login info in the web session so we can display it in the welcome page
-                        ArtifactoryContext context = ContextHelper.get();
-                        SecurityService securityService = context.beanForType(SecurityService.class);
-                        SerializablePair<String, Long> lastLoginInfo = securityService.getUserLastLoginInfo(username);
-                        ArtifactoryWebSession.get().setLastLoginInfo(lastLoginInfo);
-
-                        //Update the user's current login info in the database
-                        String remoteAddress = new HttpAuthenticationDetails(httpServletRequest).getRemoteAddress();
-                        securityService.updateUserLastLogin(username, remoteAddress, System.currentTimeMillis());
-                    }
-                }
             }
             //Update the spring  security context
             bindAuthentication();

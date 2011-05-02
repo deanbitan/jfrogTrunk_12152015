@@ -21,6 +21,7 @@ package org.artifactory.addon.wicket;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.apache.wicket.Component;
@@ -36,6 +37,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.IFormSubmittingComponent;
+import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
@@ -45,6 +47,8 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
+import org.artifactory.addon.AddonInfo;
+import org.artifactory.addon.AddonType;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.addon.OssAddonsManager;
@@ -74,6 +78,7 @@ import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.PlaceHolder;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
+import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.BaseTitledLink;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
@@ -90,6 +95,9 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PredefinedValue;
 import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.replication.ReplicationDescriptor;
+import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.security.SecurityDescriptor;
@@ -102,6 +110,7 @@ import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.request.Request;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.action.ItemAction;
@@ -141,6 +150,7 @@ import org.artifactory.webapp.wicket.page.config.services.BackupsListPage;
 import org.artifactory.webapp.wicket.page.config.services.IndexerConfigPage;
 import org.artifactory.webapp.wicket.page.home.HomePage;
 import org.artifactory.webapp.wicket.page.home.addon.AddonsInfoPanel;
+import org.artifactory.webapp.wicket.page.home.settings.modal.editable.BaseSettingsProvisioningBorder;
 import org.artifactory.webapp.wicket.page.importexport.repos.ImportExportReposPage;
 import org.artifactory.webapp.wicket.page.importexport.system.ImportExportSystemPage;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
@@ -156,32 +166,34 @@ import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
+import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.Module;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.Reader;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static java.lang.String.format;
-import static org.artifactory.addon.wicket.AddonType.*;
+import static org.artifactory.addon.AddonType.*;
 
 /**
  * Default implementation of the addons interface. Represents a normal execution of artifactory.
  * <p/>
- * <strong>NOTE!</strong> Do not create annonymous or inner classes in addon
+ * <strong>NOTE!</strong> Do not create anonymous or non-static inner classes in addon
  *
  * @author freds
  * @author Yossi Shaul
  */
 @org.springframework.stereotype.Component
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesWebAddon, SearchAddon,
-        WatchAddon, WebstartWebAddon, SsoAddon, LdapGroupWebAddon, BuildAddon, LicensesWebAddon, LayoutsWebAddon {
+        WatchAddon, WebstartWebAddon, SsoAddon, LdapGroupWebAddon, BuildAddon, LicensesWebAddon, LayoutsWebAddon,
+        FilteredResourcesWebAddon, ReplicationWebAddon {
 
     @Autowired
     private CentralConfigService centralConfigService;
@@ -287,7 +299,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         latestLabel.setOutputMarkupId(true);
         String latestWikiUrl = VersionHolder.VERSION_UNAVAILABLE.getWikiUrl();
         CentralConfigDescriptor configDescriptor = centralConfigService.getDescriptor();
-        if (!configDescriptor.isOfflineMode()) {
+        if (ConstantValues.versionQueryEnabled.getBoolean() && !configDescriptor.isOfflineMode()) {
             // try to get the latest version from the cache with a non-blocking call
             VersionHolder latestVersion = versionInfoService.getLatestVersion(headersMap, true);
             latestWikiUrl = latestVersion.getWikiUrl();
@@ -317,19 +329,21 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return new BuildSearchResultsPanel(requestingAddon, build);
     }
 
-    public org.artifactory.fs.FileInfo getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean) {
-        return null;
+    public Set<FileInfo> getNonStrictBuildFileBeanInfo(String buildName, String buildNumber,
+            BuildFileBean bean) {
+        return Sets.newHashSet();
     }
 
     public void renameBuildNameProperty(String from,
             String to) {
     }
 
-    public void discardOldBuildsByDate(String buildName, Date minimumBuildDate) {
+    public void discardOldBuildsByDate(String buildName, BuildRetention buildRetention,
+            MultiStatusHolder multiStatusHolder) {
         // nop
     }
 
-    public void discardOldBuildsByCount(String buildName, int count) {
+    public void discardOldBuildsByCount(String buildName, BuildRetention discard, MultiStatusHolder multiStatusHolder) {
         // nop
     }
 
@@ -385,6 +399,32 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     public Component getTreeItemPropertiesPanel(String panelId, ItemInfo itemInfo) {
         return new DisabledPropertiesPanel(panelId, panelId);
+    }
+
+    public Component getFilteredResourceCheckbox(String componentId, ItemInfo info) {
+        return new StyledCheckbox(componentId).setTitle("").setEnabled(false).
+                add(new DisabledAddonBehavior(FILTERED_RESOURCES));
+    }
+
+    public Component getSettingsProvisioningBorder(String id, Form form, TextArea<String> content,
+            String saveToFileName) {
+        return new DisabledSettingsProvisioningBorder(id, form, content, saveToFileName);
+    }
+
+    public String getGeneratedSettingsUserCredentialsTemplate(boolean escape) {
+        return "yourPassword";
+    }
+
+    public String getGeneratedSettingsUsernameTemplate() {
+        return ContextHelper.get().getAuthorizationService().currentUsername();
+    }
+
+    public String filterResource(Request request, Properties contextProperties, Reader reader) throws Exception {
+        try {
+            return IOUtils.toString(reader);
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
     }
 
     public WebMarkupContainer getKeyPairContainer(String wicketId, String virtualRepoKey, boolean isCreate) {
@@ -461,9 +501,9 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public WebMarkupContainer getAddonsInfoPanel(String panelId) {
-        List<String> installedAddonNames = addonsManager.getInstalledAddonNames();
+        List<AddonInfo> installedAddons = addonsManager.getInstalledAddons(null);
         List<String> enabledAddonNames = addonsManager.getEnabledAddonNames();
-        return new AddonsInfoPanel(panelId, installedAddonNames, enabledAddonNames);
+        return new AddonsInfoPanel(panelId, installedAddons, enabledAddonNames.isEmpty());
     }
 
     public ITab getBuildsTab(final RepoAwareActionableItem item) {
@@ -482,7 +522,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return defaultMessage;
     }
 
-    public Set<FileInfo> getArtifactFileInfo(Build build) {
+    public Set<FileInfo> getNonStrictArtifactFileInfo(Build build) {
         return Sets.newHashSet();
     }
 
@@ -538,8 +578,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         }
     }
 
-
-    public Set<org.artifactory.fs.FileInfo> getDependencyFileInfo(Build build, Set<String> scopes) {
+    public Set<org.artifactory.fs.FileInfo> getNonStrictDependencyFileInfo(Build build, Set<String> scopes) {
         return Sets.newHashSet();
     }
 
@@ -675,6 +714,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         BaseTitledLink link = new BaseTitledLink(id);
         link.setVisible(false);
         return link;
+    }
+
+    public ITab getHttpRepoReplicationPanel(String tabTitle, HttpRepoDescriptor repoDescriptor,
+            ReplicationDescriptor replicationDescriptor) {
+        return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.REPLICATION);
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {
@@ -816,6 +860,30 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         @Override
         protected Component newToolbar(String id) {
             return new DisabledAddonHelpBubble(id, PROPERTIES);
+        }
+    }
+
+    private static class DisabledSettingsProvisioningBorder extends BaseSettingsProvisioningBorder {
+
+        protected DisabledSettingsProvisioningBorder(String id, Form form, TextArea<String> content,
+                String saveToFileName) {
+            super(id, form, content, saveToFileName);
+            setEnabled(false);
+        }
+
+        @Override
+        protected Component newToolbar(String id) {
+            return new DisabledAddonHelpBubble(id, FILTERED_RESOURCES);
+        }
+
+        @Override
+        protected List<? extends LocalRepoDescriptor> getDeployableRepoDescriptors() {
+            return Lists.newArrayList();
+        }
+
+        @Override
+        protected Component getDeploymentLink(String id, String title, Form form, TextArea<String> editableContent) {
+            return new BaseTitledLink(id, title).setEnabled(false);
         }
     }
 }

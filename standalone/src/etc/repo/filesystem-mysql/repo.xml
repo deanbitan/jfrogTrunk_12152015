@@ -58,7 +58,7 @@
         <param name="schemaObjectPrefix" value="ds_"/>
         <!--<param name="tablePrefix" value=""/>-->
 
-        <param name="minRecordLength" value="512"/>
+        <param name="minRecordLength" value="0"/>
         <!-- The directory in which binary files will be stored -->
         <param name="fileStoreDir" value="${rep.home}/filestore"/>
     </DataStore>

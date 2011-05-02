@@ -20,7 +20,7 @@ package org.artifactory.addon.wicket.disabledaddon;
 
 import org.apache.wicket.markup.html.list.Loop;
 import org.apache.wicket.model.IModel;
-import org.artifactory.addon.wicket.AddonType;
+import org.artifactory.addon.AddonType;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledTab;
 
 /**

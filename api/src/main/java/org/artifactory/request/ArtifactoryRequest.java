@@ -36,17 +36,22 @@ public interface ArtifactoryRequest extends Request {
 
     String FORCE_DOWNLOAD_IF_NEWER = "forceDownloadIfNewer";
 
+    String SEARCH_FOR_EXISTING_RESOURCE_ON_REMOTE_REQUEST = "searchForExistingResourceOnRemoteRequest";
+
     /**
      * The path prefix name for list browsing.
      */
     String LIST_BROWSING_PATH = "list";
 
+    /**
+     * The path prefix name for simple browsing.
+     */
+    String SIMPLE_BROWSING_PATH = "simple";
+
 
     String getRepoKey();
 
     String getPath();
-
-    String getSourceDescription();
 
     boolean isMetadata();
 

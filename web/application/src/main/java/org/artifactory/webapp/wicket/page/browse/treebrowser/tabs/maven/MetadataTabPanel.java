@@ -54,7 +54,6 @@ public class MetadataTabPanel extends Panel {
     public MetadataTabPanel(String id, RepoAwareActionableItem item, RepoPath canonicalRepoPath) {
         super(id);
         //Add properties panel
-        PropertiesWebAddon propertiesWebAddon = addonsManager.addonByType(PropertiesWebAddon.class);
         ItemInfo info;
         if (item instanceof FolderActionableItem) {
             // take the last element if folder compacted compacted
@@ -63,6 +62,7 @@ public class MetadataTabPanel extends Panel {
             info = item.getItemInfo();
         }
 
+        PropertiesWebAddon propertiesWebAddon = addonsManager.addonByType(PropertiesWebAddon.class);
         add(propertiesWebAddon.getTreeItemPropertiesPanel("propertiesPanel", info));
 
         List<String> metadataTypeList = getMetadataNames(canonicalRepoPath);

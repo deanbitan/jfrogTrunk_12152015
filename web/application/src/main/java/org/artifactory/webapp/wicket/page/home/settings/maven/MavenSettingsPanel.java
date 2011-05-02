@@ -24,9 +24,11 @@ import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.ResourceModel;
+import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.api.maven.MavenSettings;
 import org.artifactory.api.maven.MavenSettingsMirror;
 import org.artifactory.api.maven.MavenSettingsRepository;
+import org.artifactory.api.maven.MavenSettingsServer;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
@@ -225,6 +227,17 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
         if (isMirrorAny()) {
             String mirror = getMirrorAnyKey();
             mavenSettings.addMirrorRepository(new MavenSettingsMirror(mirror, mirror, "*"));
+        }
+
+        if (!authorizationService.isAnonymous() || !authorizationService.isAnonAccessEnabled()) {
+            FilteredResourcesWebAddon filteredResourcesWebAddon =
+                    addonsManager.addonByType(FilteredResourcesWebAddon.class);
+
+            String currentUsername = filteredResourcesWebAddon.getGeneratedSettingsUsernameTemplate();
+            String currentPassword = filteredResourcesWebAddon.getGeneratedSettingsUserCredentialsTemplate(true);
+
+            mavenSettings.addServer(new MavenSettingsServer("central", currentUsername, currentPassword));
+            mavenSettings.addServer(new MavenSettingsServer("snapshots", currentUsername, currentPassword));
         }
         return mavenSettings;
     }

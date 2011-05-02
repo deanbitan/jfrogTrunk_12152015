@@ -41,6 +41,7 @@ import org.artifactory.schedule.TaskService;
 import org.artifactory.schedule.quartz.QuartzTask;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.EmailException;
 import org.artifactory.version.CompoundVersionDetails;
 import org.quartz.CronExpression;
@@ -288,6 +289,9 @@ public class BackupServiceImpl implements InternalBackupService {
 
     private List<LocalRepoDescriptor> getBackedupRepos(List<RealRepoDescriptor> excludeRepositories) {
         List<LocalRepoDescriptor> localRepos = repositoryService.getLocalAndCachedRepoDescriptors();
+        if (CollectionUtils.isNullOrEmpty(excludeRepositories)) {
+            return localRepos; // nothing is excluded return all local repositories
+        }
         List<LocalRepoDescriptor> backedupRepos = new ArrayList<LocalRepoDescriptor>();
         for (LocalRepoDescriptor repo : localRepos) {
             //Skip excluded repositories

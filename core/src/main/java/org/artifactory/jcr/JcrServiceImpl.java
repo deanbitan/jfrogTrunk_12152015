@@ -26,6 +26,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.jackrabbit.core.GarbageCollectorFactory;
+import org.apache.jackrabbit.core.RepositoryImpl;
+import org.apache.jackrabbit.core.data.DataIdentifier;
+import org.apache.jackrabbit.core.data.DataRecord;
+import org.apache.jackrabbit.core.data.DataStore;
+import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.core.nodetype.InvalidNodeTypeDefException;
 import org.apache.jackrabbit.core.nodetype.xml.NodeTypeReader;
 import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
@@ -748,6 +753,18 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
         }
 
         return processTreeNodeRecursively(itemNode, multiStatusHolder, fileFilter);
+    }
+
+    public InputStream getDataStreamBySha1Checksum(String sha1) throws DataStoreException {
+        JcrSession managedSession = getManagedSession();
+        RepositoryImpl rep = (RepositoryImpl) managedSession.getRepository();
+        DataStore dataStore = rep.getDataStore();
+        DataRecord record = dataStore.getRecord(new DataIdentifier(sha1));
+        if (record != null) {
+            return record.getStream();
+        }
+
+        return null;
     }
 
     private JcrTreeNode processTreeNodeRecursively(Node itemNode, MultiStatusHolder multiStatusHolder,

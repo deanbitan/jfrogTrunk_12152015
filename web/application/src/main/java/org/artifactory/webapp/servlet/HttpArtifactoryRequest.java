@@ -47,7 +47,7 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
         return "HEAD".equalsIgnoreCase(httpRequest.getMethod());
     }
 
-    public String getSourceDescription() {
+    public String getClientAddress() {
         return HttpUtils.getRemoteClientAddress(httpRequest);
     }
 

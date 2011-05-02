@@ -19,6 +19,7 @@
 package org.artifactory.security;
 
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.slf4j.Logger;
 import org.testng.annotations.Test;
 
@@ -44,7 +45,7 @@ import static org.testng.Assert.*;
  * @author Noam Tenne
  */
 @Test
-public class CryptoHelperTest {
+public class CryptoHelperTest extends ArtifactoryHomeBoundTest {
     private static final Logger log = LoggerFactory.getLogger(CryptoHelperTest.class);
 
     public void generateKeyPair() throws Exception {
@@ -98,6 +99,8 @@ public class CryptoHelperTest {
         assertEquals(CryptoHelper.escapeEncryptedPassword("{DESede}123"), "\\{DESede\\}123");
         assertEquals(CryptoHelper.escapeEncryptedPassword("\\{DESede\\}123"), "\\{DESede\\}123");
         assertEquals(CryptoHelper.escapeEncryptedPassword("123"), "123");
+        assertEquals(CryptoHelper.escapeEncryptedPassword("{DESede}"), "\\{DESede\\}");
+        assertEquals(CryptoHelper.escapeEncryptedPassword("%%DESede&&"), "%%DESede&&");
     }
 
     public void toBase64String() {

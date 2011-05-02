@@ -283,19 +283,26 @@ public class ProfilePanel extends TitledActionPanel {
         SecretKey secretKey = CryptoHelper.generatePbeKey(userInfo.getPrivateKey());
         String encryptedPassword = CryptoHelper.encryptSymmetric(currentPassword, secretKey);
         settingsSnippet.add(createSettingXml(userInfo, encryptedPassword));
-        settingsSnippet.add(new Label("nonMavenPassword",
-                "Non-maven clients should use a non-escaped password: " + encryptedPassword));
+
+        Component nonMavenPasswordLabel = new WebMarkupContainer("nonMavenPassword");
+        settingsSnippet.add(nonMavenPasswordLabel);
+        if (CryptoHelper.isEncryptedPasswordPrefixedWithDefault(encryptedPassword)) {
+            nonMavenPasswordLabel.replaceWith(new Label("nonMavenPassword",
+                    "Non-maven clients should use a non-escaped password: " + encryptedPassword));
+        }
         encryptedPasswordLabel.setDefaultModelObject(encryptedPassword);
         replace(settingsSnippet);
     }
 
     private Component createSettingXml(UserInfo userInfo, String encryptedPassword) {
-        String escapedEncPassword = CryptoHelper.escapeEncryptedPassword(encryptedPassword);
+        if (CryptoHelper.isEncryptedPasswordPrefixedWithDefault(encryptedPassword)) {
+            encryptedPassword = CryptoHelper.escapeEncryptedPassword(encryptedPassword);
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("<server>\n");
         sb.append("    <id>${server-id}</id>\n");
         sb.append("    <username>").append(userInfo.getUsername()).append("</username>\n");
-        sb.append("    <password>").append(escapedEncPassword).append("</password>\n");
+        sb.append("    <password>").append(encryptedPassword).append("</password>\n");
         sb.append("</server>");
 
         FieldSetBorder border = new FieldSetBorder("settingsBorder");

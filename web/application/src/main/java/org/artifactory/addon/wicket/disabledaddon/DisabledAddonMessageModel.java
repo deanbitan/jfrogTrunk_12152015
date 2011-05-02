@@ -21,7 +21,7 @@ package org.artifactory.addon.wicket.disabledaddon;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
 import org.artifactory.addon.AddonInfo;
-import org.artifactory.addon.wicket.AddonType;
+import org.artifactory.addon.AddonType;
 
 /**
  * @author Yoav Aharoni

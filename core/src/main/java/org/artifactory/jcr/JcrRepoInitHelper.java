@@ -113,6 +113,7 @@ abstract class JcrRepoInitHelper {
             }
             //register our own workspace inconsistency handler
             LenientOnWorkspaceInconsistency.init();
+            repoConfig.setCorePoolSize(ConstantValues.jcrCorePoolSize.getInt());
             //Create the repository
             repository = RepositoryImpl.create(repoConfig);
         } catch (Exception e) {

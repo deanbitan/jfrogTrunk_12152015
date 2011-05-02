@@ -27,6 +27,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.message.ArtifactoryUpdatesService;
 import org.artifactory.api.message.Message;
 import org.artifactory.common.ConstantValues;
@@ -61,12 +62,18 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
     @Autowired
     private TaskService taskService;
 
+    @Autowired
+    private CentralConfigService centralConfigService;
+
     private Map<String, Message> cache =
             new MapMaker().initialCapacity(1).
                     expireAfterWrite(ConstantValues.artifactoryUpdatesRefreshIntervalSecs.getLong(),
                             TimeUnit.SECONDS).makeMap();
 
     public void fetchMessage() {
+        if (!ConstantValues.versionQueryEnabled.getBoolean() && centralConfigService.getDescriptor().isOfflineMode()) {
+            return;
+        }
         final Message message = getRemoteMessage();
         cache.put(MESSAGE_CACHE_KEY, message);
     }
@@ -133,7 +140,8 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
     }
 
     private synchronized void fetchMessageAsync() {
-        if (getCachedMessage() == null && !taskService.hasTaskOfType(FetchArtifactoryUpdatesJob.class)) {
+        if (ConstantValues.versionQueryEnabled.getBoolean() && (getCachedMessage() == null) &&
+                !taskService.hasTaskOfType(FetchArtifactoryUpdatesJob.class)) {
             QuartzTask fetchCommand = new QuartzTask(FetchArtifactoryUpdatesJob.class, 0);
             fetchCommand.setSingleton(true);
             taskService.startTask(fetchCommand);

@@ -48,7 +48,6 @@ public class MimeTypes implements Serializable {
 
     protected MimeTypes(ImmutableSet<MimeType> mimeTypes) {
         this.mimeTypes = mimeTypes;
-        initializeTypeByExtension();
     }
 
     public Set<MimeType> getMimeTypes() {
@@ -68,21 +67,20 @@ public class MimeTypes implements Serializable {
         if (extension == null) {
             return null;
         }
+        if (typeByExtension == null) {
+            initializeTypeByExtensionIfNeeded();
+        }
         return typeByExtension.get(extension.toLowerCase());
     }
 
-    private void initializeTypeByExtension() {
-        typeByExtension = new HashMap<String, MimeType>(mimeTypes.size());
-        for (MimeType mimeType : mimeTypes) {
-            for (String extension : mimeType.getExtensions()) {
-                typeByExtension.put(extension, mimeType);
+    private synchronized void initializeTypeByExtensionIfNeeded() {
+        if (typeByExtension == null) {
+            typeByExtension = new HashMap<String, MimeType>(mimeTypes.size());
+            for (MimeType mimeType : mimeTypes) {
+                for (String extension : mimeType.getExtensions()) {
+                    typeByExtension.put(extension, mimeType);
+                }
             }
         }
     }
-
-    private Object readResolve() {
-        initializeTypeByExtension();
-        return this;
-    }
-
 }

@@ -30,6 +30,7 @@ import org.codehaus.jackson.map.AnnotationIntrospector;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.introspect.JacksonAnnotationIntrospector;
 import org.codehaus.jackson.xc.JaxbAnnotationIntrospector;
 
@@ -58,6 +59,7 @@ import javax.ws.rs.ext.Provider;
         BuildRestConstants.MT_BUILDS_BY_NAME,
         BuildRestConstants.MT_BUILD,
         BuildRestConstants.MT_BUILD_INFO,
+        BuildRestConstants.MT_PROMOTION_REQUEST,
         ArtifactRestConstants.MT_FOLDER_INFO,
         ArtifactRestConstants.MT_FILE_INFO,
         ArtifactRestConstants.MT_ITEM_METADATA_NAMES,
@@ -81,6 +83,7 @@ import javax.ws.rs.ext.Provider;
         BuildRestConstants.MT_BUILD,
         BuildRestConstants.MT_BUILD_INFO,
         BuildRestConstants.MT_COPY_MOVE_RESULT,
+        BuildRestConstants.MT_PROMOTION_RESULT,
         RepositoriesRestConstants.MT_REPOSITORY_DETAILS_LIST,
         RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIGURATION,
         RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIG,
@@ -114,7 +117,10 @@ public class JsonProvider extends JacksonJsonProvider implements ContextResolver
         AnnotationIntrospector primary = new JacksonAnnotationIntrospector();
         AnnotationIntrospector secondary = new JaxbAnnotationIntrospector();
         AnnotationIntrospector pair = new AnnotationIntrospector.Pair(primary, secondary);
+
         mapper.getSerializationConfig().setAnnotationIntrospector(pair);
+        mapper.getSerializationConfig().setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
+
         mapper.getDeserializationConfig().setAnnotationIntrospector(pair);
         //Ignore missing properties
         mapper.getDeserializationConfig().disable(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES);

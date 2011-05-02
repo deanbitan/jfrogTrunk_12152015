@@ -34,6 +34,7 @@ import org.artifactory.webapp.wicket.page.build.tabs.BuildEnvironmentTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildGeneralInfoTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildInfoJsonTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.PublishedModulesTabPanel;
+import org.artifactory.webapp.wicket.page.build.tabs.ReleaseHistoryTabPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledTab;
@@ -123,6 +124,8 @@ public class BuildTabbedPanel extends TitledPanel {
         LicensesWebAddon licensesAddon = addonsManager.addonByType(LicensesWebAddon.class);
         tabList.add(licensesAddon.getLicensesInfoTab("Licenses", build, hasDeployOnLocal));
 
+        tabList.add(getReleaseHistoryTab("Release History", hasDeployOnLocal));
+
         tabList.add(getJsonTab("Build Info JSON", hasDeployOnLocal));
 
         StyledTabbedPanel tabbedPanel = new StyledTabbedPanel("tabbedPanel", tabList);
@@ -171,6 +174,26 @@ public class BuildTabbedPanel extends TitledPanel {
                 @Override
                 public Panel getPanel(String panelId) {
                     return new BuildEnvironmentTabPanel(panelId, build);
+                }
+            };
+        } else {
+            return getDisabledTab(title);
+        }
+    }
+
+    /**
+     * Returns the build release history tab
+     *
+     * @param title   Title to give to the tab
+     * @param enabled Indicates the state of the tab
+     * @return Release history tab
+     */
+    private ITab getReleaseHistoryTab(String title, boolean enabled) {
+        if (enabled) {
+            return new BaseTab(title) {
+                @Override
+                public Panel getPanel(String panelId) {
+                    return new ReleaseHistoryTabPanel(panelId, build);
                 }
             };
         } else {

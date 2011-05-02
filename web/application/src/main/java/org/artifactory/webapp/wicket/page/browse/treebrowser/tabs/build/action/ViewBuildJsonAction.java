@@ -25,7 +25,7 @@ import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
-import org.artifactory.common.wicket.component.modal.panel.bordered.CodeModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.CodeModalPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.action.ViewAction;

@@ -19,7 +19,7 @@
 package org.artifactory.addon.wicket.disabledaddon;
 
 import org.apache.wicket.Component;
-import org.artifactory.addon.wicket.AddonType;
+import org.artifactory.addon.AddonType;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 
 /**

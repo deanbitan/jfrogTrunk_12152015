@@ -89,7 +89,7 @@ em {
     white-space: nowrap;
 }
 
-.IE td.nowrap span {
+.IE-678 td.nowrap span {
     float: left;
 }
 
@@ -133,15 +133,27 @@ input.text, textarea, select,
     border: solid 1px #666666;
 }
 
+.dijitComboBox .dijitInputInner {
+    height: 18px;
+}
+
+.dijitComboBox input.dijitArrowButtonInner {
+    height: 18px !important;
+}
+
+.IE .dijitComboBox input.dijitArrowButtonInner {
+    background-color: transparent;
+}
+
 input.text, textarea, span.textbox, div.textbox {
     padding: 2px 2px 0 2px;
 }
 
-.IE-8 input.text, .Safari input.text {
+.IE-89 input.text, .Safari input.text {
     margin-top: 1px;
 }
 
-.Safari textarea, .IE-8 textarea {
+.Safari textarea, .IE-89 textarea {
     margin-top: 1px;
 }
 
@@ -195,7 +207,7 @@ pre {
 }
 
 .fieldset-border-wrapper .repo-field,
-.IE .field-row .repo-field {
+.IE-67 .field-row .repo-field {
     padding-right: 12px;
 }
 
@@ -405,6 +417,7 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
 
 .import-export-form .zip-file {
     padding-top: 7px;
+    padding-bottom: 3px;
 }
 
 /*-- BackupCreateUpdatePanel --*/
@@ -418,22 +431,22 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
     width: 148px;
 }
 
-.IE .backup-form .field-path {
+.IE-67 .backup-form .field-path {
     position: relative;
     top: -4px;
 }
 
-.IE .backup-form .field-path label {
+.IE-678 .backup-form .field-path label {
     position: relative;
     top: 7px;
 }
 
-.Moz .backup-form .field-path label {
+.IE-89 .backup-form .field-path {
     position: relative;
-    top: 2px;
+    top: -2px;
 }
 
-.Safari .backup-form .field-path label {
+.backup-form .field-path label {
     position: relative;
     top: 2px;
 }
@@ -450,7 +463,7 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
     padding-right: 1px;
 }
 
-.IE .upload-form  .button {
+.IE .upload-form .button {
     padding-left: 4px;
     position: relative;
     margin-top: -4px;
@@ -500,7 +513,7 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
     padding-top: 3px;
 }
 
-.IE .upload-zip-form .button {
+.IE-67 .upload-zip-form .button {
     padding-top: 0;
 }
 
@@ -577,7 +590,7 @@ span.textbox-disabled {
     margin-left: 5px;
 }
 
-.IE .sub-menu-opened {
+.IE-67 .sub-menu-opened {
     display: inline-block;
 }
 
@@ -655,10 +668,6 @@ span.textbox-disabled {
     height: 35px;
 }
 
-.IE-8 .side-menu a.selected {
-    width: 150px;
-}
-
 .side-menu em {
     padding-left: 20px;
     display: block;
@@ -685,7 +694,7 @@ span.textbox-disabled {
     text-align: left;
 }
 
-.IE .buttons {
+.IE-67 .buttons {
     margin-top: 7px;
     height: 38px;
 }
@@ -761,8 +770,7 @@ button.help-link {
     padding: 10px;
 }
 
-.IE-6 .navigation td,
-.IE-7 .navigation td {
+.IE-67 .navigation td {
     width: 0;
 }
 
@@ -992,7 +1000,7 @@ span.LinksColumn {
     background: url("images/toolbox/toolbox-pointer.gif") right center no-repeat;
 }
 
-.IE-8 .links-pointer {
+.IE-89 .links-pointer {
     top: 3px;
 }
 
@@ -1189,7 +1197,6 @@ div.styled-tab-panel div.tab-row li.first-tab span {
 
 .IE-6 div.styled-tab-panel div.tab-row li.first-tab span {
     width: 100px;
-
 }
 
 div.styled-tab-panel div.tab-row li.last-tab span {
@@ -1208,8 +1215,7 @@ div.styled-tab-panel div.tab-row li {
     height: 100px; /* needed for js */
 }
 
-.IE-6 div.styled-tab-panel div.tab-row li,
-.IE-7 div.styled-tab-panel div.tab-row li {
+.IE-67 div.styled-tab-panel div.tab-row li {
     height: 95px;
 }
 
@@ -1317,14 +1323,12 @@ div.styled-tab-panel div.tab-row a.disabled {
     padding: 0 10px 18px 10px;
 }
 
-.IE .tab-panel-bottom-left {
+.IE-6 .tab-panel-bottom-left {
     padding: 0 10px 23px 10px;
-
 }
 
 .tab-panel-bottom-right {
     background: url("images/tree-inspector/frame/frame-bottom-right.gif") no-repeat bottom right;
-
 }
 
 div.tab-panel {
@@ -1335,7 +1339,7 @@ div.tab-panel {
     padding: 0 7px;
 }
 
-.IE div.tab-panel {
+.IE-678 div.tab-panel {
     margin-bottom: 0;
     position: relative;
 }
@@ -1409,15 +1413,15 @@ div.wicket-tree span.icon {
     margin-right: 3px;
 }
 
-.IE div.wicket-tree span.junction,
-.IE div.wicket-tree span.junction-last,
-.IE div.wicket-tree span.plus,
-.IE div.wicket-tree span.minus,
-.IE div.wicket-tree span.corner,
-.IE div.wicket-tree span.indent-line,
-.IE div.wicket-tree span.icon,
-.IE div.wicket-tree span.indent,
-.IE div.wicket-tree span.indent-blank {
+.IE-678 div.wicket-tree span.junction,
+.IE-678 div.wicket-tree span.junction-last,
+.IE-678 div.wicket-tree span.plus,
+.IE-678 div.wicket-tree span.minus,
+.IE-678 div.wicket-tree span.corner,
+.IE-678 div.wicket-tree span.indent-line,
+.IE-678 div.wicket-tree span.icon,
+.IE-678 div.wicket-tree span.indent,
+.IE-678 div.wicket-tree span.indent-blank {
     float: none;
     display: inline-block;
 }
@@ -1609,6 +1613,10 @@ td.one-line span {
     color: #555555;
 }
 
+.Chrome .button .button-right {
+    padding-bottom: 1px;
+}
+
 a.styled {
     text-decoration: none;
 }
@@ -1666,7 +1674,7 @@ a.styled {
     top: -2px;
 }
 
-.IE button.default-button {
+.IE-678 button.default-button {
     position: relative;
     top: 2px;
 }
@@ -2102,7 +2110,7 @@ div.quick-search-box .button:hover .button-right, div.quick-search-box .button:f
     padding: 10px;
 }
 
-.IE-7 .border-content, .IE-6 .border-content {
+.IE-67 .border-content {
     zoom: 1;
 }
 
@@ -2273,8 +2281,7 @@ div.quick-search-box .button:hover .button-right, div.quick-search-box .button:f
     overflow: auto;
 }
 
-.IE-6 .outer-border-content,
-.IE-7 .outer-border-content {
+.IE-67 .outer-border-content {
     position: relative;
 }
 
@@ -2338,7 +2345,7 @@ div.list-panel .border-title {
     margin: 0 0 5px 15px;
 }
 
-.IE .ordered-list {
+.IE-678 .ordered-list {
     position: relative;
 }
 
@@ -2346,7 +2353,7 @@ div.list-panel .border-title {
     padding: 0 2px;
 }
 
-.IE .ordered-list li {
+.IE-678 .ordered-list li {
     padding: 1px 2px 3px 2px;
     position: relative;
 }
@@ -2699,7 +2706,7 @@ div.w_content_scroll {
     top: -5px;
 }
 
-.IE .browseButton {
+.IE-678 .browseButton {
     position: relative;
     top: 2px;
 }
@@ -2854,7 +2861,7 @@ div.styled-tab-panel div.tab-row .permissions-tab span {
     background: url("images/fieldset/fieldset-top-right-light.gif") no-repeat top right;
 }
 
-.IE-8 .users-list .UserColumn .deletable {
+.IE-89 .users-list .UserColumn .deletable {
     position: relative;
     top: -10px;
 }
@@ -2882,7 +2889,7 @@ div.styled-tab-panel div.tab-row .permissions-tab span {
     padding-top: 9px;
 }
 
-.IE .submit-user-field {
+.IE-678 .submit-user-field {
     padding-top: 8px;
 }
 
@@ -2922,31 +2929,12 @@ button.styled-checkbox .button-left {
     font-weight: bold;
 }
 
-button.styled-checkbox .button-center, .mock-styled-checkbox-checked {
+button.styled-checkbox .button-center {
     height: 17px;
     padding: 4px 0 0 22px;
     font-weight: bold;
     color: #333333;
     text-align: left !important;
-}
-
-.mock-styled-checkbox-checked {
-    margin-left: 7px;
-    background: url("images/buttons/checkbox/checkbox-disabled-on.gif") no-repeat left top;
-}
-
-.IE-8 .mock-styled-checkbox-checked {
-    margin-left: 4px;
-}
-
-.IE-7 .mock-styled-checkbox-checked {
-    margin-left: 5px;
-    margin-bottom: 0;
-}
-
-.IE-6 .mock-styled-checkbox-checked {
-    margin-left: 2px;
-    margin-bottom: 0;
 }
 
 button.styled-checkbox-unchecked .button-center {
@@ -3447,7 +3435,7 @@ table.data-table tr.headers th.group-by-asc span.group-by-link {
     display: none;
 }
 
-.IE table.data-table tr.group-header-row div {
+.IE-678 table.data-table tr.group-header-row div {
     zoom: 1;
 }
 
@@ -3911,7 +3899,7 @@ div.login-panel {
     color: white;
 }
 
-.IE .deletable table {
+.IE-678 .deletable table {
     display: inline !important;
     margin: 0 2px !important
 }
@@ -4170,7 +4158,7 @@ td.true span {
     margin-top: 2px;
 }
 
-.IE-8 .settings-border .border-content .field-row .field .value {
+.IE-89 .settings-border .border-content .field-row .field .value {
     margin-top: 2px;
 }
 
@@ -4215,10 +4203,8 @@ td.true span {
 }
 
 textarea.modal-code {
-    background: transparent none;
     width: 100%;
     height: 500px;
-    border: none;
 }
 
 .IE-7 textarea.modal-code {
@@ -4551,7 +4537,7 @@ a.collapse-link:hover, a.collapse-link:focus {
     margin: 0 3px;
 }
 
-.IE .small-buttons .button {
+.IE-678 .small-buttons .button {
     display: inline-block;
 }
 
@@ -4682,7 +4668,7 @@ input.autocomplete {
 
 /*---AddSingleOpenPanel---*/
 
-.IE .property-editor .editor-text-area {
+.IE-678 .property-editor .editor-text-area {
     overflow-y: hidden;
 }
 
@@ -4708,7 +4694,7 @@ div.field.checkbox-field {
 
 /*--MailConfigPanel--*/
 
-.IE .mail-config .artifactory-url {
+.IE-678 .mail-config .artifactory-url {
     width: 320px;
 }
 
@@ -4753,16 +4739,16 @@ div.field.checkbox-field {
 
 /*--UploadKeystorePanel--*/
 
-.IE .upload-key .button {
+.IE-678 .upload-key .button {
     padding-left: 5px;
     top: 5px;
 }
 
-.IE .upload-key .value {
+.IE-678 .upload-key .value {
     margin-top: -15px;
 }
 
-.IE .upload-key .field-sep .value {
+.IE-678 .upload-key .field-sep .value {
     margin-top: 1px;
 }
 
@@ -4772,7 +4758,7 @@ div.field.checkbox-field {
 
 }
 
-.IE .remove-key select {
+.IE-678 .remove-key select {
     width: 221px;
 }
 
@@ -4780,7 +4766,7 @@ div.field.checkbox-field {
     margin-top: 18px;
 }
 
-.IE .remove-key button {
+.IE-67 .remove-key button {
     padding-left: 5px;
     top: 5px;
 }
@@ -4794,7 +4780,7 @@ div.field.checkbox-field {
     margin-top: -6px;
 }
 
-.IE .remove-key .value {
+.IE-678 .remove-key .value {
     margin-top: -15px;
 }
 
@@ -5026,6 +5012,14 @@ table.data-table td.add-value-row {
     background: url(images/addons/16layouts.png) no-repeat left top;
 }
 
+.addon-filtered-resources {
+    background: url(images/addons/16filtered-resources.png) no-repeat left top;
+}
+
+.addon-replication {
+    background: url(images/addons/16replication.png) no-repeat left top;
+}
+
 /*-- ProfilePanel --*/
 
 .settings-snippet {
@@ -5253,7 +5247,7 @@ div.styled-tab-panel div.tab-row li.disabled-addon-last-tab span {
     left: -10px;
 }
 
-.IE .general-settings-panel .customize.reset-field {
+.IE-678 .general-settings-panel .customize.reset-field {
     left: -10px;
 }
 
@@ -5605,12 +5599,8 @@ table.data-table {
     margin-top: 0;
 }
 
-.info-panel-text-area {
-    width: 100%;
-    height: 200px;
-    font-family: "Courier New", Courier, monospace;
-    background: none;
-    border: none;
+#sysInfo .lines {
+    overflow-y: auto !important;
 }
 
 /*-- BuildSearchResultsPanel --*/
@@ -5718,3 +5708,41 @@ table.legend .e-value {
 .http-advanced-repo-panel .basic-checkbox {
     padding-left: 28px;
 }
+
+.styled-checkbox .addon-icon {
+    position: relative;
+    top: 5px;
+}
+
+.settings-provisioning-deploy-button {
+    top: 12px;
+    position: relative;
+}
+
+.settings-provisioning-target-path {
+    width: 300px;
+}
+
+.filtered-resource-checkbox-help {
+    position: relative;
+    right: 5px;
+}
+
+/* ReleaseHistoryTabPanel */
+
+.release-history-table {
+    width: 100%;
+}
+
+.release-history-entry-border {
+    margin-bottom: 10px;
+}
+
+.release-history-timestamp {
+    font-weight: normal;
+}
+
+.addon-info-link {
+    color: #5D5C5D;
+}
+

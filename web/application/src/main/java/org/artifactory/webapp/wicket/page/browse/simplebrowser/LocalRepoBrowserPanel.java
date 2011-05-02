@@ -29,11 +29,13 @@ import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
+import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepositoryBrowsingService;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.slf4j.Logger;
@@ -52,23 +54,20 @@ public class LocalRepoBrowserPanel extends BaseRepoBrowserPanel {
     private static final long serialVersionUID = 1L;
 
     @SpringBean
-    private RepositoryService repoService;
-
-    @SpringBean
     private RepositoryBrowsingService repoBrowseService;
 
-    public LocalRepoBrowserPanel(String id, final RepoPath repoPath) {
+    public LocalRepoBrowserPanel(String id, final RepoPath repoPath, Properties requestProps) {
         super(id);
 
         add(new BreadCrumbsPanel("breadCrumbs", repoPath.getId()));
 
         List<BaseBrowsableItem> dirItems;
         try {
-            dirItems = repoBrowseService.getLocalRepoBrowsableChildren(repoPath);
+            BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(repoPath).requestProperties(
+                    requestProps).build();
+            dirItems = repoBrowseService.getLocalRepoBrowsableChildren(criteria);
         } catch (Exception e) {
             log.debug("Exception occurred while trying to get browsable children for repo path " + repoPath, e);
-            log.error("Exception occurred while trying to get browsable children for repo path '{}', '{}", repoPath,
-                    e.getMessage());
             throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
         }
         dirItems.add(0, getPseudoUpLink(repoPath));
@@ -89,7 +88,8 @@ public class LocalRepoBrowserPanel extends BaseRepoBrowserPanel {
                         itemRelativePath += "/";
                     }
                 }
-                String href = hrefPrefix + "/" + repoPath.getRepoKey() + "/" + itemRelativePath;
+                String href = hrefPrefix + "/" + ArtifactoryRequest.SIMPLE_BROWSING_PATH + "/" + repoPath.getRepoKey()
+                        + "/" + itemRelativePath;
                 AbstractLink link;
                 if (isEmpty(browsableItem.getRepoKey())) {
                     link = getRootLink();

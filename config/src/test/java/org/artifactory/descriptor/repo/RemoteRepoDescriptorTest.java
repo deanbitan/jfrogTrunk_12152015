@@ -57,5 +57,6 @@ public class RemoteRepoDescriptorTest {
         assertEquals(remote.getUnusedArtifactsCleanupPeriodHours(), 0);
         assertFalse(remote.isShareConfiguration());
         assertNotNull(remote.getPropertySets(), "Property sets list should not be null");
+        assertFalse(remote.isRejectInvalidJars());
     }
 }

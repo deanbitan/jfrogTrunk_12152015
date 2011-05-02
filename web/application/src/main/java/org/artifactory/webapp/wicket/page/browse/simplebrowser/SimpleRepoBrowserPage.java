@@ -24,6 +24,7 @@ import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RepoFilter;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
@@ -60,12 +61,13 @@ public class SimpleRepoBrowserPage extends AuthenticatedPage {
                     " You can turn on remote browsing by enabling the 'List Remote Folder Items' flag for this repository");
         }
 
+        Properties requestProps = (Properties) httpRequest.getAttribute(RepoFilter.ATTR_ARTIFACTORY_REQUEST_PROPERTIES);
         if (repoService.remoteRepoDescriptorByKey(repoKey) != null) {
-            add(new RemoteRepoBrowserPanel("browseRepoPanel", repoPath));
+            add(new RemoteRepoBrowserPanel("browseRepoPanel", repoPath, requestProps));
         } else if (repoService.virtualRepoDescriptorByKey(repoKey) != null) {
-            add(new VirtualRepoBrowserPanel("browseRepoPanel", repoPath));
+            add(new VirtualRepoBrowserPanel("browseRepoPanel", repoPath, requestProps));
         } else if (repoService.localOrCachedRepoDescriptorByKey(repoKey) != null) {
-            add(new LocalRepoBrowserPanel("browseRepoPanel", repoPath));
+            add(new LocalRepoBrowserPanel("browseRepoPanel", repoPath, requestProps));
         } else {
             throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }

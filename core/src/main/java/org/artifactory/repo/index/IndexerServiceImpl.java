@@ -322,6 +322,7 @@ public class IndexerServiceImpl implements InternalIndexerService {
                 indexer.fetchOrCreateIndex(mavenIndexManager, fireTime);
             } catch (Exception e) {
                 log.error("Fetching index files failed: {}.", e.getMessage());
+                log.debug("Fetching index files failed.", e);
             }
         }
     }

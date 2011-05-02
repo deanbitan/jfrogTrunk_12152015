@@ -130,10 +130,14 @@ public final class RequestResponseHelper {
         }
         response.setLastModified(res.getLastModified());
         RepoResourceInfo info = res.getInfo();
+
         // set the sha1 as the eTag and the sha1 header
-        response.setEtag(info.getSha1());
-        response.setSha1(info.getSha1());
+        String sha1 = info.getSha1();
+        response.setEtag(sha1);
+        response.setSha1(sha1);
+
         // set the md5 header
-        response.setMd5(info.getMd5());
+        String md5 = info.getMd5();
+        response.setMd5(md5);
     }
 }

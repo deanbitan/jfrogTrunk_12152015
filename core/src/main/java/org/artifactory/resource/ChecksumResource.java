@@ -18,6 +18,7 @@
 
 package org.artifactory.resource;
 
+import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.mime.MimeType;
@@ -29,14 +30,12 @@ import org.artifactory.repo.RepoPath;
  *
  * @author Yossi Shaul
  */
-public class ChecksumResource extends FileResource {
+public class ChecksumResource extends ResolvedResource {
     private final ChecksumType type;
-    private final String checksum;
 
-    public ChecksumResource(FileResource resource, ChecksumType type, String checksum) {
-        super(resource.getInfo());
+    public ChecksumResource(RepoResource wrappedResource, ChecksumType type, String checksum) {
+        super(wrappedResource, checksum, false);
         this.type = type;
-        this.checksum = checksum;
     }
 
     @Override
@@ -57,7 +56,7 @@ public class ChecksumResource extends FileResource {
 
     @Override
     public long getSize() {
-        return checksum != null ? checksum.length() : type.length();
+        return getContent() != null ? getContent().length() : type.length();
     }
 
     @Override

@@ -49,9 +49,13 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
 
     public Iterator<T> iterator(int first, int count) {
         List<T> data = getData();
-        ListPropertySorter.sort(data, getGroupParam(), getSort());
+        sortData(data, getGroupParam(), getSort());
         List<T> list = data.subList(first, first + count);
         return list.iterator();
+    }
+
+    protected void sortData(List<T> data, SortParam groupParam, SortParam sort) {
+        ListPropertySorter.sort(data, groupParam, sort);
     }
 
     public int size() {
@@ -75,7 +79,7 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
         SortParam groupParam = getGroupParam();
         if (groupSizeCache == null) {
             List<T> toSort = getData();
-            ListPropertySorter.sort(toSort, getGroupParam(), getSort());
+            sortData(toSort, getGroupParam(), getSort());
             groupSizeCache = GroupSizeCache.getSizeCache(toSort, getGroupRenderer(groupParam.getProperty()));
         }
         return groupSizeCache.getGroupSize(index);

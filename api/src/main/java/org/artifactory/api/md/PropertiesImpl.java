@@ -79,6 +79,10 @@ public class PropertiesImpl implements Properties {
         return props.putAll(multimap);
     }
 
+    public Set<? extends String> replaceValues(@Nonnull String key, Iterable<? extends String> values) {
+        return props.replaceValues(key, values);
+    }
+
     public void clear() {
         props.clear();
     }
@@ -109,6 +113,15 @@ public class PropertiesImpl implements Properties {
 
     public boolean isEmpty() {
         return props.isEmpty();
+    }
+
+    public boolean hasMandatoryProperty() {
+        for (String qPropKey : props.keySet()) {
+            if (qPropKey != null && qPropKey.endsWith(MANDATORY_SUFFIX)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean containsKey(String key) {

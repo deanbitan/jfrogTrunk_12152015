@@ -55,8 +55,8 @@ public class MoveResource {
      * @param path            The source path.
      * @param target          The target path.
      * @param dryRun          Flag whether to perform a dry run before executing the actual move.
-     * @param suppressLayouts Flag to indicate whether path translation across different layouts is should be
-     *                        suppressed.
+     * @param suppressLayouts Flag to indicate whether path translation across different layouts should be suppressed.
+     * @param failFast        Flag to indicate whether the operation should fail upon encountering an error.
      * @return The operation result
      * @throws Exception
      */
@@ -70,9 +70,11 @@ public class MoveResource {
             @QueryParam(ArtifactRestConstants.PARAM_TARGET) String target,
             // Flag to indicate whether to perform a dry run first. default false
             @QueryParam(ArtifactRestConstants.PARAM_DRY_RUN) int dryRun,
-            // Flag to indicate whether path translation across different layouts is should be suppressed. default false
-            @QueryParam(ArtifactRestConstants.PARAM_SUPPRESS_LAYOUTS) int suppressLayouts) throws Exception {
+            // Flag to indicate whether path translation across different layouts should be suppressed. default false
+            @QueryParam(ArtifactRestConstants.PARAM_SUPPRESS_LAYOUTS) int suppressLayouts,
+            //Flag to indicate whether the operation should fail upon encountering an error. default false
+            @QueryParam(ArtifactRestConstants.PARAM_FAIL_FAST) int failFast) throws Exception {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-        return addonsManager.addonByType(RestAddon.class).move(path, target, dryRun, suppressLayouts);
+        return addonsManager.addonByType(RestAddon.class).move(path, target, dryRun, suppressLayouts, failFast);
     }
 }

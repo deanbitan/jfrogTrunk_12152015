@@ -19,6 +19,8 @@ import java.util.Set;
  */
 public interface PropertiesService {
 
+    public static final String FILTERED_RESOURCE_PROPERTY_NAME = "filtered";
+
     /**
      * @param repoPath The item (repository/folder/file) repository path
      * @return The properties attached to this repo path. Empty properties if none exist.

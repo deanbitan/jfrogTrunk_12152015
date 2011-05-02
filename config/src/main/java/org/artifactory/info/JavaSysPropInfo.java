@@ -18,15 +18,25 @@
 
 package org.artifactory.info;
 
+import com.google.common.collect.Lists;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.util.List;
+
 /**
  * An information group for all the java system properties
  *
  * @author Noam Tenne
  */
-public class JavaSysPropInfo extends SystemPropInfoGroup {
+public class JavaSysPropInfo extends BasePropInfoGroup {
+
+    private SystemPropInfoGroup systemPropInfoGroup;
+
+    private RuntimeMXBean runtimeMXBean;
 
     public JavaSysPropInfo() {
-        super("java.class.version",
+        systemPropInfoGroup = new SystemPropInfoGroup("java.class.version",
                 "java.home",
                 "java.io.tmpdir",
                 "java.runtime.name",
@@ -54,5 +64,25 @@ public class JavaSysPropInfo extends SystemPropInfoGroup {
                 "sun.jnu.encoding",
                 "sun.management.compiler",
                 "sun.os.patch.level");
+        runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+    }
+
+    @Override
+    public InfoObject[] getInfo() {
+        List<InfoObject> infoObjects = Lists.newArrayList(systemPropInfoGroup.getInfo());
+
+        List<String> inputArguments = runtimeMXBean.getInputArguments();
+
+        boolean addedFirstValue = false;
+        String key = "JVM Input arguments";
+        for (String inputArgument : inputArguments) {
+            infoObjects.add(new InfoObject(key, inputArgument));
+            if (!addedFirstValue) {
+                addedFirstValue = true;
+                key = "";
+            }
+        }
+
+        return infoObjects.toArray(new InfoObject[infoObjects.size()]);
     }
 }

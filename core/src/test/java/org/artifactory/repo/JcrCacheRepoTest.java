@@ -18,6 +18,7 @@
 
 package org.artifactory.repo;
 
+import org.artifactory.api.fs.FileInfoImpl;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
@@ -41,24 +42,29 @@ public class JcrCacheRepoTest extends ArtifactoryHomeBoundTest {
 
     @Test
     public void testExpiry() {
-        FileResource releaseRes = new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1/a.jar"));
+        FileResource releaseRes = new FileResource(new FileInfoImpl(new RepoPathImpl("repox", "g1/g2/g3/a/v1/a.jar")));
         releaseRes.getInfo().setLastModified(0);
-        FileResource snapRes = new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1-SNAPSHOT/a-v1-SNAPSHOT.pom"));
+        FileResource snapRes = new FileResource(
+                new FileInfoImpl(new RepoPathImpl("repox", "g1/g2/g3/a/v1-SNAPSHOT/a-v1-SNAPSHOT.pom")));
         snapRes.getInfo().setLastModified(0);
         FileResource uniqueSnapRes =
-                new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1-SNAPSHOT/a-v1-20081214.090217-4.pom"));
+                new FileResource(new FileInfoImpl(
+                        new RepoPathImpl("repox", "g1/g2/g3/a/v1-SNAPSHOT/a-v1-20081214.090217-4.pom")));
         uniqueSnapRes.getInfo().setLastModified(0);
-        FileResource nonSnapRes = new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1/aSNAPSHOT.pom"));
+        FileResource nonSnapRes = new FileResource(
+                new FileInfoImpl(new RepoPathImpl("repox", "g1/g2/g3/a/v1/aSNAPSHOT.pom")));
         nonSnapRes.getInfo().setLastModified(0);
         MetadataResource relMdRes = new MetadataResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1/maven-metadata.xml"));
         relMdRes.getInfo().setLastModified(0);
         FileResource snapMdRes =
-                new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1-SNAPSHOT/maven-metadata.xml"));
+                new FileResource(
+                        new FileInfoImpl(new RepoPathImpl("repox", "g1/g2/g3/a/v1-SNAPSHOT/maven-metadata.xml")));
         snapMdRes.getInfo().setLastModified(0);
         FileResource nonsnapMdRes =
-                new FileResource(new RepoPathImpl("repox", "g1/g2/g3/a/v1/maven-metadata.metadata"));
+                new FileResource(new FileInfoImpl(new RepoPathImpl("repox", "g1/g2/g3/a/v1/maven-metadata.metadata")));
         nonsnapMdRes.getInfo().setLastModified(0);
-        FileResource indexRes = new FileResource(new RepoPathImpl("repox", MavenNaming.NEXUS_INDEX_GZ));
+        FileResource indexRes = new FileResource(
+                new FileInfoImpl(new RepoPathImpl("repox", MavenNaming.NEXUS_INDEX_GZ)));
         indexRes.getInfo().setLastModified(0);
 
         RemoteRepo<?> remoteRepo = createRemoteRepoMock(0L);

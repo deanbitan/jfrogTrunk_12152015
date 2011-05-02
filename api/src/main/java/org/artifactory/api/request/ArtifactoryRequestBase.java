@@ -142,6 +142,10 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
             int repoKeyStartIndex = requestPath.indexOf(LIST_BROWSING_PATH) + LIST_BROWSING_PATH.length() + 1;
             repoKey = PathUtils.getFirstPathElement(requestPath.substring(repoKeyStartIndex));
             pathStartIndex = repoKeyStartIndex + repoKey.length() + 1;
+        } else if (ArtifactoryRequest.SIMPLE_BROWSING_PATH.equals(repoKey)) {
+            int repoKeyStartIndex = requestPath.indexOf(SIMPLE_BROWSING_PATH) + SIMPLE_BROWSING_PATH.length() + 1;
+            repoKey = PathUtils.getFirstPathElement(requestPath.substring(repoKeyStartIndex));
+            pathStartIndex = repoKeyStartIndex + repoKey.length() + 1;
         } else {
             pathStartIndex = requestPath.startsWith("/") ? repoKey.length() + 2 : repoKey.length() + 1;
         }
@@ -168,8 +172,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         String path = pathStartIndex < pathEndIndex ? requestPath.substring(pathStartIndex, pathEndIndex) : "";
         //Calculate matrix params on the path
         path = processMatrixParamsIfExist(path);
-        RepoPath repoPath = new RepoPathImpl(repoKey, path);
-        return repoPath;
+        return new RepoPathImpl(repoKey, path);
     }
 
     private String processMatrixParamsIfExist(String fragment) {
@@ -185,7 +188,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
 
     @Override
     public String toString() {
-        return "source=" + getSourceDescription()
+        return "source=" + getClientAddress()
                 + ", path=" + getPath() + ", lastModified=" + getLastModified()
                 + ", ifModifiedSince=" + getIfModifiedSince();
     }

@@ -26,10 +26,8 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.ActionableItemBase;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.GoToBuildAction;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.ShowBuildItemInTreeAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.ShowInCiServerAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.ViewBuildJsonAction;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
@@ -56,10 +54,8 @@ public class BuildTabActionableItem extends ActionableItemBase {
      * @param textContentViewer Modal handler for displaying the build XML
      * @param basicBuildInfo    Basic build info object to handle
      * @param moduleId          ID of module association to specify
-     * @param repoPath          Selected item repo path
      */
-    public BuildTabActionableItem(ModalHandler textContentViewer, BasicBuildInfo basicBuildInfo, String moduleId,
-            RepoPath repoPath) {
+    public BuildTabActionableItem(ModalHandler textContentViewer, BasicBuildInfo basicBuildInfo, String moduleId) {
         this.basicBuildInfo = basicBuildInfo;
         this.moduleId = moduleId;
 
@@ -81,10 +77,6 @@ public class BuildTabActionableItem extends ActionableItemBase {
                     buildName, buildNumber, buildStarted);
             log.error(message + ": {}", e.getMessage());
             log.debug(message + ".", e);
-        }
-
-        if (repoPath != null) {
-            getActions().add(new ShowBuildItemInTreeAction(repoPath));
         }
     }
 

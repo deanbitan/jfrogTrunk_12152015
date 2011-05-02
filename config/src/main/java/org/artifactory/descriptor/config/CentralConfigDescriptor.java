@@ -24,6 +24,7 @@ import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.replication.ReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -87,4 +88,8 @@ public interface CentralConfigDescriptor extends Descriptor {
     List<RepoLayout> getRepoLayouts();
 
     RepoLayout getRepoLayout(String repoLayoutName);
+
+    List<ReplicationDescriptor> getReplications();
+
+    ReplicationDescriptor getReplication(String replicatedRepoKey);
 }

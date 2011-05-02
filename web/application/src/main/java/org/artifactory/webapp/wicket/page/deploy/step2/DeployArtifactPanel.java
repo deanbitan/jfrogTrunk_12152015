@@ -42,8 +42,6 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.artifact.ArtifactInfo;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.RepoPathImpl;
@@ -51,7 +49,6 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
-import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
@@ -62,20 +59,16 @@ import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.panel.editor.TextEditorPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.CookieUtils;
-import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.FileUtils;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.StringInputStream;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.MetadataPanel;
 import org.artifactory.webapp.wicket.page.deploy.DeployArtifactPage;
 import org.artifactory.webapp.wicket.page.deploy.step1.UploadArtifactPanel;
-import org.artifactory.webapp.wicket.panel.tabbed.PersistentTabbedPanel;
+import org.artifactory.webapp.wicket.util.TreeUtils;
 import org.artifactory.webapp.wicket.util.validation.DeployTargetPathValidator;
 import org.slf4j.Logger;
 
@@ -84,8 +77,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.List;
 
 /**
@@ -469,7 +460,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                     String artifactPath = model.getTargetPathFieldValue();
                     StringBuilder successMessagesBuilder = new StringBuilder();
                     successMessagesBuilder.append("Successfully deployed ");
-                    String repoPathUrl = getRepoPathUrl(repoKey, artifactPath);
+                    String repoPathUrl = TreeUtils.getRepoPathUrl(model.targetRepo, artifactPath);
                     if (StringUtils.isNotBlank(repoPathUrl)) {
                         successMessagesBuilder.append("<a href=\"").append(repoPathUrl).append("\">").
                                 append(artifactPath).append(" into ").append(repoKey).append("</a>.");
@@ -521,74 +512,6 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
             private void deployFile() throws RepoRejectException {
                 deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file);
-            }
-
-            /**
-             * Returns an HTTP link that points to the deployed item within the browser tree.
-             *
-             * @param repoKey      Repo key of item to point to
-             * @param artifactPath Relative path of item to point to
-             * @return HTTP link if permitted and valid, null if not
-             */
-            private String getRepoPathUrl(String repoKey, String artifactPath) {
-                if (!shouldProvideTreeLink(artifactPath)) {
-                    return null;
-                }
-                StringBuilder urlBuilder = new StringBuilder();
-                if (NamingUtils.isChecksum(artifactPath)) {
-                    // if a checksum file is deployed, link to the target file
-                    artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
-                }
-
-                String metadataName = null;
-                if (NamingUtils.isMetadata(artifactPath)) {
-                    SerializablePair<String, String> nameAndParent = NamingUtils.getMetadataNameAndParent(artifactPath);
-                    metadataName = nameAndParent.getFirst();
-                    artifactPath = nameAndParent.getSecond();
-                }
-                String repoPathId = new RepoPathImpl(repoKey, artifactPath).getId();
-
-                String encodedPathId;
-                try {
-                    encodedPathId = URLEncoder.encode(repoPathId, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    log.error("Unable to encode deployed artifact ID '{}': {}.", repoPathId, e.getMessage());
-                    return null;
-                }
-
-                //Using request parameters instead of wicket's page parameters. See RTFACT-2843
-                urlBuilder.append(WicketUtils.absoluteMountPathForPage(BrowseRepoPage.class)).append("?").
-                        append(BrowseRepoPage.PATH_ID_PARAM).append("=").append(encodedPathId);
-                if (StringUtils.isNotBlank(metadataName)) {
-                    urlBuilder.append("&").append(PersistentTabbedPanel.SELECT_TAB_PARAM).append("=Metadata");
-
-                    try {
-                        urlBuilder.append("&").append(MetadataPanel.SELECT_METADATA_PARAM).append("=").
-                                append(URLEncoder.encode(metadataName, "utf-8"));
-                    } catch (UnsupportedEncodingException e) {
-                        log.warn("Unable to link to tree item metadata '" + metadataName + "'.", e);
-                    }
-                }
-                return urlBuilder.toString();
-            }
-
-            /**
-             * Indicates whether a link to the tree item of the deployed artifact should be provided. Links should be
-             * provided if deploying a snapshot file to repository with different snapshot version policy.
-             *
-             * @param artifactPath The artifact deploy path
-             * @return True if should provide the link
-             */
-            private boolean shouldProvideTreeLink(String artifactPath) {
-                SnapshotVersionBehavior repoSnapshotBehavior = model.targetRepo.getSnapshotVersionBehavior();
-
-                boolean uniqueToNonUnique = MavenNaming.isUniqueSnapshot(artifactPath)
-                        && SnapshotVersionBehavior.NONUNIQUE.equals(repoSnapshotBehavior);
-
-                boolean nonUniqueToNonUnique = MavenNaming.isNonUniqueSnapshot(artifactPath)
-                        && SnapshotVersionBehavior.UNIQUE.equals(repoSnapshotBehavior);
-
-                return !uniqueToNonUnique && !nonUniqueToNonUnique;
             }
         }
 

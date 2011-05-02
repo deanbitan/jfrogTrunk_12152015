@@ -22,12 +22,16 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.maven.MavenService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
+import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.webapp.wicket.page.home.settings.modal.ReadOnlySettingsModalPanel;
+import org.artifactory.webapp.wicket.page.home.settings.modal.editable.EditableSettingsModalPanel;
 
 /**
  * A base implementation of a settings generator panel
@@ -35,6 +39,9 @@ import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
  * @author Noam Y. Tenne
  */
 public abstract class BaseSettingsGeneratorPanel extends TitledPanel implements SettingsGenerator {
+
+    @SpringBean
+    protected AddonsManager addonsManager;
 
     @SpringBean
     protected AuthorizationService authorizationService;
@@ -67,10 +74,16 @@ public abstract class BaseSettingsGeneratorPanel extends TitledPanel implements 
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 ModalWindow modelWindow = ModalHandler.getInstanceFor(this);
-                SettingsModalPanel modalPanel = new SettingsModalPanel(generateSettings(),
-                        getSettingsSyntax(), getSettingsMimeType(), getSaveToFileName());
-                modalPanel.setTitle(getSettingsWindowTitle());
-                modelWindow.setContent(modalPanel);
+                BaseModalPanel modalPanelReadOnly;
+                if (authorizationService.isAdmin()) {
+                    modalPanelReadOnly = new EditableSettingsModalPanel(generateSettings(), getSettingsMimeType(),
+                            getSaveToFileName());
+                } else {
+                    modalPanelReadOnly = new ReadOnlySettingsModalPanel(generateSettings(),
+                            getSettingsSyntax(), getSettingsMimeType(), getSaveToFileName());
+                }
+                modalPanelReadOnly.setTitle(getSettingsWindowTitle());
+                modelWindow.setContent(modalPanelReadOnly);
                 modelWindow.show(target);
             }
         };

@@ -35,14 +35,13 @@ public class BasicBuildInfo implements Serializable {
     private String name;
     private String number;
     private String started;
+    private String lastReleaseStatus;
 
     public BasicBuildInfo(String name, String number, Date started) {
         this(name, number, new SimpleDateFormat(Build.STARTED_FORMAT).format(started));
     }
 
     /**
-     * Main constructor
-     *
      * @param name    Build name
      * @param number  Build number
      * @param started Build started
@@ -51,6 +50,19 @@ public class BasicBuildInfo implements Serializable {
         this.name = name;
         this.number = number;
         this.started = started;
+    }
+
+    /**
+     * @param name              Build name
+     * @param number            Build number
+     * @param started           Build started
+     * @param lastReleaseStatus Build Last release status
+     */
+    public BasicBuildInfo(String name, String number, String started, String lastReleaseStatus) {
+        this.name = name;
+        this.number = number;
+        this.started = started;
+        this.lastReleaseStatus = lastReleaseStatus;
     }
 
     /**
@@ -95,6 +107,10 @@ public class BasicBuildInfo implements Serializable {
         }
     }
 
+    public String getLastReleaseStatus() {
+        return lastReleaseStatus;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -106,6 +122,10 @@ public class BasicBuildInfo implements Serializable {
 
         BasicBuildInfo that = (BasicBuildInfo) o;
 
+        if (lastReleaseStatus != null ? !lastReleaseStatus.equals(that.lastReleaseStatus) :
+                that.lastReleaseStatus != null) {
+            return false;
+        }
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
@@ -124,6 +144,7 @@ public class BasicBuildInfo implements Serializable {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (number != null ? number.hashCode() : 0);
         result = 31 * result + (started != null ? started.hashCode() : 0);
+        result = 31 * result + (lastReleaseStatus != null ? lastReleaseStatus.hashCode() : 0);
         return result;
     }
 }

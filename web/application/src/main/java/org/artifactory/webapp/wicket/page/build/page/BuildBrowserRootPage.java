@@ -28,6 +28,7 @@ import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.util.DoesNotExistException;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.browse.home.RememberPageBehavior;
 import org.artifactory.webapp.wicket.page.build.panel.AllBuildsPanel;
@@ -73,18 +74,29 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
 
         this.pageParameters = pageParameters;
         setOutputMarkupId(true);
-        Panel panelToAdd;
-        if (pageParameters.containsKey(MODULE_ID)) {
-            panelToAdd = getModuleSpecificTabbedPanel(null);
-        } else if (pageParameters.containsKey(BUILD_STARTED) || pageParameters.containsKey(BUILD_NUMBER)) {
-            /**
-             * If the URL was sent from Artifactory, it will include the build started param; but if it was sent by a
-             * user, it could contain only the build number
-             */
-            panelToAdd = getTabbedPanel();
-        } else if (pageParameters.containsKey(BUILD_NAME)) {
-            panelToAdd = getBuildForNamePanel();
-        } else {
+
+        Panel panelToAdd = null;
+        try {
+            if (pageParameters.containsKey(MODULE_ID)) {
+                panelToAdd = getModuleSpecificTabbedPanel(null);
+            } else if (pageParameters.containsKey(BUILD_STARTED) || pageParameters.containsKey(BUILD_NUMBER)) {
+                /**
+                 * If the URL was sent from Artifactory, it will include the build started param; but if it was sent by a
+                 * user, it could contain only the build number
+                 */
+                panelToAdd = getTabbedPanel();
+            } else if (pageParameters.containsKey(BUILD_NAME)) {
+                panelToAdd = getBuildForNamePanel();
+            }
+        } catch (DoesNotExistException e) {
+            panelToAdd = null;
+            error(e.getMessage());
+
+            //Clear all page parameters so that no breadcrumbs are added
+            pageParameters.clear();
+        }
+
+        if (panelToAdd == null) {
             panelToAdd = new AllBuildsPanel(CHILD_PANEL_ID);
         }
 
@@ -289,7 +301,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
         if (!pageParameters.containsKey(key)) {
             String errorMessage = new StringBuilder().append("Could not find parameter '").append(key).append("'").
                     toString();
-            throwNotFoundError(errorMessage);
+            throwBadRequestError(errorMessage);
         }
     }
 
@@ -307,7 +319,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
         if (StringUtils.isBlank(value)) {
             String errorMessage = new StringBuilder().append("Blank value found for parameter '").append(key).
                     append("'").toString();
-            throwNotFoundError(errorMessage);
+            throwBadRequestError(errorMessage);
         }
 
         return value;
@@ -318,8 +330,18 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      *
      * @param errorMessage Message to display in the error
      */
-    protected void throwNotFoundError(String errorMessage) throws AbortWithWebErrorCodeException {
-        throwError(HttpStatus.SC_NOT_FOUND, errorMessage);
+    protected void throwNotFoundError(String errorMessage) {
+        logError(errorMessage);
+        throw new DoesNotExistException(errorMessage);
+    }
+
+    /**
+     * Throws a 400 AbortWithWebErrorCodeException with the given message
+     *
+     * @param errorMessage Message to display in the error
+     */
+    protected void throwBadRequestError(String errorMessage) {
+        throwError(HttpStatus.SC_BAD_REQUEST, errorMessage);
     }
 
     /**
@@ -327,7 +349,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      *
      * @param errorMessage Message to display in the error
      */
-    protected void throwInternalError(String errorMessage) throws AbortWithWebErrorCodeException {
+    protected void throwInternalError(String errorMessage) {
         throwError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
     }
 
@@ -338,7 +360,11 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * @param errorMessage Message to display in the error
      */
     private void throwError(int status, String errorMessage) {
-        log.error("An error occurred during the browsing of build info: {}", errorMessage);
+        logError(errorMessage);
         throw new AbortWithWebErrorCodeException(status, errorMessage);
+    }
+
+    private void logError(String errorMessage) {
+        log.error("An error occurred during the browsing of build info: {}", errorMessage);
     }
 }

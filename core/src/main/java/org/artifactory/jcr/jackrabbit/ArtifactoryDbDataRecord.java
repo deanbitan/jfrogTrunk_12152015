@@ -113,7 +113,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
      */
     public long getLength() throws DataStoreException {
         if (!setInUse()) {
-            throw new DataStoreRecordNotFoundException("Record " + this + " is in invalid state");
+            throw new MissingOrInvalidDataStoreRecordException("Record " + this + " is in invalid state");
         }
         return length;
     }
@@ -131,7 +131,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
      */
     public InputStream getStream() throws DataStoreException {
         if (!setInUse()) {
-            throw new DataStoreRecordNotFoundException("Record " + this + " is in invalid state");
+            throw new MissingOrInvalidDataStoreRecordException("Record " + this + " is in invalid state");
         }
         DataRecordFileStream fileStream = null;
         try {
@@ -162,8 +162,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
                 throw new LockingException("Interrupted while trying to lock " + this, e);
             }
             if (!success) {
-                throw new LockingException(
-                        "Could not acquire state lock in " + getLoadSyncTimeOut());
+                throw new LockingException("Could not acquire state lock in " + getLoadSyncTimeOut());
             }
             return callable.call();
         } catch (Exception e) {

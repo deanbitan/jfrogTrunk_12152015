@@ -22,6 +22,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import org.artifactory.common.Info;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
@@ -49,6 +50,9 @@ public interface Properties extends Info {
 
     boolean putAll(Multimap<? extends String, ? extends String> multimap);
 
+    @Nullable
+    Set<? extends String> replaceValues(@Nonnull String key, Iterable<? extends String> values);
+
     void clear();
 
     Set<String> removeAll(@Nullable Object key);
@@ -64,6 +68,12 @@ public interface Properties extends Info {
     Set<String> keySet();
 
     boolean isEmpty();
+
+    /**
+     * @return True if there is a property with a mandatory key
+     * @see Properties#MANDATORY_SUFFIX
+     */
+    boolean hasMandatoryProperty();
 
     boolean containsKey(String key);
 

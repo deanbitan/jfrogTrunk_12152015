@@ -44,6 +44,7 @@ import org.artifactory.repo.RepoPath;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -189,10 +190,11 @@ public interface RepositoryService extends ImportableExportable {
      * @param repoPath      Path to targeted item
      * @param metadataClass Type class of metadata to set
      * @param metadata      Value of metadata to set. Cannot be null
+     * @return True if the setting was successful
      * @throws IllegalArgumentException When given a null metadata value
      */
     @Lock(transactional = true)
-    <MD> void setMetadata(RepoPath repoPath, Class<MD> metadataClass, MD metadata);
+    <MD> boolean setMetadata(RepoPath repoPath, Class<MD> metadataClass, MD metadata);
 
     /**
      * Sets the given metadata on the supplied repo path.
@@ -210,9 +212,10 @@ public interface RepositoryService extends ImportableExportable {
      *
      * @param repoPath     Path to targeted item
      * @param metadataName Name of metadata to remove
+     * @return True if the setting was successful
      */
     @Lock(transactional = true)
-    void removeMetadata(RepoPath repoPath, String metadataName);
+    boolean removeMetadata(RepoPath repoPath, String metadataName);
 
     @Request
     @Lock(transactional = true)
@@ -251,10 +254,12 @@ public interface RepositoryService extends ImportableExportable {
      * @param targetPath      The target local non-cached repository to move the path to.
      * @param dryRun          If true the method will just report the expected result but will not move any file
      * @param suppressLayouts If true, path translation across different layouts should be suppressed.
+     * @param failFast        If true, the operation should fail upon encountering an error.
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
     @Lock(transactional = true)
-    MoveMultiStatusHolder move(RepoPath fromRepoPath, RepoPath targetPath, boolean dryRun, boolean suppressLayouts);
+    MoveMultiStatusHolder move(RepoPath fromRepoPath, RepoPath targetPath, boolean dryRun, boolean suppressLayouts,
+            boolean failFast);
 
     /**
      * Moves set of paths to another local repository.
@@ -269,10 +274,12 @@ public interface RepositoryService extends ImportableExportable {
      * @param targetRepoKey Key of the target local non-cached repository to move the path to.
      * @param properties
      * @param dryRun        If true the method will just report the expected result but will not move any file  @return
+     * @param failFast      True if the operation should abort upon the first occurring warning or error
+     * @param searchResults
      */
     @Lock(transactional = true)
     MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetRepoKey, Properties properties,
-            boolean dryRun);
+            boolean dryRun, boolean failFast, boolean searchResults);
 
     /**
      * Copies repository path (pointing to a folder) to another local repository. The copy will only move paths the user
@@ -296,10 +303,12 @@ public interface RepositoryService extends ImportableExportable {
      * @param targetRepoPath  Path of the target local non-cached repository to copy the path to.
      * @param dryRun          If true the method will just report the expected result but will not copy any file
      * @param suppressLayouts If true, path translation across different layouts should be suppressed.
+     * @param failFast        If true, the operation should fail upon encountering an error.
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
     @Lock(transactional = true)
-    MoveMultiStatusHolder copy(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun, boolean suppressLayouts);
+    MoveMultiStatusHolder copy(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun, boolean suppressLayouts,
+            boolean failFast);
 
     /**
      * Copies a set of paths to another local repository.
@@ -314,11 +323,13 @@ public interface RepositoryService extends ImportableExportable {
      * @param targetLocalRepoKey Key of the target local non-cached repository to move the path to.
      * @param properties
      * @param dryRun             If true the method will just report the expected result but will not copy any file
+     * @param failFast           True if the operation should abort upon the first occurring warning or error
+     * @param searchResults
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
     @Lock(transactional = true)
     MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey,
-            Properties properties, boolean dryRun);
+            Properties properties, boolean dryRun, boolean failFast, boolean searchResults);
 
     /**
      * Expire expirable resources (folders, snapshot artifacts, maven metadata, etc.)
@@ -504,4 +515,33 @@ public interface RepositoryService extends ImportableExportable {
 
     @Lock(transactional = true)
     boolean mkdirs(RepoPath folderRepoPath);
+
+    StatusHolder deploy(RepoPath repoPath, InputStream inputStream);
+
+    /**
+     * Returns the first resolved local file info from a virtual repo.
+     *
+     * @param repoPath Repo path of virtual file
+     * @return Local file info
+     */
+    @Lock(transactional = true)
+    org.artifactory.fs.FileInfo getVirtualFileInfo(RepoPath repoPath);
+
+    /**
+     * Returns the first resolved local item info from a virtual repo.
+     *
+     * @param repoPath Repo path of virtual item
+     * @return Local item info
+     */
+    @Lock(transactional = true)
+    ItemInfo getVirtualItemInfo(RepoPath repoPath);
+
+    /**
+     * Returns the first resolved local metadata info from a virtual repo.
+     *
+     * @param repoPath Repo path of virtual metadata info
+     * @return Local metadata info
+     */
+    @Lock(transactional = true)
+    MetadataInfo getVirtualMetadataInfo(RepoPath repoPath, String metadataName);
 }

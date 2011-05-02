@@ -30,7 +30,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
-import org.artifactory.addon.wicket.AddonType;
+import org.artifactory.addon.AddonType;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.WicketProperty;

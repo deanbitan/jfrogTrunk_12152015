@@ -606,6 +606,12 @@ public class JcrFolder extends JcrFsItem<InternalFolderInfo> {
         File folder = new File(settings.getBaseDir(), getRelativePath());
         try {
             File[] dirEntries = folder.listFiles();
+
+            if (dirEntries == null) {
+                status.setWarning("Unable to list the children of the folder '" + folder.getAbsolutePath() +
+                        "' for import: perhaps a lack of permissions on the folder.", log);
+                return;
+            }
             for (File dirEntry : dirEntries) {
                 if (PathMatcher.isInDefaultExcludes(dirEntry)) {
                     continue;

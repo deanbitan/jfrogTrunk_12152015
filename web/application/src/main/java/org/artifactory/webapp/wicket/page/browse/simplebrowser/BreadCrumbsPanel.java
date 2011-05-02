@@ -24,6 +24,7 @@ import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.artifactory.common.wicket.behavior.CssClass;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.webapp.servlet.RequestUtils;
 
 /**
@@ -40,7 +41,8 @@ public class BreadCrumbsPanel extends Panel {
         String[] folders = path.split("[:/]");
         StringBuilder url = new StringBuilder(RequestUtils.getWicketServletContextUrl());
         url.append("/");
-
+        // add the /simple request
+        url.append(ArtifactoryRequest.SIMPLE_BROWSING_PATH).append("/");
         // add repo root
         String repo = folders[0];
         url.append(repo);

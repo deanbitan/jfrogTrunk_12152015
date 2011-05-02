@@ -18,7 +18,10 @@
 
 package org.artifactory.api.rest.artifact;
 
+import com.google.common.collect.Maps;
+
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * A found file element of the File List REST command
@@ -31,10 +34,9 @@ public class FileListElement implements Serializable {
     long size;
     String lastModified;
     boolean folder;
+    String sha1;
+    Map<String, String> mdTimestamps;
 
-    /**
-     * Default constructor
-     */
     public FileListElement() {
     }
 
@@ -123,6 +125,29 @@ public class FileListElement implements Serializable {
      */
     public void setFolder(boolean folder) {
         this.folder = folder;
+    }
+
+    public String getSha1() {
+        return sha1;
+    }
+
+    public void setSha1(String sha1) {
+        this.sha1 = sha1;
+    }
+
+    public Map<String, String> getMdTimestamps() {
+        return mdTimestamps;
+    }
+
+    public void setMdTimestamps(Map<String, String> mdTimestamps) {
+        this.mdTimestamps = mdTimestamps;
+    }
+
+    public void addMdTimestamp(String metadataName, String timestamp) {
+        if (mdTimestamps == null) {
+            mdTimestamps = Maps.newHashMap();
+        }
+        mdTimestamps.put(metadataName, timestamp);
     }
 
     @Override

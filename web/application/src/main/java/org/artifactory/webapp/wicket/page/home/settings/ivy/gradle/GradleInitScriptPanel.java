@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.home.settings.ivy.gradle;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
@@ -30,6 +31,8 @@ import org.springframework.util.PropertyPlaceholderHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Properties;
 
@@ -44,6 +47,7 @@ public class GradleInitScriptPanel extends BaseIvySettingsGeneratorPanel {
     private static final Logger log = LoggerFactory.getLogger(GradleInitScriptPanel.class);
     private IvySettingsRepoSelectorPanel libsPanel;
     private IvySettingsRepoSelectorPanel pluginsPanel;
+    private final String servletContextUrl;
 
     /**
      * Main constructor
@@ -55,6 +59,7 @@ public class GradleInitScriptPanel extends BaseIvySettingsGeneratorPanel {
     protected GradleInitScriptPanel(String id, String servletContextUrl,
             List<VirtualRepoDescriptor> virtualRepoDescriptors) {
         super(id, servletContextUrl);
+        this.servletContextUrl = servletContextUrl;
 
         libsPanel = new IvySettingsRepoSelectorPanel("libsPanel", virtualRepoDescriptors, servletContextUrl,
                 IvySettingsRepoSelectorPanel.RepoType.LIBS);
@@ -127,7 +132,29 @@ public class GradleInitScriptPanel extends BaseIvySettingsGeneratorPanel {
             repoDetailsProperties.setProperty("libs.ivy.pattern", libsPanel.getFullDescriptorPattern());
         }
 
+
+        Properties credentialProperties = new Properties();
+
+        if (!authorizationService.isAnonymous() || !authorizationService.isAnonAccessEnabled()) {
+            credentialProperties.setProperty("plugins.creds.line.break", "\n          ");
+            credentialProperties.setProperty("libs.creds.line.break", "\n        ");
+
+            credentialProperties.setProperty("auth.host", getHost());
+
+            credentialProperties.setProperty("auth.host", getHost());
+
+            FilteredResourcesWebAddon filteredResourcesWebAddon = addonsManager.addonByType(
+                    FilteredResourcesWebAddon.class);
+
+            credentialProperties.setProperty("auth.username",
+                    filteredResourcesWebAddon.getGeneratedSettingsUsernameTemplate());
+
+            credentialProperties.setProperty("auth.password",
+                    filteredResourcesWebAddon.getGeneratedSettingsUserCredentialsTemplate(false));
+        }
+
         Properties repoTemplateValues = new Properties();
+
         repoTemplateValues.setProperty("initscript.repo",
                 getTemplateValue(pluginsUsesIbiblio, "initscript", repoDetailsProperties));
         repoTemplateValues.setProperty("plugins.repo",
@@ -135,6 +162,10 @@ public class GradleInitScriptPanel extends BaseIvySettingsGeneratorPanel {
         repoTemplateValues.setProperty("libs.repo",
                 getTemplateValue(libsUsesIbiblio, "libs", repoDetailsProperties));
 
+        repoTemplateValues.setProperty("plugins.creds", credentialProperties.isEmpty() ? "" :
+                replaceValuesAndGetTemplateValue("/init.gradle.plugins.creds.template", credentialProperties));
+        repoTemplateValues.setProperty("libs.creds", credentialProperties.isEmpty() ? "" :
+                replaceValuesAndGetTemplateValue("/init.gradle.libs.creds.template", credentialProperties));
 
         return repoTemplateValues;
     }
@@ -167,5 +198,15 @@ public class GradleInitScriptPanel extends BaseIvySettingsGeneratorPanel {
             IOUtils.closeQuietly(gradleInitTemplateStream);
         }
         return "";
+    }
+
+    private String getHost() {
+        try {
+            return new URI(servletContextUrl).getHost();
+        } catch (URISyntaxException e) {
+            log.warn("Unable to resolve host for generated gradle init script: " + e.getMessage());
+        }
+
+        return "unknown";
     }
 }

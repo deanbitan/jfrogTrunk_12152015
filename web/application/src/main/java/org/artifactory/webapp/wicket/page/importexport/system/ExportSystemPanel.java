@@ -25,11 +25,13 @@ import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -72,6 +74,9 @@ public class ExportSystemPanel extends TitledPanel {
 
     @WicketProperty
     private boolean verbose;
+
+    @SpringBean
+    private RepositoryService repositoryService;
 
     public ExportSystemPanel(String string) {
         super(string);
@@ -160,6 +165,9 @@ public class ExportSystemPanel extends TitledPanel {
                     settings.setIncludeMetadata(!excludeMetadata);
                     settings.setM2Compatible(m2Compatible);
                     settings.setExcludeContent(excludeContent);
+                    if (!excludeContent) {
+                        settings.setRepositories(repositoryService.getLocalAndCachedRepoDescriptors());
+                    }
                     context.exportTo(settings);
                     List<StatusEntry> warnings = status.getWarnings();
                     if (!warnings.isEmpty()) {

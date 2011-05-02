@@ -21,16 +21,20 @@ package org.artifactory.addon.rest;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
+import org.artifactory.addon.replication.ReplicationSettings;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.Async;
+import org.artifactory.api.repo.Lock;
 import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
+import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.DownloadResource;
-import org.artifactory.rest.resource.artifact.SyncResource;
 import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.release.Promotion;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
@@ -56,10 +60,11 @@ public interface RestAddon extends Addon {
      * @param target          The target repository where to copy/move the Artifact to.
      * @param dryRun          A flag to indicate whether to perform a dry run first before performing the actual action.
      * @param suppressLayouts Indicates whether path translation across different layouts should be suppressed.
+     * @param failFast        Indicates whether the operation should fail upon encountering an error.
      * @return A JSON object of all the messages and errors that occurred during the action.
      * @throws Exception If an error occurred during the dry run or the actual action an exception is thrown.
      */
-    MoveCopyResult copy(String path, String target, int dryRun, int suppressLayouts) throws Exception;
+    MoveCopyResult copy(String path, String target, int dryRun, int suppressLayouts, int failFast) throws Exception;
 
     /**
      * Move an artifact from one path to another.
@@ -68,10 +73,11 @@ public interface RestAddon extends Addon {
      * @param target          The target repository where to copy/move the Artifact to.
      * @param dryRun          A flag to indicate whether to perform a dry run first before performing the actual action.
      * @param suppressLayouts Indicates whether path translation across different layouts should be suppressed.
+     * @param failFast        Indicates whether the operation should fail upon encountering an error.
      * @return A JSON object of all the messages and errors that occurred during the action.
      * @throws Exception If an error occurred during the dry run or the actual action an exception is thrown.
      */
-    MoveCopyResult move(String path, String target, int dryRun, int suppressLayouts) throws Exception;
+    MoveCopyResult move(String path, String target, int dryRun, int suppressLayouts, int failFast) throws Exception;
 
     Response download(String path, DownloadResource.Content content, int mark,
             HttpServletResponse response) throws Exception;
@@ -99,34 +105,42 @@ public interface RestAddon extends Addon {
      * @param scopes      Scopes of dependencies to copy (agnostic if null or empty)
      * @param properties  Properties to tag the moved or copied artifacts.
      * @param dry         Zero if to apply the selected action. One to simulate  @return Result of action
+     * @deprecated Use {@link org.artifactory.addon.rest.RestAddon#promoteBuild} instead
      */
+    @Deprecated
     MoveCopyResult moveOrCopyBuildItems(boolean move, String buildName, String buildNumber, String started,
             String to, int arts, int deps, StringList scopes, KeyValueList properties, int dry) throws ParseException;
 
     /**
+     * Promotes a build
+     *
+     * @param buildName   Name of build to promote
+     * @param buildNumber Number of build to promote
+     * @param promotion   Promotion settings
+     * @return Promotion result
+     */
+    PromotionResult promoteBuild(String buildName, String buildNumber, Promotion promotion) throws ParseException;
+
+    /**
      * Returns a list of files under the given folder path
      *
-     * @param uri         Request URI as sent by the user
-     * @param path        Path to search under
-     * @param deep        Zero if the scanning should be shallow. One for deep
-     * @param listFolders Zero if folders should be excluded. One if they should be included
+     * @param uri          Request URI as sent by the user
+     * @param path         Path to search under
+     * @param deep         Zero if the scanning should be shallow. One for deep
+     * @param depth        Number of hierarchy levels to iterate down
+     * @param listFolders  Zero if folders should be excluded. One if they should be included
+     * @param mdTimestamps Zero if metadata last modified timestamps should not be included in the list. One if they should
      */
-    FileList getFileList(String uri, String path, int deep, int listFolders);
+    @Lock(transactional = true)
+    FileList getFileList(String uri, String path, int deep, int depth, int listFolders, int mdTimestamps);
 
     /**
      * Locally replicates the given remote path
      *
-     * @param path           The path of the remote folder to replicate
-     * @param progress       One to show transfer progress, Zero or other to show normal transfer completion message
-     * @param mark           Every how many bytes to print a progress mark (when using progress tracking policy)
-     * @param deleteExisting One to delete existing files which do not exist in the remote source, Zero to keep
-     * @param overwrite      Never for never replacing an existing file and force for replacing existing files (only if
-     *                       the local file is older than the target) and Null for default of force.
-     * @param httpResponse   Response to return once complete
+     * @param replicationSettings Settings
      * @return Response
      */
-    Response replicate(String path, int progress, int mark, int deleteExisting, SyncResource.Overwrite overwrite,
-            HttpServletResponse httpResponse) throws IOException;
+    Response replicate(ReplicationSettings replicationSettings) throws IOException;
 
     /**
      * Renames structure, content and properties of build info objects. The actual rename is done asynchronously.
@@ -150,17 +164,20 @@ public interface RestAddon extends Addon {
      *
      * @param response
      * @param buildName    Name of build to delete
-     * @param buildNumbers
+     * @param buildNumbers Numbers of builds to delete
+     * @param artifacts    1 if build artifacts should be deleted
      */
-    void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers);
+    void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers, int artifacts)
+            throws IOException;
 
     /**
      * Discard old builds as according to count or date.
      *
-     * @param name
-     * @param discard The discard object that holds a count or date.
+     * @param name              Build name
+     * @param discard           The discard object that holds a count or date.
+     * @param multiStatusHolder Status holder
      */
-    void discardOldBuilds(String name, BuildRetention discard);
+    void discardOldBuilds(String name, BuildRetention discard, MultiStatusHolder multiStatusHolder);
 
     /**
      * Returns the latest modified item of the given file or folder (recursively)

@@ -25,7 +25,6 @@ import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoRejectException;
-import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.jcr.fs.JcrTreeNode;
@@ -47,7 +46,6 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -171,8 +169,6 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
 
     @Lock(transactional = true)
     void setXmlMetadataLater(RepoPath repoPath, String metadataName, String metadataContent);
-
-    StatusHolder deploy(RepoPath repoPath, InputStream inputStream);
 
     @Lock(transactional = true)
     boolean treeNodeContainsMavenPlugins(JcrTreeNode treeNode);

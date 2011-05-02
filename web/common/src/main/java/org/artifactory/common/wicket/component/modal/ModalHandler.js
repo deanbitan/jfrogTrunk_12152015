@@ -19,6 +19,11 @@
 var ModalHandler = {
     onPopup: function() {
         ModalHandler.resizeCurrent();
+        if (dojo.isIE <= 7) {
+            setTimeout(function() {
+                ModalHandler.resizeCurrent();
+            }, 200);
+        }
 
         var modal = Wicket.Window.current;
         modal.center();
@@ -141,9 +146,7 @@ Wicket.Window.prototype.resizing = function() {
  * Returns the modal window markup with specified element identifiers.
  */
 Wicket.Window.getMarkup =
-        function(idWindow, idClassElement, idCaption, idContent, idTop, idTopLeft, idTopRight, idLeft, idRight, idBottomLeft,
-                idBottomRight, idBottom,
-                idCaptionText, isFrame) {
+        function(idWindow, idClassElement, idCaption, idContent, idTop, idTopLeft, idTopRight, idLeft, idRight, idBottomLeft, idBottomRight, idBottom, idCaptionText, isFrame) {
             var s =
                     "<div class=\"wicket-modal\" id=\"" + idWindow +
                             "\" style=\"top: 10px; left: 10px; width: 100px;\">" +

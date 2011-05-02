@@ -107,6 +107,7 @@ public class BuildsForNamePanel extends TitledPanel {
         columns.add(new ActionsColumn<BuildActionableItem>(""));
         columns.add(new BuildNumberColumn());
         columns.add(new BuildDateColumn());
+        columns.add(new LastReleaseStatusColumn());
 
         BuildsDataProvider dataProvider = new BuildsDataProvider(buildsByName);
 
@@ -167,27 +168,25 @@ public class BuildsForNamePanel extends TitledPanel {
         setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }
 
-    private class BuildNumberColumn extends AbstractColumn<BuildActionableItem> {
+    private class BuildNumberColumn extends UnStyledLinkColumn {
+
         public BuildNumberColumn() {
             super(Model.of("Build Number"), "number");
         }
 
-        public void populateItem(final Item cellItem, String componentId, IModel rowModel) {
-            final BuildActionableItem build = (BuildActionableItem) cellItem.getParent().getParent().getDefaultModelObject();
-            final String buildNumber = build.getBuildNumber();
-            Component link = new Label(componentId, buildNumber);
-            link.add(new CssClass("item-link"));
-            cellItem.add(link);
-            cellItem.add(new AjaxEventBehavior("onclick") {
-                @Override
-                protected void onEvent(AjaxRequestTarget target) {
-                    drillDown(build);
-                }
-            });
+        @Override
+        protected void addStylesToLink(Component unStyledLink) {
+            unStyledLink.add(new CssClass("item-link"));
+        }
+
+        @Override
+        protected String getDisplayValue(BuildActionableItem buildActionableItem) {
+            return buildActionableItem.getBuildNumber();
         }
     }
 
     private class BuildDateColumn extends FormattedDateColumn<BuildActionableItem> {
+
         public BuildDateColumn() {
             super(Model.of("Time Built"), "startedDate", "started", centralConfigService, Build.STARTED_FORMAT);
         }
@@ -199,10 +198,50 @@ public class BuildsForNamePanel extends TitledPanel {
             item.add(new AjaxEventBehavior("onclick") {
                 @Override
                 protected void onEvent(AjaxRequestTarget target) {
-                    final BuildActionableItem build = (BuildActionableItem) item.getParent().getParent().getDefaultModelObject();
+                    final BuildActionableItem build =
+                            (BuildActionableItem) item.getParent().getParent().getDefaultModelObject();
                     drillDown(build);
                 }
             });
         }
+    }
+
+    private class LastReleaseStatusColumn extends UnStyledLinkColumn {
+
+        public LastReleaseStatusColumn() {
+            super(Model.<String>of("Release Status"), "lastReleaseStatus");
+        }
+
+        @Override
+        protected String getDisplayValue(BuildActionableItem buildActionableItem) {
+            return buildActionableItem.getLastReleaseStatus();
+        }
+    }
+
+    private abstract class UnStyledLinkColumn extends AbstractColumn<BuildActionableItem> {
+
+        public UnStyledLinkColumn(IModel<String> displayModel, String sortProperty) {
+            super(displayModel, sortProperty);
+        }
+
+        public void populateItem(final Item cellItem, String componentId, IModel rowModel) {
+            final BuildActionableItem build =
+                    (BuildActionableItem) cellItem.getParent().getParent().getDefaultModelObject();
+            String value = getDisplayValue(build);
+            Component link = new Label(componentId, value);
+            addStylesToLink(link);
+            cellItem.add(link);
+            cellItem.add(new AjaxEventBehavior("onclick") {
+                @Override
+                protected void onEvent(AjaxRequestTarget target) {
+                    drillDown(build);
+                }
+            });
+        }
+
+        protected void addStylesToLink(Component unStyledLink) {
+        }
+
+        protected abstract String getDisplayValue(BuildActionableItem buildActionableItem);
     }
 }

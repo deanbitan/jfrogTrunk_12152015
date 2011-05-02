@@ -84,6 +84,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Reloadable(beanClass = InternalSecurityService.class,
@@ -121,6 +122,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     private InternalArtifactoryContext context;
 
     private TreeSet<SecurityListener> securityListeners = new TreeSet<SecurityListener>();
+    private final long lastLoginBufferTime = TimeUnit.SECONDS.toMillis(5);
 
     @Autowired
     private void setApplicationContext(ApplicationContext context) throws BeansException {
@@ -650,6 +652,12 @@ public class SecurityServiceImpl implements InternalSecurityService {
             return;
         }
         UserInfo userInfo = findUser(username);
+        long timeSinceLastLogin = loginTimeMillis - userInfo.getLastLoginTimeMillis();
+        if (timeSinceLastLogin < lastLoginBufferTime) {
+            log.debug("Skipping the update of the last login time for the user '{}': " +
+                    "was updated less than 5 seconds ago.", username);
+            return;
+        }
         userInfo.setLastLoginTimeMillis(loginTimeMillis);
         userInfo.setLastLoginClientIp(clientIp);
         updateUser(userInfo);
@@ -674,7 +682,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     public void updateUserLastAccess(String username, String clientIp, long accessTimeMillis,
-            long acessUpdatesResolutionMillis) {
+            long accessUpdatesResolutionMillis) {
         UserInfo userInfo;
         try {
             userInfo = findUser(username);
@@ -684,7 +692,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
         //Check if we should update
         long existingLastAccess = userInfo.getLastAccessTimeMillis();
-        if (existingLastAccess <= 0 || existingLastAccess + acessUpdatesResolutionMillis < accessTimeMillis) {
+        if (existingLastAccess <= 0 || existingLastAccess + accessUpdatesResolutionMillis < accessTimeMillis) {
             userInfo.setLastAccessTimeMillis(accessTimeMillis);
             userInfo.setLastAccessClientIp(clientIp);
             updateUser(userInfo);

@@ -26,7 +26,7 @@ import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
-import org.artifactory.addon.wicket.AddonType;
+import org.artifactory.addon.AddonType;
 import org.artifactory.common.wicket.behavior.template.TemplateBehavior;
 import org.artifactory.common.wicket.behavior.tooltip.TooltipBehavior;
 import org.artifactory.common.wicket.contributor.ResourcePackage;

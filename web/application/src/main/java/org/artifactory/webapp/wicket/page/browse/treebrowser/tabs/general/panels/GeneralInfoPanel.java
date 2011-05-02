@@ -31,6 +31,7 @@ import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.addon.wicket.LicensesWebAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.config.CentralConfigService;
@@ -40,6 +41,7 @@ import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.common.wicket.ajax.AjaxLazyLoadSpanPanel;
 import org.artifactory.common.wicket.component.LabeledValue;
@@ -72,6 +74,9 @@ public class GeneralInfoPanel extends Panel {
 
     @SpringBean
     private AddonsManager addonsManager;
+
+    @SpringBean
+    private AuthorizationService authorizationService;
 
     @SpringBean
     private CentralConfigService centralConfigService;
@@ -194,6 +199,8 @@ public class GeneralInfoPanel extends Panel {
 
         addLocalLayoutInfo(infoBorder, repoDescriptor, itemIsRepo);
         addRemoteLayoutInfo(infoBorder, remoteRepo, itemIsRepo);
+
+        addFilteredResourceCheckbox(infoBorder, itemInfo);
     }
 
     private void addArtifactCount(final boolean itemIsRepo, final FieldSetBorder infoBorder,
@@ -347,5 +354,27 @@ public class GeneralInfoPanel extends Panel {
         urlBuilder.append(WicketUtils.absoluteMountPathForPage(BrowseRepoPage.class)).append("?").
                 append(BrowseRepoPage.PATH_ID_PARAM).append("=").append(encodedPathId);
         return urlBuilder.toString();
+    }
+
+    private void addFilteredResourceCheckbox(FieldSetBorder infoBorder, ItemInfo itemInfo) {
+        WebMarkupContainer filteredResourceContainer = new WebMarkupContainer("filteredResourceContainer");
+        filteredResourceContainer.setVisible(false);
+        infoBorder.add(filteredResourceContainer);
+
+        WebMarkupContainer filteredResourceCheckbox = new WebMarkupContainer("filteredResourceCheckbox");
+        filteredResourceContainer.add(filteredResourceCheckbox);
+
+        final WebMarkupContainer filteredResourceHelpBubble = new WebMarkupContainer("filteredResource.help");
+        filteredResourceContainer.add(filteredResourceHelpBubble);
+
+        if (!itemInfo.isFolder() && authorizationService.canAnnotate(itemInfo.getRepoPath())) {
+            FilteredResourcesWebAddon filteredResourcesWebAddon =
+                    addonsManager.addonByType(FilteredResourcesWebAddon.class);
+            filteredResourceCheckbox.replaceWith(
+                    filteredResourcesWebAddon.getFilteredResourceCheckbox("filteredResourceCheckbox", itemInfo));
+            filteredResourceHelpBubble
+                    .replaceWith(new HelpBubble("filteredResource.help", getString("filteredResource.help")));
+            filteredResourceContainer.setVisible(true);
+        }
     }
 }

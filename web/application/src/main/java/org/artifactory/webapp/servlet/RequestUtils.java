@@ -19,6 +19,7 @@
 package org.artifactory.webapp.servlet;
 
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -96,6 +97,9 @@ public abstract class RequestUtils {
         }
         if (ArtifactoryRequest.LIST_BROWSING_PATH.equals(pathPrefix)) {
             pathPrefix = PathUtils.getFirstPathElement(servletPath.substring("list/".length()));
+        }
+        if (ArtifactoryRequest.SIMPLE_BROWSING_PATH.equals(pathPrefix)) {
+            pathPrefix = PathUtils.getFirstPathElement(servletPath.substring("simple/".length()));
         }
         if (UI_PATH_PREFIXES.contains(pathPrefix)) {
             return false;
@@ -207,30 +211,37 @@ public abstract class RequestUtils {
      * Returns the servlet path from the request, in accordance to the boolean value of USE_PATH_INFO which Decides if
      * to try and use getPathInfo() instead of getServletPath().
      *
-     * @param req The recieved request
+     * @param req The received request
      * @return String - Servlet path
      */
     public static String getServletPathFromRequest(HttpServletRequest req) {
-        if (USE_PATH_INFO) {
-            //Websphere returns the path in the getPathInfo()
-            String path = req.getPathInfo();
-            //path == null so no Websphere
-            if (path == null) {
-                return req.getServletPath();
-            }
-            if (path.length() == 0) {
-                path = "/" + WEBAPP_URL_PATH_PREFIX;
-            }
-            return path;
-        } else {
-            String uri = req.getRequestURI();
-            String path = req.getServletPath();
-            int idx = uri.lastIndexOf(path);
-            if (idx > 0) {
-                path = uri.substring(idx);
-            }
-            return path;
+        String contextPath = req.getContextPath();
+        if (StringUtils.isBlank(contextPath)) {
+            return req.getRequestURI();
         }
+        return req.getRequestURI().substring(contextPath.length());
+        /**
+         if (USE_PATH_INFO) {
+         //Websphere returns the path in the getPathInfo()
+         String path = req.getPathInfo();
+         //path == null so no Websphere
+         if (path == null) {
+         return req.getServletPath();
+         }
+         if (path.length() == 0) {
+         path = "/" + WEBAPP_URL_PATH_PREFIX;
+         }
+         return path;
+         } else {
+         String uri = req.getRequestURI();
+         String path = req.getServletPath();
+         int idx = uri.lastIndexOf(path);
+         if (idx > 0) {
+         path = uri.substring(idx);
+         }
+         return path;
+         }
+         */
     }
 
     /**

@@ -18,8 +18,6 @@
 
 package org.artifactory.repo.service;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -28,6 +26,7 @@ import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DurationFormatUtils;
+import org.artifactory.api.artifact.ArtifactInfo;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
@@ -56,13 +55,13 @@ import org.artifactory.request.InternalArtifactoryResponse;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.util.PathMatcher;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.ZipUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -97,14 +96,13 @@ public class DeployServiceImpl implements DeployService {
         deploy(targetRepo, artifactInfo, file, pomString, false, false);
     }
 
-    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, final File fileToDeploy, String pomString,
+    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy, String pomString,
             boolean forceDeployPom, boolean partOfBundleDeploy) throws RepoRejectException {
-
-        validatePath(artifactInfo);
-
+        String path = artifactInfo.getPath();
         if (!artifactInfo.isValid()) {
-            throw new IllegalArgumentException("Invalid artifact details.");
+            throw new IllegalArgumentException("Invalid unit info for '" + path + "'.");
         }
+
         //Sanity check
         if (targetRepo == null) {
             throw new IllegalArgumentException("No target repository selected for deployment.");
@@ -114,7 +112,6 @@ public class DeployServiceImpl implements DeployService {
             throw new IllegalArgumentException("No target repository found for deployment.");
         }
         //Check acceptance according to include/exclude patterns
-        String path = artifactInfo.getPath();
         //TODO: [by yl] assertValidDeployPath is already called by the upload service, including security checks!
         repositoryService.assertValidDeployPath(localRepo, path);
         RepoPath repoPath = new RepoPathImpl(targetRepo.getKey(), path);
@@ -138,7 +135,7 @@ public class DeployServiceImpl implements DeployService {
         }
 
         //Handle extra pom deployment - add the metadata with the generated pom file to the artifact
-        if (forceDeployPom && artifactInfo.isMavenArtifact()) {
+        if (forceDeployPom && artifactInfo.isMavenArtifact() && StringUtils.isNotBlank(pomString)) {
             MavenArtifactInfo mavenArtifactInfo = (MavenArtifactInfo) artifactInfo;
             RepoPath pomPath = new RepoPathImpl(repoPath.getParent(),
                     mavenArtifactInfo.getArtifactId() + "-" + mavenArtifactInfo.getVersion() + ".pom");
@@ -179,14 +176,8 @@ public class DeployServiceImpl implements DeployService {
         }
     }
 
-    private void validatePath(UnitInfo artifactInfo) {
-        if (PathUtils.isDirectoryPath(artifactInfo.getPath())) {
-            throw new IllegalArgumentException("Cannot deploy an artifact file using a directory path.");
-        }
-    }
-
     @SuppressWarnings({"unchecked"})
-    public void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status) {
+    public void deployBundle(File bundle, RealRepoDescriptor targetRepo, final BasicStatusHolder status) {
         long start = System.currentTimeMillis();
         if (!bundle.exists()) {
             String message =
@@ -212,71 +203,66 @@ public class DeployServiceImpl implements DeployService {
             IOFileFilter deployableFilesFilter = new AbstractFileFilter() {
                 @Override
                 public boolean accept(File file) {
-                    return !NamingUtils.isSystem(file.getAbsolutePath());
+                    if (NamingUtils.isSystem(file.getAbsolutePath()) || PathMatcher.isInDefaultExcludes(file) ||
+                            file.getName().contains(MavenNaming.MAVEN_METADATA_NAME)) {
+                        status.setDebug("Excluding '" + file.getAbsolutePath() + "' from bundle deployment.", log);
+                        return false;
+                    }
+
+                    return true;
                 }
             };
             List<File> archiveContent = Lists.newArrayList(FileUtils.listFiles(
                     extractFolder, deployableFilesFilter, DirectoryFileFilter.DIRECTORY));
             Collections.sort(archiveContent);
-            // filter out the maven-metadata.xmls
-            Iterable<File> mavenMetadataFiles = Iterables.filter(archiveContent, new Predicate<File>() {
-                public boolean apply(@Nullable File input) {
-                    return input.getName().endsWith("maven-metadata.xml");
-                }
-            });
-            Iterables.removeAll(archiveContent, Lists.newArrayList(mavenMetadataFiles));
-            List<File> deployFailedList = Lists.newArrayList();
 
             Repo repo = repositoryService.repositoryByKey(targetRepo.getKey());
             for (File file : archiveContent) {
                 String parentPath = extractFolder.getAbsolutePath();
-                String pomPath = file.getAbsolutePath();
-                String relPath = PathUtils.getRelativePath(parentPath, pomPath);
+                String filePath = file.getAbsolutePath();
+                String relPath = PathUtils.getRelativePath(parentPath, filePath);
 
                 ModuleInfo moduleInfo = repo.getItemModuleInfo(relPath);
                 if (MavenNaming.isPom(file.getName())) {
                     try {
                         validatePom(file, relPath, moduleInfo, targetRepo.isSuppressPomConsistencyChecks());
                     } catch (Exception e) {
-                        String msg =
-                                "The pom: " + file.getName() +
-                                        " could not be validated, and thus was not deployed.";
+                        String msg = "The pom: " + file.getName() +
+                                " could not be validated, and thus was not deployed.";
                         status.setWarning(msg, log);
                         continue;
                     }
                 }
-                MavenArtifactInfo artifactInfo =
-                        MavenArtifactInfo.fromRepoPath(new RepoPathImpl(targetRepo.getKey(), relPath));
-                if (!artifactInfo.isValid()) {
-                    deployFailedList.add(file);
-                } else {
-                    try {
-                        String pomString = getPomModelString(file);
-                        getTransactionalMe().deploy(targetRepo, artifactInfo, file, pomString, false, true);
-                    } catch (IllegalArgumentException iae) {
-                        status.setWarning(iae.getMessage(), log);
-                    } catch (Exception e) {
-                        String msg = "Error during deployment";
-                        status.setError(msg, e, log);
+
+                try {
+                    UnitInfo artifactInfo = null;
+
+                    /**
+                     * No use in creating a maven artifact info if it's not a valid module. Will just create a weird
+                     * path
+                     */
+                    if (targetRepo.isMavenRepoLayout() && moduleInfo.isValid()) {
+                        artifactInfo = MavenArtifactInfo.fromRepoPath(new RepoPathImpl(targetRepo.getKey(), relPath));
                     }
+
+                    if ((artifactInfo == null) || !artifactInfo.isValid()) {
+                        artifactInfo = new ArtifactInfo(relPath);
+                    }
+
+                    getTransactionalMe().deploy(targetRepo, artifactInfo, file, null, false, true);
+                } catch (IllegalArgumentException iae) {
+                    status.setWarning(iae.getMessage(), log);
+                } catch (Exception e) {
+                    status.setError("Error during deployment: " + e.getMessage(), e, log);
                 }
             }
 
             String bundleName = bundle.getName();
             String timeTaken = DurationFormatUtils.formatPeriod(start, System.currentTimeMillis(), "s");
-            int artifactsFailed = deployFailedList.size();
             int archiveContentSize = archiveContent.size();
 
-            if (artifactsFailed == 0) {
-                status.setStatus(
-                        "Successfully deployed " + archiveContentSize + " artifacts from archive: " + bundleName
-                                + " (" + timeTaken + " seconds).", log);
-            } else if ((artifactsFailed > 0) && (artifactsFailed < archiveContentSize)) {
-                status.setWarning(artifactsFailed + " out of " + archiveContentSize +
-                        " artifacts have failed to deploy.", log);
-            } else {
-                status.setError("Deployment of archive: " + bundleName + " has failed: no valid artifacts found", log);
-            }
+            status.setStatus("Successfully deployed " + archiveContentSize + " artifacts from archive: " + bundleName
+                    + " (" + timeTaken + " seconds).", log);
             //Trigger indexing for marked files
             searchService.asyncIndexMarkedArchives();
         } catch (Exception e) {

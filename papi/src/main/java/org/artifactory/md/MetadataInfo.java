@@ -18,23 +18,15 @@
 
 package org.artifactory.md;
 
-import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumsInfo;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.RepoResourceInfo;
-
-import java.util.Set;
 
 /**
  * @author yoavl
  */
 public interface MetadataInfo extends RepoResourceInfo {
 
-    RepoPath getRepoPath();
-
     ChecksumsInfo getChecksumsInfo();
-
-    String getName();
 
     void setName(String name);
 
@@ -42,23 +34,7 @@ public interface MetadataInfo extends RepoResourceInfo {
 
     void setCreated(long created);
 
-    long getLastModified();
-
-    void setLastModified(long lastModified);
-
     String getLastModifiedBy();
 
     void setLastModifiedBy(String lastModifiedBy);
-
-    String getSha1();
-
-    String getMd5();
-
-    Set<ChecksumInfo> getChecksums();
-
-    void setChecksums(Set<ChecksumInfo> checksums);
-
-    long getSize();
-
-    void setSize(long size);
 }

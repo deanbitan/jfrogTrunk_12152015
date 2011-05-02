@@ -56,6 +56,7 @@ public class RepoFilter extends DelayedFilterBase {
     private static final Logger log = LoggerFactory.getLogger(RepoFilter.class);
 
     public static final String ATTR_ARTIFACTORY_REPOSITORY_PATH = "artifactory.repository_path";
+    public static final String ATTR_ARTIFACTORY_REQUEST_PROPERTIES = "artifactory.request_properties";
     public static final String ATTR_ARTIFACTORY_REMOVED_REPOSITORY_PATH =
             "artifactory.removed_repository_path";
 
@@ -88,16 +89,16 @@ public class RepoFilter extends DelayedFilterBase {
             log.debug("Entering request {}.", requestDebugString(request));
         }
 
+        ArtifactoryRequest artifactoryRequest = new HttpArtifactoryRequest(request);
         if (servletPath != null && servletPath.startsWith("/" + ArtifactoryRequest.LIST_BROWSING_PATH)
                 && servletPath.endsWith("/")) {
-            doRepoListing(request, response, servletPath);
+            doRepoListing(request, response, servletPath, artifactoryRequest);
             return;
         }
 
         String method = request.getMethod().toLowerCase().intern();
         if (servletPath != null && RequestUtils.isRepoRequest(request)) {
             //Handle upload and download requests
-            ArtifactoryRequest artifactoryRequest = new HttpArtifactoryRequest(request);
             ArtifactoryResponse artifactoryResponse = new HttpArtifactoryResponse(response);
 
             if ("get".equals(method) && servletPath.endsWith("/")) {
@@ -106,8 +107,11 @@ public class RepoFilter extends DelayedFilterBase {
                     doWebDavDirectory(response, artifactoryRequest);
                     return;
                 }
-
-                doSimpleRepoBrowse(request, response, artifactoryRequest);
+                if (servletPath.startsWith("/" + ArtifactoryRequest.SIMPLE_BROWSING_PATH)) {
+                    doSimpleRepoBrowse(request, response, artifactoryRequest);
+                } else {
+                    doRepoListing(request, response, servletPath, artifactoryRequest);
+                }
                 return;
             }
 
@@ -213,6 +217,7 @@ public class RepoFilter extends DelayedFilterBase {
         //    return;
         //}
         request.setAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH, repoPath);
+        request.setAttribute(ATTR_ARTIFACTORY_REQUEST_PROPERTIES, artifactoryRequest.getProperties());
 
         //Remove the forwarding URL (repo+path) as this is used by wicket to build
         //a relative path, which does not make sense in this case
@@ -224,21 +229,20 @@ public class RepoFilter extends DelayedFilterBase {
         dispatcher.forward(requestWrapper, response);
     }
 
-    private void doRepoListing(HttpServletRequest request, HttpServletResponse response, String servletPath)
-            throws ServletException, IOException {
+    private void doRepoListing(HttpServletRequest request, HttpServletResponse response, String servletPath,
+            ArtifactoryRequest artifactoryRequest) throws ServletException, IOException {
         log.debug("Forwarding internally to an apache-style listing page.");
         if (!servletPath.endsWith("/")) {
             response.sendRedirect(HttpUtils.getServletContextUrl(request) + servletPath + "/");
             return;
         }
-        String listPath = PathUtils.stripFirstPathElement(servletPath);
-        RepoPath repoPath = RequestUtils.calculateRepoPath(listPath);
         /*
         if (checkForInvalidPath(response, repoPath)) {
             return;
         }
         */
-        request.setAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH, repoPath);
+        request.setAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH, artifactoryRequest.getRepoPath());
+        request.setAttribute(ATTR_ARTIFACTORY_REQUEST_PROPERTIES, artifactoryRequest.getProperties());
 
         RequestDispatcher dispatcher =
                 request.getRequestDispatcher("/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/" + ArtifactListPage.PATH);

@@ -27,10 +27,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.maven.MavenNaming;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
+import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RemoteBrowsableItem;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryBrowsingService;
@@ -49,11 +51,12 @@ import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.virtual.VirtualRepo;
-import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -106,7 +109,9 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         return repo.getJcrFsItem(repoPath);
     }
 
-    public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(RepoPath repoPath) {
+    @Nonnull
+    public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(BrowsableItemCriteria criteria) {
+        RepoPath repoPath = criteria.getRepoPath();
         String repoKey = repoPath.getRepoKey();
         JcrFsItem fsItem = getFsItem(repoPath);
         if (fsItem == null) {
@@ -119,6 +124,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         JcrFolder repoPathFolder = (JcrFolder) fsItem;
         List<JcrFsItem> children = repoPathFolder.getItems();
         LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoKey);
+        if (repo == null) {
+            log.debug("Repository '{}' does not exist", repoKey);
+            return Lists.newArrayList();
+        }
 
         List<BaseBrowsableItem> repoPathChildren = Lists.newArrayList();
         for (JcrFsItem child : children) {
@@ -129,37 +138,58 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             BrowsableItem browsableItem = BrowsableItem.getItem(itemInfo);
 
             if (authService.canImplicitlyReadParentPath(childRepoPath) && repo.accepts(childRepoPath.getPath())) {
-                repoPathChildren.add(browsableItem);
-                if (child.isFile()) {
+                boolean isMatchingFile = child.isFile() && isPropertiesMatch(child, criteria.getRequestProperties());
+                if (isMatchingFile || child.isFolder()) {
+                    repoPathChildren.add(browsableItem);
+                }
+                if (isMatchingFile && criteria.isIncludeChecksums()) {
                     repoPathChildren.addAll(getBrowsableItemChecksumItems(repo,
                             ((FileInfo) itemInfo).getChecksumsInfo(), browsableItem));
                 }
             }
         }
 
-        addBrowsableMetadataAndChecksums(repo, repoPathFolder, repoPathChildren);
+        if (criteria.isIncludeMavenMetadata()) {
+            addBrowsableMetadataAndChecksums(repo, repoPathFolder, repoPathChildren, criteria);
+        }
         //TODO: [by ys] the sort can make the up path not be the first
         Collections.sort(repoPathChildren);
         return repoPathChildren;
     }
 
-    public List<BaseBrowsableItem> getRemoteRepoBrowsableChildren(RepoPath repoPath, boolean includeRemoteResources) {
+    private boolean isPropertiesMatch(JcrFsItem<?> fsItem, Properties requestProps) {
+        if (requestProps == null || requestProps.isEmpty()) {
+            return true;
+        }
+        Properties nodeProps = fsItem.getMetadata(Properties.class);
+        if (nodeProps == null) {
+            return true;
+        }
+        Properties.MatchResult result = nodeProps.matchQuery(requestProps);
+        return !Properties.MatchResult.CONFLICT.equals(result);
+    }
+
+    @Nonnull
+    public List<BaseBrowsableItem> getRemoteRepoBrowsableChildren(BrowsableItemCriteria criteria) {
+        RepoPath repoPath = criteria.getRepoPath();
         String repoKey = repoPath.getRepoKey();
+        String relativePath = repoPath.getPath();
         RemoteRepo repo = repoService.remoteRepositoryByKey(repoKey);
         if (repo == null) {
             throw new IllegalArgumentException("Remote repo not found: " + repoKey);
         }
 
         // include remote resources based on the flag and the offline mode
-        includeRemoteResources = includeRemoteResources && repo.isListRemoteFolderItems();
+        boolean includeRemoteResources = criteria.isIncludeRemoteResources() && repo.isListRemoteFolderItems();
 
         // first get all the cached items
         List<BaseBrowsableItem> children = Lists.newArrayList();
         boolean pathExistsInCache = false;
         if (repo.isStoreArtifactsLocally()) {
             try {
-                children = getLocalRepoBrowsableChildren(
-                        new RepoPathImpl(repo.getLocalCacheRepo().getKey(), repoPath.getPath()));
+                BrowsableItemCriteria cacheCriteria = new BrowsableItemCriteria.Builder(criteria).
+                        repoPath(new RepoPathImpl(repo.getLocalCacheRepo().getKey(), relativePath)).build();
+                children = getLocalRepoBrowsableChildren(cacheCriteria);
                 pathExistsInCache = true;
             } catch (ItemNotFoundRuntimeException e) {
                 // this is legit only if we also want to add remote items
@@ -169,36 +199,43 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             }
         }
         if (includeRemoteResources) {
-            List<String> remoteChildrenUrls = Lists.newArrayList();
-            try {
-                remoteChildrenUrls = repo.listRemoteResources(repoPath);
-            } catch (IOException e) {
-                // probably remote not found - return 404 only if current folder doesn't exist in the cache
-                if (!pathExistsInCache) {
-                    // no cache and remote failed - signal 404
-                    throw new ItemNotFoundRuntimeException("Couldn't find item: " + repoPath);
-                }
-            }
-            // filter already existing local items
-            remoteChildrenUrls = Lists.newArrayList(
-                    Iterables.filter(remoteChildrenUrls, new RemoteOnlyBrowsableItemPredicate(children)));
-            for (String externalUrl : remoteChildrenUrls) {
-                boolean isFolder = externalUrl.endsWith("/");
-                // remove the remote repository base url
-                String path = org.apache.commons.lang.StringUtils.removeStart(externalUrl, repo.getUrl());
-                RepoPath remoteRepoPath = new RepoPathImpl(repoPath.getRepoKey(), path);
-                if (authService.canImplicitlyReadParentPath(repoPath) && repo.accepts(remoteRepoPath.getPath())) {
-                    String name = PathUtils.getName(externalUrl);
-                    BrowsableItem browsableItem = new RemoteBrowsableItem(name, isFolder, remoteRepoPath);
-                    children.add(browsableItem);
-                }
-            }
+            listRemoteBrowsableChildren(children, repo, relativePath, pathExistsInCache);
         }
         Collections.sort(children);
         return children;
     }
 
-    public List<BaseBrowsableItem> getVirtualRepoBrowsableChildren(final RepoPath repoPath) {
+    private void listRemoteBrowsableChildren(List<BaseBrowsableItem> children, RemoteRepo repo, String relativePath,
+            boolean pathExistsInCache) {
+        RepoPath repoPath = repo.getRepoPath(relativePath);
+        List<RemoteItem> remoteItems = Lists.newArrayList();
+        try {
+            remoteItems.addAll(repo.listRemoteResources(relativePath));
+        } catch (IOException e) {
+            log.debug("Error while listing remote resources", e);
+            // probably remote not found - return 404 only if current folder doesn't exist in the cache
+            if (!pathExistsInCache) {
+                // no cache and remote failed - signal 404
+                throw new ItemNotFoundRuntimeException("Couldn't find item: " + repoPath);
+            }
+        }
+        // filter already existing local items
+        remoteItems = Lists.newArrayList(
+                Iterables.filter(remoteItems, new RemoteOnlyBrowsableItemPredicate(children)));
+        for (RemoteItem remoteItem : remoteItems) {
+            // remove the remote repository base url
+            String path = StringUtils.removeStart(remoteItem.getUrl(), repo.getUrl());
+            RepoPath remoteRepoPath = new RepoPathImpl(repoPath.getRepoKey(), path);
+            if (authService.canImplicitlyReadParentPath(repoPath) && repo.accepts(remoteRepoPath.getPath())) {
+                BrowsableItem browsableItem = new RemoteBrowsableItem(remoteItem, remoteRepoPath);
+                children.add(browsableItem);
+            }
+        }
+    }
+
+    @Nonnull
+    public List<BaseBrowsableItem> getVirtualRepoBrowsableChildren(BrowsableItemCriteria criteria) {
+        RepoPath repoPath = criteria.getRepoPath();
         String virtualRepoKey = repoPath.getRepoKey();
         VirtualRepo virtualRepo = repoService.virtualRepositoryByKey(virtualRepoKey);
         if (virtualRepo == null) {
@@ -210,65 +247,82 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         Multimap<String, VirtualRepo> pathToVirtualRepos = HashMultimap.create();
         // add children from all local repos
         for (VirtualRepo repo : searchableRepos) {
-            List<LocalRepo> localRepositories = repo.getLocalRepositories();
-            for (LocalRepo localRepo : localRepositories) {
-                RepoPath path = new RepoPathImpl(localRepo.getKey(), repoPath.getPath());
-                try {
-                    List<BaseBrowsableItem> localRepoBrowsableChildren = getLocalRepoBrowsableChildren(path);
-                    // go over all local repo browsable children, these have already been filtered according
-                    // to each local repo's rules, now all that is left is to check that the virtual repo that
-                    // the local repo belongs to accepts as well.
-                    for (BaseBrowsableItem localRepoBrowsableChild : localRepoBrowsableChildren) {
-                        if (virtualRepoAccepts(repo, localRepoBrowsableChild.getRelativePath())) {
-                            pathToVirtualRepos.put(localRepoBrowsableChild.getRelativePath(), repo);
-                            candidateChildren.add(localRepoBrowsableChild);
-                        }
-                    }
-                } catch (ItemNotFoundRuntimeException e) {
-                    log.trace("Could not find local browsable children at '{}'", repoPath + " " + e.getMessage());
-                }
-            }
-            List<RemoteRepo> remoteRepositories = repo.getRemoteRepositories();
-            // add children from all remote repos (and their caches)
-            for (RemoteRepo remoteRepo : remoteRepositories) {
-                RepoPath remoteRepoPath = new RepoPathImpl(remoteRepo.getKey(), repoPath.getPath());
-                try {
-                    List<BaseBrowsableItem> remoteRepoBrowsableChildren = getRemoteRepoBrowsableChildren(
-                            remoteRepoPath, true);
-                    for (BaseBrowsableItem remoteRepoBrowsableChild : remoteRepoBrowsableChildren) {
-                        if (virtualRepoAccepts(repo, remoteRepoBrowsableChild.getRelativePath())) {
-                            pathToVirtualRepos.put(remoteRepoBrowsableChild.getRelativePath(), repo);
-                            candidateChildren.add(remoteRepoBrowsableChild);
-                        }
-                    }
-                } catch (ItemNotFoundRuntimeException e) {
-                    log.trace("Could not find local browsable children at '{}'",
-                            repoPath + " " + e.getMessage());
-                }
-            }
+            addVirtualBrowsableItemsFromLocal(criteria, repo, candidateChildren, pathToVirtualRepos);
+            addVirtualBrowsableItemsFromRemote(criteria, repo, candidateChildren, pathToVirtualRepos);
         }
         // only add the candidate that this virtual repository accepts via its include/exclude rules
         Map<String, BaseBrowsableItem> childrenToReturn = Maps.newHashMap();
-        for (BaseBrowsableItem item : candidateChildren) {
+        for (BaseBrowsableItem child : candidateChildren) {
 
-            String relativePath = item.getRelativePath();
-            if (virtualRepoAccepts(virtualRepo, relativePath)) {
+            String childRelativePath = child.getRelativePath();
+            if (virtualRepoAccepts(virtualRepo, childRelativePath)) {
                 VirtualBrowsableItem virtualItem;
-                if (childrenToReturn.containsKey(relativePath)) {
-                    virtualItem = (VirtualBrowsableItem) childrenToReturn.get(relativePath);
+                if (childrenToReturn.containsKey(childRelativePath)) {
+                    virtualItem = (VirtualBrowsableItem) childrenToReturn.get(childRelativePath);
                 } else {
-                    Collection<VirtualRepo> virtualRepos = pathToVirtualRepos.get(relativePath);
-                    virtualItem = new VirtualBrowsableItem(item.getName(), item.isFolder(), item.getCreated(),
-                            item.getLastModified(), item.getSize(), new RepoPathImpl(virtualRepoKey, relativePath),
+                    Collection<VirtualRepo> virtualRepos = pathToVirtualRepos.get(childRelativePath);
+                    virtualItem = new VirtualBrowsableItem(child.getName(), child.isFolder(), child.getCreated(),
+                            child.getLastModified(), child.getSize(), new RepoPathImpl(virtualRepoKey,
+                                    childRelativePath),
                             Lists.<String>newArrayList(getSearchableReposKeys(virtualRepos)));
                     virtualItem.setRemote(true);    // default to true
-                    childrenToReturn.put(relativePath, virtualItem);
+                    childrenToReturn.put(childRelativePath, virtualItem);
                 }
-                virtualItem.setRemote(virtualItem.isRemote() && item.isRemote());   // remote if all are remote
-                virtualItem.addRepoKey(item.getRepoKey());
+                virtualItem.setRemote(virtualItem.isRemote() && child.isRemote());   // remote if all are remote
+                virtualItem.addRepoKey(child.getRepoKey());
             }
         }
         return Lists.newArrayList(childrenToReturn.values());
+    }
+
+    private void addVirtualBrowsableItemsFromLocal(BrowsableItemCriteria criteria, VirtualRepo repo,
+            List<BaseBrowsableItem> candidateChildren, Multimap<String, VirtualRepo> pathToVirtualRepos) {
+        String relativePath = criteria.getRepoPath().getPath();
+        List<LocalRepo> localRepositories = repo.getLocalRepositories();
+
+        for (LocalRepo localRepo : localRepositories) {
+            RepoPath path = new RepoPathImpl(localRepo.getKey(), relativePath);
+            try {
+                BrowsableItemCriteria localCriteria = new BrowsableItemCriteria.Builder(criteria).repoPath(path).
+                        build();
+                List<BaseBrowsableItem> localRepoBrowsableChildren = getLocalRepoBrowsableChildren(localCriteria);
+                // go over all local repo browsable children, these have already been filtered according
+                // to each local repo's rules, now all that is left is to check that the virtual repo that
+                // the local repo belongs to accepts as well.
+                for (BaseBrowsableItem localRepoBrowsableChild : localRepoBrowsableChildren) {
+                    if (virtualRepoAccepts(repo, localRepoBrowsableChild.getRelativePath())) {
+                        pathToVirtualRepos.put(localRepoBrowsableChild.getRelativePath(), repo);
+                        candidateChildren.add(localRepoBrowsableChild);
+                    }
+                }
+            } catch (ItemNotFoundRuntimeException e) {
+                log.trace("Could not find local browsable children at '{}'", criteria + " " + e.getMessage());
+            }
+        }
+    }
+
+    private void addVirtualBrowsableItemsFromRemote(BrowsableItemCriteria criteria, VirtualRepo repo,
+            List<BaseBrowsableItem> candidateChildren, Multimap<String, VirtualRepo> pathToVirtualRepos) {
+        List<RemoteRepo> remoteRepositories = repo.getRemoteRepositories();
+        // add children from all remote repos (and their caches)
+        for (RemoteRepo remoteRepo : remoteRepositories) {
+            RepoPath remoteRepoPath = new RepoPathImpl(remoteRepo.getKey(), criteria.getRepoPath().getPath());
+            try {
+                BrowsableItemCriteria remoteCriteria = new BrowsableItemCriteria.Builder(criteria).
+                        repoPath(remoteRepoPath).build();
+                List<BaseBrowsableItem> remoteRepoBrowsableChildren =
+                        getRemoteRepoBrowsableChildren(remoteCriteria);
+                for (BaseBrowsableItem remoteRepoBrowsableChild : remoteRepoBrowsableChildren) {
+                    if (virtualRepoAccepts(repo, remoteRepoBrowsableChild.getRelativePath())) {
+                        pathToVirtualRepos.put(remoteRepoBrowsableChild.getRelativePath(), repo);
+                        candidateChildren.add(remoteRepoBrowsableChild);
+                    }
+                }
+            } catch (ItemNotFoundRuntimeException e) {
+                log.trace("Could not find local browsable children at '{}'",
+                        criteria + " " + e.getMessage());
+            }
+        }
     }
 
     private List<VirtualRepo> getSearchableRepos(VirtualRepo virtualRepo, RepoPath pathToCheck) {
@@ -294,6 +348,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         //If the path is not accepted, return immediately
         if (!virtualRepo.accepts(relativePath)) {
             log.debug("Virtual repo '{}' did not accept path '{}'", virtualRepo, relativePath);
+            return false;
+        }
+
+        if (relativePath.contains(MavenNaming.NEXUS_INDEX_DIR) || MavenNaming.isIndex(relativePath)) {
             return false;
         }
 
@@ -355,17 +413,16 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     /**
      * This predicate returns true if a given item, represented by URL, doesn't already exists in the local items.
      */
-    private static class RemoteOnlyBrowsableItemPredicate implements Predicate<String> {
+    private static class RemoteOnlyBrowsableItemPredicate implements Predicate<RemoteItem> {
         private List<BaseBrowsableItem> localItems;
 
         private RemoteOnlyBrowsableItemPredicate(List<BaseBrowsableItem> localItems) {
             this.localItems = localItems;
         }
 
-        public boolean apply(@Nonnull String input) {
-            String name = PathUtils.getName(input);
+        public boolean apply(@Nonnull RemoteItem input) {
             for (BaseBrowsableItem localItem : localItems) {
-                if (localItem.getName().equals(name)) {
+                if (localItem.getName().equals(input.getName())) {
                     return false;
                 }
             }
@@ -379,9 +436,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
      * @param repo             Browsed Repo
      * @param repoPathFolder   Folder to search and add metadata for
      * @param repoPathChildren Folder children list
+     * @param criteria         Browsable item conditions
      */
     private void addBrowsableMetadataAndChecksums(LocalRepo repo, JcrFolder repoPathFolder,
-            List<BaseBrowsableItem> repoPathChildren) {
+            List<BaseBrowsableItem> repoPathChildren, BrowsableItemCriteria criteria) {
         MetadataInfo metadataInfo = repoService.getMetadataInfo(repoPathFolder.getRepoPath(),
                 MavenNaming.MAVEN_METADATA_NAME);
 
@@ -393,10 +451,12 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             if (authService.canImplicitlyReadParentPath(metadataItemRepoPath) &&
                     repo.accepts(metadataItemRepoPath.getPath())) {
                 repoPathChildren.add(browsableItem);
-                repoPathChildren.addAll(getBrowsableItemChecksumItems(repo, metadataInfo.getChecksumsInfo(),
-                        browsableItem));
-            }
 
+                if (criteria.isIncludeChecksums()) {
+                    repoPathChildren.addAll(getBrowsableItemChecksumItems(repo, metadataInfo.getChecksumsInfo(),
+                            browsableItem));
+                }
+            }
         }
     }
 

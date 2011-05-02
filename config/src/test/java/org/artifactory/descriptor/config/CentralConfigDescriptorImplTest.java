@@ -20,6 +20,7 @@ package org.artifactory.descriptor.config;
 
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.replication.ReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
@@ -93,6 +94,16 @@ public class CentralConfigDescriptorImplTest {
         RepoLayout repoLayout2 = new RepoLayout();
         repoLayout2.setName("layout2");
         cc.addRepoLayout(repoLayout2);
+
+        ReplicationDescriptor replication1 = new ReplicationDescriptor();
+        replication1.setCronExp("0 0/5 * * * ?");
+        replication1.setRepoKey("remote1");
+        cc.addReplication(replication1);
+
+        ReplicationDescriptor replication2 = new ReplicationDescriptor();
+        replication2.setCronExp("0 0/6 * * * ?");
+        replication2.setRepoKey("remote2");
+        cc.addReplication(replication2);
     }
 
     public void defaultsTest() {
@@ -111,6 +122,7 @@ public class CentralConfigDescriptorImplTest {
                 "Default max file upload size should be bigger than 50mb");
         assertFalse(cc.isOfflineMode(), "Offline mode should be false by default");
         assertNotNull(cc.getRepoLayouts(), "Repo layouts list should not be null");
+        assertNotNull(cc.getReplications(), "Replication list should not be null");
     }
 
     public void uniqueKeyExistence() {
@@ -313,5 +325,25 @@ public class CentralConfigDescriptorImplTest {
                 "The repo layout should have defaulted.");
 
         assertNull(virtualDescriptor.getRepoLayout(), "The repo layout should have defaulted to null.");
+    }
+
+    public void replicationExistence() {
+        assertNotNull(cc.getReplication("remote1"));
+        assertNotNull(cc.getReplication("remote2"));
+    }
+
+    public void replicationUpdates() {
+        ReplicationDescriptor replication = cc.getReplication("remote1");
+        assertFalse(replication.isEnabled(), "Unexpected default enabled state.");
+        replication.setEnabled(true);
+        cc.updateReplication(replication);
+        assertTrue(cc.getReplication("remote1").isEnabled(), "Enabled state should have been updated.");
+    }
+
+    public void removeReplicationUpdates() {
+        ReplicationDescriptor replication = cc.getReplication("remote2");
+        assertNotNull(replication, "Expected to find second replication.");
+        cc.removeReplication(replication);
+        assertNull(cc.getReplication("remote2"), "Second replication should have been removed.");
     }
 }

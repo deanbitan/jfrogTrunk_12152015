@@ -18,12 +18,14 @@
 
 package org.artifactory.addon;
 
+import com.google.common.collect.Lists;
 import org.artifactory.api.context.ContextHelper;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Yossi Shaul
@@ -39,8 +41,22 @@ public class OssAddonsManager implements AddonsManager {
         return "Artifactory";
     }
 
-    public List<String> getInstalledAddonNames() {
-        return Collections.emptyList();
+    public String getLicenseRequiredMessage(String licensePageUrl) {
+        return "Add-ons are currently disabled.";
+    }
+
+    public List<AddonInfo> getInstalledAddons(Set<String> excludedAddonKeys) {
+        List<AddonInfo> addonInfos = Lists.newArrayList();
+        for (AddonType addonType : AddonType.values()) {
+            if (AddonType.AOL.equals(addonType)) {
+                continue;
+            }
+            addonInfos.add(new AddonInfo(addonType.getAddonName(), addonType.getAddonDisplayName(), null,
+                    AddonState.INACTIVATED, null, addonType.getDisplayOrdinal()));
+        }
+
+        Collections.sort(addonInfos);
+        return addonInfos;
     }
 
     public List<String> getEnabledAddonNames() {

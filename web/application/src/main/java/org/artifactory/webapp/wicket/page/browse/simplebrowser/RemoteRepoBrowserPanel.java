@@ -20,7 +20,6 @@ package org.artifactory.webapp.wicket.page.browse.simplebrowser;
 
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
-import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
@@ -31,12 +30,13 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
+import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepositoryBrowsingService;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.slf4j.Logger;
@@ -49,13 +49,10 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 /**
  * @author Yoav Landman
  */
-public class RemoteRepoBrowserPanel extends BaseRepoBrowserPanel {
+public class RemoteRepoBrowserPanel extends RemoteBrowsableRepoPanel {
     private static final Logger log = LoggerFactory.getLogger(RemoteRepoBrowserPanel.class);
 
     private static final long serialVersionUID = 1L;
-
-    @SpringBean
-    private RepositoryService repoService;
 
     @SpringBean
     private RepositoryBrowsingService repoBrowseService;
@@ -63,20 +60,17 @@ public class RemoteRepoBrowserPanel extends BaseRepoBrowserPanel {
     @SpringBean
     private CentralConfigService centralConfigService;
 
-    public RemoteRepoBrowserPanel(String id, final RepoPath repoPath) {
+    public RemoteRepoBrowserPanel(String id, final RepoPath repoPath, Properties requestProps) {
         super(id);
 
         add(new BreadCrumbsPanel("breadCrumbs", repoPath.getId()));
-        RemoteRepoDescriptor remoteRepoDescriptor =
-                centralConfigService.getDescriptor().getRemoteRepositoriesMap().get(repoPath.getRepoKey());
         List<BaseBrowsableItem> remoteChildren;
         try {
-            remoteChildren = repoBrowseService.getRemoteRepoBrowsableChildren(repoPath,
-                    remoteRepoDescriptor.isListRemoteFolderItems());
+            BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(repoPath).
+                    requestProperties(requestProps).build();
+            remoteChildren = repoBrowseService.getRemoteRepoBrowsableChildren(criteria);
         } catch (Exception e) {
             log.debug("Exception occurred while trying to get browsable children for repo path " + repoPath, e);
-            log.error("Exception occurred while trying to get browsable children for repo path '{}', '{}", repoPath,
-                    e.getMessage());
             throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
         }
         remoteChildren.add(0, getPseudoUpLink(repoPath));
@@ -97,7 +91,8 @@ public class RemoteRepoBrowserPanel extends BaseRepoBrowserPanel {
                         itemRelativePath += "/";
                     }
                 }
-                String href = hrefPrefix + "/" + repoPath.getRepoKey() + "/" + itemRelativePath;
+                String href = hrefPrefix + "/" + ArtifactoryRequest.SIMPLE_BROWSING_PATH + "/" + repoPath.getRepoKey()
+                        + "/" + itemRelativePath;
                 AbstractLink link;
                 if (isEmpty(browsableItem.getRepoKey())) {
                     link = getRootLink();
@@ -105,11 +100,7 @@ public class RemoteRepoBrowserPanel extends BaseRepoBrowserPanel {
                     link = new ExternalLink("link", href, browsableItem.getName());
                 }
                 link.add(new CssClass(getCssClass(browsableItem)));
-                WebMarkupContainer globe = new WebMarkupContainer("globe");
-                listItem.add(globe);
-                if (!browsableItem.isRemote()) {
-                    globe.setVisible(false);
-                }
+                addGlobeIcon(listItem, browsableItem.isRemote());
                 listItem.add(link);
             }
 

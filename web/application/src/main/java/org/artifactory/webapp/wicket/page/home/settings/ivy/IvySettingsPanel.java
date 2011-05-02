@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.home.settings.ivy;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
@@ -68,24 +69,34 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
         Element settingsElement = new Element("settings");
         settingsElement.setAttribute("defaultResolver", "main");
         rootNode.addContent(settingsElement);
-        rootNode.addContent(new Comment("Authentication required for publishing (deployment). 'Artifactory Realm' is " +
-                "the realm used by Artifactory so don't change it."));
 
-        Element credentialsElement = new Element("credentials");
-        try {
-            credentialsElement.setAttribute("host", new URL(servletContextUrl).getHost());
-        } catch (MalformedURLException e) {
-            String errorMessage =
-                    "An error occurred while decoding the servlet context URL for the credentials host attribute: ";
-            error(errorMessage + e.getMessage());
-            log.error(errorMessage, e);
+        if (!authorizationService.isAnonymous() || !authorizationService.isAnonAccessEnabled()) {
+            rootNode.addContent(
+                    new Comment("Authentication required for publishing (deployment). 'Artifactory Realm' is " +
+                            "the realm used by Artifactory so don't change it."));
+
+            Element credentialsElement = new Element("credentials");
+            try {
+                credentialsElement.setAttribute("host", new URL(servletContextUrl).getHost());
+            } catch (MalformedURLException e) {
+                String errorMessage =
+                        "An error occurred while decoding the servlet context URL for the credentials host attribute: ";
+                error(errorMessage + e.getMessage());
+                log.error(errorMessage, e);
+            }
+            credentialsElement.setAttribute("realm", "Artifactory Realm");
+
+            FilteredResourcesWebAddon filteredResourcesWebAddon =
+                    addonsManager.addonByType(FilteredResourcesWebAddon.class);
+
+            credentialsElement.setAttribute("username",
+                    filteredResourcesWebAddon.getGeneratedSettingsUsernameTemplate());
+
+            credentialsElement.setAttribute("passwd",
+                    filteredResourcesWebAddon.getGeneratedSettingsUserCredentialsTemplate(false));
+
+            rootNode.addContent(credentialsElement);
         }
-        credentialsElement.setAttribute("realm", "Artifactory Realm");
-
-        credentialsElement.setAttribute("username", authorizationService.currentUsername());
-        credentialsElement.setAttribute("passwd", "yourPassword");
-
-        rootNode.addContent(credentialsElement);
 
         Element resolversElement = new Element("resolvers");
 

@@ -17,7 +17,7 @@
  *  the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA 02110-1301 USA.
  *
- *  You can also contact jfrog Ltd. at info@jfrog.org.
+ *  You can also contact jfrog Ltd. at info@jfrog.com.
  *
  *  The interactive user interfaces in modified source and object code versions
  *  of this program must display Appropriate Legal Notices, as required under
@@ -340,5 +340,20 @@ var DojoUtils = {
             css += ' ' + name + ' ' + name + '-' + version;
         }
     });
+    switch (dojo.isIE) {
+        case 6:
+            css += ' IE-67 IE-678';
+            break;
+        case 7:
+            css += ' IE-67 IE-678 IE-78';
+            break;
+        case 8:
+            css += ' IE-78 IE-678 IE-789 IE-89';
+            break;
+        case 9:
+            css += ' IE-89 IE-789';
+            break;
+    }
+
     document.documentElement.className = navigator.platform + css;
 })();

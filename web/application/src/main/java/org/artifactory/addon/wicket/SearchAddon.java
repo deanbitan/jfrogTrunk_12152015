@@ -20,6 +20,7 @@ package org.artifactory.addon.wicket;
 
 import org.apache.wicket.model.IModel;
 import org.artifactory.addon.Addon;
+import org.artifactory.addon.AddonType;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.webapp.wicket.page.search.LimitlessCapableSearcher;
 import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;

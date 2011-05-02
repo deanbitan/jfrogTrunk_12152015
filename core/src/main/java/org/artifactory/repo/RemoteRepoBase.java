@@ -18,18 +18,19 @@
 
 package org.artifactory.repo;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.jackrabbit.core.data.DataStoreException;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AltRemoteContentAction;
 import org.artifactory.addon.plugin.download.AltRemotePathAction;
 import org.artifactory.addon.plugin.download.PathCtx;
 import org.artifactory.addon.plugin.download.ResourceStreamCtx;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenNaming;
@@ -47,13 +48,17 @@ import org.artifactory.concurrent.ExpiringDelayed;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.checksum.Checksum;
+import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
+import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.NullRequestContext;
 import org.artifactory.request.RemoteRequestException;
+import org.artifactory.request.Request;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -64,14 +69,12 @@ import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.jcr.RepositoryException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -94,12 +97,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     private RemoteRepoBase oldRemoteRepo;
     private Map<String, RepoResource> failedRetrievalsCache;
     private Map<String, RepoResource> missedRetrievalsCache;
-    private Map<RepoPath, List<String>> remoteResourceCache;
+    private Map<String, List<RemoteItem>> remoteResourceCache;
 
     private boolean globalOfflineMode;
     private final HandleRefsTracker handleRefsTracker;
     private final ConcurrentMap<String, DownloadEntry> inTransit;
-    protected ApacheURLLister urlLister;
 
     protected RemoteRepoBase(InternalRepositoryService repositoryService, T descriptor, boolean globalOfflineMode,
             RemoteRepo oldRemoteRepo) {
@@ -142,12 +144,21 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     protected void initCaches() {
-        failedRetrievalsCache = new MapMaker().initialCapacity(100).expireAfterWrite(
-                getDescriptor().getFailedRetrievalCachePeriodSecs(), TimeUnit.SECONDS).makeMap();
-        missedRetrievalsCache = new MapMaker().initialCapacity(500).expireAfterWrite(
-                getDescriptor().getMissedRetrievalCachePeriodSecs(), TimeUnit.SECONDS).makeMap();
-        remoteResourceCache = new MapMaker().initialCapacity(1000).softValues()
-                .expireAfterWrite(getDescriptor().getRetrievalCachePeriodSecs(), TimeUnit.SECONDS).makeMap();
+        failedRetrievalsCache = initCache(100, getDescriptor().getFailedRetrievalCachePeriodSecs(), false);
+        missedRetrievalsCache = initCache(500, getDescriptor().getMissedRetrievalCachePeriodSecs(), false);
+        remoteResourceCache = initCache(1000, getDescriptor().getRetrievalCachePeriodSecs(), true);
+    }
+
+    private <V> Map<String, V> initCache(int initialCapacity, long expirationSeconds, boolean softValues) {
+        MapMaker mapMaker = new MapMaker().initialCapacity(initialCapacity);
+        if (expirationSeconds >= 0) {
+            mapMaker.expireAfterWrite(expirationSeconds, TimeUnit.SECONDS);
+        }
+        if (softValues) {
+            mapMaker.softValues();
+        }
+
+        return mapMaker.makeMap();
     }
 
     private void logCacheInfo() {
@@ -299,9 +310,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             boolean foundExpiredInCache) {
         String path = repoPath.getPath();
 
-        if (!isRequestPropertyBoundAndPropertiesAreSynced(context, path)) {
-            String msg = this + ": does not synchronize remote properties, '" + repoPath +
-                    "' will not be downloaded from '" + path + "'.";
+        if (!getDescriptor().isSynchronizeProperties() && context.getProperties().hasMandatoryProperty()) {
+            String msg = this + ": does not synchronize remote properties and request contains mandatory property, '"
+                    + repoPath + "' will not be downloaded from '" + path + "'.";
             log.debug(msg);
             return new UnfoundRepoResource(repoPath, msg);
         }
@@ -424,16 +435,27 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 try {
                     beforeResourceDownload(remoteResource);
 
+                    RepoResourceInfo remoteInfo = remoteResource.getInfo();
+                    Set<ChecksumInfo> remoteChecksums = remoteInfo.getChecksums();
+                    boolean receivedRemoteChecksums = (remoteChecksums != null) && !remoteChecksums.isEmpty();
+
                     //Allow plugins to provide an alternate content
                     handle = getAltContent(remoteRepoPath);
+
+                    if (shouldSearchForExistingResource(context.getRequest()) && (handle == null) &&
+                            receivedRemoteChecksums) {
+                        handle = getExistingResourceByChecksum(remoteChecksums, remoteResource.getSize());
+                    }
 
                     if (handle == null) {
                         //If we didn't get an alternate handle do the actual download
                         handle = downloadResource(path, context.getProperties());
                     }
-                    Set<ChecksumInfo> remoteChecksums = getRemoteChecksums(path);
-                    RepoResourceInfo remoteInfo = remoteResource.getInfo();
-                    remoteInfo.setChecksums(remoteChecksums);
+
+                    if (!receivedRemoteChecksums) {
+                        remoteChecksums = getRemoteChecksums(path);
+                        remoteInfo.setChecksums(remoteChecksums);
+                    }
 
                     Properties properties = null;
                     if (getDescriptor().isSynchronizeProperties() &&
@@ -474,6 +496,36 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
         //Return the cached result (the newly downloaded or already cached resource)
         return localCacheRepo.getResourceStreamHandle(context, cachedResource);
+    }
+
+    private boolean shouldSearchForExistingResource(Request request) {
+        String searchForExistingResource = request.getParameter(
+                ArtifactoryRequest.SEARCH_FOR_EXISTING_RESOURCE_ON_REMOTE_REQUEST);
+        if (StringUtils.isNotBlank(searchForExistingResource)) {
+            return Boolean.valueOf(searchForExistingResource);
+        }
+
+        return ConstantValues.searchForExistingResourceOnRemoteRequest.getBoolean();
+    }
+
+    private ResourceStreamHandle getExistingResourceByChecksum(Set<ChecksumInfo> remoteChecksums, long size) {
+        for (ChecksumInfo remoteChecksum : remoteChecksums) {
+            if (ChecksumType.sha1.equals(remoteChecksum.getType())) {
+                String sha1 = remoteChecksum.getOriginal();
+                JcrService jcrService = ContextHelper.get().beanForType(JcrService.class);
+                InputStream data = null;
+                try {
+                    data = jcrService.getDataStreamBySha1Checksum(sha1);
+                } catch (DataStoreException e) {
+                    log.debug("The data record for checksum '{}' could not be found.", sha1);
+                }
+                if (data != null) {
+                    return new SimpleResourceStreamHandle(data, size);
+                }
+            }
+        }
+
+        return null;
     }
 
     private void unexpire(RepoResource cachedResource) {
@@ -612,57 +664,76 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return localCacheRepo;
     }
 
-    public List<String> listRemoteResources(RepoPath directoryRepoPath) throws IOException {
+    public List<RemoteItem> listRemoteResources(String directoryPath) throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
-        List<String> cachedUrls = remoteResourceCache.get(directoryRepoPath);
+        List<RemoteItem> cachedUrls = remoteResourceCache.get(directoryPath);
         if (CollectionUtils.notNullOrEmpty(cachedUrls)) {
             return cachedUrls;
         }
-        List<URL> urls = getChildUrls(new URL(getUrl() + "/" + directoryRepoPath.getPath()));
+
+        checkForRemoteListingInFailedCaches(directoryPath);
+
+        List<RemoteItem> urls;
+        String fullDirectoryUrl = appendAndGetUrl(directoryPath);
+        try {
+            urls = getChildUrls(fullDirectoryUrl);
+        } catch (IOException e) {
+            addRemoteListingEntryToFailedOrMissedCache(directoryPath, e);
+            throw e;
+        }
+
         if (CollectionUtils.isNullOrEmpty(urls)) {
-            log.debug("No remote URLS where found for: ", getUrl() + "/" + directoryRepoPath.getPath());
+            log.debug("No remote URLS where found for: ", fullDirectoryUrl);
             return Lists.newArrayList();
         }
-        List<String> urlsAsStrings = transformUrlsToStrings(urls);
-        remoteResourceCache.put(directoryRepoPath, urlsAsStrings);
-        return urlsAsStrings;
+        remoteResourceCache.put(directoryPath, urls);
+        return urls;
     }
 
-    protected abstract List<URL> getChildUrls(URL dirUrl) throws IOException;
-
-    private List<String> transformUrlsToStrings(List<URL> urls) {
-        return Lists.transform(urls, new Function<URL, String>() {
-            public String apply(@Nonnull URL input) {
-                return input.toExternalForm();
-            }
-        });
+    protected String appendAndGetUrl(String pathToAppend) {
+        String remoteUrl = getUrl();
+        StringBuilder baseUrlBuilder = new StringBuilder(remoteUrl);
+        if (!remoteUrl.endsWith("/")) {
+            baseUrlBuilder.append("/");
+        }
+        baseUrlBuilder.append(pathToAppend);
+        return baseUrlBuilder.toString();
     }
+
+    private void checkForRemoteListingInFailedCaches(String directoryPath) throws IOException {
+        UnfoundRepoResource unfoundRepoResource = null;
+        if (failedRetrievalsCache.containsKey(directoryPath)) {
+            unfoundRepoResource = ((UnfoundRepoResource) failedRetrievalsCache.get(directoryPath));
+        } else if (missedRetrievalsCache.containsKey(directoryPath)) {
+            unfoundRepoResource = ((UnfoundRepoResource) missedRetrievalsCache.get(directoryPath));
+        }
+
+        if (unfoundRepoResource != null) {
+            throw new IOException(unfoundRepoResource.getReason());
+        }
+    }
+
+    private void addRemoteListingEntryToFailedOrMissedCache(String directoryPath, IOException e) {
+        String message = e.getMessage();
+        Map<String, RepoResource> relevantCache;
+        if (StringUtils.isNotBlank(message) && message.contains("Failed")) {
+            relevantCache = failedRetrievalsCache;
+        } else {
+            relevantCache = missedRetrievalsCache;
+        }
+        if (!relevantCache.containsKey(directoryPath)) {
+            relevantCache.put(directoryPath, new UnfoundRepoResource(getRepoPath(directoryPath), message));
+        }
+    }
+
+    protected abstract List<RemoteItem> getChildUrls(String dirUrl) throws IOException;
 
     public void clearCaches() {
-        if (failedRetrievalsCache != null) {
-            failedRetrievalsCache.clear();
-        }
-        if (missedRetrievalsCache != null) {
-            missedRetrievalsCache.clear();
-        }
-        if (remoteResourceCache != null) {
-            remoteResourceCache.clear();
-        }
+        clearCaches(failedRetrievalsCache, missedRetrievalsCache, remoteResourceCache);
     }
 
     public void removeFromCaches(String path, boolean removeSubPaths) {
-        if (failedRetrievalsCache != null && !failedRetrievalsCache.isEmpty()) {
-            failedRetrievalsCache.remove(path);
-            if (removeSubPaths) {
-                removeSubPathsFromCache(path, failedRetrievalsCache);
-            }
-        }
-        if (missedRetrievalsCache != null && !missedRetrievalsCache.isEmpty()) {
-            missedRetrievalsCache.remove(path);
-            if (removeSubPaths) {
-                removeSubPathsFromCache(path, missedRetrievalsCache);
-            }
-        }
+        removeFromCaches(path, removeSubPaths, failedRetrievalsCache, missedRetrievalsCache, remoteResourceCache);
     }
 
     /**
@@ -705,16 +776,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         InternalSearchService internalSearchService =
                 InternalContextHelper.get().beanForType(InternalSearchService.class);
         internalSearchService.asyncIndex(new RepoPathImpl(localCacheRepo.getKey(), path));
-    }
-
-    private void removeSubPathsFromCache(String basePath, Map<String, RepoResource> cache) {
-        Iterator<String> cachedPaths = cache.keySet().iterator();
-        while (cachedPaths.hasNext()) {
-            String key = cachedPaths.next();
-            if (key.startsWith(basePath)) {
-                cachedPaths.remove();
-            }
-        }
     }
 
     /**
@@ -877,19 +938,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     /**
-     * If the download request contains properties and the repo isn't configured to sync properties - don't get the
-     * info
-     *
-     * @param requestContext Download request context
-     * @param relativePath   Relative path of requested artifact
-     * @return True if the request contains no properties, or if the repository is configured to sync them
-     */
-    private boolean isRequestPropertyBoundAndPropertiesAreSynced(RequestContext requestContext, String relativePath) {
-        Properties requestProperties = requestContext.getProperties();
-        return requestProperties.isEmpty() || getDescriptor().isSynchronizeProperties();
-    }
-
-    /**
      * Allow plugins to override the path
      *
      * @param path
@@ -920,5 +968,34 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             return new SimpleResourceStreamHandle(is, rsCtx.getSize());
         }
         return null;
+    }
+
+    private void clearCaches(Map<String, ?>... caches) {
+        for (Map<String, ?> cache : caches) {
+            if (cache != null) {
+                cache.clear();
+            }
+        }
+    }
+
+    private void removeFromCaches(String path, boolean removeSubPaths, Map<String, ?>... caches) {
+        for (Map<String, ?> cache : caches) {
+            if (cache != null && !cache.isEmpty()) {
+                cache.remove(path);
+                if (removeSubPaths) {
+                    removeSubPathsFromCache(path, cache);
+                }
+            }
+        }
+    }
+
+    private void removeSubPathsFromCache(String basePath, Map<String, ?> cache) {
+        Iterator<String> cachedPaths = cache.keySet().iterator();
+        while (cachedPaths.hasNext()) {
+            String key = cachedPaths.next();
+            if (key.startsWith(basePath)) {
+                cachedPaths.remove();
+            }
+        }
     }
 }

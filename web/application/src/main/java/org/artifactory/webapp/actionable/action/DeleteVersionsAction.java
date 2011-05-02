@@ -23,7 +23,8 @@ import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.artifactory.api.fs.VersionUnit;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
+import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.PanelNestingBorderedModal;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.event.ItemEventTargetComponents;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
@@ -56,9 +57,9 @@ public class DeleteVersionsAction extends RepoAwareItemAction {
 
         DeleteVersionsPanel panel = new DeleteVersionsPanel(modalWindow.getContentId(), versionUnits,
                 browseRepoPanel, event.getSource());
-        BorderedModalPanel modelPanel = new BorderedModalPanel(panel);
-        modelPanel.setTitle("Delete Versions");
-        modalWindow.setContent(modelPanel);
+        BaseModalPanel modalPanel = new PanelNestingBorderedModal(panel);
+        modalPanel.setTitle("Delete Versions");
+        modalWindow.setContent(modalPanel);
         AjaxRequestTarget target = event.getTarget();
         modalWindow.show(target);
     }

@@ -110,4 +110,13 @@ public class BuildActionableItem extends ActionableItemBase {
     public String getBuildNumber() {
         return basicBuildInfo.getNumber();
     }
+
+    /**
+     * Returns the latest release status of the build
+     *
+     * @return Build latest release status if exists, null if not
+     */
+    public String getLastReleaseStatus() {
+        return basicBuildInfo.getLastReleaseStatus();
+    }
 }

@@ -44,11 +44,11 @@ class CrossLayoutRepoPathMover extends BaseRepoPathMover {
     private boolean isSourceM2;
     private boolean isTargetM2;
 
-    CrossLayoutRepoPathMover(MoverConfig moverConfig) {
-        super(moverConfig);
+    CrossLayoutRepoPathMover(MoveMultiStatusHolder status, MoverConfig moverConfig) {
+        super(status, moverConfig);
     }
 
-    MoveMultiStatusHolder moveOrCopy(LocalRepo sourceRepo, LocalRepo targetRepo, JcrFsItem fsItemToMove) {
+    void moveOrCopy(LocalRepo sourceRepo, LocalRepo targetRepo, JcrFsItem fsItemToMove) {
 
         sourceLayout = sourceRepo.getDescriptor().getRepoLayout();
         targetLayout = targetRepo.getDescriptor().getRepoLayout();
@@ -58,7 +58,6 @@ class CrossLayoutRepoPathMover extends BaseRepoPathMover {
         moveRecursive(fsItemToMove, targetRepo);
 
         clearEmptyDirsAndCalcMetadata(new RepoRepoPath<LocalRepo>(targetRepo, lowestCommonTargetParent), fsItemToMove);
-        return status;
     }
 
     @Override
@@ -77,6 +76,10 @@ class CrossLayoutRepoPathMover extends BaseRepoPathMover {
     }
 
     private void moveRecursive(JcrFsItem source, LocalRepo targetRepo) {
+
+        if (errorsOrWarningsOccurredAndFailFast()) {
+            return;
+        }
 
         if (source.isDirectory()) {
             JcrFolder sourceFolder = (JcrFolder) source;
@@ -100,6 +103,10 @@ class CrossLayoutRepoPathMover extends BaseRepoPathMover {
                     source.getRelativePath(), translateStatus);
 
             status.merge(translateStatus);
+
+            if (errorsOrWarningsOccurredAndFailFast()) {
+                return;
+            }
 
             RepoPath targetRepoPath = targetRepo.getRepoPath(translatedTargetPath);
 

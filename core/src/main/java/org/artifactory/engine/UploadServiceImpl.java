@@ -40,8 +40,8 @@ import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
+import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.LocalRepoChecksumPolicy;
 import org.artifactory.jcr.JcrRepoService;
@@ -172,6 +172,7 @@ public class UploadServiceImpl implements InternalUploadService {
 
     public void doProcess(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException, RepoRejectException {
+        log.info("Deploy to '{}' Content-Length: {}", request.getRepoPath(), request.getContentLength());
         String path = request.getPath();
         ModuleInfo moduleInfo = repo.getItemModuleInfo(path);
 
@@ -181,7 +182,7 @@ public class UploadServiceImpl implements InternalUploadService {
         }
 
         //Adjust snapshot paths for maven repositories
-        if (((RepoDescriptor) repo.getDescriptor()).isMavenRepoLayout()) {
+        if (repo.getDescriptor().isMavenRepoLayout()) {
             SnapshotVersionBehavior snapshotBehavior = repo.getMavenSnapshotVersionBehavior();
             if (!snapshotBehavior.equals(DEPLOYER) && MavenNaming.isSnapshot(path) &&
                     MavenNaming.isMavenMetadata(path)) {
@@ -217,19 +218,19 @@ public class UploadServiceImpl implements InternalUploadService {
          * from(JCR) will be used (if available).
          */
         InputStream stream = null;
-        if (ConstantValues.useExpectContinue.getBoolean() && HttpUtils.isExpectedContinue(request)) {
-            log.debug("Client '{}' supports Expect 100/continue", request.getHeader("User-Agent"));
-            stream = getStreamFromJcrIfExists(request, repoPath);
-        }
-        // if not supporting a 100/continue request, or no stream was found from JCR, take the stream from request
-        // and continue as usual
-        if (stream == null) {
-            log.debug("No matching artifact found, using stream from request");
-            stream = request.getInputStream();
-        } else {
-            log.debug("Matching artifact found, using stream from storage");
-        }
         try {
+            if (ConstantValues.httpUseExpectContinue.getBoolean() && HttpUtils.isExpectedContinue(request)) {
+                log.debug("Client '{}' supports Expect 100/continue", request.getHeader("User-Agent"));
+                stream = getStreamFromJcrIfExists(request, repoPath);
+            }
+            // if not supporting a 100/continue request, or no stream was found from JCR, take the stream from request
+            // and continue as usual
+            if (stream == null) {
+                log.debug("No matching artifact found, using stream from request");
+                stream = request.getInputStream();
+            } else {
+                log.debug("Matching artifact found, using stream from storage");
+            }
             RepoResource resource = repo.saveResource(res, stream, properties);
             if (!resource.isFound()) {
                 response.sendError(SC_NOT_FOUND, ((UnfoundRepoResource) resource).getReason(), log);
@@ -331,7 +332,7 @@ public class UploadServiceImpl implements InternalUploadService {
             ModuleInfo moduleInfo) throws IOException {
 
         String checksumPath = request.getPath();
-        if (((RepoDescriptor) repo.getDescriptor()).isMavenRepoLayout()) {
+        if (repo.getDescriptor().isMavenRepoLayout()) {
             checksumPath = adjustMavenSnapshotPath(repo, checksumPath, moduleInfo, request.getProperties());
         }
 
@@ -363,12 +364,16 @@ public class UploadServiceImpl implements InternalUploadService {
         }
 
         String checksum;
+        InputStream inputStream = null;
         try {
-            checksum = IOUtils.toString(request.getInputStream(), "UTF-8");
+            inputStream = request.getInputStream();
+            checksum = Checksum.checksumStringFromStream(inputStream);
         } catch (IOException e) {
             response.sendError(SC_CONFLICT, "Failed to read checksum from file: " + e.getMessage() +
                     " for path " + checksumPath, log);
             return;
+        } finally {
+            IOUtils.closeQuietly(inputStream);
         }
 
         // ok everything looks good, lets set the checksum original value

@@ -31,18 +31,24 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.ImportableExportableBuild;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.jackson.JacksonFactory;
 import org.artifactory.api.jackson.JacksonReader;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
+import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.constant.BuildRestConstants;
+import org.artifactory.api.search.SearchService;
+import org.artifactory.api.search.artifact.ChecksumSearchControls;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.build.cache.ChecksumPair;
@@ -56,6 +62,7 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
+import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
@@ -70,12 +77,15 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonStreamContext;
 import org.codehaus.jackson.JsonToken;
 import org.codehaus.jackson.node.ObjectNode;
+import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildAgent;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.BuildType;
 import org.jfrog.build.api.Dependency;
 import org.jfrog.build.api.Module;
+import org.jfrog.build.api.release.Promotion;
+import org.jfrog.build.api.release.PromotionStatus;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -96,6 +106,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -131,6 +144,12 @@ public class BuildServiceImpl implements InternalBuildService {
 
     @Autowired
     private JcrService jcrService;
+
+    @Autowired
+    private RepositoryService repositoryService;
+
+    @Autowired
+    private SearchService searchService;
 
     /**
      * Keep a cache for each type of checksums because we can get requests for different types of checksum for the same
@@ -211,6 +230,15 @@ public class BuildServiceImpl implements InternalBuildService {
                     "build name '%s', number '%s', started at '%s'.", buildName, buildNumber, started);
             throw new RuntimeException(errorMessage, e);
         }
+
+        try {
+            updateReleaseLastStatusProperty(build, buildStartedNode);
+        } catch (RepositoryException e) {
+            String errorMessage = String.format("An error occurred while updating the latest release status " +
+                    "property of build name '%s', number '%s', started at '%s'.", buildName, buildNumber, started);
+            throw new RuntimeException(errorMessage, e);
+        }
+
         log.debug("Added info for build '{}' #{}", buildName, buildNumber);
 
         LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
@@ -244,18 +272,46 @@ public class BuildServiceImpl implements InternalBuildService {
         return jcrService.getString(buildPath);
     }
 
-    public void deleteBuild(String buildName) {
+    public void deleteBuild(String buildName, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder) {
+        if (deleteArtifacts) {
+            Set<BasicBuildInfo> existingBuilds = searchBuildsByName(buildName);
+            for (BasicBuildInfo existingBuild : existingBuilds) {
+                removeBuildArtifacts(existingBuild, multiStatusHolder);
+            }
+        }
         String buildPath = JcrPath.get().getBuildsJcrPath(escapeAndGetJcrCompatibleString(buildName));
         jcrService.delete(buildPath);
     }
 
-    public void deleteBuild(BasicBuildInfo basicBuildInfo) {
+    public void deleteBuild(BasicBuildInfo basicBuildInfo, boolean deleteArtifacts,
+            MultiStatusHolder multiStatusHolder) {
         String buildName = basicBuildInfo.getName();
+        if (deleteArtifacts) {
+            removeBuildArtifacts(basicBuildInfo, multiStatusHolder);
+        }
         jcrService.delete(getBuildPathFromParams(buildName, basicBuildInfo.getNumber(), basicBuildInfo.getStarted()));
         Set<BasicBuildInfo> remainingBuilds = searchBuildsByName(buildName);
         if (remainingBuilds.isEmpty()) {
-            deleteBuild(buildName);
+            deleteBuild(buildName, false, multiStatusHolder);
         }
+    }
+
+    private void removeBuildArtifacts(BasicBuildInfo basicBuildInfo, MultiStatusHolder status) {
+        String buildName = basicBuildInfo.getName();
+        String buildNumber = basicBuildInfo.getNumber();
+        Build build = getBuild(buildName, buildNumber, basicBuildInfo.getStarted());
+        status.setDebug("Starting to remove the artifacts of build '" + buildName + "' #" + buildNumber, log);
+        for (Module module : build.getModules()) {
+            for (Artifact artifact : module.getArtifacts()) {
+                Set<FileInfo> matchingArtifacts = getBuildFileBeanInfo(buildName, buildNumber, artifact, true);
+                for (FileInfo matchingArtifact : matchingArtifacts) {
+                    RepoPath repoPath = matchingArtifact.getRepoPath();
+                    BasicStatusHolder undeployStatus = repositoryService.undeploy(repoPath);
+                    status.merge(undeployStatus);
+                }
+            }
+        }
+        status.setDebug("Finished removing the artifacts of build '" + buildName + "' #" + buildNumber, log);
     }
 
     public Build getLatestBuildByNameAndNumber(String buildName, String buildNumber) {
@@ -333,7 +389,15 @@ public class BuildServiceImpl implements InternalBuildService {
                         Node buildStartedNode = buildStartedNodes.nextNode();
                         String decodedBuildStarted = unEscapeAndGetJcrCompatibleString(buildStartedNode.getName());
 
-                        results.add(new BasicBuildInfo(buildName, buildNumber, decodedBuildStarted));
+                        BasicBuildInfo basicBuildInfo;
+                        if (!buildStartedNode.hasProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS)) {
+                            basicBuildInfo = new BasicBuildInfo(buildName, buildNumber, decodedBuildStarted);
+                        } else {
+                            Property property = buildStartedNode.getProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS);
+                            basicBuildInfo = new BasicBuildInfo(buildName, buildNumber, decodedBuildStarted,
+                                    property.getString());
+                        }
+                        results.add(basicBuildInfo);
                     }
                 }
             } catch (RepositoryException e) {
@@ -382,13 +446,38 @@ public class BuildServiceImpl implements InternalBuildService {
         return results;
     }
 
-    public FileInfo getBestMatchingResult(Set<RepoPath> searchResults, Map<RepoPath, Properties> resultProperties,
-            String buildName, String buildNumber) {
+    public Set<FileInfo> getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean,
+            boolean strictMatching) {
+        PropertiesAddon propertiesAddon = addonsManager.addonByType(PropertiesAddon.class);
+        ChecksumSearchControls controls = new ChecksumSearchControls();
+        controls.addChecksum(ChecksumType.sha1, bean.getSha1());
+        controls.addChecksum(ChecksumType.md5, bean.getMd5());
+        Set<RepoPath> searchResults = searchService.searchArtifactsByChecksum(controls);
+
+        if (!strictMatching && (searchResults.size() == 1)) {
+            return Sets.<FileInfo>newHashSet(new FileInfoProxy(searchResults.iterator().next()));
+        } else if (!searchResults.isEmpty()) {
+            Map<RepoPath, Properties> resultProperties = propertiesAddon.getProperties(searchResults);
+            return getBestMatchingResult(searchResults, resultProperties, buildName, buildNumber, strictMatching);
+        }
+        return Sets.newHashSet();
+    }
+
+    public Set<FileInfo> getBestMatchingResult(Set<RepoPath> searchResults, Map<RepoPath, Properties> resultProperties,
+            String buildName, String buildNumber, boolean strictMatching) {
 
         if (resultProperties.isEmpty()) {
-            return getLatestItem(searchResults);
+            Set<FileInfo> matchingItems = Sets.newHashSet();
+            if (!strictMatching) {
+                FileInfo latestItem = getLatestItem(searchResults);
+                if (latestItem != null) {
+                    matchingItems.add(latestItem);
+                }
+            }
+            return matchingItems;
         } else {
-            return matchResultBuildNameAndNumber(searchResults, resultProperties, buildName, buildNumber);
+            return matchResultBuildNameAndNumber(searchResults, resultProperties, buildName, buildNumber,
+                    strictMatching);
         }
     }
 
@@ -537,6 +626,9 @@ public class BuildServiceImpl implements InternalBuildService {
 
         // set the artifacts and dependencies checksums
         saveBuildFileChecksums(buildStartedNode, build.getArtifactChecksums(), build.getDependencyChecksums());
+
+        updateReleaseLastStatusProperty(getBuild(buildStartedNode), buildStartedNode);
+
         multiStatusHolder.setDebug(
                 String.format("Finished import of build: %s:%s:%s", buildName, buildNumber, buildStarted), log);
     }
@@ -625,6 +717,11 @@ public class BuildServiceImpl implements InternalBuildService {
                 properties, dryRun);
     }
 
+    public PromotionResult promoteBuild(BasicBuildInfo buildInfo, Promotion promotion) {
+        BuildPromotionHelper buildPromotionHelper = new BuildPromotionHelper();
+        return buildPromotionHelper.promoteBuild(buildInfo, promotion);
+    }
+
     public void renameBuilds(String from, String to) {
         Set<BasicBuildInfo> buildsToRename = searchBuildsByName(from);
         if (buildsToRename.isEmpty()) {
@@ -648,6 +745,138 @@ public class BuildServiceImpl implements InternalBuildService {
             log.info("Renamed build node from '{}' to '{}'.", from, to);
         } catch (Exception e) {
             log.error("Failed to rename JCR build node from '{}' to '{}'.", from, to);
+        }
+    }
+
+    public void renameBuildNode(String from, String to) throws RepositoryException {
+        String oldNamePath = getBuildPathFromParams(from, null, null);
+
+        Node oldNameNode = jcrService.getNode(oldNamePath);
+        if (oldNameNode == null) {
+            log.error("Could not find a build tree node by the name '{}'. Build node was not renamed.", from);
+            return;
+        }
+
+        String newNamePath = getBuildPathFromParams(to, null, null);
+        Node newNameNode = jcrService.getOrCreateUnstructuredNode(newNamePath);
+
+        NodeIterator oldNumberNodesIterator = oldNameNode.getNodes();
+        while (oldNumberNodesIterator.hasNext()) {
+            Node oldNumberNode = oldNumberNodesIterator.nextNode();
+
+            Node newNumberNode = jcrService.getOrCreateUnstructuredNode(newNameNode, oldNumberNode.getName());
+
+            NodeIterator oldStartedNodesIterator = oldNumberNode.getNodes();
+            while (oldStartedNodesIterator.hasNext()) {
+                Node oldStartedNode = oldStartedNodesIterator.nextNode();
+                oldStartedNode.getSession().move(oldStartedNode.getPath(), newNumberNode.getPath() + "/" +
+                        oldStartedNode.getName());
+            }
+            if (!oldNumberNode.hasNodes()) {
+                oldNumberNode.remove();
+            }
+        }
+        if (!oldNameNode.hasNodes()) {
+            oldNameNode.remove();
+        }
+    }
+
+    public void renameBuildContent(BasicBuildInfo basicBuildInfo, String to) throws RepositoryException, IOException {
+        String buildName = basicBuildInfo.getName();
+        String buildNumber = basicBuildInfo.getNumber();
+        String buildStarted = basicBuildInfo.getStarted();
+
+        String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
+        Node buildNode = jcrService.getNode(buildPath);
+        if (buildNode == null) {
+            log.error("Could not find build to rename at path: {}", buildPath);
+            return;
+        }
+
+        Set<String> artifactChecksums = getChecksumPropertyValue(buildNode, PROP_BUILD_ARTIFACT_CHECKSUMS);
+        Set<String> dependencyChecksums = getChecksumPropertyValue(buildNode, PROP_BUILD_DEPENDENCY_CHECKSUMS);
+
+        InputStream jsonStream = JcrHelper.getRawStringStream(buildNode);
+        final JsonNode rootNode = JacksonReader.streamAsTree(jsonStream);
+        ((ObjectNode) rootNode).put("name", to);
+
+        InputStreamFromOutputStream stream = null;
+        try {
+            stream = new InputStreamFromOutputStream() {
+
+                @Override
+                protected Object produce(OutputStream outputStream) throws Exception {
+                    JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream);
+                    jsonGenerator.writeTree(rootNode);
+                    return null;
+                }
+            };
+            jcrService.setStream(buildNode.getParent(), buildNode.getName(), stream, BuildRestConstants.MT_BUILD_INFO,
+                    authorizationService.currentUsername(), false);
+        } catch (Exception e) {
+            log.error("An error occurred while writing JSON data to the node of build name '{}', number '{}', " +
+                    "started at '{}'.", new String[]{buildName, buildNumber, buildStarted});
+            return;
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
+
+        try {
+            saveBuildFileChecksums(buildNode, artifactChecksums, dependencyChecksums);
+        } catch (Exception e) {
+            log.error("An error occurred while saving checksum properties on the node of build name '{}', number " +
+                    "'{}', started at '{}'.", new String[]{buildName, buildNumber, buildStarted});
+        }
+    }
+
+    public void updateBuild(final Build build) {
+        String buildName = build.getName();
+        String buildNumber = build.getNumber();
+        String buildStarted = build.getStarted();
+
+        String buildPathFromParams = getBuildPathFromParams(buildName, buildNumber, buildStarted);
+
+        Node buildNode = jcrService.getNode(buildPathFromParams);
+
+        InputStreamFromOutputStream stream = null;
+        try {
+            stream = new InputStreamFromOutputStream() {
+
+                @Override
+                protected Object produce(OutputStream outputStream) throws Exception {
+                    JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream);
+                    jsonGenerator.writeObject(build);
+                    return null;
+                }
+            };
+            jcrService.setStream(buildNode.getParent(), buildNode.getName(), stream, BuildRestConstants.MT_BUILD_INFO,
+                    authorizationService.currentUsername(), false);
+        } catch (Exception e) {
+            String errorMessage = String.format("An error occurred while updating the JSON data of build name " +
+                    "'%s', number '%s', started at '%s'.", buildName, buildNumber, buildStarted);
+            throw new RuntimeException(errorMessage, e);
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
+
+        try {
+            updateReleaseLastStatusProperty(build, buildNode);
+        } catch (RepositoryException e) {
+            String errorMessage = String.format("An error occurred while updating the latest release status " +
+                    "property of build name '%s', number '%s', started at '%s'.", buildName, buildNumber, buildStarted);
+            throw new RuntimeException(errorMessage, e);
+        }
+    }
+
+    public String getBuildLatestReleaseStatus(String buildName, String buildNumber, String buildStarted) {
+        String buildPathFromParams = getBuildPathFromParams(buildName, buildNumber, buildStarted);
+        Node buildNode = jcrService.getNode(buildPathFromParams);
+        try {
+            return getBuildLatestReleaseStatus(buildNode);
+        } catch (RepositoryException e) {
+            String errorMessage = String.format("An error occurred while looking up the latest release status " +
+                    "property of build name '%s', number '%s', started at '%s'.", buildName, buildNumber, buildStarted);
+            throw new RuntimeException(errorMessage, e);
         }
     }
 
@@ -947,10 +1176,11 @@ public class BuildServiceImpl implements InternalBuildService {
      * @param resultProperties Search result property map
      * @param buildName        Build name to search for
      * @param buildNumber      Build number to search for
+     * @param strictMatching   True if the artifact finder should operate in strict mode
      * @return The file info of a result that best matches the given build name and number
      */
-    private org.artifactory.fs.FileInfo matchResultBuildNameAndNumber(Set<RepoPath> searchResults,
-            Map<RepoPath, Properties> resultProperties, String buildName, String buildNumber) {
+    private Set<FileInfo> matchResultBuildNameAndNumber(Set<RepoPath> searchResults,
+            Map<RepoPath, Properties> resultProperties, String buildName, String buildNumber, boolean strictMatching) {
         Map<RepoPath, Properties> matchingBuildNames = Maps.newHashMap();
 
         for (Map.Entry<RepoPath, Properties> repoPathPropertiesEntry : resultProperties.entrySet()) {
@@ -962,9 +1192,16 @@ public class BuildServiceImpl implements InternalBuildService {
         }
 
         if (matchingBuildNames.isEmpty()) {
-            return getLatestItem(searchResults);
+            Set<FileInfo> matchingItems = Sets.newHashSet();
+            if (!strictMatching) {
+                FileInfo latestItem = getLatestItem(searchResults);
+                if (latestItem != null) {
+                    matchingItems.add(latestItem);
+                }
+            }
+            return matchingItems;
         } else {
-            return matchResultBuildNumber(resultProperties, matchingBuildNames, buildNumber);
+            return matchResultBuildNumber(resultProperties, matchingBuildNames, buildNumber, strictMatching);
         }
     }
 
@@ -974,22 +1211,24 @@ public class BuildServiceImpl implements InternalBuildService {
      * @param resultProperties Search result property map
      * @param matchingPaths    File info paths that match by build name
      * @param buildNumber      Build number to search for
+     * @param strictMatching   True if the artifact finder should operate in strict mode
      * @return The file info of a result that best matches the given build number
      */
-    private org.artifactory.fs.FileInfo matchResultBuildNumber(Map<RepoPath, Properties> resultProperties,
-            Map<RepoPath, Properties> matchingPaths, String buildNumber) {
-        RepoPath selectedPath = matchingPaths.keySet().iterator().next();
-
+    private Set<FileInfo> matchResultBuildNumber(Map<RepoPath, Properties> resultProperties,
+            Map<RepoPath, Properties> matchingPaths, String buildNumber, boolean strictMatching) {
+        Set<FileInfo> matchingItems = Sets.newHashSet();
         for (RepoPath repoPath : matchingPaths.keySet()) {
             Properties properties = resultProperties.get(repoPath);
             Set<String> buildNumbers = properties.get("build.number");
             if (buildNumbers.contains(buildNumber)) {
-                selectedPath = repoPath;
-                break;
+                matchingItems.add(new FileInfoProxy(repoPath));
             }
         }
 
-        return new FileInfoProxy(selectedPath);
+        if (matchingItems.isEmpty() && !strictMatching && !matchingPaths.isEmpty()) {
+            matchingItems.add(new FileInfoProxy(matchingPaths.keySet().iterator().next()));
+        }
+        return matchingItems;
     }
 
     /**
@@ -998,11 +1237,11 @@ public class BuildServiceImpl implements InternalBuildService {
      * @param searchResults Search results to search within
      * @return Latest modified search result file info. Null if no results were given
      */
-    private org.artifactory.fs.FileInfo getLatestItem(Set<RepoPath> searchResults) {
-        org.artifactory.fs.FileInfo latestItem = null;
+    private FileInfo getLatestItem(Set<RepoPath> searchResults) {
+        FileInfo latestItem = null;
 
         for (RepoPath result : searchResults) {
-            org.artifactory.fs.FileInfo fileInfo = new FileInfoProxy(result);
+            FileInfo fileInfo = new FileInfoProxy(result);
             if ((latestItem == null) || (latestItem.getLastModified() < fileInfo.getLastModified())) {
                 latestItem = fileInfo;
             }
@@ -1137,87 +1376,6 @@ public class BuildServiceImpl implements InternalBuildService {
         return ContextHelper.get().beanForType(InternalBuildService.class);
     }
 
-    public void renameBuildNode(String from, String to) throws RepositoryException {
-        String oldNamePath = getBuildPathFromParams(from, null, null);
-
-        Node oldNameNode = jcrService.getNode(oldNamePath);
-        if (oldNameNode == null) {
-            log.error("Could not find a build tree node by the name '{}'. Build node was not renamed.", from);
-            return;
-        }
-
-        String newNamePath = getBuildPathFromParams(to, null, null);
-        Node newNameNode = jcrService.getOrCreateUnstructuredNode(newNamePath);
-
-        NodeIterator oldNumberNodesIterator = oldNameNode.getNodes();
-        while (oldNumberNodesIterator.hasNext()) {
-            Node oldNumberNode = oldNumberNodesIterator.nextNode();
-
-            Node newNumberNode = jcrService.getOrCreateUnstructuredNode(newNameNode, oldNumberNode.getName());
-
-            NodeIterator oldStartedNodesIterator = oldNumberNode.getNodes();
-            while (oldStartedNodesIterator.hasNext()) {
-                Node oldStartedNode = oldStartedNodesIterator.nextNode();
-                oldStartedNode.getSession().move(oldStartedNode.getPath(), newNumberNode.getPath() + "/" +
-                        oldStartedNode.getName());
-            }
-            if (!oldNumberNode.hasNodes()) {
-                oldNumberNode.remove();
-            }
-        }
-        if (!oldNameNode.hasNodes()) {
-            oldNameNode.remove();
-        }
-    }
-
-    public void renameBuildContent(BasicBuildInfo basicBuildInfo, String to) throws RepositoryException, IOException {
-        String buildName = basicBuildInfo.getName();
-        String buildNumber = basicBuildInfo.getNumber();
-        String buildStarted = basicBuildInfo.getStarted();
-
-        String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
-        Node buildNode = jcrService.getNode(buildPath);
-        if (buildNode == null) {
-            log.error("Could not find build to rename at path: {}", buildPath);
-            return;
-        }
-
-        Set<String> artifactChecksums = getChecksumPropertyValue(buildNode, PROP_BUILD_ARTIFACT_CHECKSUMS);
-        Set<String> dependencyChecksums = getChecksumPropertyValue(buildNode, PROP_BUILD_DEPENDENCY_CHECKSUMS);
-
-        InputStream jsonStream = JcrHelper.getRawStringStream(buildNode);
-        final JsonNode rootNode = JacksonReader.streamAsTree(jsonStream);
-        ((ObjectNode) rootNode).put("name", to);
-
-        InputStreamFromOutputStream stream = null;
-        try {
-            stream = new InputStreamFromOutputStream() {
-
-                @Override
-                protected Object produce(OutputStream outputStream) throws Exception {
-                    JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream);
-                    jsonGenerator.writeTree(rootNode);
-                    return null;
-                }
-            };
-            jcrService.setStream(buildNode.getParent(), buildNode.getName(), stream, BuildRestConstants.MT_BUILD_INFO,
-                    authorizationService.currentUsername(), false);
-        } catch (Exception e) {
-            log.error("An error occurred while writing JSON data to the node of build name '{}', number '{}', " +
-                    "started at '{}'.", new String[]{buildName, buildNumber, buildStarted});
-            return;
-        } finally {
-            IOUtils.closeQuietly(stream);
-        }
-
-        try {
-            saveBuildFileChecksums(buildNode, artifactChecksums, dependencyChecksums);
-        } catch (Exception e) {
-            log.error("An error occurred while saving checksum properties on the node of build name '{}', number " +
-                    "'{}', started at '{}'.", new String[]{buildName, buildNumber, buildStarted});
-        }
-    }
-
     /**
      * Returns the value of the build node checksum property
      *
@@ -1239,5 +1397,66 @@ public class BuildServiceImpl implements InternalBuildService {
             }
         }
         return checksums;
+    }
+
+    private String getBuildLatestReleaseStatus(Node buildNode) throws RepositoryException {
+        if (!buildNode.hasProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS)) {
+            return null;
+        }
+
+        Property lastStatusPropery = buildNode.getProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS);
+        return lastStatusPropery.getString();
+    }
+
+    private void updateReleaseLastStatusProperty(Build build, Node buildNode) throws RepositoryException {
+        String latestReleaseStatus = getLatestReleaseStatus(build);
+
+        if (latestReleaseStatus == null) {
+            return;
+        }
+
+        updateReleaseLastStatusProperty(buildNode, latestReleaseStatus);
+    }
+
+    private void updateReleaseLastStatusProperty(Node buildNode, String latestReleaseStatus)
+            throws RepositoryException {
+        if (!buildNode.hasProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS)) {
+            buildNode.setProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS, latestReleaseStatus);
+        } else {
+            Property currentStatusProperty = buildNode.getProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS);
+            String currentStatus = currentStatusProperty.getString();
+            if (!currentStatus.equals(latestReleaseStatus)) {
+                buildNode.setProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS, latestReleaseStatus);
+            }
+        }
+    }
+
+    private String getLatestReleaseStatus(final Build build) {
+        List<PromotionStatus> statuses = build.getStatuses();
+        if ((statuses == null) || statuses.isEmpty()) {
+            return null;
+        }
+
+        if (statuses.size() == 1) {
+            return statuses.get(0).getStatus();
+        }
+
+        Collections.sort(statuses, new Comparator<PromotionStatus>() {
+            public int compare(PromotionStatus first, PromotionStatus second) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat(Build.STARTED_FORMAT);
+                try {
+                    Date firstDate = dateFormat.parse(first.getTimestamp());
+                    Date secondDate = dateFormat.parse(second.getTimestamp());
+                    return firstDate.compareTo(secondDate);
+                } catch (ParseException e) {
+                    log.error("Unable to parse build ({}, #{}, {}) statuses for comparison: {}",
+                            new Object[]{build.getName(), build.getNumber(), build.getStarted(), e.getMessage()});
+                    return 0;
+                }
+            }
+        });
+
+        //Return latest
+        return statuses.get(statuses.size() - 1).getStatus();
     }
 }

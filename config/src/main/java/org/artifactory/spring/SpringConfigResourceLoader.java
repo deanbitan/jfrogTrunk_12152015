@@ -18,6 +18,7 @@
 
 package org.artifactory.spring;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonInfo;
 import org.artifactory.addon.AddonState;
 import org.artifactory.common.ArtifactoryHome;
@@ -108,6 +109,16 @@ public abstract class SpringConfigResourceLoader {
                 addonProperties.load(addonPropsUrl.openStream());
                 String addonName = addonProperties.getProperty("name");
                 String addonDisplayName = addonProperties.getProperty("display.name");
+                long displayOrdinal = -1;
+                try {
+                    String property = addonProperties.getProperty("display.ordinal");
+                    if (StringUtils.isNotBlank(property)) {
+                        displayOrdinal = Long.parseLong(property);
+                    }
+                } catch (Exception e) {
+                    log.debug("Unable to resolve 'display.ordinal' property of the addon '" + addonName + "'.", e);
+                    displayOrdinal = -1;
+                }
 
                 if (addonName != null) {
                     String enabledAddon = PathUtils.getParent(addonPropsUrl.toExternalForm()) + "/addon.xml";
@@ -120,8 +131,8 @@ public abstract class SpringConfigResourceLoader {
                         log.info("Adding disabled addon: {}", addonName);
                         state = AddonState.DISABLED;
                     }
-                    addonsContextPathsByAddonName.put(addonName,
-                            new AddonInfo(addonName, addonDisplayName, enabledAddon, state, addonProperties));
+                    addonsContextPathsByAddonName.put(addonName, new AddonInfo(addonName, addonDisplayName,
+                            enabledAddon, state, addonProperties, displayOrdinal));
                 }
             }
             return addonsContextPathsByAddonName;

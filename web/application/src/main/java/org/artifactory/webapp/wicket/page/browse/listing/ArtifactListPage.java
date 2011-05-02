@@ -17,6 +17,7 @@
  */
 package org.artifactory.webapp.wicket.page.browse.listing;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.Response;
@@ -31,10 +32,11 @@ import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.BaseBrowsableItem;
+import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.storage.StorageUnit;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RepoFilter;
 
@@ -81,7 +83,9 @@ public class ArtifactListPage extends WebPage {
         }
 
         addTitle(repoPath);
-        addFileList(repoPath);
+        Properties requestProps = (Properties) request.getHttpServletRequest()
+                .getAttribute(RepoFilter.ATTR_ARTIFACTORY_REQUEST_PROPERTIES);
+        addFileList(repoPath, requestProps);
         addAddress(request.getHttpServletRequest());
     }
 
@@ -91,11 +95,10 @@ public class ArtifactListPage extends WebPage {
         add(new Label("pageTitle", title));
     }
 
-    private void addFileList(final RepoPath repoPath) {
-        final List<? extends BaseBrowsableItem> items = getItems(repoPath);
+    private void addFileList(final RepoPath repoPath, Properties requestProps) {
+        final List<? extends BaseBrowsableItem> items = getItems(repoPath, requestProps);
 
         // get max name length
-
         int maxLength = 4;
         for (BaseBrowsableItem baseBrowsableItem : items) {
             maxLength = Math.max(baseBrowsableItem.getName().length(), maxLength);
@@ -124,18 +127,17 @@ public class ArtifactListPage extends WebPage {
         add(new Label("address", address));
     }
 
-    private List<? extends BaseBrowsableItem> getItems(RepoPath repoPath) {
-        List<? extends BaseBrowsableItem> items = null;
+    private List<? extends BaseBrowsableItem> getItems(RepoPath repoPath, Properties requestProps) {
+        List<? extends BaseBrowsableItem> items = Lists.newArrayList();
         try {
+            BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(repoPath).
+                    requestProperties(requestProps).build();
             if (repositoryService.remoteRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
-                RemoteRepoDescriptor remoteRepoDescriptor =
-                        centralConfig.getDescriptor().getRemoteRepositoriesMap().get(repoPath.getRepoKey());
-                items = repoBrowsingService.getRemoteRepoBrowsableChildren(repoPath,
-                        remoteRepoDescriptor.isListRemoteFolderItems());
+                items = repoBrowsingService.getRemoteRepoBrowsableChildren(criteria);
             } else if (repositoryService.localOrCachedRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
-                items = repoBrowsingService.getLocalRepoBrowsableChildren(repoPath);
+                items = repoBrowsingService.getLocalRepoBrowsableChildren(criteria);
             } else if (repositoryService.virtualRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
-                items = repoBrowsingService.getVirtualRepoBrowsableChildren(repoPath);
+                items = repoBrowsingService.getVirtualRepoBrowsableChildren(criteria);
             }
         } catch (Exception e) {
             throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
@@ -185,9 +187,11 @@ public class ArtifactListPage extends WebPage {
                 if (item.isRemote()) {
                     response.write("->");
                 }
-                response.write(StringUtils.repeat(" ", columnSize - (name.length() + (item.isRemote() ? 2 : 0))));
-                if (!item.isRemote()) {
+                response.write(StringUtils.repeat(" ", columnSize - name.length()));
+                if (item.getLastModified() > 0) {
                     response.write(DATE_FORMAT.format(item.getLastModified()));
+                } else {
+                    response.write("  -");
                 }
                 response.write("  ");
 

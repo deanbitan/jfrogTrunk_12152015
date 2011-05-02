@@ -24,9 +24,12 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
+import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.build.BuildInfo;
 import org.artifactory.api.rest.build.Builds;
 import org.artifactory.api.rest.build.BuildsByName;
@@ -42,6 +45,7 @@ import org.artifactory.rest.util.RestUtils;
 import org.artifactory.util.DoesNotExistException;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.release.Promotion;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -51,17 +55,10 @@ import org.springframework.stereotype.Component;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -82,9 +79,6 @@ public class BuildResource {
 
     @Autowired
     private AddonsManager addonsManager;
-
-    @Autowired
-    private AuthorizationService authorizationService;
 
     @Autowired
     private BuildService buildService;
@@ -206,7 +200,15 @@ public class BuildResource {
         BuildRetention retention = build.getBuildRetention();
         if (retention != null) {
             RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-            restAddon.discardOldBuilds(build.getName(), retention);
+            MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
+            restAddon.discardOldBuilds(build.getName(), retention, multiStatusHolder);
+            if (multiStatusHolder.hasErrors()) {
+                response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Errors have occurred while maintaining " +
+                        "build retention. Please review the system logs for further information.");
+            } else if (multiStatusHolder.hasWarnings()) {
+                response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Warnings have been produced while " +
+                        "maintaining build retention. Please review the system logs for further information.");
+            }
         }
     }
 
@@ -220,10 +222,12 @@ public class BuildResource {
      * @param scopes  Scopes of dependencies to copy (agnostic if null or empty)
      * @param dry     Zero or negative int if to apply the selected action. Positive int to simulate
      * @return Result of action
+     * @deprecated Use {@link org.artifactory.rest.resource.ci.BuildResource#promote(java.lang.String, java.lang.String, org.jfrog.build.api.release.Promotion)} instead
      */
     @POST
     @Path("/{action}/{name}/{buildNumber}")
     @Produces({BuildRestConstants.MT_COPY_MOVE_RESULT, MediaType.APPLICATION_JSON})
+    @Deprecated
     public MoveCopyResult moveBuildItems(@QueryParam("started") String started,
             @QueryParam("to") String to,
             @QueryParam("arts") @DefaultValue("1") int arts,
@@ -232,6 +236,38 @@ public class BuildResource {
             @QueryParam("properties") KeyValueList properties,
             @QueryParam("dry") int dry) throws IOException {
         return moveOrCopy(started, to, arts, deps, scopes, properties, dry);
+    }
+
+    /**
+     * Promotes a build
+     *
+     * @param name        Name of build to promote
+     * @param buildNumber Number of build to promote
+     * @param promotion   Promotion settings
+     * @return Promotion result
+     */
+    @POST
+    @Path("/promote/{name}/{buildNumber}")
+    @Consumes({BuildRestConstants.MT_PROMOTION_REQUEST, MediaType.APPLICATION_JSON})
+    @Produces({BuildRestConstants.MT_PROMOTION_RESULT, MediaType.APPLICATION_JSON})
+    public Response promote(@PathParam("name") String name,
+            @PathParam("buildNumber") String buildNumber, Promotion promotion) throws IOException {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        try {
+            PromotionResult promotionResult = restAddon.promoteBuild(name, buildNumber, promotion);
+            return Response.status(promotionResult.errorsOrWarningHaveOccurred() ?
+                    HttpStatus.SC_BAD_REQUEST : HttpStatus.SC_OK).entity(promotionResult).build();
+        } catch (IllegalArgumentException iae) {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+        } catch (DoesNotExistException dnee) {
+            response.sendError(HttpStatus.SC_NOT_FOUND, dnee.getMessage());
+        } catch (ParseException pe) {
+            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Unable to parse given build start date: " +
+                    pe.getMessage());
+        } catch (ItemNotFoundRuntimeException infre) {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, infre.getMessage());
+        }
+        return null;
     }
 
     /**
@@ -269,12 +305,13 @@ public class BuildResource {
      */
     @DELETE
     @Path("/{name}")
-    public void deleteBuilds(@QueryParam("buildNumbers") StringList buildNumbers) throws IOException {
+    public void deleteBuilds(@QueryParam("artifacts") int artifacts,
+            @QueryParam("buildNumbers") StringList buildNumbers) throws IOException {
         String[] pathElements = RestUtils.getBuildRestUrlPathElements(request);
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
             String buildName = URLDecoder.decode(pathElements[0], "UTF-8");
-            restAddon.deleteBuilds(response, buildName, buildNumbers);
+            restAddon.deleteBuilds(response, buildName, buildNumbers, artifacts);
         } catch (AuthorizationException ae) {
             response.sendError(HttpStatus.SC_UNAUTHORIZED, ae.getMessage());
         } catch (IllegalArgumentException iae) {
@@ -286,16 +323,19 @@ public class BuildResource {
     }
 
     /**
-     * Move or copy the artifacts and\or dependencies of the specified build
+     * Move or copy the artifacts and\or dependencies of the specified build, The user can also send a series of
+     * Properties that are encased in a {@link KeyValueList}. Those properties will then be attached to the
+     * <b>destination</b> artifact as {@link org.artifactory.md.Properties}, these will be added to those properties
+     * from the source artifact.
      *
      * @param started    Build started date. Can be null
      * @param to         Key of target repository to move to
      * @param arts       Zero or negative int if to exclude artifacts from the action take. Positive int to include
      * @param deps       Zero or negative int if to exclude dependencies from the action take. Positive int to include
      * @param scopes     Scopes of dependencies to copy (agnostic if null or empty)
-     * @param properties
-     * @param dry        Zero or negative int if to apply the selected action. Positive int to simulate  @return Result
-     *                   of action
+     * @param properties The properties that are attached to the destination artifact.
+     * @param dry        Zero or negative int if to apply the selected action. Positive int to simulate
+     * @return Result
      */
     private MoveCopyResult moveOrCopy(String started, String to, int arts, int deps, StringList scopes,
             KeyValueList properties, int dry) throws IOException {
@@ -318,7 +358,8 @@ public class BuildResource {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
             return restAddon.moveOrCopyBuildItems(move, URLDecoder.decode(pathElements[1], "UTF-8"),
-                    URLDecoder.decode(pathElements[2], "UTF-8"), started, to, arts, deps, scopes, properties, dry);
+                    URLDecoder.decode(pathElements[2], "UTF-8"), started, to, arts, deps, scopes, properties, dry
+            );
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnee) {

@@ -36,7 +36,7 @@ public interface RepositoryBrowsingService {
      *         if not found or user has no permissions.
      */
     @Lock(transactional = true)
-    public VirtualRepoItem getVirtualRepoItem(RepoPath repoPath);
+    VirtualRepoItem getVirtualRepoItem(RepoPath repoPath);
 
     /**
      * @param virtualFolderPath Path to a virtual repo folder.
@@ -44,47 +44,46 @@ public interface RepositoryBrowsingService {
      *         doesn't exist, not a file of no permissions.
      */
     @Lock(transactional = true)
-    public List<VirtualRepoItem> getVirtualRepoItems(RepoPath virtualFolderPath);
+    List<VirtualRepoItem> getVirtualRepoItems(RepoPath virtualFolderPath);
 
     /**
      * Creates a list of local and cached repo children items for all the simple browsers. <br> This method is not to be
      * used by non-ui clients for simple child discovery. It is also intended to serve only local and cache
      * repositories. Use {@link RepositoryService#getChildren(org.artifactory.repo.RepoPath)} instead.
      *
-     * @param repoPath Local or cache directory repo path.
+     * @param criteria Browsable item conditions
      * @return Null if given a non-existent or non-folder repo path. Otherwise, the list of children
      */
     @Lock(transactional = true)
     @Nonnull
-    List<BaseBrowsableItem> getLocalRepoBrowsableChildren(RepoPath repoPath);
+    List<BaseBrowsableItem> getLocalRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria);
 
     /**
      * Get external browsable children from a remote repo. Using {@link org.apache.ivy.util.url.ApacheURLLister#listAll}
      * of Ivy in order to get a remote listing.
      *
-     * @param repoPath               The path to browse
-     * @param includeRemoteResources
+     * @param criteria Browsable item conditions
      * @return A list of all browsable items (local and remote)
      */
     @Lock(transactional = true)
     @Nonnull
-    List<BaseBrowsableItem> getRemoteRepoBrowsableChildren(RepoPath repoPath, boolean includeRemoteResources);
+    List<BaseBrowsableItem> getRemoteRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria);
 
     /**
      * Creates a list of virtual repo children items for all the simple browsers.<br> This method is not to be used by
      * non-ui clients for simple child discovery. Use {@link RepositoryService#getVirtualRepoItems(org.artifactory.repo.RepoPath)}
      * instead.
      *
-     * @param repoPath Parent repo path
+     * @param criteria Browsable item conditions
      * @return Null if given a non-existent or non-folder repo path. Otherwise, the list of children
      */
     @Lock(transactional = true)
     @Nonnull
-    List<BaseBrowsableItem> getVirtualRepoBrowsableChildren(RepoPath repoPath);
+    List<BaseBrowsableItem> getVirtualRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria);
 
     /**
-     * Returns a browsable item for the given repo path. It also checks if the artifacts exists and if the repository
-     * is blacked out.
+     * Returns a browsable item for the given repo path. It also checks if the artifacts exists and if the repository is
+     * blacked out.
      *
      * @param repoPath The item repo path (file or folder)
      * @return Browsable item for the repo path. Null if the item exists but the repository is blacked out.

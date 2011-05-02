@@ -80,6 +80,10 @@ public abstract class RestUtils {
         return ISODateTimeFormat.dateTime().print(time);
     }
 
+    public static long fromIsoDateString(String dateTime) {
+        return ISODateTimeFormat.dateTime().parseMillis(dateTime);
+    }
+
     public static String[] getBuildRestUrlPathElements(HttpServletRequest request) {
         StringBuffer url = request.getRequestURL();
         String sUrl = url.toString();

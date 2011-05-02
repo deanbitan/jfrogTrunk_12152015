@@ -16,13 +16,46 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
+<wicket:head>
+    <style type="text/css">
+        .IE-7 .outer-border-wrapper {
+            float: left;
+        }
+
+        .outer-border-content {
+            overflow: visible !important;
+        }
+
+        .border-content {
+            display: inline-block;
+        }
+    </style>
+</wicket:head>
 <wicket:extend>
     <div wicket:id="border">
-        <textarea wicket:id="sysInfo" class="info-panel-text-area" readonly="true"></textarea>
+        <div wicket:id="sysInfo" id="sysInfo"></div>
     </div>
     <script type="text/javascript">
-        DomUtils.bindHeight(document.getElementsByTagName('textarea')[0], function(docHeight) {
-            return Math.max(200, docHeight - 190);
-        }, true);
+        DomUtils.addOnLoad(function() {
+            var adjustV = 200;
+            var adjustH = 240;
+            if (dojo.isIE == 8) {
+                adjustV = 220;
+                adjustH = 260;
+            }
+            function fixSize() {
+                var doc = document.documentElement;
+                var node = dojo.query('.lines', dojo.byId('sysInfo'))[0];
+                if (!node) {
+                    setTimeout(fixSize, 300);
+                    return;
+                }
+                node.style.cssText = 'height: ' + Math.max(50, doc.offsetHeight - adjustV)
+                        + 'px !important; width:' + Math.max(50, doc.offsetWidth - adjustH) + 'px !important;'
+            }
+
+            setTimeout(fixSize, 100);
+            window.onresize = fixSize;
+        });
     </script>
 </wicket:extend>

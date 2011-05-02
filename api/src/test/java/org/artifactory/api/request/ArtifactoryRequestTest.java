@@ -83,7 +83,7 @@ public class ArtifactoryRequestTest extends ArtifactoryHomeBoundTest {
                 return 0;
             }
 
-            public String getSourceDescription() {
+            public String getClientAddress() {
                 return null;
             }
 

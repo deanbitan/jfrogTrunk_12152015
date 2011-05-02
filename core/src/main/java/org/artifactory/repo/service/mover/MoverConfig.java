@@ -41,6 +41,7 @@ public class MoverConfig {
     private final boolean searchResult;
     private final Properties properties;
     private final boolean suppressLayouts;
+    private final boolean failFast;
 
     /**
      * Main constructor
@@ -53,10 +54,11 @@ public class MoverConfig {
      *                           Should immediately execute metadata calculation, or schedule
      * @param searchResult       Is moving search results
      * @param suppressLayouts    True if path translation across different layouts should be suppressed.
+     * @param failFast           Flag to indicate whether the operation should fail upon encountering an error.
      */
     public MoverConfig(RepoPath fromRepoPath, RepoPath targetLocalRepoPath, String targetLocalRepoKey, boolean copy,
             boolean dryRun, boolean executeMavenMetadataCalculation, boolean searchResult, Properties properties,
-            boolean suppressLayouts) {
+            boolean suppressLayouts, boolean failFast) {
         this.fromRepoPath = fromRepoPath;
         this.targetLocalRepoPath = targetLocalRepoPath;
         this.targetLocalRepoKey = targetLocalRepoKey;
@@ -66,6 +68,7 @@ public class MoverConfig {
         this.searchResult = searchResult;
         this.properties = properties;
         this.suppressLayouts = suppressLayouts;
+        this.failFast = failFast;
     }
 
     public Properties getProperties() {
@@ -132,11 +135,20 @@ public class MoverConfig {
     }
 
     /**
-     * Indicate whether path translation across different layouts is should be suppressed.
+     * Indicates whether path translation across different layouts should be suppressed.
      *
-     * @return True if path translation is should be suppressed
+     * @return True if path translation should be suppressed
      */
     public boolean isSuppressLayouts() {
         return suppressLayouts;
+    }
+
+    /**
+     * Indicates whether the operation should fail upon encountering an error.
+     *
+     * @return True if the operation should fail on the first error
+     */
+    public boolean isFailFast() {
+        return failFast;
     }
 }

@@ -22,6 +22,7 @@ import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.md.Properties;
+import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
 
@@ -87,12 +88,12 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
     /**
      * List remote resources from a remote path.
      *
-     * @param directoryRepoPath The path of the remote repository listing
+     * @param directoryPath The path of the remote repository listing
      * @return A list of URLs that represent the remote hrefs of the remote resources.
      * @throws IOException On any communication of parsing exception
      */
     @Nonnull
-    List<String> listRemoteResources(RepoPath directoryRepoPath) throws IOException;
+    List<RemoteItem> listRemoteResources(String directoryPath) throws IOException;
 
     /**
      * @return True if this repo supports listing remote directories AND it's not offline AND it's not blacklisted.

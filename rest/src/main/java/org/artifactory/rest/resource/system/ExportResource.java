@@ -61,6 +61,9 @@ public class ExportResource {
     @POST
     @Consumes(MediaType.APPLICATION_XML)
     public Response activateExport(ExportSettings settings) {
+        if (!settings.isExcludeContent() && settings.getRepositories().isEmpty()) {
+            settings.setRepositories(repoService.getLocalAndCachedRepoDescriptors());
+        }
         log.debug("Activating export {}", settings);
         try {
             ContextHelper.get().exportTo(settings);
