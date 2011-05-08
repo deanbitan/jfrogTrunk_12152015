@@ -317,7 +317,7 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
             long length = record.length;
             // DELETE FROM DATASTORE WHERE ID=? (toremove)
             int res = conHelper.update(deleteSQL, new Object[]{record.getIdentifier().toString()});
-            //record.setDeleted();
+            record.setDeleted();
             allEntries.remove(record.getIdentifier().toString());
             if (res != 1) {
                 log.error("Deleting record " + record + " returned " + res + " updated.");
