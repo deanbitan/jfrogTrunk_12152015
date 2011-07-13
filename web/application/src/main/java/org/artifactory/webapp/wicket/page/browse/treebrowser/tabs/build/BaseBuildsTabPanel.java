@@ -26,11 +26,11 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.SearchService;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn;
@@ -133,60 +133,60 @@ public abstract class BaseBuildsTabPanel extends Panel {
      *
      * @return Artifact basic build info list
      */
-    protected abstract List<BasicBuildInfo> getArtifactBuilds();
+    protected abstract List<BuildRun> getArtifactBuilds();
 
     /**
      * Returns the list of dependency basic build info items to display
      *
      * @return Dependency basic build info item list
      */
-    protected abstract List<BasicBuildInfo> getDependencyBuilds();
+    protected abstract List<BuildRun> getDependencyBuilds();
 
     /**
      * Returns the list of artifact build actionable items to display
      *
-     * @param basicInfo Basic build info to create actionable items from
+     * @param run Basic build info to create actionable items from
      * @return Artifact build actionable item list
      */
-    protected abstract List<BuildTabActionableItem> getArtifactActionableItems(BasicBuildInfo basicInfo);
+    protected abstract List<BuildTabActionableItem> getArtifactActionableItems(BuildRun run);
 
     /**
      * Returns the list of dependency build actionable items to display
      *
-     * @param basicInfo Basic build info to create actionable items from
+     * @param run Basic build info to create actionable items from
      * @return Dependency build actionable item list
      */
-    protected abstract List<BuildDependencyActionableItem> getDependencyActionableItems(BasicBuildInfo basicInfo);
+    protected abstract List<BuildDependencyActionableItem> getDependencyActionableItems(BuildRun run);
 
-    private class ProducedByTable extends MasterDetailTable<BasicBuildInfo, BuildTabActionableItem> {
+    private class ProducedByTable extends MasterDetailTable<BuildRun, BuildTabActionableItem> {
         public ProducedByTable(String id, List<IColumn> columns) {
             super(id, columns, BaseBuildsTabPanel.this.getArtifactBuilds(), "master.startedDate", 10);
         }
 
         @Override
-        protected String getMasterLabel(BasicBuildInfo masterObject) {
+        protected String getMasterLabel(BuildRun masterObject) {
             return String.format("%s, Build #%s", masterObject.getName(), masterObject.getNumber());
         }
 
         @Override
-        protected List<BuildTabActionableItem> getDetails(BasicBuildInfo masterObject) {
+        protected List<BuildTabActionableItem> getDetails(BuildRun masterObject) {
             return getArtifactActionableItems(masterObject);
         }
     }
 
-    private class UsedByTable extends MasterDetailTable<BasicBuildInfo, BuildDependencyActionableItem> {
+    private class UsedByTable extends MasterDetailTable<BuildRun, BuildDependencyActionableItem> {
         public UsedByTable(String id, List<IColumn> columns) {
             super(id, columns, BaseBuildsTabPanel.this.getDependencyBuilds(), "master.name", 10);
 
         }
 
         @Override
-        protected String getMasterLabel(BasicBuildInfo masterObject) {
+        protected String getMasterLabel(BuildRun masterObject) {
             return String.format("%s, Build #%s", masterObject.getName(), masterObject.getNumber());
         }
 
         @Override
-        protected List<BuildDependencyActionableItem> getDetails(BasicBuildInfo masterObject) {
+        protected List<BuildDependencyActionableItem> getDetails(BuildRun masterObject) {
             return getDependencyActionableItems(masterObject);
         }
     }
@@ -199,7 +199,7 @@ public abstract class BaseBuildsTabPanel extends Panel {
         @SuppressWarnings({"unchecked"})
         @Override
         protected ActionableItem getRowObject(IModel rowModel) {
-            return ((MasterDetailEntry<BasicBuildInfo, BuildTabActionableItem>) rowModel.getObject()).getDetail();
+            return ((MasterDetailEntry<BuildRun, BuildTabActionableItem>) rowModel.getObject()).getDetail();
         }
     }
 }

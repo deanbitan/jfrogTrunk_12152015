@@ -21,8 +21,8 @@ package org.artifactory.search.xml.metadata;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.JcrQuerySpec;
-import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.stat.StatsInfo;
@@ -32,6 +32,8 @@ import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.schedule.TaskInterruptedException;
+import org.artifactory.schedule.TaskUtils;
 import org.artifactory.search.SearcherBase;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -50,7 +52,7 @@ public class StatsInfoSearcher
         extends SearcherBase<GenericMetadataSearchControls<StatsInfo>, GenericMetadataSearchResult<StatsInfo>> {
 
     @Override
-    public SearchResults<GenericMetadataSearchResult<StatsInfo>> doSearch(
+    public ItemSearchResults<GenericMetadataSearchResult<StatsInfo>> doSearch(
             GenericMetadataSearchControls<StatsInfo> controls) throws RepositoryException {
         String metadataName = StatsInfo.ROOT;
         String propertyAttribute;
@@ -140,7 +142,11 @@ public class StatsInfoSearcher
         RowIterator rows = queryResult.getRows();
 
         //Filter the results and if the search results are limited, stop when reached more than max results + 1
+        int iterationCount = 0;
         while (rows.hasNext() && (!controls.isLimitSearchResults() || (results.size() < getMaxResults()))) {
+            if ((++iterationCount % 10 == 0) && TaskUtils.pauseOrBreak()) {
+                throw new TaskInterruptedException();
+            }
             Row row = rows.nextRow();
             String path = row.getValue(JcrConstants.JCR_PATH).getString();
             String artifactPath = path.substring(0, path.lastIndexOf("/" + JcrTypes.NODE_ARTIFACTORY_METADATA));
@@ -166,7 +172,7 @@ public class StatsInfoSearcher
             //Release the read locks early
             LockingHelper.releaseReadLock(repoPath);
         }
-        return new SearchResults<GenericMetadataSearchResult<StatsInfo>>(results, rows.getSize());
+        return new ItemSearchResults<GenericMetadataSearchResult<StatsInfo>>(results, rows.getSize());
     }
 
 }

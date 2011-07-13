@@ -73,6 +73,7 @@ import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.resource.ResourceStreamHandle;
+import org.artifactory.schedule.TaskInterruptedException;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalArtifactoryContext;
@@ -1028,12 +1029,13 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
         return pluginPomFiles;
     }
 
-    public GarbageCollectorInfo garbageCollect() {
+    public GarbageCollectorInfo garbageCollect(boolean fixConsistency) {
         GarbageCollectorInfo result = null;
         JcrSession session = getUnmanagedSession();
         JcrGarbageCollector gc = null;
         try {
-            gc = GarbageCollectorFactory.createDataStoreGarbageCollector(session);
+            gc = GarbageCollectorFactory.createDataStoreGarbageCollector(session,
+                    fixConsistency);
             if (gc != null) {
                 log.debug("Running " + gc.getClass().getName() + " datastore garbage collector...");
                 if (gc.scan()) {
@@ -1050,6 +1052,8 @@ public class JcrServiceImpl implements JcrService, JcrRepoService {
                 result = gc.getInfo();
                 gc = null;
             }
+        } catch (TaskInterruptedException e) {
+            log.warn(e.getMessage());
         } catch (Exception e) {
             log.error("Datastore garbage collector execution failed.", e);
         } finally {

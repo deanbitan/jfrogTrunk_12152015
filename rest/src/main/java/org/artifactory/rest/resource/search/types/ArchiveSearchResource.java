@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.ArchiveRestSearchResult;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
@@ -96,7 +96,7 @@ public class ArchiveSearchResource {
         controls.setQuery(name);
         controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
-        SearchResults<ArchiveSearchResult> searchResults;
+        ItemSearchResults<ArchiveSearchResult> searchResults;
         try {
             searchResults = searchService.searchArchiveContent(controls);
         } catch (RepositoryRuntimeException e) {

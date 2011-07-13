@@ -22,7 +22,8 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
-import org.artifactory.schedule.TaskService;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.spring.InternalContextHelper;
 import org.quartz.JobDataMap;
@@ -34,6 +35,10 @@ import org.slf4j.Logger;
  * @author freds
  * @date Nov 6, 2008
  */
+@JobCommand(manualUser = TaskUser.CURRENT,
+        commandsToStop = {
+                ArtifactCleanupJob.class,
+                ImportJob.class})
 public class ExportJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(ExportJob.class);
 
@@ -41,12 +46,8 @@ public class ExportJob extends QuartzCommand {
 
     @Override
     protected void onExecute(JobExecutionContext callbackContext) throws JobExecutionException {
-        TaskService taskService = InternalContextHelper.get().beanForType(TaskService.class);
         MultiStatusHolder status = null;
         try {
-            //Stop the clean-up job while the backup is running
-            taskService.stopTasks(ArtifactCleanupJob.class, true);
-
             JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
             String repoKey = (String) jobDataMap.get(REPO_KEY);
             ExportSettings settings = (ExportSettings) jobDataMap.get(ExportSettings.class.getName());
@@ -64,8 +65,6 @@ public class ExportJob extends QuartzCommand {
             } else {
                 log.error("Error occurred during export", e);
             }
-        } finally {
-            taskService.resumeTasks(ArtifactCleanupJob.class);
         }
     }
 }

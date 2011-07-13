@@ -27,7 +27,6 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -43,7 +42,6 @@ import org.artifactory.common.wicket.component.file.path.PathAutoCompleteTextFie
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
-import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ZipUtils;
@@ -64,9 +62,6 @@ public class ImportSystemPanel extends TitledPanel {
 
     @SpringBean
     private SearchService searchService;
-
-    @SpringBean
-    private CentralConfigService centralConfigService;
 
     @WicketProperty
     private File importFromPath;
@@ -219,38 +214,33 @@ public class ImportSystemPanel extends TitledPanel {
                     importSettings.setTrustServerChecksums(trustServerChecksums);
                     context.importFrom(importSettings);
                     List<StatusEntry> warnings = status.getWarnings();
-                    File logoDir = ArtifactoryHome.get().getLogoDir();
-                    File[] logoFiles = logoDir.listFiles();
-                    if (logoFiles != null && logoFiles.length == 1) {
-                        File logoFile = logoFiles[0];
-                        File dest = new File(logoDir, "logo");
-                        logoFile.renameTo(dest);
-                        target.addComponent(getPage().get("logo"));
-                        ArtifactoryApplication.get().updateLogo();
-                    }
+
                     if (!warnings.isEmpty()) {
                         String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
-                        warn(warnings.size() + " Warnings have been produces during the export. Please " +
+                        Session.get().warn(warnings.size() + " Warnings have been produces during the export. Please " +
                                 "review the <a href=\"" + systemLogsPage +
                                 "\">log</a> for further information.");
                     }
                     if (status.isError()) {
-                        String msg =
-                                "Error while importing system from '" + importFromPath +
-                                        "': " + status.getStatusMsg();
-                        error(msg);
+                        String msg = "Error while importing system from '" + importFromPath + "': "
+                                + status.getStatusMsg();
+                        Session.get().error(msg);
                         if (status.getException() != null) {
                             log.warn(msg, status.getException());
                         }
                     } else {
-                        info("Successfully imported system from '" + importFromPath + "'.");
+                        Session.get().info("Successfully imported system from '" + importFromPath + "'.");
                     }
+                    // rebuild site map to open/close pages
+                    ArtifactoryApplication.get().rebuildSiteMap();
+                    // update logo last modified time
+                    ArtifactoryApplication.get().updateLogo();
+                    setResponsePage(new ImportExportSystemPage());
                 } catch (Exception e) {
                     error("Failed to import system from '" + importFromPath + "': " +
                             e.getMessage());
                     log.error("Failed to import system.", e);
                 } finally {
-                    AjaxUtils.refreshFeedback(target);
                     if (isZip(importFromPath)) {
                         //Delete the extracted dir
                         try {

@@ -28,24 +28,26 @@ import org.artifactory.api.tree.fs.ZipEntryInfo;
 import org.artifactory.api.tree.fs.ZipTreeNode;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
-import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
+import org.artifactory.webapp.actionable.action.DownloadAction;
+import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.viewable.ViewableTabPanel;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.zipentry.ZipEntryPanel;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.zipentry.ZipEntryGeneralTabPanel;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Represents a file or directory inside a zip.
  *
  * @author Yossi Shaul
  */
-public class ArchivedFileActionableItem extends RepoAwareActionableItemBase {
-    private final ZipTreeNode node;
+public class ArchivedFileActionableItem extends ArchivedItemActionableItem {
 
     public ArchivedFileActionableItem(RepoPath archivePath, ZipTreeNode node) {
-        super(archivePath);
-        this.node = node;
+        super(archivePath, node);
+        Set<ItemAction> actions = getActions();
+        actions.add(new DownloadAction());
     }
 
     public String getDisplayName() {
@@ -65,7 +67,7 @@ public class ArchivedFileActionableItem extends RepoAwareActionableItemBase {
         tabs.add(new AbstractTab(Model.of("General")) {
             @Override
             public Panel getPanel(String panelId) {
-                return new ZipEntryPanel(panelId, getZipEntry());
+                return new ZipEntryGeneralTabPanel(panelId, getZipEntry(), ArchivedFileActionableItem.this);
             }
         });
 

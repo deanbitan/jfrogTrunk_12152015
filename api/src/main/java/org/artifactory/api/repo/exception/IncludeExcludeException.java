@@ -31,11 +31,12 @@ public class IncludeExcludeException extends RejectedArtifactException {
     /**
      * Main constructor
      *
+     * @param status           Response status code
      * @param rejectingRepo    The descriptor of the rejecting repo
      * @param rejectedArtifact The repo path of the rejected artifact
      */
-    public IncludeExcludeException(RepoDescriptor rejectingRepo, RepoPath rejectedArtifact) {
-        super(rejectingRepo, rejectedArtifact);
+    public IncludeExcludeException(int status, RepoDescriptor rejectingRepo, RepoPath rejectedArtifact) {
+        super(status, rejectingRepo, rejectedArtifact);
     }
 
     @Override

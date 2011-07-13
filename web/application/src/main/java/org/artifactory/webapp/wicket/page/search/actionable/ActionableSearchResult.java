@@ -21,7 +21,7 @@ package org.artifactory.webapp.wicket.page.search.actionable;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.api.search.SearchResult;
+import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.ItemAction;
@@ -36,7 +36,7 @@ import java.util.Set;
  *
  * @author Yossi Shaul
  */
-public abstract class ActionableSearchResult<T extends SearchResult> extends RepoAwareActionableItemBase {
+public abstract class ActionableSearchResult<T extends ItemSearchResult> extends RepoAwareActionableItemBase {
 
     private T searchResult;
 

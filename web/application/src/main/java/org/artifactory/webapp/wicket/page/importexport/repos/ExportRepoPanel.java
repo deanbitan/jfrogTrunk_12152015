@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.importexport.repos;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -41,13 +42,14 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -84,7 +86,8 @@ public class ExportRepoPanel extends TitledPanel {
 
         IModel<String> sourceRepoModel = new PropertyModel<String>(this, "sourceRepoKey");
         List<LocalRepoDescriptor> localRepos = repositoryService.getLocalAndCachedRepoDescriptors();
-        final List<String> repoKeys = new ArrayList<String>(localRepos.size() + 1);
+        Collections.sort(localRepos, new LocalRepoAlphaComparator());
+        List<String> repoKeys = Lists.newArrayListWithExpectedSize(localRepos.size() + 1);
         //Add the "All" pseudo repository
         repoKeys.add(ImportExportReposPage.ALL_REPOS);
         for (LocalRepoDescriptor localRepo : localRepos) {

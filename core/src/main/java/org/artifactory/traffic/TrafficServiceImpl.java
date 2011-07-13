@@ -34,8 +34,9 @@ import org.artifactory.jcr.JcrTypes;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.schedule.TaskBase;
 import org.artifactory.schedule.TaskService;
-import org.artifactory.schedule.quartz.QuartzTask;
+import org.artifactory.schedule.TaskUtils;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
@@ -130,10 +131,10 @@ public class TrafficServiceImpl implements InternalTrafficService {
         active = ConstantValues.trafficCollectionActive.getBoolean();
         if (active) {
             //Init the global entries collector
-            QuartzTask entriesCollector = new QuartzTask(TrafficEntriesCollector.class,
+            TaskBase entriesCollector = TaskUtils.createRepeatingTask(TrafficEntriesCollector.class,
+                    TimeUnit.SECONDS.toMillis(ConstantValues.trafficCollectionIntervalSecs.getInt()),
                     TimeUnit.SECONDS.toMillis(ConstantValues.trafficCollectionIntervalSecs.getInt()));
-            entriesCollector.setSingleton(true);
-            taskService.startTask(entriesCollector);
+            taskService.startTask(entriesCollector, false);
         }
     }
 

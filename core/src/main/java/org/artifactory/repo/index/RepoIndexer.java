@@ -51,6 +51,8 @@ import org.artifactory.repo.index.locator.PomLocator;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.request.NullRequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
+import org.artifactory.schedule.TaskInterruptedException;
+import org.artifactory.schedule.TaskUtils;
 import org.artifactory.util.FileUtils;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.slf4j.Logger;
@@ -116,6 +118,12 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
     }
 
     public void artifactDiscovered(ArtifactContext ac) {
+        if (log.isTraceEnabled()) {
+            log.trace("Artifact discovered: '{}'", ac.getArtifactInfo().getUinfo());
+        }
+        if (TaskUtils.pauseOrBreak()) {
+            throw new TaskInterruptedException();
+        }
         //Be nice with other threads
         Thread.yield();
     }
@@ -250,7 +258,8 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
         FSDirectory indexDir = extractedRepoIndexes.get(repo);
         if (indexDir == null) {
             //Extraction required
-            NullRequestContext requestContext = new NullRequestContext(MavenNaming.NEXUS_INDEX_GZ_PATH);
+            NullRequestContext requestContext =
+                    new NullRequestContext(repo.getRepoPath(MavenNaming.NEXUS_INDEX_GZ_PATH));
             RepoResource indexRes = repo.getInfo(requestContext);
             if (!indexRes.isFound()) {
                 log.debug("Cannot find index resource for repository {}", repo);

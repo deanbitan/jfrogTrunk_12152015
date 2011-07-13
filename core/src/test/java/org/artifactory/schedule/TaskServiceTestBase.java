@@ -18,26 +18,52 @@
 
 package org.artifactory.schedule;
 
+import ch.qos.logback.classic.Level;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.schedule.quartz.QuartzTask;
 import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
+import org.artifactory.test.TestUtils;
 import org.artifactory.test.mock.MockUtils;
 import org.easymock.EasyMock;
 import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import javax.annotation.Nullable;
+import java.util.List;
+
+import static org.testng.Assert.assertTrue;
 
 /**
  * @author yoavl
  */
 @Test(enabled = false)
-public class TaskServiceTestBase {
+public class TaskServiceTestBase extends ArtifactoryHomeBoundTest {
 
+    private static final boolean HIGH_DEBUG = false;
+    protected ArtifactoryHomeTaskTestStub artifactoryHome;
     protected TaskServiceImpl taskService;
+
+    @Override
+    protected ArtifactoryHomeTaskTestStub getOrCreateArtifactoryHomeStub() {
+        if (artifactoryHome == null) {
+            artifactoryHome = new ArtifactoryHomeTaskTestStub();
+            artifactoryHome.setMimeTypes(mimeTypes);
+        }
+        return artifactoryHome;
+    }
 
     @BeforeClass
     public void setupTaskService() throws Exception {
@@ -46,6 +72,7 @@ public class TaskServiceTestBase {
 
         InternalArtifactoryContext context = MockUtils.getThreadBoundedMockContext();
 
+        EasyMock.expect(context.getArtifactoryHome()).andReturn(getOrCreateArtifactoryHomeStub()).anyTimes();
         //Create a config mock
         CentralConfigService cc = EasyMock.createMock(CentralConfigService.class);
         EasyMock.expect(context.getCentralConfig()).andReturn(cc).anyTimes();
@@ -76,5 +103,32 @@ public class TaskServiceTestBase {
 
         //Charge the mocks
         EasyMock.replay(context, cc, ccd);
+        schedulerFactory.start();
+    }
+
+    @BeforeClass
+    public void setEnvironment() throws Exception {
+        if (HIGH_DEBUG) {
+            TestUtils.setLoggingLevel("org.artifactory.schedule", Level.DEBUG);
+            TestUtils.setLoggingLevel("org.artifactory.schedule.TaskBase", Level.TRACE);
+            TestUtils.setLoggingLevel("org.artifactory.schedule.TaskCallback", Level.TRACE);
+        } else {
+            TestUtils.setLoggingLevel("org.artifactory.schedule", Level.INFO);
+        }
+        getOrCreateArtifactoryHomeStub().setProperty(ConstantValues.taskCompletionLockTimeoutRetries, "3");
+        getOrCreateArtifactoryHomeStub().setProperty(ConstantValues.locksTimeoutSecs, "5");
+    }
+
+    @AfterMethod(enabled = HIGH_DEBUG, lastTimeOnly = true)
+    public void assertNoActiveTasks() throws SchedulerException {
+        List<TaskBase> activeTasks = taskService.getActiveTasks(new Predicate<Task>() {
+            public boolean apply(@Nullable Task input) {
+                return true;
+            }
+        });
+        assertTrue(activeTasks.isEmpty(), "Active tasks after test method finished: " + activeTasks);
+        Scheduler scheduler = ContextHelper.get().beanForType(Scheduler.class);
+        Assert.assertEquals(scheduler.getJobNames(QuartzTask.ARTIFACTORY_GROUP).length, 0);
+        Assert.assertEquals(scheduler.getJobNames(null).length, 0);
     }
 }

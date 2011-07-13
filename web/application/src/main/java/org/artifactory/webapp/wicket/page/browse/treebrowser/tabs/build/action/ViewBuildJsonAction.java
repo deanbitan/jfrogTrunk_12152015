@@ -20,9 +20,9 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.CodeModalPanel;
@@ -40,25 +40,25 @@ public class ViewBuildJsonAction extends ItemAction {
 
     public static final String ACTION_NAME = "View Build JSON";
     private ModalHandler textContentViewer;
-    private BasicBuildInfo basicBuildInfo;
+    private BuildRun buildRun;
 
     /**
      * Main constructor
      *
      * @param textContentViewer Modal handler for displaying the build JSON
-     * @param basicBuildInfo    Basic build info
+     * @param buildRun          Basic build info
      */
-    public ViewBuildJsonAction(ModalHandler textContentViewer, BasicBuildInfo basicBuildInfo) {
+    public ViewBuildJsonAction(ModalHandler textContentViewer, BuildRun buildRun) {
         super(ACTION_NAME);
         this.textContentViewer = textContentViewer;
-        this.basicBuildInfo = basicBuildInfo;
+        this.buildRun = buildRun;
     }
 
     @Override
     public void onAction(ItemEvent e) {
         BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
-        String json = buildService.getBuildAsJson(basicBuildInfo.getName(), basicBuildInfo.getNumber(),
-                basicBuildInfo.getStarted());
+        String json = buildService.getBuildAsJson(buildRun.getName(), buildRun.getNumber(),
+                buildRun.getStarted());
 
         Component content = WicketUtils.getSyntaxHighlighter(textContentViewer.getContentId(), json, Syntax.javascript);
         CodeModalPanel modelPanel = new CodeModalPanel(content);

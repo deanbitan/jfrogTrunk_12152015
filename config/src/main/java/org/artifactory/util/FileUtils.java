@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -191,8 +192,7 @@ public abstract class FileUtils {
             System.gc();
             try {
                 Thread.sleep(100);
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 // nop
             }
 
@@ -252,5 +252,38 @@ public abstract class FileUtils {
         }
 
         org.apache.commons.io.FileUtils.writeStringToFile(targetFile, content);
+    }
+
+    public static long writeToFileAndClose(InputStream in, File file) throws IOException {
+        try {
+            org.apache.commons.io.FileUtils.copyInputStreamToFile(in, file);
+        } catch (IOException e) {
+            try {
+                log.error("Could not fill content in file '" + file.getAbsolutePath() + "'. Deleting it if possible!");
+                if (file.exists()) {
+                    if (!file.delete()) {
+                        log.error("Could not delete wrong file '" + file.getAbsolutePath() + "'!");
+                    }
+                }
+            } catch (Exception ignore) {
+                // Ignore all exception here, to throw back the original failure
+                log.debug("Fail to remove file after failed fill data", ignore);
+            }
+            throw e;
+        }
+        return file.length();
+    }
+
+    public static long nextLong(long n) {
+        if (n <= 0) {
+            throw new IllegalArgumentException("n must be positive");
+        }
+        // error checking and 2^x checking removed for simplicity.
+        long bits, val;
+        do {
+            bits = (intGenerator.nextLong() << 1) >>> 1;
+            val = bits % n;
+        } while (bits - val + (n - 1) < 0L);
+        return val;
     }
 }

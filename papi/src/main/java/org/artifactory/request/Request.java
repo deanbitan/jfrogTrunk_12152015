@@ -72,4 +72,19 @@ public interface Request {
      * @return The client IP address as a string.
      */
     String getClientAddress();
+
+    /**
+     * Returns the internal zip resource path if such existed in the request.<p/>
+     * For example if the request path is /path/to/zip!/path/to/resource/in/zip the method will return the zip resource
+     * path: '/path/to/zip' as the root path.
+     *
+     * @return The zip resource path. Null or empty is such doesn't exist in the request path.
+     */
+    String getZipResourcePath();
+
+    /**
+     * @return True is the request is for internal zip resource
+     * @see org.artifactory.request.Request#getZipResourcePath()
+     */
+    boolean isZipResourceRequest();
 }

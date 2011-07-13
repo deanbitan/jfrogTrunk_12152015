@@ -32,6 +32,7 @@ public interface ArtifactRestConstants {
     String MT_FILE_LIST = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".FileList+json";
     String MT_ITEM_LAST_MODIFIED = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemLastModified+json";
     String MT_ITEM_CREATED = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemCreated+json";
+    String MT_ITEM_PERMISSIONS = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemPermissions+json";
 
     String PARAM_METADATA_NAMES_PREFIX = "mdns";
 
@@ -50,4 +51,5 @@ public interface ArtifactRestConstants {
     String PARAM_PROGRESS = "progress";
     String PARAM_DELETE = "delete";
     String PARAM_OVERWRITE = "overwrite";
+    String PARAM_TIMEOUT = "timeout";
 }

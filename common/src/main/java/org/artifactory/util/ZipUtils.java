@@ -128,20 +128,33 @@ public abstract class ZipUtils {
     }
 
     /**
+     * @param zis       The zip input stream
+     * @param entryPath The entry path to search for
+     * @return The entry if found, null otherwise
+     * @throws IOException On failure to read the stream
+     * @see ZipUtils#locateEntry(java.util.zip.ZipInputStream, java.lang.String, java.util.List<java.lang.String>)
+     */
+    public static ZipEntry locateEntry(ZipInputStream zis, String entryPath) throws IOException {
+        return locateEntry(zis, entryPath, null);
+    }
+
+    /**
      * Searches for an entry inside the zip stream by entry path. If there are alternative extensions, will also look
      * for entry with alternative extension. The search stops reading the stream when the entry is found, so calling
-     * read on the stream will read the returned entry.
+     * read on the stream will read the returned entry. <p/>
+     * The zip input stream doesn't support mark/reset so once this method is used you cannot go back - either the
+     * stream was fully read (when entry is not found) or the stream was read until the current entry.
      *
-     * @param jis                   The zip input stream
+     * @param zis                   The zip input stream
      * @param entryPath             The entry path to search for
      * @param alternativeExtensions List of alternative file extensions to try if the main entry path is not found.
      * @return The entry if found, null otherwise
      * @throws IOException On failure to read the stream
      */
-    public static ZipEntry locateEntry(ZipInputStream jis, String entryPath, List<String> alternativeExtensions)
+    public static ZipEntry locateEntry(ZipInputStream zis, String entryPath, List<String> alternativeExtensions)
             throws IOException {
         ZipEntry zipEntry;
-        while ((zipEntry = jis.getNextEntry()) != null) {
+        while ((zipEntry = zis.getNextEntry()) != null) {
             String zipEntryName = zipEntry.getName();
             if (zipEntryName.equals(entryPath)) {
                 return zipEntry;
@@ -154,7 +167,6 @@ public abstract class ZipUtils {
                     }
                 }
             }
-
         }
         return null;
     }
@@ -181,8 +193,7 @@ public abstract class ZipUtils {
                 }
             }
 
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             throw new RuntimeException("Error while extracting " + sourceArchive.getPath(), ioe);
         } finally {
             IOUtils.closeQuietly(zipInputStream);
@@ -233,8 +244,7 @@ public abstract class ZipUtils {
 
             //Preserve last modified date
             resolvedEntryFile.setLastModified(entryDate.getTime());
-        }
-        catch (FileNotFoundException ex) {
+        } catch (FileNotFoundException ex) {
             throw new RuntimeException("Can't extract file " + sourceArchive.getPath(), ex);
         }
     }

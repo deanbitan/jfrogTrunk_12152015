@@ -22,15 +22,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.ISO8601;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchControls;
-import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
@@ -49,6 +48,7 @@ import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.util.SerializablePair;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrPath;
@@ -135,12 +135,12 @@ public class SearchServiceImpl implements InternalSearchService {
         this.context = (InternalArtifactoryContext) context;
     }
 
-    public SearchResults<ArtifactSearchResult> searchArtifacts(ArtifactSearchControls controls) {
+    public ItemSearchResults<ArtifactSearchResult> searchArtifacts(ArtifactSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new SearchResults<ArtifactSearchResult>(Lists.<ArtifactSearchResult>newArrayList());
+            return new ItemSearchResults<ArtifactSearchResult>(Lists.<ArtifactSearchResult>newArrayList());
         }
         ArtifactSearcher searcher = new ArtifactSearcher();
-        SearchResults<ArtifactSearchResult> results = searcher.search(controls);
+        ItemSearchResults<ArtifactSearchResult> results = searcher.search(controls);
         return results;
     }
 
@@ -153,28 +153,28 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
-    public SearchResults<ArchiveSearchResult> searchArchiveContent(ArchiveSearchControls controls) {
+    public ItemSearchResults<ArchiveSearchResult> searchArchiveContent(ArchiveSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new SearchResults<ArchiveSearchResult>(Lists.<ArchiveSearchResult>newArrayList());
+            return new ItemSearchResults<ArchiveSearchResult>(Lists.<ArchiveSearchResult>newArrayList());
         }
         ArchiveSearcher searcher = new ArchiveSearcher();
-        SearchResults<ArchiveSearchResult> results = searcher.search(controls);
+        ItemSearchResults<ArchiveSearchResult> results = searcher.search(controls);
         return results;
     }
 
-    public SearchResults<MetadataSearchResult> searchMetadata(MetadataSearchControls controls) {
+    public ItemSearchResults<MetadataSearchResult> searchMetadata(MetadataSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new SearchResults<MetadataSearchResult>(Lists.<MetadataSearchResult>newArrayList());
+            return new ItemSearchResults<MetadataSearchResult>(Lists.<MetadataSearchResult>newArrayList());
         }
         MetadataSearcher searcher = new MetadataSearcher();
-        SearchResults<MetadataSearchResult> results = searcher.search(controls);
+        ItemSearchResults<MetadataSearchResult> results = searcher.search(controls);
         return results;
     }
 
-    public <T> SearchResults<GenericMetadataSearchResult<T>> searchGenericMetadata(
+    public <T> ItemSearchResults<GenericMetadataSearchResult<T>> searchGenericMetadata(
             GenericMetadataSearchControls<T> controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new SearchResults<GenericMetadataSearchResult<T>>(
+            return new ItemSearchResults<GenericMetadataSearchResult<T>>(
                     Lists.<GenericMetadataSearchResult<T>>newArrayList());
         }
         MetadataDefinitionService mdService = context.beanForType(MetadataDefinitionService.class);
@@ -184,35 +184,35 @@ public class SearchServiceImpl implements InternalSearchService {
         return searcher.search(controls);
     }
 
-    public SearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls) {
+    public ItemSearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new SearchResults<GavcSearchResult>(Lists.<GavcSearchResult>newArrayList());
+            return new ItemSearchResults<GavcSearchResult>(Lists.<GavcSearchResult>newArrayList());
         }
 
         GavcSearcher searcher = new GavcSearcher();
-        SearchResults<GavcSearchResult> results = searcher.search(controls);
+        ItemSearchResults<GavcSearchResult> results = searcher.search(controls);
 
         return results;
     }
 
-    public SearchResults<XmlSearchResult> searchXmlContent(MetadataSearchControls controls) {
+    public ItemSearchResults<XmlSearchResult> searchXmlContent(MetadataSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new SearchResults<XmlSearchResult>(Lists.<XmlSearchResult>newArrayList());
+            return new ItemSearchResults<XmlSearchResult>(Lists.<XmlSearchResult>newArrayList());
         }
 
         XmlFileSearcher searcher = new XmlFileSearcher();
-        SearchResults<XmlSearchResult> results = searcher.search(controls);
+        ItemSearchResults<XmlSearchResult> results = searcher.search(controls);
 
         return results;
     }
 
-    public SearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls) {
+    public ItemSearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new SearchResults<PropertySearchResult>(Lists.<PropertySearchResult>newArrayList());
+            return new ItemSearchResults<PropertySearchResult>(Lists.<PropertySearchResult>newArrayList());
         }
 
         PropertySearcher searcher = new PropertySearcher();
-        SearchResults<PropertySearchResult> results = searcher.search(controls);
+        ItemSearchResults<PropertySearchResult> results = searcher.search(controls);
 
         return results;
     }
@@ -264,13 +264,13 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
-    public SearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls)
+    public ItemSearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls)
             throws RepositoryException {
         VersionUnitSearcher searcher = new VersionUnitSearcher();
         return searcher.doSearch(controls);
     }
 
-    public Set<BasicBuildInfo> getLatestBuildsByName() {
+    public Set<BuildRun> getLatestBuilds() {
         BuildSearcher searcher = new BuildSearcher();
         try {
             return searcher.getLatestBuildsByName();
@@ -279,7 +279,7 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
-    public List<BasicBuildInfo> findBuildsByArtifactChecksum(String sha1, String md5) {
+    public List<BuildRun> findBuildsByArtifactChecksum(String sha1, String md5) {
         BuildSearcher searcher = new BuildSearcher();
         try {
             return searcher.findBuildsByArtifactChecksum(sha1, md5);
@@ -288,7 +288,7 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
-    public List<BasicBuildInfo> findBuildsByDependencyChecksum(String sha1, String md5) {
+    public List<BuildRun> findBuildsByDependencyChecksum(String sha1, String md5) {
         BuildSearcher searcher = new BuildSearcher();
         try {
             return searcher.findBuildsByDependencyChecksum(sha1, md5);

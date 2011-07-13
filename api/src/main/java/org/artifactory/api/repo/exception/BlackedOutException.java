@@ -40,7 +40,7 @@ public class BlackedOutException extends RejectedArtifactException {
 
     @Override
     public String getMessage() {
-        return "The repository '" + rejectingRepo.getKey() + "' is blacked out and cannot accept artifact '" +
+        return "The repository '" + rejectingRepo.getKey() + "' is blacked out and cannot serve artifact '" +
                 rejectedArtifact + "'.";
     }
 }

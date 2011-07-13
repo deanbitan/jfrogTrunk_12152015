@@ -20,7 +20,7 @@ package org.artifactory.webapp.wicket.page.build.panel.compare;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
-import org.artifactory.api.build.BasicBuildInfo;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 
 import java.io.Serializable;
@@ -41,7 +41,7 @@ public class BuildForNameListSorter {
      * @param toSort    List to sort
      * @param sortParam Selected sort param
      */
-    public static void sort(List<BasicBuildInfo> toSort, SortParam sortParam) {
+    public static void sort(List<BuildRun> toSort, SortParam sortParam) {
         String sortProperty = sortParam.getProperty();
         boolean ascending = sortParam.isAscending();
         if ("number".equals(sortProperty)) {
@@ -70,9 +70,9 @@ public class BuildForNameListSorter {
      * A custom build number comparator. If both build number are exclusively numeric, they will be compared as Longs;
      * otherwise they will be compared as strings.
      */
-    private static class BuildNumberComparator implements Comparator<BasicBuildInfo>, Serializable {
+    private static class BuildNumberComparator implements Comparator<BuildRun>, Serializable {
 
-        public int compare(BasicBuildInfo build1, BasicBuildInfo build2) {
+        public int compare(BuildRun build1, BuildRun build2) {
             if ((build1 == null) || (build2 == null)) {
                 return 0;
             }

@@ -17,8 +17,8 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<config xmlns="http://artifactory.jfrog.org/xsd/1.4.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.8 http://www.jfrog.org/xsd/artifactory-v1_4_8.xsd">
+<config xmlns="http://artifactory.jfrog.org/xsd/1.4.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.9 http://www.jfrog.org/xsd/artifactory-v1_4_9.xsd">
 
     <security>
         <anonAccessEnabled>true</anonAccessEnabled>
@@ -194,8 +194,7 @@
             <name>ivy-default</name>
             <artifactPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[type]s/[module](-[classifier])-[baseRev](-[fileItegRev]).[ext]</artifactPathPattern>
             <distinctiveDescriptorPathPattern>true</distinctiveDescriptorPathPattern>
-            <descriptorPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[type]s/ivy-[baseRev](-[fileItegRev]).xml
-            </descriptorPathPattern>
+            <descriptorPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/[type]s/ivy-[baseRev](-[fileItegRev]).xml</descriptorPathPattern>
             <folderIntegrationRevisionRegExp>\d{14}</folderIntegrationRevisionRegExp>
             <fileIntegrationRevisionRegExp>\d{14}</fileIntegrationRevisionRegExp>
         </repoLayout>

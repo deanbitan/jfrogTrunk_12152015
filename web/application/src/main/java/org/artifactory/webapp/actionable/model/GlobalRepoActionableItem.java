@@ -18,18 +18,20 @@
 
 package org.artifactory.webapp.actionable.model;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.ActionableItemBase;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -65,7 +67,8 @@ public class GlobalRepoActionableItem extends ActionableItemBase implements Hier
         RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
         List<LocalRepoDescriptor> repos = repositoryService.getLocalAndCachedRepoDescriptors();
         removeNonPermissionRepositories(repos);
-        List<ActionableItem> items = new ArrayList<ActionableItem>(repos.size());
+        Collections.sort(repos, new LocalRepoAlphaComparator());
+        List<ActionableItem> items = Lists.newArrayListWithCapacity(repos.size());
         for (LocalRepoDescriptor repo : repos) {
             LocalRepoActionableItem repoActionableItem = new LocalRepoActionableItem(repo);
             repoActionableItem.setCompactAllowed(isCompactAllowed());

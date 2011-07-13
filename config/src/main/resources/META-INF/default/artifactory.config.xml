@@ -18,9 +18,9 @@
   -->
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.4.8"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.8
-        http://www.jfrog.org/xsd/artifactory-v1_4_8.xsd">
+        xmlns="http://artifactory.jfrog.org/xsd/1.4.9"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.9
+        http://www.jfrog.org/xsd/artifactory-v1_4_9.xsd">
     <!--
     enable/disable anonymous downloads
     -->

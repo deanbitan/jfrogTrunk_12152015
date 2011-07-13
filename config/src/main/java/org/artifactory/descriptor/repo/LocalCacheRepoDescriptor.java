@@ -18,12 +18,13 @@
 
 package org.artifactory.descriptor.repo;
 
+import org.artifactory.descriptor.TaskDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 
 import javax.xml.bind.annotation.XmlTransient;
 import java.util.List;
 
-public class LocalCacheRepoDescriptor extends LocalRepoDescriptor {
+public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements TaskDescriptor {
 
     @XmlTransient
     private RemoteRepoDescriptor remoteRepo;
@@ -116,6 +117,16 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor {
         if (!(oldDescriptor instanceof LocalCacheRepoDescriptor)) {
             return false;
         }
-        return remoteRepo.identicalCache(((LocalCacheRepoDescriptor)oldDescriptor).remoteRepo);
+        return remoteRepo.identicalCache(((LocalCacheRepoDescriptor) oldDescriptor).remoteRepo);
+    }
+
+    public boolean sameTaskDefinition(TaskDescriptor otherDescriptor) {
+        if (otherDescriptor == null || !(otherDescriptor instanceof LocalCacheRepoDescriptor)) {
+            throw new IllegalArgumentException("Cannot compare backup dexcriptor " + this + " with " + otherDescriptor);
+        }
+        LocalCacheRepoDescriptor localCacheRepoDesc = (LocalCacheRepoDescriptor) otherDescriptor;
+        return localCacheRepoDesc.isBlackedOut() == this.isBlackedOut() &&
+                localCacheRepoDesc.getKey().equals(this.getKey()) &&
+                localCacheRepoDesc.remoteRepo.getUnusedArtifactsCleanupPeriodHours() == this.remoteRepo.getUnusedArtifactsCleanupPeriodHours();
     }
 }

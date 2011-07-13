@@ -22,7 +22,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataRecord;
 import org.apache.jackrabbit.core.data.DataStoreException;
-import org.apache.jackrabbit.core.data.db.TempFileInputStream;
 import org.apache.jackrabbit.core.persistence.pool.DerbyPersistenceManager;
 import org.apache.jackrabbit.core.util.db.ArtifactoryConnectionHelper;
 import org.apache.jackrabbit.core.util.db.CheckSchemaOperation;
@@ -32,6 +31,9 @@ import org.apache.jackrabbit.core.util.db.StreamWrapper;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.schedule.TaskInterruptedException;
+import org.artifactory.schedule.TaskUtils;
+import org.artifactory.util.FileUtils;
 import org.slf4j.Logger;
 
 import javax.sql.DataSource;
@@ -267,7 +269,7 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
      */
     private File moveToTempFile(InputStream in) throws IOException {
         File temp = File.createTempFile("dbRecord", null, tmpDir);
-        TempFileInputStream.writeToFileAndClose(in, temp);
+        FileUtils.writeToFileAndClose(in, temp);
         return temp;
     }
 
@@ -287,7 +289,13 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
     public long[] cleanUnreferencedItems() throws DataStoreException {
         long now = System.currentTimeMillis();
         long[] result = new long[]{0L, 0L};
+        long recordsCounter = 0;
         for (ArtifactoryDbDataRecord record : getAllEntries()) {
+            if ((++recordsCounter % 100L) == 0) {
+                if (TaskUtils.pauseOrBreak()) {
+                    throw new TaskInterruptedException();
+                }
+            }
             if (record.markForDeletion(now)) {
                 try {
                     result[1] += deleteEntry(record);
@@ -426,7 +434,7 @@ public abstract class ArtifactoryBaseDataStore extends ExtendedDbDataStoreBase {
     public DataRecord getRecord(DataIdentifier identifier) throws DataStoreException {
         DataRecord record = getRecordIfStored(identifier);
         if (record == null) {
-            throw new DataStoreException("No such record: '" + identifier + "'.");
+            throw new MissingOrInvalidDataStoreRecordException("No such record: '" + identifier + "'.");
         }
         return record;
     }

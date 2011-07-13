@@ -23,7 +23,9 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.Request;
+import org.artifactory.resource.ResourceStreamHandle;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
@@ -61,4 +63,25 @@ public interface FilteredResourcesAddon extends Addon {
      * @param filtered True if the item should be marked as filter
      */
     void toggleResourceFilterState(RepoPath repoPath, boolean filtered);
+
+    /**
+     * Returns resource representing a file inside zip. The method will fail if the input stream doesn't represent valid
+     * zip stream.
+     *
+     * @param request The client request
+     * @param info    The zip file info
+     * @param stream  The file input stream
+     * @return The resource info contained in the zip file. Including size and checksums
+     */
+    RepoResource getZipResource(Request request, FileInfo info, InputStream stream);
+
+    /**
+     * Returns stream handle to the entry inside the zip
+     *
+     * @param resource The zip resource
+     * @param stream   Input stream of a zip
+     * @return Stream handle to the entry inside the zip
+     * @throws IOException on failure to open the zip stream of to locate the entry
+     */
+    ResourceStreamHandle getZipResourceHandle(RepoResource resource, InputStream stream) throws IOException;
 }

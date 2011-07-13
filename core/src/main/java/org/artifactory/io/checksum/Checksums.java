@@ -19,6 +19,7 @@
 package org.artifactory.io.checksum;
 
 import org.apache.commons.io.IOUtils;
+import org.artifactory.api.util.Pair;
 import org.artifactory.checksum.ChecksumType;
 
 import java.io.File;
@@ -37,7 +38,7 @@ public abstract class Checksums {
     }
 
     /**
-     * Calculate checksums for all known checksum types.
+     * Calculate checksums for all known checksum types. Closes the input stream when done.
      *
      * @param in Input streams for which checksums are calculated
      * @return Array of all computed checksums
@@ -47,7 +48,7 @@ public abstract class Checksums {
     }
 
     /**
-     * Calculate checksum for the input type.
+     * Calculate checksum for the input type. Closes the input stream when done.
      *
      * @param in   Input streams for which checksums are calculated
      * @param type Checksum type to calculate
@@ -59,7 +60,7 @@ public abstract class Checksums {
     }
 
     /**
-     * Calculate checksums for all the input types.
+     * Calculate checksums for all the input types. Closes the input stream when done.
      *
      * @param in    Input streams for which checksums are calculated
      * @param types Checksum types to calculate
@@ -67,18 +68,33 @@ public abstract class Checksums {
      * @throws IOException On any exception reading from the stream
      */
     public static Checksum[] calculate(InputStream in, ChecksumType... types) throws IOException {
+        return calculateWithLength(in, types).getSecond();
+    }
+
+    /**
+     * Calculate checksums for all the input types. Closes the input stream when done.
+     *
+     * @param in    Input streams for which checksums are calculated
+     * @param types Checksum types to calculate
+     * @return Pair where the first element is the amount of bytes read and the second is array of all computed checksums
+     * @throws IOException On any exception reading from the stream
+     */
+    public static Pair<Long, Checksum[]> calculateWithLength(InputStream in, ChecksumType... types) throws IOException {
         Checksum[] checksums = new Checksum[types.length];
         for (int i = 0; i < types.length; i++) {
             checksums[i] = new Checksum(types[i]);
         }
 
         ChecksumInputStream checksumsInputStream = new ChecksumInputStream(in, checksums);
-        byte[] bytes = new byte[1024];
-        while (checksumsInputStream.read(bytes) != -1) {
-            // nothing to do, checksum output stream calculates the checksums
+        try {
+            byte[] bytes = new byte[1024];
+            while (checksumsInputStream.read(bytes) != -1) {
+                // nothing to do, checksum output stream updates the checksums and calculate on stream close
+            }
+        } finally {
+            IOUtils.closeQuietly(checksumsInputStream);
         }
-        checksumsInputStream.close();
-        return checksums;
+        return new Pair<Long, Checksum[]>(checksumsInputStream.getTotalBytesRead(), checksums);
     }
 
     /**

@@ -244,7 +244,6 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
 
         // groups
         Set<UserInfo.UserGroupInfo> userGroups = user.getGroups();
-        user.getRealm();
         if (!create) {
             provider.addExternalGroups(user.getUsername(), user.getRealm(), userGroups);
         }

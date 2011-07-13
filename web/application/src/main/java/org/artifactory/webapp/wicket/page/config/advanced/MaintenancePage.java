@@ -92,10 +92,10 @@ public class MaintenancePage extends AuthenticatedPage {
 
     private void addGarbageCollectorMaintenance() {
         add(border);
-        TitledAjaxLink compressLink = new TitledAjaxLink("collect", "Run Garbage Collector Now") {
+        TitledAjaxLink compressLink = new TitledAjaxLink("collect", "Run Storage Consistency Fix") {
             public void onClick(AjaxRequestTarget target) {
                 MultiStatusHolder statusHolder = new MultiStatusHolder();
-                storageService.manualGarbageCollect(statusHolder);
+                storageService.callManualGarbageCollect(statusHolder);
                 if (statusHolder.isError()) {
                     error("Could not run the garbage collector: " + statusHolder.getLastError().getMessage() + ".");
                 } else {

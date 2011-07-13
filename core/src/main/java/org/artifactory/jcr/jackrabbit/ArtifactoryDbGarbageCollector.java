@@ -31,6 +31,7 @@ import org.apache.jackrabbit.core.state.ItemStateException;
 import org.apache.jackrabbit.core.state.NoSuchItemStateException;
 import org.apache.jackrabbit.core.state.NodeState;
 import org.apache.jackrabbit.core.state.PropertyState;
+import org.apache.jackrabbit.core.value.BLOBFileValue;
 import org.apache.jackrabbit.core.value.InternalValue;
 import org.apache.jackrabbit.spi.Name;
 import org.artifactory.api.storage.GarbageCollectorInfo;
@@ -38,6 +39,8 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.gc.JcrGarbageCollector;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.schedule.TaskInterruptedException;
+import org.artifactory.schedule.TaskUtils;
 import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
 
@@ -91,10 +94,12 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
      * Create a new garbage collector. This method is usually not called by the application, it is called by
      * SessionImpl.createDataStoreGarbageCollector().
      *
-     * @param list        the persistence managers
-     * @param sessionList system sessions - one per workspace
+     * @param list           the persistence managers
+     * @param sessionList    system sessions - one per workspace
+     * @param fixConsistency
      */
-    public ArtifactoryDbGarbageCollector(Session session, IterablePersistenceManager[] list, Session[] sessionList) {
+    public ArtifactoryDbGarbageCollector(Session session, IterablePersistenceManager[] list, Session[] sessionList,
+            boolean fixConsistency) {
         if (session instanceof SessionImpl) {
             this.session = (SessionImpl) session;
         } else if (session instanceof JcrSession) {
@@ -115,7 +120,7 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
         info.nbBereavedNodes = 0;
         info.startScanTimestamp = 0;
         info.stopScanTimestamp = 0;
-        if (ConstantValues.jcrFixConsistency.getBoolean()) {
+        if (fixConsistency) {
             this.bereavedNodePaths = new ArrayList<String>();
         } else {
             this.bereavedNodePaths = null;
@@ -323,9 +328,15 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
         for (String binaryPropertyName : binaryPropertyNames) {
             binaryProps[i++] = session.getQName(binaryPropertyName);
         }
+        long nodesCount = 0;
         for (IterablePersistenceManager pm : pmList) {
             Iterable<NodeId> ids = pm.getAllNodeIds(null, 0);
             for (NodeId id : ids) {
+                if ((++nodesCount % 500L) == 0) {
+                    if (TaskUtils.pauseOrBreak()) {
+                        throw new TaskInterruptedException();
+                    }
+                }
                 try {
                     NodeState state = pm.load(id);
                     for (Name name : binaryProps) {
@@ -334,11 +345,18 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
                             PropertyState ps = pm.load(pid);
                             InternalValue[] values = ps.getValues();
                             for (InternalValue value : values) {
-                                long length = value.getLength();
-                                if (length < 0) {
+                                BLOBFileValue blobFileValue = value.getBLOBFileValue();
+                                long length = 0;
+                                try {
+                                    if (blobFileValue.getDataIdentifier() != null) {
+                                        length = store.getRecord(blobFileValue.getDataIdentifier()).getLength();
+                                    }
+                                } catch (MissingOrInvalidDataStoreRecordException e) {
+                                    log.info("Node '{}' is bereaved", state.getId());
                                     doBereaved(session.getJCRPath(session.getHierarchyManager().getPath(state.getId())),
                                             name.getLocalName());
-                                } else {
+                                }
+                                if (length > 0) {
                                     info.totalSizeFromBinaryProperties += length;
                                 }
                             }

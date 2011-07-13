@@ -102,7 +102,7 @@ public class HttpRepoBasicPanel extends Panel {
                 case GEN_IF_ABSENT:
                     return "Generate if absent";
                 case IGNORE_AND_GEN:
-                    return "Ignore and generated";
+                    return "Ignore and generate";
                 case PASS_THRU:
                     return "Ignore and pass-through";
                 default:

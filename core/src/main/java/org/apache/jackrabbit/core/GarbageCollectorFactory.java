@@ -61,7 +61,7 @@ public abstract class GarbageCollectorFactory {
      *
      * @throws javax.jcr.RepositoryException
      */
-    public static JcrGarbageCollector createDataStoreGarbageCollector(JcrSession session)
+    public static JcrGarbageCollector createDataStoreGarbageCollector(JcrSession session, boolean fixConsistency)
             throws RepositoryException, ItemStateException {
         RepositoryImpl rep = (RepositoryImpl) session.getRepository();
         DataStore store = rep.getDataStore();
@@ -102,7 +102,8 @@ public abstract class GarbageCollectorFactory {
         }
         JcrGarbageCollector gc = null;
         if (store instanceof ArtifactoryBaseDataStore) {
-            gc = new ArtifactoryDbGarbageCollector(session, ipmArray, sysSessions);
+            gc = new ArtifactoryDbGarbageCollector(session, ipmArray, sysSessions,
+                    fixConsistency);
             ((ArtifactoryDbGarbageCollector) gc).addBinaryPropertyNames(new String[]{JcrConstants.JCR_DATA});
         } else if (!(store instanceof DbDataStore)) {
             gc = new ArtifactoryGarbageCollector(session, ipmArray, sysSessions);

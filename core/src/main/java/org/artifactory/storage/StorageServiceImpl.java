@@ -33,8 +33,9 @@ import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.jcr.utils.DerbyUtils;
 import org.artifactory.jcr.utils.JcrUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.schedule.TaskBase;
 import org.artifactory.schedule.TaskService;
-import org.artifactory.schedule.quartz.QuartzTask;
+import org.artifactory.schedule.TaskUtils;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.storage.mbean.Storage;
@@ -108,21 +109,47 @@ public class StorageServiceImpl implements InternalStorageService {
         }
     }
 
-    public String manualGarbageCollect(MultiStatusHolder statusHolder) {
-        taskService.stopTasks(JcrGarbageCollectorJob.class, true);
+    public void callManualGarbageCollect(MultiStatusHolder statusHolder) {
+        taskService.checkCanStartManualTask(JcrGarbageCollectorJob.class, statusHolder);
+        if (!statusHolder.isError()) {
+            try {
+                String firstToken = execOneGcAndWait(false);
+                InternalStorageService me = InternalContextHelper.get().getBean(InternalStorageService.class);
+                me.asyncManualGarbageCollect(firstToken);
+                statusHolder.setStatus("Artifactory Storage Garbage Collector process activated in the background!",
+                        log);
+            } catch (Exception e) {
+                statusHolder.setError("Error activating Artifactory Storage Garbage Collector: " + e.getMessage(), e,
+                        log);
+            }
+        }
+    }
+
+    public void asyncManualGarbageCollect(String firstRunToken) {
+        taskService.waitForTaskCompletion(firstRunToken);
+        execOneGcAndWait(true);
+    }
+
+    public void manualGarbageCollect() {
         try {
             //GC in-use-records weak references used by the file datastore
             System.gc();
-            QuartzTask task = new QuartzTask(JcrGarbageCollectorJob.class, 0);
-            return taskService.startTask(task);
-        } catch (Exception e) {
-            statusHolder.setError("Error in scheduling the garbage collector.", e, log);
-        } finally {
-            statusHolder.setStatus("Scheduled garbage collector to run immediately.", log);
-            taskService.resumeTasks(JcrGarbageCollectorJob.class);
+            log.info("Scheduling manual garbage collector to run immediately.");
+            execOneGcAndWait(true);
+            execOneGcAndWait(true);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error in executing the manual garbage collector.", e);
         }
+    }
 
-        return null;
+    private String execOneGcAndWait(boolean waitForCompletion) {
+        TaskBase task = TaskUtils.createManualTask(JcrGarbageCollectorJob.class, 0L);
+        task.addAttribute(JcrGarbageCollectorJob.FIX_CONSISTENCY, "true");
+        String token = taskService.startTask(task, true);
+        if (waitForCompletion) {
+            taskService.waitForTaskCompletion(token);
+        }
+        return token;
     }
 
     public boolean isDerbyUsed() {

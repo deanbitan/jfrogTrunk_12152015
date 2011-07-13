@@ -21,7 +21,7 @@ package org.artifactory.search.xml;
 import com.google.common.collect.Lists;
 import org.apache.jackrabbit.JcrConstants;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.xml.XmlSearchResult;
 import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.jcr.JcrPath;
@@ -50,7 +50,7 @@ public class XmlFileSearcher extends XmlSearcherBase<XmlSearchResult> {
     }
 
     @Override
-    protected SearchResults<XmlSearchResult> filterAndReturnResults(
+    protected ItemSearchResults<XmlSearchResult> filterAndReturnResults(
             MetadataSearchControls controls, QueryResult queryResult) throws RepositoryException {
 
         List<XmlSearchResult> results = Lists.newArrayList();
@@ -80,6 +80,6 @@ public class XmlFileSearcher extends XmlSearcherBase<XmlSearchResult> {
                 handleNotFoundException(re);
             }
         }
-        return new SearchResults<XmlSearchResult>(results, rows.getSize());
+        return new ItemSearchResults<XmlSearchResult>(results, rows.getSize());
     }
 }

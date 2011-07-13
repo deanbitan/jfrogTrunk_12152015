@@ -287,7 +287,12 @@ public class DeployServiceImpl implements DeployService {
         }
         String pomFromJar = MavenModelUtils.getPomFileAsStringFromJar(file);
         if (StringUtils.isNotBlank(pomFromJar)) {
-            return pomFromJar;
+            try {
+                MavenModelUtils.stringToMavenModel(pomFromJar);
+                return pomFromJar;
+            } catch (RepositoryRuntimeException rre) {
+                log.error("Failed to validate the model of the POM file within '{}'.", file.getAbsolutePath());
+            }
         }
         MavenArtifactInfo model = getArtifactInfo(file);
         return MavenModelUtils.mavenModelToString(MavenModelUtils.toMavenModel(model));

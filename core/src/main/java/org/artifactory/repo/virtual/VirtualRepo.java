@@ -42,7 +42,6 @@ import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.md.Properties;
 import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
@@ -50,6 +49,7 @@ import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoBase;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.jcr.StoringRepoMixin;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -61,7 +61,6 @@ import org.slf4j.Logger;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -370,7 +369,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
      * @return Recursively resolved list of all the local and cache repos of this virtual repo and nested virtual
      *         repos.
      */
-    private Set<LocalRepo> getResolvedLocalAndCachedRepos() {
+    public Set<LocalRepo> getResolvedLocalAndCachedRepos() {
         Set<LocalRepo> localAndCahcedRepos = Sets.newLinkedHashSet();
         localAndCahcedRepos.addAll(getResolvedLocalRepos());
         localAndCahcedRepos.addAll(getResolvedLocalCachedRepos());
@@ -458,9 +457,8 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         storageMixin.undeploy(repoPath, calcMavenMetadata);
     }
 
-    public RepoResource saveResource(RepoResource res, final InputStream in, Properties keyvals) throws IOException,
-            RepoRejectException {
-        return storageMixin.saveResource(res, in, keyvals);
+    public RepoResource saveResource(SaveResourceContext context) throws IOException, RepoRejectException {
+        return storageMixin.saveResource(context);
     }
 
     public boolean shouldProtectPathDeletion(String path, boolean assertOverwrite) {

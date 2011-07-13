@@ -19,8 +19,8 @@
 package org.artifactory.api.search.artifact;
 
 import com.google.common.collect.Sets;
-import org.artifactory.api.checksum.ChecksumInfo;
 import org.artifactory.api.search.SearchControlsBase;
+import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 
 import java.util.Set;

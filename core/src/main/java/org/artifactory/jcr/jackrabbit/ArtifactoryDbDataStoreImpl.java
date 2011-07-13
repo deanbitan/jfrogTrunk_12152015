@@ -22,7 +22,6 @@ import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
-import org.apache.jackrabbit.core.data.db.TempFileInputStream;
 import org.apache.jackrabbit.core.util.db.DatabaseAware;
 import org.apache.jackrabbit.core.util.db.DbUtility;
 import org.artifactory.api.storage.StorageUnit;
@@ -61,12 +60,6 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
     // Parameter initialized from repo.xml
     private String blobsCacheDir = null;
 
-    // Calculated from cacheDir string or default value ${rep.home}/cache
-    private File cacheFolder = null;
-
-    // Max cache size in bytes parsed from cacheMaxSize
-    private long maxCacheSize = -1;
-
     boolean slowdownScanning;
     long slowdownScanningMillis = ConstantValues.gcScanSleepBetweenIterationsMillis.getLong();
     /**
@@ -76,9 +69,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
 
     @Override
     public void init(String homeDir) throws DataStoreException {
-        initRootStoreDir(homeDir);
-        initMaxCacheSize();
-        filesystemLruCache = new FilesLruCache(maxCacheSize);
+        filesystemLruCache = new FilesLruCache(homeDir);
         super.init(homeDir);
     }
 
@@ -123,7 +114,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
                             throw new DataStoreException("Cannot create folder: " + parentFile.getAbsolutePath());
                         }
                     }
-                    TempFileInputStream.writeToFileAndClose(in, result);
+                    org.artifactory.util.FileUtils.writeToFileAndClose(in, result);
                     return result;
                 } catch (Exception e) {
                     throw convert("Can not read identifier " + id, e);
@@ -140,61 +131,9 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
 
         if (cacheBlobs && !filesystemLruCache.initialized) {
             // initialize cache files LRU cache if blob cache is enabled
-            scanAllCachedFiles();
+            filesystemLruCache.init();
         }
         return result;
-    }
-
-    private void scanAllCachedFiles() {
-        log.info("Starting scanning all cached files present in " + cacheFolder.getAbsolutePath());
-        //find . -type f -printf %f:%s\\n
-        long start = System.currentTimeMillis();
-
-        File[] firstLevel = cacheFolder.listFiles();
-        // In case the cache folder does not contain files, it returns null
-        if (firstLevel == null) {
-            log.warn("No files found in cache folder: " + cacheFolder.getAbsolutePath());
-            return;
-        }
-        for (File first : firstLevel) {
-            File[] secondLevel = first.listFiles();
-            for (File second : secondLevel) {
-                //Only yield if scanning takes longer than x seconds
-                slowDownIfLongScan(start);
-                File[] thirdLevel = second.listFiles();
-                for (File third : thirdLevel) {
-                    String[] files = third.list();
-                    for (String fileName : files) {
-                        File file = new File(third, fileName);
-                        ArtifactoryDbDataRecord record = getFromAllEntries(fileName);
-                        if (record == null) {
-                            log.warn("Cached file " + file.getAbsolutePath() +
-                                    " does not exists in DB! Deleting it");
-                            file.delete();
-                        } else {
-                            if (file.length() != record.length) {
-                                log.warn("Cached file " + file.getAbsolutePath() +
-                                        " does not have the correct length! Deleting it");
-                                // Putting the start scan in the future remove the protection of accessed during scan
-                                record.deleteCacheFile(Long.MAX_VALUE);
-                            } else {
-                                // mark the record as accessed, this action will also update the lru cache
-                                record.markAccessed();
-                                if (filesystemLruCache.cachedFilesCount.get() % 500 == 0) {
-                                    log.info(
-                                            "Scanned " + filesystemLruCache.cachedFilesCount.get() +
-                                                    " cached files in " +
-                                                    (System.currentTimeMillis() - start) + "ms");
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        filesystemLruCache.initialized();
-        log.info("Finished scanning {} cached files in {} ms",
-                filesystemLruCache.cachedFilesCount.get(), (System.currentTimeMillis() - start));
     }
 
     @Override
@@ -217,54 +156,14 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
         }
     }
 
-    private void initRootStoreDir(String homeDir) throws DataStoreException {
-        String fsDir = getBlobsCacheDir();
-        if (fsDir != null && fsDir.length() > 0) {
-            cacheFolder = new File(fsDir);
-        } else {
-            cacheFolder = new File(homeDir, "cache");
-        }
-        if (!cacheFolder.exists()) {
-            if (!cacheFolder.mkdirs()) {
-                throw new DataStoreException("Could not create file store folder " + cacheFolder.getAbsolutePath());
-            }
-        }
-    }
-
-    private void initMaxCacheSize() throws DataStoreException {
-        if (!cacheBlobs) {
-            // No limit here since NO files should be there
-            maxCacheSize = -1;
-            throw new DataStoreException("DB Data Store with no cache files is not supported yet!");
-        }
-        String maxSize = getBlobsCacheMaxSize();
-        if (maxSize == null || maxSize.length() < 2) {
-            throw new DataStoreException("Maximum size of all cached files is mandatory!\n" +
-                    "The format is Xg Xm or Xk for X in Gb Mb and Kb respectively");
-        }
-        maxSize = maxSize.toLowerCase();
-        char unit = maxSize.charAt(maxSize.length() - 1);
-        long value = Long.parseLong(maxSize.substring(0, maxSize.length() - 1));
-        switch (unit) {
-            case 'g':
-                maxCacheSize = value * 1024l * 1024l * 1024l;
-                break;
-            case 'm':
-                maxCacheSize = value * 1024l * 1024l;
-                break;
-            case 'k':
-                maxCacheSize = value * 1024l;
-                break;
-            default:
-                throw new DataStoreException("Maximum size of all cached files '" +
-                        maxSize + "' has an invalid format!\n" +
-                        "The format is Xg Xm or Xk for X in Gb Mb and Kb respectively");
-        }
-    }
-
+    /**
+     * The location this datastore saves binaries. The files stored here are only cached in the filesystem.
+     *
+     * @return The location this datastore saves binaries.
+     */
     @Override
     public File getBinariesFolder() {
-        return cacheFolder;
+        return filesystemLruCache.cacheFolder;
     }
 
     @Override
@@ -327,7 +226,11 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
         }
     }
 
-    public static class FilesLruCache {
+    public class FilesLruCache {
+        /**
+         * Calculated from cacheDir string or default value ${rep.home}/cache
+         */
+        private final File cacheFolder;
         /**
          * Maximum cache size in bytes. The cache can still grow above this number, but it will trigger a cleanup.
          */
@@ -335,27 +238,74 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
         /**
          * A concurrent sorted map that holds all the records with cached files by last access time.
          */
-        private ConcurrentSkipListMap/*<Long, ArtifactoryDbDataRecord>*/ cachedRecords;
+        private final ConcurrentSkipListMap/*<Long, ArtifactoryDbDataRecord>*/ cachedRecords;
         /**
          * Total size in bytes of the cached files.
          */
-        private AtomicLong cachedFilesSize = new AtomicLong(0);
+        private final AtomicLong cachedFilesSize = new AtomicLong(0);
         /**
          * Count of the cached files.
          */
-        private AtomicLong cachedFilesCount = new AtomicLong(0);
+        private final AtomicLong cachedFilesCount = new AtomicLong(0);
         /**
-         * Cache cleanup semaphore. Allows only one thread to do a cleanup.
+         * Cache semaphore for protecting cleanup and initialization work.
+         * Allows only one thread to do a cleanup or initialization.
          */
-        private Semaphore cleanLock = new Semaphore(1);
+        private final Semaphore cacheInitAndCleanLock = new Semaphore(1);
         /**
          * The cache is not initialized until all the cached records are scanned (short time after startup).
          */
         private boolean initialized;
 
-        private FilesLruCache(long maxCacheSize) {
-            this.maxCacheSize = maxCacheSize;
-            cachedRecords = new ConcurrentSkipListMap();
+        private FilesLruCache(String homeDir) throws DataStoreException {
+            this.cacheFolder = calculateCacheFolder(homeDir);
+            this.maxCacheSize = calculateMaxCacheSize();
+            this.cachedRecords = new ConcurrentSkipListMap();
+            this.initialized = false;
+        }
+
+        private File calculateCacheFolder(String homeDir) throws DataStoreException {
+            File result;
+            String fsDir = getBlobsCacheDir();
+            if (fsDir != null && fsDir.length() > 0) {
+                result = new File(fsDir);
+            } else {
+                result = new File(homeDir, "cache");
+            }
+            if (!result.exists()) {
+                if (!result.mkdirs()) {
+                    throw new DataStoreException("Could not create file store folder " + result.getAbsolutePath());
+                }
+            }
+            return result;
+        }
+
+        private long calculateMaxCacheSize() throws DataStoreException {
+            if (!cacheBlobs) {
+                // No limit here since NO files should be there
+                //maxCacheSize = -1;
+                throw new DataStoreException("DB Data Store with no cache files is not supported yet!");
+            }
+            String maxSize = getBlobsCacheMaxSize();
+            if (maxSize == null || maxSize.length() < 2) {
+                throw new DataStoreException("Maximum size of all cached files is mandatory!\n" +
+                        "The format is Xg Xm or Xk for X in Gb Mb and Kb respectively");
+            }
+            maxSize = maxSize.toLowerCase();
+            char unit = maxSize.charAt(maxSize.length() - 1);
+            long value = Long.parseLong(maxSize.substring(0, maxSize.length() - 1));
+            switch (unit) {
+                case 'g':
+                    return value * 1024l * 1024l * 1024l;
+                case 'm':
+                    return value * 1024l * 1024l;
+                case 'k':
+                    return value * 1024l;
+                default:
+                    throw new DataStoreException("Maximum size of all cached files '" +
+                            maxSize + "' has an invalid format!\n" +
+                            "The format is Xg Xm or Xk for X in Gb Mb and Kb respectively");
+            }
         }
 
         public void put(ArtifactoryDbDataRecord record) {
@@ -391,11 +341,6 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
             put(record);
         }
 
-        public void initialized() {
-            this.initialized = true;
-            clean();
-        }
-
         private void clean() {
             if (!initialized) {
                 // don't attempt to clean until fully initialized
@@ -407,7 +352,7 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
 
             // try to acquire the lock to do the clean. Only one cleanup is allowed. The lock will be released by
             // the cleaning thread
-            if (!cleanLock.tryAcquire()) {
+            if (!cacheInitAndCleanLock.tryAcquire()) {
                 // someone is already cleaning
                 return;
             }
@@ -452,10 +397,81 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryBaseDataStore impleme
                         return null;
                     } finally {
                         // release the clean lock
-                        cleanLock.release();
+                        cacheInitAndCleanLock.release();
                     }
                 }
             });
+        }
+
+        private void init() {
+            // try to acquire the lock to do the initialization.
+            // Only one init is allowed. The lock will be released at the end of the init
+            if (!cacheInitAndCleanLock.tryAcquire()) {
+                // someone is already cleaning or init
+                log.warn("Cannot initialize cache '{}' since another process is already scanning all the files",
+                        cacheFolder.getAbsolutePath());
+                return;
+            }
+            try {
+                if (initialized) {
+                    log.info("Cached files scanning of '{}' already done! Skipping.", cacheFolder.getAbsolutePath());
+                    return;
+                }
+                log.info("Starting scanning all cached files present in " + cacheFolder.getAbsolutePath());
+                //find . -type f -printf %f:%s\\n
+                long start = System.currentTimeMillis();
+
+                File[] firstLevel = cacheFolder.listFiles();
+                // In case the cache folder does not contain files, it returns null
+                if (firstLevel == null) {
+                    log.warn("No files found in cache folder: " + cacheFolder.getAbsolutePath());
+                    return;
+                }
+                for (File first : firstLevel) {
+                    File[] secondLevel = first.listFiles();
+                    for (File second : secondLevel) {
+                        //Only yield if scanning takes longer than x seconds
+                        slowDownIfLongScan(start);
+                        File[] thirdLevel = second.listFiles();
+                        for (File third : thirdLevel) {
+                            String[] files = third.list();
+                            for (String fileName : files) {
+                                File file = new File(third, fileName);
+                                ArtifactoryDbDataRecord record = getFromAllEntries(fileName);
+                                if (record == null) {
+                                    log.warn("Cached file " + file.getAbsolutePath() +
+                                            " does not exists in DB! Deleting it");
+                                    if (!file.delete()) {
+                                        log.warn("Cached file " + file.getAbsolutePath() +
+                                                " could not be deleted!");
+                                    }
+                                } else {
+                                    if (file.length() != record.length) {
+                                        log.warn("Cached file " + file.getAbsolutePath() +
+                                                " does not have the correct length! Deleting it");
+                                        // Putting the start scan in the future remove the protection of accessed during scan
+                                        record.deleteCacheFile(Long.MAX_VALUE);
+                                    } else {
+                                        // mark the record as accessed, this action will also update the lru cache
+                                        record.markAccessed();
+                                        if (cachedFilesCount.get() % 500 == 0) {
+                                            log.info(
+                                                    "Scanned " + cachedFilesCount.get() +
+                                                            " cached files in " +
+                                                            (System.currentTimeMillis() - start) + "ms");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                log.info("Finished scanning {} cached files in {} ms",
+                        cachedFilesCount.get(), (System.currentTimeMillis() - start));
+                this.initialized = true;
+            } finally {
+                cacheInitAndCleanLock.release();
+            }
         }
     }
 }

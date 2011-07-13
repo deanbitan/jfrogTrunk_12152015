@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
 import org.artifactory.api.module.ModuleInfo;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.jcr.JcrPath;
@@ -46,7 +46,7 @@ import java.util.List;
 public class GavcSearcher extends SearcherBase<GavcSearchControls, GavcSearchResult> {
 
     @Override
-    public SearchResults<GavcSearchResult> doSearch(GavcSearchControls controls) throws RepositoryException {
+    public ItemSearchResults<GavcSearchResult> doSearch(GavcSearchControls controls) throws RepositoryException {
         StringBuilder queryBuilder = getPathQueryBuilder(controls);
 
         //Validate and escape all input values
@@ -121,7 +121,7 @@ public class GavcSearcher extends SearcherBase<GavcSearchControls, GavcSearchRes
             }
         }
 
-        return new SearchResults<GavcSearchResult>(results, nodes.getSize());
+        return new ItemSearchResults<GavcSearchResult>(results, nodes.getSize());
     }
 
     /**

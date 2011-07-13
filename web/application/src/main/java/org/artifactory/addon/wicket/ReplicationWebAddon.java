@@ -20,7 +20,10 @@ package org.artifactory.addon.wicket;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.artifactory.addon.Addon;
-import org.artifactory.descriptor.replication.ReplicationDescriptor;
+import org.artifactory.common.wicket.component.CreateUpdateAction;
+import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
+import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 
 /**
@@ -28,6 +31,9 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
  */
 public interface ReplicationWebAddon extends Addon {
 
-    ITab getHttpRepoReplicationPanel(String tabTitle, HttpRepoDescriptor entity,
-            ReplicationDescriptor replicationDescriptor);
+    ITab getHttpRepoReplicationPanel(String tabTitle, HttpRepoDescriptor repoDescriptor,
+            RemoteReplicationDescriptor replicationDescriptor);
+
+    ITab getLocalRepoReplicationPanel(String tabTitle, LocalReplicationDescriptor replicationDescriptor,
+            MutableCentralConfigDescriptor mutableDescriptor, CreateUpdateAction action);
 }

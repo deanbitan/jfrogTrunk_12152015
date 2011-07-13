@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 
 /**
  * @author yoavl
@@ -141,5 +142,22 @@ public abstract class RestUtils {
             throw new RuntimeException("Could not append string", e);
         }
         return String.format(appended.toString(), args);
+    }
+
+    public static String getBaseBuildsHref(HttpServletRequest request) {
+        return RestUtils.getRestApiUrl(request) + "/" + BuildRestConstants.PATH_ROOT;
+    }
+
+    public static String getBuildRelativeHref(String buildName) throws UnsupportedEncodingException {
+        return "/" + URLEncoder.encode(buildName, "utf-8");
+    }
+
+    public static String getBuildNumberRelativeHref(String buildNumber) throws UnsupportedEncodingException {
+        return "/" + URLEncoder.encode(buildNumber, "utf-8");
+    }
+
+    public static String getBuildInfoHref(HttpServletRequest request, String buildName, String buildNumber)
+            throws UnsupportedEncodingException {
+        return getBaseBuildsHref(request) + getBuildRelativeHref(buildName) + getBuildNumberRelativeHref(buildNumber);
     }
 }

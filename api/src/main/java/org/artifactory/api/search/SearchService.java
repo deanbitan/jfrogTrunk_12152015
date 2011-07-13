@@ -18,7 +18,6 @@
 
 package org.artifactory.api.search;
 
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
@@ -37,6 +36,7 @@ import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.api.util.SerializablePair;
+import org.artifactory.build.BuildRun;
 import org.artifactory.repo.RepoPath;
 
 import javax.annotation.Nullable;
@@ -55,7 +55,7 @@ public interface SearchService {
      * @return Artifacts found by the search, empty list if nothing was found
      */
     @Lock(transactional = true)
-    SearchResults<ArtifactSearchResult> searchArtifacts(ArtifactSearchControls controls);
+    ItemSearchResults<ArtifactSearchResult> searchArtifacts(ArtifactSearchControls controls);
 
     /**
      * Searches for artifacts by their checksum values
@@ -78,36 +78,37 @@ public interface SearchService {
             @Nullable Calendar from, @Nullable Calendar to, List<String> reposToSearch);
 
     @Lock(transactional = true)
-    SearchResults<ArchiveSearchResult> searchArchiveContent(ArchiveSearchControls controls);
+    ItemSearchResults<ArchiveSearchResult> searchArchiveContent(ArchiveSearchControls controls);
 
     @Lock(transactional = true)
-    SearchResults<MetadataSearchResult> searchMetadata(MetadataSearchControls controls);
+    ItemSearchResults<MetadataSearchResult> searchMetadata(MetadataSearchControls controls);
 
     @Lock(transactional = true)
-    <T> SearchResults<GenericMetadataSearchResult<T>> searchGenericMetadata(GenericMetadataSearchControls<T> controls);
+    <T> ItemSearchResults<GenericMetadataSearchResult<T>> searchGenericMetadata(
+            GenericMetadataSearchControls<T> controls);
 
     @Lock(transactional = true)
-    SearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls);
+    ItemSearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls);
 
     @Lock(transactional = true)
-    SearchResults<XmlSearchResult> searchXmlContent(MetadataSearchControls controls);
+    ItemSearchResults<XmlSearchResult> searchXmlContent(MetadataSearchControls controls);
 
     @Lock(transactional = true)
-    SearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls);
+    ItemSearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls);
 
     @Async(delayUntilAfterCommit = true)
     void asyncIndexMarkedArchives();
 
-    //TODO: [by yl] Move all these methods to the InternalBuildService!
+    @Lock(transactional = true)
+    Set<BuildRun> getLatestBuilds() throws RepositoryRuntimeException;
 
     @Lock(transactional = true)
-    Set<BasicBuildInfo> getLatestBuildsByName() throws RepositoryRuntimeException;
+    List<BuildRun> findBuildsByArtifactChecksum(@Nullable String sha1, @Nullable String md5)
+            throws RepositoryRuntimeException;
 
     @Lock(transactional = true)
-    List<BasicBuildInfo> findBuildsByArtifactChecksum(String sha1, String md5) throws RepositoryRuntimeException;
-
-    @Lock(transactional = true)
-    List<BasicBuildInfo> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryRuntimeException;
+    List<BuildRun> findBuildsByDependencyChecksum(@Nullable String sha1, @Nullable String md5)
+            throws RepositoryRuntimeException;
 
     /**
      * Search for artifacts within a repository matching a given pattern.<br> The pattern should be like

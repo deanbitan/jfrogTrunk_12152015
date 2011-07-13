@@ -23,8 +23,8 @@ import org.artifactory.mime.MimeTypes;
 import org.artifactory.mime.MimeTypesReader;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
 
 import java.io.InputStream;
 
@@ -35,9 +35,9 @@ import java.io.InputStream;
  * @author Yossi Shaul
  */
 public class ArtifactoryHomeBoundTest {
-    private static MimeTypes mimeTypes;
+    protected MimeTypes mimeTypes;
 
-    @BeforeTest
+    @BeforeClass
     public void readMimeTypes() {
         // read and keep the default mime types
         InputStream mimeTypesFile = ResourceUtils.getResource(
@@ -47,9 +47,14 @@ public class ArtifactoryHomeBoundTest {
 
     @BeforeMethod
     public void bindArtifactoryHome() {
+        ArtifactoryHomeStub artifactory = getOrCreateArtifactoryHomeStub();
+        ArtifactoryHome.bind(artifactory);
+    }
+
+    protected ArtifactoryHomeStub getOrCreateArtifactoryHomeStub() {
         ArtifactoryHomeStub artifactory = new ArtifactoryHomeStub();
         artifactory.setMimeTypes(mimeTypes);
-        ArtifactoryHome.bind(artifactory);
+        return artifactory;
     }
 
     @AfterMethod

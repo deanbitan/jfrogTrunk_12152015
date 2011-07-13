@@ -18,13 +18,13 @@
 
 package org.artifactory.search;
 
+import org.artifactory.api.search.ItemSearchResult;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchControls;
-import org.artifactory.api.search.SearchResult;
-import org.artifactory.api.search.SearchResults;
 
 /**
  * @author yoavl
  */
-public interface Searcher<C extends SearchControls, R extends SearchResult> {
-    SearchResults<R> search(C controls);
+public interface Searcher<C extends SearchControls, R extends ItemSearchResult> {
+    ItemSearchResults<R> search(C controls);
 }

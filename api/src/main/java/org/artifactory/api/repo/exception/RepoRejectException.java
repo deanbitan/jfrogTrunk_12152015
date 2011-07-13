@@ -36,6 +36,10 @@ public class RepoRejectException extends Exception {
         super();
     }
 
+    protected RepoRejectException(int status) {
+        this.status = status;
+    }
+
     public RepoRejectException(CancelException cause) {
         super(cause);
         status = cause.getErrorCode();

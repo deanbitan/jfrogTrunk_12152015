@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.jcr.JcrPath;
@@ -65,7 +65,7 @@ public class MetadataSearcher extends XmlSearcherBase<MetadataSearchResult> {
     }
 
     @Override
-    protected SearchResults<MetadataSearchResult> filterAndReturnResults(
+    protected ItemSearchResults<MetadataSearchResult> filterAndReturnResults(
             MetadataSearchControls controls, QueryResult queryResult) throws RepositoryException {
 
         List<MetadataSearchResult> results = Lists.newArrayList();
@@ -101,6 +101,6 @@ public class MetadataSearcher extends XmlSearcherBase<MetadataSearchResult> {
                 handleNotFoundException(re);
             }
         }
-        return new SearchResults<MetadataSearchResult>(results, rows.getSize());
+        return new ItemSearchResults<MetadataSearchResult>(results, rows.getSize());
     }
 }

@@ -22,7 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.InfoRestSearchResult;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
@@ -93,7 +93,7 @@ public class ArtifactSearchResource {
         controls.setQuery(appendAndReturnWildcards(name));
         controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
-        SearchResults<ArtifactSearchResult> searchResults;
+        ItemSearchResults<ArtifactSearchResult> searchResults;
         try {
             searchResults = searchService.searchArtifacts(controls);
         } catch (RepositoryRuntimeException e) {

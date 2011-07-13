@@ -23,8 +23,8 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.JcrQuerySpec;
-import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
 import org.artifactory.fs.ItemInfo;
@@ -63,7 +63,8 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
     private long totalResultCount = 0;
 
     @Override
-    public SearchResults<PropertySearchResult> doSearch(PropertySearchControls controls) throws RepositoryException {
+    public ItemSearchResults<PropertySearchResult> doSearch(PropertySearchControls controls)
+            throws RepositoryException {
         this.controls = controls;
 
         String queryBase = getPathQueryBuilder(controls).toString();
@@ -77,7 +78,7 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
         executeClosedPropSearch(queryBase, closedPropertyKeys);
 
         //Return global results list
-        return new SearchResults<PropertySearchResult>(new ArrayList<PropertySearchResult>(globalResults),
+        return new ItemSearchResults<PropertySearchResult>(new ArrayList<PropertySearchResult>(globalResults),
                 totalResultCount);
     }
 

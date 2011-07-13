@@ -20,10 +20,10 @@ package org.artifactory.webapp.wicket.page.build.actionable;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.build.BuildRun;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.ActionableItemBase;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.ShowInCiServerAction;
@@ -43,24 +43,24 @@ public class BuildActionableItem extends ActionableItemBase {
 
     private static final Logger log = LoggerFactory.getLogger(BuildActionableItem.class);
 
-    private BasicBuildInfo basicBuildInfo;
+    private BuildRun buildRun;
 
     /**
      * Main constructor
      *
-     * @param basicBuildInfo Basic build info to act up-on
+     * @param buildRun Basic build info to act up-on
      */
-    public BuildActionableItem(BasicBuildInfo basicBuildInfo) {
-        this.basicBuildInfo = basicBuildInfo;
+    public BuildActionableItem(BuildRun buildRun) {
+        this.buildRun = buildRun;
         BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
         try {
-            String ciServerUrl = buildService.getBuildCiServerUrl(basicBuildInfo);
+            String ciServerUrl = buildService.getBuildCiServerUrl(buildRun);
             if (StringUtils.isNotBlank(ciServerUrl)) {
                 getActions().add(new ShowInCiServerAction(ciServerUrl));
             }
         } catch (IOException e) {
             String message = String.format("Unable to extract CI server URL if build '%s' #%s that started at %s",
-                    basicBuildInfo.getName(), basicBuildInfo.getNumber(), basicBuildInfo.getStarted());
+                    buildRun.getName(), buildRun.getNumber(), buildRun.getStarted());
             log.error(message + ": {}", e.getMessage());
             log.debug(message + ".", e);
         }
@@ -71,7 +71,7 @@ public class BuildActionableItem extends ActionableItemBase {
     }
 
     public String getDisplayName() {
-        return basicBuildInfo.getName();
+        return buildRun.getName();
     }
 
     public String getCssClass() {
@@ -80,7 +80,7 @@ public class BuildActionableItem extends ActionableItemBase {
 
     public void filterActions(AuthorizationService authService) {
         if (authService.isAdmin()) {
-            getActions().add(new DeleteBuildAction(basicBuildInfo));
+            getActions().add(new DeleteBuildAction(buildRun));
         }
     }
 
@@ -90,7 +90,7 @@ public class BuildActionableItem extends ActionableItemBase {
      * @return Selected build start time
      */
     public String getStarted() {
-        return basicBuildInfo.getStarted();
+        return buildRun.getStarted();
     }
 
     /**
@@ -99,7 +99,7 @@ public class BuildActionableItem extends ActionableItemBase {
      * @return Selected build start time as date
      */
     public Date getStartedDate() {
-        return basicBuildInfo.getStartedDate();
+        return buildRun.getStartedDate();
     }
 
     /**
@@ -108,7 +108,7 @@ public class BuildActionableItem extends ActionableItemBase {
      * @return Selected build number
      */
     public String getBuildNumber() {
-        return basicBuildInfo.getNumber();
+        return buildRun.getNumber();
     }
 
     /**
@@ -117,6 +117,6 @@ public class BuildActionableItem extends ActionableItemBase {
      * @return Build latest release status if exists, null if not
      */
     public String getLastReleaseStatus() {
-        return basicBuildInfo.getLastReleaseStatus();
+        return buildRun.getReleaseStatus();
     }
 }

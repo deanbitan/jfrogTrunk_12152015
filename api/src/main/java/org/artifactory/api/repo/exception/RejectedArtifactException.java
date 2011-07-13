@@ -41,4 +41,10 @@ public abstract class RejectedArtifactException extends RepoRejectException {
         this.rejectingRepo = rejectingRepo;
         this.rejectedArtifact = rejectedArtifact;
     }
+
+    protected RejectedArtifactException(int status, RepoDescriptor rejectingRepo, RepoPath rejectedArtifact) {
+        super(status);
+        this.rejectingRepo = rejectingRepo;
+        this.rejectedArtifact = rejectedArtifact;
+    }
 }

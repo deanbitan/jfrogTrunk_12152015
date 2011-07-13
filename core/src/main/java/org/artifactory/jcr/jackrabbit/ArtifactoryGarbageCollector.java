@@ -64,7 +64,10 @@ import java.util.Set;
  * </pre>
  *
  * @author Yoav Landman
+ * @deprecated This one is activated only for very old versions that used the pure Jackrabbit storage.
+ *             Replaced by {@link ArtifactoryDbGarbageCollector}.
  */
+@Deprecated
 public class ArtifactoryGarbageCollector implements JcrGarbageCollector {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryGarbageCollector.class);
 
@@ -320,7 +323,7 @@ public class ArtifactoryGarbageCollector implements JcrGarbageCollector {
             callback.beforeScanning(n);
         }
         log.debug("Scanning '{}'...", n.getPath());
-        for (PropertyIterator it = n.getProperties(); it.hasNext();) {
+        for (PropertyIterator it = n.getProperties(); it.hasNext(); ) {
             Property p = it.nextProperty();
             if (p.getType() == PropertyType.BINARY) {
                 if (n.hasProperty("jcr:uuid")) {
@@ -347,7 +350,7 @@ public class ArtifactoryGarbageCollector implements JcrGarbageCollector {
         }
         //Sleep before recursing to children (instead of between each node)
         sleep(sleep);
-        for (NodeIterator it = n.getNodes(); it.hasNext();) {
+        for (NodeIterator it = n.getNodes(); it.hasNext(); ) {
             result += recurse(it.nextNode(), sleep);
         }
         return result;

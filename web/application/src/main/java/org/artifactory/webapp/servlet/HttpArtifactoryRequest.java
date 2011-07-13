@@ -22,7 +22,6 @@ import org.artifactory.api.request.ArtifactoryRequestBase;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.HttpUtils;
-import org.artifactory.util.PathUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -66,7 +65,7 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
 
     public boolean isRecursive() {
         String origin = getOrigin();
-        return origin != null && origin.equals(PathUtils.getHostId());
+        return origin != null && origin.equals(HttpUtils.getHostId());
     }
 
     public InputStream getInputStream() throws IOException {

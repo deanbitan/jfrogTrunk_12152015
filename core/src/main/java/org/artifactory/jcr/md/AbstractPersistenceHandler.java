@@ -97,12 +97,10 @@ public abstract class AbstractPersistenceHandler<T> implements MetadataPersisten
         itemInfo.setCreated(getLongProperty(node, PROP_ARTIFACTORY_CREATED, getJcrCreated(node), false));
         itemInfo.setLastModified(
                 getLongProperty(node, PROP_ARTIFACTORY_LAST_MODIFIED, getJcrLastModified(node), false));
-        itemInfo.setCreatedBy(
-                getStringProperty(node, PROP_ARTIFACTORY_CREATED_BY, itemInfo.getCreatedBy(), true));
+        itemInfo.setCreatedBy(getStringProperty(node, PROP_ARTIFACTORY_CREATED_BY, itemInfo.getCreatedBy(), true));
         itemInfo.setModifiedBy(
                 getStringProperty(node, PROP_ARTIFACTORY_LAST_MODIFIED_BY, itemInfo.getModifiedBy(), true));
-        itemInfo.setLastUpdated(
-                getLongProperty(node, PROP_ARTIFACTORY_LAST_UPDATED, itemInfo.getLastUpdated(), true));
+        itemInfo.setLastUpdated(getLongProperty(node, PROP_ARTIFACTORY_LAST_UPDATED, itemInfo.getLastUpdated(), true));
     }
 
     protected void setPropertiesInNodeFromInfo(Node node, ItemInfo itemInfo) {

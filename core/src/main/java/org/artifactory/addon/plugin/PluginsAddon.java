@@ -19,6 +19,7 @@
 package org.artifactory.addon.plugin;
 
 import org.artifactory.addon.Addon;
+import org.artifactory.api.config.ImportableExportable;
 
 import java.util.Map;
 
@@ -26,7 +27,7 @@ import java.util.Map;
  * @author Yoav Landman
  * @date Oct 28, 2008
  */
-public interface PluginsAddon extends Addon {
+public interface PluginsAddon extends Addon, ImportableExportable {
     <C> void execPluginActions(Class<? extends PluginAction> type, C context, Object... args);
 
     ResponseCtx execute(String executionName, Map params, boolean async);

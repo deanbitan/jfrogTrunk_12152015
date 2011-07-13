@@ -22,8 +22,18 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.security.PermissionTargetInfo;
+import org.artifactory.backup.BackupJob;
+import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.cleanup.ArtifactCleanupJob;
+import org.artifactory.repo.index.IndexerJob;
+import org.artifactory.repo.index.IndexerServiceImpl;
+import org.artifactory.repo.replication.LocalReplicationJob;
+import org.artifactory.repo.replication.RemoteReplicationJob;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.StopStrategy;
+import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.InternalContextHelper;
@@ -35,6 +45,19 @@ import org.slf4j.Logger;
  * @author freds
  * @date Nov 6, 2008
  */
+@JobCommand(manualUser = TaskUser.CURRENT,
+        stopStrategy = StopStrategy.IMPOSSIBLE,
+        commandsToStop = {
+                JcrGarbageCollectorJob.class,
+                ExportJob.class,
+                IndexerServiceImpl.FindOrCreateIndexJob.class,
+                IndexerServiceImpl.SaveIndexFileJob.class,
+                IndexerJob.class,
+                BackupJob.class,
+                ArtifactCleanupJob.class,
+                LocalReplicationJob.class,
+                RemoteReplicationJob.class
+        })
 public class ImportJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(ImportJob.class);
 

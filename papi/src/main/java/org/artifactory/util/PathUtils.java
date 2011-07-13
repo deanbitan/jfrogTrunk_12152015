@@ -21,7 +21,6 @@ package org.artifactory.util;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
-import java.rmi.dgc.VMID;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -34,7 +33,6 @@ import java.util.List;
  * User: freds Date: Aug 3, 2008 Time: 5:42:55 PM
  */
 public class PathUtils {
-    private static String HOST_ID;
 
     /**
      * Check that the given CharSequence is neither <code>null</code> nor of length 0. Note: Will return
@@ -158,17 +156,6 @@ public class PathUtils {
             result = path.substring(0, path.length() - extension.length() - 1);
         }
         return result;
-    }
-
-    /**
-     * Calculate a unique id for the VM to support Artifactories with the same ip (e.g. accross NATs)
-     */
-    public static String getHostId() {
-        if (HOST_ID == null) {
-            VMID vmid = new VMID();
-            HOST_ID = vmid.toString();
-        }
-        return HOST_ID;
     }
 
     public static String collectionToDelimitedString(Iterable<String> iterable) {

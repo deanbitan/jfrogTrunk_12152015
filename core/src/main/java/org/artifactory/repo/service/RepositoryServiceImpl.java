@@ -23,12 +23,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.addon.AddonsManager;
@@ -57,9 +54,9 @@ import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.request.UploadService;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SavedSearchResults;
-import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.deployable.VersionUnitSearchControls;
 import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.api.security.AclService;
@@ -68,7 +65,6 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.PermissionTargetInfo;
 import org.artifactory.api.tree.fs.ZipEntriesTree;
 import org.artifactory.api.tree.fs.ZipEntryInfo;
-import org.artifactory.backup.BackupJob;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
@@ -98,8 +94,6 @@ import org.artifactory.maven.MavenPluginsMetadataCalculator;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.*;
-import org.artifactory.repo.cleanup.ArtifactCleanupJob;
-import org.artifactory.repo.index.IndexerJob;
 import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.jcr.JcrHelper;
 import org.artifactory.repo.jcr.JcrLocalRepo;
@@ -114,14 +108,15 @@ import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ResolvedResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.schedule.TaskBase;
 import org.artifactory.schedule.TaskCallback;
 import org.artifactory.schedule.TaskService;
-import org.artifactory.schedule.quartz.QuartzTask;
+import org.artifactory.schedule.TaskUtils;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.util.HttpClientUtils;
+import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.util.ZipUtils;
@@ -132,6 +127,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Nullable;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -637,15 +633,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (TaskCallback.currentTaskToken() == null) {
             importAsync(PermissionTargetInfo.ANY_REPO, settings, false, true);
         } else {
-            ImportExportTasks tasks = new ImportExportTasks();
-            try {
-                tasks.importStarting();
-                //Import the local repositories
-                List<LocalRepoDescriptor> repoList = getLocalAndCachedRepoDescriptors();
-                importAll(repoList, Collections.<LocalRepoDescriptor>emptyList(), settings);
-            } finally {
-                tasks.importEnded();
-            }
+            //Import the local repositories
+            List<LocalRepoDescriptor> repoList = getLocalAndCachedRepoDescriptors();
+            importAll(repoList, Collections.<LocalRepoDescriptor>emptyList(), settings);
         }
     }
 
@@ -659,21 +649,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (TaskCallback.currentTaskToken() == null) {
             importAsync(repoKey, settings, false, true);
         } else {
-            ImportExportTasks tasks = new ImportExportTasks();
-            try {
-                tasks.importStarting();
-                //Import each file seperately to avoid a long running transaction
-                LocalRepo localRepo = localOrCachedRepositoryByKey(repoKey);
-                if (localRepo == null) {
-                    String msg = "The repo key " + repoKey + " is not a local or cached repository!";
-                    IllegalArgumentException ex = new IllegalArgumentException(msg);
-                    status.setError(msg, ex, log);
-                    return;
-                }
-                localRepo.importFrom(settings);
-            } finally {
-                tasks.importEnded();
+            //Import each file seperately to avoid a long running transaction
+            LocalRepo localRepo = localOrCachedRepositoryByKey(repoKey);
+            if (localRepo == null) {
+                String msg = "The repo key " + repoKey + " is not a local or cached repository!";
+                IllegalArgumentException ex = new IllegalArgumentException(msg);
+                status.setError(msg, ex, log);
+                return;
             }
+            localRepo.importFrom(settings);
         }
     }
 
@@ -877,12 +861,16 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     public <MD> boolean setMetadata(RepoPath repoPath, Class<MD> metadataClass, MD metadata) {
         if (!authService.canAnnotate(repoPath)) {
             AccessLogger.annotateDenied(repoPath);
+            log.error("Cannot set metadata of type '{}' on '{}': lacking annotate permissions.",
+                    metadataClass.getSimpleName(), repoPath.getId());
             return false;
         }
 
         LocalRepo repository = getLocalRepository(repoPath);
         JcrFsItem<?> fsItem = repository.getLockedJcrFsItem(repoPath);
         if (fsItem == null) {
+            log.error("Cannot set metadata of type '{}' on '{}': unable to find the item within the repository.",
+                    metadataClass.getSimpleName(), repoPath.getId());
             return false;
         }
 
@@ -960,7 +948,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     public MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetLocalRepoKey,
             Properties properties, boolean dryRun, boolean failFast, boolean searchResults) {
-        Set<RepoPath> pathsToMoveIncludingParents = aggregatePathsToMove(pathsToMove, targetLocalRepoKey);
+        Set<RepoPath> pathsToMoveIncludingParents = aggregatePathsToMove(pathsToMove, targetLocalRepoKey, false);
 
         log.debug("The following paths will be moved: {}", pathsToMoveIncludingParents);
         // start moving each path separately, marking each folder or file's parent folder for metadata recalculation
@@ -994,7 +982,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     public MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey,
             Properties properties, boolean dryRun, boolean failFast, boolean searchResults) {
-        Set<RepoPath> pathsToCopyIncludingParents = aggregatePathsToMove(pathsToCopy, targetLocalRepoKey);
+        Set<RepoPath> pathsToCopyIncludingParents = aggregatePathsToMove(pathsToCopy, targetLocalRepoKey, true);
 
         log.debug("The following paths will be copied: {}", pathsToCopyIncludingParents);
         //Start copying each path separately, marking each folder or file's parent folder for metadata recalculation
@@ -1037,7 +1025,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (virtualRepo == null) {
             throw new IllegalArgumentException(repoPath.getRepoKey() + " is not a virtual repository.");
         }
-        Set<LocalRepo> resolvedLocalRepos = virtualRepo.getResolvedLocalRepos();
+        Set<LocalRepo> resolvedLocalRepos = virtualRepo.getResolvedLocalAndCachedRepos();
         for (LocalRepo resolvedLocalRepo : resolvedLocalRepos) {
             if (resolvedLocalRepo.itemExists(repoPath.getPath())) {
                 return getFileInfo(resolvedLocalRepo.getRepoPath(repoPath.getPath()));
@@ -1052,7 +1040,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (virtualRepo == null) {
             throw new IllegalArgumentException(repoPath.getRepoKey() + " is not a virtual repository.");
         }
-        Set<LocalRepo> resolvedLocalRepos = virtualRepo.getResolvedLocalRepos();
+        Set<LocalRepo> resolvedLocalRepos = virtualRepo.getResolvedLocalAndCachedRepos();
         for (LocalRepo resolvedLocalRepo : resolvedLocalRepos) {
             if (resolvedLocalRepo.itemExists(repoPath.getPath())) {
                 return getItemInfo(resolvedLocalRepo.getRepoPath(repoPath.getPath()));
@@ -1251,7 +1239,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     public RepoDescriptor repoDescriptorByKey(String key) {
         Repo repo = globalVirtualRepo.repositoryByKey(key);
         if (repo != null) {
-            return (LocalRepoDescriptor) repo.getDescriptor();
+            return repo.getDescriptor();
         }
         return null;
     }
@@ -1485,23 +1473,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             importAsync(null, settings, false, true);
         } else {
             status.setStatus("Importing repositories...", log);
-            ImportExportTasks tasks = new ImportExportTasks();
-            try {
-                tasks.importStarting();
-                internalImportFrom(settings);
-            } finally {
-                tasks.importEnded();
-            }
+            internalImportFrom(settings);
             status.setStatus("Finished importing repositories...", log);
         }
     }
 
-    public BasicStatusHolder assertValidPath(RealRepo repo, String path) {
-        return repo.assertValidPath(path);
-    }
-
     public void assertValidDeployPath(LocalRepo repo, String path) throws RepoRejectException {
-        BasicStatusHolder status = assertValidPath(repo, path);
+        BasicStatusHolder status = repo.assertValidPath(path, false);
 
         if (!status.isError()) {
             RepoPath repoPath = new RepoPathImpl(repo.getKey(), path);
@@ -1588,7 +1566,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         List<VersionUnit> versionUnits = Lists.newArrayList();
         try {
             VersionUnitSearchControls controls = new VersionUnitSearchControls(repoPath);
-            SearchResults<VersionUnitSearchResult> searchResults = searchService.searchVersionUnits(controls);
+            ItemSearchResults<VersionUnitSearchResult> searchResults = searchService.searchVersionUnits(controls);
             for (VersionUnitSearchResult result : searchResults.getResults()) {
                 versionUnits.add(result.getVersionUnit());
             }
@@ -1795,13 +1773,14 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return latestItem;
     }
 
-    private String importAsync(String repoKey, ImportSettings settings, boolean deleteExistingRepo, boolean wait) {
+    private String importAsync(@Nullable String repoKey, ImportSettings settings, boolean deleteExistingRepo,
+            boolean wait) {
         MultiStatusHolder status = settings.getStatusHolder();
-        QuartzTask task = new QuartzTask(ImportJob.class, "Import");
+        TaskBase task = TaskUtils.createManualTask(ImportJob.class, 0L);
         task.addAttribute(ImportJob.REPO_KEY, repoKey);
         task.addAttribute(ImportJob.DELETE_REPO, deleteExistingRepo);
         task.addAttribute(ImportSettings.class.getName(), settings);
-        taskService.startTask(task);
+        taskService.startTask(task, true);
         if (wait) {
             boolean completed = taskService.waitForTaskCompletion(task.getToken());
             if (!completed) {
@@ -1816,12 +1795,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     private void exportAsync(String repoKey, ExportSettings settings) {
         MultiStatusHolder status = settings.getStatusHolder();
-        QuartzTask task = new QuartzTask(ExportJob.class, "Export");
+        TaskBase task = TaskUtils.createManualTask(ExportJob.class, 0L);
         if (repoKey != null) {
             task.addAttribute(ExportJob.REPO_KEY, repoKey);
         }
         task.addAttribute(ExportSettings.class.getName(), settings);
-        taskService.startTask(task);
+        taskService.startTask(task, true);
         boolean completed = taskService.waitForTaskCompletion(task.getToken());
         if (!completed) {
             if (!status.isError()) {
@@ -1840,27 +1819,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return localRepo;
     }
 
-    private class ImportExportTasks {
-
-        void importStarting() {
-            taskService.cancelTasks(ExportJob.class, true);
-            taskService.stopTasks(IndexerJob.class, false);
-            taskService.stopTasks(BackupJob.class, true);
-            taskService.stopTasks(ArtifactCleanupJob.class, true);
-        }
-
-        void importEnded() {
-            taskService.resumeTasks(IndexerJob.class);
-            taskService.resumeTasks(BackupJob.class);
-            taskService.resumeTasks(ArtifactCleanupJob.class);
-        }
-    }
-
     /**
      * Do the actual full import.
      *
      * @param settings
-     * @return true if success, false othewise
+     * @return true if success, false otherwise
      */
     private boolean internalImportFrom(ImportSettings settings) {
         MultiStatusHolder status = settings.getStatusHolder();
@@ -1967,7 +1930,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             log.debug("{}: falling back to using cache entry for resource info at '{}'.", this, path);
             //Reset the resource age so it is kept being cached
             fsItem.unexpire();
-            return repo.getInfo(new NullRequestContext(path));
+            return repo.getInfo(new NullRequestContext(repoPath));
         }
         return null;
     }
@@ -2073,7 +2036,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
      * @param targetLocalRepoKey Key of target local repo
      * @return Set of aggregated paths to move
      */
-    private Set<RepoPath> aggregatePathsToMove(Set<RepoPath> pathsToMove, String targetLocalRepoKey) {
+    private Set<RepoPath> aggregatePathsToMove(Set<RepoPath> pathsToMove, String targetLocalRepoKey, boolean copy) {
         // aggregate paths by parent repo path
         Multimap<RepoPath, RepoPath> pathsByParent = HashMultimap.create();
         for (RepoPath pathToMove : pathsToMove) {
@@ -2093,9 +2056,10 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             } else {
                 // if the parent children count equals to the number of files to be moved, move the folder instead
                 LocalRepo repository = getLocalRepository(parentPath);
-                JcrFolder folder = repository.getLockedJcrFolder(parentPath, false);
+                JcrFolder folder =
+                        copy ? repository.getJcrFolder(parentPath) : repository.getLockedJcrFolder(parentPath, false);
                 // get all the folder children using write lock
-                List<JcrFsItem> folderChildren = jcrRepoService.getChildren(folder, true);
+                List<JcrFsItem> folderChildren = jcrRepoService.getChildren(folder, !copy);
                 if (folder != null && folderChildren.size() == children.size()) {
                     pathsToMoveIncludingParents.add(parentPath);
                 } else {
@@ -2200,19 +2164,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         setHeader(getMethod, headersMap, "User-Agent");
         setHeader(getMethod, headersMap, "Referer");
 
-        HttpClient client = new HttpClient();
-        HttpClientParams clientParams = client.getParams();
-        // Set the socket data timeout
-        clientParams.setSoTimeout(15000);
-        // Set the connection timeout
-        clientParams.setConnectionManagerTimeout(1500);
-
-        // Don't retry
-        clientParams.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(0, false));
-
-        //Update the proxy settings
         ProxyDescriptor proxy = InternalContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
-        HttpClientUtils.configureProxy(client, proxy);
+
+        HttpClient client = new HttpClientConfigurator()
+                .soTimeout(15000)
+                .connectionTimeout(1500)
+                .retry(0, false)
+                .proxy(proxy).getClient();
 
         client.executeMethod(getMethod);
         if (getMethod.getStatusCode() == HttpStatus.SC_OK) {

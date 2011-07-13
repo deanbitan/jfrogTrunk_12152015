@@ -19,6 +19,7 @@
 package org.artifactory.api.search.property;
 
 import org.artifactory.api.search.SearchResultBase;
+import org.artifactory.fs.ItemInfo;
 
 /**
  * Holds property search result data.
@@ -27,7 +28,7 @@ import org.artifactory.api.search.SearchResultBase;
  */
 public class PropertySearchResult extends SearchResultBase {
 
-    public PropertySearchResult(org.artifactory.fs.ItemInfo itemInfo) {
+    public PropertySearchResult(ItemInfo itemInfo) {
         super(itemInfo);
     }
 }

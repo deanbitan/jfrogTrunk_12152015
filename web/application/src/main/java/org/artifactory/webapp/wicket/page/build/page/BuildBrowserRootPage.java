@@ -24,9 +24,9 @@ import org.apache.wicket.PageParameters;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.build.BuildRun;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.DoesNotExistException;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
@@ -181,7 +181,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
         Panel panelToAdd = null;
         String buildName = getBuildName();
         try {
-            Set<BasicBuildInfo> buildsByName = buildService.searchBuildsByName(buildName);
+            Set<BuildRun> buildsByName = buildService.searchBuildsByName(buildName);
 
             if (buildsByName == null || buildsByName.isEmpty()) {
                 String errorMessage = new StringBuilder().append("Could not find builds by name '").append(buildName).

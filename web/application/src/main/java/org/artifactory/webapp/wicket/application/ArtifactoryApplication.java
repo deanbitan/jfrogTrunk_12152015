@@ -109,6 +109,9 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     private SiteMap siteMap;
     private String sharedResourcesPath;
 
+    /**
+     * Used to prevent logo caching in browsers
+     */
     private long logoModifyTime;
 
     private final EnumSet<ConstantValues> modes =
@@ -152,6 +155,9 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         return new ArtifactoryRequestCycle(this, (WebRequest) request, response);
     }
 
+    /**
+     * Updates the logo last modify time to force browsers to reload the logo.
+     */
     public void updateLogo() {
         this.logoModifyTime = new File(ContextHelper.get().getArtifactoryHome().getLogoDir(), "logo").lastModified();
     }

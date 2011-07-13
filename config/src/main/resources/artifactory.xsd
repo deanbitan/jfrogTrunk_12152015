@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.8"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.8"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.9"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.9"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -169,15 +169,29 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="replications" minOccurs="0">
+            <xs:element name="remoteReplications" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Configure scheduled repository replications.
+                        Configure scheduled remote repository replications.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="replication" type="ReplicationType" maxOccurs="unbounded" minOccurs="0"/>
+                        <xs:element name="remoteReplication" type="RemoteReplicationType" maxOccurs="unbounded"
+                                    minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="localReplications" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Configure scheduled local repository replications.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="localReplication" type="LocalReplicationType" maxOccurs="unbounded"
+                                    minOccurs="0"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -758,7 +772,7 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        The cron expression by which backup frequency is determined.  <a href="http://www.opensymphony.com/quartz/wikidocs/TutorialLesson6.html" target="_blank">More Info...</a>
+                        The cron expression by which backup frequency is determined.  <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">More Info...</a>
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1348,7 +1362,9 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        Context name to search in, relative to the base DN in the LDAP URL.
+                        Context name to search in, relative to the base DN in the LDAP URL. ex: ou=users
+                        With LDAP Group addon enabled it is possible to enter multiple searchBase entries
+                        separated by the '|' sign. ex: ou=internalUsers,ou=hq|ou=externalUsers
                         This parameter is optional.
                         ]]>
                     </xs:documentation>
@@ -1745,12 +1761,12 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="ReplicationType">
+    <xs:complexType name="ReplicationBaseType">
         <xs:sequence>
             <xs:element name="enabled" type="xs:boolean">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Enable active replication of this remote repoitory.
+                        Enable active replication of this repository.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1758,7 +1774,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        The cron expression by which replication frequency is determined. <a href="http://www.opensymphony.com/quartz/wikidocs/TutorialLesson6.html" target="_blank">More Info...</a>
+                        The cron expression by which replication frequency is determined. <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">More Info...</a>
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1766,21 +1782,21 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="syncDeletes" type="xs:boolean">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Delete artifacts and folders that no longer exist in the remote repository.
+                        Delete artifacts and folders that no longer exist in the source repository.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="syncProperties" type="xs:boolean">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Include metdata properties of remote files and folders as part of the replication.
+                        Include metadata properties of files and folders as part of the replication.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="pathPrefix" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        A subpath within the remote repository to limit replication to.
+                        A subpath within the source repository to limit replication to.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1792,5 +1808,68 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RemoteReplicationType">
+        <xs:complexContent>
+            <xs:extension base="ReplicationBaseType">
+                <xs:sequence>
+                    <xs:element name="socketTimeoutMillis" type="xs:int" default="15000" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Network timeout in milliseconds to use for remote file listing query.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="LocalReplicationType">
+        <xs:complexContent>
+            <xs:extension base="ReplicationBaseType">
+                <xs:sequence>
+                    <xs:element name="url" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The URL of the target local repository on a remote Artifactory server.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="proxyRef" type="xs:IDREF" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Network proxy reference.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="socketTimeoutMillis" type="xs:int" default="15000" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Network timeout in milliseconds to use both for connection
+                                establishment and for unanswered requests.
+                                Timing out on a network operation is considered as a retrieval
+                                failure.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="username" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                HTTP authentication username.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="password" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                HTTP authentication password.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 </xs:schema>

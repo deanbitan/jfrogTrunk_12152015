@@ -39,8 +39,14 @@ public interface RealRepo<T extends RealRepoDescriptor> extends Repo<T> {
 
     int getMaxUniqueSnapshots();
 
-    BasicStatusHolder assertValidPath(String path);
+    /**
+     * Checks that the actionable path is valid in the current context
+     *
+     * @param path            Path to test
+     * @param downloadRequest True if the originating request is for download, false for upload
+     * @return Test result
+     */
+    BasicStatusHolder assertValidPath(String path, boolean downloadRequest);
 
     boolean accepts(String path);
-
 }

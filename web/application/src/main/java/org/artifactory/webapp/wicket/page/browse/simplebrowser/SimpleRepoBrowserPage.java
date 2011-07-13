@@ -23,6 +23,7 @@ import org.apache.wicket.protocol.http.WebRequestCycle;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
@@ -36,6 +37,9 @@ import javax.servlet.http.HttpServletResponse;
 
 public class SimpleRepoBrowserPage extends AuthenticatedPage {
     public static final String PATH = "_repoBrowser";
+
+    @SpringBean
+    private AuthorizationService authorizationService;
 
     @SpringBean
     private RepositoryService repoService;
@@ -56,9 +60,10 @@ public class SimpleRepoBrowserPage extends AuthenticatedPage {
 
         String repoKey = repoPath.getRepoKey();
         RemoteRepoDescriptor remoteRepoDescriptor = repoService.remoteRepoDescriptorByKey(repoKey);
-        if (remoteRepoDescriptor != null && !remoteRepoDescriptor.isListRemoteFolderItems()) {
-            warn("Remote content browsing is disabled for this repository.\n" +
-                    " You can turn on remote browsing by enabling the 'List Remote Folder Items' flag for this repository");
+        if (authorizationService.isAdmin() && (remoteRepoDescriptor != null) &&
+                !remoteRepoDescriptor.isListRemoteFolderItems()) {
+            warn("Remote content browsing is disabled for this repository." +
+                    "\n You can turn on remote browsing by enabling the 'List Remote Folder Items' flag for this repository.");
         }
 
         Properties requestProps = (Properties) httpRequest.getAttribute(RepoFilter.ATTR_ARTIFACTORY_REQUEST_PROPERTIES);

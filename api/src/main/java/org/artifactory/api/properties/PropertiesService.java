@@ -11,6 +11,7 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,7 +36,7 @@ public interface PropertiesService {
      * @param property    Property to add
      * @param values      Property values (if null, will not add the property)
      */
-    void addProperty(RepoPath repoPath, PropertySet propertySet, Property property, String... values);
+    void addProperty(RepoPath repoPath, @Nullable PropertySet propertySet, Property property, String... values);
 
     /**
      * Edit a property on a specific repo path.

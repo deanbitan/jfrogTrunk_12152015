@@ -22,7 +22,6 @@ import com.google.common.collect.Sets;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.RestAddon;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
@@ -38,6 +37,7 @@ import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.build.BuildRun;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
@@ -60,9 +60,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.text.ParseException;
 import java.util.Set;
 
@@ -105,15 +103,15 @@ public class BuildResource {
     @GET
     @Produces({BuildRestConstants.MT_BUILDS, MediaType.APPLICATION_JSON})
     public Builds getAllBuilds() throws IOException {
-        Set<BasicBuildInfo> latestBuildsByName = searchService.getLatestBuildsByName();
+        Set<BuildRun> latestBuildsByName = searchService.getLatestBuilds();
         if (!latestBuildsByName.isEmpty()) {
             //Add our builds to the list of build resources
             Builds builds = new Builds();
-            builds.slf = getBaseBuildsHref();
+            builds.slf = RestUtils.getBaseBuildsHref(request);
 
-            for (BasicBuildInfo buildInfo : latestBuildsByName) {
-                String buildHref = getBuildRelativeHref(buildInfo.getName());
-                builds.builds.add(new Builds.Build(buildHref, buildInfo.getStarted()));
+            for (BuildRun buildRun : latestBuildsByName) {
+                String buildHref = RestUtils.getBuildRelativeHref(buildRun.getName());
+                builds.builds.add(new Builds.Build(buildHref, buildRun.getStarted()));
             }
             return builds;
 
@@ -134,7 +132,7 @@ public class BuildResource {
     @Produces({BuildRestConstants.MT_BUILDS_BY_NAME, MediaType.APPLICATION_JSON})
     public BuildsByName getAllSpecificBuilds() throws IOException {
         String buildName = RestUtils.getBuildNameFromRequest(request);
-        Set<BasicBuildInfo> buildsByName;
+        Set<BuildRun> buildsByName;
         try {
             buildsByName = buildService.searchBuildsByName(buildName);
         } catch (RepositoryRuntimeException e) {
@@ -142,10 +140,10 @@ public class BuildResource {
         }
         if (!buildsByName.isEmpty()) {
             BuildsByName builds = new BuildsByName();
-            builds.slf = getBaseBuildsHref() + getBuildRelativeHref(buildName);
-            for (BasicBuildInfo basicBuildInfo : buildsByName) {
-                String versionHref = getBuildNumberRelativeHref(basicBuildInfo.getNumber());
-                builds.buildsNumbers.add(new BuildsByName.Build(versionHref, basicBuildInfo.getStarted()));
+            builds.slf = RestUtils.getBaseBuildsHref(request) + RestUtils.getBuildRelativeHref(buildName);
+            for (BuildRun buildRun : buildsByName) {
+                String versionHref = RestUtils.getBuildNumberRelativeHref(buildRun.getNumber());
+                builds.buildsNumbers.add(new BuildsByName.Build(versionHref, buildRun.getStarted()));
             }
             return builds;
         }
@@ -168,7 +166,7 @@ public class BuildResource {
         Build build = buildService.getLatestBuildByNameAndNumber(buildName, buildNumber);
         if (build != null) {
             BuildInfo buildInfo = new BuildInfo();
-            buildInfo.slf = getBuildInfoHref(build.getName(), build.getNumber());
+            buildInfo.slf = RestUtils.getBuildInfoHref(request, build.getName(), build.getNumber());
             buildInfo.buildInfo = build;
             return buildInfo;
         } else {
@@ -222,7 +220,8 @@ public class BuildResource {
      * @param scopes  Scopes of dependencies to copy (agnostic if null or empty)
      * @param dry     Zero or negative int if to apply the selected action. Positive int to simulate
      * @return Result of action
-     * @deprecated Use {@link org.artifactory.rest.resource.ci.BuildResource#promote(java.lang.String, java.lang.String, org.jfrog.build.api.release.Promotion)} instead
+     * @deprecated Use {@link org.artifactory.rest.resource.ci.BuildResource#promote(java.lang.String, java.lang.String,
+     *             org.jfrog.build.api.release.Promotion)} instead
      */
     @POST
     @Path("/{action}/{name}/{buildNumber}")
@@ -254,7 +253,9 @@ public class BuildResource {
             @PathParam("buildNumber") String buildNumber, Promotion promotion) throws IOException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
-            PromotionResult promotionResult = restAddon.promoteBuild(name, buildNumber, promotion);
+            String decodedName = URLDecoder.decode(name, "UTF-8");
+            String decodedBuildNumber = URLDecoder.decode(buildNumber, "UTF-8");
+            PromotionResult promotionResult = restAddon.promoteBuild(decodedName, decodedBuildNumber, promotion);
             return Response.status(promotionResult.errorsOrWarningHaveOccurred() ?
                     HttpStatus.SC_BAD_REQUEST : HttpStatus.SC_OK).entity(promotionResult).build();
         } catch (IllegalArgumentException iae) {
@@ -369,21 +370,5 @@ public class BuildResource {
                     pe.getMessage());
         }
         return null;
-    }
-
-    private String getBaseBuildsHref() {
-        return RestUtils.getRestApiUrl(request) + "/" + BuildRestConstants.PATH_ROOT;
-    }
-
-    private String getBuildRelativeHref(String buildName) throws UnsupportedEncodingException {
-        return "/" + URLEncoder.encode(buildName, "utf-8");
-    }
-
-    private String getBuildNumberRelativeHref(String buildNumber) throws UnsupportedEncodingException {
-        return "/" + URLEncoder.encode(buildNumber, "utf-8");
-    }
-
-    private String getBuildInfoHref(String buildName, String buildNumber) throws UnsupportedEncodingException {
-        return getBaseBuildsHref() + getBuildRelativeHref(buildName) + getBuildNumberRelativeHref(buildNumber);
     }
 }

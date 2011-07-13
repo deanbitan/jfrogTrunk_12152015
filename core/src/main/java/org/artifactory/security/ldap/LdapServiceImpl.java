@@ -19,24 +19,29 @@
 package org.artifactory.security.ldap;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddonsImpl;
+import org.artifactory.addon.LdapGroupAddon;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.security.ldap.LdapService;
 import org.artifactory.api.security.ldap.LdapUser;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
 import org.springframework.ldap.CommunicationException;
 import org.springframework.ldap.core.DirContextAdapter;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.ldap.core.support.BaseLdapPathContextSource;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 import org.springframework.stereotype.Service;
 
-import static org.apache.commons.lang.StringUtils.EMPTY;
+import java.util.List;
+
 import static org.apache.commons.lang.StringUtils.isBlank;
 
 /**
@@ -79,6 +84,16 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
         return status;
     }
 
+    private LdapGroupAddon getLdapGroupAddon() {
+        InternalArtifactoryContext context = InternalContextHelper.get();
+        if (context != null) {
+            AddonsManager addonsManager = context.beanForType(AddonsManager.class);
+            return addonsManager.addonByType(LdapGroupAddon.class);
+        } else {
+            return new CoreAddonsImpl();
+        }
+    }
+
 
     @SuppressWarnings({"unchecked"})
     public LdapUser getDnFromUserName(LdapSetting ldapSetting, String userName) {
@@ -103,20 +118,30 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
             return null;
         }
         DirContextOperations contextOperations = null;
-        FilterBasedLdapUserSearch ldapUserSearch = getFilterBasedLdapUserSearch(ldapTemplate, settings);
         try {
             log.debug("Searching for user {}", userName);
-            contextOperations = ldapUserSearch.searchForUser(userName);
-            // Only DirContextAdapter can be used since the LDAP connection need to be released and we still need
-            // read access to this LDAP context.
-            if (!(contextOperations instanceof DirContextAdapter)) {
-                throw new ClassCastException(
-                        "Cannot use LDAP DirContext class " + contextOperations.getClass().getName() +
-                                " it should be " + DirContextAdapter.class.getName());
+            List<FilterBasedLdapUserSearch> ldapUserSearches = getLdapGroupAddon().getLdapUserSearches(
+                    ldapTemplate.getContextSource(), settings);
+            for (FilterBasedLdapUserSearch ldapUserSearch : ldapUserSearches) {
+                try {
+                    contextOperations = ldapUserSearch.searchForUser(userName);
+                } catch (org.springframework.security.core.AuthenticationException e) {
+                    log.debug("Failed to retrieve groups user '{}' via LDAP: {}", userName, e.getMessage());
+                }
+                if (contextOperations != null) {
+                    break;
+                }
             }
-            log.debug("Found user {}, has DN: {}", userName, contextOperations.getNameInNamespace());
-        } catch (org.springframework.security.core.AuthenticationException e) {
-            log.debug("Failed to retrieve groups user '{}' via LDAP: {}", userName, e.getMessage());
+            if (contextOperations != null) {
+                // Only DirContextAdapter can be used since the LDAP connection need to be released and we still need
+                // read access to this LDAP context.
+                if (!(contextOperations instanceof DirContextAdapter)) {
+                    throw new ClassCastException(
+                            "Cannot use LDAP DirContext class " + contextOperations.getClass().getName() +
+                                    " it should be " + DirContextAdapter.class.getName());
+                }
+                log.debug("Found user {}, has DN: {}", userName, contextOperations.getNameInNamespace());
+            }
         } catch (CommunicationException ce) {
             String message =
                     String.format("Failed to retrieve groups for user '%s' via LDAP: communication error.", userName);
@@ -137,22 +162,4 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
         }
         return new LdapUser(userName, contextOperations.getNameInNamespace());
     }
-
-    private FilterBasedLdapUserSearch getFilterBasedLdapUserSearch(LdapTemplate ldapTemplate, LdapSetting settings) {
-        SearchPattern pattern = settings.getSearch();
-        if (pattern == null) {
-
-        }
-        if (isBlank(pattern.getSearchBase())) {
-            log.debug("LDAP settings have no search base defined, using defaults.");
-            pattern.setSearchBase(EMPTY);
-        }
-        FilterBasedLdapUserSearch ldapUserSearch =
-                new FilterBasedLdapUserSearch(settings.getSearch().getSearchBase(),
-                        pattern.getSearchFilter(),
-                        (BaseLdapPathContextSource) ldapTemplate.getContextSource());
-        ldapUserSearch.setSearchSubtree(settings.getSearch().isSearchSubTree());
-        return ldapUserSearch;
-    }
-
 }

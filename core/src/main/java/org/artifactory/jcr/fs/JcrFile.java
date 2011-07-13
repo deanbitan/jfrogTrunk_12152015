@@ -270,7 +270,8 @@ public class JcrFile extends JcrFsItem<InternalFileInfo> {
     }
 
     /**
-     * Retrieve JCR content, and do working copy commit if needed.
+     * Retrieve JCR content as input stream, and do working copy commit if needed. The consumer is responsible for
+     * calling close() on the returned stream.
      *
      * @return null if deleted, the InputStream of the content of the file otherwise
      */

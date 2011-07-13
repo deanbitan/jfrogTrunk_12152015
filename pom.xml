@@ -25,7 +25,7 @@
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>2.3.3.1</version>
+    <version>2.3.4</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -54,7 +54,7 @@
         <sourceforgeName>artifactory</sourceforgeName>
         <spring.version>3.0.5.RELEASE</spring.version>
         <spring.security.version>3.0.5.RELEASE</spring.security.version>
-        <artifactory.version>2.3.3.1</artifactory.version>
+        <artifactory.version>2.3.4</artifactory.version>
         <build.info.version>2.0.0</build.info.version>
         <wicket.version>1.4.10</wicket.version>
         <jetty.version>7.0.2.v20100331</jetty.version>
@@ -277,14 +277,14 @@
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy</artifactId>
-                <version>1.7.10</version>
+                <version>1.8.0</version>
                 <optional>true</optional>
             </dependency>
 
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
-                <version>1.7.10</version>
+                <version>1.8.0</version>
             </dependency>
 
             <dependency>
@@ -629,7 +629,7 @@
             <dependency>
                 <groupId>org.apache.jackrabbit</groupId>
                 <artifactId>jackrabbit-core-jfrog</artifactId>
-                <version>2.2.5a</version>
+                <version>2.2.5b</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.lucene</groupId>
@@ -1199,6 +1199,7 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
             <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
@@ -1393,7 +1394,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>2.8</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1461,7 +1462,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.7</version>
+                <version>2.8</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

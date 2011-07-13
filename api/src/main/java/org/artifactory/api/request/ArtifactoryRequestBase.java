@@ -18,6 +18,7 @@
 
 package org.artifactory.api.request;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPathImpl;
@@ -41,6 +42,12 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
      */
     private Properties properties = new PropertiesImpl();
 
+    /**
+     * A path inside a zip file. The path never starts with leading slash. <p/> For example for path like
+     * /path/to/zip!/path/to/resource/in/zip the resource path is path/to/resource/in/zip
+     */
+    private String zipResourcePath;
+
     private long modificationTime = -1;
 
     public RepoPath getRepoPath() {
@@ -63,12 +70,20 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         return !properties.isEmpty();
     }
 
+    public String getZipResourcePath() {
+        return zipResourcePath;
+    }
+
+    public boolean isZipResourceRequest() {
+        return StringUtils.isNotBlank(zipResourcePath);
+    }
+
     public boolean isMetadata() {
         return NamingUtils.isMetadata(getPath());
     }
 
     public boolean isChecksum() {
-        return NamingUtils.isChecksum(getPath());
+        return NamingUtils.isChecksum(getPath()) || NamingUtils.isChecksum(zipResourcePath);
     }
 
     public String getName() {
@@ -170,8 +185,13 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         //Strip any trailing '/'
         int pathEndIndex = requestPath.endsWith("/") ? requestPath.length() - 1 : requestPath.length();
         String path = pathStartIndex < pathEndIndex ? requestPath.substring(pathStartIndex, pathEndIndex) : "";
-        //Calculate matrix params on the path
+
+        //Calculate matrix params on the path and return path without matrix params
         path = processMatrixParamsIfExist(path);
+
+        // calculate zip resource path and return path without the zip resource path
+        path = processZipResourcePathIfExist(path);
+
         return new RepoPathImpl(repoKey, path);
     }
 
@@ -184,6 +204,29 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         } else {
             return fragment;
         }
+    }
+
+    /**
+     * Extracts the zip resource sub path from the path and returns the main resource path.<p/> For example if the
+     * request path is /path/to/zip!/path/to/resource/in/zip the method will detect '/path/to/resource/in/zip' as the
+     * zip resource path and will return '/path/to/zip' as the root path.
+     *
+     * @param path Valid path to resource in the repository
+     * @return The path without the zip resource sub path. Same path if it's not a zip resource request (i.e., doesn't
+     *         contain '!' as part of the path).
+     */
+    private String processZipResourcePathIfExist(String path) {
+        int zipResourceStart = path.indexOf(RepoPath.ARCHIVE_SEP);
+        if (zipResourceStart > 0) {
+            zipResourcePath = path.substring(zipResourceStart + 1, path.length());
+            if (zipResourcePath.startsWith("/")) {
+                // all paths are relative inside the zip, so remove the '/' from the beginning
+                zipResourcePath = zipResourcePath.substring(1, zipResourcePath.length());
+            }
+            // remove the zip resource sub path from the main path
+            path = path.substring(0, zipResourceStart);
+        }
+        return path;
     }
 
     @Override

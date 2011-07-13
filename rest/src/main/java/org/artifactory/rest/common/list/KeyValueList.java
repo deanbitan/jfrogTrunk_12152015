@@ -76,6 +76,11 @@ public class KeyValueList extends ArrayList<String> {
                 String[] valueSplit = StringUtils.split(value, ",");
                 List<String> values = Lists.newArrayList(valueSplit);
                 map.put(propertyDescriptor, values);
+            } else if (split.length == 1) {
+                //Empty value
+                Property propertyDescriptor = new Property();
+                propertyDescriptor.setName(split[0]);
+                map.put(propertyDescriptor, Lists.<String>newArrayList(""));
             }
         }
         return map;

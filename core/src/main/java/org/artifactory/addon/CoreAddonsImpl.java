@@ -25,7 +25,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.license.LicensesAddon;
-import org.artifactory.addon.replication.ReplicationSettings;
+import org.artifactory.addon.replication.LocalReplicationSettings;
+import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettings;
@@ -43,6 +44,7 @@ import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
+import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
@@ -53,15 +55,20 @@ import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.request.Request;
 import org.artifactory.resource.MetadataResource;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.util.RepoLayoutUtils;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
+import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.DirContextOperations;
+import org.springframework.ldap.core.support.BaseLdapPathContextSource;
+import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -115,6 +122,20 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
         return Lists.newArrayList();
     }
 
+    public List<FilterBasedLdapUserSearch> getLdapUserSearches(ContextSource ctx, LdapSetting settings) {
+        SearchPattern searchPattern = settings.getSearch();
+        String searchBase = searchPattern.getSearchBase();
+        if (searchBase == null) {
+            searchBase = "";
+        }
+        ArrayList<FilterBasedLdapUserSearch> result = new ArrayList<FilterBasedLdapUserSearch>();
+        FilterBasedLdapUserSearch userSearch = new FilterBasedLdapUserSearch(searchBase,
+                searchPattern.getSearchFilter(), (BaseLdapPathContextSource) ctx);
+        userSearch.setSearchSubtree(searchPattern.isSearchSubTree());
+        result.add(userSearch);
+        return result;
+    }
+
     public void performOnBuildArtifacts(Build build) {
         // NOP
     }
@@ -165,6 +186,16 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
                 "Creation of a filtered resource requires the Properties add-on.", HttpStatus.SC_FORBIDDEN);
     }
 
+    public RepoResource getZipResource(Request request, FileInfo fileInfo, InputStream stream) {
+        return new UnfoundRepoResource(fileInfo.getRepoPath(),
+                "Direct resource download from zip requires the Filtered resources add-on.", HttpStatus.SC_FORBIDDEN);
+    }
+
+    public ResourceStreamHandle getZipResourceHandle(RepoResource resource, InputStream stream) {
+        throw new UnsupportedOperationException(
+                "Direct resource download from zip requires the Filtered resources add-on.");
+    }
+
     public String filterResource(Request request, Properties contextProperties, Reader reader) throws Exception {
         try {
             return IOUtils.toString(reader);
@@ -210,7 +241,15 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
         }
     }
 
-    public MultiStatusHolder replicate(ReplicationSettings replicationSettings) {
+    public MultiStatusHolder performRemoteReplication(RemoteReplicationSettings settings) {
+        return getReplicationRequiredStatusHolder();
+    }
+
+    public MultiStatusHolder performLocalReplication(LocalReplicationSettings settings) {
+        return getReplicationRequiredStatusHolder();
+    }
+
+    private MultiStatusHolder getReplicationRequiredStatusHolder() {
         MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
         multiStatusHolder.setError("Error: the replication addon is required for this operation.",
                 HttpStatus.SC_BAD_REQUEST, log);

@@ -27,9 +27,9 @@ import javax.ws.rs.core.Response;
  */
 public class MissingRestAddonException extends WebApplicationException {
 
-    private static final String MESSAGE = "This API is available only in the Artifactory Pro Power Pack (see: " +
-            "http://www.jfrog.org/addons.php). If you are already running Artifactory with the Add-ons Power " +
-            "Pack please make sure your server was activated with a valid license key.\n";
+    private static final String MESSAGE = "This REST API is available only in Artifactory Pro (see: " +
+            "http://www.jfrog.com/addons.php). If you are already running Artifactory Pro please make " +
+            "sure your server is activated with a valid license key.\n";
 
     public MissingRestAddonException() {
         super(Response.status(Response.Status.BAD_REQUEST).entity(MESSAGE).type(MediaType.TEXT_PLAIN).build());

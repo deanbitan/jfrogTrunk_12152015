@@ -48,6 +48,20 @@ public class LdapSetting implements Descriptor {
     @XmlElement(defaultValue = "mail")
     private String emailAttribute = "mail";
 
+    public LdapSetting() {
+    }
+
+    public LdapSetting(LdapSetting ldapSetting) {
+        this.key = ldapSetting.key;
+        this.enabled = ldapSetting.enabled;
+        this.ldapUrl = ldapSetting.ldapUrl;
+        this.userDnPattern = ldapSetting.userDnPattern;
+        if (ldapSetting.search != null) {
+            this.search = new SearchPattern(ldapSetting.search);
+        }
+        this.autoCreateUser = ldapSetting.autoCreateUser;
+        this.emailAttribute = ldapSetting.emailAttribute;
+    }
 
     public String getKey() {
         return key;
@@ -103,6 +117,20 @@ public class LdapSetting implements Descriptor {
 
     public void setEmailAttribute(String emailAttribute) {
         this.emailAttribute = emailAttribute;
+    }
+
+    public void duplicate(LdapSetting ldapSetting) {
+        this.key = ldapSetting.key;
+        this.enabled = ldapSetting.enabled;
+        this.ldapUrl = ldapSetting.ldapUrl;
+        this.userDnPattern = ldapSetting.userDnPattern;
+        if (search != null) {
+            this.search.duplicate(ldapSetting.search);
+        } else {
+            this.search = new SearchPattern(ldapSetting.search);
+        }
+        this.autoCreateUser = ldapSetting.autoCreateUser;
+        this.emailAttribute = ldapSetting.emailAttribute;
     }
 
     @Override

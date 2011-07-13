@@ -39,7 +39,7 @@ import javax.annotation.Nonnull;
 public enum ItemCssClass {
     doc,
     folder, folderCompact("folder-compact"),
-    jar, pom, xml, jnlp, parent,
+    jar, pom, xml, jnlp, parent, nupkg,
     repository, repositoryCache("repository-cache"),
     repositoryVirtual("repository-virtual"), root, treeSearch("tree-search");
 

@@ -38,7 +38,7 @@ public class LicenseKeyValidator extends StringValidator {
         try {
             AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
             if (!addonsManager.isLicenseKeyValid(licenseKey)) {
-                postError(validatable, "Invalid license key");
+                postError(validatable, "Invalid license key.");
             }
         } catch (Exception e) {
             postError(validatable, e.getMessage());

@@ -18,6 +18,7 @@
 
 package org.artifactory.schedule;
 
+import com.google.common.collect.Lists;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
@@ -25,6 +26,8 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.util.List;
 
 /**
  * A callback for doing the actual work of a scheduled {@link Task}, with some typed work context
@@ -41,6 +44,7 @@ public abstract class TaskCallback<C> {
     }
 
     private TaskBase activeTask;
+    private List<String> tasksStopped = Lists.newArrayList();
 
     protected abstract String triggeringTaskTokenFromWorkContext(C workContext);
 
@@ -54,16 +58,22 @@ public abstract class TaskCallback<C> {
         currentTaskToken.set(taskToken);
         Authentication authentication = getAuthenticationFromWorkContext(callbackContext);
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        //Notify listeners that we started execution
         TaskService taskService = getTaskService();
-        String token = currentTaskToken();
-        activeTask = taskService.getInternalActiveTask(token);
+        activeTask = taskService.getInternalActiveTask(taskToken);
         if (activeTask == null) {
-            log.warn("Before execute: Could not locate active task with toke {}. Taks may have been canceled.", token);
+            log.warn("Before execute: Could not locate active task with token {}. Task {} may have been canceled.",
+                    taskToken, this);
             return false;
         }
-        boolean shouldExecute = activeTask.started();
-        return shouldExecute;
+        this.tasksStopped.clear();
+        try {
+            taskService.stopRelatedTasks(activeTask.getType(), this.tasksStopped);
+        } catch (Exception e) {
+            log.error("Couldn't start task " + taskToken + ": " + e.getMessage());
+            log.debug("Couldn't start task " + taskToken + ": " + e.getMessage(), e);
+            return false;
+        }
+        return activeTask.started();
     }
 
     protected abstract Authentication getAuthenticationFromWorkContext(C callbackContext);
@@ -86,11 +96,25 @@ public abstract class TaskCallback<C> {
                     taskService.cancelTask(token, true);
                 }
             } else {
-                log.warn("After execute: Could not locate active task with toke {}. Task may have been canceled.",
+                log.warn("After execute: Could not locate active task with token {}. Task may have been canceled.",
                         token);
             }
             log.debug("Finished task {}.", token);
         } finally {
+            if (!tasksStopped.isEmpty()) {
+                try {
+                    TaskService taskService = getTaskService();
+                    for (String taskToken : tasksStopped) {
+                        try {
+                            taskService.resumeTask(taskToken);
+                        } catch (Exception e) {
+                            log.warn("After execute: Could not locate reactive task with token {}", taskToken);
+                        }
+                    }
+                } finally {
+                    tasksStopped.clear();
+                }
+            }
             SecurityContextHolder.getContext().setAuthentication(null);
             activeTask = null;
             currentTaskToken.remove();

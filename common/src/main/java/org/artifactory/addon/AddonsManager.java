@@ -18,6 +18,8 @@
 
 package org.artifactory.addon;
 
+import org.artifactory.api.config.ImportSettings;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
@@ -97,4 +99,6 @@ public interface AddonsManager {
     String getProductName();
 
     String getLicenseRequiredMessage(String licensePageUrl);
+
+    void importFrom(ImportSettings settings);
 }

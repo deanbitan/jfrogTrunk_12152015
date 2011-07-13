@@ -23,6 +23,7 @@ import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.reader.CentralConfigReader;
+import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
@@ -139,6 +140,15 @@ public class CentralConfigReadWriteTest {
         propertySet2.setVisible(false);
         desc.addPropertySet(propertySet2);
 
+        LocalReplicationDescriptor localReplication = new LocalReplicationDescriptor();
+        localReplication.setEnabled(true);
+        localReplication.setCronExp("0 0/7 * * * ?");
+        localReplication.setRepoKey("local1");
+        localReplication.setUrl("http://momo.com");
+        localReplication.setUsername("user1");
+        localReplication.setPassword("password1");
+        desc.addLocalReplication(localReplication);
+
         File outputConfig = new File(testDir, "central.config.test.xml");
         JaxbHelper.writeConfig(desc, outputConfig);
     }
@@ -178,6 +188,11 @@ public class CentralConfigReadWriteTest {
         assertEquals(propertySet2.getName(), "propertySet2", "The second property set in the list should be named " +
                 "'propertySet2'.");
         assertFalse(propertySet2.isVisible(), "The second property set in the list should not be visible.");
+
+        List<LocalReplicationDescriptor> localReplications = cc.getLocalReplications();
+        assertEquals(localReplications.size(), 1, "Expected only 1 replication.");
+        assertEquals(localReplications.get(0).getRepoKey(), "local1", "Unexpected replication repo key association.");
+        assertTrue(localReplications.get(0).isEnabled(), "Expected the replication to be enabled.");
 
         log.debug("config = " + cc);
     }

@@ -541,7 +541,7 @@ public class VirtualRepoDownloadStrategy {
         }
 
         if (context instanceof NullRequestContext) {
-            return new NullRequestContext(translatedPath);
+            return new NullRequestContext(target.getRepoPath(translatedPath));
         }
 
         ArtifactoryRequest artifactoryRequest = ((DownloadRequestContext) context).getRequest();

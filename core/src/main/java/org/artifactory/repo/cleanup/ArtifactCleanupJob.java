@@ -20,6 +20,11 @@ package org.artifactory.repo.cleanup;
 
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.repo.replication.RemoteReplicationJob;
+import org.artifactory.repo.service.ImportJob;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.StopStrategy;
+import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -30,6 +35,10 @@ import org.quartz.JobExecutionException;
  *
  * @author Noam Tenne
  */
+@JobCommand(schedulerUser = TaskUser.SYSTEM,
+        stopStrategy = StopStrategy.PAUSE,
+        commandsToStop = {ImportJob.class, RemoteReplicationJob.class}
+)
 public class ArtifactCleanupJob extends QuartzCommand {
 
     public static final String REPO_KEY = "repoKey";

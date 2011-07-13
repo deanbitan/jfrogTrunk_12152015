@@ -20,10 +20,11 @@ package org.artifactory.addon.plugin.download;
 
 import org.artifactory.addon.plugin.PluginAction;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.request.Request;
 
 /**
  * @author Yoav Landman
  */
 public interface AfterRemoteDownloadAction extends PluginAction {
-    void afterRemoteDownload(RepoPath repoPath);
+    void afterRemoteDownload(Request request, RepoPath repoPath);
 }

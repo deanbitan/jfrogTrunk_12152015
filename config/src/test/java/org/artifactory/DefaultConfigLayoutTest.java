@@ -38,6 +38,10 @@ public class DefaultConfigLayoutTest {
         testLayoutsNotAutoFormatted("/config/install/config.1.4.7.xml");
     }
 
+    public void testConfigV148NotAutoFormatted() {
+        testLayoutsNotAutoFormatted("/config/test/config.1.4.8_old_replication.xml");
+    }
+
     private void testLayoutsNotAutoFormatted(String resourcePath) {
         String configString = ResourceUtils.getResourceAsString(resourcePath);
         Assert.assertTrue(configString.contains("<artifactPathPattern>[org]/[module]/[baseRev](-[folderItegRev])/" +

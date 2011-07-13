@@ -18,13 +18,15 @@
 
 package org.artifactory.api.repo.index;
 
+import org.artifactory.common.MutableStatusHolder;
+
 /**
  * @author yoavl
  */
 public interface IndexerService {
 
     /**
-     * Schedule the indexer to run immediately even if it is disabled.
+     * Schedule the indexer to run immediately even if it is disabled
      */
-    void scheduleImmediateIndexing();
+    void scheduleImmediateIndexing(MutableStatusHolder statusHolder);
 }

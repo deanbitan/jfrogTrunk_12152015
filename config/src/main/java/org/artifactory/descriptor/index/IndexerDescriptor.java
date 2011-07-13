@@ -19,6 +19,7 @@
 package org.artifactory.descriptor.index;
 
 import org.artifactory.descriptor.Descriptor;
+import org.artifactory.descriptor.TaskDescriptor;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 
 import javax.xml.bind.annotation.XmlElement;
@@ -29,7 +30,7 @@ import java.util.SortedSet;
 
 @XmlType(name = "IndexerType", propOrder = {"enabled", "indexingIntervalHours", "excludedRepositories"},
         namespace = Descriptor.NS)
-public class IndexerDescriptor implements Descriptor {
+public class IndexerDescriptor implements TaskDescriptor {
 
     private static final long serialVersionUID = 1L;
 
@@ -74,5 +75,48 @@ public class IndexerDescriptor implements Descriptor {
     @SuppressWarnings({"SuspiciousMethodCalls"})
     public boolean removeExcludedRepository(RepoBaseDescriptor repoBaseDescriptor) {
         return excludedRepositories.remove(repoBaseDescriptor);
+    }
+
+    public boolean sameTaskDefinition(TaskDescriptor otherDescriptor) {
+        if (otherDescriptor == null || !(otherDescriptor instanceof IndexerDescriptor)) {
+            throw new IllegalArgumentException(
+                    "Cannot compare indexer descriptor " + this + " with " + otherDescriptor);
+        }
+        IndexerDescriptor indexerDesc = (IndexerDescriptor) otherDescriptor;
+        return indexerDesc.enabled == this.enabled &&
+                indexerDesc.indexingIntervalHours == this.indexingIntervalHours;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        IndexerDescriptor that = (IndexerDescriptor) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (indexingIntervalHours != that.indexingIntervalHours) {
+            return false;
+        }
+        if (excludedRepositories != null ? !excludedRepositories.equals(that.excludedRepositories) :
+                that.excludedRepositories != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + indexingIntervalHours;
+        result = 31 * result + (excludedRepositories != null ? excludedRepositories.hashCode() : 0);
+        return result;
     }
 }

@@ -29,12 +29,14 @@ import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.VirtualRepoItem;
+import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.ItemLastModified;
 import org.artifactory.api.rest.artifact.ItemMetadata;
 import org.artifactory.api.rest.artifact.ItemMetadataNames;
+import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.ItemProperties;
 import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
 import org.artifactory.api.rest.artifact.RestFileInfo;
@@ -51,6 +53,7 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.KeyValueList;
@@ -59,6 +62,7 @@ import org.artifactory.rest.util.RestUtils;
 import org.artifactory.util.DoesNotExistException;
 import org.artifactory.util.HttpUtils;
 import org.joda.time.format.DateTimeFormat;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -95,6 +99,8 @@ import static org.artifactory.api.rest.constant.RestConstants.PATH_API;
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class ArtifactResource {
 
+    private static final Logger log = LoggerFactory.getLogger(ArtifactResource.class);
+
     @Context
     private HttpServletRequest request;
 
@@ -119,7 +125,7 @@ public class ArtifactResource {
     @GET
     @Path("{path: .+}")
     @Produces({MediaType.APPLICATION_JSON, MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_METADATA_NAMES, MT_ITEM_PROPERTIES,
-            MT_ITEM_METADATA, MT_FILE_LIST, MT_ITEM_LAST_MODIFIED})
+            MT_ITEM_METADATA, MT_FILE_LIST, MT_ITEM_LAST_MODIFIED, MT_ITEM_PERMISSIONS})
     public Object getStorageInfo(@PathParam("path") String path,
             @QueryParam("mdns") String mdns,
             @QueryParam("md") StringList md,
@@ -129,7 +135,8 @@ public class ArtifactResource {
             @QueryParam("listFolders") int listFolders,
             @QueryParam("mdTimestamps") int mdTimestamps,
             @QueryParam("properties") StringList properties,
-            @QueryParam("lastModified") String lastModified) throws IOException {
+            @QueryParam("lastModified") String lastModified,
+            @QueryParam("permissions") String permissions) throws IOException {
 
         //Divert to file list request if the list param is mentioned
         if (list != null) {
@@ -169,6 +176,13 @@ public class ArtifactResource {
             } else {
                 return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
             }
+        } else if (permissions != null) {
+            // get property storage info on the requested specific property
+            if (matches(acceptableMediaTypes, MT_ITEM_PERMISSIONS)) {
+                return getItemPermissions(path);
+            } else {
+                return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
+            }
         } else {
             //get folderInfo or FileInfo on requested path
             return processStorageInfoRequest(acceptableMediaTypes, path);
@@ -192,7 +206,8 @@ public class ArtifactResource {
      * @param path         Path to scan files for
      * @param deep         Zero if the scanning should be shallow. One for deep
      * @param listFolders  Zero if folders should not be included in the list. One if they should
-     * @param mdTimestamps Zero if metadata last modified timestamps should not be included in the list. One if they should
+     * @param mdTimestamps Zero if metadata last modified timestamps should not be included in the list. One if they
+     *                     should
      */
     private FileList getFileList(String path, int deep, int depth, int listFolders, int mdTimestamps)
             throws IOException {
@@ -203,12 +218,18 @@ public class ArtifactResource {
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnee) {
+            log.debug("Not exists", dnee);
             response.sendError(HttpStatus.SC_NOT_FOUND, dnee.getMessage());
         } catch (FolderExpectedException fee) {
+            log.debug("Folder expected", fee);
             response.sendError(HttpStatus.SC_BAD_REQUEST, fee.getMessage());
+        } catch (BlackedOutException boe) {
+            log.debug("Repository is blacked out", boe);
+            response.sendError(HttpStatus.SC_NOT_FOUND, boe.getMessage());
         } catch (MissingRestAddonException mrae) {
             throw mrae;
         } catch (Exception e) {
+            log.error("Could not get retrieve list", e);
             response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "An error occurred while retrieving file list: " +
                     e.getMessage());
         }
@@ -302,6 +323,20 @@ public class ArtifactResource {
         return null;
     }
 
+    private Response getItemPermissions(String path) throws IOException {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        try {
+            ItemPermissions itemPermissions = restAddon.getItemPermissions(request, path);
+            return Response.ok(itemPermissions, MT_ITEM_PERMISSIONS).build();
+        } catch (IllegalArgumentException iae) {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+        } catch (ItemNotFoundRuntimeException infre) {
+            response.sendError(HttpStatus.SC_NOT_FOUND, infre.getMessage());
+        } catch (AuthorizationException ae) {
+            response.sendError(HttpStatus.SC_UNAUTHORIZED, ae.getMessage());
+        }
+        return null;
+    }
 
     @Deprecated
     public ItemMetadata getItemMetadata(String path, StringList md) throws IOException {

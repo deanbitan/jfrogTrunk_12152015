@@ -19,6 +19,9 @@
 package org.artifactory.schedule.quartz;
 
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.service.ImportJob;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.TaskUser;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -30,6 +33,9 @@ import org.slf4j.Logger;
  *
  * @author Yoav Landman
  */
+@JobCommand(schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.SYSTEM,
+        commandsToStop = {ImportJob.class}
+)
 public class PluginCommand extends QuartzCommand {
 
     private static final Logger log = LoggerFactory.getLogger(PluginCommand.class);

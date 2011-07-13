@@ -24,9 +24,11 @@ import org.apache.wicket.Page;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
+import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.validation.validator.StringValidator;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -49,6 +51,8 @@ import java.io.File;
  * @author Tomer Cohen
  */
 public class CustomizingPanel extends BaseCustomizingPanel implements UploadListener, IResourceListener {
+    public static final int MAX_FOOTER_LENGTH = 64;
+
     @SpringBean
     private AddonsManager addonsManager;
 
@@ -69,9 +73,11 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         urlLogo.setOutputMarkupId(true);
         fileUploadLogo.add(urlLogo);
 
-        TextField footer = new TextField("footer");
+        TextField<String> footer = new TextField<String>("footer");
 
         fileUploadLogo.add(new ResetLink("reset", fileUploadLogo));
+        footer.add(StringValidator.maximumLength(MAX_FOOTER_LENGTH));
+        footer.add(new SimpleAttributeModifier("maxlength", String.valueOf(MAX_FOOTER_LENGTH)));
         footer.setOutputMarkupId(true);
         add(footer);
 

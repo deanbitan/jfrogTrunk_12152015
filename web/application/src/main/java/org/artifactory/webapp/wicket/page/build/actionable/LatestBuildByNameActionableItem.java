@@ -19,8 +19,8 @@
 package org.artifactory.webapp.wicket.page.build.actionable;
 
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.build.BuildRun;
 import org.artifactory.webapp.actionable.ActionableItemBase;
 import org.artifactory.webapp.wicket.page.build.action.DeleteAllBuildsAction;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
@@ -34,15 +34,15 @@ import java.util.Date;
  */
 public class LatestBuildByNameActionableItem extends ActionableItemBase {
 
-    private BasicBuildInfo basicBuildInfo;
+    private BuildRun buildRun;
 
     /**
      * Main constructor
      *
-     * @param basicBuildInfo Basic info of selected builds
+     * @param buildRun Basic info of selected builds
      */
-    public LatestBuildByNameActionableItem(BasicBuildInfo basicBuildInfo) {
-        this.basicBuildInfo = basicBuildInfo;
+    public LatestBuildByNameActionableItem(BuildRun buildRun) {
+        this.buildRun = buildRun;
     }
 
     public Panel newItemDetailsPanel(String id) {
@@ -50,7 +50,7 @@ public class LatestBuildByNameActionableItem extends ActionableItemBase {
     }
 
     public String getDisplayName() {
-        return basicBuildInfo.getName();
+        return buildRun.getName();
     }
 
     public String getCssClass() {
@@ -59,7 +59,7 @@ public class LatestBuildByNameActionableItem extends ActionableItemBase {
 
     public void filterActions(AuthorizationService authService) {
         if (authService.isAdmin()) {
-            getActions().add(new DeleteAllBuildsAction(basicBuildInfo.getName()));
+            getActions().add(new DeleteAllBuildsAction(buildRun.getName()));
         }
     }
 
@@ -69,7 +69,7 @@ public class LatestBuildByNameActionableItem extends ActionableItemBase {
      * @return Selected build name
      */
     public String getName() {
-        return basicBuildInfo.getName();
+        return buildRun.getName();
     }
 
     /**
@@ -78,7 +78,7 @@ public class LatestBuildByNameActionableItem extends ActionableItemBase {
      * @return Selected build start time
      */
     public String getStarted() {
-        return basicBuildInfo.getStarted();
+        return buildRun.getStarted();
     }
 
     /**
@@ -87,6 +87,6 @@ public class LatestBuildByNameActionableItem extends ActionableItemBase {
      * @return Selected build start time as date
      */
     public Date getStartedDate() {
-        return basicBuildInfo.getStartedDate();
+        return buildRun.getStartedDate();
     }
 }

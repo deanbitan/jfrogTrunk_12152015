@@ -72,6 +72,7 @@ public class TranslatedArtifactoryRequestTest extends ArtifactoryHomeBoundTest {
         EasyMock.expect(artifactoryRequestMock.getParameterValues("parameters")).andReturn(parameterValues).anyTimes();
         EasyMock.expect(artifactoryRequestMock.getInputStream()).andReturn(inputStream).anyTimes();
         EasyMock.expect(artifactoryRequestMock.getContentLength()).andReturn(1337).anyTimes();
+        EasyMock.expect(artifactoryRequestMock.getZipResourcePath()).andReturn(null).anyTimes();
         EasyMock.replay(artifactoryRequestMock);
 
         translatedRepoPath = new RepoPathImpl("translatedRepoKey", "translatedRepoPath");

@@ -30,6 +30,11 @@ import org.artifactory.repo.RepoPath;
 public class FileResource implements RepoResource {
 
     private final FileInfo info;
+    /**
+     * Response repo path represents the exact repo path the resource came from which might be different from the
+     * request repo path. An example is when file is requested from remote repo and served from the remote cache or
+     * request from virtual and the response is coming from local/cache.
+     */
     private RepoPath responseRepoPath;
     private boolean exactQueryMatch;
 
@@ -46,10 +51,16 @@ public class FileResource implements RepoResource {
         return info.getRepoPath();
     }
 
+    /**
+     * @see FileResource#responseRepoPath
+     */
     public RepoPath getResponseRepoPath() {
         return responseRepoPath != null ? responseRepoPath : getRepoPath();
     }
 
+    /**
+     * @see FileResource#responseRepoPath
+     */
     public void setResponseRepoPath(RepoPath responsePath) {
         this.responseRepoPath = responsePath;
     }

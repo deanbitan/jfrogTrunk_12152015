@@ -28,13 +28,12 @@ import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionFactory;
-import org.artifactory.md.Properties;
 import org.artifactory.repo.JcrFsItemFactory;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.SaveResourceContext;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, JcrFsItemFactory, MetadataDefinitionFactory {
@@ -45,14 +44,8 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, JcrFsIte
 
     /**
      * Save the resource in the repository.
-     *
-     * @param res     the destination resource definition
-     * @param stream  the stream to save at the location
-     * @param keyvals A set of keyval metadata to attach to the (file) resource as part of this storage process. Null
-     *                is
      */
-    RepoResource saveResource(RepoResource res, InputStream stream, Properties keyvals) throws IOException,
-            RepoRejectException;
+    RepoResource saveResource(SaveResourceContext context) throws IOException, RepoRejectException;
 
     void undeploy(RepoPath repoPath);
 

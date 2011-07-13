@@ -25,15 +25,7 @@ import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.rest.resource.license.LicenseResource;
-import org.artifactory.rest.resource.search.types.ArchiveSearchResource;
-import org.artifactory.rest.resource.search.types.ArtifactSearchResource;
-import org.artifactory.rest.resource.search.types.ChecksumSearchResource;
-import org.artifactory.rest.resource.search.types.CreatedInRangeResource;
-import org.artifactory.rest.resource.search.types.GavcSearchResource;
-import org.artifactory.rest.resource.search.types.PatternSearchResource;
-import org.artifactory.rest.resource.search.types.PropertySearchResource;
-import org.artifactory.rest.resource.search.types.UsageSinceResource;
-import org.artifactory.rest.resource.search.types.XpathSearchResource;
+import org.artifactory.rest.resource.search.types.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -160,6 +152,18 @@ public class SearchResource {
     public ChecksumSearchResource checksumSearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         return new ChecksumSearchResource(authorizationService, restAddon, request, response);
+    }
+
+    @Path(SearchRestConstants.PATH_BAD_CHECKSUM)
+    public BadChecksumSearchResource badChecksumSearch() {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return new BadChecksumSearchResource(authorizationService, restAddon, request, response);
+    }
+
+    @Path(SearchRestConstants.PATH_DEPENDENCY)
+    public DependencySearchResource dependencySearch() {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return new DependencySearchResource(restAddon, request, response);
     }
 
     /**

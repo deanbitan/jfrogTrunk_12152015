@@ -13,15 +13,16 @@
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Artifactory.  If not, see http://www.gnu.org/licenses/.
  */
 
 /**
  * Globally bound variables:
  *
  * log (org.slf4j.Logger)
- * repositories (org.artifactory.repo.Repositories repositories)
- * security (org.artifactory.security.Security security)
+ * repositories (org.artifactory.repo.Repositories)
+ * security (org.artifactory.security.Security)
+ * searches (org.artifactory.search.Searches) [since: 2.3.4]
  *
  * context (org.artifactory.spring.InternalArtifactoryContext) - NOT A PUBLIC API - FOR INTERNAL USE ONLY!
  *
@@ -33,87 +34,89 @@
  */
 download {
 
-  /**
-   * Provide an alternative response, by one of the following methods:
-   * (1) Setting a success/error status code value and an optional error message.
-   * (2) Provide an alternative download content, by setting new values for the inputStream and size context variables.
-   *
-   * Note that, unless specifically handled, checksum requests for altered responses will return the checksum of the
-   * original resource, which may not match the checksum of the alternate response.
-   *
-   * Will not be called if the response is already committed (e.g. a previous error occurred).
-   * Currently called only for GET requests where the resource was found.
-   *
-   * Context variables:
-   * status (int) - a response status code. Defaults to -1 (unset).
-   * message (java.lang.String) - a text message to return in the response body, replacing the response content.
-   *                              Defaults to null.
-   * inputStream (java.io.InputStream) - a new stream that provides the response content. Defaults to null.
-   * size (long) - the size of the new content (helpful for clients processing the response). Defaults to -1.
-   *
-   *
-   * Closure parameters:
-   * request (org.artifactory.request.Request) - a read-only parameter of the request.
-   * responseRepoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the response RepoPath (containing the
-   *                                                    physical repository the resource was found in).
-   */
-  altResponse { request, responseRepoPath ->
-  }
+    /**
+     * Provide an alternative response, by one of the following methods:
+     * (1) Setting a success/error status code value and an optional error message.
+     * (2) Provide an alternative download content, by setting new values for the inputStream and size context variables.
+     *
+     * Note that, unless specifically handled, checksum requests for altered responses will return the checksum of the
+     * original resource, which may not match the checksum of the alternate response.
+     *
+     * Will not be called if the response is already committed (e.g. a previous error occurred).
+     * Currently called only for GET requests where the resource was found.
+     *
+     * Context variables:
+     * status (int) - a response status code. Defaults to -1 (unset).
+     * message (java.lang.String) - a text message to return in the response body, replacing the response content.
+     *                              Defaults to null.
+     * inputStream (java.io.InputStream) - a new stream that provides the response content. Defaults to null.
+     * size (long) - the size of the new content (helpful for clients processing the response). Defaults to -1.
+     *
+     *
+     * Closure parameters:
+     * request (org.artifactory.request.Request) - a read-only parameter of the request.
+     * responseRepoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the response RepoPath (containing the
+     *                                                    physical repository the resource was found in).
+     */
+    altResponse { request, responseRepoPath ->
+    }
 
-  /**
-   * Provides an alternative download path under the same remote repository, by setting a new value to the path
-   * variable.
-   *
-   * Context variables:
-   * path (java.lang.String) - the new path value. Defaults to the originalRepoPath's path.
-   *
-   * Closure parameters:
-   * repoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the original request RepoPath.
-   */
-  altRemotePath { repoPath ->
-  }
+    /**
+     * Provides an alternative download path under the same remote repository, by setting a new value to the path
+     * variable.
+     *
+     * Context variables:
+     * path (java.lang.String) - the new path value. Defaults to the originalRepoPath's path.
+     *
+     * Closure parameters:
+     * repoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the original request RepoPath.
+     */
+    altRemotePath { repoPath ->
+    }
 
-  /**
-   * Provide an alternative download content, by setting new values for the inputStream and size context variables.
-   *
-   * Context variables:
-   * inputStream (java.io.InputStream) - a new stream that provides the response content. Defaults to null.
-   * size (long) - the size of the new content (helpful for clients processing the response). Defaults to -1.
-   *
-   * Closure parameters:
-   * repoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the original request RepoPath.
-   */
-  altRemoteContent { repoPath ->
-  }
+    /**
+     * Provide an alternative download content, by setting new values for the inputStream and size context variables.
+     *
+     * Context variables:
+     * inputStream (java.io.InputStream) - a new stream that provides the response content. Defaults to null.
+     * size (long) - the size of the new content (helpful for clients processing the response). Defaults to -1.
+     *
+     * Closure parameters:
+     * repoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the original request RepoPath.
+     */
+    altRemoteContent { repoPath ->
+    }
 
-  /**
-   * Handle before remote download events.
-   *
-   * Closure parameters:
-   * repoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the original request RepoPath.
-   */
-  beforeRemoteDownload { repoPath ->
-  }
+    /**
+     * Handle before remote download events.
+     *
+     * Closure parameters:
+     * request (org.artifactory.request.Request) - a read-only parameter of the request. [since: 2.3.4]
+     * repoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the original request RepoPath.
+     */
+    beforeRemoteDownload { request, repoPath ->
+    }
 
-  /**
-   * Handle after remote download events.
-   *
-   * Closure parameters:
-   * repoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the original request RepoPath.
-   */
-  afterRemoteDownload { repoPath ->
-  }
+    /**
+     * Handle after remote download events.
+     *
+     * Closure parameters:
+     * request (org.artifactory.request.Request) - a read-only parameter of the request. [since: 2.3.4]
+     * repoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the original request RepoPath.
+     */
+    afterRemoteDownload { request, repoPath ->
+    }
 
-  /**
-   * Handle before local download events.
-   *
-   * Closure parameters:
-   * request (org.artifactory.request.Request) - a read-only parameter of the request.
-   * responseRepoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the response RepoPath (containing the
-   *                                                    physical repository the resource was found in).
-   */
-  beforeDownload { request, responseRepoPath ->
-  }
+    /**
+     * Handle before local download events.
+     *
+     * Closure parameters:
+     * request (org.artifactory.request.Request) - a read-only parameter of the request.
+     * responseRepoPath (org.artifactory.repo.RepoPath) - a read-only parameter of the response RepoPath (containing the
+     *                                                    physical repository the resource was found in).
+     */
+    beforeDownload { request, responseRepoPath ->
+    }
 }
 
 /**
@@ -124,86 +127,86 @@ download {
  */
 storage {
 
-  /**
-   * Handle before create events.
-   *
-   * Closure parameters:
-   * item (org.artifactory.fs.ItemInfo) - the original item being created.
-   */
-  beforeCreate { item ->
-  }
+    /**
+     * Handle before create events.
+     *
+     * Closure parameters:
+     * item (org.artifactory.fs.ItemInfo) - the original item being created.
+     */
+    beforeCreate { item ->
+    }
 
-  /**
-   * Handle after create events.
-   *
-   * Closure parameters:
-   * item (org.artifactory.fs.ItemInfo) - the original item being created.
-   */
-  afterCreate { item ->
-  }
+    /**
+     * Handle after create events.
+     *
+     * Closure parameters:
+     * item (org.artifactory.fs.ItemInfo) - the original item being created.
+     */
+    afterCreate { item ->
+    }
 
-  /**
-   * Handle before create events.
-   *
-   * Closure parameters:
-   * item (org.artifactory.fs.ItemInfo) - the original item being being deleted.
-   */
-  beforeDelete { item ->
-  }
+    /**
+     * Handle before create events.
+     *
+     * Closure parameters:
+     * item (org.artifactory.fs.ItemInfo) - the original item being being deleted.
+     */
+    beforeDelete { item ->
+    }
 
-  /**
-   * Handle after create events.
-   *
-   * Closure parameters:
-   * item (org.artifactory.fs.ItemInfo) - the original item deleted.
-   */
-  afterDelete { item ->
-  }
+    /**
+     * Handle after create events.
+     *
+     * Closure parameters:
+     * item (org.artifactory.fs.ItemInfo) - the original item deleted.
+     */
+    afterDelete { item ->
+    }
 
-  /**
-   * Handle before move events.
-   *
-   * Closure parameters:
+    /**
+     * Handle before move events.
+     *
+     * Closure parameters:
 
-   * item (org.artifactory.fs.ItemInfo) - the source item being moved.
-   * targetRepoPath (org.artifactory.repo.RepoPath) - the target repoPath for the move.
-   * properties (org.artifactory.md.Properties) - user specified properties to add to the item being moved.
-   */
-  beforeMove { item, targetRepoPath, properties ->
-  }
+     * item (org.artifactory.fs.ItemInfo) - the source item being moved.
+     * targetRepoPath (org.artifactory.repo.RepoPath) - the target repoPath for the move.
+     * properties (org.artifactory.md.Properties) - user specified properties to add to the item being moved.
+     */
+    beforeMove { item, targetRepoPath, properties ->
+    }
 
-  /**
-   * Handle after move events.
-   *
-   * Closure parameters:
-   * item (org.artifactory.fs.ItemInfo) - the source item moved.
-   * targetRepoPath (org.artifactory.repo.RepoPath) - the target repoPath for the move.
-   * properties (org.artifactory.md.Properties) - user specified properties to add to the item being moved.
-   */
-  afterMove { item, targetRepoPath, properties ->
-  }
+    /**
+     * Handle after move events.
+     *
+     * Closure parameters:
+     * item (org.artifactory.fs.ItemInfo) - the source item moved.
+     * targetRepoPath (org.artifactory.repo.RepoPath) - the target repoPath for the move.
+     * properties (org.artifactory.md.Properties) - user specified properties to add to the item being moved.
+     */
+    afterMove { item, targetRepoPath, properties ->
+    }
 
-  /**
-   * Handle before copy events.
-   *
-   * Closure parameters:
-   * item (org.artifactory.fs.ItemInfo) - the source item being copied.
-   * targetRepoPath (org.artifactory.repo.RepoPath) - the target repoPath for the copy.
-   * properties (org.artifactory.md.Properties) - user specified properties to add to the item being moved.
-   */
-  beforeCopy { item, targetRepoPath, properties ->
-  }
+    /**
+     * Handle before copy events.
+     *
+     * Closure parameters:
+     * item (org.artifactory.fs.ItemInfo) - the source item being copied.
+     * targetRepoPath (org.artifactory.repo.RepoPath) - the target repoPath for the copy.
+     * properties (org.artifactory.md.Properties) - user specified properties to add to the item being moved.
+     */
+    beforeCopy { item, targetRepoPath, properties ->
+    }
 
-  /**
-   * Handle after copy events.
-   *
-   * Closure parameters:
-   * item (org.artifactory.fs.ItemInfo) - the source item copied.
-   * targetRepoPath (org.artifactory.repo.RepoPath) - the target repoPath for the copy.
-   * properties (org.artifactory.md.Properties) - user specified properties to add to the item being moved.
-   */
-  afterCopy { item, targetRepoPath, properties ->
-  }
+    /**
+     * Handle after copy events.
+     *
+     * Closure parameters:
+     * item (org.artifactory.fs.ItemInfo) - the source item copied.
+     * targetRepoPath (org.artifactory.repo.RepoPath) - the target repoPath for the copy.
+     * properties (org.artifactory.md.Properties) - user specified properties to add to the item being moved.
+     */
+    afterCopy { item, targetRepoPath, properties ->
+    }
 }
 
 /**
@@ -211,23 +214,23 @@ storage {
  */
 jobs {
 
-  /**
-   * A job definition.
-   * The first value is a unique name for the job.
-   * Job runs are controlled by the provided interval or cron expression, which are mutually exclusive.
-   * The actual code to run as part of the job should be part of the job's closure.
-   *
-   * Parameters:
-   * delay (long) - An initial delay in milliseconds before the job starts running (not applicable for a cron job).
-   * interval (long) -  An interval in milliseconds between job runs.
-   * cron (java.lang.String) - A valid cron expression used to schedule job runs (see: http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)
-   */
+    /**
+     * A job definition.
+     * The first value is a unique name for the job.
+     * Job runs are controlled by the provided interval or cron expression, which are mutually exclusive.
+     * The actual code to run as part of the job should be part of the job's closure.
+     *
+     * Parameters:
+     * delay (long) - An initial delay in milliseconds before the job starts running (not applicable for a cron job).
+     * interval (long) -  An interval in milliseconds between job runs.
+     * cron (java.lang.String) - A valid cron expression used to schedule job runs (see: http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)
+     */
 
-  myJob(interval: 1000, delay: 100) {
-  }
+    myJob(interval: 1000, delay: 100) {
+    }
 
-  mySecondJob(cron: "0/1 * * * * ?") {
-  }
+    mySecondJob(cron: "0/1 * * * * ?") {
+    }
 }
 
 /**
@@ -239,22 +242,22 @@ jobs {
  */
 executions {
 
-  /**
-   * An execution definition.
-   * The first value is a unique name for the execution.
-   *
-   * Context variables:
-   * status (int) - a response status code. Defaults to -1 (unset). Not applicable for an async execution.
-   * message (java.lang.String) - a text message to return in the response body, replacing the response content.
-   *                              Defaults to null. Not applicable for an async execution.
-   *
-   * Closure parameters:
-   * params (java.util.Map) - An execution takes a read-only key-value map that corresponds to the REST request
-   * parameter 'params'. Each entry in the map conatains an array of values.
-   */
+    /**
+     * An execution definition.
+     * The first value is a unique name for the execution.
+     *
+     * Context variables:
+     * status (int) - a response status code. Defaults to -1 (unset). Not applicable for an async execution.
+     * message (java.lang.String) - a text message to return in the response body, replacing the response content.
+     *                              Defaults to null. Not applicable for an async execution.
+     *
+     * Closure parameters:
+     * params (java.util.Map) - An execution takes a read-only key-value map that corresponds to the REST request
+     * parameter 'params'. Each entry in the map conatains an array of values.
+     */
 
-  myExecution() { params ->
-  }
+    myExecution() { params ->
+    }
 }
 
 /**
@@ -264,33 +267,33 @@ executions {
  */
 realms {
 
-  /**
-   * An security realm definition.
-   * The first value is a unique name for the realm.
-   *
-   * Parameters:
-   * autoCreateUsers (boolean) - Whether to automatically create users in Artifactory upon successul login. Defaults to
-   * true. When false, the user will be transient and his privileges will be managed according to permissions defined
-   * for auto-join groups.
-   */
-
-  myRealm(autoCreateUsers: true) {
-    /*
-    * Implementation should return true/false as the reult of the authentication.
-    * Closure parameters:
-    * username (java.lang.String) - The username
-    * credentials (java.lang.String) - The password
-    */
-    authenticate { username, credentials ->
-    }
-
-    /*
-     * Implementation should return true if the user is found in the realm.
-     * Closure parameters:
-     * username (java.lang.String) - The username
+    /**
+     * An security realm definition.
+     * The first value is a unique name for the realm.
+     *
+     * Parameters:
+     * autoCreateUsers (boolean) - Whether to automatically create users in Artifactory upon successul login. Defaults to
+     * true. When false, the user will be transient and his privileges will be managed according to permissions defined
+     * for auto-join groups.
      */
-    userExists { username ->
+
+    myRealm(autoCreateUsers: true) {
+        /*
+        * Implementation should return true/false as the reult of the authentication.
+        * Closure parameters:
+        * username (java.lang.String) - The username
+        * credentials (java.lang.String) - The password
+        */
+        authenticate { username, credentials ->
+        }
+
+        /*
+        * Implementation should return true if the user is found in the realm.
+        * Closure parameters:
+        * username (java.lang.String) - The username
+        */
+        userExists { username ->
+        }
     }
-  }
 
 }

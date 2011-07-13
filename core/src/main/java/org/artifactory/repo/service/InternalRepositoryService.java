@@ -18,7 +18,6 @@
 
 package org.artifactory.repo.service;
 
-import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ExportSettings;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.Async;
@@ -101,8 +100,6 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
 
     Repo nonCacheRepositoryByKey(String key);
 
-    BasicStatusHolder assertValidPath(RealRepo repo, String path);
-
     /**
      * This will verify the permission to deploy to the path, and will not acquire any FsItem. ATTENTION: No read lock
      * acquire, pure JCR and ACL tests are done.
@@ -174,4 +171,6 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     boolean treeNodeContainsMavenPlugins(JcrTreeNode treeNode);
 
     RepoPath getExplicitDescriptorPathByArtifact(RepoPath repoPath);
+
+    VirtualRepo getGlobalVirtualRepo();
 }

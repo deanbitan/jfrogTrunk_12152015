@@ -1,6 +1,6 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable;
 
-import org.artifactory.api.build.BasicBuildInfo;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 
 /**
@@ -9,9 +9,9 @@ import org.artifactory.common.wicket.component.modal.ModalHandler;
 public class BuildDependencyActionableItem extends BuildTabActionableItem {
     private String scope;
 
-    public BuildDependencyActionableItem(ModalHandler textContentViewer, BasicBuildInfo basicBuildInfo, String moduleId,
+    public BuildDependencyActionableItem(ModalHandler textContentViewer, BuildRun buildRun, String moduleId,
             String scope) {
-        super(textContentViewer, basicBuildInfo, moduleId);
+        super(textContentViewer, buildRun, moduleId);
         this.scope = scope;
     }
 

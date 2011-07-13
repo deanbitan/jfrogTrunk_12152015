@@ -18,7 +18,6 @@
 
 package org.artifactory.build;
 
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.build.ImportableExportableBuild;
 import org.artifactory.api.config.ImportSettings;
@@ -83,7 +82,7 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * @return Set of builds with the given name
      */
     @Lock(transactional = true)
-    Set<BasicBuildInfo> transactionalSearchBuildsByName(String buildName);
+    Set<BuildRun> transactionalSearchBuildsByName(String buildName);
 
     /**
      * Locates builds that are named and numbered as the given name and number within a transaction
@@ -93,7 +92,7 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * @return Set of builds with the given name
      */
     @Lock(transactional = true)
-    Set<BasicBuildInfo> transactionalSearchBuildsByNameAndNumber(String buildName, String buildNumber);
+    Set<BuildRun> transactionalSearchBuildsByNameAndNumber(String buildName, String buildNumber);
 
     /**
      * Imports an exportable build info into the database. This is an internal method and should be used to import a
@@ -116,11 +115,11 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
     /**
      * Renames the JSON content within a build
      *
-     * @param basicBuildInfo Build to rename
-     * @param to             Replacement build name
+     * @param buildRun Build to rename
+     * @param to       Replacement build name
      */
     @Lock(transactional = true)
-    void renameBuildContent(BasicBuildInfo basicBuildInfo, String to) throws RepositoryException, IOException;
+    void renameBuildContent(BuildRun buildRun, String to) throws RepositoryException, IOException;
 
     /**
      * Renames the build JCR tree node

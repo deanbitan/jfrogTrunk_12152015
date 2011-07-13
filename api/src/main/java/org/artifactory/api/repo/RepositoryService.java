@@ -120,14 +120,14 @@ public interface RepositoryService extends ImportableExportable {
      * @return Folder or file info. Throws exception if the path doesn't exist.
      */
     @Lock(transactional = true)
-    org.artifactory.fs.ItemInfo getItemInfo(RepoPath repoPath);
+    ItemInfo getItemInfo(RepoPath repoPath);
 
     /**
      * @param repoPath Repository path of the file
      * @return The file info. Throws exception if the path doesn't exist or it doesn't point to a file.
      */
     @Lock(transactional = true)
-    org.artifactory.fs.FileInfo getFileInfo(RepoPath repoPath);
+    FileInfo getFileInfo(RepoPath repoPath);
 
     /**
      * @param repoPath     Repository path of the metadata aware item

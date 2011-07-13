@@ -18,6 +18,7 @@
 
 package org.artifactory.request;
 
+import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.md.Properties;
 import org.artifactory.util.PathUtils;
 
@@ -39,7 +40,7 @@ public class DownloadRequestContext implements RequestContext {
 
     public String getResourcePath() {
         String path = artifactoryRequest.getPath();
-        return artifactoryRequest.isChecksum() ? PathUtils.stripExtension(path) : path;
+        return NamingUtils.isChecksum(path) ? PathUtils.stripExtension(path) : path;
     }
 
     public String getServletContextUrl() {

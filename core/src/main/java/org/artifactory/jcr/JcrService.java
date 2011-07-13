@@ -146,9 +146,10 @@ public interface JcrService extends ReloadableBean {
     /**
      * Runs the garbage collector
      *
+     * @param fixConsistency
      * @return Garbage collector info with collected garbage summary
      */
-    GarbageCollectorInfo garbageCollect();
+    GarbageCollectorInfo garbageCollect(boolean fixConsistency);
 
     /**
      * Returns an unmanaged non-transactional session. You must call logout() on this session after using it, to

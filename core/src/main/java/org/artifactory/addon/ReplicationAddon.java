@@ -18,7 +18,8 @@
 
 package org.artifactory.addon;
 
-import org.artifactory.addon.replication.ReplicationSettings;
+import org.artifactory.addon.replication.LocalReplicationSettings;
+import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.api.common.MultiStatusHolder;
 
 import java.io.IOException;
@@ -28,9 +29,13 @@ import java.io.IOException;
  */
 public interface ReplicationAddon extends Addon {
 
+    String REPO_KEY = "repoKey";
+
     public enum Overwrite {
         never, force
     }
 
-    MultiStatusHolder replicate(ReplicationSettings replicationSettings) throws IOException;
+    MultiStatusHolder performRemoteReplication(RemoteReplicationSettings settings) throws IOException;
+
+    MultiStatusHolder performLocalReplication(LocalReplicationSettings settings) throws IOException;
 }

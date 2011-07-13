@@ -26,6 +26,7 @@ import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.validation.validator.MinimumValidator;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
@@ -94,8 +95,13 @@ public class IndexerConfigPanel extends TitledActionPanel {
             public void onClick(AjaxRequestTarget target) {
                 MultiStatusHolder statusHolder = new MultiStatusHolder();
                 try {
-                    indexerService.scheduleImmediateIndexing();
-                    info("Indexer was successfully scheduled to run in the background.");
+                    BasicStatusHolder status = new BasicStatusHolder();
+                    indexerService.scheduleImmediateIndexing(status);
+                    if (status.isError()) {
+                        error(status.getStatusMsg());
+                    } else {
+                        info("Indexer was successfully scheduled to run in the background.");
+                    }
                 } catch (Exception e) {
                     log.error("Could not run indexer.", e);
                     statusHolder.setError(e.getMessage(), log);

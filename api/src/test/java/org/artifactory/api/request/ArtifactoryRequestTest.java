@@ -18,6 +18,7 @@
 
 package org.artifactory.api.request;
 
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.md.Properties;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.Test;
@@ -31,6 +32,7 @@ import static org.testng.Assert.assertFalse;
 /**
  * @author Yoav Landman
  */
+@SuppressWarnings({"ConstantConditions"})
 @Test
 public class ArtifactoryRequestTest extends ArtifactoryHomeBoundTest {
 
@@ -61,6 +63,28 @@ public class ArtifactoryRequestTest extends ArtifactoryHomeBoundTest {
         assertEquals(params.get("a").iterator().next(), "1 2", "Character '+' should have been decoded to space");
         assertEquals(params.get("b").iterator().next(), "1#2", "String '%23' should have been decoded to '#'");
         assertEquals(params.get("c").iterator().next(), "", "Expecting empty string");
+    }
+
+    public void zipResourceAbsolute() {
+        ArtifactoryRequestBase request = newRequest();
+        request.setRepoPath(request.calculateRepoPath("libs-releases/path/to/zip!/zip/resource"));
+        assertEquals(request.getRepoPath(), new RepoPathImpl("libs-releases", "path/to/zip"));
+        assertEquals(request.getZipResourcePath(), "zip/resource");
+    }
+
+    public void zipResourceRelative() {
+        ArtifactoryRequestBase request = newRequest();
+        request.setRepoPath(request.calculateRepoPath("libs-releases/path/to/zip!zip/resource"));
+        assertEquals(request.getRepoPath(), new RepoPathImpl("libs-releases", "path/to/zip"));
+        assertEquals(request.getZipResourcePath(), "zip/resource");
+    }
+
+    public void zipResourceEmptyPath() {
+        ArtifactoryRequestBase request = newRequest();
+        request.setRepoPath(request.calculateRepoPath("libs-releases/path/to/zip!"));
+        assertEquals(request.getRepoPath(), new RepoPathImpl("libs-releases", "path/to/zip"));
+        assertEquals(request.getZipResourcePath(), "",
+                "Expected empty path to zip resource: " + request.getZipResourcePath());
     }
 
     private void assertMatrixParams(Properties params) {

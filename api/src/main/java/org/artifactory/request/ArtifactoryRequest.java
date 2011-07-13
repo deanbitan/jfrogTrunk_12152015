@@ -48,6 +48,13 @@ public interface ArtifactoryRequest extends Request {
      */
     String SIMPLE_BROWSING_PATH = "simple";
 
+    String LAST_MODIFIED = "X-Artifactory-Last-Modified";
+
+    String CREATED = "X-Artifactory-Created";
+
+    String MODIFIED_BY = "X-Artifactory-Modified-By";
+
+    String CREATED_BY = "X-Artifactory-Created-By";
 
     String getRepoKey();
 

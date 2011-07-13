@@ -32,6 +32,7 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.injection.web.InjectorHolder;
+import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -57,7 +58,6 @@ import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonHelpBubble;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonMenuNode;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
@@ -69,6 +69,7 @@ import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.api.version.VersionHolder;
 import org.artifactory.api.version.VersionInfoService;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -95,7 +96,8 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PredefinedValue;
 import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.property.PropertySet;
-import org.artifactory.descriptor.replication.ReplicationDescriptor;
+import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
+import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
@@ -411,6 +413,10 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return new DisabledSettingsProvisioningBorder(id, form, content, saveToFileName);
     }
 
+    public Component getZipEntryActions(String wicketId, ActionableItem repoItem) {
+        return new WebComponent(wicketId);
+    }
+
     public String getGeneratedSettingsUserCredentialsTemplate(boolean escape) {
         return "yourPassword";
     }
@@ -717,7 +723,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public ITab getHttpRepoReplicationPanel(String tabTitle, HttpRepoDescriptor repoDescriptor,
-            ReplicationDescriptor replicationDescriptor) {
+            RemoteReplicationDescriptor replicationDescriptor) {
+        return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.REPLICATION);
+    }
+
+    public ITab getLocalRepoReplicationPanel(String tabTitle, LocalReplicationDescriptor replicationDescriptor,
+            MutableCentralConfigDescriptor mutableDescriptor, CreateUpdateAction action) {
         return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.REPLICATION);
     }
 
@@ -819,22 +830,22 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         }
 
         @Override
-        protected List<BasicBuildInfo> getArtifactBuilds() {
+        protected List<BuildRun> getArtifactBuilds() {
             return Lists.newArrayList();
         }
 
         @Override
-        protected List<BasicBuildInfo> getDependencyBuilds() {
+        protected List<BuildRun> getDependencyBuilds() {
             return Lists.newArrayList();
         }
 
         @Override
-        protected List<BuildTabActionableItem> getArtifactActionableItems(BasicBuildInfo basicInfo) {
+        protected List<BuildTabActionableItem> getArtifactActionableItems(BuildRun run) {
             return Lists.newArrayList();
         }
 
         @Override
-        protected List<BuildDependencyActionableItem> getDependencyActionableItems(BasicBuildInfo basicInfo) {
+        protected List<BuildDependencyActionableItem> getDependencyActionableItems(BuildRun run) {
             return Lists.newArrayList();
         }
     }

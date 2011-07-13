@@ -22,10 +22,10 @@ import org.apache.wicket.PageParameters;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.component.confirm.AjaxConfirm;
 import org.artifactory.common.wicket.component.confirm.ConfirmDialog;
@@ -51,16 +51,16 @@ public class DeleteBuildAction extends ItemAction {
     private static final Logger log = LoggerFactory.getLogger(DeleteBuildAction.class);
 
     private static String ACTION_NAME = "Delete";
-    private BasicBuildInfo basicBuildInfo;
+    private BuildRun buildRun;
 
     /**
      * Main constructor
      *
-     * @param basicBuildInfo Basic build info of build to delete
+     * @param buildRun Basic build info of build to delete
      */
-    public DeleteBuildAction(BasicBuildInfo basicBuildInfo) {
+    public DeleteBuildAction(BuildRun buildRun) {
         super(ACTION_NAME);
-        this.basicBuildInfo = basicBuildInfo;
+        this.buildRun = buildRun;
     }
 
     @Override
@@ -68,7 +68,7 @@ public class DeleteBuildAction extends ItemAction {
         AjaxConfirm.get().confirm(new ConfirmDialog() {
             public String getMessage() {
                 return String.format("Are you sure you wish to delete the build '%s' #%s?",
-                        basicBuildInfo.getName(), basicBuildInfo.getNumber());
+                        buildRun.getName(), buildRun.getNumber());
             }
 
             public void onConfirm(boolean approved, AjaxRequestTarget target) {
@@ -92,12 +92,12 @@ public class DeleteBuildAction extends ItemAction {
     private void delete(ItemEvent e) {
         AjaxRequestTarget target = e.getTarget();
         BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
-        String buildName = basicBuildInfo.getName();
-        String buildNumber = basicBuildInfo.getNumber();
+        String buildName = buildRun.getName();
+        String buildNumber = buildRun.getNumber();
 
         MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
         try {
-            buildService.deleteBuild(basicBuildInfo, false, multiStatusHolder);
+            buildService.deleteBuild(buildRun, false, multiStatusHolder);
             multiStatusHolder.setStatus(String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber),
                     log);
         } catch (Exception exception) {
@@ -119,7 +119,7 @@ public class DeleteBuildAction extends ItemAction {
             AjaxUtils.refreshFeedback(target);
         }
 
-        Set<BasicBuildInfo> remainingBuilds = buildService.searchBuildsByName(buildName);
+        Set<BuildRun> remainingBuilds = buildService.searchBuildsByName(buildName);
         PageParameters pageParameters = new PageParameters();
 
         if (!remainingBuilds.isEmpty()) {

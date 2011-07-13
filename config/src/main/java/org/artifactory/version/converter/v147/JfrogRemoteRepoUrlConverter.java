@@ -18,12 +18,10 @@
 
 package org.artifactory.version.converter.v147;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
-import org.slf4j.Logger;
 
 import java.util.List;
 
@@ -34,7 +32,6 @@ import java.util.List;
  * @author Tomer Cohen
  */
 public class JfrogRemoteRepoUrlConverter implements XmlConverter {
-    private static final Logger log = LoggerFactory.getLogger(JfrogRemoteRepoUrlConverter.class);
 
     private static final String OLD_JFROG_LIBS = "http://repo.jfrog.org/artifactory/libs-release-local";
     private static final String NEW_JFROG_LIBS = "http://repo.jfrog.org/artifactory/libs-releases-local";
@@ -42,7 +39,6 @@ public class JfrogRemoteRepoUrlConverter implements XmlConverter {
     private static final String NEW_JFROG_PLUGINS = "http://repo.jfrog.org/artifactory/plugins-releases-local";
 
     public void convert(Document doc) {
-        log.info("Starting JfrogRemoteRepoUrlConverter");
         Element rootElement = doc.getRootElement();
         Namespace namespace = rootElement.getNamespace();
         Element repositories = rootElement.getChild("remoteRepositories", namespace);
@@ -63,6 +59,5 @@ public class JfrogRemoteRepoUrlConverter implements XmlConverter {
                 }
             }
         }
-        log.info("Ending JfrogRemoteRepoUrlConverter");
     }
 }

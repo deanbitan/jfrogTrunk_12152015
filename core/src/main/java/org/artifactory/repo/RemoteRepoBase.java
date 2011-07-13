@@ -243,6 +243,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         if (NamingUtils.isChecksum(path)) {
             return new UnfoundRepoResource(repoPath, "Checksums are not downloaded");
         }
+
         //Try to get it from the caches
         RepoResource res = getFailedOrMissedResource(path);
         if (res == null) {
@@ -279,14 +280,18 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             return returnCachedResource(repoPath, cachedResource);
         }
 
-        RepoResource remoteResource;
         boolean foundExpiredInCache = ((cachedResource != null) && cachedResource.isExpired());
 
         //not found in local cache - try to get it from the remote repository
         if (!isOffline()) {
-            remoteResource = getRemoteResource(context, repoPath, foundExpiredInCache);
+            RepoResource remoteResource = getRemoteResource(context, repoPath, foundExpiredInCache);
             if (!remoteResource.isFound() && foundExpiredInCache) {
                 remoteResource = returnCachedResource(repoPath, cachedResource);
+            }
+            // there's a newer remote resource that should be downloaded this is not supported for zip resources
+            if (remoteResource.isFound() && context.getRequest().isZipResourceRequest()) {
+                return new UnfoundRepoResource(repoPath,
+                        "Zip resources download is only supported on cached artifacts");
             }
             return remoteResource;
         } else if (foundExpiredInCache) {
@@ -375,7 +380,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
         String path = repoPath.getPath();
-        StatusHolder status = assertValidPath(path);
+        StatusHolder status = assertValidPath(path, true);
         if (status.isError()) {
             return status;
         }
@@ -410,12 +415,12 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 throw e;
             }
         } else {
-            ResourceStreamHandle handle = downloadResource(path, requestContext.getProperties());
+            ResourceStreamHandle handle = downloadResource(path, requestContext);
             return handle;
         }
     }
 
-    public ResourceStreamHandle downloadAndSave(RequestContext context, RepoResource remoteResource,
+    public ResourceStreamHandle downloadAndSave(RequestContext requestContext, RepoResource remoteResource,
             RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectException {
         RepoPath remoteRepoPath = remoteResource.getRepoPath();
         String path = remoteRepoPath.getPath();
@@ -442,14 +447,14 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     //Allow plugins to provide an alternate content
                     handle = getAltContent(remoteRepoPath);
 
-                    if (shouldSearchForExistingResource(context.getRequest()) && (handle == null) &&
+                    if (shouldSearchForExistingResource(requestContext.getRequest()) && (handle == null) &&
                             receivedRemoteChecksums) {
                         handle = getExistingResourceByChecksum(remoteChecksums, remoteResource.getSize());
                     }
 
                     if (handle == null) {
                         //If we didn't get an alternate handle do the actual download
-                        handle = downloadResource(path, context.getProperties());
+                        handle = downloadResource(path, requestContext);
                     }
 
                     if (!receivedRemoteChecksums) {
@@ -468,7 +473,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     InputStream is = handle.getInputStream();
 
                     log.debug("Saving resource '{}' into cache '{}'.", remoteResource, localCacheRepo);
-                    cachedResource = localCacheRepo.saveResource(remoteResource, is, properties);
+                    SaveResourceContext saveResourceContext = new SaveResourceContext.Builder(remoteResource, is)
+                            .properties(properties).build();
+                    cachedResource = localCacheRepo.saveResource(saveResourceContext);
                     unexpire(cachedResource);
                     afterResourceDownload(remoteResource);
                 } finally {
@@ -476,7 +483,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                         handle.close();
                     }
                     //Notify concurrent download waiters
-                    notifyConcurrentWaiters(context, cachedResource, path);
+                    notifyConcurrentWaiters(requestContext, cachedResource, path);
                 }
             } else {
                 //We will not see the stored result here yet since it is saved in its own tx - return a direct handle
@@ -495,7 +502,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
 
         //Return the cached result (the newly downloaded or already cached resource)
-        return localCacheRepo.getResourceStreamHandle(context, cachedResource);
+        return localCacheRepo.getResourceStreamHandle(requestContext, cachedResource);
     }
 
     private boolean shouldSearchForExistingResource(Request request) {
@@ -786,7 +793,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @throws IOException If remote checksum is not found or there was a problem retrieving it
      */
     private String getRemoteChecksum(String path) throws IOException {
-        ResourceStreamHandle handle = downloadResource(path, null);
+        ResourceStreamHandle handle = downloadResource(path);
         try {
             InputStream is = handle.getInputStream();
             return Checksum.checksumStringFromStream(is);
@@ -806,7 +813,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         ResourceStreamHandle handle = null;
         InputStream is = null;
         try {
-            handle = downloadResource(relPath + ":" + Properties.ROOT, null);
+            handle = downloadResource(relPath + ":" + Properties.ROOT);
             is = handle.getInputStream();
             if (is != null) {
                 properties = (Properties) XStreamFactory.create(PropertiesImpl.class).fromXML(is);
@@ -844,7 +851,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             String remotePropertiesRelativePath = getAltRemotePath(propertiesRepoPath);
 
             LocalCacheRepo cache = getLocalCacheRepo();
-            RepoResource cachedPropertiesResource = cache.getInfo(new NullRequestContext(propertiesRelativePath));
+            RepoResource cachedPropertiesResource = cache.getInfo(new NullRequestContext(propertiesRepoPath));
 
             Properties properties = new PropertiesImpl();
 
@@ -857,7 +864,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     return;
                 }
 
-                ResourceStreamHandle resourceStreamHandle = downloadResource(remotePropertiesRelativePath, null);
+                ResourceStreamHandle resourceStreamHandle = downloadResource(remotePropertiesRelativePath);
                 InputStream inputStream = null;
                 try {
                     inputStream = resourceStreamHandle.getInputStream();

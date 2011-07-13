@@ -20,7 +20,7 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action;
 
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.RequestCycle;
-import org.artifactory.api.build.BasicBuildInfo;
+import org.artifactory.build.BuildRun;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
@@ -34,27 +34,27 @@ import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 public class GoToBuildAction extends ItemAction {
 
     private static String ACTION_NAME = "Go To Build";
-    private BasicBuildInfo basicBuildInfo;
+    private BuildRun buildRun;
     private String moduleId;
 
     /**
      * Main constructor
      *
-     * @param basicBuildInfo Basic build info to act upon
-     * @param moduleId       ID of module to point to
+     * @param buildRun Basic build info to act upon
+     * @param moduleId ID of module to point to
      */
-    public GoToBuildAction(BasicBuildInfo basicBuildInfo, String moduleId) {
+    public GoToBuildAction(BuildRun buildRun, String moduleId) {
         super(ACTION_NAME);
-        this.basicBuildInfo = basicBuildInfo;
+        this.buildRun = buildRun;
         this.moduleId = moduleId;
     }
 
     @Override
     public void onAction(ItemEvent e) {
         PageParameters pageParameters = new PageParameters();
-        pageParameters.put(BuildBrowserConstants.BUILD_NAME, basicBuildInfo.getName());
-        pageParameters.put(BuildBrowserConstants.BUILD_NUMBER, basicBuildInfo.getNumber());
-        pageParameters.put(BuildBrowserConstants.BUILD_STARTED, basicBuildInfo.getStarted());
+        pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildRun.getName());
+        pageParameters.put(BuildBrowserConstants.BUILD_NUMBER, buildRun.getNumber());
+        pageParameters.put(BuildBrowserConstants.BUILD_STARTED, buildRun.getStarted());
         pageParameters.put(BuildBrowserConstants.MODULE_ID, moduleId);
         RequestCycle.get().setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }

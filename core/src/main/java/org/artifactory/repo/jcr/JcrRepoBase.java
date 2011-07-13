@@ -48,10 +48,10 @@ import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.md.Properties;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepoBase;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -120,7 +120,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     }
 
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
-        BasicStatusHolder status = assertValidPath(repoPath.getPath());
+        BasicStatusHolder status = assertValidPath(repoPath.getPath(), true);
         if (status.isError()) {
             return status;
         }
@@ -340,9 +340,8 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         storageMixin.undeploy(repoPath, calcMavenMetadata);
     }
 
-    public RepoResource saveResource(RepoResource res, final InputStream in, Properties keyvals) throws IOException,
-            RepoRejectException {
-        return storageMixin.saveResource(res, in, keyvals);
+    public RepoResource saveResource(SaveResourceContext context) throws IOException, RepoRejectException {
+        return storageMixin.saveResource(context);
     }
 
     public boolean shouldProtectPathDeletion(String path, boolean assertOverwrite) {

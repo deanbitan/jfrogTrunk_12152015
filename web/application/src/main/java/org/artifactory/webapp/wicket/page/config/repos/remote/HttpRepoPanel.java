@@ -19,21 +19,32 @@
 package org.artifactory.webapp.wicket.page.config.repos.remote;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
+import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
+import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
-import org.artifactory.descriptor.replication.ReplicationDescriptor;
+import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
 
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.List;
 
 /**
@@ -44,7 +55,7 @@ import java.util.List;
 public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescriptor> {
 
     private final CreateUpdateAction action;
-    private ReplicationDescriptor replicationDescriptor;
+    private RemoteReplicationDescriptor replicationDescriptor;
 
     public HttpRepoPanel(CreateUpdateAction action, HttpRepoDescriptor repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
@@ -76,9 +87,10 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         List<PropertySet> propertySets = getCachingDescriptorHelper().getModelMutableDescriptor().getPropertySets();
         tabs.add(propertiesWebAddon.getRepoConfigPropertySetsTab("Property Sets", entity, propertySets));
 
-        replicationDescriptor = cachingDescriptorHelper.getModelMutableDescriptor().getReplication(entity.getKey());
+        replicationDescriptor = cachingDescriptorHelper.getModelMutableDescriptor().getRemoteReplication(
+                entity.getKey());
         if (replicationDescriptor == null) {
-            replicationDescriptor = new ReplicationDescriptor();
+            replicationDescriptor = new RemoteReplicationDescriptor();
             replicationDescriptor.setRepoKey(entity.getKey());
         }
         ReplicationWebAddon replicationWebAddon = addons.addonByType(ReplicationWebAddon.class);
@@ -97,17 +109,22 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
             if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
                 replicationDescriptor.setRepoKey(key);
             }
-            mccd.addReplication(replicationDescriptor);
+            mccd.addRemoteReplication(replicationDescriptor);
         }
         helper.syncAndSaveRemoteRepositories();
     }
 
     @Override
     public void saveEditDescriptor(HttpRepoDescriptor repoDescriptor) {
-        MutableCentralConfigDescriptor modelMutableDescriptor =
-                getCachingDescriptorHelper().getModelMutableDescriptor();
-        modelMutableDescriptor.updateReplication(replicationDescriptor);
-        getCachingDescriptorHelper().syncAndSaveRemoteRepositories();
+        CachingDescriptorHelper helper = getCachingDescriptorHelper();
+        MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
+        if (replicationDescriptor.isEnabled() && !mccd.isRemoteReplicationExists(replicationDescriptor)) {
+            if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
+                replicationDescriptor.setRepoKey(key);
+            }
+            mccd.addRemoteReplication(replicationDescriptor);
+        }
+        helper.syncAndSaveRemoteRepositories();
     }
 
     @Override
@@ -117,5 +134,50 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
             error("Field 'Url' is required.");
         }
         return urlValid;
+    }
+
+    @Override
+    protected TitledAjaxSubmitLink createTestButton() {
+        return new TitledAjaxSubmitLink("test", "Test", form) {
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form form) {
+                HttpRepoDescriptor repo = getRepoDescriptor();
+                if (!validate(repo)) {
+                    AjaxUtils.refreshFeedback();
+                    return;
+                }
+                HttpClient client = new HttpClientConfigurator(true)
+                        .hostFromUrl(repo.getUrl())
+                        .defaultMaxConnectionsPerHost(50)
+                        .maxTotalConnections(50)
+                        .connectionTimeout(repo.getSocketTimeoutMillis())
+                        .soTimeout(repo.getSocketTimeoutMillis())
+                        .staleCheckingEnabled(true)
+                        .retry(1, false)
+                        .localAddress(repo.getLocalAddress())
+                        .proxy(repo.getProxy())
+                        .authentication(repo.getUsername(), repo.getPassword())
+                        .getClient();
+                HeadMethod head = new HeadMethod(repo.getUrl());
+                try {
+                    int status = client.executeMethod(head);
+                    if (status != HttpStatus.SC_OK) {
+                        String reason = head.getStatusText();
+                        error("Connection failed: Error " + status + ": " + reason);
+                    } else {
+                        info("Successfully connected to server");
+                    }
+                } catch (UnknownHostException e) {
+                    error("Unknown host: " + e.getMessage());
+                } catch (ConnectException e) {
+                    error(e.getMessage());
+                } catch (IOException e) {
+                    error("Connection failed with exception: " + e.getMessage());
+                } finally {
+                    head.releaseConnection();
+                }
+                AjaxUtils.refreshFeedback(target);
+            }
+        };
     }
 }

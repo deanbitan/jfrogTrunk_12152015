@@ -19,7 +19,6 @@
 package org.artifactory.build;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.api.rest.artifact.PromotionResult;
@@ -45,12 +44,12 @@ import java.util.Set;
 public class BuildPromotionHelper extends BaseBuildPromoter {
     private static final Logger log = LoggerFactory.getLogger(BuildPromotionHelper.class);
 
-    public PromotionResult promoteBuild(BasicBuildInfo basicBuildInfo, Promotion promotion) {
-        Build build = getBuild(basicBuildInfo);
+    public PromotionResult promoteBuild(BuildRun buildRun, Promotion promotion) {
+        Build build = getBuild(buildRun);
 
         if (build == null) {
-            throw new DoesNotExistException("Unable to find build '" + basicBuildInfo.getName() + "' #" +
-                    basicBuildInfo.getNumber() + ".");
+            throw new DoesNotExistException("Unable to find build '" + buildRun.getName() + "' #" +
+                    buildRun.getNumber() + ".");
         }
 
         PromotionResult promotionResult = new PromotionResult();

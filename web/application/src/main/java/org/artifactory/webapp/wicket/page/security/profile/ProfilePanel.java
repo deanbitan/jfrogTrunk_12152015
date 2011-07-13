@@ -36,7 +36,6 @@ import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
 import org.apache.wicket.validation.validator.EmailAddressValidator;
-import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
@@ -57,6 +56,10 @@ import org.artifactory.security.AccessLogger;
 import org.artifactory.security.CryptoHelper;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
 import org.slf4j.Logger;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
@@ -84,7 +87,7 @@ public class ProfilePanel extends TitledActionPanel {
     private SecurityService securityService;
 
     @SpringBean
-    private CentralConfigService centralConfigService;
+    private AuthenticationManager authenticationManager;
 
     private Label encryptedPasswordLabel;
     private Form unlockForm;
@@ -130,44 +133,7 @@ public class ProfilePanel extends TitledActionPanel {
         updateFieldsContainer.setVisible(authService.isUpdatableProfile());
         profileForm.add(updateFieldsContainer);
 
-        // New password
-        final PasswordTextField newPassword = new PasswordTextField("newPassword");
-        newPassword.setRequired(false);
-        newPassword.setEnabled(false);
-        newPassword.add(PasswordStreangthValidator.getInstance());
-        updateFieldsContainer.add(newPassword);
-
-        final PasswordStrengthComponentPanel strength =
-                new PasswordStrengthComponentPanel("strengthPanel", new PropertyModel(newPassword, "modelObject"));
-        updateFieldsContainer.add(strength);
-        strength.setOutputMarkupId(true);
-
-        newPassword.add(new AjaxFormComponentUpdatingBehavior("onkeyup") {
-            @Override
-            protected IAjaxCallDecorator getAjaxCallDecorator() {
-                return new NoAjaxIndicatorDecorator();
-            }
-
-            @Override
-            protected void onError(AjaxRequestTarget target, RuntimeException e) {
-                super.onError(target, e);
-                String password = getFormComponent().getRawInput();
-                newPassword.setDefaultModelObject(password);
-                target.addComponent(strength);
-            }
-
-            @Override
-            protected void onUpdate(AjaxRequestTarget target) {
-                target.addComponent(strength);
-            }
-        }.setThrottleDelay(Duration.seconds(0.5)));
-
-        PasswordTextField retypedPassword = new PasswordTextField("retypedPassword");
-        retypedPassword.setRequired(false);
-        retypedPassword.setEnabled(false);
-        updateFieldsContainer.add(retypedPassword);
-
-        profileForm.add(new EqualPasswordInputValidator(newPassword, retypedPassword));
+        addPasswordFields(updateFieldsContainer);
 
         // Email
         TextField<String> emailTf = new TextField<String>("email");
@@ -183,6 +149,7 @@ public class ProfilePanel extends TitledActionPanel {
         //Submit
         TitledAjaxSubmitLink updateLink = createUpdateProfileButton(profileForm);
         updateLink.setEnabled(false);
+        updateLink.setVisible(authService.isUpdatableProfile());
         addDefaultButton(updateLink);
 
         //Cancel
@@ -192,9 +159,63 @@ public class ProfilePanel extends TitledActionPanel {
             }
         };
         cancelLink.setEnabled(false);
-
+        cancelLink.setVisible(authService.isUpdatableProfile());
         addButton(cancelLink);
+    }
 
+    private void addPasswordFields(WebMarkupContainer updateFieldsContainer) {
+        WebMarkupContainer passwordFieldsContainer = new WebMarkupContainer("passwordFieldsContainer");
+        final TextField<String> newPassword;
+        final WebMarkupContainer strength;
+        final TextField<String> retypedPassword;
+
+        if (authService.isDisableInternalPassword()) {
+            newPassword = new TextField<String>("newPassword");
+            strength = new WebMarkupContainer("strengthPanel");
+            retypedPassword = new TextField<String>("retypedPassword");
+            passwordFieldsContainer.setVisible(false);
+        } else {
+            // New password
+            newPassword = new PasswordTextField("newPassword");
+            newPassword.setRequired(false);
+            newPassword.setEnabled(false);
+            newPassword.add(PasswordStreangthValidator.getInstance());
+
+
+            strength = new PasswordStrengthComponentPanel("strengthPanel",
+                    new PropertyModel(newPassword, "modelObject"));
+            strength.setOutputMarkupId(true);
+
+            newPassword.add(new AjaxFormComponentUpdatingBehavior("onkeyup") {
+                @Override
+                protected IAjaxCallDecorator getAjaxCallDecorator() {
+                    return new NoAjaxIndicatorDecorator();
+                }
+
+                @Override
+                protected void onError(AjaxRequestTarget target, RuntimeException e) {
+                    super.onError(target, e);
+                    String password = getFormComponent().getRawInput();
+                    newPassword.setDefaultModelObject(password);
+                    target.addComponent(strength);
+                }
+
+                @Override
+                protected void onUpdate(AjaxRequestTarget target) {
+                    target.addComponent(strength);
+                }
+            }.setThrottleDelay(Duration.seconds(0.5)));
+
+            retypedPassword = new PasswordTextField("retypedPassword");
+            retypedPassword.setRequired(false);
+            retypedPassword.setEnabled(false);
+            profileForm.add(new EqualPasswordInputValidator(newPassword, retypedPassword));
+        }
+
+        passwordFieldsContainer.add(newPassword);
+        passwordFieldsContainer.add(strength);
+        passwordFieldsContainer.add(retypedPassword);
+        updateFieldsContainer.add(passwordFieldsContainer);
     }
 
     private ProfileModel getUserProfile() {
@@ -208,23 +229,25 @@ public class ProfilePanel extends TitledActionPanel {
                 ProfileModel profile = getUserProfile();
                 UserInfo userInfo = loadUserInfo();
                 String currentPasswordHashed = DigestUtils.md5Hex(profile.getCurrentPassword());
-                if (!currentPasswordHashed.equals(userInfo.getPassword())) {
+                if (!authService.isDisableInternalPassword() && !currentPasswordHashed.equals(userInfo.getPassword())) {
                     error("The specified current password is incorrect.");
                 } else if (!StringUtils.hasText(profile.getEmail())) {
                     error("Field 'Email address' is required.");
                 } else {
                     userInfo.setEmail(profile.getEmail());
-                    String newPassword = profile.getNewPassword();
-                    if (StringUtils.hasText(newPassword)) {
-                        userInfo.setPassword(DigestUtils.md5Hex(newPassword));
-                        profile.setCurrentPassword(newPassword);
+                    if (!authService.isDisableInternalPassword()) {
+                        String newPassword = profile.getNewPassword();
+                        if (StringUtils.hasText(newPassword)) {
+                            userInfo.setPassword(DigestUtils.md5Hex(newPassword));
+                            profile.setCurrentPassword(newPassword);
 
-                        // generate a new KeyPair and update the user profile
-                        regenerateKeyPair(userInfo);
+                            // generate a new KeyPair and update the user profile
+                            regenerateKeyPair(userInfo);
 
-                        // display the encrypted password
-                        if (securityService.isPasswordEncryptionEnabled()) {
-                            displayEncryptedPassword(userInfo);
+                            // display the encrypted password
+                            if (securityService.isPasswordEncryptionEnabled()) {
+                                displayEncryptedPassword(userInfo);
+                            }
                         }
                     }
                 }
@@ -254,9 +277,10 @@ public class ProfilePanel extends TitledActionPanel {
     private void unlockProfile(UserInfo userInfo) {
         unlockForm.visitChildren(new SetEnableVisitor<Component>(false));
 
-        profileForm.visitChildren(new SetEnableVisitor<Component>(true));
-
-        getButtonsContainer().visitChildren(new SetEnableVisitor<Component>(true));
+        if (authService.isUpdatableProfile()) {
+            profileForm.visitChildren(new SetEnableVisitor<Component>(true));
+            getButtonsContainer().visitChildren(new SetEnableVisitor<Component>(true));
+        }
 
         // generate a new KeyPair and update the user profile
         regenerateKeyPair(userInfo);
@@ -320,8 +344,8 @@ public class ProfilePanel extends TitledActionPanel {
         @Override
         protected void onSubmit(AjaxRequestTarget target, Form form) {
             UserInfo userInfo = loadUserInfo();
-            String password = getUserProfile().getCurrentPassword();
-            if (!passwordValid(password, userInfo)) {
+            String enteredCurrentPassword = getUserProfile().getCurrentPassword();
+            if (!authenticate(userInfo, enteredCurrentPassword)) {
                 error("The specified current password is incorrect.");
             } else {
                 unlockProfile(userInfo);
@@ -330,14 +354,13 @@ public class ProfilePanel extends TitledActionPanel {
             AjaxUtils.refreshFeedback(target);
         }
 
-        private boolean passwordValid(String enteredCurrentPassword, UserInfo userInfo) {
-            String currentPassword = userInfo.getPassword();
-            if (!StringUtils.hasText(currentPassword)) {
-                // external user - validate using the password in session
-                return securityService.userPasswordMatches(enteredCurrentPassword);
-            } else {
-                // internal user validate against hashed password in the database
-                return currentPassword.equals(DigestUtils.md5Hex(enteredCurrentPassword));
+        private boolean authenticate(UserInfo userInfo, String enteredCurrentPassword) {
+            try {
+                Authentication authentication = authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(userInfo.getUsername(), enteredCurrentPassword));
+                return (authentication != null) && authentication.isAuthenticated();
+            } catch (AuthenticationException e) {
+                return false;
             }
         }
     }

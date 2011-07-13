@@ -33,7 +33,6 @@ import org.apache.jackrabbit.util.Text;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.addon.license.LicensesAddon;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.ImportableExportableBuild;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
@@ -274,8 +273,8 @@ public class BuildServiceImpl implements InternalBuildService {
 
     public void deleteBuild(String buildName, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder) {
         if (deleteArtifacts) {
-            Set<BasicBuildInfo> existingBuilds = searchBuildsByName(buildName);
-            for (BasicBuildInfo existingBuild : existingBuilds) {
+            Set<BuildRun> existingBuilds = searchBuildsByName(buildName);
+            for (BuildRun existingBuild : existingBuilds) {
                 removeBuildArtifacts(existingBuild, multiStatusHolder);
             }
         }
@@ -283,23 +282,23 @@ public class BuildServiceImpl implements InternalBuildService {
         jcrService.delete(buildPath);
     }
 
-    public void deleteBuild(BasicBuildInfo basicBuildInfo, boolean deleteArtifacts,
+    public void deleteBuild(BuildRun buildRun, boolean deleteArtifacts,
             MultiStatusHolder multiStatusHolder) {
-        String buildName = basicBuildInfo.getName();
+        String buildName = buildRun.getName();
         if (deleteArtifacts) {
-            removeBuildArtifacts(basicBuildInfo, multiStatusHolder);
+            removeBuildArtifacts(buildRun, multiStatusHolder);
         }
-        jcrService.delete(getBuildPathFromParams(buildName, basicBuildInfo.getNumber(), basicBuildInfo.getStarted()));
-        Set<BasicBuildInfo> remainingBuilds = searchBuildsByName(buildName);
+        jcrService.delete(getBuildPathFromParams(buildName, buildRun.getNumber(), buildRun.getStarted()));
+        Set<BuildRun> remainingBuilds = searchBuildsByName(buildName);
         if (remainingBuilds.isEmpty()) {
             deleteBuild(buildName, false, multiStatusHolder);
         }
     }
 
-    private void removeBuildArtifacts(BasicBuildInfo basicBuildInfo, MultiStatusHolder status) {
-        String buildName = basicBuildInfo.getName();
-        String buildNumber = basicBuildInfo.getNumber();
-        Build build = getBuild(buildName, buildNumber, basicBuildInfo.getStarted());
+    private void removeBuildArtifacts(BuildRun buildRun, MultiStatusHolder status) {
+        String buildName = buildRun.getName();
+        String buildNumber = buildRun.getNumber();
+        Build build = getBuild(buildName, buildNumber, buildRun.getStarted());
         status.setDebug("Starting to remove the artifacts of build '" + buildName + "' #" + buildNumber, log);
         for (Module module : build.getModules()) {
             for (Artifact artifact : module.getArtifacts()) {
@@ -357,12 +356,12 @@ public class BuildServiceImpl implements InternalBuildService {
         return null;
     }
 
-    public Set<BasicBuildInfo> searchBuildsByName(String buildName) {
+    public Set<BuildRun> searchBuildsByName(String buildName) {
         return getTransactionalMe().transactionalSearchBuildsByName(buildName);
     }
 
-    public Set<BasicBuildInfo> transactionalSearchBuildsByName(String buildName) {
-        Set<BasicBuildInfo> results = Sets.newHashSet();
+    public Set<BuildRun> transactionalSearchBuildsByName(String buildName) {
+        Set<BuildRun> results = Sets.newHashSet();
 
         if (StringUtils.isBlank(buildName)) {
             return results;
@@ -389,15 +388,15 @@ public class BuildServiceImpl implements InternalBuildService {
                         Node buildStartedNode = buildStartedNodes.nextNode();
                         String decodedBuildStarted = unEscapeAndGetJcrCompatibleString(buildStartedNode.getName());
 
-                        BasicBuildInfo basicBuildInfo;
+                        BuildRun buildRun;
                         if (!buildStartedNode.hasProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS)) {
-                            basicBuildInfo = new BasicBuildInfo(buildName, buildNumber, decodedBuildStarted);
+                            buildRun = new BuildRun(buildName, buildNumber, decodedBuildStarted);
                         } else {
                             Property property = buildStartedNode.getProperty(JcrTypes.PROP_BUILD_RELEASE_LAST_STATUS);
-                            basicBuildInfo = new BasicBuildInfo(buildName, buildNumber, decodedBuildStarted,
+                            buildRun = new BuildRun(buildName, buildNumber, decodedBuildStarted,
                                     property.getString());
                         }
-                        results.add(basicBuildInfo);
+                        results.add(buildRun);
                     }
                 }
             } catch (RepositoryException e) {
@@ -408,12 +407,12 @@ public class BuildServiceImpl implements InternalBuildService {
         return results;
     }
 
-    public Set<BasicBuildInfo> searchBuildsByNameAndNumber(String buildName, String buildNumber) {
+    public Set<BuildRun> searchBuildsByNameAndNumber(String buildName, String buildNumber) {
         return getTransactionalMe().transactionalSearchBuildsByNameAndNumber(buildName, buildNumber);
     }
 
-    public Set<BasicBuildInfo> transactionalSearchBuildsByNameAndNumber(String buildName, String buildNumber) {
-        Set<BasicBuildInfo> results = Sets.newHashSet();
+    public Set<BuildRun> transactionalSearchBuildsByNameAndNumber(String buildName, String buildNumber) {
+        Set<BuildRun> results = Sets.newHashSet();
 
         if (StringUtils.isBlank(buildName) || StringUtils.isBlank(buildNumber)) {
             return results;
@@ -435,7 +434,7 @@ public class BuildServiceImpl implements InternalBuildService {
                     Node buildStartedNode = buildStartedNodes.nextNode();
                     String decodedBuildStarted = unEscapeAndGetJcrCompatibleString(buildStartedNode.getName());
 
-                    results.add(new BasicBuildInfo(buildName, buildNumber, decodedBuildStarted));
+                    results.add(new BuildRun(buildName, buildNumber, decodedBuildStarted));
                 }
 
             } catch (RepositoryException e) {
@@ -668,9 +667,9 @@ public class BuildServiceImpl implements InternalBuildService {
         return BuildType.ANT.equals(type) || BuildType.GENERIC.equals(type);
     }
 
-    public String getBuildCiServerUrl(BasicBuildInfo basicBuildInfo) throws IOException {
-        String buildPath = getBuildPathFromParams(basicBuildInfo.getName(), basicBuildInfo.getNumber(),
-                basicBuildInfo.getStarted());
+    public String getBuildCiServerUrl(BuildRun buildRun) throws IOException {
+        String buildPath = getBuildPathFromParams(buildRun.getName(), buildRun.getNumber(),
+                buildRun.getStarted());
         InputStream jsonStream = null;
         JsonParser parser = null;
         try {
@@ -710,26 +709,26 @@ public class BuildServiceImpl implements InternalBuildService {
         return null;
     }
 
-    public MoveCopyResult moveOrCopyBuildItems(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
+    public MoveCopyResult moveOrCopyBuildItems(boolean move, BuildRun buildRun, String targetRepoKey,
             boolean artifacts, boolean dependencies, List<String> scopes, Properties properties, boolean dryRun) {
         BuildItemMoveCopyHelper itemMoveCopyHelper = new BuildItemMoveCopyHelper();
-        return itemMoveCopyHelper.moveOrCopy(move, basicBuildInfo, targetRepoKey, artifacts, dependencies, scopes,
+        return itemMoveCopyHelper.moveOrCopy(move, buildRun, targetRepoKey, artifacts, dependencies, scopes,
                 properties, dryRun);
     }
 
-    public PromotionResult promoteBuild(BasicBuildInfo buildInfo, Promotion promotion) {
+    public PromotionResult promoteBuild(BuildRun buildRun, Promotion promotion) {
         BuildPromotionHelper buildPromotionHelper = new BuildPromotionHelper();
-        return buildPromotionHelper.promoteBuild(buildInfo, promotion);
+        return buildPromotionHelper.promoteBuild(buildRun, promotion);
     }
 
     public void renameBuilds(String from, String to) {
-        Set<BasicBuildInfo> buildsToRename = searchBuildsByName(from);
+        Set<BuildRun> buildsToRename = searchBuildsByName(from);
         if (buildsToRename.isEmpty()) {
             log.error("Could not find builds by the name '{}'. No builds were renamed.", from);
             return;
         }
 
-        for (BasicBuildInfo buildToRename : buildsToRename) {
+        for (BuildRun buildToRename : buildsToRename) {
             try {
                 getTransactionalMe().renameBuildContent(buildToRename, to);
                 log.info("Renamed build number '{}' that started at '{}' from '{}' to '{}'.", new String[]{
@@ -781,10 +780,10 @@ public class BuildServiceImpl implements InternalBuildService {
         }
     }
 
-    public void renameBuildContent(BasicBuildInfo basicBuildInfo, String to) throws RepositoryException, IOException {
-        String buildName = basicBuildInfo.getName();
-        String buildNumber = basicBuildInfo.getNumber();
-        String buildStarted = basicBuildInfo.getStarted();
+    public void renameBuildContent(BuildRun buildRun, String to) throws RepositoryException, IOException {
+        String buildName = buildRun.getName();
+        String buildNumber = buildRun.getNumber();
+        String buildStarted = buildRun.getStarted();
 
         String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
         Node buildNode = jcrService.getNode(buildPath);

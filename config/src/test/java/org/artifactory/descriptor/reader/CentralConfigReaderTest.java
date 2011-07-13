@@ -66,7 +66,12 @@ public class CentralConfigReaderTest extends ArtifactoryHomeBoundTest {
         CentralConfigReader centralConfigReader = new CentralConfigReader();
         for (Object oldArtifactoryConfig : oldArtifactoryConfigs) {
             File file = (File) oldArtifactoryConfig;
-            CentralConfigDescriptor newConfig = centralConfigReader.read(file);
+            CentralConfigDescriptor newConfig;
+            try {
+                newConfig = centralConfigReader.read(file);
+            } catch (Exception e) {
+                throw new Exception("Caught exception while trying to read config: " + file.getAbsolutePath(), e);
+            }
             ArtifactoryConfigVersion configVersion =
                     ArtifactoryConfigVersion.getConfigVersion(JaxbHelper.toXml(newConfig));
             assertNotNull(configVersion, "Null value returned from security reader for file " + file.getAbsolutePath());

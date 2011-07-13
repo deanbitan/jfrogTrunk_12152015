@@ -887,6 +887,11 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return false;
     }
 
+    public boolean isDisableInternalPassword() {
+        UserInfo simpleUser = currentUser();
+        return simpleUser != null && UserInfo.INVALID_PASSWORD.equals(simpleUser.getPassword());
+    }
+
     private boolean hasPermissionOnRoot(String repoKey) {
         RepoPath path = RepoPathImpl.repoRootPath(repoKey);
         for (ArtifactoryPermission permission : ArtifactoryPermission.values()) {

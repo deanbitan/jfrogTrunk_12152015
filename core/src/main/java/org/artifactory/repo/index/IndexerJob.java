@@ -18,46 +18,37 @@
 
 package org.artifactory.repo.index;
 
-import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
-import org.artifactory.schedule.TaskService;
-import org.artifactory.schedule.quartz.QuartzCommand;
-import org.artifactory.security.SystemAuthenticationToken;
+import org.artifactory.repo.service.ImportJob;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.TaskUser;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Date;
 
 /**
  * @author yoavl
  */
-public class IndexerJob extends QuartzCommand {
-
-    public static final String MANUAL_RUN = "manualRun";
+@JobCommand(
+        singleton = true,
+        schedulerUser = TaskUser.SYSTEM,
+        manualUser = TaskUser.SYSTEM,
+        commandsToStop = {
+                JcrGarbageCollectorJob.class,
+                ArtifactCleanupJob.class,
+                ImportJob.class})
+public class IndexerJob extends AbstractIndexerJobs {
 
     @Override
     protected void onExecute(JobExecutionContext context) throws JobExecutionException {
-        SecurityContextHolder.getContext().setAuthentication(new SystemAuthenticationToken());
-        ArtifactoryContext artifactoryContext = ContextHelper.get();
-        TaskService taskService = artifactoryContext.beanForType(TaskService.class);
-        try {
-            //Stop the clean-up and gc jobs while the indexer is running
-            taskService.stopTasks(JcrGarbageCollectorJob.class, true);
-            taskService.stopTasks(ArtifactCleanupJob.class, true);
-
-            InternalIndexerService indexer = artifactoryContext.beanForType(InternalIndexerService.class);
-            JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
-            boolean manualRun = Boolean.TRUE.equals(jobDataMap.get(MANUAL_RUN));
-            Date fireTime = context.getFireTime();
-            indexer.index(fireTime, manualRun);
-        } finally {
-            SecurityContextHolder.getContext().setAuthentication(null);
-            taskService.resumeTasks(ArtifactCleanupJob.class);
-            taskService.resumeTasks(JcrGarbageCollectorJob.class);
-        }
+        InternalIndexerService indexer = ContextHelper.get().beanForType(InternalIndexerService.class);
+        JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
+        boolean manualRun = Boolean.TRUE.equals(jobDataMap.get(MANUAL_RUN));
+        Date fireTime = context.getFireTime();
+        indexer.index(fireTime, manualRun);
     }
 }

@@ -56,6 +56,7 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
 
     public GroupsListPanel(String id) {
         super(id);
+        getDataProvider().setSort("groupName", true);
     }
 
     @Override

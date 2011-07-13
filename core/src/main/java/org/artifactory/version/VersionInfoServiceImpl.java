@@ -19,13 +19,10 @@
 package org.artifactory.version;
 
 import com.google.common.collect.MapMaker;
-import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.context.ContextHelper;
@@ -36,7 +33,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalContextHelper;
-import org.artifactory.util.HttpClientUtils;
+import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,19 +140,13 @@ public class VersionInfoServiceImpl implements VersionInfoService {
         setHeader(getMethod, headersMap, "User-Agent");
         setHeader(getMethod, headersMap, "Referer");
 
-        HttpClient client = new HttpClient();
-        HttpClientParams clientParams = client.getParams();
-        // Set the socket data timeout
-        clientParams.setSoTimeout(15000);
-        // Set the connection timeout
-        clientParams.setConnectionManagerTimeout(1500);
-
-        // Don't retry
-        clientParams.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(0, false));
-
-        //Update the proxy settings
         ProxyDescriptor proxy = InternalContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
-        HttpClientUtils.configureProxy(client, proxy);
+        HttpClient client = new HttpClientConfigurator()
+                .soTimeout(15000)
+                .connectionTimeout(1500)
+                .retry(0, false)
+                .proxy(proxy)
+                .getClient();
 
         ArtifactoryVersioning result;
         try {

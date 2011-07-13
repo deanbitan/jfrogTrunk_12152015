@@ -35,6 +35,8 @@ public interface SearchRestConstants {
     String PATH_PATTERN = "pattern";
     String PATH_LICENSE = "license";
     String PATH_CHECKSUM = "checksum";
+    String PATH_BAD_CHECKSUM = "badChecksum";
+    String PATH_DEPENDENCY = "dependency";
 
     //Common query params
     String PARAM_REPO_TO_SEARCH = "repos";
@@ -87,6 +89,8 @@ public interface SearchRestConstants {
     String MT_PATTERN_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".PatternResultFileSet+json";
     String MT_LICENSE_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".LicenseResult+json";
     String MT_CHECKSUM_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ChecksumSearchResult+json";
+    String MT_BAD_CHECKSUM_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".BadChecksumSearchResult+json";
+    String MT_DEPENDENCY_BUILDS = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".DependencyBuilds+json";
 
     String NOT_FOUND = "No results found.";
 }

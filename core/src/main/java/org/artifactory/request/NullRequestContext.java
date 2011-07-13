@@ -19,19 +19,22 @@
 package org.artifactory.request;
 
 import org.artifactory.api.md.PropertiesImpl;
+import org.artifactory.api.request.InternalArtifactoryRequest;
 import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
 
 /**
- * Dummy implementation of the request context.
+ * Dummy implementation of the request context. It doesn't contain the original request. Used in internal requests and
+ * for testing.
  *
  * @author Yossi Shaul
  */
 public class NullRequestContext implements RequestContext {
 
-    private final String path;
+    private final ArtifactoryRequest request;
 
-    public NullRequestContext(String path) {
-        this.path = path;
+    public NullRequestContext(RepoPath repoPath) {
+        this.request = new InternalArtifactoryRequest(repoPath);
     }
 
     public boolean isFromAnotherArtifactory() {
@@ -39,7 +42,8 @@ public class NullRequestContext implements RequestContext {
     }
 
     public String getResourcePath() {
-        return path;
+        final RepoPath repoPath = request.getRepoPath();
+        return repoPath.getPath();
     }
 
     public String getServletContextUrl() {
@@ -51,6 +55,6 @@ public class NullRequestContext implements RequestContext {
     }
 
     public ArtifactoryRequest getRequest() {
-        return null;
+        return request;
     }
 }

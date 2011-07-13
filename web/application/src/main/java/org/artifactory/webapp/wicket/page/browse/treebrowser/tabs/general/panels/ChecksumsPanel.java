@@ -22,11 +22,13 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
@@ -76,6 +78,7 @@ public class ChecksumsPanel extends Panel {
         if (checksumsMatch) {
             checksumMismatchContainer.setVisible(false);
         } else {
+            Label mismatchMessageLabel = new Label("mismatchMessage", "");
             // if one is missing but the other is broken display the following
             StringBuilder message = new StringBuilder();
             if (isAllChecksumsMissing(sha1Info, md5Info) || isOneMissingOtherMatches(sha1Info, md5Info)) {
@@ -84,6 +87,7 @@ public class ChecksumsPanel extends Panel {
                 } else {
                     message.append(" Remote checksum doesn't exist. <br/>");
                 }
+                mismatchMessageLabel.add(new CssClass("missing-checksum-warning"));
             } else if (isAllChecksumsBroken(sha1Info, md5Info) || isOneOkOtherMissing(sha1Info, md5Info) ||
                     isOneMissingOtherBroken(sha1Info, md5Info)) {
                 String repoClass = isLocalRepo ? "Uploaded" : "Remote";
@@ -95,8 +99,8 @@ public class ChecksumsPanel extends Panel {
                 message.append("If you trust the ").append(isLocalRepo ? "uploaded" : "remote")
                         .append(" artifact you can accept the actual checksum by clicking the 'Fix Checksum' button.");
             }
-            checksumMismatchContainer.add(
-                    new Label("mismatchMessage", message.toString()).setEscapeModelStrings(false));
+            mismatchMessageLabel.setDefaultModel(Model.of(message.toString())).setEscapeModelStrings(false);
+            checksumMismatchContainer.add(mismatchMessageLabel);
             FixChecksumsButton fixChecksumsButton = new FixChecksumsButton(file);
             fixChecksumsButton.setVisible(canFixChecksum);
             checksumMismatchContainer.add(fixChecksumsButton);
@@ -182,7 +186,7 @@ public class ChecksumsPanel extends Panel {
                 .append(checksumInfo.getType()).append(": ")
                 .append(checksumInfo.getActual()).append(" (")
                 .append(isLocalRepo ? "Uploaded" : "Remote").append(": ")
-                .append(checksumInfo.checksumsMatch() ? "" : "<span style=\"color:red\"}>");
+                .append(checksumInfo.checksumsMatch() ? "" : "<span>");
 
         if (checksumInfo.getOriginal() != null) {
             if (checksumInfo.checksumsMatch()) {
@@ -194,9 +198,7 @@ public class ChecksumsPanel extends Panel {
             sb.append("None");
         }
 
-        sb.append(checksumInfo.checksumsMatch() ? "" : "</span>")
-                .append(")");
-        return sb.toString();
+        return sb.append(checksumInfo.checksumsMatch() ? "" : "</span>").append(")").toString();
     }
 
     private boolean isLocal(String repoKey) {

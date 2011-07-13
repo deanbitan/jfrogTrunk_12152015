@@ -22,13 +22,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.checksum.ChecksumInfo;
 import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.JcrQuerySpec;
-import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.artifact.ChecksumSearchControls;
+import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.jcr.fs.FileInfoProxy;
@@ -48,7 +48,8 @@ import java.util.Set;
 public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, ArtifactSearchResult> {
 
     @Override
-    public SearchResults<ArtifactSearchResult> doSearch(ArtifactSearchControls controls) throws RepositoryException {
+    public ItemSearchResults<ArtifactSearchResult> doSearch(ArtifactSearchControls controls)
+            throws RepositoryException {
         String exp = Text.escapeIllegalXpathSearchChars(controls.getQuery());
 
         // select all the elements of type artifactory:file with element artifactory:name that contains the search term.
@@ -75,7 +76,7 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
                 handleNotFoundException(re);
             }
         }
-        return new SearchResults<ArtifactSearchResult>(results, nodes.getSize());
+        return new ItemSearchResults<ArtifactSearchResult>(results, nodes.getSize());
     }
 
     /**

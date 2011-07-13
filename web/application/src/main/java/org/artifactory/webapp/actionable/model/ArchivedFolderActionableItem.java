@@ -28,7 +28,6 @@ import org.artifactory.api.tree.fs.ZipEntryInfo;
 import org.artifactory.api.tree.fs.ZipTreeNode;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.ActionableItem;
-import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.zipentry.ZipEntryPanel;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
@@ -40,15 +39,13 @@ import java.util.Set;
  *
  * @author Yossi Shaul
  */
-public class ArchivedFolderActionableItem extends RepoAwareActionableItemBase implements HierarchicActionableItem {
-    private ZipTreeNode node;
+public class ArchivedFolderActionableItem extends ArchivedItemActionableItem implements HierarchicActionableItem {
     private boolean compactAllowed;
     private String displayName;
     private boolean compacted;
 
     public ArchivedFolderActionableItem(RepoPath archivePath, ZipTreeNode node, boolean compact) {
-        super(archivePath);
-        this.node = node;
+        super(archivePath, node);
         this.displayName = node.getName();
         this.compactAllowed = compact;
         if (compact) {
@@ -72,7 +69,6 @@ public class ArchivedFolderActionableItem extends RepoAwareActionableItemBase im
                 return new ZipEntryPanel(panelId, getZipEntry());
             }
         });
-
     }
 
     public void filterActions(AuthorizationService authService) {
@@ -84,9 +80,9 @@ public class ArchivedFolderActionableItem extends RepoAwareActionableItemBase im
         Set<ZipTreeNode> children = node.getChildren();
         for (ZipTreeNode file : children) {
             if (file.isDirectory()) {
-                items.add(new ArchivedFolderActionableItem(getRepoPath(), file, compactAllowed));
+                items.add(new ArchivedFolderActionableItem(getArchiveRepoPath(), file, compactAllowed));
             } else {
-                items.add(new ArchivedFileActionableItem(getRepoPath(), file));
+                items.add(new ArchivedFileActionableItem(getArchiveRepoPath(), file));
             }
         }
         return items;

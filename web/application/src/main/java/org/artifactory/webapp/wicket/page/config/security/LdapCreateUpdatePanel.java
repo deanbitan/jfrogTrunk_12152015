@@ -80,9 +80,15 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
 
     @WicketProperty
     private String testPassword;
+    private LdapSetting originalDescriptor;
 
     public LdapCreateUpdatePanel(CreateUpdateAction action, LdapSetting ldapDescriptor) {
-        super(action, ldapDescriptor);
+        /**
+         * Creating a local copy of the original descriptor so that we can fool around with it without changing the
+         * original until we need to save
+         */
+        super(action, new LdapSetting(ldapDescriptor));
+        originalDescriptor = ldapDescriptor;
         setWidth(500);
 
         add(form);
@@ -116,7 +122,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         borderDn.add(new SchemaHelpBubble("autoCreateUser.help"));
         borderDn.add(new SchemaHelpBubble("userDnPattern.help"));
 
-        addSearchFields(ldapDescriptor, borderDn);
+        addSearchFields(borderDn);
 
         addTestConnectionFields();
 
@@ -131,8 +137,8 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         add(form);
     }
 
-    private void addSearchFields(LdapSetting ldapDescriptor, TitledBorder borderDn) {
-        searchPattern = ldapDescriptor.getSearch();
+    private void addSearchFields(TitledBorder borderDn) {
+        searchPattern = entity.getSearch();
         if (searchPattern == null) {
             searchPattern = new SearchPattern();
         }
@@ -181,23 +187,23 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 Session.get().cleanupFeedbackMessages();
-                LdapSetting ldapSetting = (LdapSetting) form.getDefaultModelObject();
-                if (!validateAndUpdateLdapSettings(ldapSetting)) {
+                if (!validateAndUpdateLdapSettings()) {
                     AjaxUtils.refreshFeedback(target);
                     return;
                 }
 
                 MutableCentralConfigDescriptor configDescriptor = centralConfigService.getMutableDescriptor();
+                originalDescriptor.duplicate(entity);
                 if (isCreate()) {
-                    configDescriptor.getSecurity().addLdap(ldapSetting);
+                    configDescriptor.getSecurity().addLdap(originalDescriptor);
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    getPage().info("LDAP '" + entity.getKey() + "' successfully created.");
+                    getPage().info("LDAP '" + originalDescriptor.getKey() + "' successfully created.");
                     ((LdapsListPage) getPage()).refresh(target);
                 } else {
                     LdapGroupWebAddon addon = addonsManager.addonByType(LdapGroupWebAddon.class);
-                    addon.saveLdapSetting(configDescriptor, entity);
+                    addon.saveLdapSetting(configDescriptor, originalDescriptor);
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    getPage().info("LDAP '" + entity.getKey() + "' successfully updated.");
+                    getPage().info("LDAP '" + originalDescriptor.getKey() + "' successfully updated.");
                     ((LdapsListPage) getPage()).refresh(target);
                 }
                 AjaxUtils.refreshFeedback(target);
@@ -212,8 +218,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 Session.get().cleanupFeedbackMessages();
-                LdapSetting ldapSetting = (LdapSetting) form.getDefaultModelObject();
-                if (!validateAndUpdateLdapSettings(ldapSetting)) {
+                if (!validateAndUpdateLdapSettings()) {
                     AjaxUtils.refreshFeedback(target);
                     return;
                 }
@@ -223,7 +228,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                     AjaxUtils.refreshFeedback(target);
                     return;
                 }
-                MultiStatusHolder status = securityService.testLdapConnection(ldapSetting, testUsername, testPassword);
+                MultiStatusHolder status = securityService.testLdapConnection(entity, testUsername, testPassword);
                 List<StatusEntry> infos = status.getEntries(StatusEntryLevel.INFO);
                 if (status.isError()) {
                     String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
@@ -243,9 +248,9 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         return submit;
     }
 
-    private boolean validateAndUpdateLdapSettings(LdapSetting ldapSetting) {
+    private boolean validateAndUpdateLdapSettings() {
         // validate userDnPattern or searchFilter
-        boolean hasDnPattern = StringUtils.hasText(ldapSetting.getUserDnPattern());
+        boolean hasDnPattern = StringUtils.hasText(entity.getUserDnPattern());
         boolean hasSearch = StringUtils.hasText(searchPattern.getSearchFilter());
         if (!hasDnPattern && !hasSearch) {
             error("LDAP settings should provide a userDnPattern or a searchFilter (or both)");
@@ -261,7 +266,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         // if the search filter has value set the search pattern
         if (StringUtils.hasText(searchPattern.getSearchFilter()) || (StringUtils.hasText(
                 searchPattern.getManagerDn()) && StringUtils.hasText(searchPattern.getManagerPassword()))) {
-            ldapSetting.setSearch(searchPattern);
+            entity.setSearch(searchPattern);
         }
 
         return true;

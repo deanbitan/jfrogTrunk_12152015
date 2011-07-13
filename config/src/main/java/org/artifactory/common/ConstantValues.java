@@ -46,7 +46,7 @@ public enum ConstantValues {
     locksDebugTimeouts("locks.debugTimeouts", FALSE),
     taskCompletionLockTimeoutRetries("task.completionLockTimeoutRetries", 100),
     substituteRepoKeys("repo.key.subst."),
-    repoCleanupIntervalHours("repo.cleanup.intervalHours", 1),
+    repoCleanupIntervalHours("repo.cleanup.intervalHours", 21),
     repoConcurrentDownloadSyncTimeoutSecs("repo.concurrentDownloadSyncTimeoutSecs", Seconds.MINUTE * 15),
     fsItemCacheIdleTimeSecs("fsitem.cache.idleTimeSecs", Seconds.MINUTE * 20),
     searchMaxResults("search.maxResults", 500),
@@ -92,7 +92,8 @@ public enum ConstantValues {
     httpUseExpectContinue("http.useExpectContinue", false),
     filteringResourceSizeKb("filtering.resourceSizeKb", 64),
     searchForExistingResourceOnRemoteRequest("repo.remote.checkForExistingResourceOnRequest", TRUE),
-    versionQueryEnabled("version.query.enabled", true);
+    versionQueryEnabled("version.query.enabled", true),
+    hostId("host.id");
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

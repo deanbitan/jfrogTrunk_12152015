@@ -27,7 +27,7 @@ import org.apache.jackrabbit.util.ISO9075;
 import org.artifactory.api.fs.VersionUnit;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoBuilder;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.deployable.VersionUnitSearchControls;
 import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.jcr.JcrPath;
@@ -53,7 +53,7 @@ import static org.artifactory.jcr.JcrTypes.PROP_ARTIFACTORY_NAME;
 public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls, VersionUnitSearchResult> {
 
     @Override
-    public SearchResults<VersionUnitSearchResult> doSearch(VersionUnitSearchControls controls)
+    public ItemSearchResults<VersionUnitSearchResult> doSearch(VersionUnitSearchControls controls)
             throws RepositoryException {
 
         RepoPath pathToSearch = controls.getPathToSearchWithin();
@@ -91,7 +91,7 @@ public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls,
             handleNotFoundException(re);
         }
         Set<VersionUnitSearchResult> results = getVersionUnitResults(moduleInfoToRepoPaths);
-        return new SearchResults<VersionUnitSearchResult>(Lists.newArrayList(results), nodeIterator.getSize());
+        return new ItemSearchResults<VersionUnitSearchResult>(Lists.newArrayList(results), nodeIterator.getSize());
     }
 
     private Set<VersionUnitSearchResult> getVersionUnitResults(Multimap<ModuleInfo, RepoPath> moduleInfoToRepoPaths) {

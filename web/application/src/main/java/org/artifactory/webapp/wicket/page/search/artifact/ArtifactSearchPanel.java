@@ -26,7 +26,7 @@ import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.common.wicket.component.help.HelpBubble;
@@ -114,12 +114,12 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
     }
 
     @Override
-    protected SearchResults<ArtifactSearchResult> searchArtifacts() {
+    protected ItemSearchResults<ArtifactSearchResult> searchArtifacts() {
         return search(true);
     }
 
     @Override
-    protected SearchResults<ArtifactSearchResult> performLimitlessArtifactSearch() {
+    protected ItemSearchResults<ArtifactSearchResult> performLimitlessArtifactSearch() {
         return search(false);
     }
 
@@ -129,7 +129,7 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
      * @param limitResults True if the search results should be limited
      * @return List of search results
      */
-    private SearchResults<ArtifactSearchResult> search(boolean limitResults) {
+    private ItemSearchResults<ArtifactSearchResult> search(boolean limitResults) {
         ArtifactSearchControls controlsCopy = new ArtifactSearchControls(searchControls);
 
         String query = searchControls.getQuery();

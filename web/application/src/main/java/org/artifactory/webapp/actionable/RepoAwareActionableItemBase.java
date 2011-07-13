@@ -35,7 +35,6 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.GeneralTabPanel;
@@ -43,7 +42,6 @@ import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.Metadata
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.permissions.PermissionsTabPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.TabbedPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
-import org.slf4j.Logger;
 
 import java.util.List;
 
@@ -52,8 +50,6 @@ import java.util.List;
  */
 public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         implements RepoAwareActionableItem, TabViewedActionableItem {
-
-    private static final Logger log = LoggerFactory.getLogger(RepoAwareActionableItemBase.class);
 
     private final RepoPath repoPath;
 

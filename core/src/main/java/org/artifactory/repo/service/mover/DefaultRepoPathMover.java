@@ -120,7 +120,7 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
             return;
         }
 
-        List<JcrFsItem> children = jcrRepoService.getChildren(source, true);
+        List<JcrFsItem> children = jcrRepoService.getChildren(source, !copy);
         RepoPath originalRepoPath = targetRrp.getRepoPath();
         for (JcrFsItem child : children) {
             // update the cached object with the child's repo path.
@@ -135,6 +135,8 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
             // we don't use folder.delete() as it will move to trash and will fire additional events
             storageInterceptors.afterMove(source, targetFolder, status, properties);
             source.bruteForceDelete();
+        } else if (!dryRun && copy) {
+            storageInterceptors.afterCopy(source, targetFolder, status, properties);
         }
 
         //If not containing any children and items have been moved (children have actually been moved)

@@ -73,7 +73,7 @@ public class TranslatedArtifactoryRequest implements ArtifactoryRequest {
     }
 
     public boolean isChecksum() {
-        return NamingUtils.isChecksum(getPath());
+        return NamingUtils.isChecksum(getPath()) || NamingUtils.isChecksum(originalRequest.getZipResourcePath());
     }
 
     public boolean isFromAnotherArtifactory() {
@@ -114,6 +114,14 @@ public class TranslatedArtifactoryRequest implements ArtifactoryRequest {
 
     public boolean hasProperties() {
         return originalRequest.hasProperties();
+    }
+
+    public String getZipResourcePath() {
+        return originalRequest.getZipResourcePath();
+    }
+
+    public boolean isZipResourceRequest() {
+        return originalRequest.isZipResourceRequest();
     }
 
     public String getParameter(String name) {

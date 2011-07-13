@@ -18,13 +18,14 @@
 
 package org.artifactory.addon.plugin;
 
+import org.artifactory.api.config.ExportSettings;
+import org.artifactory.api.config.ImportSettings;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 @Component
 public class PluginsAddonDefaultImpl implements PluginsAddon {
-
 
     public <C> void execPluginActions(Class<? extends PluginAction> type, C context, Object... args) {
         //Nothing to do in the default impl
@@ -36,5 +37,13 @@ public class PluginsAddonDefaultImpl implements PluginsAddon {
 
     public boolean isDefault() {
         return true;
+    }
+
+    public void exportTo(ExportSettings settings) {
+
+    }
+
+    public void importFrom(ImportSettings settings) {
+
     }
 }

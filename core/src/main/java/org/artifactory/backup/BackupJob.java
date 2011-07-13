@@ -19,9 +19,15 @@
 package org.artifactory.backup;
 
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.repo.cleanup.ArtifactCleanupJob;
+import org.artifactory.repo.index.IndexerJob;
+import org.artifactory.repo.index.IndexerServiceImpl;
+import org.artifactory.repo.service.ImportJob;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
@@ -30,14 +36,22 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * @author Yoav Landman
  */
+@JobCommand(schedulerUser = TaskUser.SYSTEM,
+        commandsToStop = {
+                JcrGarbageCollectorJob.class,
+                IndexerServiceImpl.FindOrCreateIndexJob.class,
+                IndexerServiceImpl.SaveIndexFileJob.class,
+                IndexerJob.class,
+                ArtifactCleanupJob.class,
+                ImportJob.class})
 public class BackupJob extends QuartzCommand {
 
     private static final Logger log = LoggerFactory.getLogger(BackupJob.class);
+    public static final String BAKUP_KEY = "backupKey";
 
     @Override
     protected void onExecute(JobExecutionContext jobContext) throws JobExecutionException {
@@ -46,12 +60,12 @@ public class BackupJob extends QuartzCommand {
             log.debug("Skipping execution of '{}', sever is not ready yet", BackupJob.class.getName());
             return;
         }
-        final int backupIndex = jobContext.getJobDetail().getJobDataMap().getInt("index");
+        final String backupKey = jobContext.getJobDetail().getJobDataMap().getString(BAKUP_KEY);
         InternalBackupService backup = context.beanForType(InternalBackupService.class);
         Date fireTime = jobContext.getFireTime();
         MultiStatusHolder jobStatus = new MultiStatusHolder();
         try {
-            MultiStatusHolder backupStatus = backup.backupSystem(context, backupIndex);
+            MultiStatusHolder backupStatus = backup.backupSystem(context, backupKey);
             jobStatus.merge(backupStatus);
         } catch (Exception e) {
             jobStatus.setError("An error occurred while performing a backup", e, log);
@@ -61,8 +75,8 @@ public class BackupJob extends QuartzCommand {
             jobStatus.setWarning("Backup completed with some errors (see the log messages above for details). " +
                     "Old backups will not be auto-removed.", log);
 
-            BackupDescriptor backupDescriptor = getBackup(backupIndex);
-            if ((backupDescriptor != null) && backupDescriptor.isSendMailOnError()) {
+            BackupDescriptor backupDescriptor = backup.getBackup(backupKey);
+            if (backupDescriptor != null && backupDescriptor.isEnabled() && backupDescriptor.isSendMailOnError()) {
                 try {
                     backup.sendBackupErrorNotification(backupDescriptor.getKey(), jobStatus);
                 } catch (Exception e) {
@@ -72,22 +86,6 @@ public class BackupJob extends QuartzCommand {
             return;
         }
         //If backup was successful continue with old backups cleanup
-        backup.cleanupOldBackups(fireTime, backupIndex);
-    }
-
-    /**
-     * Returns a backup descriptor via the given index
-     *
-     * @param backupIndex Index of descriptor to acquire
-     * @return BackupDescriptor if the index is valid. Null if not
-     */
-    private BackupDescriptor getBackup(int backupIndex) {
-        InternalArtifactoryContext context = InternalContextHelper.get();
-        CentralConfigService centralConfig = context.getCentralConfig();
-        final List<BackupDescriptor> list = centralConfig.getDescriptor().getBackups();
-        if (list.size() <= backupIndex) {
-            return null;
-        }
-        return list.get(backupIndex);
+        backup.cleanupOldBackups(fireTime, backupKey);
     }
 }

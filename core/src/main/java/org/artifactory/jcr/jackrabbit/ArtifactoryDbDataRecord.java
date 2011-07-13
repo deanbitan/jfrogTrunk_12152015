@@ -492,25 +492,30 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
             return guardedActionOnFile(new Callable<Boolean>() {
                 public Boolean call() throws Exception {
                     if (getReadersCount() > 0) {
-                        log.debug("Cannot delete file. Currently opened");
+                        log.debug("Cannot delete file '{}'. Currently opened", getIdentifier());
                         return false;
                     }
                     long lastAccess = lastAccessTime.get();
                     if (lastAccess != NOT_ACCESSED && lastAccess > scanStartTime) {
-                        log.debug("Cannot delete file. Last access time changed during scanning");
+                        log.debug("Cannot delete file '{}'. Last access time changed during scanning", getIdentifier());
                         return false;
                     }
                     // mark the record as not accessed (so it will be considered as record with no cache file)
                     if (!lastAccessTime.compareAndSet(lastAccess, NOT_ACCESSED)) {
-                        log.debug("Cannot delete file. Last access time changed during delete");
+                        log.debug("Cannot delete file '{}'. Last access time changed during delete", getIdentifier());
                         return false;
                     }
                     File cachedFile = store.getFile(getIdentifier());
                     if (cachedFile.exists()) {
-                        log.debug("Deleting cache file from '{}'", cachedFile.getAbsolutePath());
-                        return cachedFile.delete();
+                        log.debug("Deleting cache file '{}' to save {}bytes", cachedFile.getAbsolutePath(), length);
+                        boolean deleted = cachedFile.delete();
+                        if (!deleted) {
+                            log.debug("Could not delete cache file '{}' to save {}bytes", cachedFile.getAbsolutePath(),
+                                    length);
+                        }
+                        return deleted;
                     }
-                    log.trace("Cache file doesn't exist in '{}'", cachedFile.getAbsolutePath());
+                    log.trace("Cache file '{}' doesn't exist! Already deleted?", cachedFile.getAbsolutePath());
                     return true;
                 }
             });

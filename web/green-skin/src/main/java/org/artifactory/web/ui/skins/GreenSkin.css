@@ -1448,6 +1448,7 @@ body div.wicket-tree div.row, body div.wicket-tree div.row-selected {
     border: solid 1px black;
     margin-bottom: 18px;
     min-width: 150px;
+    overflow: auto;
 }
 
 .IE-6 #treeContentPane {
@@ -1529,7 +1530,7 @@ td.one-line span {
 
 /*-- ActionsMenuPanel --*/
 
-.tundra table.dijitMenu, .tundra .dijitMenuTable {
+.tundra .tree-actions, .tundra .dijitMenuBar, .tree-actions .dijitMenu {
     border: none;
     background: none;
 }
@@ -3589,6 +3590,7 @@ div.general-settings-panel input.text-file {
 
 .black-listed-label {
     color: red;
+    font-weight: bold;
 }
 
 .blue-listed-label {
@@ -3739,6 +3741,10 @@ div.general-settings-panel input.text-file {
 
 .jar {
     background-image: url("images/icons/ICN-jar.gif");
+}
+
+.nupkg {
+    background-image: url("images/icons/ICN-nupkg.gif");
 }
 
 .pom {
@@ -5746,3 +5752,25 @@ table.legend .e-value {
     color: #5D5C5D;
 }
 
+.local-repo-replication-config .field-row input.text {
+    width: 230px;
+}
+
+.local-repo-replication-config .field-row .local-replication-url input.text {
+    width: 481px;
+}
+
+.local-repo-replication-config .field-row select {
+    width: 236px;
+}
+
+/*-- LinkableBehavior --*/
+
+textarea.linkable {
+    color: #0000ff;
+    text-decoration: underline;
+}
+
+.missing-checksum-warning {
+    color: black;
+}

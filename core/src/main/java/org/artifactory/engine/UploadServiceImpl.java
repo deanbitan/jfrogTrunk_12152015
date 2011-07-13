@@ -51,6 +51,7 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapterContext;
@@ -231,7 +232,10 @@ public class UploadServiceImpl implements InternalUploadService {
             } else {
                 log.debug("Matching artifact found, using stream from storage");
             }
-            RepoResource resource = repo.saveResource(res, stream, properties);
+            SaveResourceContext.Builder contextBuilder = new SaveResourceContext.Builder(res, stream)
+                    .properties(properties);
+            gatherItemInfoFromHeaders(request, res, contextBuilder);
+            RepoResource resource = repo.saveResource(contextBuilder.build());
             if (!resource.isFound()) {
                 response.sendError(SC_NOT_FOUND, ((UnfoundRepoResource) resource).getReason(), log);
                 return;
@@ -248,6 +252,38 @@ public class UploadServiceImpl implements InternalUploadService {
                 append("/").append(repoPath.getPath()).toString();
         successfulDeploymentResponseHelper.writeSuccessfulDeploymentResponse(
                 repoService, request, response, repoPath, url);
+    }
+
+    private void gatherItemInfoFromHeaders(ArtifactoryRequest request, RepoResource res,
+            SaveResourceContext.Builder contextBuilder) {
+        if (authService.isAdmin()) {
+
+            String lastModifiedString = request.getHeader(ArtifactoryRequest.LAST_MODIFIED);
+            if (StringUtils.isNotBlank(lastModifiedString)) {
+                long lastModified = Long.parseLong(lastModifiedString);
+                if (lastModified > 0) {
+                    res.getInfo().setLastModified(lastModified);
+                }
+            }
+
+            String createdString = request.getHeader(ArtifactoryRequest.CREATED);
+            if (StringUtils.isNotBlank(createdString)) {
+                long created = Long.parseLong(createdString);
+                if (created > 0) {
+                    contextBuilder.created(created);
+                }
+            }
+
+            String createBy = request.getHeader(ArtifactoryRequest.CREATED_BY);
+            if (StringUtils.isNotBlank(createBy)) {
+                contextBuilder.createdBy(createBy);
+            }
+
+            String modifiedBy = request.getHeader(ArtifactoryRequest.MODIFIED_BY);
+            if (StringUtils.isNotBlank(modifiedBy)) {
+                contextBuilder.modifiedBy(modifiedBy);
+            }
+        }
     }
 
     private void setFileInfoChecksums(ArtifactoryRequest request, FileInfoImpl fileInfo) {

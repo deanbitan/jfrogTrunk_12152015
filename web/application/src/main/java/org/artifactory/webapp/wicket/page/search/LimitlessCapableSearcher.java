@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.search;
 
-import org.artifactory.api.search.SearchResult;
+import org.artifactory.api.search.ItemSearchResult;
 
 import java.io.Serializable;
 import java.util.List;
@@ -28,7 +28,7 @@ import java.util.List;
  *
  * @author Noam Y. Tenne
  */
-public interface LimitlessCapableSearcher<T extends SearchResult> extends Serializable {
+public interface LimitlessCapableSearcher<T extends ItemSearchResult> extends Serializable {
 
     /**
      * Performs a limitless search

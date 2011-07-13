@@ -41,8 +41,8 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.SearchAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.search.SearchResult;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResult;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.ajax.ImmediateAjaxIndicatorDecorator;
@@ -73,7 +73,7 @@ import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
  *
  * @author Noam Tenne
  */
-public abstract class BaseSearchPanel<T extends SearchResult> extends Panel implements LimitlessCapableSearcher<T> {
+public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel implements LimitlessCapableSearcher<T> {
 
     @SpringBean
     protected SearchService searchService;
@@ -87,7 +87,7 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
     @SpringBean
     private AddonsManager addons;
 
-    private SearchResults<T> searchResults;
+    private ItemSearchResults<T> searchResults;
     private GroupableDataProvider<ActionableSearchResult<T>> dataProvider;
     private WebMarkupContainer searchBorder;
 
@@ -228,14 +228,14 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
      *
      * @return List of results limited by the system spec
      */
-    protected abstract SearchResults<T> searchArtifacts();
+    protected abstract ItemSearchResults<T> searchArtifacts();
 
     /**
      * Performs a limitless result search
      *
      * @return List of results unlimited by the system spec
      */
-    protected abstract SearchResults<T> performLimitlessArtifactSearch();
+    protected abstract ItemSearchResults<T> performLimitlessArtifactSearch();
 
     protected abstract void onNoResults();
 
@@ -309,7 +309,7 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
     }
 
     public List<T> searchLimitlessArtifacts() {
-        SearchResults<T> results = performLimitlessArtifactSearch();
+        ItemSearchResults<T> results = performLimitlessArtifactSearch();
         return results.getResults();
     }
 
@@ -326,10 +326,10 @@ public abstract class BaseSearchPanel<T extends SearchResult> extends Panel impl
         @Override
         public void populateItem(Item cellItem, String componentId, IModel model) {
             final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
-            ActionableSearchResult<SearchResult> result =
-                    (ActionableSearchResult<SearchResult>) cellItem.getParent().getParent().getDefaultModelObject();
-            String href = hrefPrefix + "/" + result.getSearchResult().getRepoKey() + "/" +
-                    result.getSearchResult().getRelativePath();
+            ActionableSearchResult<ItemSearchResult> result =
+                    (ActionableSearchResult<ItemSearchResult>) cellItem.getParent().getParent().getDefaultModelObject();
+            String href = hrefPrefix + "/" + result.getSearchResult().getItemInfo().getRepoKey() + "/" +
+                    result.getSearchResult().getItemInfo().getRelPath();
             String name = result.getSearchResult().getName();
             ExternalLink link = new ExternalLink(componentId, href, name);
             link.add(new CssClass("item-link"));

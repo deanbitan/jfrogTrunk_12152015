@@ -20,7 +20,8 @@ package org.artifactory.descriptor.config;
 
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
-import org.artifactory.descriptor.replication.ReplicationDescriptor;
+import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
+import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
@@ -32,6 +33,8 @@ import org.artifactory.util.AlreadyExistsException;
 import org.artifactory.util.RepoLayoutUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.util.Map;
 
 import static org.testng.Assert.*;
 
@@ -95,15 +98,31 @@ public class CentralConfigDescriptorImplTest {
         repoLayout2.setName("layout2");
         cc.addRepoLayout(repoLayout2);
 
-        ReplicationDescriptor replication1 = new ReplicationDescriptor();
-        replication1.setCronExp("0 0/5 * * * ?");
-        replication1.setRepoKey("remote1");
-        cc.addReplication(replication1);
+        RemoteReplicationDescriptor remoteReplication1 = new RemoteReplicationDescriptor();
+        remoteReplication1.setCronExp("0 0/5 * * * ?");
+        remoteReplication1.setRepoKey("remote1");
+        cc.addRemoteReplication(remoteReplication1);
 
-        ReplicationDescriptor replication2 = new ReplicationDescriptor();
-        replication2.setCronExp("0 0/6 * * * ?");
-        replication2.setRepoKey("remote2");
-        cc.addReplication(replication2);
+        RemoteReplicationDescriptor remoteReplication2 = new RemoteReplicationDescriptor();
+        remoteReplication2.setCronExp("0 0/6 * * * ?");
+        remoteReplication2.setRepoKey("remote2");
+        cc.addRemoteReplication(remoteReplication2);
+
+        LocalReplicationDescriptor localReplication1 = new LocalReplicationDescriptor();
+        localReplication1.setCronExp("0 0/7 * * * ?");
+        localReplication1.setRepoKey("local1");
+        localReplication1.setUrl("http://momo.com");
+        localReplication1.setUsername("user1");
+        localReplication1.setPassword("password1");
+        cc.addLocalReplication(localReplication1);
+
+        LocalReplicationDescriptor localReplication2 = new LocalReplicationDescriptor();
+        localReplication2.setCronExp("0 0/8 * * * ?");
+        localReplication2.setRepoKey("local2");
+        localReplication2.setUrl("http://popo.com");
+        localReplication2.setUsername("user2");
+        localReplication2.setPassword("password2");
+        cc.addLocalReplication(localReplication2);
     }
 
     public void defaultsTest() {
@@ -122,7 +141,8 @@ public class CentralConfigDescriptorImplTest {
                 "Default max file upload size should be bigger than 50mb");
         assertFalse(cc.isOfflineMode(), "Offline mode should be false by default");
         assertNotNull(cc.getRepoLayouts(), "Repo layouts list should not be null");
-        assertNotNull(cc.getReplications(), "Replication list should not be null");
+        assertNotNull(cc.getRemoteReplications(), "Remote replication list should not be null");
+        assertNotNull(cc.getLocalReplications(), "Local replication list should not be null");
     }
 
     public void uniqueKeyExistence() {
@@ -202,21 +222,13 @@ public class CentralConfigDescriptorImplTest {
 
         assertNotNull(remoteRepo.getProxy(), "Just checking ...");
 
+        LocalReplicationDescriptor localReplication = cc.getLocalReplication("local1");
+        localReplication.setProxy(proxy);
+
         cc.removeProxy("referencedProxy");
 
         assertNull(remoteRepo.getProxy(), "Proxy should have been removed from the remote repo");
-    }
-
-    public void addDefaultProxyToRemoteRepositories() {
-        ProxyDescriptor proxy = new ProxyDescriptor();
-        proxy.setKey("defaultProxy");
-        cc.addProxy(proxy, false);
-        cc.addDefaultProxyToRemoteRepositories(proxy);
-
-        HttpRepoDescriptor remoteRepo = (HttpRepoDescriptor) cc.getRemoteRepositoriesMap().get("remote1");
-
-        assertNotNull(remoteRepo.getProxy(), "Remote repo should have a proxy");
-        assertEquals(remoteRepo.getProxy().getKey(), "defaultProxy", "Proxy name does not match");
+        assertNull(localReplication.getProxy(), "Proxy should have been removed from the local replication.");
     }
 
     public void defaultProxyChanged() {
@@ -224,7 +236,9 @@ public class CentralConfigDescriptorImplTest {
         proxy.setKey("defaultProxy");
         proxy.setDefaultProxy(true);
         cc.addProxy(proxy, false);
-        cc.addDefaultProxyToRemoteRepositories(proxy);
+        addDefaultProxyToRemoteRepositories(proxy);
+        LocalReplicationDescriptor localReplication = cc.getLocalReplication("local1");
+        localReplication.setProxy(proxy);
 
         ProxyDescriptor newDefaultProxy = new ProxyDescriptor();
         newDefaultProxy.setKey("newDefaultProxy");
@@ -235,6 +249,10 @@ public class CentralConfigDescriptorImplTest {
 
         assertNotNull(remoteRepo.getProxy(), "Remote repo should have a proxy");
         assertEquals(remoteRepo.getProxy().getKey(), "newDefaultProxy", "Proxy name does not match");
+
+        assertNotNull(localReplication.getProxy(), "Local replication should have a proxy");
+        assertEquals(localReplication.getProxy().getKey(), "newDefaultProxy", "Proxy name does not match");
+
         assertFalse(proxy.isDefaultProxy(), "Original proxy should now be false");
 
         proxy.setDefaultProxy(true);
@@ -243,6 +261,8 @@ public class CentralConfigDescriptorImplTest {
         assertNotNull(remoteRepo.getProxy(), "Remote repo should have a proxy");
         assertEquals(remoteRepo.getProxy().getKey(), "newDefaultProxy", "Proxy name does not match");
 
+        assertNotNull(localReplication.getProxy(), "Remote repo should have a proxy");
+        assertEquals(localReplication.getProxy().getKey(), "newDefaultProxy", "Proxy name does not match");
     }
 
     public void backupExistence() {
@@ -327,23 +347,32 @@ public class CentralConfigDescriptorImplTest {
         assertNull(virtualDescriptor.getRepoLayout(), "The repo layout should have defaulted to null.");
     }
 
-    public void replicationExistence() {
-        assertNotNull(cc.getReplication("remote1"));
-        assertNotNull(cc.getReplication("remote2"));
-    }
-
-    public void replicationUpdates() {
-        ReplicationDescriptor replication = cc.getReplication("remote1");
-        assertFalse(replication.isEnabled(), "Unexpected default enabled state.");
-        replication.setEnabled(true);
-        cc.updateReplication(replication);
-        assertTrue(cc.getReplication("remote1").isEnabled(), "Enabled state should have been updated.");
+    public void replicationsExistence() {
+        assertNotNull(cc.getRemoteReplication("remote1"));
+        assertNotNull(cc.getRemoteReplication("remote2"));
+        assertNotNull(cc.getLocalReplication("local1"));
+        assertNotNull(cc.getLocalReplication("local2"));
     }
 
     public void removeReplicationUpdates() {
-        ReplicationDescriptor replication = cc.getReplication("remote2");
-        assertNotNull(replication, "Expected to find second replication.");
-        cc.removeReplication(replication);
-        assertNull(cc.getReplication("remote2"), "Second replication should have been removed.");
+        RemoteReplicationDescriptor remoteReplication = cc.getRemoteReplication("remote2");
+        assertNotNull(remoteReplication, "Expected to find second remote replication.");
+        cc.removeRemoteReplication(remoteReplication);
+        assertNull(cc.getRemoteReplication("remote2"), "Second remote replication should have been removed.");
+
+        LocalReplicationDescriptor localReplication = cc.getLocalReplication("local2");
+        assertNotNull(localReplication, "Expected to find second local replication.");
+        cc.removeLocalReplication(localReplication);
+        assertNull(cc.getLocalReplication("local2"), "Second local replication should have been removed.");
+    }
+
+    private void addDefaultProxyToRemoteRepositories(ProxyDescriptor proxyDescriptor) {
+        Map<String, RemoteRepoDescriptor> descriptorOrderedMap = cc.getRemoteRepositoriesMap();
+        for (RemoteRepoDescriptor descriptor : descriptorOrderedMap.values()) {
+            if (descriptor instanceof HttpRepoDescriptor) {
+                HttpRepoDescriptor httpRepoDescriptor = (HttpRepoDescriptor) descriptor;
+                httpRepoDescriptor.setProxy(proxyDescriptor);
+            }
+        }
     }
 }

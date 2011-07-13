@@ -35,11 +35,13 @@ import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.panel.upload.FileUploadForm;
 import org.artifactory.common.wicket.panel.upload.UploadListener;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.artifactory.webapp.wicket.panel.upload.DefaultFileUploadForm;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -186,6 +188,8 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
      * @return List - All deployable repos
      */
     private List<LocalRepoDescriptor> getDeployableRepos() {
-        return repositoryService.getDeployableRepoDescriptors();
+        List<LocalRepoDescriptor> repos = repositoryService.getDeployableRepoDescriptors();
+        Collections.sort(repos, new LocalRepoAlphaComparator());
+        return repos;
     }
 }

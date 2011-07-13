@@ -19,21 +19,30 @@
 package org.artifactory.webapp.wicket.page.search.archive;
 
 import org.apache.wicket.Page;
+import org.apache.wicket.RequestCycle;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+import org.apache.wicket.markup.ComponentTag;
+import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
+import org.apache.wicket.markup.html.link.Link;
+import org.apache.wicket.markup.repeater.Item;
+import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.common.wicket.WicketProperty;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
 import org.artifactory.common.wicket.component.table.groupable.column.GroupableColumn;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPanel;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableArchiveSearchResult;
@@ -123,19 +132,20 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
         columns.add(new GroupableColumn<ActionableSearchResult<ArchiveSearchResult>>(
                 "Entry Name", "searchResult.entry", "searchResult.entryPath"));
         columns.add(new BaseSearchPanel.ArtifactNameColumn());
-        columns.add(new TitlePropertyColumn<ActionableSearchResult<ArchiveSearchResult>>(
-                "Artifact Path", "searchResult.relDirPath", "searchResult.relDirPath"));
+        columns.add(new ArtifactPathColumn());
+        //columns.add(new TitlePropertyColumn<ActionableSearchResult<ArchiveSearchResult>>(
+        //        "Artifact Path", "searchResult.relDirPath", "searchResult.relDirPath"));
         columns.add(new TitlePropertyColumn<ActionableSearchResult<ArchiveSearchResult>>(
                 "Repository", "searchResult.repoKey", "searchResult.repoKey"));
     }
 
     @Override
-    protected SearchResults<ArchiveSearchResult> searchArtifacts() {
+    protected ItemSearchResults<ArchiveSearchResult> searchArtifacts() {
         return search(false);
     }
 
     @Override
-    protected SearchResults<ArchiveSearchResult> performLimitlessArtifactSearch() {
+    protected ItemSearchResults<ArchiveSearchResult> performLimitlessArtifactSearch() {
         return search(true);
     }
 
@@ -145,7 +155,7 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
      * @param limitlessSearch True if should perform a limitless search
      * @return List of search results
      */
-    private SearchResults<ArchiveSearchResult> search(boolean limitlessSearch) {
+    private ItemSearchResults<ArchiveSearchResult> search(boolean limitlessSearch) {
         ArchiveSearchControls controlsCopy = new ArchiveSearchControls(searchControls);
         String exp = controlsCopy.getQuery();
         if (!searchAllTypes && !exp.endsWith(".class")) {
@@ -159,4 +169,38 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
         controlsCopy.setExcludeInnerClasses(excludeInnerClasses);
         return searchService.searchArchiveContent(controlsCopy);
     }
+
+    protected static class ArtifactPathColumn extends GroupableColumn {
+        public ArtifactPathColumn() {
+            super("Artifact Path", "searchResult.relDirPath", "searchResult.relDirPath");
+        }
+
+        @SuppressWarnings({"unchecked"})
+        @Override
+        public void populateItem(final Item cellItem, String componentId, IModel model) {
+            final ActionableArchiveSearchResult result =
+                    (ActionableArchiveSearchResult) cellItem.getParent().getParent().getDefaultModelObject();
+            final String relDirPath = result.getSearchResult().getRelDirPath();
+            Link linkToTreeView = new Link<String>(componentId, Model.of(relDirPath)) {
+                @Override
+                protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+                    replaceComponentTagBody(markupStream, openTag, relDirPath);
+                }
+
+                @Override
+                public void onClick() {
+                    RequestCycle.get().setResponsePage(new BrowseRepoPage(result.getArchiveRepoPath()));
+                }
+            };
+            linkToTreeView.add(new CssClass("item-link"));
+            cellItem.add(linkToTreeView);
+        }
+
+        @Override
+        public String getGroupProperty() {
+            return "baseName";
+        }
+    }
+
+
 }

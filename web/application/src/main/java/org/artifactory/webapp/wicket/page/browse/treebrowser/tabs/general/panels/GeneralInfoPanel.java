@@ -106,7 +106,7 @@ public class GeneralInfoPanel extends Panel {
 
         String itemDisplayName = repoItem.getDisplayName();
 
-        String pathUrl = getRepoPathUrl(repoItem);
+        String pathUrl = BrowseRepoPage.getRepoPathUrl(repoItem);
         if (StringUtils.isBlank(pathUrl)) {
             pathUrl = "";
         }
@@ -175,7 +175,7 @@ public class GeneralInfoPanel extends Panel {
         LabeledValue blackListedLabel = new LabeledValue("blackListed", "This repository is black-listed!") {
             @Override
             public boolean isVisible() {
-                return itemIsRepo && repoIsBlackedOut;
+                return repoIsBlackedOut;
             }
         };
         infoBorder.add(blackListedLabel);

@@ -23,11 +23,11 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchControls;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.build.BuildRun;
 import org.artifactory.jcr.JcrPath;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.log.LoggerFactory;
@@ -57,7 +57,7 @@ public class BuildSearcher extends SearcherBase {
      * @return Set of latest builds by name
      * @throws RepositoryException Any exception that might occur while executing the query
      */
-    public Set<BasicBuildInfo> getLatestBuildsByName() throws Exception {
+    public Set<BuildRun> getLatestBuildsByName() throws Exception {
 
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder.append("/jcr:root").append(JcrPath.get().getBuildsJcrRootPath()).append("/element(*, ").
@@ -67,7 +67,7 @@ public class BuildSearcher extends SearcherBase {
 
         NodeIterator nodes = queryResult.getNodes();
 
-        Set<BasicBuildInfo> buildsToReturn = Sets.newHashSet();
+        Set<BuildRun> buildsToReturn = Sets.newHashSet();
 
         while (nodes.hasNext()) {
             try {
@@ -77,7 +77,7 @@ public class BuildSearcher extends SearcherBase {
                 Property latestNumber = node.getProperty(BuildService.PROP_BUILD_LATEST_NUMBER);
                 Property latestStartTime = node.getProperty(BuildService.PROP_BUILD_LATEST_START_TIME);
 
-                buildsToReturn.add(new BasicBuildInfo(buildName, latestNumber.getString(),
+                buildsToReturn.add(new BuildRun(buildName, latestNumber.getString(),
                         latestStartTime.getDate().getTime()));
             } catch (RepositoryException re) {
                 handleNotFoundException(re);
@@ -94,7 +94,7 @@ public class BuildSearcher extends SearcherBase {
      * @param md5  MD5 checksum to search for. Can be blank.
      * @return List of basic build infos that deployed at least one artifact with the given checksum
      */
-    public List<BasicBuildInfo> findBuildsByArtifactChecksum(String sha1, String md5) throws RepositoryException {
+    public List<BuildRun> findBuildsByArtifactChecksum(String sha1, String md5) throws RepositoryException {
         return findBuildsByItemChecksums(JcrTypes.PROP_BUILD_ARTIFACT_CHECKSUMS, sha1, md5);
     }
 
@@ -105,7 +105,7 @@ public class BuildSearcher extends SearcherBase {
      * @param md5  MD5 checksum to search for. Can be blank.
      * @return List of basic build infos that depend on the artifact with the given checksum
      */
-    public List<BasicBuildInfo> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryException {
+    public List<BuildRun> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryException {
         return findBuildsByItemChecksums(JcrTypes.PROP_BUILD_DEPENDENCY_CHECKSUMS, sha1, md5);
     }
 
@@ -113,7 +113,7 @@ public class BuildSearcher extends SearcherBase {
      * DO NOT USE - NOT IMPLEMENTED
      */
     @Override
-    public SearchResults doSearch(SearchControls controls) throws RepositoryException {
+    public ItemSearchResults doSearch(SearchControls controls) throws RepositoryException {
         return null;
     }
 
@@ -125,9 +125,9 @@ public class BuildSearcher extends SearcherBase {
      * @param md5          MD5 checksum. May be blank
      * @return List of results
      */
-    private List<BasicBuildInfo> findBuildsByItemChecksums(String itemTypeProp, String sha1, String md5)
+    private List<BuildRun> findBuildsByItemChecksums(String itemTypeProp, String sha1, String md5)
             throws RepositoryException {
-        List<BasicBuildInfo> results = Lists.newArrayList();
+        List<BuildRun> results = Lists.newArrayList();
 
         findBuildsByItemChecksum(itemTypeProp, sha1, md5, results);
 
@@ -142,7 +142,7 @@ public class BuildSearcher extends SearcherBase {
      * @param md5          MD5 checksum value
      * @param results      List of results to append to
      */
-    private void findBuildsByItemChecksum(String itemTypeProp, String sha1, String md5, List<BasicBuildInfo> results)
+    private void findBuildsByItemChecksum(String itemTypeProp, String sha1, String md5, List<BuildRun> results)
             throws RepositoryException {
         boolean validSha1 = StringUtils.isNotBlank(sha1);
         boolean validMd5 = StringUtils.isNotBlank(md5);
@@ -197,7 +197,7 @@ public class BuildSearcher extends SearcherBase {
             String decodedBuildName = Text.unescapeIllegalJcrChars(splitPath[2]);
             String decodedBuildNumber = Text.unescapeIllegalJcrChars(splitPath[3]);
             String decodedBuildStarted = Text.unescapeIllegalJcrChars(splitPath[4]);
-            results.add(new BasicBuildInfo(decodedBuildName, decodedBuildNumber, decodedBuildStarted));
+            results.add(new BuildRun(decodedBuildName, decodedBuildNumber, decodedBuildStarted));
         }
     }
 }

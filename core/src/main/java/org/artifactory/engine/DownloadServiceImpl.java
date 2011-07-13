@@ -27,6 +27,7 @@ import org.artifactory.addon.plugin.download.AltResponseAction;
 import org.artifactory.addon.plugin.download.BeforeDownloadAction;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.fs.RepoResource;
+import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryResponse;
@@ -337,6 +338,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
             RepoResource resource) throws IOException {
 
         RepoPath requestRepoPath = request.getRepoPath();
+        if (request.isZipResourceRequest()) {
+            requestRepoPath = RepoPathImpl.archiveResourceRepoPath(requestRepoPath, request.getZipResourcePath());
+        }
         String requestChecksumFilePath = requestRepoPath.getPath();
         ChecksumType checksumType = ChecksumType.forFilePath(requestChecksumFilePath);
         if (checksumType == null) {

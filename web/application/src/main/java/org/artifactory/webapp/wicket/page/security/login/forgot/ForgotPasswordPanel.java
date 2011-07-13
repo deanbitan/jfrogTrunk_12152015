@@ -126,7 +126,7 @@ public class ForgotPasswordPanel extends TitledActionPanel {
         String resetPageUrl;
         if (mailServer != null && StringUtils.isNotBlank(mailServer.getArtifactoryUrl())) {
             resetPageUrl = mailServer.getArtifactoryUrl();
-            if (resetPageUrl.endsWith("/")) {
+            if (!resetPageUrl.endsWith("/")) {
                 resetPageUrl += "/";
             }
             resetPageUrl += RequestUtils.WEBAPP_URL_PATH_PREFIX + "/resetpassword.html";

@@ -272,7 +272,6 @@ public class PropertiesImpl implements Properties {
                 }
             }
         }
-
         return requestPropertyBuilder.toString();
     }
 

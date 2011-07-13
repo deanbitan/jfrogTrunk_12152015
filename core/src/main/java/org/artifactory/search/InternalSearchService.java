@@ -20,7 +20,7 @@ package org.artifactory.search;
 
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.deployable.VersionUnitSearchControls;
 import org.artifactory.api.search.deployable.VersionUnitSearchResult;
@@ -61,6 +61,6 @@ public interface InternalSearchService extends SearchService, ReloadableBean {
      * @return Search results
      */
     @Lock(transactional = true)
-    SearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls)
+    ItemSearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls)
             throws RepositoryException;
 }

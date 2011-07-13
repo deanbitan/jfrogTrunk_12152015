@@ -20,6 +20,8 @@ package org.artifactory.request;
 
 import org.artifactory.md.Properties;
 
+import javax.annotation.Nullable;
+
 /**
  * Request context that might be passed to the repository when requesting for info.
  *
@@ -34,5 +36,11 @@ public interface RequestContext {
 
     Properties getProperties();
 
+    /**
+     * Return the client request. This might be null when doing internal requests.
+     *
+     * @return The request or null if not set.
+     */
+    @Nullable
     Request getRequest();
 }

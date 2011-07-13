@@ -19,6 +19,7 @@
 package org.artifactory.api.search.archive;
 
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
+import org.artifactory.fs.ItemInfo;
 
 /**
  * Holds archive content search result data. Inherits from SearchResult and adds two fields: -Entry name -Entry path
@@ -27,20 +28,23 @@ import org.artifactory.api.search.artifact.ArtifactSearchResult;
  */
 public class ArchiveSearchResult extends ArtifactSearchResult {
 
-    private String entry;
-    private String entryPath;
+    private final String entry;
+    private final String entryPath;
+    private final boolean isRealEntry;
 
     /**
      * Extended constructor
      *
-     * @param itemInfo  Item info
-     * @param entry     Entry name
-     * @param entryPath Entry path
+     * @param itemInfo    Item info
+     * @param entry       Entry name
+     * @param entryPath   Entry path
+     * @param isRealEntry Whether the entry is a real one, or just an informative missing entry message
      */
-    public ArchiveSearchResult(org.artifactory.fs.ItemInfo itemInfo, String entry, String entryPath) {
+    public ArchiveSearchResult(ItemInfo itemInfo, String entry, String entryPath, boolean isRealEntry) {
         super(itemInfo);
         this.entry = entry;
         this.entryPath = entryPath;
+        this.isRealEntry = isRealEntry;
     }
 
     /**
@@ -69,5 +73,9 @@ public class ArchiveSearchResult extends ArtifactSearchResult {
      */
     public String getEntryPath() {
         return entryPath;
+    }
+
+    public boolean isRealEntry() {
+        return isRealEntry;
     }
 }

@@ -19,20 +19,21 @@
 package org.artifactory.api.search;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.fs.ItemInfo;
 
 import java.io.File;
 
 /**
  * @author Yoav Landman
  */
-public abstract class SearchResultBase implements SearchResult {
-    public final org.artifactory.fs.ItemInfo itemInfo;
+public abstract class SearchResultBase implements ItemSearchResult {
+    public final ItemInfo itemInfo;
 
-    public SearchResultBase(org.artifactory.fs.ItemInfo itemInfo) {
+    public SearchResultBase(ItemInfo itemInfo) {
         this.itemInfo = itemInfo;
     }
 
-    public org.artifactory.fs.ItemInfo getItemInfo() {
+    public ItemInfo getItemInfo() {
         return itemInfo;
     }
 
@@ -41,7 +42,6 @@ public abstract class SearchResultBase implements SearchResult {
         if (StringUtils.isEmpty(itemName)) {
             return getRepoKey();
         }
-
         return itemName;
     }
 

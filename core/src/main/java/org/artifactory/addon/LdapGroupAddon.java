@@ -18,9 +18,13 @@
 
 package org.artifactory.addon;
 
+import org.apache.lucene.search.Searchable;
 import org.artifactory.api.security.UserInfo;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
+import org.artifactory.descriptor.security.ldap.SearchPattern;
+import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.DirContextOperations;
+import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 
 import java.util.List;
 import java.util.Set;
@@ -63,4 +67,6 @@ public interface LdapGroupAddon extends Addon {
      * @return The enabled LDAP setting(s)
      */
     List<LdapSetting> getEnabledLdapSettings();
+
+    List<FilterBasedLdapUserSearch> getLdapUserSearches(ContextSource ctx, LdapSetting settings);
 }

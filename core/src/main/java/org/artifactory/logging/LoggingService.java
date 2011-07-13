@@ -18,6 +18,7 @@
 
 package org.artifactory.logging;
 
+import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.spring.ReloadableBean;
 
 /**
@@ -25,5 +26,5 @@ import org.artifactory.spring.ReloadableBean;
  *
  * @author Noam Y. Tenne
  */
-public interface LoggingService extends ReloadableBean {
+public interface LoggingService extends ReloadableBean, ImportableExportable {
 }

@@ -25,7 +25,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -119,12 +119,12 @@ public class GavcSearchPanel extends BaseSearchPanel<GavcSearchResult> {
     }
 
     @Override
-    protected SearchResults<GavcSearchResult> searchArtifacts() {
+    protected ItemSearchResults<GavcSearchResult> searchArtifacts() {
         return search(searchControls);
     }
 
     @Override
-    protected SearchResults<GavcSearchResult> performLimitlessArtifactSearch() {
+    protected ItemSearchResults<GavcSearchResult> performLimitlessArtifactSearch() {
         GavcSearchControls controlsCopy = new GavcSearchControls(searchControls);
         controlsCopy.setLimitSearchResults(false);
         return search(controlsCopy);
@@ -151,7 +151,7 @@ public class GavcSearchPanel extends BaseSearchPanel<GavcSearchResult> {
      * @param controls Search controls
      * @return List of search results
      */
-    private SearchResults<GavcSearchResult> search(GavcSearchControls controls) {
+    private ItemSearchResults<GavcSearchResult> search(GavcSearchControls controls) {
         return searchService.searchGavc(controls);
     }
 }

@@ -84,7 +84,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
             BackupsListPanel backupsListPanel) {
         super(action, backupDescriptor);
         this.backupsListPanel = backupsListPanel;
-        createIncrementalBackup = backupDescriptor.isIncremental();
+        createIncrementalBackup = backupDescriptor.isIncremental() && !backupDescriptor.isCreateArchive();
         setWidth(560);
 
         add(form);
@@ -141,6 +141,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
 
         createArchiveCheckbox = new StyledCheckbox("createArchive");
         createArchiveCheckbox.setOutputMarkupId(true);
+        createArchiveCheckbox.setEnabled(!createIncrementalBackup);
         createArchiveCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
@@ -162,6 +163,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                 new PropertyModel<Boolean>(this, "createIncrementalBackup"));
         createIncremental.setOutputMarkupId(true);
         createIncremental.setRequired(false);
+        createIncremental.setEnabled(!backupDescriptor.isCreateArchive());
         createIncremental.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {

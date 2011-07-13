@@ -80,7 +80,7 @@ public class MetadataPanel extends TitledPanel {
      * Main constructor
      *
      * @param id                ID of the panel to construct
-     * @param canonicalRepoPath Cannonical repo path of currently selected tree item
+     * @param canonicalRepoPath Canonical repo path of currently selected tree item
      * @param metadataTypeList  Name list of metadata that's tagging the selected item
      */
     public MetadataPanel(String id, final RepoPath canonicalRepoPath, List<String> metadataTypeList) {
@@ -92,9 +92,9 @@ public class MetadataPanel extends TitledPanel {
 
         LabeledValue metadataNameLabeledValue = new LabeledValue("selectLabel", "Metadata Name:");
         metadataSelectorForm.add(metadataNameLabeledValue);
-        final IModel<String> metadataTypeModel = new PropertyModel<String>(this, "metadataType");
+        IModel<String> metadataTypeModel = new PropertyModel<String>(this, "metadataType");
 
-        final DropDownChoice<String> metadataTypesDropDown =
+        DropDownChoice<String> metadataTypesDropDown =
                 new DropDownChoice<String>("metadataTypes", metadataTypeModel, metadataTypeList);
         metadataTypesDropDown.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
@@ -110,9 +110,8 @@ public class MetadataPanel extends TitledPanel {
         TitledAjaxSubmitLink removeButton = new TitledAjaxSubmitLink("remove", "Remove", metadataSelectorForm) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                RepoPath metadataRepoPath =
-                        new RepoPathImpl(canonicalRepoPath.getRepoKey(),
-                                canonicalRepoPath.getPath() + ":" + metadataType);
+                RepoPath metadataRepoPath = new RepoPathImpl(canonicalRepoPath.getRepoKey(),
+                        canonicalRepoPath.getPath() + ":" + metadataType);
                 repoService.undeploy(metadataRepoPath);
                 MarkupContainer browsePanel = findParent(TreeBrowsePanel.class);
                 ActionableItemsTree tree = (ActionableItemsTree) browsePanel.get("tree");

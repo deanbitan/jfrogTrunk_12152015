@@ -68,4 +68,18 @@ public class RepoPathTest {
         assertTrue(new RepoPathImpl("1", "     ").isRoot());
         assertTrue(new RepoPathImpl("1", null).isRoot());
     }
+
+    public void archiveResourcePath() {
+        RepoPathImpl archivePath = new RepoPathImpl("key", "file.jar");
+        RepoPath resourcePath = RepoPathImpl.archiveResourceRepoPath(archivePath, "path/to/resource");
+        assertEquals(resourcePath.getRepoKey(), archivePath.getRepoKey());
+        assertEquals(resourcePath.getPath(), "file.jar!/path/to/resource");
+    }
+
+    public void archiveResourcePathLeadingSlash() {
+        RepoPathImpl archivePath = new RepoPathImpl("key", "folder");
+        RepoPath resourcePath = RepoPathImpl.archiveResourceRepoPath(archivePath, "/path/to/resource");
+        assertEquals(resourcePath.getRepoKey(), archivePath.getRepoKey());
+        assertEquals(resourcePath.getPath(), "folder!/path/to/resource");
+    }
 }

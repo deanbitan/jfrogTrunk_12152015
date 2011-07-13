@@ -28,6 +28,7 @@ import org.artifactory.request.ArtifactoryRequest;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
+import java.rmi.dgc.VMID;
 import java.util.StringTokenizer;
 
 /**
@@ -39,6 +40,8 @@ public abstract class HttpUtils {
 
     //Indicates whether Artifactory is working with servlet API v2.4
     private static final boolean SERVLET_24;
+
+    private static String VM_HOST_ID;
 
     /**
      * Determine if we are running with servlet API v2.4 or v2.5
@@ -90,8 +93,6 @@ public abstract class HttpUtils {
     }
 
     public static String getServletContextUrl(HttpServletRequest httpRequest) {
-        String url;
-
         CentralConfigService centralConfigService = ContextHelper.get().getCentralConfig();
         String baseUrl = centralConfigService.getDescriptor().getUrlBase();
 
@@ -156,5 +157,19 @@ public abstract class HttpUtils {
      */
     public static boolean isSuccessfulResponseCode(int status) {
         return HttpStatus.SC_OK <= status && status <= HttpStatus.SC_MULTI_STATUS;
+    }
+
+    /**
+     * Calculate a unique id for the VM to support Artifactories with the same ip (e.g. accross NATs)
+     */
+    public static String getHostId() {
+        if (StringUtils.isNotBlank(ConstantValues.hostId.getString())) {
+            return ConstantValues.hostId.getString();
+        }
+        if (VM_HOST_ID == null) {
+            VMID vmid = new VMID();
+            VM_HOST_ID = vmid.toString();
+        }
+        return VM_HOST_ID;
     }
 }

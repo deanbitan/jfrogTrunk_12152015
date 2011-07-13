@@ -20,14 +20,24 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.artifactory.api.maven.MavenNaming;
+import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.RepoPathImpl;
+import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
+import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.browse.home.RememberPageBehavior;
+import org.slf4j.Logger;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
+    private static final Logger log = LoggerFactory.getLogger(BrowseRepoPage.class);
 
     private String lastTabName;
     public static final String PATH_ID_PARAM = "pathId";
@@ -71,5 +81,41 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
         WebMarkupContainer scrollScript = new WebMarkupContainer("scrollScript");
         scrollScript.setVisible(repoPath != null);
         add(scrollScript);
+    }
+
+    /**
+     * Builds an external url that points to resource inside the tree. Once used, the tree browser will open and select
+     * the node represented by the repository item.
+     *
+     * @param repoItem The repository item
+     * @return External URL linking directly to the item in the tree browser
+     */
+    public static String getRepoPathUrl(RepoAwareActionableItem repoItem) {
+        String artifactPath;
+        if (repoItem instanceof CannonicalEnabledActionableFolder) {
+            artifactPath = ((CannonicalEnabledActionableFolder) repoItem).getCanonicalPath().getPath();
+        } else {
+            artifactPath = repoItem.getRepoPath().getPath();
+        }
+
+        StringBuilder urlBuilder = new StringBuilder();
+        if (NamingUtils.isChecksum(artifactPath)) {
+            // checksums are not displayed in the tree, link to the target file
+            artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
+        }
+        String repoPathId = new RepoPathImpl(repoItem.getRepo().getKey(), artifactPath).getId();
+
+        String encodedPathId;
+        try {
+            encodedPathId = URLEncoder.encode(repoPathId, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            log.error("Unable to encode deployed artifact ID '{}': {}.", repoPathId, e.getMessage());
+            return null;
+        }
+
+        //Using request parameters instead of wicket's page parameters. See RTFACT-2843
+        urlBuilder.append(WicketUtils.absoluteMountPathForPage(BrowseRepoPage.class)).append("?").
+                append(PATH_ID_PARAM).append("=").append(encodedPathId);
+        return urlBuilder.toString();
     }
 }

@@ -23,7 +23,8 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
-import org.artifactory.descriptor.replication.ReplicationDescriptor;
+import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
+import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -74,13 +75,14 @@ public class CachingDescriptorHelper implements Serializable {
     public void syncAndSaveLocalRepositories() {
         MutableCentralConfigDescriptor configDescriptor = getDescriptor();
         configDescriptor.setLocalRepositoriesMap(modelMutableDescriptor.getLocalRepositoriesMap());
+        configDescriptor.setLocalReplications(modelMutableDescriptor.getLocalReplications());
         saveDescriptor(configDescriptor);
     }
 
     public void syncAndSaveRemoteRepositories() {
         MutableCentralConfigDescriptor configDescriptor = getDescriptor();
         configDescriptor.setRemoteRepositoriesMap(modelMutableDescriptor.getRemoteRepositoriesMap());
-        configDescriptor.setReplications(modelMutableDescriptor.getReplications());
+        configDescriptor.setRemoteReplications(modelMutableDescriptor.getRemoteReplications());
         saveDescriptor(configDescriptor);
     }
 
@@ -114,14 +116,22 @@ public class CachingDescriptorHelper implements Serializable {
         RepoDescriptor repoToReload = cc.getLocalRepositoriesMap().get(repoKey);
         if (repoToReload != null) {
             modelMutableDescriptor.getLocalRepositoriesMap().put(repoKey, (LocalRepoDescriptor) repoToReload);
+            LocalReplicationDescriptor localReplication = cc.getLocalReplication(repoKey);
+            if (localReplication != null) {
+                LocalReplicationDescriptor localChangesToRemove = modelMutableDescriptor.getLocalReplication(repoKey);
+                modelMutableDescriptor.removeLocalReplication(localChangesToRemove);
+                modelMutableDescriptor.addLocalReplication(localReplication);
+            }
             return;
         }
         repoToReload = cc.getRemoteRepositoriesMap().get(repoKey);
         if (repoToReload != null) {
             modelMutableDescriptor.getRemoteRepositoriesMap().put(repoKey, (RemoteRepoDescriptor) repoToReload);
-            ReplicationDescriptor existingReplication = cc.getReplication(repoKey);
+            RemoteReplicationDescriptor existingReplication = cc.getRemoteReplication(repoKey);
             if (existingReplication != null) {
-                modelMutableDescriptor.updateReplication(existingReplication);
+                RemoteReplicationDescriptor localChangesToRemove = modelMutableDescriptor.getRemoteReplication(repoKey);
+                modelMutableDescriptor.removeRemoteReplication(localChangesToRemove);
+                modelMutableDescriptor.addRemoteReplication(existingReplication);
             }
             return;
         }

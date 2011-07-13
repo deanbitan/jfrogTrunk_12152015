@@ -165,4 +165,6 @@ public interface AuthorizationService {
      * @return Whether the user has any permissions on a repository root
      */
     boolean userHasPermissionsOnRepositoryRoot(String repoKey);
+
+    boolean isDisableInternalPassword();
 }

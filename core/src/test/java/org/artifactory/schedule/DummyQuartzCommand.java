@@ -20,6 +20,8 @@ package org.artifactory.schedule;
 
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.quartz.QuartzCommand;
+import org.artifactory.spring.InternalContextHelper;
+import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
@@ -27,6 +29,7 @@ import org.slf4j.Logger;
 /**
  * @author yoavl
  */
+@JobCommand(schedulerUser = TaskUser.CURRENT, manualUser = TaskUser.CURRENT)
 public class DummyQuartzCommand extends QuartzCommand {
 
     public static final String FAIL = "FAIL";
@@ -42,30 +45,44 @@ public class DummyQuartzCommand extends QuartzCommand {
     @Override
     protected void onExecute(JobExecutionContext callbackContext) throws JobExecutionException {
         log.debug("Command for task " + currentTaskToken() + " is executing.");
-        if (callbackContext.getMergedJobDataMap().get(FAIL) != null &&
-                callbackContext.getMergedJobDataMap().getBoolean(FAIL)) {
+        JobDataMap jobDataMap = callbackContext.getMergedJobDataMap();
+        ArtifactoryHomeTaskTestStub artifactoryHome = getArtHomeStub();
+        artifactoryHome.executed(currentTaskToken());
+        if (jobDataMap.get(FAIL) != null &&
+                jobDataMap.getBoolean(FAIL)) {
             log.info("Failing with exception!");
+            artifactoryHome.failed(currentTaskToken());
             throw new RuntimeException("Failed execution.");
         }
         long msecsToRun = 500;
-        if (callbackContext.getMergedJobDataMap().get(MSECS_TO_RUN) != null) {
-            msecsToRun = callbackContext.getMergedJobDataMap().getLongValue(MSECS_TO_RUN);
+        if (jobDataMap.get(MSECS_TO_RUN) != null) {
+            msecsToRun = jobDataMap.getLongValue(MSECS_TO_RUN);
         }
         long count = (long) (msecsToRun / (float) SLEEP);
-        for (int i = 0; i < count; i++) {
+        long i = 0L;
+        for (; i < count; i++) {
             boolean shouldBreak = getTaskService().pauseOrBreak();
             if (shouldBreak) {
                 log.debug("Command for task " + currentTaskToken() + " is breaking.");
+                artifactoryHome.breaking(currentTaskToken());
                 break;
             } else {
                 try {
                     Thread.sleep(SLEEP);
                 } catch (InterruptedException e) {
+                    artifactoryHome.interrupted(currentTaskToken());
                     e.printStackTrace();
                     break;
                 }
             }
         }
+        if (i == count) {
+            artifactoryHome.complete(currentTaskToken());
+        }
         log.debug("Command for task " + currentTaskToken() + " has ended.");
+    }
+
+    protected ArtifactoryHomeTaskTestStub getArtHomeStub() {
+        return (ArtifactoryHomeTaskTestStub) InternalContextHelper.get().getArtifactoryHome();
     }
 }

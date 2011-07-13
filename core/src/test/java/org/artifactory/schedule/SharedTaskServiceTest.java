@@ -19,7 +19,6 @@
 package org.artifactory.schedule;
 
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.schedule.quartz.QuartzTask;
 import org.slf4j.Logger;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -32,12 +31,12 @@ import org.testng.annotations.Test;
 public class SharedTaskServiceTest extends TaskServiceTestBase {
     private static final Logger log = LoggerFactory.getLogger(SharedTaskServiceTest.class);
 
-    protected QuartzTask task;
+    protected TaskBase task;
 
     @BeforeClass
     public void startTask() throws Exception {
-        task = new QuartzTask(DummyQuartzCommand.class, 50);
-        taskService.startTask(task);
+        task = TaskUtils.createRepeatingTask(DummyQuartzCommand.class, 50, 0);
+        taskService.startTask(task, false);
     }
 
     @AfterClass

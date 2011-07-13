@@ -29,7 +29,9 @@ import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
-import org.artifactory.descriptor.replication.ReplicationDescriptor;
+import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
+import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
+import org.artifactory.descriptor.replication.ReplicationBaseDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
@@ -65,7 +67,7 @@ import java.util.Map;
         propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
                 "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
                 "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
-                "replications"}, namespace = Descriptor.NS)
+                "remoteReplications", "localReplications"}, namespace = Descriptor.NS)
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CentralConfigDescriptorImpl implements MutableCentralConfigDescriptor {
 
@@ -138,9 +140,13 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @XmlElement(name = "repoLayout", required = false)
     private List<RepoLayout> repoLayouts = Lists.newArrayList();
 
-    @XmlElementWrapper(name = "replications")
-    @XmlElement(name = "replication", required = false)
-    private List<ReplicationDescriptor> replications = Lists.newArrayList();
+    @XmlElementWrapper(name = "remoteReplications")
+    @XmlElement(name = "remoteReplication", required = false)
+    private List<RemoteReplicationDescriptor> remoteReplications = Lists.newArrayList();
+
+    @XmlElementWrapper(name = "localReplications")
+    @XmlElement(name = "localReplication", required = false)
+    private List<LocalReplicationDescriptor> localReplications = Lists.newArrayList();
 
     public Map<String, LocalRepoDescriptor> getLocalRepositoriesMap() {
         return localRepositoriesMap;
@@ -235,16 +241,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         this.addons = addons;
     }
 
-    public void addDefaultProxyToRemoteRepositories(ProxyDescriptor proxyDescriptor) {
-        Map<String, RemoteRepoDescriptor> descriptorOrderedMap = getRemoteRepositoriesMap();
-        for (RemoteRepoDescriptor descriptor : descriptorOrderedMap.values()) {
-            if (descriptor instanceof HttpRepoDescriptor) {
-                HttpRepoDescriptor httpRepoDescriptor = (HttpRepoDescriptor) descriptor;
-                httpRepoDescriptor.setProxy(proxyDescriptor);
-            }
-        }
-    }
-
     public MailServerDescriptor getMailServer() {
         return mailServer;
     }
@@ -311,9 +307,16 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         }
 
         if (removedRepo instanceof HttpRepoDescriptor) {
-            ReplicationDescriptor existingReplication = getReplication(removedRepo.getKey());
+            RemoteReplicationDescriptor existingReplication = getRemoteReplication(removedRepo.getKey());
             if (existingReplication != null) {
-                removeReplication(existingReplication);
+                removeRemoteReplication(existingReplication);
+            }
+        }
+
+        if (removedRepo instanceof LocalRepoDescriptor) {
+            LocalReplicationDescriptor existingReplication = getLocalReplication(removedRepo.getKey());
+            if (existingReplication != null) {
+                removeLocalReplication(existingReplication);
             }
         }
 
@@ -404,6 +407,11 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
                 ((HttpRepoDescriptor) remoteRepo).setProxy(null);
             }
         }
+
+        for (LocalReplicationDescriptor localReplication : localReplications) {
+            localReplication.setProxy(null);
+        }
+
         return proxyDescriptor;
     }
 
@@ -411,6 +419,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         if (proxy.isDefaultProxy()) {
             if (updateExistingRepos) {
                 updateExistingRepos(proxy);
+                updateExistingLocalReplications(proxy);
             }
             //Unset the previous default if any
             for (ProxyDescriptor proxyDescriptor : proxies) {
@@ -431,6 +440,16 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
                 if (existingRepoProxy == null || existingRepoProxy.equals(previousDefaultProxy)) {
                     httpRepoDescriptor.setProxy(proxy);
                 }
+            }
+        }
+    }
+
+    private void updateExistingLocalReplications(ProxyDescriptor proxy) {
+        ProxyDescriptor previousDefaultProxy = findPreviousProxyDescriptor(proxy);
+        for (LocalReplicationDescriptor localReplication : localReplications) {
+            ProxyDescriptor existingProxy = localReplication.getProxy();
+            if (existingProxy == null || existingProxy.equals(previousDefaultProxy)) {
+                localReplication.setProxy(proxy);
             }
         }
     }
@@ -644,14 +663,71 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return null;
     }
 
-    public List<ReplicationDescriptor> getReplications() {
-        return replications;
+    public boolean isRemoteReplicationExists(RemoteReplicationDescriptor descriptor) {
+        return remoteReplications.contains(descriptor);
     }
 
-    public ReplicationDescriptor getReplication(String replicatedRepoKey) {
+    public boolean isLocalReplicationExists(LocalReplicationDescriptor descriptor) {
+        return localReplications.contains(descriptor);
+    }
 
+    public List<RemoteReplicationDescriptor> getRemoteReplications() {
+        return remoteReplications;
+    }
+
+    public List<LocalReplicationDescriptor> getLocalReplications() {
+        return localReplications;
+    }
+
+    public RemoteReplicationDescriptor getRemoteReplication(String replicatedRepoKey) {
+
+        return getReplication(replicatedRepoKey, remoteReplications);
+    }
+
+    public LocalReplicationDescriptor getLocalReplication(String replicatedRepoKey) {
+        return getReplication(replicatedRepoKey, localReplications);
+    }
+
+    public void addRemoteReplication(RemoteReplicationDescriptor replicationDescriptor) {
+        addReplication(replicationDescriptor, remoteReplications);
+    }
+
+    public void addLocalReplication(LocalReplicationDescriptor replicationDescriptor) {
+        addReplication(replicationDescriptor, localReplications);
+        ProxyDescriptor defaultProxyDescriptor = defaultProxyDefined();
+        if (defaultProxyDescriptor != null) {
+            replicationDescriptor.setProxy(defaultProxyDescriptor);
+        }
+    }
+
+    public void removeRemoteReplication(RemoteReplicationDescriptor replicationDescriptor) {
+        removeReplication(replicationDescriptor, remoteReplications);
+    }
+
+    public void removeLocalReplication(LocalReplicationDescriptor replicationDescriptor) {
+        removeReplication(replicationDescriptor, localReplications);
+    }
+
+    public void setRemoteReplications(List<RemoteReplicationDescriptor> replicationDescriptors) {
+        remoteReplications = replicationDescriptors;
+    }
+
+    public void setLocalReplications(List<LocalReplicationDescriptor> localReplications) {
+        this.localReplications = localReplications;
+    }
+
+    private <T extends ReplicationBaseDescriptor> void addReplication(T replicationDescriptor,
+            List<T> replications) {
+        if (replications.contains(replicationDescriptor)) {
+            throw new AlreadyExistsException("Replication for '" + replicationDescriptor.getRepoKey() +
+                    "' already exists");
+        }
+        replications.add(replicationDescriptor);
+    }
+
+    private <T extends ReplicationBaseDescriptor> T getReplication(String replicatedRepoKey, List<T> replications) {
         if (StringUtils.isNotBlank(replicatedRepoKey)) {
-            for (ReplicationDescriptor replication : replications) {
+            for (T replication : replications) {
 
                 if (replicatedRepoKey.equals(replication.getRepoKey())) {
                     return replication;
@@ -662,25 +738,8 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return null;
     }
 
-    public void addReplication(ReplicationDescriptor replicationDescriptor) {
-        if (replications.contains(replicationDescriptor)) {
-            throw new AlreadyExistsException("Replication for '" + replicationDescriptor.getRepoKey() +
-                    "' already exists");
-        }
-        replications.add(replicationDescriptor);
-    }
-
-    public void updateReplication(ReplicationDescriptor replicationDescriptor) {
-        ReplicationDescriptor replication = getReplication(replicationDescriptor.getRepoKey());
-        removeReplication(replication);
-        addReplication(replicationDescriptor);
-    }
-
-    public void removeReplication(ReplicationDescriptor replicationDescriptor) {
+    private <T extends ReplicationBaseDescriptor> void removeReplication(T replicationDescriptor,
+            List<T> replications) {
         replications.remove(replicationDescriptor);
-    }
-
-    public void setReplications(List<ReplicationDescriptor> replicationDescriptors) {
-        replications = replicationDescriptors;
     }
 }

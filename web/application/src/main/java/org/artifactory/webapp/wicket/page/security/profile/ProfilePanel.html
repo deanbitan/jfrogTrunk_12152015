@@ -30,25 +30,27 @@
         </wicket:enclosure>
 
         <div wicket:id="updateFieldsContainer">
-            <div class="field field-sep">
-                <label>
-                    <wicket:message key="newPassword"/>
-                </label>
+            <div wicket:id="passwordFieldsContainer">
+                <div class="field field-sep">
+                    <label>
+                        <wicket:message key="newPassword"/>
+                    </label>
 
-                <div class="value">
-                    <input wicket:id="newPassword" type="password" autocomplete="off" class="text password"/>
+                    <div class="value">
+                        <input wicket:id="newPassword" type="password" autocomplete="off" class="text password"/>
+                    </div>
                 </div>
-            </div>
 
-            <div wicket:id="strengthPanel" class="profile-password"></div>
+                <div wicket:id="strengthPanel" class="profile-password"></div>
 
-            <div class="field field-sep">
-                <label>
-                    <wicket:message key="retypedPassword"/>
-                </label>
+                <div class="field field-sep">
+                    <label>
+                        <wicket:message key="retypedPassword"/>
+                    </label>
 
-                <div class="value">
-                    <input wicket:id="retypedPassword" type="password" autocomplete="off" class="text password"/>
+                    <div class="value">
+                        <input wicket:id="retypedPassword" type="password" autocomplete="off" class="text password"/>
+                    </div>
                 </div>
             </div>
 

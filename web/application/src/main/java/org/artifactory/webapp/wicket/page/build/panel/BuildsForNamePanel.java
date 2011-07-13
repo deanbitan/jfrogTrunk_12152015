@@ -32,9 +32,9 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.search.SearchService;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
@@ -77,7 +77,7 @@ public class BuildsForNamePanel extends TitledPanel {
      * @param buildName    The name of the builds to display
      * @param buildsByName Set of builds to display
      */
-    public BuildsForNamePanel(String id, String buildName, Set<BasicBuildInfo> buildsByName) {
+    public BuildsForNamePanel(String id, String buildName, Set<BuildRun> buildsByName) {
         super(id);
         setOutputMarkupId(true);
         this.buildName = buildName;
@@ -101,7 +101,7 @@ public class BuildsForNamePanel extends TitledPanel {
      *
      * @param buildsByName Builds to display
      */
-    private void addTable(Set<BasicBuildInfo> buildsByName) {
+    private void addTable(Set<BuildRun> buildsByName) {
         List<IColumn<BuildActionableItem>> columns = Lists.newArrayList();
 
         columns.add(new ActionsColumn<BuildActionableItem>(""));
@@ -119,12 +119,12 @@ public class BuildsForNamePanel extends TitledPanel {
      */
     private static class BuildsDataProvider extends SortableDataProvider<BuildActionableItem> {
 
-        List<BasicBuildInfo> buildList;
+        List<BuildRun> buildList;
 
         /**
          * @param buildsByName Builds to display
          */
-        public BuildsDataProvider(Set<BasicBuildInfo> buildsByName) {
+        public BuildsDataProvider(Set<BuildRun> buildsByName) {
             setSort("number", false);
             this.buildList = Lists.newArrayList(buildsByName);
         }
@@ -149,10 +149,10 @@ public class BuildsForNamePanel extends TitledPanel {
          * @param builds Builds to display
          * @return Actionable item list
          */
-        private List<BuildActionableItem> getActionableItems(List<BasicBuildInfo> builds) {
+        private List<BuildActionableItem> getActionableItems(List<BuildRun> builds) {
             List<BuildActionableItem> actionableItems = Lists.newArrayList();
 
-            for (BasicBuildInfo build : builds) {
+            for (BuildRun build : builds) {
                 actionableItems.add(new BuildActionableItem(build));
             }
 

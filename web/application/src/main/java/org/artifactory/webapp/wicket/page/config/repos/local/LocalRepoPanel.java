@@ -19,15 +19,18 @@
 package org.artifactory.webapp.wicket.page.config.repos.local;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
+import org.artifactory.addon.wicket.ReplicationWebAddon;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
@@ -40,6 +43,8 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescriptor> {
+
+    private LocalReplicationDescriptor replicationDescriptor;
 
     public LocalRepoPanel(CreateUpdateAction action, LocalRepoDescriptor repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
@@ -63,6 +68,16 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         List<PropertySet> propertySets = getCachingDescriptorHelper().getModelMutableDescriptor().getPropertySets();
         tabList.add(propertiesWebAddon.getRepoConfigPropertySetsTab("Property Sets", entity, propertySets));
 
+        MutableCentralConfigDescriptor mutableDescriptor = cachingDescriptorHelper.getModelMutableDescriptor();
+        replicationDescriptor = mutableDescriptor.getLocalReplication(entity.getKey());
+        if (replicationDescriptor == null) {
+            replicationDescriptor = new LocalReplicationDescriptor();
+            replicationDescriptor.setRepoKey(entity.getKey());
+        }
+        ReplicationWebAddon replicationWebAddon = addons.addonByType(ReplicationWebAddon.class);
+        tabList.add(replicationWebAddon.getLocalRepoReplicationPanel("Replication", replicationDescriptor,
+                mutableDescriptor, action));
+
         return tabList;
     }
 
@@ -72,12 +87,26 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
         repoDescriptor.setKey(key);
         mccd.addLocalRepository(repoDescriptor);
+        if (replicationDescriptor.isEnabled()) {
+            if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
+                replicationDescriptor.setRepoKey(key);
+            }
+            mccd.addLocalReplication(replicationDescriptor);
+        }
         helper.syncAndSaveLocalRepositories();
     }
 
     @Override
     public void saveEditDescriptor(LocalRepoDescriptor repoDescriptor) {
-        getCachingDescriptorHelper().syncAndSaveLocalRepositories();
+        CachingDescriptorHelper helper = getCachingDescriptorHelper();
+        MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
+        if (replicationDescriptor.isEnabled() && !mccd.isLocalReplicationExists(replicationDescriptor)) {
+            if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
+                replicationDescriptor.setRepoKey(key);
+            }
+            mccd.addLocalReplication(replicationDescriptor);
+        }
+        helper.syncAndSaveLocalRepositories();
     }
 
     @Override

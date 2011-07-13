@@ -25,6 +25,7 @@ import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.Lock;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
+import org.artifactory.build.BuildRun;
 import org.artifactory.jcr.JcrTypes;
 import org.artifactory.md.Properties;
 import org.jfrog.build.api.Build;
@@ -82,11 +83,11 @@ public interface BuildService extends ImportableExportable {
     /**
      * Removes the build of the given details
      *
-     * @param basicBuildInfo    Build info details
+     * @param buildRun          Build info details
      * @param deleteArtifacts   True if build artifacts should be deleted
      * @param multiStatusHolder Status holder
      */
-    void deleteBuild(BasicBuildInfo basicBuildInfo, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder);
+    void deleteBuild(BuildRun buildRun, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder);
 
     /**
      * Returns the build of the given details
@@ -115,7 +116,7 @@ public interface BuildService extends ImportableExportable {
      * @param buildName Name of builds to locate
      * @return Set of builds with the given name
      */
-    Set<BasicBuildInfo> searchBuildsByName(String buildName);
+    Set<BuildRun> searchBuildsByName(String buildName);
 
     /**
      * Locates builds that are named and numbered as the given name and number
@@ -124,7 +125,7 @@ public interface BuildService extends ImportableExportable {
      * @param buildNumber Number of builds to locate
      * @return Set of builds with the given name
      */
-    Set<BasicBuildInfo> searchBuildsByNameAndNumber(String buildName, String buildNumber);
+    Set<BuildRun> searchBuildsByNameAndNumber(String buildName, String buildNumber);
 
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);
@@ -141,40 +142,40 @@ public interface BuildService extends ImportableExportable {
     /**
      * Returns the CI server URL of the given build
      *
-     * @param basicBuildInfo Basic build info to extract URL of
+     * @param buildRun Basic build info to extract URL of
      * @return URL if exists, form of blank string if not
      */
-    String getBuildCiServerUrl(BasicBuildInfo basicBuildInfo) throws IOException;
+    String getBuildCiServerUrl(BuildRun buildRun) throws IOException;
 
     /**
      * Moves or copies build artifacts and\or dependencies
      *
-     * @param move           True if the items should be moved. False if they should be copied
-     * @param basicBuildInfo Basic info of the selected build
-     * @param targetRepoKey  Key of target repository to move to
-     * @param artifacts      True if the build artifacts should be moved\copied
-     * @param dependencies   True if the build dependencies should be moved\copied
-     * @param scopes         Scopes of dependencies to copy (agnostic if null or empty)
-     * @param properties     The properties to tag the copied or move artifacts on their <b>destination</b> path
-     * @param dryRun         True if the action should run dry (simulate)
+     * @param move          True if the items should be moved. False if they should be copied
+     * @param buildRun      Basic info of the selected build
+     * @param targetRepoKey Key of target repository to move to
+     * @param artifacts     True if the build artifacts should be moved\copied
+     * @param dependencies  True if the build dependencies should be moved\copied
+     * @param scopes        Scopes of dependencies to copy (agnostic if null or empty)
+     * @param properties    The properties to tag the copied or move artifacts on their <b>destination</b> path
+     * @param dryRun        True if the action should run dry (simulate)
      * @return Result of action
      * @deprecated Use {@link org.artifactory.api.build.BuildService#promoteBuild} instead
      */
     @Deprecated
     @Lock(transactional = true)
-    MoveCopyResult moveOrCopyBuildItems(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
+    MoveCopyResult moveOrCopyBuildItems(boolean move, BuildRun buildRun, String targetRepoKey,
             boolean artifacts, boolean dependencies, List<String> scopes, Properties properties,
             boolean dryRun);
 
     /**
      * Promotes a build
      *
-     * @param buildInfo Basic info of build to promote
+     * @param buildRun  Basic info of build to promote
      * @param promotion Promotion settings
      * @return Promotion result
      */
     @Lock(transactional = true)
-    PromotionResult promoteBuild(BasicBuildInfo buildInfo, Promotion promotion);
+    PromotionResult promoteBuild(BuildRun buildRun, Promotion promotion);
 
     /**
      * Renames the JCR structure and content of build info objects

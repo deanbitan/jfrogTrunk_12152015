@@ -21,6 +21,7 @@ package org.artifactory.repo.jcr;
 import com.google.common.collect.MapMaker;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.FilteredResourcesAddon;
 import org.artifactory.addon.PropertiesAddon;
@@ -37,6 +38,7 @@ import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
@@ -69,8 +71,10 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.request.Request;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -117,6 +121,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     private RepoPath rootRepoPath;
     private final StoringRepo<T> delegator;
     private StoringRepoMixin<T> oldStoringRepo;
+    private AuthorizationService authorizationService;
 
     public StoringRepoMixin(StoringRepo<T> delegator, StoringRepo<T> oldStoringRepo) {
         this.delegator = delegator;
@@ -128,6 +133,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     public void init() {
         InternalArtifactoryContext context = InternalContextHelper.get();
 
+        authorizationService = context.beanForType(AuthorizationService.class);
         this.mdDefService = context.beanForType(MetadataDefinitionService.class);
         this.fileInfoMd = mdDefService.getMetadataDefinition(InternalFileInfo.class);
         this.folderInfoMd = mdDefService.getMetadataDefinition(InternalFolderInfo.class);
@@ -339,6 +345,10 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return (JcrFolder) internalGetLockedJcrFsItem(locator);
     }
 
+    /**
+     * Return <b>locally</b> stored file resource. Unfound resource will be returned if the requested resource
+     * doesn't exist locally.
+     */
     public RepoResource getInfo(RequestContext context) throws FileExpectedException {
         final String path = context.getResourcePath();
         RepoPath repoPath = new RepoPathImpl(getKey(), path);
@@ -347,9 +357,9 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             return new UnfoundRepoResource(repoPath, "File not found.");
         }
         RepoResource localRes;
-        //When requesting a property/metadata return a special resource class that contains the parent node
-        //path and the metadata name.
         if (NamingUtils.isMetadata(path)) {
+            //When requesting a property/metadata return a special resource class that contains the parent node
+            //path and the metadata name.
             String metadataName = NamingUtils.getMetadataName(path);
             MetadataDefinition definition;
             try {
@@ -432,9 +442,16 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             if (getRepositoryService().virtualRepositoryByKey(responsePath.getRepoKey()) == null) {
                 getRepositoryService().updateDirtyState(responsePath);
             }
-            long size = jcrFile.getSize();
-            handle = new SimpleResourceStreamHandle(is, size);
-            log.trace("Created stream handle for '{}' with length {}.", res, size);
+
+            Request request = requestContext.getRequest();
+            if (request != null && request.isZipResourceRequest()) {
+                handle = addonsManager.addonByType(FilteredResourcesAddon.class)
+                        .getZipResourceHandle(res, jcrFile.getStream());
+            } else {
+                handle = new SimpleResourceStreamHandle(is, jcrFile.getSize());
+                log.trace("Created stream handle for '{}' with length {}.", res, jcrFile.getSize());
+            }
+
         } else {
             throw new IOException("Could not get resource stream from a folder " + res + ".");
         }
@@ -513,15 +530,12 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
     /**
      * Create the resource in the local repository
-     *
-     * @param res        the destination resource definition
-     * @param in         the stream to save at the location
-     * @param properties A set of keyval metadata to attach to the (file) resource as part of this storage process
      */
-    public RepoResource saveResource(RepoResource res, InputStream in, Properties properties) throws IOException,
-            RepoRejectException {
+    public RepoResource saveResource(SaveResourceContext context) throws IOException, RepoRejectException {
+        RepoResource res = context.getRepoResource();
         RepoPath repoPath = new RepoPathImpl(getKey(), res.getRepoPath().getPath());
         try {
+            InputStream in = context.getInputStream();
             if (res.isMetadata()) {
                 //If we are dealing with metadata set it on the containing fsitem
                 RepoPath metadataContainerRepoPath = RepoPathImpl.getLockingTargetRepoPath(repoPath);
@@ -569,9 +583,16 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
                 long dataFillStartTime = fillJcrFileData(res, bufferedIs, jcrFile);
 
+                /**
+                 * Populating info details from request should come after fillJcrFileData() since the method sets it's
+                 * own values too
+                 */
+                populateItemInfoDetails(context, jcrFile);
+
                 setArtifactActualChecksums(res, jcrFile, artifactNonUniqueSnapshot, existingChecksumsToCompare);
 
                 //Save properties
+                Properties properties = context.getProperties();
                 if (properties != null) {
                     jcrFile.setMetadata(Properties.class, properties);
                 }
@@ -675,6 +696,28 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         Set<ChecksumInfo> resourceChecksums = res.getInfo().getChecksums();
         jcrFile.getInfo().setChecksums(resourceChecksums);
         return existingChecksumsToCompare;
+    }
+
+    private void populateItemInfoDetails(SaveResourceContext context, JcrFile jcrFile) {
+        if (!authorizationService.isAdmin()) {
+            return;
+        }
+        InternalFileInfo info = jcrFile.getInfo();
+
+        long created = context.getCreated();
+        if (created > 0) {
+            info.setCreated(created);
+        }
+
+        String createBy = context.getCreateBy();
+        if (StringUtils.isNotBlank(createBy)) {
+            info.setCreatedBy(createBy);
+        }
+
+        String modifiedBy = context.getModifiedBy();
+        if (StringUtils.isNotBlank(modifiedBy)) {
+            info.setModifiedBy(modifiedBy);
+        }
     }
 
     private long fillJcrFileData(RepoResource res, BufferedInputStream in, JcrFile jcrFile) throws Exception {
@@ -997,15 +1040,20 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
     private RepoResource getFilteredOrFileResource(JcrFile file, RepoPath repoPath, RequestContext context,
             boolean exactMatch) {
-        if (file.getRepo().isReal()) {
+        Request request = context.getRequest();
+        if (request != null && file.getRepo().isReal()) {
             FilteredResourcesAddon filteredResourcesAddon = addonsManager.addonByType(FilteredResourcesAddon.class);
-
             if (filteredResourcesAddon.isFilteredResourceFile(repoPath)) {
-                return filteredResourcesAddon.
-                        getFilteredResource(context.getRequest(), file.getInfo(), file.getStream());
-
+                return filteredResourcesAddon.getFilteredResource(
+                        request, file.getInfo(), file.getStream());
             }
         }
+
+        if (request != null && request.isZipResourceRequest()) {
+            return addonsManager.addonByType(FilteredResourcesAddon.class).getZipResource(
+                    request, file.getInfo(), file.getStream());
+        }
+
         return new FileResource(file.getInfo(), exactMatch);
     }
 

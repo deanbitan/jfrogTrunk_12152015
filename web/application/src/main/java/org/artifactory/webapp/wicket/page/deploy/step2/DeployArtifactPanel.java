@@ -59,6 +59,7 @@ import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.panel.editor.TextEditorPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.CookieUtils;
+import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
@@ -77,6 +78,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -155,6 +157,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             if (repos.isEmpty()) {
                 throw new UnauthorizedInstantiationException(DeployArtifactPage.class);
             }
+            Collections.sort(repos, new LocalRepoAlphaComparator());
             return repos;
         }
 

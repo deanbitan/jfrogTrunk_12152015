@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.search.actionable;
 
 import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.search.SearchResult;
+import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.webapp.actionable.action.DownloadAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
@@ -34,7 +34,7 @@ import java.util.Set;
  *
  * @author Noam Tenne
  */
-public class ActionableArtifactSearchResult<T extends SearchResult> extends ActionableSearchResult<T> {
+public class ActionableArtifactSearchResult<T extends ItemSearchResult> extends ActionableSearchResult<T> {
 
     protected T searchResult;
     private ViewAction viewAction;

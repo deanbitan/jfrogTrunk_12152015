@@ -25,11 +25,14 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -41,6 +44,7 @@ public class RepoListPanel extends TitledPanel {
 
     public RepoListPanel(String id, List<? extends RepoBaseDescriptor> repoDescriptorList) {
         super(id);
+        Collections.sort(repoDescriptorList, new RepoComparator());
         final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
         add(new ListView<RepoBaseDescriptor>("repos", repoDescriptorList) {
             @Override
@@ -67,5 +71,22 @@ public class RepoListPanel extends TitledPanel {
         return getString(getId(), null);
     }
 
+    private static class RepoComparator implements Comparator<RepoBaseDescriptor> {
+        public int compare(RepoBaseDescriptor descriptor1, RepoBaseDescriptor descriptor2) {
 
+            //Local repositories can be either ordinary or caches
+            if (descriptor1 instanceof LocalRepoDescriptor) {
+                boolean repo1IsCache = ((LocalRepoDescriptor) descriptor1).isCache();
+                boolean repo2IsCache = ((LocalRepoDescriptor) descriptor2).isCache();
+
+                //Cache repositories should appear in a higher priority
+                if (repo1IsCache && !repo2IsCache) {
+                    return 1;
+                } else if (!repo1IsCache && repo2IsCache) {
+                    return -1;
+                }
+            }
+            return descriptor1.getKey().compareTo(descriptor2.getKey());
+        }
+    }
 }

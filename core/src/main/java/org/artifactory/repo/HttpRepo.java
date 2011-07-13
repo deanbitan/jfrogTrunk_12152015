@@ -19,17 +19,18 @@
 package org.artifactory.repo;
 
 import com.google.common.collect.Sets;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpConnectionManager;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.StatusLine;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.util.DateParseException;
 import org.apache.commons.httpclient.util.DateUtil;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
@@ -54,19 +55,18 @@ import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.NullRequestContext;
 import org.artifactory.request.RemoteRequestException;
+import org.artifactory.request.Request;
+import org.artifactory.request.RequestContext;
 import org.artifactory.resource.RemoteRepoResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.spring.InternalContextHelper;
-import org.artifactory.util.HttpClientUtils;
-import org.artifactory.util.PathUtils;
+import org.artifactory.util.HttpClientConfigurator;
+import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
@@ -174,23 +174,27 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             }
         }
         //Do GET
-        return downloadResource(relPath, null);
+        return downloadResource(relPath);
     }
 
-    public ResourceStreamHandle downloadResource(final String relPath, Properties requestProperties)
+    public ResourceStreamHandle downloadResource(String relPath) throws IOException {
+        return downloadResource(relPath, new NullRequestContext(getRepoPath(relPath)));
+    }
+
+    public ResourceStreamHandle downloadResource(final String relPath, final RequestContext requestContext)
             throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
         String fullPath = convertRequestPathIfNeeded(relPath);
         if (getDescriptor().isSynchronizeProperties()) {
-            fullPath += PropertiesImpl.encodeForRequest(requestProperties);
+            fullPath += PropertiesImpl.encodeForRequest(requestContext.getProperties());
         }
         final String fullUrl = appendAndGetUrl(convertRequestPathIfNeeded(fullPath));
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         final PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
 
         final RepoPathImpl repoPath = new RepoPathImpl(getKey(), fullPath);
-        pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, null, repoPath);
-
+        final Request requestForPlugins = requestContext.getRequest();
+        pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, null, requestForPlugins, repoPath);
         if (log.isDebugEnabled()) {
             log.debug("Retrieving " + relPath + " from remote repository '" + getKey() + "' URL '" + fullUrl + "'.");
         }
@@ -234,7 +238,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 StatusLine statusLine = method.getStatusLine();
                 log.info(HttpRepo.this + ": Downloaded '{}' with return code: {}.", fullUrl,
                         statusLine != null ? statusLine.getStatusCode() : "unknown");
-                pluginAddon.execPluginActions(AfterRemoteDownloadAction.class, null, repoPath);
+                pluginAddon.execPluginActions(AfterRemoteDownloadAction.class, null, requestForPlugins, repoPath);
             }
         };
         return handle;
@@ -313,59 +317,24 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     HttpClient createHttpClient() {
-        HttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
-        HttpConnectionManagerParams connectionManagerParams = connectionManager.getParams();
-        connectionManagerParams.setDefaultMaxConnectionsPerHost(50);
-        connectionManagerParams.setMaxTotalConnections(50);
-        //Set the socket connection timeout
-        int socketTimeoutMillis = getSocketTimeoutMillis();
-        connectionManagerParams.setConnectionTimeout(socketTimeoutMillis);
-        connectionManagerParams.setSoTimeout(socketTimeoutMillis);
-        connectionManagerParams.setStaleCheckingEnabled(true);
-        HttpClient client = new HttpClient(connectionManager);
-        //Set uagent
-        HttpClientUtils.configureUserAgent(client);
-        HttpClientParams clientParams = client.getParams();
-        //Set the socket data timeout
-        clientParams.setSoTimeout(socketTimeoutMillis);
-        //Limit the retries to a single retry
-        clientParams.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(1, false));
-        //Set the host
-        String host;
-        try {
-            host = new URL(getUrl()).getHost();
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Cannot parse the url " + getUrl(), e);
-        }
-        client.getHostConfiguration().setHost(host);
-        //Set the local address if exists
-        String localAddress = getLocalAddress();
-        if (StringUtils.isNotBlank(localAddress)) {
-            InetAddress address;
-            try {
-                address = InetAddress.getByName(localAddress);
-                client.getHostConfiguration().setLocalAddress(address);
-            } catch (UnknownHostException e) {
-                log.error("Invalid local address: " + localAddress, e);
-            }
-        }
-        //Set the proxy
-        ProxyDescriptor proxy = getProxy();
-        HttpClientUtils.configureProxy(client, proxy);
-        //Set authentication
-        String username = getUsername();
-        if (StringUtils.isNotBlank(username)) {
-            clientParams.setAuthenticationPreemptive(true);
-            Credentials creds = new UsernamePasswordCredentials(username, getPassword());
-            AuthScope scope = new AuthScope(host, AuthScope.ANY_PORT, AuthScope.ANY_REALM);
-            client.getState().setCredentials(scope, creds);
-        }
-        return client;
+        return new HttpClientConfigurator(true)
+                .hostFromUrl(getUrl())
+                .defaultMaxConnectionsPerHost(50)
+                .maxTotalConnections(50)
+                .connectionTimeout(getSocketTimeoutMillis())
+                .soTimeout(getSocketTimeoutMillis())
+                .staleCheckingEnabled(true)
+                .retry(1, false)
+                .localAddress(getLocalAddress())
+                .proxy(getProxy())
+                .authentication(getUsername(), getPassword())
+                .getClient();
     }
 
     private RepoResource getCachedResource(String relPath) {
         LocalCacheRepo cache = getLocalCacheRepo();
-        RepoResource cachedResource = cache.getInfo(new NullRequestContext(relPath));
+        final NullRequestContext context = new NullRequestContext(getRepoPath(relPath));
+        RepoResource cachedResource = cache.getInfo(context);
         return cachedResource;
     }
 
@@ -374,9 +343,9 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         //Explicitly force keep alive
         method.setRequestHeader("Connection", "Keep-Alive");
         //Set the current requestor
-        method.setRequestHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, PathUtils.getHostId());
+        method.setRequestHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, HttpUtils.getHostId());
         //For backwards compatibility
-        method.setRequestHeader(ArtifactoryRequest.ORIGIN_ARTIFACTORY, PathUtils.getHostId());
+        method.setRequestHeader(ArtifactoryRequest.ORIGIN_ARTIFACTORY, HttpUtils.getHostId());
         //Follow redirects
         method.setFollowRedirects(true);
         //Set gzip encoding

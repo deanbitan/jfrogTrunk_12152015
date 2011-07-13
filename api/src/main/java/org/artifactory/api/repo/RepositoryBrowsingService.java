@@ -36,6 +36,7 @@ public interface RepositoryBrowsingService {
      *         if not found or user has no permissions.
      */
     @Lock(transactional = true)
+    @Nullable
     VirtualRepoItem getVirtualRepoItem(RepoPath repoPath);
 
     /**

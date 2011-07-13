@@ -19,9 +19,14 @@
 package org.artifactory.security.ldap;
 
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddonsImpl;
+import org.artifactory.addon.LdapGroupAddon;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
@@ -42,6 +47,7 @@ import org.springframework.util.StringUtils;
 
 import javax.naming.directory.DirContext;
 import java.text.MessageFormat;
+import java.util.List;
 
 /**
  * @author freds
@@ -50,10 +56,20 @@ import java.text.MessageFormat;
 public class ArtifactoryBindAuthenticator extends BindAuthenticator {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryBindAuthenticator.class);
 
+    /**
+     * The spring context connected to LDAP server
+     */
     private LdapContextSource contextSource;
 
+    /**
+     * The pattern for direct finding/authenticating a user. Usually used for OpenLDAP, never used with AD.
+     */
     private MessageFormat userDnPattern;
-    private FilterBasedLdapUserSearch userSearch;
+
+    /**
+     * A list of user search that can be used to search and authenticate the user. Used with AD.
+     */
+    private List<FilterBasedLdapUserSearch> userSearches;
 
     public ArtifactoryBindAuthenticator(LdapContextSource contextSource, LdapSetting ldapSetting) {
         super(contextSource);
@@ -74,12 +90,17 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
         }
 
         if (hasSearch) {
-            String searchBase = search.getSearchBase();
-            if (searchBase == null) {
-                searchBase = "";
-            }
-            this.userSearch = new FilterBasedLdapUserSearch(searchBase, search.getSearchFilter(), contextSource);
-            this.userSearch.setSearchSubtree(search.isSearchSubTree());
+            this.userSearches = getLdapGroupAddon().getLdapUserSearches(contextSource, ldapSetting);
+        }
+    }
+
+    private LdapGroupAddon getLdapGroupAddon() {
+        InternalArtifactoryContext context = InternalContextHelper.get();
+        if (context != null) {
+            AddonsManager addonsManager = context.beanForType(AddonsManager.class);
+            return addonsManager.addonByType(LdapGroupAddon.class);
+        } else {
+            return new CoreAddonsImpl();
         }
     }
 
@@ -112,8 +133,11 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
             user = bindWithDn(userDnPattern.format(new Object[]{username}), username, password);
         }
 
-        if (user == null) {
-            if (userSearch != null) {
+        if (userSearches != null && !userSearches.isEmpty()) {
+            for (FilterBasedLdapUserSearch userSearch : userSearches) {
+                if (user != null) {
+                    break;
+                }
                 try {
                     // Otherwise use the configured locator to find the user
                     // and authenticate with the returned DN.

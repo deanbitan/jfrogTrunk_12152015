@@ -21,7 +21,6 @@ package org.artifactory.repo;
 import org.artifactory.api.fs.RepoResource;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.md.Properties;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -47,7 +46,9 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
      *
      * @return A handle for the remote resource
      */
-    ResourceStreamHandle downloadResource(String relPath, Properties requestProperties) throws IOException;
+    ResourceStreamHandle downloadResource(String relPath) throws IOException;
+
+    ResourceStreamHandle downloadResource(String relPath, RequestContext requestContext) throws IOException;
 
     /**
      * Retrieves a resource remotely if the remote resource was found and is newer

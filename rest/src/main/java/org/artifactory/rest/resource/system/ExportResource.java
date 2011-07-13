@@ -67,9 +67,15 @@ public class ExportResource {
         log.debug("Activating export {}", settings);
         try {
             ContextHelper.get().exportTo(settings);
+            if (!settings.getStatusHolder().hasErrors()) {
+                return Response.ok().build();
+            } else {
+                return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(
+                        "Export finished with errors. Check " +
+                                "Artifactory logs for more details.").build();
+            }
         } catch (Exception e) {
-            return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+            return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
-        return Response.ok().build();
     }
 }

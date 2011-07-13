@@ -21,6 +21,7 @@ package org.artifactory.backup;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.BackupService;
+import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.ReloadableBean;
 
@@ -32,20 +33,20 @@ import java.util.Date;
  */
 public interface InternalBackupService extends ReloadableBean, BackupService {
     /**
-     * @param context     The internal artifactory context
-     * @param backupIndex The index of the backup in the backups list
+     * @param context   The internal artifactory context
+     * @param backupKey
      * @return MultiStatusHolder containing messages
      */
-    MultiStatusHolder backupSystem(InternalArtifactoryContext context, int backupIndex);
+    MultiStatusHolder backupSystem(InternalArtifactoryContext context, String backupKey);
 
     /**
      * Iterate (non-recursively) on all folders/files in the backup dir and delete them if they are older than "now"
      * minus the retention period of the beckup.
      *
-     * @param now         The base time to use for the cleanup
-     * @param backupIndex The index of the backup in the backups list
+     * @param now       The base time to use for the cleanup
+     * @param backupKey
      */
-    void cleanupOldBackups(Date now, int backupIndex);
+    void cleanupOldBackups(Date now, String backupKey);
 
     /**
      * Sends an email notification to the admins about errors that have occurred during backups
@@ -56,4 +57,6 @@ public interface InternalBackupService extends ReloadableBean, BackupService {
      */
     @Async
     void sendBackupErrorNotification(String backupName, MultiStatusHolder statusHolder) throws Exception;
+
+    BackupDescriptor getBackup(String backupKey);
 }

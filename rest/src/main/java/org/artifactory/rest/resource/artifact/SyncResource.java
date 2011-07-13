@@ -20,8 +20,8 @@ package org.artifactory.rest.resource.artifact;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.ReplicationAddon;
-import org.artifactory.addon.replication.ReplicationSettings;
-import org.artifactory.addon.replication.ReplicationSettingsBuilder;
+import org.artifactory.addon.replication.RemoteReplicationSettings;
+import org.artifactory.addon.replication.RemoteReplicationSettingsBuilder;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepoPathImpl;
@@ -78,12 +78,13 @@ public class SyncResource {
             @QueryParam(PARAM_PROGRESS) @DefaultValue("1") int progress,
             @QueryParam(PARAM_MARK) int mark,
             @QueryParam(PARAM_DELETE) int delete,
+            @QueryParam(PARAM_TIMEOUT) int timeout,
             @QueryParam(PARAM_OVERWRITE) ReplicationAddon.Overwrite overwrite) throws Exception {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         RepoPath repoPath = RepoPathImpl.fromRepoPathPath(path);
-        ReplicationSettings settings = new ReplicationSettingsBuilder(repoPath, httpResponse.getWriter()).
+        RemoteReplicationSettings settings = new RemoteReplicationSettingsBuilder(repoPath, httpResponse.getWriter()).
                 deleteExisting(delete == 1).includeProperties(true).mark(mark).overwrite(overwrite).
-                progress(progress == 1).build();
+                progress(progress == 1).timeout(timeout).build();
         return addonsManager.addonByType(RestAddon.class).replicate(settings);
     }
 }

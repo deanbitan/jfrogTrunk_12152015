@@ -33,6 +33,9 @@ public class ChecksumInputStream extends BufferedInputStream {
 
     private final Checksum[] checksums;
     private boolean closed;
+    /**
+     * Total bytes read by this stream
+     */
     private long totalBytesRead;
 
     public ChecksumInputStream(InputStream is, Checksum... checksums) {
@@ -79,5 +82,12 @@ public class ChecksumInputStream extends BufferedInputStream {
             }
             closed = true;
         }
+    }
+
+    /**
+     * @return The total bytes read by this stream
+     */
+    public long getTotalBytesRead() {
+        return totalBytesRead;
     }
 }

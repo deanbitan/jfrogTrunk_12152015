@@ -36,13 +36,11 @@ public interface StorageService {
      */
     long getStorageSize();
 
-    /**
-     * Induce the garbage collector manually.
-     *
-     * @param statusHolder StatusHolder
-     * @return GC task token. Might be null in case of exception
-     */
-    String manualGarbageCollect(MultiStatusHolder statusHolder);
-
     void exportDbDataStore(String destDir);
+
+    /**
+     * Check that manual garbage collection can be run, and then activate the double GC asynchronously.
+     * @param statusHolder
+     */
+    void callManualGarbageCollect(MultiStatusHolder statusHolder);
 }

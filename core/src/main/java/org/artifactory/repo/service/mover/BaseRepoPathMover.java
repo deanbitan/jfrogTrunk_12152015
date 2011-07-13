@@ -34,6 +34,7 @@ import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.maven.PomTargetPathValidator;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.LocalRepo;
@@ -101,13 +102,10 @@ abstract class BaseRepoPathMover {
     }
 
     /**
-     * <ul>
-     * <li>If not in a dry run.</li>
-     * <li>If not handling search results (search result folders are cleaned at a later stage).</li>
-     * <li>If not copying (no source removal when copying).</li>
-     * <li>If not on the root item (a repo).</li>
-     * <li>If not containing any children and items have been moved (children have actually been moved).</li>
-     * </ul>
+     * <ul> <li>If not in a dry run.</li> <li>If not handling search results (search result folders are cleaned at a
+     * later stage).</li> <li>If not copying (no source removal when copying).</li> <li>If not on the root item (a
+     * repo).</li> <li>If not containing any children and items have been moved (children have actually been
+     * moved).</li> </ul>
      */
     protected boolean shouldRemoveSourceFolder(JcrFolder sourceFolder) {
         return !dryRun && !searchResult && !copy && !sourceFolder.getRepoPath().isRoot() &&
@@ -234,6 +232,7 @@ abstract class BaseRepoPathMover {
             sourceFile.setDeleted(true);
             sourceFile.updateCache();
         }
+        LockingHelper.removeLockEntry(sourceFile.getRepoPath());
         status.itemMoved();
     }
 

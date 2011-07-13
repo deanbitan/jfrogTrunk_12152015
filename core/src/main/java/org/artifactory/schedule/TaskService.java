@@ -18,7 +18,13 @@
 
 package org.artifactory.schedule;
 
+import com.google.common.base.Predicate;
+import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.spring.ReloadableBean;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * @author yoavl
@@ -29,9 +35,10 @@ public interface TaskService extends ReloadableBean {
      * Starts a task and returns its token
      *
      * @param task
+     * @param waitForRunning
      * @return the token of this task
      */
-    String startTask(TaskBase task);
+    String startTask(TaskBase task, boolean waitForRunning);
 
     /**
      * Cancels and stops the task
@@ -63,19 +70,9 @@ public interface TaskService extends ReloadableBean {
      * Cancels and stops all active tasks of the specified type
      *
      * @param callbackType
-     * @param wait
      * @return true if tasks were stops, false if all already stopped
      */
-    void stopTasks(Class<? extends TaskCallback> callbackType, boolean wait);
-
-    /**
-     * Pauses all tasks of a certain type
-     *
-     * @param callbackType
-     * @param wait
-     * @return true if actually paused, false if already paused
-     */
-    void pauseTasks(Class<? extends TaskCallback> callbackType, boolean wait);
+    List<String> stopTasks(Class<? extends TaskCallback> callbackType);
 
     /**
      * Resume a paused task
@@ -84,13 +81,6 @@ public interface TaskService extends ReloadableBean {
      * @return true if managed to resume, false if there are additional stop/pause holders
      */
     boolean resumeTask(String token);
-
-    /**
-     * Resume all paused task of a certain type
-     *
-     * @param callbackType
-     */
-    void resumeTasks(Class<? extends TaskCallback> callbackType);
 
     /**
      * Cancels (unschedules) a task
@@ -104,7 +94,7 @@ public interface TaskService extends ReloadableBean {
      *
      * @param callbackType
      */
-    void cancelTasks(Class<? extends TaskCallback> callbackType, boolean wait);
+    void cancelTasks(@Nonnull Class<? extends TaskCallback> callbackType, boolean wait);
 
     /**
      * Cancels all tasks
@@ -136,7 +126,13 @@ public interface TaskService extends ReloadableBean {
      */
     boolean hasTaskOfType(Class<? extends TaskCallback> callbackType);
 
-    TaskBase getSingletonTaskTaskOfType(Class<? extends TaskCallback> callbackType);
+    boolean canRunManual(Class<? extends TaskCallback> callbackType);
 
-    void pauseTask(String token, long timeToPause);
+    void cancelTasks(@Nullable Predicate<Task> predicate, boolean wait);
+
+    List<TaskBase> getActiveTasks(@Nonnull Predicate<Task> predicate);
+
+    void checkCanStartManualTask(Class<? extends TaskCallback> typeToRun, MutableStatusHolder statusHolder);
+
+    void stopRelatedTasks(Class typeToRun, List<String> tokenStopped);
 }

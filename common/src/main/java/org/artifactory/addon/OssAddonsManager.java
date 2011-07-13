@@ -19,6 +19,7 @@
 package org.artifactory.addon;
 
 import com.google.common.collect.Lists;
+import org.artifactory.api.config.ImportSettings;
 import org.artifactory.api.context.ContextHelper;
 import org.springframework.stereotype.Component;
 
@@ -61,6 +62,10 @@ public class OssAddonsManager implements AddonsManager {
 
     public List<String> getEnabledAddonNames() {
         return Collections.emptyList();
+    }
+
+    public void importFrom(ImportSettings settings) {
+
     }
 
     public void refresh() {

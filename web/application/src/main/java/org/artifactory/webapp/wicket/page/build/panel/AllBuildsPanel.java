@@ -32,10 +32,10 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.SearchService;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
@@ -78,7 +78,7 @@ public class AllBuildsPanel extends TitledPanel {
         setOutputMarkupId(true);
 
         try {
-            Set<BasicBuildInfo> latestBuildsByName = searchService.getLatestBuildsByName();
+            Set<BuildRun> latestBuildsByName = searchService.getLatestBuilds();
             addTable(latestBuildsByName);
         } catch (RepositoryRuntimeException e) {
             String errorMessage = "An error occurred while loading all existing builds";
@@ -97,7 +97,7 @@ public class AllBuildsPanel extends TitledPanel {
      *
      * @param latestBuildsByName Latest builds by name to display
      */
-    private void addTable(Set<BasicBuildInfo> latestBuildsByName) {
+    private void addTable(Set<BuildRun> latestBuildsByName) {
         List<IColumn<LatestBuildByNameActionableItem>> columns = Lists.newArrayList();
         columns.add(new ActionsColumn<LatestBuildByNameActionableItem>(""));
         columns.add(new BuildNameColumn());
@@ -111,14 +111,14 @@ public class AllBuildsPanel extends TitledPanel {
      */
     private static class BuildsDataProvider extends SortableDataProvider<LatestBuildByNameActionableItem> {
 
-        List<BasicBuildInfo> buildList;
+        List<BuildRun> buildList;
 
         /**
          * Main constructor
          *
          * @param latestBuildsByName Latest build by name to display
          */
-        public BuildsDataProvider(Set<BasicBuildInfo> latestBuildsByName) {
+        public BuildsDataProvider(Set<BuildRun> latestBuildsByName) {
             setSort("startedDate", false);
             this.buildList = Lists.newArrayList(latestBuildsByName);
         }
@@ -144,9 +144,9 @@ public class AllBuildsPanel extends TitledPanel {
          * @param builds Builds to return as actionable
          * @return Actionable builds
          */
-        private List<LatestBuildByNameActionableItem> getActionableItems(List<BasicBuildInfo> builds) {
+        private List<LatestBuildByNameActionableItem> getActionableItems(List<BuildRun> builds) {
             List<LatestBuildByNameActionableItem> items = Lists.newArrayList();
-            for (BasicBuildInfo build : builds) {
+            for (BuildRun build : builds) {
                 items.add(new LatestBuildByNameActionableItem(build));
             }
 

@@ -28,6 +28,7 @@ import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.repo.virtual.interceptor.transformer.PomTransformer;
@@ -97,8 +98,9 @@ public class PomInterceptor {
         RepoResource transformedResource = new FileResource(fileInfo);
 
         try {
-            transformedResource = virtualRepo.saveResource(
-                    transformedResource, IOUtils.toInputStream(pomContent, "utf-8"), null);
+            SaveResourceContext saveResourceContext = new SaveResourceContext.Builder(transformedResource,
+                    IOUtils.toInputStream(pomContent, "utf-8")).build();
+            transformedResource = virtualRepo.saveResource(saveResourceContext);
         } catch (IOException e) {
             String message = "Failed to import file to local storage";
             log.error(message, e);

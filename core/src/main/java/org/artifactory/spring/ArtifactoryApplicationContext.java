@@ -18,11 +18,13 @@
 
 package org.artifactory.spring;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.WebstartAddon;
 import org.artifactory.addon.license.LicensesAddon;
+import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
@@ -39,10 +41,12 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.index.IndexerJob;
+import org.artifactory.logging.LoggingService;
+import org.artifactory.repo.service.ExportJob;
+import org.artifactory.repo.service.ImportJob;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.schedule.TaskCallback;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.update.utils.BackupUtils;
 import org.artifactory.util.ZipUtils;
@@ -249,7 +253,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     @Override
     protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
         super.prepareBeanFactory(beanFactory);
-        //Add our own post processor that registers all reloadable beans automagically after construction
+        //Add our own post processor that registers all reloadable beans auto-magically after construction
         beanFactory.addBeanPostProcessor(new BeanPostProcessor() {
             public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
                 Class<?> targetClass = AopUtils.getTargetClass(bean);
@@ -448,28 +452,36 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                     "into Artifactory.");
         }
         settings.setExportVersion(backupVersion);
-        toggleImportExportRelatedTasks(false);
+        List<String> stoppedTasks = Lists.newArrayList();
         try {
+            stopRelatedTasks(ImportJob.class, stoppedTasks);
             importEtcDirectory(settings);
-            getCentralConfig().importFrom(settings);
-            getSecurityService().importFrom(settings);
-
+            // import addons manager
             AddonsManager addonsManager = beanForType(AddonsManager.class);
-            WebstartAddon webstartAddon = addonsManager.addonByType(WebstartAddon.class);
-            webstartAddon.importKeyStore(settings);
+            addonsManager.importFrom(settings);
 
-            LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
-            licensesAddon.importLicenses(settings);
-
-            BuildService buildService = beanForType(BuildService.class);
-            buildService.importFrom(settings);
+            // import central configuration
+            getCentralConfig().importFrom(settings);
+            // import security settings
+            getSecurityService().importFrom(settings);
+            // import webstart keystore
+            addonsManager.addonByType(WebstartAddon.class).importKeyStore(settings);
+            // import 3rd party licenses
+            addonsManager.addonByType(LicensesAddon.class).importLicenses(settings);
+            // import user plugins
+            addonsManager.addonByType(PluginsAddon.class).importFrom(settings);
+            // import builds
+            beanForType(BuildService.class).importFrom(settings);
+            // import logback conf
+            beanForType(LoggingService.class).importFrom(settings);
 
             if (!settings.isExcludeContent()) {
+                // import repositories content
                 getRepositoryService().importFrom(settings);
             }
             status.setStatus("### Full system import finished ###", log);
         } finally {
-            toggleImportExportRelatedTasks(true);
+            resumeTasks(stoppedTasks);
         }
     }
 
@@ -498,15 +510,17 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             try {
                 FileUtils.deleteDirectory(tmpExportDir);
             } catch (IOException e) {
-                throw new RuntimeException(
-                        "Failed to delete old temp export directory: " + tmpExportDir.getAbsolutePath(), e);
+                status.setError("Failed to delete old temp export directory: " + tmpExportDir.getAbsolutePath(), e,
+                        log);
+                return;
             }
         }
         status.setStatus("Creating temp export directory: " + tmpExportDir.getAbsolutePath(), log);
         try {
             FileUtils.forceMkdir(tmpExportDir);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create backup dir: " + tmpExportDir.getAbsolutePath(), e);
+            status.setError("Failed to create backup dir: " + tmpExportDir.getAbsolutePath(), e, log);
+            return;
         }
         status.setStatus("Using backup directory: '" + tmpExportDir.getAbsolutePath() + "'.", log);
 
@@ -514,8 +528,9 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         ExportSettings exportSettings = new ExportSettings(tmpExportDir, settings);
         CentralConfigService centralConfig = getCentralConfig();
 
-        toggleImportExportRelatedTasks(false);
+        List<String> stoppedTasks = Lists.newArrayList();
         try {
+            stopRelatedTasks(ExportJob.class, stoppedTasks);
             centralConfig.exportTo(exportSettings);
             if (status.isError() && settings.isFailFast()) {
                 return;
@@ -565,8 +580,10 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 status.setCallback(tmpExportDir);
             }
             status.setStatus("Full system export completed successfully.", log);
+        } catch (RuntimeException e) {
+            status.setError("Full system export failed: " + e.getMessage(), e, log);
         } finally {
-            toggleImportExportRelatedTasks(true);
+            resumeTasks(stoppedTasks);
         }
     }
 
@@ -646,21 +663,42 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
     }
 
+    /**
+     * Import selected files from the etc directory. Note that while the export simply copies the etc directory, here
+     * we are only wish to import some of the files while ignoring others. The reason is that the etc may contain custom
+     * settings that are environment dependant (like db configuration) which will fail the import of will fail
+     * Artifactory on the next startup. So changes to the repo.xml and/or artifactory.system.properties has to be
+     * imported manually.
+     */
     private void importEtcDirectory(ImportSettings settings) {
-        File sourceBackupDir = new File(settings.getBaseDir(), "etc");
-        if (!sourceBackupDir.exists()) {
+        File importEtcDir = new File(settings.getBaseDir(), "etc");
+        if (!importEtcDir.exists()) {
             // older versions didn't export the etc directory
-            log.info("Skipping etc directory import. File doesn't exist: " + sourceBackupDir.getAbsolutePath());
+            log.info("Skipping etc directory import. File doesn't exist: " + importEtcDir.getAbsolutePath());
             return;
         }
-        try {
-            // copy only the logo.
-            FileUtils.copyDirectory(new File(sourceBackupDir, "ui"), artifactoryHome.getLogoDir());
-            // refresh the addons manager
-            beanForType(AddonsManager.class).refresh();
-        } catch (Exception e) {
-            settings.getStatusHolder().setError(
-                    "Failed to import etc directory: " + sourceBackupDir.getAbsolutePath(), e, log);
+        // copy the logo if it exists
+        File customUiDir = new File(importEtcDir, "ui");
+        if (customUiDir.exists()) {
+            try {
+                FileUtils.copyDirectory(customUiDir, artifactoryHome.getLogoDir());
+            } catch (IOException e) {
+                settings.getStatusHolder().setError(
+                        "Failed to import ui directory: " + importEtcDir.getAbsolutePath(), e, log);
+            }
+        }
+
+        // copy and re-initialize the mime types mapping
+        File mimeTypesFile = new File(importEtcDir, ArtifactoryHome.MIME_TYPES_FILE_NAME);
+        if (mimeTypesFile.exists()) {
+            try {
+                FileUtils.copyFileToDirectory(mimeTypesFile, artifactoryHome.getEtcDir());
+                artifactoryHome.initAndLoadMimeTypes();
+            } catch (IOException e) {
+                settings.getStatusHolder().setError(
+                        "Failed to import mime types: " + importEtcDir.getAbsolutePath(), e, log);
+            }
+
         }
     }
 
@@ -690,15 +728,23 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         return reloadableBeans;
     }
 
-    private void toggleImportExportRelatedTasks(boolean start) {
+    private void stopRelatedTasks(Class<? extends TaskCallback> jobCommandClass, List<String> stoppedTokens) {
+        if (TaskCallback.currentTaskToken() != null) {
+            // Already stopped by standard task manager
+            return;
+        }
         TaskService taskService = getTaskService();
-        //Turn on/off indexing and garbage collection
-        if (start) {
-            taskService.resumeTasks(JcrGarbageCollectorJob.class);
-            taskService.resumeTasks(IndexerJob.class);
-        } else {
-            taskService.stopTasks(IndexerJob.class, true);
-            taskService.stopTasks(JcrGarbageCollectorJob.class, true);
+        taskService.stopRelatedTasks((Class) jobCommandClass, stoppedTokens);
+    }
+
+    private void resumeTasks(List<String> tokens) {
+        if (TaskCallback.currentTaskToken() != null) {
+            // Already stopped by standard task manager
+            return;
+        }
+        TaskService taskService = getTaskService();
+        for (String token : tokens) {
+            taskService.resumeTask(token);
         }
     }
 

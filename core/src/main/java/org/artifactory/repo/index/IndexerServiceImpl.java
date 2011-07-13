@@ -18,10 +18,13 @@
 
 package org.artifactory.repo.index;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
 import org.apache.lucene.store.FSDirectory;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
@@ -35,9 +38,14 @@ import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.resource.ResourceStreamHandle;
+import org.artifactory.schedule.BaseTaskServiceDescriptorHandler;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.Task;
+import org.artifactory.schedule.TaskBase;
+import org.artifactory.schedule.TaskInterruptedException;
 import org.artifactory.schedule.TaskService;
-import org.artifactory.schedule.quartz.QuartzCommand;
-import org.artifactory.schedule.quartz.QuartzTask;
+import org.artifactory.schedule.TaskUser;
+import org.artifactory.schedule.TaskUtils;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.util.ExceptionUtils;
@@ -48,6 +56,8 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -77,43 +87,114 @@ public class IndexerServiceImpl implements InternalIndexerService {
     @Autowired
     private InternalRepositoryService repositoryService;
 
-    private IndexerDescriptor descriptor;
-
     public void init() {
-        descriptor = centralConfig.getDescriptor().getIndexer();
-        if (descriptor == null) {
-            descriptor = new IndexerDescriptor();
-        }
-        if (descriptor.getExcludedRepositories() == null) {
-            //Auto exclude all remote and virtual repos
-            SortedSet<RepoBaseDescriptor> set = new TreeSet<RepoBaseDescriptor>();
-            set.addAll(repositoryService.getRemoteRepoDescriptors());
-            set.addAll(getAllVirtualReposExceptGlobal());
-            descriptor.setExcludedRepositories(set);
-        }
-
-        if (descriptor.isEnabled()) {
-            scheduleIndexing(false);
-        } else {
-            taskService.cancelTasks(IndexerJob.class, false);
-        }
+        new IndexerSchedulerHandler(getAndCheckDescriptor(), null).reschedule();
     }
 
     public void reload(CentralConfigDescriptor oldDescriptor) {
-        init();
+        new IndexerSchedulerHandler(getAndCheckDescriptor(), oldDescriptor.getIndexer()).reschedule();
     }
 
-    public void scheduleImmediateIndexing() {
-        scheduleIndexing(true);
+    private IndexerDescriptor getAndCheckDescriptor() {
+        IndexerDescriptor descriptor = centralConfig.getDescriptor().getIndexer();
+        if (descriptor != null) {
+            SortedSet<RepoBaseDescriptor> set = new TreeSet<RepoBaseDescriptor>();
+            if (descriptor.getExcludedRepositories() == null) {
+                //Auto exclude all remote and virtual repos
+                set.addAll(repositoryService.getRemoteRepoDescriptors());
+                set.addAll(getAllVirtualReposExceptGlobal());
+            } else {
+                set.addAll(descriptor.getExcludedRepositories());
+                // Always remove globalVirtual one
+                VirtualRepoDescriptor dummyGlobal = new VirtualRepoDescriptor();
+                dummyGlobal.setKey(VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY);
+                set.remove(dummyGlobal);
+            }
+            descriptor.setExcludedRepositories(set);
+        }
+        return descriptor;
+    }
+
+    static class IndexerSchedulerHandler extends BaseTaskServiceDescriptorHandler<IndexerDescriptor> {
+        final List<IndexerDescriptor> oldDescriptorHolder = Lists.newArrayList();
+        final List<IndexerDescriptor> newDescriptorHolder = Lists.newArrayList();
+
+        IndexerSchedulerHandler(IndexerDescriptor newDesc, IndexerDescriptor oldDesc) {
+            if (newDesc != null) {
+                newDescriptorHolder.add(newDesc);
+            }
+            if (oldDesc != null) {
+                oldDescriptorHolder.add(oldDesc);
+            }
+        }
+
+        public String jobName() {
+            return "Indexer";
+        }
+
+        public List<IndexerDescriptor> getNewDescriptors() {
+            return newDescriptorHolder;
+        }
+
+        public List<IndexerDescriptor> getOldDescriptors() {
+            return oldDescriptorHolder;
+        }
+
+        public Predicate<Task> getAllPredicate() {
+            return new Predicate<Task>() {
+                public boolean apply(@Nullable Task input) {
+                    return AbstractIndexerJobs.class.isAssignableFrom(input.getType());
+                }
+            };
+        }
+
+        public Predicate<Task> getPredicate(@Nonnull IndexerDescriptor descriptor) {
+            return getAllPredicate();
+        }
+
+        public void activate(@Nonnull IndexerDescriptor descriptor) {
+            if (descriptor.isEnabled()) {
+                long interval = descriptor.getIndexingIntervalHours() * 60L * 60L * 1000L;
+                TaskBase task = TaskUtils.createRepeatingTask(IndexerJob.class,
+                        interval,
+                        FileUtils.nextLong(interval));
+                InternalContextHelper.get().getBean(TaskService.class).startTask(task, false);
+                if (log.isInfoEnabled()) {
+                    log.info("Indexer activated every " + descriptor.getIndexingIntervalHours() + " hours.");
+                }
+            } else {
+                log.info("Indexer disabled.");
+            }
+        }
+
+        public IndexerDescriptor findOldFromNew(@Nonnull IndexerDescriptor newDescriptor) {
+            return oldDescriptorHolder.isEmpty() ? null : oldDescriptorHolder.get(0);
+        }
+    }
+
+    public void scheduleImmediateIndexing(MutableStatusHolder statusHolder) {
+        taskService.checkCanStartManualTask(IndexerJob.class, statusHolder);
+        if (!statusHolder.isError()) {
+            try {
+                log.info("Activating indexer manually");
+                TaskBase task = TaskUtils.createManualTask(IndexerJob.class, 0L);
+                task.addAttribute(IndexerJob.MANUAL_RUN, true);
+                taskService.startTask(task, true);
+            } catch (Exception e) {
+                log.error("Error scheduling the indexer.", e);
+            }
+        }
     }
 
     public void destroy() {
+        new IndexerSchedulerHandler(null, null).unschedule();
     }
 
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
     public void index(Date fireTime, boolean manualRun) {
+        IndexerDescriptor descriptor = getAndCheckDescriptor();
         if (!descriptor.isEnabled() && !manualRun) {
             log.debug("Indexer is disabled - doing nothing.");
             return;
@@ -126,6 +207,7 @@ public class IndexerServiceImpl implements InternalIndexerService {
         for (RealRepo indexedRepo : indexedRepos) {
             //Check if we need to stop/suspend
             if (taskService.pauseOrBreak()) {
+                log.info("Stopped indexing on demand");
                 return;
             }
             MavenIndexManager mavenIndexManager = new MavenIndexManager(indexedRepo);
@@ -134,6 +216,7 @@ public class IndexerServiceImpl implements InternalIndexerService {
                 findOrCreateRepositoryIndex(fireTime, mavenIndexManager);
                 //Check again if we need to stop/suspend
                 if (taskService.pauseOrBreak()) {
+                    log.info("Stopped indexing on demand");
                     return;
                 }
                 saveIndex(mavenIndexManager);
@@ -154,17 +237,17 @@ public class IndexerServiceImpl implements InternalIndexerService {
     }
 
     private void findOrCreateRepositoryIndex(Date fireTime, MavenIndexManager mavenIndexManager) {
-        QuartzTask taskFindOrCreateIndex = new QuartzTask(FindOrCreateIndexJob.class, "FindOrCreateIndex");
+        TaskBase taskFindOrCreateIndex = TaskUtils.createManualTask(FindOrCreateIndexJob.class, 0L);
         taskFindOrCreateIndex.addAttribute(MavenIndexManager.class.getName(), mavenIndexManager);
         taskFindOrCreateIndex.addAttribute(Date.class.getName(), fireTime);
-        taskService.startTask(taskFindOrCreateIndex);
+        taskService.startTask(taskFindOrCreateIndex, true);
         taskService.waitForTaskCompletion(taskFindOrCreateIndex.getToken());
     }
 
     private void saveIndex(MavenIndexManager mavenIndexManager) {
-        QuartzTask saveIndexFileTask = new QuartzTask(SaveIndexFileJob.class, "SaveIndexFile");
+        TaskBase saveIndexFileTask = TaskUtils.createManualTask(SaveIndexFileJob.class, 0L);
         saveIndexFileTask.addAttribute(MavenIndexManager.class.getName(), mavenIndexManager);
-        taskService.startTask(saveIndexFileTask);
+        taskService.startTask(saveIndexFileTask, true);
         //No real need to wait, but since other task are waiting for indexer completion, leaving it
         taskService.waitForTaskCompletion(saveIndexFileTask.getToken());
     }
@@ -203,6 +286,7 @@ public class IndexerServiceImpl implements InternalIndexerService {
             for (VirtualRepo virtualRepo : virtualRepos) {
                 //Check if we need to stop/suspend
                 if (taskService.pauseOrBreak()) {
+                    log.info("Stopped indexing on demand");
                     return;
                 }
                 Set<LocalRepo> localRepos = new HashSet<LocalRepo>();
@@ -220,6 +304,7 @@ public class IndexerServiceImpl implements InternalIndexerService {
                     for (RealRepo indexedRepo : indexedRepos) {
                         //Check if we need to stop/suspend
                         if (taskService.pauseOrBreak()) {
+                            log.info("Stopped indexing on demand");
                             return;
                         }
                         LocalRepo localRepo = indexedRepo.isLocal() ? (LocalRepo) indexedRepo :
@@ -276,41 +361,20 @@ public class IndexerServiceImpl implements InternalIndexerService {
      * @return List of all virtual repository descriptors apart from the global one
      */
     private List<VirtualRepoDescriptor> getAllVirtualReposExceptGlobal() {
-        List<VirtualRepoDescriptor> virtualRepoDescriptors = repositoryService.getVirtualRepoDescriptors();
         List<VirtualRepoDescriptor> virtualRepositoriesCopy =
-                new ArrayList<VirtualRepoDescriptor>(virtualRepoDescriptors);
-        for (VirtualRepoDescriptor virtualRepository : virtualRepoDescriptors) {
-            if (VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY.equals(virtualRepository.getKey())) {
-                virtualRepositoriesCopy.remove(virtualRepository);
-            }
-        }
-
+                new ArrayList<VirtualRepoDescriptor>(repositoryService.getVirtualRepoDescriptors());
+        VirtualRepoDescriptor dummyGlobal = new VirtualRepoDescriptor();
+        dummyGlobal.setKey(VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY);
+        virtualRepositoriesCopy.remove(dummyGlobal);
         return virtualRepositoriesCopy;
-    }
-
-    private void scheduleIndexing(boolean runNow) {
-        //If scheduled fo immediate run, wait for the previous task to stop
-        taskService.stopTasks(IndexerJob.class, runNow);
-        //Schedule the indexing
-        try {
-            long interval = descriptor.getIndexingIntervalHours() * 60L * 60L * 1000L;
-            QuartzTask task = new QuartzTask(IndexerJob.class, interval, runNow ? 0 : interval);
-            task.addAttribute(IndexerJob.MANUAL_RUN, runNow);
-            taskService.startTask(task);
-        } catch (Exception e) {
-            log.error("Error scheduling the indexer.", e);
-        }
-        // don't print out log message if the indexer is not enabled (invoked manually) or enabled and was executed manually
-        if (descriptor.isEnabled() && !runNow) {
-            log.info("Scheduled indexer to run every {} hours.", descriptor.getIndexingIntervalHours());
-        }
     }
 
     private static InternalIndexerService getTransactionalMe() {
         return InternalContextHelper.get().beanForType(InternalIndexerService.class);
     }
 
-    public static class FindOrCreateIndexJob extends QuartzCommand {
+    @JobCommand(manualUser = TaskUser.CURRENT)
+    public static class FindOrCreateIndexJob extends AbstractIndexerJobs {
         @Override
         protected void onExecute(JobExecutionContext callbackContext) {
             try {
@@ -321,13 +385,14 @@ public class IndexerServiceImpl implements InternalIndexerService {
                 InternalIndexerService indexer = InternalContextHelper.get().beanForType(InternalIndexerService.class);
                 indexer.fetchOrCreateIndex(mavenIndexManager, fireTime);
             } catch (Exception e) {
-                log.error("Fetching index files failed: {}.", e.getMessage());
-                log.debug("Fetching index files failed.", e);
+                log.error("Indexing failed: {}.", e.getMessage());
+                log.debug("Indexing failed.", e);
             }
         }
     }
 
-    public static class SaveIndexFileJob extends QuartzCommand {
+    @JobCommand(manualUser = TaskUser.CURRENT)
+    public static class SaveIndexFileJob extends AbstractIndexerJobs {
         @Override
         protected void onExecute(JobExecutionContext callbackContext) {
             try {
@@ -336,6 +401,8 @@ public class IndexerServiceImpl implements InternalIndexerService {
                                 MavenIndexManager.class.getName());
                 InternalIndexerService indexer = getTransactionalMe();
                 indexer.saveIndexFiles(mavenIndexManager);
+            } catch (TaskInterruptedException e) {
+                log.warn(e.getMessage());
             } catch (Exception e) {
                 log.error("Saving index files failed.", e);
             }

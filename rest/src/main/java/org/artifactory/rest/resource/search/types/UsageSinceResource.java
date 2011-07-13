@@ -22,7 +22,7 @@ package org.artifactory.rest.resource.search.types;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.LastDownloadRestResult;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
@@ -83,7 +83,7 @@ public class UsageSinceResource {
 
         GenericMetadataSearchControls<StatsInfo> searchControls = buildSearchControls(lastDownloaded, reposToSearch);
 
-        SearchResults<GenericMetadataSearchResult<StatsInfo>> metadataSearchResults;
+        ItemSearchResults<GenericMetadataSearchResult<StatsInfo>> metadataSearchResults;
         try {
             metadataSearchResults = searchService.searchGenericMetadata(searchControls);
         } catch (RepositoryRuntimeException e) {

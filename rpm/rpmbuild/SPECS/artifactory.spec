@@ -162,6 +162,11 @@ if [ "$1" = "2" ]; then
 
   echo "Removing tomcat work directory"
   %__rm -rf %{tomcat_home}/work || $?
+
+  if [ -d %{tomcat_home}/webapps/%{name} ]; then
+    echo "Removing Artifactory's exploded WAR directory"
+    %__rm -rf %{tomcat_home}/webapps/%{name}
+  fi
 fi
 exit 0
 

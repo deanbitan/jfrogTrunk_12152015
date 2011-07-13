@@ -30,7 +30,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.ResourceModel;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -149,13 +149,13 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
 
     @SuppressWarnings({"unchecked"})
     @Override
-    protected SearchResults<T> searchArtifacts() {
+    protected ItemSearchResults<T> searchArtifacts() {
         return search(metaDataSearchCheckBox.isChecked(), searchControls);
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
-    protected SearchResults<T> performLimitlessArtifactSearch() {
+    protected ItemSearchResults<T> performLimitlessArtifactSearch() {
         MetadataSearchControls controlsCopy = new MetadataSearchControls<MetadataSearchResult>(searchControls);
         controlsCopy.setLimitSearchResults(false);
         return search(metaDataSearchCheckBox.isChecked(), controlsCopy);
@@ -208,7 +208,7 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
      * @param controls       Search controls
      * @return List of search results
      */
-    private SearchResults search(boolean metaDataSearch, MetadataSearchControls controls) {
+    private ItemSearchResults search(boolean metaDataSearch, MetadataSearchControls controls) {
         if (metaDataSearch) {
             return searchService.searchMetadata(controls);
         }

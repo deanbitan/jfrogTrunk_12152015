@@ -18,6 +18,7 @@
 
 package org.artifactory.repo;
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.module.ModuleInfo;
@@ -88,7 +89,7 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    public BasicStatusHolder assertValidPath(String path) {
+    public BasicStatusHolder assertValidPath(String path, boolean downloadRequest) {
         BasicStatusHolder statusHolder = new BasicStatusHolder();
         statusHolder.setActivateLogging(log.isDebugEnabled());
         if (isBlackedOut()) {
@@ -98,7 +99,9 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
             SnapshotPolicyException exception = new SnapshotPolicyException(this.getDescriptor(), getRepoPath(path));
             statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
         } else if (!accepts(path)) {
-            IncludeExcludeException exception = new IncludeExcludeException(this.getDescriptor(), getRepoPath(path));
+            IncludeExcludeException exception = new IncludeExcludeException(
+                    downloadRequest ? HttpStatus.SC_NOT_FOUND : HttpStatus.SC_CONFLICT, this.getDescriptor(),
+                    getRepoPath(path));
             statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
         }
         return statusHolder;

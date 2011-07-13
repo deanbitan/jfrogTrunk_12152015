@@ -18,9 +18,13 @@
 
 package org.artifactory.webapp.wicket.page.search.actionable;
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.action.DownloadAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
@@ -46,10 +50,31 @@ public class ActionableArchiveSearchResult extends ActionableSearchResult<Archiv
      */
     @Override
     protected void addActions(Set<ItemAction> actions) {
-        actions.add(new DownloadAction());
+        FilteredResourcesWebAddon filteredAddon = ContextHelper.get().beanForType(
+                AddonsManager.class).addonByType(FilteredResourcesWebAddon.class);
+        if (!filteredAddon.isDefault()) {
+            actions.add(new DownloadAction());
+        }
         actions.add(new ShowInTreeAction());
         viewSourceAction = new ViewSourceAction();
         actions.add(viewSourceAction);
+    }
+
+    /**
+     * @return The repo path to the resource inside the archive file
+     */
+    @Override
+    public RepoPath getRepoPath() {
+        //TODO: [by YS] implement to support navigation to zip resource
+        //return new RepoPathImpl(super.getRepoPath(), RepoPath.ARCHIVE_SEP + getSearchResult().getEntryPath());
+        return super.getRepoPath();
+    }
+
+    /**
+     * @return The repo path of the archive containing this entry
+     */
+    public RepoPath getArchiveRepoPath() {
+        return super.getRepoPath();
     }
 
     /**

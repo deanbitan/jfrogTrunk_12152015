@@ -79,7 +79,7 @@ class SecurityGeneralConfigPanel extends TitledActionPanel {
 
     private void addHideUnauthorizedResourcesField(Form form) {
         StyledCheckbox anonAccess = new StyledCheckbox("hideUnauthorizedResources");
-        anonAccess.setLabel(Model.of("Hide Existence of Unauthorized Resource"));
+        anonAccess.setLabel(Model.of("Hide Existence of Unauthorized Resources"));
         form.add(anonAccess);
         form.add(new SchemaHelpBubble("hideUnauthorizedResources.help"));
     }

@@ -21,7 +21,7 @@ package org.artifactory.rest.resource.search.types;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.InfoRestSearchResult;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
@@ -93,7 +93,7 @@ public class PropertySearchResource {
             }
         }
 
-        SearchResults<PropertySearchResult> searchResults;
+        ItemSearchResults<PropertySearchResult> searchResults;
         try {
             searchResults = searchService.searchProperty(searchControls);
         } catch (RepositoryRuntimeException e) {

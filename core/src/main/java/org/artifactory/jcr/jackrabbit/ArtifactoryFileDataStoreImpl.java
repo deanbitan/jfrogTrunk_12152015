@@ -75,6 +75,12 @@ public class ArtifactoryFileDataStoreImpl extends ArtifactoryBaseDataStore imple
         return file.exists() && file.length() == record.length;
     }
 
+    /**
+     * Returns the location this datastore stores the actual binaries (as opposed to db datastore that saves them in
+     * the db). This is normally same as {@link org.artifactory.jcr.jackrabbit.ArtifactoryFileDataStoreImpl#fileStoreDir}.
+     *
+     * @return The location this datastore stores the actual binaries.
+     */
     @Override
     public File getBinariesFolder() {
         return binariesFolder;

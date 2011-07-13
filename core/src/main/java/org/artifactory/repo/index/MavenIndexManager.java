@@ -35,6 +35,8 @@ import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.resource.ResourceStreamHandle;
+import org.artifactory.schedule.TaskInterruptedException;
+import org.artifactory.schedule.TaskUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -57,7 +59,7 @@ public class MavenIndexManager {
     IndexStatus indexStatus = IndexStatus.NOT_CREATED;
 
     private enum IndexStatus {
-        NOT_CREATED, NEEDS_SAVING, SKIP
+        NOT_CREATED, NEEDS_SAVING, SKIP, ABORTED
     }
 
     MavenIndexManager(RealRepo indexedRepo) {
@@ -116,6 +118,7 @@ public class MavenIndexManager {
 
                 //If we receive a non-modified response (with a null handle) - don't re-download the index
                 log.debug("Fetching remote index files for {}", indexedRepo);
+                FileOutputStream fos = null;
                 try {
                     remoteIndexHandle = remoteRepo.conditionalRetrieveResource(MavenNaming.NEXUS_INDEX_GZ_PATH);
                     if (remoteIndexHandle instanceof NullResourceStreamHandle) {
@@ -126,8 +129,10 @@ public class MavenIndexManager {
                     }
                     //Save into temp files
                     tempIndex = File.createTempFile(MavenNaming.NEXUS_INDEX_GZ, null);
-                    IOUtils.copy(remoteIndexHandle.getInputStream(), new FileOutputStream(tempIndex));
+                    fos = new FileOutputStream(tempIndex);
+                    TaskUtils.copyLarge(remoteIndexHandle.getInputStream(), fos);
                 } finally {
+                    IOUtils.closeQuietly(fos);
                     /**
                      * Close the handle directly after reading stream and before we start to download the properties
                      * in case the target repo does not allow multiple simultaneous connections
@@ -137,11 +142,14 @@ public class MavenIndexManager {
                     }
                 }
 
+                fos = null;
                 try {
-                    remotePropertiesHandle = remoteRepo.downloadResource(MavenNaming.NEXUS_INDEX_PROPERTIES_PATH, null);
+                    remotePropertiesHandle = remoteRepo.downloadResource(MavenNaming.NEXUS_INDEX_PROPERTIES_PATH);
                     tempProperties = File.createTempFile(MavenNaming.NEXUS_INDEX_PROPERTIES, null);
-                    IOUtils.copy(remotePropertiesHandle.getInputStream(), new FileOutputStream(tempProperties));
+                    fos = new FileOutputStream(tempProperties);
+                    TaskUtils.copyLarge(remotePropertiesHandle.getInputStream(), fos);
                 } finally {
+                    IOUtils.closeQuietly(fos);
                     if (remotePropertiesHandle != null) {
                         remotePropertiesHandle.close();
                     }
@@ -159,9 +167,16 @@ public class MavenIndexManager {
                 FileUtils.deleteQuietly(tempProperties);
                 log.warn("Could not retrieve remote maven index '" + MavenNaming.NEXUS_INDEX_GZ +
                         "' for repo '" + indexedRepo + "': " + e.getMessage());
+                abort();
                 return false;
             }
         }
+    }
+
+    private void abort() {
+        indexHandle = null;
+        propertiesHandle = null;
+        indexStatus = IndexStatus.ABORTED;
     }
 
     void createLocalIndex(Date fireTime, boolean remoteIndexExists) {
@@ -186,7 +201,12 @@ public class MavenIndexManager {
             log.debug("Created index files for {}", indexedRepo);
         } catch (Exception e) {
             closeHandles();
-            throw new RuntimeException("Failed to index repository '" + indexedRepo + "'.", e);
+            abort();
+            String message = "Failed to index repository '" + indexedRepo + "': " + e.getMessage();
+            if (e instanceof TaskInterruptedException) {
+                throw new TaskInterruptedException(message, e);
+            }
+            throw new RuntimeException(message, e);
         }
     }
 
@@ -225,6 +245,8 @@ public class MavenIndexManager {
             log.debug("Saved index file for {}", indexStorageRepo);
             return true;
         } catch (Exception e) {
+            closeHandles();
+            abort();
             throw new RuntimeException("Failed to save index file for repo '" + indexStorageRepo + "'.", e);
         } finally {
             closeHandles();

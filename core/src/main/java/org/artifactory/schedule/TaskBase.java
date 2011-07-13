@@ -23,12 +23,10 @@ import org.artifactory.concurrent.LockingException;
 import org.artifactory.concurrent.State;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.springframework.util.ClassUtils;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -38,6 +36,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class TaskBase implements Task {
     private static final Logger log = LoggerFactory.getLogger(TaskBase.class);
+    public static final String TASK_TOKEN = "TASK_TOKEN";
+    public static final String TASK_AUTHENTICATION = "TASK_AUTHENTICATION";
 
     private TaskState state;
     //TODO: [by fsi] should use StateManager
@@ -45,9 +45,10 @@ public abstract class TaskBase implements Task {
     private final Condition stateChanged;
     private final Condition completed;
     private boolean executed;
-    //TODO: [by yl] This should be on callback type level (maybe configure all callbacks an an enum or general job
-    //definition service)
+
+    // Initialized from JobCommand annotation
     private boolean singleton;
+    private boolean manuallyActivated;
 
     /**
      * Prevents resuming a task until all stoppers/pausers have resumed it
@@ -66,22 +67,99 @@ public abstract class TaskBase implements Task {
         executed = false;
         resumeBarriersCount = 0;
         this.callbackType = callbackType;
-        this.token = UUID.randomUUID().toString();
+        this.token = callbackType.getName() + "#" + UUID.randomUUID().toString();
     }
 
     public State getInitialState() {
         return TaskState.VIRGIN;
     }
 
-    void schedule() {
+    public boolean waitingForProcess() {
+        return state == TaskState.PAUSING || state == TaskState.STOPPING;
+    }
+
+    public boolean isRunning() {
+        return state == TaskState.RUNNING || waitingForProcess();
+    }
+
+    public boolean processActive() {
+        return isRunning() || state == TaskState.PAUSED;
+    }
+
+    void schedule(boolean waitForRunning) {
         lockState();
         try {
-            guardedTransitionToState(TaskState.SCHEDULED, false, new Callable<Object>() {
-                public Object call() throws Exception {
-                    scheduleTask();
-                    return null;
+            scheduleTask();
+            guardedTransitionToState(TaskState.SCHEDULED, waitForRunning);
+        } finally {
+            unlockState();
+        }
+    }
+
+    void cancel(boolean wait) {
+        lockState();
+        try {
+            log.trace("Entering cancel with state {} on {}", state, this);
+            if (processActive() && !wait) {
+                throw new IllegalStateException("Cannot cancel immediately an active task " + this);
+            }
+
+            if (processActive()) {
+                log.trace("Waiting for active task: {} to finish.", this);
+                if (waitingForProcess()) {
+                    guardedWaitForNextStep();
                 }
-            });
+                if (processActive()) {
+                    guardedTransitionToState(TaskState.STOPPING, wait);
+                }
+            }
+            if (state == TaskState.CANCELED) {
+                log.info("Task {} already canceled.", this);
+            } else {
+                log.debug("Canceling task: {}.", this);
+                guardedSetState(TaskState.CANCELED);
+            }
+            cancelTask();
+        } finally {
+            unlockState();
+        }
+    }
+
+    void pause(boolean wait) {
+        lockState();
+        try {
+            log.trace("Entering pause with state {} on {}", state, this);
+            if (state == TaskState.VIRGIN) {
+                throw new IllegalStateException("Cannot stop a virgin task.");
+            } else if (state == TaskState.RUNNING) {
+                if (!wait) {
+                    throw new IllegalStateException("Cannot pause immediately a running task " + this);
+                }
+                resumeBarriersCount++;
+                log.trace("resumeBarriersCount++ to {} after pause while running on {}", resumeBarriersCount, this);
+                guardedTransitionToState(TaskState.PAUSING, wait);
+            } else if (state == TaskState.STOPPING) {
+                // Already stopping, waiting for stop
+                if (!wait) {
+                    throw new IllegalStateException("Cannot pause immediately a stopping task " + this);
+                }
+                resumeBarriersCount++;
+                log.trace("resumeBarriersCount++ to {} after pause while stopping on {}", resumeBarriersCount, this);
+                guardedWaitForNextStep();
+            } else if (state == TaskState.PAUSED || state == TaskState.PAUSING) {
+                // Already paused, just count the barrier
+                resumeBarriersCount++;
+                log.trace("resumeBarriersCount++ to {} after pause already paused on {}", resumeBarriersCount, this);
+            } else if (state == TaskState.CANCELED) {
+                // Task canceled, forget it => do nothing
+            } else {
+                // Not running, just count the barrier, and set to stop
+                resumeBarriersCount++;
+                log.trace("resumeBarriersCount++ to {} after pause on {}", resumeBarriersCount, this);
+                if (state != TaskState.STOPPED) {
+                    guardedSetState(TaskState.STOPPED);
+                }
+            }
         } finally {
             unlockState();
         }
@@ -92,61 +170,34 @@ public abstract class TaskBase implements Task {
      *
      * @param wait
      */
-    void stop(boolean pause, boolean cancel, boolean wait, long pauseTime) {
-        if (pause & cancel) {
-            throw new IllegalArgumentException("Please decide whether you wish to pause or to cancel!");
-        }
+    void stop(boolean wait) {
         lockState();
         try {
             log.trace("Entering stop with state {} on {}", state, this);
             if (state == TaskState.VIRGIN) {
                 throw new IllegalStateException("Cannot stop a virgin task.");
-            } else if (state == TaskState.SCHEDULED) {
-                //Not in execution loop
-                if (cancel) {
-                    guardedSetState(TaskState.CANCELED);
-                    cancelTask();
-                } else {
-                    //For both stop and pause
-                    resumeBarriersCount++;
-                    log.trace("resumeBarriersCount++ to {} after pause/stop on {}", resumeBarriersCount, this);
-                    guardedSetState(TaskState.STOPPED);
+            } else if (state == TaskState.RUNNING || state == TaskState.PAUSING) {
+                if (!wait) {
+                    throw new IllegalStateException("Cannot stop immediately a running task " + this);
                 }
-            } else if (state == TaskState.RUNNING) {
-                if (pause) {
-                    resumeBarriersCount++;
-                    log.trace("resumeBarriersCount++ to {} after pause on {}", resumeBarriersCount, this);
-                    guardedTransitionToState(TaskState.PAUSING, wait, null);
-                    if (pauseTime > 0) {
-                        try {
-                            Thread.sleep(pauseTime);
-                        } catch (InterruptedException e) {
-                            log.trace("Timed pause interrupted {}", this);
-                        } finally {
-                            resume();
-                        }
-                    }
-                } else {
-                    Callable<Object> callback = null;
-                    if (cancel) {
-                        log.trace("Canceling running task: {}.", this);
-                        callback = new Callable<Object>() {
-                            public Object call() throws Exception {
-                                cancelTask();
-                                return null;
-                            }
-                        };
-                    } else {
-                        //Stop
-                        resumeBarriersCount++;
-                        log.trace("resumeBarriersCount++ to {} after stop on {}", resumeBarriersCount, this);
-                    }
-                    guardedTransitionToState(TaskState.STOPPING, wait, callback);
-                }
-            } else if (state == TaskState.STOPPED || state == TaskState.PAUSED) {
-                //Stop/pause
+                //Stop
                 resumeBarriersCount++;
-                log.trace("resumeBarriersCount++ to {} after re-stop/re-pause on {}", resumeBarriersCount, this);
+                log.trace("resumeBarriersCount++ to {} after stop on {}", resumeBarriersCount, this);
+                guardedTransitionToState(TaskState.STOPPING, wait);
+            } else if (state == TaskState.CANCELED) {
+                // Task canceled, forget it => do nothing
+            } else if (state == TaskState.STOPPED || state == TaskState.STOPPING) {
+                // Already stopped, just count the barrier
+                resumeBarriersCount++;
+                log.trace("resumeBarriersCount++ to {} after stop already stopped on {}", resumeBarriersCount, this);
+                if (state == TaskState.STOPPING) {
+                    guardedWaitForNextStep();
+                }
+            } else {
+                //For both stop and pause
+                resumeBarriersCount++;
+                log.trace("resumeBarriersCount++ to {} after stop on {}", resumeBarriersCount, this);
+                guardedSetState(TaskState.STOPPED);
             }
         } finally {
             unlockState();
@@ -216,8 +267,21 @@ public abstract class TaskBase implements Task {
             if (state == TaskState.PAUSING) {
                 guardedSetState(TaskState.PAUSED);
             }
-            while (state == TaskState.PAUSED) {
-                guardedWaitForNextStep();
+            try {
+                log.trace("Entering wait for out of paused on: {}", this);
+                int tries = ConstantValues.taskCompletionLockTimeoutRetries.getInt();
+                long timeout = ConstantValues.locksTimeoutSecs.getLong();
+                while (state == TaskState.PAUSED) {
+                    stateChanged.await(timeout, TimeUnit.SECONDS);
+                    tries--;
+                    if (tries <= 0) {
+                        throw new LockingException("Task " + this + " paused for more than " +
+                                ConstantValues.taskCompletionLockTimeoutRetries.getInt() + " times.");
+                    }
+                    log.trace("One wait for out of paused from on {}", this);
+                }
+            } catch (InterruptedException e) {
+                catchInterrupt(TaskState.PAUSED);
             }
             return state != TaskState.RUNNING;
         } finally {
@@ -248,12 +312,27 @@ public abstract class TaskBase implements Task {
         this.singleton = singleton;
     }
 
+    public boolean isManuallyActivated() {
+        return manuallyActivated;
+    }
+
+    public void setManuallyActivated(boolean manuallyActivated) {
+        this.manuallyActivated = manuallyActivated;
+    }
+
+    public boolean wasCompleted() {
+        if (!isSingleExecution()) {
+            throw new UnsupportedOperationException("Does not support waitForCompletion on cyclic tasks.");
+        }
+        return executed && (state == TaskState.STOPPED || state == TaskState.CANCELED);
+    }
+
     /**
      * Wait for the task to stop running
      *
      * @return
      */
-    boolean waitForCompletion() {
+    public boolean waitForCompletion() {
         if (!isSingleExecution()) {
             throw new UnsupportedOperationException("Does not support waitForCompletion on cyclic tasks.");
         }
@@ -263,7 +342,16 @@ public abstract class TaskBase implements Task {
             try {
                 //Wait forever (tries * lock timeout) until it finished the current execution
                 int tries = ConstantValues.taskCompletionLockTimeoutRetries.getInt();
-                while (!(completed = executed && (state == TaskState.STOPPED || state == TaskState.CANCELED))) {
+                while (true) {
+                    // If already executed (passed to running state) and now stooped or canceled
+                    //   => It means already completed
+                    if (executed) {
+                        if (state == TaskState.STOPPED || state == TaskState.CANCELED) {
+                            completed = true;
+                            break;
+                        }
+                    }
+                    // Waiting on the completed condition
                     boolean success = this.completed.await(ConstantValues.locksTimeoutSecs.getLong(), TimeUnit.SECONDS);
                     if (success) {
                         completed = true;
@@ -322,18 +410,10 @@ public abstract class TaskBase implements Task {
         }
     }
 
-    private <V> V guardedTransitionToState(TaskState newState, boolean waitForNextStep, Callable<V> callable) {
+    private <V> V guardedTransitionToState(TaskState newState, boolean waitForNextStep) {
         V result = null;
         if (state == newState) {
             return result;
-        }
-        if (callable != null) {
-            try {
-                result = callable.call();
-            } catch (Exception e) {
-                throw new RuntimeException(
-                        "Failed to switch state from '" + this.state + "' to '" + newState + "'.", e);
-            }
         }
         guardedSetState(newState);
         if (waitForNextStep) {
@@ -401,7 +481,7 @@ public abstract class TaskBase implements Task {
                     stateSync.tryLock(getStateLockTimeOut(), TimeUnit.SECONDS);
             if (!success) {
                 throw new LockingException(
-                        "Could not acquire state lock in " + getStateLockTimeOut());
+                        "Could not acquire state lock in " + getStateLockTimeOut() + " secs");
             }
         } catch (InterruptedException e) {
             log.warn("Interrupted while trying to lock {}.", this);
@@ -440,8 +520,10 @@ public abstract class TaskBase implements Task {
 
     @Override
     public String toString() {
-        return ClassUtils.getShortName(getType()) + "#" + token;
+        return token;
     }
+
+    public abstract void addAttribute(String key, Object value);
 
     public enum TaskState implements State {
         VIRGIN,
@@ -491,6 +573,7 @@ public abstract class TaskBase implements Task {
                 case PAUSED:
                     states.add(TaskState.RUNNING);
                     states.add(TaskState.STOPPING);
+                    states.add(TaskState.STOPPED);
                     states.add(TaskState.CANCELED);
                     return states;
                 case STOPPING:

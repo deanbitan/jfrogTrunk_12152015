@@ -19,6 +19,8 @@
 package org.artifactory.traffic;
 
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
@@ -30,6 +32,7 @@ import org.slf4j.Logger;
 /**
  * @author yoavl
  */
+@JobCommand(singleton = true, schedulerUser = TaskUser.SYSTEM)
 public class TrafficEntriesCollector extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(TrafficEntriesCollector.class);
 

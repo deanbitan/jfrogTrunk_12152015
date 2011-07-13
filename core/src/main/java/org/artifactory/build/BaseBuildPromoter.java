@@ -23,7 +23,6 @@ import com.google.common.collect.Sets;
 import org.apache.commons.collections.CollectionUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.PropertiesAddon;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ArtifactoryContext;
@@ -68,8 +67,8 @@ public class BaseBuildPromoter {
         repositoryService = context.getRepositoryService();
     }
 
-    protected Build getBuild(BasicBuildInfo basicBuildInfo) {
-        return buildService.getBuild(basicBuildInfo.getName(), basicBuildInfo.getNumber(), basicBuildInfo.getStarted());
+    protected Build getBuild(BuildRun buildRun) {
+        return buildService.getBuild(buildRun.getName(), buildRun.getNumber(), buildRun.getStarted());
     }
 
     protected void assertRepoExists(String targetRepoKey) {

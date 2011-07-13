@@ -23,7 +23,8 @@ import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
-import org.artifactory.descriptor.replication.ReplicationDescriptor;
+import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
+import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -215,11 +216,19 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
 
     void setRepoLayouts(List<RepoLayout> repoLayouts);
 
-    void addReplication(ReplicationDescriptor replicationDescriptor);
+    boolean isRemoteReplicationExists(RemoteReplicationDescriptor descriptor);
 
-    void updateReplication(ReplicationDescriptor replicationDescriptor);
+    boolean isLocalReplicationExists(LocalReplicationDescriptor descriptor);
 
-    void removeReplication(ReplicationDescriptor replicationDescriptor);
+    void addRemoteReplication(RemoteReplicationDescriptor replicationDescriptor);
 
-    void setReplications(List<ReplicationDescriptor> replicationDescriptors);
+    void addLocalReplication(LocalReplicationDescriptor replicationDescriptor);
+
+    void removeRemoteReplication(RemoteReplicationDescriptor replicationDescriptor);
+
+    void removeLocalReplication(LocalReplicationDescriptor replicationDescriptor);
+
+    void setRemoteReplications(List<RemoteReplicationDescriptor> replicationDescriptors);
+
+    void setLocalReplications(List<LocalReplicationDescriptor> localReplications);
 }

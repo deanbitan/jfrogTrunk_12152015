@@ -151,6 +151,22 @@ public final class RepoPathImpl implements RepoPath {
     }
 
     /**
+     * Builds a repository path to a resource inside an archive file. <p/> The format is
+     * <code>archiveRepoPath!/resourcePath</code>
+     *
+     * @param archiveRepoPath Repo path to an archive file (zip, jar etc.)
+     * @param resourcePath    Path to a resource (file or folder) inside the archive
+     * @return Repo path to a resource inside an archive file
+     */
+    public static RepoPath archiveResourceRepoPath(RepoPath archiveRepoPath, String resourcePath) {
+        if (!resourcePath.startsWith("/")) {
+            resourcePath = "/" + resourcePath;
+        }
+        return new RepoPathImpl(archiveRepoPath.getRepoKey(),
+                archiveRepoPath.getPath() + RepoPath.ARCHIVE_SEP + resourcePath);
+    }
+
+    /**
      * Construct a RepoPath from a path containing both repo key and the relative path in the repo
      *
      * @param rpp - {repoKey}/{itemRelativePath}

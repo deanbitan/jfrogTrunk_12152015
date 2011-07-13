@@ -49,7 +49,8 @@ public class ViewableTabPanel extends Panel {
         String sourceFile = null;
         Syntax syntax = Syntax.plain;
         try {
-            ArchiveFileContent result = repoService.getArchiveFileContent(repoItem.getRepoPath(), repoItem.getPath());
+            ArchiveFileContent result = repoService.getArchiveFileContent(
+                    repoItem.getArchiveRepoPath(), repoItem.getPath());
             String failureReason = result.getFailureReason();
             if (failureReason == null) {
                 // content successfully retrieved

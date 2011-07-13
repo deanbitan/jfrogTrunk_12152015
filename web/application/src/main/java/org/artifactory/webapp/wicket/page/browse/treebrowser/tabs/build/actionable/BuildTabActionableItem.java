@@ -20,10 +20,10 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actiona
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.ActionableItemBase;
@@ -45,34 +45,34 @@ public class BuildTabActionableItem extends ActionableItemBase {
     private static final Logger log = LoggerFactory.getLogger(BuildTabActionableItem.class);
 
     private String moduleId;
-    private BasicBuildInfo basicBuildInfo;
+    private BuildRun buildRun;
     private ViewBuildJsonAction viewJsonAction;
 
     /**
      * Main constructor
      *
      * @param textContentViewer Modal handler for displaying the build XML
-     * @param basicBuildInfo    Basic build info object to handle
+     * @param buildRun          Basic build info object to handle
      * @param moduleId          ID of module association to specify
      */
-    public BuildTabActionableItem(ModalHandler textContentViewer, BasicBuildInfo basicBuildInfo, String moduleId) {
-        this.basicBuildInfo = basicBuildInfo;
+    public BuildTabActionableItem(ModalHandler textContentViewer, BuildRun buildRun, String moduleId) {
+        this.buildRun = buildRun;
         this.moduleId = moduleId;
 
-        getActions().add(new GoToBuildAction(basicBuildInfo, moduleId));
-        viewJsonAction = new ViewBuildJsonAction(textContentViewer, basicBuildInfo);
+        getActions().add(new GoToBuildAction(buildRun, moduleId));
+        viewJsonAction = new ViewBuildJsonAction(textContentViewer, buildRun);
         getActions().add(viewJsonAction);
 
         try {
             BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
-            String ciServerUrl = buildService.getBuildCiServerUrl(basicBuildInfo);
+            String ciServerUrl = buildService.getBuildCiServerUrl(buildRun);
             if (StringUtils.isNotBlank(ciServerUrl)) {
                 getActions().add(new ShowInCiServerAction(ciServerUrl));
             }
         } catch (IOException e) {
-            String buildName = basicBuildInfo.getName();
-            String buildNumber = basicBuildInfo.getNumber();
-            String buildStarted = basicBuildInfo.getStarted();
+            String buildName = buildRun.getName();
+            String buildNumber = buildRun.getNumber();
+            String buildStarted = buildRun.getStarted();
             String message = String.format("Unable to extract CI server URL if build '%s' #%s that started at %s",
                     buildName, buildNumber, buildStarted);
             log.error(message + ": {}", e.getMessage());
@@ -85,7 +85,7 @@ public class BuildTabActionableItem extends ActionableItemBase {
     }
 
     public String getDisplayName() {
-        return basicBuildInfo.getName();
+        return buildRun.getName();
     }
 
     public String getCssClass() {

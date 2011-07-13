@@ -193,11 +193,7 @@ public class RepoFilter extends DelayedFilterBase {
             // see RTFACT-2738 and RTFACT-3510
             if (!request.getServletPath().endsWith("/")) {
                 log.debug("Redirecting a directory browsing or head request.");
-                //Dispatch a new directory browsing request
-                RepoPath repoPath = e.getRepoPath();
-                response.sendRedirect(HttpUtils.getServletContextUrl(request) +
-                        "/" + repoPath.getRepoKey() + "/" + repoPath.getPath() +
-                        (repoPath.getPath().length() > 0 ? "/" : ""));
+                response.sendRedirect(request.getRequestURL().append("/").toString());
             } else if ("head".equals(method)) {
                 log.debug("Serving a directory head request.");
             } else {

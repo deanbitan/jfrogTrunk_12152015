@@ -21,11 +21,9 @@ package org.artifactory.message;
 import com.google.common.collect.MapMaker;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.message.ArtifactoryUpdatesService;
@@ -33,11 +31,14 @@ import org.artifactory.api.message.Message;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.TaskBase;
 import org.artifactory.schedule.TaskService;
+import org.artifactory.schedule.TaskUser;
+import org.artifactory.schedule.TaskUtils;
 import org.artifactory.schedule.quartz.QuartzCommand;
-import org.artifactory.schedule.quartz.QuartzTask;
 import org.artifactory.spring.InternalContextHelper;
-import org.artifactory.util.HttpClientUtils;
+import org.artifactory.util.HttpClientConfigurator;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
@@ -47,8 +48,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import static org.apache.commons.httpclient.params.HttpMethodParams.RETRY_HANDLER;
 
 /**
  * @author Yoav Aharoni
@@ -127,27 +126,24 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
     }
 
     private HttpClient createHTTPClient() {
-        HttpClient client = new HttpClient();
-        HttpClientParams clientParams = client.getParams();
-        clientParams.setSoTimeout(5000);
-        clientParams.setConnectionManagerTimeout(2000);
-        clientParams.setParameter(RETRY_HANDLER, new DefaultHttpMethodRetryHandler(0, false));
-
-        // proxy settings
         ProxyDescriptor proxy = InternalContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
-        HttpClientUtils.configureProxy(client, proxy);
-        return client;
+
+        return new HttpClientConfigurator()
+                .soTimeout(5000)
+                .connectionTimeout(2000)
+                .retry(0, false)
+                .proxy(proxy)
+                .getClient();
     }
 
     private synchronized void fetchMessageAsync() {
-        if (ConstantValues.versionQueryEnabled.getBoolean() && (getCachedMessage() == null) &&
-                !taskService.hasTaskOfType(FetchArtifactoryUpdatesJob.class)) {
-            QuartzTask fetchCommand = new QuartzTask(FetchArtifactoryUpdatesJob.class, 0);
-            fetchCommand.setSingleton(true);
-            taskService.startTask(fetchCommand);
+        if (ConstantValues.versionQueryEnabled.getBoolean() && (getCachedMessage() == null)) {
+            TaskBase fetchCommand = TaskUtils.createManualTask(FetchArtifactoryUpdatesJob.class, 0L);
+            taskService.startTask(fetchCommand, false);
         }
     }
 
+    @JobCommand( singleton = true, manualUser = TaskUser.ANONYMOUS )
     public static class FetchArtifactoryUpdatesJob extends QuartzCommand {
         @Override
         protected void onExecute(JobExecutionContext callbackContext) throws JobExecutionException {

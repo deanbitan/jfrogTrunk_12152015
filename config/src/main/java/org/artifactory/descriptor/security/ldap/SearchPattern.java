@@ -40,6 +40,17 @@ public class SearchPattern implements Descriptor {
     private String managerDn;
     private String managerPassword;
 
+    public SearchPattern() {
+    }
+
+    public SearchPattern(SearchPattern searchPattern) {
+        this.searchFilter = searchPattern.searchFilter;
+        this.searchBase = searchPattern.searchBase;
+        this.searchSubTree = searchPattern.searchSubTree;
+        this.managerDn = searchPattern.managerDn;
+        this.managerPassword = searchPattern.managerPassword;
+    }
+
     public String getSearchFilter() {
         return searchFilter;
     }
@@ -78,5 +89,13 @@ public class SearchPattern implements Descriptor {
 
     public void setManagerPassword(String managerPassword) {
         this.managerPassword = managerPassword;
+    }
+
+    public void duplicate(SearchPattern searchPattern) {
+        this.searchFilter = searchPattern.searchFilter;
+        this.searchBase = searchPattern.searchBase;
+        this.searchSubTree = searchPattern.searchSubTree;
+        this.managerDn = searchPattern.managerDn;
+        this.managerPassword = searchPattern.managerPassword;
     }
 }

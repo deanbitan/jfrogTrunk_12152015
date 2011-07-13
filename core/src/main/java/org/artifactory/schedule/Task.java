@@ -31,4 +31,8 @@ public interface Task extends StateAware {
     Class getType();
 
     String getToken();
+
+    boolean isRunning();
+
+    Object getAttribute(String key);
 }

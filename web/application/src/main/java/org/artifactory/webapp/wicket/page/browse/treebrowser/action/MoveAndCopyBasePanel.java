@@ -37,6 +37,7 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.fs.FileInfo;
@@ -44,6 +45,7 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -83,6 +85,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         add(form);
 
         List<LocalRepoDescriptor> localRepos = getDeployableLocalReposKeys();
+        Collections.sort(localRepos, new LocalRepoAlphaComparator());
         ChoiceRenderer<LocalRepoDescriptor> choiceRenderer = new ChoiceRenderer<LocalRepoDescriptor>() {
             @Override
             public Object getDisplayValue(LocalRepoDescriptor selectedTarget) {

@@ -26,11 +26,11 @@ import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
+import org.artifactory.api.search.ItemSearchResult;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchControls;
 import org.artifactory.api.search.SearchControlsBase;
-import org.artifactory.api.search.SearchResult;
-import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.jcr.JcrPath;
@@ -44,6 +44,7 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.schedule.TaskInterruptedException;
 import org.artifactory.util.ExceptionUtils;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -65,7 +66,7 @@ import java.util.List;
 /**
  * @author yoavl
  */
-public abstract class SearcherBase<C extends SearchControls, R extends SearchResult> implements Searcher<C, R> {
+public abstract class SearcherBase<C extends SearchControls, R extends ItemSearchResult> implements Searcher<C, R> {
     private static final Logger log = LoggerFactory.getLogger(SearcherBase.class);
     protected static final String FORWARD_SLASH = "/";
 
@@ -83,11 +84,13 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
         authService = context.beanForType(AuthorizationService.class);
     }
 
-    public final SearchResults<R> search(C controls) {
+    public final ItemSearchResults<R> search(C controls) {
         long start = System.currentTimeMillis();
-        SearchResults<R> results;
+        ItemSearchResults<R> results;
         try {
             results = doSearch(controls);
+        } catch (TaskInterruptedException e) {
+            throw e;
         } catch (Exception e) {
             //Handle bad queries
             Throwable invalidQueryException = ExceptionUtils.getCauseOfTypes(e, InvalidQueryException.class);
@@ -131,7 +134,7 @@ public abstract class SearcherBase<C extends SearchControls, R extends SearchRes
         }
     }
 
-    public abstract SearchResults<R> doSearch(C controls) throws RepositoryException;
+    public abstract ItemSearchResults<R> doSearch(C controls) throws RepositoryException;
 
     public JcrService getJcrService() {
         return jcrService;

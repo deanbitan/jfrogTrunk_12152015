@@ -18,6 +18,8 @@
 
 package org.artifactory.backup;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -37,25 +39,27 @@ import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.schedule.BaseTaskServiceDescriptorHandler;
+import org.artifactory.schedule.Task;
+import org.artifactory.schedule.TaskBase;
 import org.artifactory.schedule.TaskService;
-import org.artifactory.schedule.quartz.QuartzTask;
+import org.artifactory.schedule.TaskUtils;
 import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.EmailException;
 import org.artifactory.version.CompoundVersionDetails;
-import org.quartz.CronExpression;
-import org.quartz.JobDetail;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.quartz.CronTriggerBean;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -72,11 +76,6 @@ import java.util.ResourceBundle;
 public class BackupServiceImpl implements InternalBackupService {
     private static final Logger log = LoggerFactory.getLogger(BackupServiceImpl.class);
 
-    private static final String BACKUP_TRIGGER_NAME = "backupTrigger";
-
-    @Autowired
-    private TaskService taskService;
-
     @Autowired
     private CentralConfigService centralConfig;
 
@@ -90,77 +89,95 @@ public class BackupServiceImpl implements InternalBackupService {
     private UserGroupService userGroupService;
 
     public void init() {
-        List<BackupDescriptor> backupDescriptors = centralConfig.getDescriptor().getBackups();
-        if (backupDescriptors.isEmpty()) {
-            log.info("No backups configured. Backup is disabled.");
-            return;
-        }
-        for (int i = 0; i < backupDescriptors.size(); i++) {
-            BackupDescriptor backupDescriptor = null;
-            try {
-                backupDescriptor = backupDescriptors.get(i);
-                if (backupDescriptor.isEnabled()) {
-                    activateBackup(backupDescriptor, i);
-                }
-            } catch (Exception e) {
-                log.warn("activation of backup number " + i + ":" + backupDescriptor + " failed:" +
-                        e.getMessage(), e);
-            }
-        }
+        reload(null);
     }
 
-    public void reload(CentralConfigDescriptor oldDescriptor) {
-        unschedule();
-        init();
+    public void reload(@Nullable CentralConfigDescriptor oldDescriptor) {
+        List<BackupDescriptor> backupDescriptors = centralConfig.getDescriptor().getBackups();
+        BackupDescriptorHandler backupDescriptorHandler = new BackupDescriptorHandler(backupDescriptors,
+                (oldDescriptor != null) ? oldDescriptor.getBackups() : null);
+        backupDescriptorHandler.reschedule();
+    }
+
+    static class BackupDescriptorHandler extends BaseTaskServiceDescriptorHandler<BackupDescriptor> {
+        final List<BackupDescriptor> newBackupDescriptors;
+        final List<BackupDescriptor> oldBackupDescriptors;
+
+        public String jobName() {
+            return "Backup";
+        }
+
+        BackupDescriptorHandler(List<BackupDescriptor> newBackupDescriptors,
+                List<BackupDescriptor> oldBackupDescriptors) {
+            this.newBackupDescriptors = newBackupDescriptors;
+            if (oldBackupDescriptors != null) {
+                this.oldBackupDescriptors = oldBackupDescriptors;
+            } else {
+                this.oldBackupDescriptors = Lists.newArrayList();
+            }
+        }
+
+        public List<BackupDescriptor> getNewDescriptors() {
+            return this.newBackupDescriptors;
+        }
+
+        public List<BackupDescriptor> getOldDescriptors() {
+            return this.oldBackupDescriptors;
+        }
+
+        public Predicate<Task> getAllPredicate() {
+            return new Predicate<Task>() {
+                public boolean apply(@Nullable Task input) {
+                    return BackupJob.class.isAssignableFrom(input.getType());
+                }
+            };
+        }
+
+        public Predicate<Task> getPredicate(@Nonnull final BackupDescriptor descriptor) {
+            return new Predicate<Task>() {
+                public boolean apply(@Nullable Task input) {
+                    return BackupJob.class.isAssignableFrom(input.getType()) &&
+                            descriptor.getKey().equals(input.getAttribute(BackupJob.BAKUP_KEY));
+                }
+            };
+        }
+
+        public void activate(BackupDescriptor descriptor) {
+            //Schedule the cron'd backup
+            String key = descriptor.getKey();
+            String cronExp = descriptor.getCronExp();
+            if (descriptor.isEnabled() && cronExp != null) {
+                try {
+                    TaskBase task = TaskUtils.createCronTask(BackupJob.class, cronExp);
+                    task.addAttribute(BackupJob.BAKUP_KEY, key);
+                    InternalContextHelper.get().getBean(TaskService.class).startTask(task, false);
+                    if (log.isInfoEnabled()) {
+                        log.info("Backup " + key + " activated with cron expression '" + cronExp + "'.");
+                    }
+                } catch (Exception e) {
+                    log.warn("Activation of backup " + key + ":" + descriptor + " failed:" +
+                            e.getMessage(), e);
+                }
+            } else {
+                log.warn("No backup cron expression is configured. Backup " + key + " will be disabled.");
+            }
+        }
+
+        public BackupDescriptor findOldFromNew(@Nonnull BackupDescriptor newDescriptor) {
+            for (BackupDescriptor oldBackupDescriptor : oldBackupDescriptors) {
+                if (oldBackupDescriptor.getKey().equals(newDescriptor.getKey())) {
+                    return oldBackupDescriptor;
+                }
+            }
+            return null;
+        }
     }
 
     public void destroy() {
-        unschedule();
+        new BackupDescriptorHandler(null, null).unschedule();
     }
 
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
-    }
-
-    private void unschedule() {
-        taskService.cancelTasks(BackupJob.class, true);
-    }
-
-    private void activateBackup(BackupDescriptor descriptor, int index) {
-        String cronExp = descriptor.getCronExp();
-        try {
-            // Check cron validity
-            new CronExpression(cronExp);
-        } catch (ParseException e) {
-            log.error(
-                    "Bad backup cron expression '" + cronExp + "' backup number " + index + " will be ignored (" +
-                            e.getMessage() + ").");
-            return;
-        }
-        JobDetail jobDetail = new JobDetail("backupJob#" + index, null, BackupJob.class);
-        jobDetail.getJobDataMap().put("index", index);
-        //Schedule the croned backup
-        if (cronExp != null) {
-            CronTriggerBean trigger = new CronTriggerBean();
-            trigger.setName(BACKUP_TRIGGER_NAME + index);
-            trigger.setJobDetail(jobDetail);
-            try {
-                trigger.setCronExpression(cronExp);
-            } catch (ParseException e) {
-                throw new RuntimeException("Invalid cron exp '" + cronExp + "'.", e);
-            }
-            try {
-                trigger.afterPropertiesSet();
-                QuartzTask task = new QuartzTask(trigger);
-                taskService.startTask(task);
-            } catch (Exception e) {
-                throw new RuntimeException("Error in scheduling the backup job.", e);
-            }
-            if (log.isInfoEnabled()) {
-                log.info("Backup activated with cron expression '" + cronExp + "'.");
-            }
-        } else {
-            log.warn("No backup cron expression is configured. Backup will be disabled.");
-        }
     }
 
     public void backupRepos(File backupDir, ExportSettings exportSettings) {
@@ -175,11 +192,11 @@ public class BackupServiceImpl implements InternalBackupService {
         repositoryService.exportTo(settings);
     }
 
-    public MultiStatusHolder backupSystem(InternalArtifactoryContext context, int backupIndex) {
+    public MultiStatusHolder backupSystem(InternalArtifactoryContext context, String backupKey) {
         MultiStatusHolder status = new MultiStatusHolder();
-        BackupDescriptor backup = getBackup(backupIndex);
-        if (backup == null) {
-            status.setError("Backup index: '" + backupIndex + "' was not found. Backup was not performed.", log);
+        BackupDescriptor backup = getBackup(backupKey);
+        if (backup == null || !backup.isEnabled()) {
+            status.setError("Backup: '" + backupKey + "' not found or disabled. Backup was not performed.", log);
             return status;
         }
         List<RealRepoDescriptor> excludeRepositories = backup.getExcludedRepositories();
@@ -204,8 +221,8 @@ public class BackupServiceImpl implements InternalBackupService {
         return status;
     }
 
-    public void cleanupOldBackups(Date now, int backupIndex) {
-        BackupDescriptor descriptor = getBackup(backupIndex);
+    public void cleanupOldBackups(Date now, String backupKey) {
+        BackupDescriptor descriptor = getBackup(backupKey);
         if (descriptor == null) {
             return;
         }
@@ -316,16 +333,18 @@ public class BackupServiceImpl implements InternalBackupService {
         return backedupRepos;
     }
 
-    private BackupDescriptor getBackup(int backupIndex) {
+    public BackupDescriptor getBackup(String backupKey) {
         final List<BackupDescriptor> list = centralConfig.getDescriptor().getBackups();
-        if (list.size() <= backupIndex) {
-            //This might happen after the first time a backup has been turned off if the scheduler
-            //wakes up before old jobs were cleaned up
-            log.warn("Skipping empty backup config (probably a leftover from an old " +
-                    "to-be-deleted backup job).");
-            return null;
+        for (BackupDescriptor backupDescriptor : list) {
+            if (backupKey.equals(backupDescriptor.getKey())) {
+                return backupDescriptor;
+            }
         }
-        return list.get(backupIndex);
+        //This might happen after the first time a backup has been turned off if the scheduler
+        //wakes up before old jobs were cleaned up
+        log.warn("Skipping empty backup config " + backupKey + "!\n" +
+                "Probably a leftover from an old to-be-deleted backup job.");
+        return null;
     }
 
     /**

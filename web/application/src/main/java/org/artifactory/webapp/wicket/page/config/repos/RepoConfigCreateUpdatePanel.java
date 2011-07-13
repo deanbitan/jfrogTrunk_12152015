@@ -115,6 +115,11 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         form.add(submit);
         form.add(new DefaultButtonBehavior(submit));
 
+        // test button (when relevant)
+        TitledAjaxSubmitLink test = createTestButton();
+        form.add(test);
+        form.add(new DefaultButtonBehavior(test));
+
         add(form);
     }
 
@@ -161,6 +166,17 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
                 close(target);
             }
         };
+    }
+
+    protected TitledAjaxSubmitLink createTestButton() {
+        // create a dummy hidden link
+        TitledAjaxSubmitLink hiddenLink = new TitledAjaxSubmitLink("test") {
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+            }
+        };
+        hiddenLink.setVisible(false);
+        return hiddenLink;
     }
 
     protected abstract boolean validate(E repoDescriptor);

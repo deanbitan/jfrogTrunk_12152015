@@ -21,11 +21,13 @@ package org.artifactory.addon.rest;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
-import org.artifactory.addon.replication.ReplicationSettings;
+import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.Lock;
+import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.rest.artifact.FileList;
+import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
@@ -36,10 +38,13 @@ import org.artifactory.rest.resource.artifact.DownloadResource;
 import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.release.Promotion;
 
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +63,8 @@ public interface RestAddon extends Addon {
      *
      * @param path            The source path of the artifact.
      * @param target          The target repository where to copy/move the Artifact to.
-     * @param dryRun          A flag to indicate whether to perform a dry run first before performing the actual action.
+     * @param dryRun          A flag to indicate whether to perform a dry run first before performing the actual
+     *                        action.
      * @param suppressLayouts Indicates whether path translation across different layouts should be suppressed.
      * @param failFast        Indicates whether the operation should fail upon encountering an error.
      * @return A JSON object of all the messages and errors that occurred during the action.
@@ -71,7 +77,8 @@ public interface RestAddon extends Addon {
      *
      * @param path            The source path of the artifact.
      * @param target          The target repository where to copy/move the Artifact to.
-     * @param dryRun          A flag to indicate whether to perform a dry run first before performing the actual action.
+     * @param dryRun          A flag to indicate whether to perform a dry run first before performing the actual
+     *                        action.
      * @param suppressLayouts Indicates whether path translation across different layouts should be suppressed.
      * @param failFast        Indicates whether the operation should fail upon encountering an error.
      * @return A JSON object of all the messages and errors that occurred during the action.
@@ -129,18 +136,20 @@ public interface RestAddon extends Addon {
      * @param deep         Zero if the scanning should be shallow. One for deep
      * @param depth        Number of hierarchy levels to iterate down
      * @param listFolders  Zero if folders should be excluded. One if they should be included
-     * @param mdTimestamps Zero if metadata last modified timestamps should not be included in the list. One if they should
+     * @param mdTimestamps Zero if metadata last modified timestamps should not be included in the list. One if they
+     *                     should
      */
     @Lock(transactional = true)
-    FileList getFileList(String uri, String path, int deep, int depth, int listFolders, int mdTimestamps);
+    FileList getFileList(String uri, String path, int deep, int depth, int listFolders, int mdTimestamps)
+            throws BlackedOutException;
 
     /**
      * Locally replicates the given remote path
      *
-     * @param replicationSettings Settings
+     * @param remoteReplicationSettings Settings
      * @return Response
      */
-    Response replicate(ReplicationSettings replicationSettings) throws IOException;
+    Response replicate(RemoteReplicationSettings remoteReplicationSettings) throws IOException;
 
     /**
      * Renames structure, content and properties of build info objects. The actual rename is done asynchronously.
@@ -245,6 +254,20 @@ public interface RestAddon extends Addon {
     Set<RepoPath> searchArtifactsByChecksum(String md5Checksum, String sha1Checksum, StringList reposToSearch);
 
     /**
+     * Search the repository(ies) for artifacts which have a mismatch between their server generated checksums and their
+     * client generated checksums, this can result from an inequality or if one is missing.
+     *
+     * @param type          the type of checksum to search for (md5, sha1).
+     * @param reposToSearch The list of repositories to search for the corrupt artifacts, if empty all repositories will
+     *                      be searched
+     * @param request       The request
+     * @return The response object with the result as its entity.
+     */
+    @Nonnull
+    Response searchBadChecksumArtifacts(String type, StringList reposToSearch,
+            HttpServletRequest request);
+
+    /**
      * Save properties on a certain path (which must be a valid {@link org.artifactory.repo.RepoPath})
      *
      * @param path       The path on which to set the properties
@@ -257,4 +280,8 @@ public interface RestAddon extends Addon {
     Response deletePathProperties(String path, String recursive, StringList properties);
 
     ResponseCtx runPluginExecution(String executionName, Map params, boolean async);
+
+    ItemPermissions getItemPermissions(HttpServletRequest request, String path);
+
+    Response searchDependencyBuilds(HttpServletRequest request, String sha1) throws UnsupportedEncodingException;
 }

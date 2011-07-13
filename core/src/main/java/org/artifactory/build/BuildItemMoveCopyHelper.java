@@ -18,7 +18,6 @@
 
 package org.artifactory.build;
 
-import org.artifactory.api.build.BasicBuildInfo;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.common.StatusEntry;
@@ -44,19 +43,19 @@ public class BuildItemMoveCopyHelper extends BaseBuildPromoter {
     /**
      * Move or copy build artifacts and\or dependencies
      *
-     * @param move           True if the items should be moved. False if they should be copied
-     * @param basicBuildInfo Basic info of the selected build
-     * @param targetRepoKey  Key of target repository to move to
-     * @param artifacts      True if the build artifacts should be moved\copied
-     * @param dependencies   True if the build dependencies should be moved\copied
-     * @param scopes         Scopes of dependencies to copy (agnostic if null or empty)
-     * @param properties     The properties to tag the copied or move artifacts on their <b>destination</b> path
-     * @param dryRun         True if the action should run dry (simulate)
+     * @param move          True if the items should be moved. False if they should be copied
+     * @param buildRun      Basic info of the selected build
+     * @param targetRepoKey Key of target repository to move to
+     * @param artifacts     True if the build artifacts should be moved\copied
+     * @param dependencies  True if the build dependencies should be moved\copied
+     * @param scopes        Scopes of dependencies to copy (agnostic if null or empty)
+     * @param properties    The properties to tag the copied or move artifacts on their <b>destination</b> path
+     * @param dryRun        True if the action should run dry (simulate)
      * @return Result of action
      */
-    public MoveCopyResult moveOrCopy(boolean move, BasicBuildInfo basicBuildInfo, String targetRepoKey,
+    public MoveCopyResult moveOrCopy(boolean move, BuildRun buildRun, String targetRepoKey,
             boolean artifacts, boolean dependencies, List<String> scopes, Properties properties, boolean dryRun) {
-        Build build = getBuild(basicBuildInfo);
+        Build build = getBuild(buildRun);
 
         assertRepoExists(targetRepoKey);
 

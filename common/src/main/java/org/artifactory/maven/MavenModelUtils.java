@@ -294,6 +294,7 @@ public abstract class MavenModelUtils {
                 } catch (Exception e) {
                     log.warn("Failed to read maven model from '" + entry.getName() + "'. Cause: " + e.getMessage() +
                             ".", e);
+                    artifactInfo = null;
                 }
             }
         } catch (IOException e) {
@@ -318,17 +319,10 @@ public abstract class MavenModelUtils {
                 String name = entry.getName();
                 //Look for pom.xml in META-INF/maven/
                 if (name.startsWith("META-INF/maven/") && name.endsWith("pom.xml")) {
-                    int size = (int) entry.getSize();
-                    //Sanity check
-                    if (size <= 0) {
-                        log.warn("Found pom.xml file with size {} inside the zip. Ignoring.", size);
-                        entry = null;
-                    }
                     return entry;
                 }
             }
         }
-
         return null;
     }
 

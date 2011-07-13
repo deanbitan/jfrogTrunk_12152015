@@ -18,6 +18,7 @@
 
 package org.artifactory.storage;
 
+import org.artifactory.api.repo.Async;
 import org.artifactory.api.storage.StorageService;
 import org.artifactory.spring.ReloadableBean;
 
@@ -25,4 +26,16 @@ import org.artifactory.spring.ReloadableBean;
  * @author yoavl
  */
 public interface InternalStorageService extends StorageService, ReloadableBean {
+    /**
+     * Induce the garbage collector manually, and wait for full execution of double run.
+     */
+    void manualGarbageCollect();
+
+    /**
+     * Induce the garbage collector manually, and wait for full execution of double run.
+     *
+     * @param firstRunToken
+     */
+    @Async
+    void asyncManualGarbageCollect(String firstRunToken);
 }

@@ -54,7 +54,11 @@ public class RepoPathMover {
         status.setActivateLogging(!isDryRun);
 
         LocalRepo sourceRepo = getLocalRepo(fromRepoPath.getRepoKey());
-        JcrFsItem fsItemToMove = getRootFsItemToMove(fromRepoPath, sourceRepo);
+        JcrFsItem fsItemToMove = moverConfig.isCopy() ? sourceRepo.getJcrFsItem(fromRepoPath) :
+                sourceRepo.getLockedJcrFsItem(fromRepoPath);
+        if (fsItemToMove == null) {
+            throw new IllegalArgumentException("Could not find folder at " + fromRepoPath);
+        }
 
         RepoPath targetLocalRepoPath = moverConfig.getTargetLocalRepoPath();
         if (targetLocalRepoPath == null) {
@@ -99,11 +103,4 @@ public class RepoPathMover {
         return targetLocalRepo;
     }
 
-    private JcrFsItem getRootFsItemToMove(RepoPath fromRepoPath, LocalRepo fromRepo) {
-        JcrFsItem rootPathToMove = fromRepo.getLockedJcrFsItem(fromRepoPath);
-        if (rootPathToMove == null) {
-            throw new IllegalArgumentException("Could not find folder at " + fromRepoPath);
-        }
-        return rootPathToMove;
-    }
 }

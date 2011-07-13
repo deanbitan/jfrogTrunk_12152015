@@ -18,7 +18,9 @@
 
 package org.artifactory.descriptor.backup;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
+import org.artifactory.descriptor.TaskDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
@@ -35,7 +37,7 @@ import java.util.List;
 @XmlType(name = "BackupType", propOrder = {"key", "enabled", "dir", "cronExp", "retentionPeriodHours", "createArchive",
         "excludedRepositories", "sendMailOnError"},
         namespace = Descriptor.NS)
-public class BackupDescriptor implements Descriptor {
+public class BackupDescriptor implements TaskDescriptor {
 
     private static final long serialVersionUID = 1L;
 
@@ -147,7 +149,7 @@ public class BackupDescriptor implements Descriptor {
     }
 
     public boolean isIncremental() {
-        return retentionPeriodHours <= 0;
+        return (retentionPeriodHours <= 0) && !isCreateArchive();
     }
 
     public boolean isSendMailOnError() {
@@ -179,5 +181,15 @@ public class BackupDescriptor implements Descriptor {
     @Override
     public int hashCode() {
         return key != null ? key.hashCode() : 0;
+    }
+
+    public boolean sameTaskDefinition(TaskDescriptor otherDescriptor) {
+        if (otherDescriptor == null || !(otherDescriptor instanceof BackupDescriptor)) {
+            throw new IllegalArgumentException("Cannot compare backup dexcriptor " + this + " with " + otherDescriptor);
+        }
+        BackupDescriptor backupDesc = (BackupDescriptor) otherDescriptor;
+        return backupDesc.enabled == this.enabled &&
+                StringUtils.equals(backupDesc.key, this.key) &&
+                StringUtils.equals(backupDesc.cronExp, this.cronExp);
     }
 }

@@ -395,7 +395,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
             }
         });
         columns.add(new KeyTextFieldColumn());
-        columns.add(new TooltipLabelColumn<ImportableRemoteRepo>(Model.of("Url"), "repoUrl", "repoUrl", 50));
+        columns.add(new TooltipLabelColumn<ImportableRemoteRepo>(Model.of("URL"), "repoUrl", "repoUrl", 50));
         columns.add(new TooltipLabelColumn<ImportableRemoteRepo>(
                 Model.of("Description"), "repoDescription", "repoDescription", 25));
         return columns;

@@ -22,7 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.InfoRestSearchResult;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
@@ -107,7 +107,7 @@ public class GavcSearchResource {
             searchControls.setLimitSearchResults(authorizationService.isAnonymous());
             searchControls.setSelectedRepoForSearch(reposToSearch);
 
-            SearchResults<GavcSearchResult> searchResults = null;
+            ItemSearchResults<GavcSearchResult> searchResults;
             try {
                 searchResults = searchService.searchGavc(searchControls);
             } catch (RepositoryRuntimeException e) {

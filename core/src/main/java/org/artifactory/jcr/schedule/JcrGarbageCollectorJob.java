@@ -18,12 +18,13 @@
 
 package org.artifactory.jcr.schedule;
 
-import org.artifactory.jcr.JcrService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.index.IndexerJob;
-import org.artifactory.schedule.TaskService;
+import org.artifactory.repo.service.ImportJob;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.StopStrategy;
+import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
-import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -32,22 +33,27 @@ import org.slf4j.Logger;
 /**
  * @author Yoav Landman
  */
+@JobCommand(singleton = true,
+        schedulerUser = TaskUser.SYSTEM,
+        manualUser = TaskUser.SYSTEM,
+        stopStrategy = StopStrategy.PAUSE,
+        commandsToStop = {ImportJob.class})
 public class JcrGarbageCollectorJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(JcrGarbageCollectorJob.class);
+    public static final String FIX_CONSISTENCY = "FIX_CONSISTENCY";
 
     @Override
     protected void onExecute(JobExecutionContext context) throws JobExecutionException {
-        InternalArtifactoryContext contextHelper = InternalContextHelper.get();
-        JcrService jcr = contextHelper.getJcrService();
-        TaskService taskService = contextHelper.beanForType(TaskService.class);
-
-        taskService.stopTasks(IndexerJob.class, true);
         try {
             log.info("Garbage collection starting...");
-            jcr.garbageCollect();
+            String strFixConsistency = (String) context.getMergedJobDataMap().get(FIX_CONSISTENCY);
+            boolean fixConsistency = ConstantValues.jcrFixConsistency.getBoolean();
+            if (!fixConsistency && strFixConsistency != null) {
+                fixConsistency = Boolean.parseBoolean(strFixConsistency);
+            }
+            InternalContextHelper.get().getJcrService().garbageCollect(fixConsistency);
         } finally {
             log.info("Garbage collection ended.");
-            taskService.resumeTasks(IndexerJob.class);
         }
     }
 }

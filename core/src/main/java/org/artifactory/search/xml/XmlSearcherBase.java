@@ -20,7 +20,7 @@ package org.artifactory.search.xml;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
 import org.artifactory.search.SearcherBase;
@@ -38,7 +38,7 @@ public abstract class XmlSearcherBase<T extends MetadataSearchResult> extends Se
     private static final String DEFAULT_PROPERTY_ATTRIBUTE = "jcr:xmlcharacters";
 
     @Override
-    public SearchResults<T> doSearch(MetadataSearchControls controls) throws RepositoryException {
+    public ItemSearchResults<T> doSearch(MetadataSearchControls controls) throws RepositoryException {
         String metadataName = getFormattedMetadataName(controls.getMetadataName());
 
         String xPath = getFormattedXpath(controls.getPath());
@@ -89,7 +89,8 @@ public abstract class XmlSearcherBase<T extends MetadataSearchResult> extends Se
      * @param queryResult Raw results
      * @return Conformed search results
      */
-    protected abstract SearchResults<T> filterAndReturnResults(MetadataSearchControls controls, QueryResult queryResult)
+    protected abstract ItemSearchResults<T> filterAndReturnResults(MetadataSearchControls controls,
+            QueryResult queryResult)
             throws RepositoryException;
 
     /**

@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
-import org.artifactory.api.search.SearchResults;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.common.ConstantValues;
@@ -53,7 +53,7 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
     private static final String HIGHLIGHT_TAG = "highlight";
 
     @Override
-    public SearchResults<ArchiveSearchResult> doSearch(ArchiveSearchControls controls) throws RepositoryException {
+    public ItemSearchResults<ArchiveSearchResult> doSearch(ArchiveSearchControls controls) throws RepositoryException {
 
         String query = controls.getQuery();
         validateQueryLength(query);
@@ -111,16 +111,24 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
                     boolean shouldCalc = controls.shouldCalcEntries();
                     boolean entriesNotEmpty = (entriesSize != 0);
 
-                    //If we need only the files (i.e. when saving), skip entries calculation to speed up things
                     if (shouldCalc && entriesNotEmpty) {
+                        /**
+                         * Handle normal archive search (needs to calculate entry paths for display and results were
+                         * returned)
+                         */
                         for (ArchiveSearchEntry entry : entriesToInclude) {
                             String entryName = entry.getEntryName();
                             if (StringUtils.isEmpty(entryName)) {
                                 entryName = escapedExp;
                             }
-                            resultList.add(new ArchiveSearchResult(fileInfo, entryName, entry.getEntryPath()));
+                            resultList.add(new ArchiveSearchResult(fileInfo, entryName, entry.getEntryPath(), true));
                         }
                     } else {
+                        /**
+                         * Create generic entries when we don't need to calculate paths (performing a search for the
+                         * "saved search results") or if the search query was too ambiguous (no results returned because
+                         * there were too many)
+                         */
                         String noPathReason = "";
 
                         if (!shouldCalc) {
@@ -128,14 +136,14 @@ public class ArchiveSearcher extends SearcherBase<ArchiveSearchControls, Archive
                         } else if (!entriesNotEmpty) {
                             noPathReason = "Not available - too many results in archive.";
                         }
-                        resultList.add(new ArchiveSearchResult(fileInfo, escapedExp, noPathReason));
+                        resultList.add(new ArchiveSearchResult(fileInfo, escapedExp, noPathReason, false));
                     }
                 }
             } catch (RepositoryException re) {
                 handleNotFoundException(re);
             }
         }
-        return new SearchResults<ArchiveSearchResult>(resultList, fullResults);
+        return new ItemSearchResults<ArchiveSearchResult>(resultList, fullResults);
     }
 
     /**

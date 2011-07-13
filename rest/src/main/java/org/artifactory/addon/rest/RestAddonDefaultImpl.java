@@ -20,9 +20,10 @@ package org.artifactory.addon.rest;
 
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
-import org.artifactory.addon.replication.ReplicationSettings;
+import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.rest.artifact.FileList;
+import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
@@ -35,6 +36,8 @@ import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.release.Promotion;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -86,7 +89,7 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
-    public Response replicate(ReplicationSettings replicationSettings) {
+    public Response replicate(RemoteReplicationSettings remoteReplicationSettings) {
         throw new MissingRestAddonException();
     }
 
@@ -135,6 +138,12 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
+    @Nonnull
+    public Response searchBadChecksumArtifacts(String type, StringList reposToSearch,
+            HttpServletRequest request) {
+        throw new MissingRestAddonException();
+    }
+
     public Response savePathProperties(String path, String recursive, KeyValueList properties) {
         throw new MissingRestAddonException();
     }
@@ -144,6 +153,14 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     public ResponseCtx runPluginExecution(String executionName, Map params, boolean async) {
+        throw new MissingRestAddonException();
+    }
+
+    public ItemPermissions getItemPermissions(HttpServletRequest request, String path) {
+        throw new MissingRestAddonException();
+    }
+
+    public Response searchDependencyBuilds(HttpServletRequest request, String sha1) {
         throw new MissingRestAddonException();
     }
 }

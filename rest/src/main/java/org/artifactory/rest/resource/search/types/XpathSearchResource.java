@@ -22,8 +22,8 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.InfoRestSearchResult;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchResultBase;
-import org.artifactory.api.search.SearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
 import org.artifactory.api.security.AuthorizationService;
@@ -108,7 +108,7 @@ public class XpathSearchResource {
         controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
 
-        SearchResults searchResults = null;
+        ItemSearchResults searchResults;
         //any value of typeSearch except 1 is xmlSearch
         boolean isXmlSearch = searchType == null || !searchType.equals(String.valueOf(1));
         try {
