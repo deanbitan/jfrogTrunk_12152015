@@ -248,6 +248,10 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         }
     }
 
+    public int compareTo(SecurityListener o) {
+        return 0;
+    }
+
     private static class AuthCacheKey {
         private static final String EMPTY_HEADER = DigestUtils.shaHex("");
 

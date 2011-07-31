@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Artifactory is a binaries repository manager.
   ~ Copyright (C) 2011 JFrog Ltd.
@@ -15,17 +15,12 @@
   ~
   ~ You should have received a copy of the GNU Lesser General Public License
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
-  -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/maven-v4_0_0.xsd">
+  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>2.3.4</version>
+    <version>2.3.4.1</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -156,80 +151,80 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-papi</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-api</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-traffic</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-log</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-core</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-update</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-cli</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-application</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-common</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-war</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
                 <type>war</type>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-green-skin</artifactId>
-                <version>${artifactory.version}</version>
+                <version>2.3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>

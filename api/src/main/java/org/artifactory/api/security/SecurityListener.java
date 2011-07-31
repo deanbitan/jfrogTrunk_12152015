@@ -23,7 +23,7 @@ package org.artifactory.api.security;
  *
  * @author Yoav Landman
  */
-public interface SecurityListener {
+public interface SecurityListener extends Comparable<SecurityListener> {
 
     void onClearSecurity();
 }
