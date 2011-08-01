@@ -38,6 +38,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
@@ -137,10 +138,23 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         );
 
         if (!isSupportedJava6()) {
-            String message = "\n\n***************************************************************************\n" +
+            String message = "\n\n" +
+                    "***************************************************************************\n" +
                     "*** You have started Artifactory with an unsupported version of Java 6! ***\n" +
                     "***                Please use Java 6 update 4 and above.                ***\n" +
                     "***************************************************************************\n";
+            log.warn(message);
+        }
+
+        if (isJava7WithLoopPredicate(log)) {
+            String message = "\n\n" +
+                    "********************************************************************************************\n" +
+                    "*** It looks like you are running Artifactory with Java 7.                               ***\n" +
+                    "*** Due to critical Hotspot bugs in some of the first Java 7 releases (bug ids: 7070134, ***\n" +
+                    "*** 7044738 & 7068051), it is HIGHLY RECOMMENDED to run Artifactory with the following   ***\n" +
+                    "*** JVM Hotspot flag, to avoid JVM crashes and/or index corruption:                      ***\n" +
+                    "*** -XX:-UseLoopPredicate                                                                ***\n" +
+                    "********************************************************************************************\n";
             log.warn(message);
         }
 
@@ -219,5 +233,27 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             }
         }
         return supported;
+    }
+
+    /**
+     * @return True if the current jvm version is Oracle Java 7.
+     */
+    private boolean isJava7WithLoopPredicate(Logger log) {
+        if (JdkVersion.getMajorJavaVersion() == JdkVersion.JAVA_17) {
+            try {
+                List<String> arguments = ManagementFactory.getRuntimeMXBean().getInputArguments();
+                for (String argument : arguments) {
+                    if (argument.contains("-XX:-UseLoopPredicate")) {
+                        return false;
+                    }
+                }
+                return true;
+            } catch (Exception e) {
+                log.warn("Could not check for Java 7 loop predicate jvm arg ({}).", e.getMessage());
+                log.debug("Could not check for Java 7 loop predicate jvm arg.", e);
+                return false;
+            }
+        }
+        return false;
     }
 }
