@@ -20,7 +20,7 @@
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>2.4.x-SNAPSHOT</version>
+    <version>2.4.0</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -144,96 +144,96 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-capi</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-papi</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-capi</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-api</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common-storage</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-jcr-storage</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-traffic</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-log</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-core</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-update</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-application</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-common</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-war</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
                 <type>war</type>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-green-skin</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
@@ -250,7 +250,7 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-constants</artifactId>
-                <version>2.4.x-SNAPSHOT</version>
+                <version>2.4.0</version>
             </dependency>
 
             <dependency>
