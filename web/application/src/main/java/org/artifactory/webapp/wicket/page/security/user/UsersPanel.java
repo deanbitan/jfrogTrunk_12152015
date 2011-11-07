@@ -22,9 +22,9 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.security.GroupInfo;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.security.GroupInfo;
 
 import java.util.List;
 
@@ -47,8 +47,8 @@ public class UsersPanel extends TitledPanel {
 
         add(new GroupManagementPanel("groupManagementPanel", this));
 
-        usersTable = new UsersTable("users",
-                new UsersTableDataProvider(usersFilterPanel, userGroupService));
+        usersTable =
+                new UsersTable("users", new UsersTableDataProvider(usersFilterPanel, userGroupService));
         add(usersTable);
     }
 

@@ -26,8 +26,8 @@ import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.injection.web.InjectorHolder;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
+import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
@@ -35,11 +35,9 @@ import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.addon.wicket.LicensesWebAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.api.license.LicenseInfo;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.ArtifactCount;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageUnit;
@@ -52,8 +50,13 @@ import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.MavenNaming;
+import org.artifactory.mime.MimeType;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
@@ -84,12 +87,11 @@ public class GeneralInfoPanel extends Panel {
     @SpringBean
     private RepositoryService repositoryService;
 
-    public GeneralInfoPanel(String id, RepoAwareActionableItem repoItem) {
+    public GeneralInfoPanel(String id) {
         super(id);
-        addGeneralInfo(repoItem);
     }
 
-    private void addGeneralInfo(RepoAwareActionableItem repoItem) {
+    public GeneralInfoPanel init(RepoAwareActionableItem repoItem) {
         final boolean itemIsRepo = repoItem instanceof LocalRepoActionableItem;
         LocalRepoDescriptor repoDescriptor = repoItem.getRepo();
         final boolean isCache = repoDescriptor.isCache();
@@ -116,6 +118,7 @@ public class GeneralInfoPanel extends Panel {
                 "Copy this link to navigate directly to the artifact in tree view."));
 
         LabeledValue descriptionLabel = new LabeledValue("description", "Description: ");
+        descriptionLabel.setEscapeValue(false);
         String description = null;
         if (itemIsRepo) {
             if (isCache) {
@@ -123,9 +126,11 @@ public class GeneralInfoPanel extends Panel {
             } else {
                 description = repoDescriptor.getDescription();
             }
-            descriptionLabel.setValue(description);
+            if (description != null) {
+                descriptionLabel.setValue(description.replace("\n", "<br/>"));
+            }
         }
-        descriptionLabel.setVisible(!StringUtils.isEmpty(description) && itemIsRepo);
+        descriptionLabel.setVisible(!StringUtils.isEmpty(description));
         infoBorder.add(descriptionLabel);
 
         ItemInfo itemInfo = repoItem.getItemInfo();
@@ -195,12 +200,14 @@ public class GeneralInfoPanel extends Panel {
 
         addItemInfoLabels(infoBorder, itemInfo);
 
-        addLicenseInfo(infoBorder, path);
+        addLicenseInfo(infoBorder, repoItem);
 
         addLocalLayoutInfo(infoBorder, repoDescriptor, itemIsRepo);
         addRemoteLayoutInfo(infoBorder, remoteRepo, itemIsRepo);
 
         addFilteredResourceCheckbox(infoBorder, itemInfo);
+
+        return this;
     }
 
     private void addArtifactCount(final boolean itemIsRepo, final FieldSetBorder infoBorder,
@@ -261,20 +268,40 @@ public class GeneralInfoPanel extends Panel {
         infoBorder.add(watchAddon.getDirectlyWatchedPathPanel("watchedPath", selectedPath));
     }
 
-    private void addLicenseInfo(FieldSetBorder infoBorder, RepoPath path) {
-        LicensesWebAddon licensesWebAddon = addonsManager.addonByType(LicensesWebAddon.class);
-        final LabeledValue licensesLabel = licensesWebAddon.getLicenseLabel("licenses", path);
-        licensesLabel.setOutputMarkupId(true);
+    private void addLicenseInfo(FieldSetBorder infoBorder, RepoAwareActionableItem actionableItem) {
+        WebMarkupContainer licensesLabel = new WebMarkupContainer("licensesLabel");
         infoBorder.add(licensesLabel);
-        AbstractLink addButton = licensesWebAddon.getAddLicenseLink("add", path,
-                licensesLabel.getDefaultModelObjectAsString(), licensesLabel);
+
+        WebMarkupContainer licensesListView = new WebMarkupContainer("licensesListView");
+        licensesListView.add(new WebMarkupContainer("licensesLink"));
+        licensesListView.add(new WebMarkupContainer("commaLabel"));
+        infoBorder.add(licensesListView);
+
+        WebMarkupContainer addButton = new WebMarkupContainer("add");
         infoBorder.add(addButton);
-        AbstractLink editLicenseLink = licensesWebAddon.getEditLicenseLink("edit", path,
-                licensesLabel.getDefaultModelObjectAsString(), licensesLabel);
-        infoBorder.add(editLicenseLink);
-        AbstractLink deleteLicenseLink = licensesWebAddon.getDeleteLink("delete", path,
-                licensesLabel.getDefaultModelObjectAsString(), infoBorder);
-        infoBorder.add(deleteLicenseLink);
+        WebMarkupContainer editButton = new WebMarkupContainer("edit");
+        infoBorder.add(editButton);
+        WebMarkupContainer deleteButton = new WebMarkupContainer("delete");
+        infoBorder.add(deleteButton);
+        WebMarkupContainer viewButton = new WebMarkupContainer("view");
+        infoBorder.add(viewButton);
+
+        if (!actionableItem.getItemInfo().isFolder()) {
+            RepoPath repoPath = actionableItem.getRepoPath();
+            LicensesWebAddon licensesWebAddon = addonsManager.addonByType(LicensesWebAddon.class);
+            licensesLabel.replaceWith(licensesWebAddon.getLicenseLabel(licensesLabel.getId()));
+            ListView<LicenseInfo> listView = licensesWebAddon.getLicensesListView(licensesListView.getId(), repoPath);
+            licensesListView.replaceWith(listView);
+            addButton.replaceWith(licensesWebAddon.getAddLicenseLink(addButton.getId(), repoPath, listView));
+            editButton.replaceWith(licensesWebAddon.getEditLicenseLink(editButton.getId(), repoPath, listView));
+            deleteButton.replaceWith(licensesWebAddon.getDeleteLink(deleteButton.getId(), repoPath, infoBorder,
+                    listView));
+            String path = repoPath.getPath();
+            MimeType mimeType = NamingUtils.getMimeType(path);
+            if (NamingUtils.isJarVariant(path) || mimeType.isArchive()) {
+                viewButton.replaceWith(licensesWebAddon.getViewLink(viewButton.getId(), actionableItem, infoBorder));
+            }
+        }
     }
 
     private void addItemInfoLabels(FieldSetBorder infoBorder, ItemInfo itemInfo) {
@@ -293,7 +320,7 @@ public class GeneralInfoPanel extends Panel {
             sizeLabel.setVisible(false);
             moduleId.setVisible(false);
         } else {
-            org.artifactory.fs.FileInfo file = (org.artifactory.fs.FileInfo) itemInfo;
+            MutableFileInfo file = (MutableFileInfo) itemInfo;
 
             ModuleInfo moduleInfo = repositoryService.getItemModuleInfo(file.getRepoPath());
 
@@ -340,7 +367,7 @@ public class GeneralInfoPanel extends Panel {
             // if a checksum file is deployed, link to the target file
             artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
         }
-        String repoPathId = new RepoPathImpl(repoItem.getRepo().getKey(), artifactPath).getId();
+        String repoPathId = InternalRepoPathFactory.create(repoItem.getRepo().getKey(), artifactPath).getId();
 
         String encodedPathId;
         try {

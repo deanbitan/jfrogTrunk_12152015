@@ -19,7 +19,6 @@
 package org.artifactory.webapp.wicket.util;
 
 import com.google.common.collect.ImmutableMap;
-import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
@@ -27,6 +26,7 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.mime.MimeType;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 
 import javax.annotation.Nonnull;
@@ -39,7 +39,7 @@ import javax.annotation.Nonnull;
 public enum ItemCssClass {
     doc,
     folder, folderCompact("folder-compact"),
-    jar, pom, xml, jnlp, parent, nupkg,
+    jar, pom, xml, jnlp, parent, nupkg, apk,
     repository, repositoryCache("repository-cache"),
     repositoryVirtual("repository-virtual"), root, treeSearch("tree-search");
 

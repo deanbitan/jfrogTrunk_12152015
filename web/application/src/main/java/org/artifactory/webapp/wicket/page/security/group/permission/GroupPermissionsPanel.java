@@ -29,18 +29,19 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.security.AceInfo;
-import org.artifactory.api.security.AclInfo;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.GroupInfo;
-import org.artifactory.api.security.PermissionTargetInfo;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.util.ListPropertySorter;
+import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.security.AceInfo;
+import org.artifactory.security.AclInfo;
+import org.artifactory.security.GroupInfo;
+import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.webapp.wicket.page.security.acl.AclsPage;
 import org.artifactory.webapp.wicket.page.security.acl.PermissionsRow;
 
@@ -168,7 +169,7 @@ public class GroupPermissionsPanel extends BaseModalPanel {
             Link link = new Link("link") {
                 @Override
                 public void onClick() {
-                    setResponsePage(new AclsPage(permissionTarget));
+                    setResponsePage(new AclsPage(InfoFactoryHolder.get().copyPermissionTarget(permissionTarget)));
                 }
             };
             add(link);

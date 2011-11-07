@@ -37,14 +37,11 @@ import org.apache.wicket.util.time.Duration;
 import org.apache.wicket.validation.validator.EmailAddressValidator;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserAwareAuthenticationProvider;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.api.security.UserInfoBuilder;
-import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -58,9 +55,11 @@ import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordStrengthComponentPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AccessLogger;
-import org.artifactory.util.HttpUtils;
+import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.UserGroupInfo;
+import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
 import org.springframework.util.StringUtils;
@@ -109,6 +108,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
 
         //Username
         RequiredTextField<String> usernameField = new RequiredTextField<String>("username");
+        setDefaultFocusField(usernameField);
         usernameField.setEnabled(create);
         usernameField.add(StringValidator.maximumLength(100));
         usernameField.add(new JcrNameValidator("Invalid username '%s'"));
@@ -243,13 +243,13 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         border.add(adminCheckbox);
 
         // groups
-        Set<UserInfo.UserGroupInfo> userGroups = user.getGroups();
+        Set<UserGroupInfo> userGroups = user.getGroups();
         if (!create) {
             provider.addExternalGroups(user.getUsername(), user.getRealm(), userGroups);
         }
 
-        final DeletableLabelGroup<UserInfo.UserGroupInfo> groupsListView =
-                new DeletableLabelGroup<UserInfo.UserGroupInfo>("groups", userGroups);
+        final DeletableLabelGroup<UserGroupInfo> groupsListView =
+                new DeletableLabelGroup<UserGroupInfo>("groups", userGroups);
         groupsListView.setLabelClickable(false);
         groupsListView.setVisible(!create);
         border.add(groupsListView);
@@ -278,16 +278,8 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                     successful = createNewUser(username);
                     AccessLogger.created("User " + username + " was created successfully");
                 } else {
-                    CoreAddons coreAddons = addons.addonByType(CoreAddons.class);
-                    if (!coreAddons.isAolDashboardAdmin(username, HttpUtils.getRemoteClientAddress(
-                            WicketUtils.getWebRequest().getHttpServletRequest()))) {
-                        updateUser(username);
-                        AccessLogger.updated("User " + username + " was updated successfully");
-                    } else {
-                        warn("User " + username + " cannot be updated");
-                        AjaxUtils.refreshFeedback(target);
-                        return;
-                    }
+                    updateUser(username);
+                    AccessLogger.updated("User " + username + " was updated successfully");
                 }
                 if (successful) {
                     AjaxUtils.refreshFeedback(target);
@@ -301,8 +293,8 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                         .email(entity.getEmail())
                         .admin(entity.isAdmin())
                         .updatableProfile(entity.isUpdatableProfile())
-                        .groups(new HashSet<UserInfo.UserGroupInfo>(groupsListView.getData()));
-                UserInfo newUser = builder.build();
+                        .groups(new HashSet<UserGroupInfo>(groupsListView.getData()));
+                MutableUserInfo newUser = builder.build();
 
                 boolean created = userGroupService.createUser(newUser);
                 if (!created) {
@@ -321,14 +313,14 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
 
             private void updateUser(String username) {
                 // get the user info from the database and update it from the model
-                UserInfo userInfo = userGroupService.findUser(username);
+                MutableUserInfo userInfo = InfoFactoryHolder.get().copyUser(userGroupService.findUser(username));
                 userInfo.setEmail(entity.getEmail());
                 userInfo.setAdmin(entity.isAdmin());
                 userInfo.setUpdatableProfile(entity.isUpdatableProfile());
-                userInfo.setGroups(new HashSet<UserInfo.UserGroupInfo>(groupsListView.getData()));
+                userInfo.setGroups(new HashSet<UserGroupInfo>(groupsListView.getData()));
                 if (entity.isDisableInternalPassword()) {
                     // user should authenticate externally - set password to invalid
-                    userInfo.setPassword(UserInfo.INVALID_PASSWORD);
+                    userInfo.setPassword(MutableUserInfo.INVALID_PASSWORD);
                 } else if (StringUtils.hasText(entity.getPassword())) {
                     userInfo.setPassword(DigestUtils.md5Hex(entity.getPassword()));
                 }

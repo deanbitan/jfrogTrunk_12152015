@@ -22,9 +22,12 @@ import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddons;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.util.ListPropertySorter;
+import org.artifactory.security.UserInfo;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -93,8 +96,11 @@ class UsersTableDataProvider extends SortableDataProvider<UserModel> {
         List<UserInfo> allUsers = userGroupService.getAllUsers(true);
         List<UserModel> filtered = new ArrayList<UserModel>();
         for (UserInfo userInfo : allUsers) {
+            //Send the address for logging purposes
+            AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+            CoreAddons addons = addonsManager.addonByType(CoreAddons.class);
             //Don't list excluded users
-            if (includedByFilter(userInfo)) {
+            if (!addons.isAolAdmin(userInfo) && includedByFilter(userInfo)) {
                 UserModel userModel = new UserModel(userInfo);
                 filtered.add(userModel);
 

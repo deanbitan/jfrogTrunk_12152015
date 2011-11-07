@@ -18,16 +18,12 @@
 
 package org.artifactory.webapp.actionable.action;
 
-import org.apache.wicket.Component;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
-import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.PanelNestingBorderedModal;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.event.ItemEventTargetComponents;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.action.CopyPathPanel;
 
 /**
@@ -39,16 +35,8 @@ public class CopyAction extends RepoAwareItemAction {
 
     public static final String ACTION_NAME = "Copy";
 
-    /**
-     * Default constructor
-     */
     public CopyAction() {
         super(ACTION_NAME);
-    }
-
-    @Override
-    public String getDisplayName(ActionableItem actionableItem) {
-        return "Copy...";
     }
 
     @Override
@@ -57,14 +45,9 @@ public class CopyAction extends RepoAwareItemAction {
 
         //Create a modal window and add the move path panel to it
         ItemEventTargetComponents eventTargetComponents = event.getTargetComponents();
-        //Should be the tree
-        Component tree = eventTargetComponents.getRefreshableComponent();
-
-        WebMarkupContainer nodaPanelContainer = eventTargetComponents.getNodePanelContainer();
-        TreeBrowsePanel browseRepoPanel = (TreeBrowsePanel) nodaPanelContainer.getParent();
 
         ModalWindow modalWindow = eventTargetComponents.getModalWindow();
-        CopyPathPanel panel = new CopyPathPanel(modalWindow.getContentId(), repoPath, tree, browseRepoPanel);
+        CopyPathPanel panel = new CopyPathPanel(modalWindow.getContentId(), repoPath);
 
         BaseModalPanel modalPanel = new PanelNestingBorderedModal(panel);
         modalPanel.setWidth(500);

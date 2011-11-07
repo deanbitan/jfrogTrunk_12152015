@@ -93,8 +93,7 @@ public class BuildTabActionableItem extends ActionableItemBase {
     }
 
     public void filterActions(AuthorizationService authService) {
-        boolean hasDeployOnLocal = !ContextHelper.get().getRepositoryService().getDeployableRepoDescriptors().isEmpty();
-        if (!hasDeployOnLocal) {
+        if (!authService.canDeployToLocalRepository()) {
             viewJsonAction.setEnabled(false);
         }
     }

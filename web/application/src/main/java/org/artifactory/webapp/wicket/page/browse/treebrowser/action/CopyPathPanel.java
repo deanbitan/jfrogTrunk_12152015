@@ -18,25 +18,19 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.action;
 
-import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.IAjaxCallDecorator;
-import org.apache.wicket.extensions.markup.html.tree.Tree;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.tree.ITreeState;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.StatusEntry;
-import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 
 import java.util.List;
@@ -54,22 +48,12 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
     @SpringBean
     private RepositoryService repoService;
 
-    private Component componentToRefresh;
-    private TreeBrowsePanel browseRepoPanel;
-
     /**
-     * Main constructor
-     *
-     * @param id                 Panel ID
-     * @param pathToCopy         Path to copy
-     * @param componentToRefresh Component to refresh after completing the copy
-     * @param browseRepoPanel    An instance of the browse repo panel
+     * @param id         Panel ID
+     * @param pathToCopy Path to copy
      */
-    public CopyPathPanel(String id, RepoPath pathToCopy, Component componentToRefresh,
-            TreeBrowsePanel browseRepoPanel) {
+    public CopyPathPanel(String id, RepoPath pathToCopy) {
         super(id, pathToCopy);
-        this.componentToRefresh = componentToRefresh;
-        this.browseRepoPanel = browseRepoPanel;
         init();
     }
 
@@ -107,25 +91,8 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
                     }
                 }
 
-                //Colapse all tree nodes
-                if (componentToRefresh instanceof Tree) {
-                    //We collapse all since we don't know which path will eventually copy
-                    Tree tree = (Tree) componentToRefresh;
-                    ITreeState treeState = tree.getTreeState();
-                    treeState.collapseAll();
-                }
-
-                browseRepoPanel.removeNodePanel(target);
-                target.addComponent(componentToRefresh);
                 AjaxUtils.refreshFeedback(target);
                 ModalHandler.closeCurrent(target);
-            }
-
-            @Override
-            protected IAjaxCallDecorator getAjaxCallDecorator() {
-                //Add confirmation dialog when clicked
-                String message = String.format("Are you sure you wish to copy '%s'?", sourceRepoPath);
-                return new ConfirmationAjaxCallDecorator(message);
             }
         };
     }

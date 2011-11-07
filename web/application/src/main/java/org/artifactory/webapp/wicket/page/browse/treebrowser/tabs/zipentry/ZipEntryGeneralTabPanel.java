@@ -22,7 +22,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.tree.fs.ZipEntryInfo;
+import org.artifactory.fs.ZipEntryInfo;
 import org.artifactory.webapp.actionable.model.ArchivedItemActionableItem;
 
 /**

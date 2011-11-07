@@ -24,7 +24,6 @@ import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.validation.validator.StringValidator;
-import org.artifactory.api.security.GroupInfo;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -35,7 +34,10 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AccessLogger;
+import org.artifactory.security.GroupInfo;
+import org.artifactory.security.MutableGroupInfo;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 
 /**
@@ -59,6 +61,7 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
 
         // Group name
         RequiredTextField<String> groupNameTf = new RequiredTextField<String>("groupName");
+        setDefaultFocusField(groupNameTf);
         groupNameTf.add(StringValidator.maximumLength(100));
         groupNameTf.setEnabled(isCreate());// don't allow groupname update
         groupNameTf.add(new JcrNameValidator("Invalid group name '%s'"));
@@ -105,7 +108,7 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
     }
 
     private boolean onCreate() {
-        GroupInfo group = getGroupInfo();
+        MutableGroupInfo group = getGroupInfo();
         boolean created = groupService.createGroup(group);
         if (!created) {
             error("Group '" + group.getGroupName() + "' already exists.");
@@ -121,8 +124,8 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
         getPage().info("Group '" + getGroupInfo().getGroupName() + "' successfully updated.");
     }
 
-    private GroupInfo getGroupInfo() {
-        GroupInfo groupInfo = (GroupInfo) form.getDefaultModelObject();
+    private MutableGroupInfo getGroupInfo() {
+        MutableGroupInfo groupInfo = InfoFactoryHolder.get().copyGroup((GroupInfo) form.getDefaultModelObject());
         groupInfo.setGroupName(groupInfo.getGroupName().toLowerCase());
         return groupInfo;
     }

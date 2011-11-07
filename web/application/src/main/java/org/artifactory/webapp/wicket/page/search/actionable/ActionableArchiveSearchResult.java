@@ -21,7 +21,7 @@ package org.artifactory.webapp.wicket.page.search.actionable;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.repo.RepoPath;
@@ -66,7 +66,7 @@ public class ActionableArchiveSearchResult extends ActionableSearchResult<Archiv
     @Override
     public RepoPath getRepoPath() {
         //TODO: [by YS] implement to support navigation to zip resource
-        //return new RepoPathImpl(super.getRepoPath(), RepoPath.ARCHIVE_SEP + getSearchResult().getEntryPath());
+        //return InternalRepoPathFactory.create(super.getRepoPath(), RepoPath.ARCHIVE_SEP + getSearchResult().getEntryPath());
         return super.getRepoPath();
     }
 

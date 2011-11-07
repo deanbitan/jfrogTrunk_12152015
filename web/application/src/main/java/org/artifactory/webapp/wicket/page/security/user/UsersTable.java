@@ -28,8 +28,6 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserAwareAuthenticationProvider;
 import org.artifactory.api.security.UserGroupService;
@@ -42,10 +40,8 @@ import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.component.table.columns.TooltipLabelColumn;
 import org.artifactory.common.wicket.component.table.columns.checkbox.SelectAllCheckboxColumn;
-import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
-import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.page.security.user.column.UserColumn;
 import org.artifactory.webapp.wicket.page.security.user.permission.UserPermissionsPanel;
 import org.slf4j.Logger;
@@ -67,9 +63,6 @@ public class UsersTable extends ModalListPanel<UserModel> {
 
     @SpringBean
     private AuthorizationService authorizationService;
-
-    @SpringBean
-    private AddonsManager addonsManager;
 
     @SpringBean
     private UserAwareAuthenticationProvider provider;
@@ -187,14 +180,8 @@ public class UsersTable extends ModalListPanel<UserModel> {
             error("Action cancelled. You are logged-in as the user you have selected for removal.");
             return;
         }
-        CoreAddons addons = addonsManager.addonByType(CoreAddons.class);
-        if (!addons.isAolDashboardAdmin(selectedUsername, HttpUtils.getRemoteClientAddress(
-                WicketUtils.getWebRequest().getHttpServletRequest()))) {
-            userGroupService.deleteUser(selectedUsername);
-            AccessLogger.deleted("User " + selectedUsername + " was deleted successfully");
-        } else {
-            warn("Action cancelled, " + selectedUsername + " is an un-deletable user");
-        }
+        userGroupService.deleteUser(selectedUsername);
+        AccessLogger.deleted("User " + selectedUsername + " was deleted successfully");
         refreshUsersList(target);
     }
 

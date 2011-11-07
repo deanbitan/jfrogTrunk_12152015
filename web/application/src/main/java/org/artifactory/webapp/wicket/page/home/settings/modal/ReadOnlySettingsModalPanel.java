@@ -24,7 +24,6 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
-import org.artifactory.api.md.PropertiesImpl;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonStyleModel;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
@@ -32,7 +31,9 @@ import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlight
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.CodeModalPanel;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.md.Properties;
 import org.artifactory.webapp.wicket.page.home.settings.modal.download.AjaxSettingsDownloadBehavior;
 import org.slf4j.Logger;
 
@@ -63,7 +64,8 @@ public class ReadOnlySettingsModalPanel extends CodeModalPanel {
                         FilteredResourcesWebAddon filteredResourcesWebAddon = addonsManager.addonByType(
                                 FilteredResourcesWebAddon.class);
                         try {
-                            String filtered = filteredResourcesWebAddon.filterResource(null, new PropertiesImpl(),
+                            String filtered = filteredResourcesWebAddon.filterResource(null,
+                                    (Properties) InfoFactoryHolder.get().createProperties(),
                                     new StringReader(settings));
                             return new StringResourceStream(filtered, mimeType);
                         } catch (Exception e) {

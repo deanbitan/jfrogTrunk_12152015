@@ -27,7 +27,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.config.ImportSettings;
+import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.common.StatusEntry;
@@ -136,7 +136,7 @@ public abstract class BasicImportPanel extends TitledPanel {
                 status.reset();
                 status.setVerbose(verbose);
 
-                ImportSettings importSettings = new ImportSettings(folder, status);
+                ImportSettingsImpl importSettings = new ImportSettingsImpl(folder, status);
                 try {
                     importSettings.setFailIfEmpty(true);
                     importSettings.setVerbose(verbose);

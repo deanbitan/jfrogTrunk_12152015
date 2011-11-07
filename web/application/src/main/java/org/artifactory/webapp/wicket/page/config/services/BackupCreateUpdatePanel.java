@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.config.services;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.form.Form;
@@ -26,10 +27,14 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.repo.BackupService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.WicketProperty;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonStyleModel;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
@@ -43,6 +48,7 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.webapp.wicket.components.SortedRepoDragDropSelection;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
@@ -51,6 +57,7 @@ import org.artifactory.webapp.wicket.util.validation.CronExpValidator;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.util.List;
@@ -61,6 +68,10 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor> {
+    private static final Logger log = LoggerFactory.getLogger(BackupCreateUpdatePanel.class);
+
+    @SpringBean
+    private BackupService backupService;
 
     @SpringBean
     private CentralConfigService centralConfigService;
@@ -79,6 +90,8 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
     private FileBrowserButton browserButton;
     private PathAutoCompleteTextField backupDir;
     private BackupsListPanel backupsListPanel;
+    private TitledAjaxSubmitLink runNowButton;
+    private StyledCheckbox enabledCheckBox;
 
     public BackupCreateUpdatePanel(CreateUpdateAction action, BackupDescriptor backupDescriptor,
             BackupsListPanel backupsListPanel) {
@@ -94,6 +107,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
 
         // Backup key
         RequiredTextField<String> keyField = new RequiredTextField<String>("key");
+        setDefaultFocusField(keyField);
         keyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
             keyField.add(new JcrNameValidator("Invalid backup key '%s'"));
@@ -103,9 +117,17 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         simpleFields.add(keyField);
         simpleFields.add(new SchemaHelpBubble("key.help"));
 
-        simpleFields.add(new StyledCheckbox("enabled"));
+        enabledCheckBox = new StyledCheckbox("enabled");
+        enabledCheckBox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
+            @Override
+            protected void onUpdate(AjaxRequestTarget target) {
+                runNowButton.setEnabled(enabledCheckBox.isChecked());
+                target.addComponent(runNowButton);
+            }
+        });
+        simpleFields.add(enabledCheckBox);
 
-        final RequiredTextField<String> cronExpField = new RequiredTextField<String>("cronExp");
+        final TextField<String> cronExpField = new TextField<String>("cronExp");
         cronExpField.add(CronExpValidator.getInstance());
         simpleFields.add(cronExpField);
         simpleFields.add(new SchemaHelpBubble("cronExp.help"));
@@ -118,7 +140,6 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         backupDir.setMask(PathMask.FOLDERS);
         simpleFields.add(backupDir);
         simpleFields.add(new SchemaHelpBubble("dir.help"));
-
 
         browserButton = new FileBrowserButton("browseButton", pathModel) {
             @Override
@@ -191,6 +212,12 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         TitledAjaxSubmitLink submit = createSubmitButton(backupsListPanel);
         form.add(submit);
         form.add(new DefaultButtonBehavior(submit));
+
+        runNowButton = createRunNowButton();
+        runNowButton.setOutputMarkupId(true);
+        runNowButton.setEnabled(backupDescriptor.isEnabled());
+        runNowButton.add(new CssClass(new DefaultButtonStyleModel(runNowButton)));
+        form.add(runNowButton);
     }
 
     @Override
@@ -203,6 +230,10 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         return new TitledAjaxSubmitLink("submit", submitCaption, form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
+                if (StringUtils.isBlank(entity.getCronExp())) {
+                    error("A Cron Expression is required.");
+                    return;
+                }
                 MutableCentralConfigDescriptor configDescriptor = backupsListPanel.getMutableDescriptor();
                 if (isCreate()) {
                     configDescriptor.addBackup(entity);
@@ -226,6 +257,30 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                 super.onError(target);
                 IModel dirModal = browserButton.getDefaultModel();
                 backupDir.setDefaultModel(dirModal);
+            }
+        };
+    }
+
+    private TitledAjaxSubmitLink createRunNowButton() {
+        return new TitledAjaxSubmitLink("runNow", "Run Now", form) {
+
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                try {
+                    backupService.scheduleImmediateSystemBackup(entity, statusHolder);
+                    if (statusHolder.isError()) {
+                        error(statusHolder.getStatusMsg());
+                    } else {
+                        info("System backup was successfully scheduled to run in the background.");
+                        AjaxUtils.refreshFeedback(target);
+                    }
+                } catch (Exception e) {
+                    String errorMessage = "Could not run system backup '" + entity.getKey() + "': " + e.getMessage();
+                    statusHolder.setError(errorMessage, e, log);
+                    error(errorMessage);
+                }
+                AjaxUtils.refreshFeedback(target);
             }
         };
     }

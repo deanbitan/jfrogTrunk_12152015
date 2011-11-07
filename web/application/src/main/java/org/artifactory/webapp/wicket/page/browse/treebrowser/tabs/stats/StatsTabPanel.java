@@ -20,8 +20,9 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.stats;
 
 import com.ocpsoft.pretty.time.PrettyTime;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.common.wicket.component.LabeledValue;
+import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.fs.StatsInfo;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.springframework.util.StringUtils;
 
@@ -45,17 +46,17 @@ public class StatsTabPanel extends Panel {
         add(lastDownloadedBy);
         StatsInfo statsInfo = item.getXmlMetadata(StatsInfo.class);
         if (statsInfo == null) {
-            statsInfo = new StatsInfo();
+            statsInfo = InfoFactoryHolder.get().createStats();
         }
-        downloadedLabel.setValue(Long.toString(statsInfo.getDownloadCount()));
-        long lastDownloadedVal = statsInfo.getLastDownloaded();
-        if (lastDownloadedVal == 0) {
+        long downloadCount = statsInfo.getDownloadCount();
+        downloadedLabel.setValue(Long.toString(downloadCount));
+        if (downloadCount == 0) {
             //No download data available (either never downloaded or coming from legacy repo)
             lastDownloaded.setVisible(false);
             lastDownloadedBy.setVisible(false);
         } else {
             PrettyTime prettyTime = new PrettyTime();
-            Date lastDownloadedDate = new Date(lastDownloadedVal);
+            Date lastDownloadedDate = new Date(statsInfo.getLastDownloaded());
             String lastDownloadedString = prettyTime.format(lastDownloadedDate) + " (" + lastDownloadedDate.toString() +
                     ")";
             lastDownloaded.setValue(lastDownloadedString);

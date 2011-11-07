@@ -25,15 +25,15 @@ import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInst
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.SecurityInfo;
 import org.artifactory.api.security.SecurityService;
-import org.artifactory.api.xstream.XStreamFactory;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.panel.editor.TextEditorPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.security.SecurityInfo;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.slf4j.Logger;
 
@@ -84,7 +84,7 @@ public class AdvancedSecurityConfigPage extends AuthenticatedPage {
         };
         securityForm.add(securityPanel);
         SecurityInfo securityData = securityService.getSecurityData();
-        XStream xstream = XStreamFactory.create(SecurityInfo.class);
+        XStream xstream = InfoFactoryHolder.get().getSecurityXStream();
         securityPanel.setEditorValue(xstream.toXML(securityData));
         securityForm.add(saveSecurityButton);
         TitledAjaxLink cancelSecurityButton = new TitledAjaxLink("securityCancel", "Cancel") {

@@ -22,12 +22,12 @@ import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
-import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.fs.ZipEntryInfo;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.tree.fs.ZipEntryInfo;
-import org.artifactory.api.tree.fs.ZipTreeNode;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
+import org.artifactory.util.TreeNode;
 import org.artifactory.webapp.actionable.action.DownloadAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.viewable.ViewableTabPanel;
@@ -44,22 +44,22 @@ import java.util.Set;
  */
 public class ArchivedFileActionableItem extends ArchivedItemActionableItem {
 
-    public ArchivedFileActionableItem(RepoPath archivePath, ZipTreeNode node) {
+    public ArchivedFileActionableItem(RepoPath archivePath, TreeNode<ZipEntryInfo> node) {
         super(archivePath, node);
         Set<ItemAction> actions = getActions();
         actions.add(new DownloadAction());
     }
 
     public String getDisplayName() {
-        return node.getName();
+        return node.getData().getName();
     }
 
     public String getPath() {
-        return node.getPath();
+        return node.getData().getPath();
     }
 
     public ZipEntryInfo getZipEntry() {
-        return node.getZipEntry();
+        return node.getData();
     }
 
     @Override
@@ -71,7 +71,7 @@ public class ArchivedFileActionableItem extends ArchivedItemActionableItem {
             }
         });
 
-        if (NamingUtils.isViewable(node.getName()) || "class".equals(PathUtils.getExtension(node.getName()))) {
+        if (NamingUtils.isViewable(getPath()) || "class".equals(PathUtils.getExtension(getPath()))) {
             tabs.add(new AbstractTab(Model.of("View Source")) {
                 @Override
                 public Panel getPanel(String panelId) {
@@ -86,6 +86,6 @@ public class ArchivedFileActionableItem extends ArchivedItemActionableItem {
     }
 
     public String getCssClass() {
-        return ItemCssClass.getFileCssClass(node.getName()).getCssClass();
+        return ItemCssClass.getFileCssClass(getPath()).getCssClass();
     }
 }

@@ -24,7 +24,6 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.PanelNestingBorderedModal;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.event.ItemEventTargetComponents;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
@@ -38,11 +37,6 @@ public class MoveAction extends RepoAwareItemAction {
 
     public MoveAction() {
         super(ACTION_NAME);
-    }
-
-    @Override
-    public String getDisplayName(ActionableItem actionableItem) {
-        return "Move...";
     }
 
     @Override

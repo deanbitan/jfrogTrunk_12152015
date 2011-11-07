@@ -30,6 +30,7 @@ import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.ivy.IvyService;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.FileActionable;
@@ -91,7 +92,7 @@ public class XmlViewTabPanel extends Panel {
 
 
     private String getContent(FileActionable item) {
-        org.artifactory.fs.FileInfo info = item.getFileInfo();
+        FileInfo info = item.getFileInfo();
         return repoService.getStringContent(info);
     }
 

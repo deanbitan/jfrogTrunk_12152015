@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.security.acl;
 
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.api.security.PermissionTargetInfo;
+import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 

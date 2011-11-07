@@ -27,13 +27,13 @@ import org.artifactory.addon.wicket.SearchAddon;
 import org.artifactory.addon.wicket.SsoAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.addon.wicket.WebstartWebAddon;
-import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.common.wicket.model.sitemap.MenuNodeVisitor;
 import org.artifactory.common.wicket.model.sitemap.SiteMap;
 import org.artifactory.common.wicket.model.sitemap.SiteMapBuilder;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.security.ArtifactoryPermission;
 import org.artifactory.webapp.wicket.page.admin.AdminPage;
 import org.artifactory.webapp.wicket.page.browse.home.ArtifactsHomePage;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
@@ -51,7 +51,6 @@ import org.artifactory.webapp.wicket.page.search.gavc.GavcSearchPage;
 import org.artifactory.webapp.wicket.page.search.metadata.MetadataSearchPage;
 
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author Yoav Aharoni
@@ -103,7 +102,9 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         searchGroup.addChild(new ArtifactsPageNode("GAVC Search", GavcSearchPage.class));
         PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
         searchGroup.addChild(propertiesWebAddon.getPropertySearchMenuNode("Property Search"));
-        searchGroup.addChild(new ArtifactsPageNode("POM/XML Search", MetadataSearchPage.class));
+        if (ConstantValues.searchXmlIndexing.getBoolean()) {
+            searchGroup.addChild(new ArtifactsPageNode("POM/XML Search", MetadataSearchPage.class));
+        }
 
         DeployArtifactPageNode deployPage = new DeployArtifactPageNode(DeployArtifactPage.class, "Deploy");
         root.addChild(deployPage);
@@ -150,8 +151,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
                 return false;
             }
 
-            List<LocalRepoDescriptor> repoDescriptorList = getRepositoryService().getDeployableRepoDescriptors();
-            return repoDescriptorList != null && !repoDescriptorList.isEmpty();
+            return getAuthorizationService().canDeployToLocalRepository();
         }
     }
 
@@ -170,8 +170,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
                     ArtifactoryPermission.READ)) {
                 return true;
             }
-            List<LocalRepoDescriptor> repoDescriptorList = getRepositoryService().getDeployableRepoDescriptors();
-            return repoDescriptorList != null && !repoDescriptorList.isEmpty();
+            return getAuthorizationService().canDeployToLocalRepository();
         }
     }
 

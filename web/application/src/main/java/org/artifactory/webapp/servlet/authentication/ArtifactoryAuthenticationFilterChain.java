@@ -54,16 +54,23 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
     }
 
     public void addFilters(Collection<ArtifactoryAuthenticationFilter> filters) {
+        ArtifactoryAuthenticationFilter beforeLast = null;
         ArtifactoryAuthenticationFilter last = null;
         for (ArtifactoryAuthenticationFilter filter : filters) {
-            //TODO: [by YS] Not sure thhe comment below is true. All basic authentications are done by the same filter
-            //HACK! ArtifactoryBasicAuthenticationFilter should always be last so it doesn't handle basic auth intended
-            //for other sso filters
             if (filter instanceof ArtifactoryBasicAuthenticationFilter) {
+                //TODO: [by YS] Not sure the comment below is true. All basic authentications are done by the same filter
+                //HACK! ArtifactoryBasicAuthenticationFilter should always be last so it doesn't handle basic auth intended
+                //for other sso filters
                 last = filter;
+            } else if (filter.getClass().getName().endsWith("CasAuthenticationFilter")) {
+                // Other Hack! The CAS should be after other SSO filter
+                beforeLast = filter;
             } else {
                 this.chain.add(filter);
             }
+        }
+        if (beforeLast != null) {
+            this.chain.add(beforeLast);
         }
         if (last != null) {
             this.chain.add(last);
@@ -105,7 +112,7 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
         String result;
         for (ArtifactoryAuthenticationFilter filter : chain) {
             result = filter.getCacheKey(request);
-            if (result != null) {
+            if (result != null && result.trim().length() > 0) {
                 return result;
             }
         }

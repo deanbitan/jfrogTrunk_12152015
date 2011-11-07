@@ -176,9 +176,6 @@ public class DragDropSelection<T extends Serializable> extends FormComponentPane
     }
 
     protected Collection<T> createNewSelectionCollection(int length) {
-        if (length == 0) {
-            return Collections.emptyList();
-        }
         return new ArrayList<T>(length);
     }
 

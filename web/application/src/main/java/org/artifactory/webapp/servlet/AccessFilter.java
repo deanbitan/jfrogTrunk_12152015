@@ -24,12 +24,12 @@ import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.SecurityListener;
 import org.artifactory.api.security.SecurityService;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.HttpAuthenticationDetailsSource;
+import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.servlet.authentication.ArtifactoryAuthenticationFilter;
 import org.artifactory.webapp.servlet.authentication.ArtifactoryAuthenticationFilterChain;
 import org.slf4j.Logger;
@@ -51,6 +51,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -100,6 +101,30 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         nonUiAuthCache.clear();
     }
 
+    public void onUserUpdate(String username) {
+        invalidateUserAuthCache(username);
+    }
+
+    public void onUserDelete(String username) {
+        invalidateUserAuthCache(username);
+
+    }
+
+    private void invalidateUserAuthCache(String username) {
+        // remove the authentication of the username from the non-ui cache if exists
+        Iterator<Map.Entry<AuthCacheKey, Authentication>> cacheIter = nonUiAuthCache.entrySet().iterator();
+        while (cacheIter.hasNext()) {
+            Map.Entry<AuthCacheKey, Authentication> entry = cacheIter.next();
+            Authentication authentication = entry.getValue();
+            String principal = authentication.getPrincipal() + "";
+            if (username.equals(principal)) {
+                log.debug("Removing {} from the non-ui authentication cache", username);
+                cacheIter.remove();
+                // continue to iterate, there might be entries with the same username but another ip
+            }
+        }
+    }
+
     public void destroy() {
         //May not be inited yet
         if (authFilter != null) {
@@ -123,7 +148,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         if ((servletPath == null || "/".equals(servletPath) || servletPath.length() == 0) &&
                 "get".equalsIgnoreCase(method)) {
             //We were called with an empty path - redirect to the app main page
-            response.sendRedirect("./" + RequestUtils.WEBAPP_URL_PATH_PREFIX);
+            response.sendRedirect(RequestUtils.WEBAPP_URL_PATH_PREFIX);
             return;
         }
         //Reuse the authentication if it exists

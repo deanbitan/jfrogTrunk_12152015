@@ -27,15 +27,15 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.stat.StatsInfo;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.fs.MutableFileInfo;
+import org.artifactory.fs.StatsInfo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.GeneralTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.MetadataTabPanel;
@@ -54,7 +54,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
     private final RepoPath repoPath;
 
     protected RepoAwareActionableItemBase(ItemInfo itemInfo) {
-        this.repoPath = new RepoPathImpl(itemInfo.getRepoKey(), itemInfo.getRelPath());
+        this.repoPath = InternalRepoPathFactory.create(itemInfo.getRepoKey(), itemInfo.getRelPath());
     }
 
     protected RepoAwareActionableItemBase(RepoPath repoPath) {
@@ -151,7 +151,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         }
 
 
-        if (!itemInfo.isFolder() && itemInfo instanceof FileInfo) {
+        if (!itemInfo.isFolder() && itemInfo instanceof MutableFileInfo) {
             BuildAddon buildAddon = getAddonsProvider().addonByType(BuildAddon.class);
             tabs.add(buildAddon.getBuildsTab(item));
         }

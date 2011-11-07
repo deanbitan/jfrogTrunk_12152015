@@ -61,6 +61,13 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
     }
 
     @Override
+    protected void validateSearchControls() {
+        if (searchControls.isEmpty()) {
+            throw new IllegalArgumentException("The search term cannot be empty.");
+        }
+    }
+
+    @Override
     protected void addSearchComponents(Form form) {
         searchControls = new ArtifactSearchControls();
 
@@ -135,10 +142,6 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
         String query = searchControls.getQuery();
         if (StringUtils.isNotBlank(query)) {
             StringBuilder queryBuilder = new StringBuilder();
-            if (!query.startsWith("*") && !query.startsWith("?")) {
-                queryBuilder.append("*");
-            }
-
             queryBuilder.append(query);
 
             if (!query.endsWith("*") && !query.endsWith("?")) {

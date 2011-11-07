@@ -20,13 +20,13 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.viewable;
 
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.mime.MimeType;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.model.ArchivedFileActionableItem;
 
@@ -57,7 +57,7 @@ public class ViewableTabPanel extends Panel {
                 MimeType contentType = NamingUtils.getMimeType(result.getSourcePath());
                 syntax = Syntax.fromContentType(contentType);
                 content = result.getContent();
-                sourceFile = PathUtils.getName(result.getSourcePath());
+                sourceFile = PathUtils.getFileName(result.getSourcePath());
             } else {
                 content = failureReason;
             }

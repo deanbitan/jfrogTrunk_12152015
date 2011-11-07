@@ -19,13 +19,13 @@
 package org.artifactory.webapp.wicket.util;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPathImpl;
-import org.artifactory.api.util.SerializablePair;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
+import org.artifactory.mime.MavenNaming;
+import org.artifactory.mime.NamingUtils;
+import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.MetadataPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.PersistentTabbedPanel;
@@ -64,7 +64,7 @@ public abstract class TreeUtils {
             metadataName = nameAndParent.getFirst();
             artifactPath = nameAndParent.getSecond();
         }
-        String repoPathId = new RepoPathImpl(repo.getKey(), artifactPath).getId();
+        String repoPathId = InternalRepoPathFactory.create(repo.getKey(), artifactPath).getId();
 
         String encodedPathId;
         try {

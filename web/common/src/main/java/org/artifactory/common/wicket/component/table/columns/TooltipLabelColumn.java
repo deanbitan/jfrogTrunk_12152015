@@ -28,6 +28,10 @@ import org.artifactory.common.wicket.component.label.tooltip.TooltipLabel;
  * @author Yoav Aharoni
  */
 public class TooltipLabelColumn<T> extends PropertyColumn<T> {
+    /**
+     * Maximum length of the text in the column. If the text the column will display characters up to the maxLength
+     * and trailing dots ('...')
+     */
     private int maxLength;
 
     public TooltipLabelColumn(IModel<String> displayModel, String sortProperty, String propertyExpression,

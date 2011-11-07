@@ -23,14 +23,14 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
@@ -264,7 +264,7 @@ public abstract class RequestUtils {
     public static RepoPath calculateRepoPath(String requestPath) {
         String repoKey = PathUtils.getFirstPathElement(requestPath);
         String path = PathUtils.stripFirstPathElement(requestPath);
-        return new RepoPathImpl(repoKey, path);
+        return InternalRepoPathFactory.create(repoKey, path);
     }
 
 

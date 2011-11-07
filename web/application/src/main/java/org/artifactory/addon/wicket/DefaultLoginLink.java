@@ -66,7 +66,7 @@ public class DefaultLoginLink extends TitledSubmitLink {
                     AuthenticationHelper.getAuthentication());
         } else {
             //Try the component based localizer first. If not found try the application localizer. Else use the default
-            error("User name or password are incorrect. Login failed.");
+            error("Username or password are incorrect. Login failed.");
             rememberMeServices.loginFail(httpServletRequest, getHttpServletResponse());
         }
     }

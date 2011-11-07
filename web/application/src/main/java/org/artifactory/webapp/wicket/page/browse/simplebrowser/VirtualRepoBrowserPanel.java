@@ -37,16 +37,16 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.mime.NamingUtils;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.VirtualBrowsableItem;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.slf4j.Logger;
@@ -166,11 +166,11 @@ public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
                 upDirPath = "";
             }
             upDirItem = new VirtualBrowsableItem(VirtualBrowsableItem.UP, true, 0, 0, 0,
-                    new RepoPathImpl("", upDirPath), Lists.<String>newArrayList());
+                    InternalRepoPathFactory.create("", upDirPath), Lists.<String>newArrayList());
         } else {
             // up link for the root repo dir
             upDirItem = new VirtualBrowsableItem(VirtualBrowsableItem.UP, true, 0, 0, 0,
-                    new RepoPathImpl("", VirtualBrowsableItem.UP), Lists.<String>newArrayList());
+                    InternalRepoPathFactory.create("", VirtualBrowsableItem.UP), Lists.<String>newArrayList());
         }
         return upDirItem;
     }

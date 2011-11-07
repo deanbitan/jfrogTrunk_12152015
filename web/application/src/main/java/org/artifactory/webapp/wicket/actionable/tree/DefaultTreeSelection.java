@@ -18,6 +18,8 @@
 
 package org.artifactory.webapp.wicket.actionable.tree;
 
+import javax.annotation.Nonnull;
+
 /**
  * Default tree selection helper interface
  *
@@ -33,13 +35,14 @@ public interface DefaultTreeSelection {
     String getDefaultSelectionTreePath();
 
     /**
-     * Returns the deepest node matching the given path. For example if the parent look like parent/child/1 and we ask
-     * for child/1/2/3 the returned node will be child/1.
+     * Returns the deepest node matching the given path. For example if the parent looks like 'parent/child/1' and we
+     * ask for 'child/1/2/3' the returned node will be child/1.
      *
      * @param parentNode The parent node of the path.
      * @param path       The path relative to the parent node we are looking for.
      * @return The deepest node under the parent node for the given path. If no node under the parent matches part of
      *         the path, the parent path is returned.
      */
+    @Nonnull
     ActionableItemTreeNode getNodeAt(ActionableItemTreeNode parentNode, String path);
 }

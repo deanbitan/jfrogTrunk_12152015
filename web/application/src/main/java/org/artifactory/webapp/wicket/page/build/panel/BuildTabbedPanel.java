@@ -27,7 +27,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
 import org.artifactory.addon.wicket.LicensesWebAddon;
-import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.behavior.RenderJavaScript;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildEnvironmentTabPanel;
@@ -54,7 +54,7 @@ public class BuildTabbedPanel extends TitledPanel {
     private AddonsManager addonsManager;
 
     @SpringBean
-    private RepositoryService repositoryService;
+    private AuthorizationService authorizationService;
 
     private Build build;
     private Module module;
@@ -100,7 +100,7 @@ public class BuildTabbedPanel extends TitledPanel {
         final boolean targetSpecificModule = module != null;
 
         //Check if the user can deploy on any local repos
-        final boolean hasDeployOnLocal = !repositoryService.getDeployableRepoDescriptors().isEmpty();
+        final boolean hasDeployOnLocal = authorizationService.canDeployToLocalRepository();
 
         List<ITab> tabList = Lists.newArrayList();
 

@@ -24,13 +24,13 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.security.GroupInfo;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.behavior.filteringselect.FilteringSelectBehavior;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
+import org.artifactory.security.GroupInfo;
 
 import java.util.List;
 

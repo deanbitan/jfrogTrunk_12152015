@@ -18,7 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.security.acl;
 
-import org.artifactory.api.security.AceInfo;
+import org.artifactory.security.AceInfo;
+import org.artifactory.security.MutableAceInfo;
 
 import java.io.Serializable;
 
@@ -29,13 +30,32 @@ import java.io.Serializable;
  */
 public class AceInfoRow implements Serializable {
     private AceInfo aceInfo;
+    private MutableAceInfo mutableAceInfo;
 
-    public AceInfoRow(AceInfo aceinfo) {
-        this.aceInfo = aceinfo;
+    public static AceInfoRow createMutableAceInfoRow(MutableAceInfo aceInfo) {
+        return new AceInfoRow(aceInfo);
+    }
+
+    public static AceInfoRow createAceInfoRow(AceInfo aceInfo) {
+        return new AceInfoRow(aceInfo);
+    }
+
+    private AceInfoRow(AceInfo aceInfo) {
+        this.aceInfo = aceInfo;
+        this.mutableAceInfo = null;
+    }
+
+    private AceInfoRow(MutableAceInfo aceInfo) {
+        this.aceInfo = aceInfo;
+        this.mutableAceInfo = aceInfo;
     }
 
     public AceInfo getAceInfo() {
         return aceInfo;
+    }
+
+    public MutableAceInfo getMutableAceInfo() {
+        return mutableAceInfo;
     }
 
     public String getPrincipal() {
@@ -43,7 +63,8 @@ public class AceInfoRow implements Serializable {
     }
 
     public void setPrincipal(String principal) {
-        aceInfo.setPrincipal(principal);
+        checkMutable();
+        mutableAceInfo.setPrincipal(principal);
     }
 
     public boolean isGroup() {
@@ -51,7 +72,8 @@ public class AceInfoRow implements Serializable {
     }
 
     public void setGroup(boolean group) {
-        aceInfo.setGroup(group);
+        checkMutable();
+        mutableAceInfo.setGroup(group);
     }
 
     public boolean isAdmin() {
@@ -59,7 +81,8 @@ public class AceInfoRow implements Serializable {
     }
 
     public void setAdmin(boolean admin) {
-        aceInfo.setAdmin(admin);
+        checkMutable();
+        mutableAceInfo.setAdmin(admin);
         if (admin) {
             setDelete(true);
         }
@@ -70,7 +93,8 @@ public class AceInfoRow implements Serializable {
     }
 
     public void setDelete(boolean delete) {
-        aceInfo.setDelete(delete);
+        checkMutable();
+        mutableAceInfo.setDelete(delete);
         if (delete) {
             setDeploy(true);
         }
@@ -81,7 +105,8 @@ public class AceInfoRow implements Serializable {
     }
 
     public void setDeploy(boolean deploy) {
-        aceInfo.setDeploy(deploy);
+        checkMutable();
+        mutableAceInfo.setDeploy(deploy);
         if (deploy) {
             setAnnotate(true);
         }
@@ -92,7 +117,8 @@ public class AceInfoRow implements Serializable {
     }
 
     public void setAnnotate(boolean annotate) {
-        aceInfo.setAnnotate(annotate);
+        checkMutable();
+        mutableAceInfo.setAnnotate(annotate);
         if (annotate) {
             setRead(true);
         }
@@ -103,7 +129,14 @@ public class AceInfoRow implements Serializable {
     }
 
     public void setRead(boolean read) {
-        aceInfo.setRead(read);
+        checkMutable();
+        mutableAceInfo.setRead(read);
+    }
+
+    private void checkMutable() {
+        if (mutableAceInfo == null) {
+            throw new IllegalStateException("Trying to modify an immutable Access Control Entry: "+aceInfo);
+        }
     }
 
     @Override

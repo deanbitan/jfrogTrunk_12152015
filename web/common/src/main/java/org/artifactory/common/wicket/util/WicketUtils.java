@@ -35,12 +35,12 @@ import org.apache.wicket.util.io.Streams;
 import org.apache.wicket.util.lang.Packages;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
-import org.artifactory.api.util.Pair;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
+import org.artifactory.util.Pair;
 
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;

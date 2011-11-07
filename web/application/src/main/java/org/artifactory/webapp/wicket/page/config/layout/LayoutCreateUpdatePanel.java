@@ -30,6 +30,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.CompoundPropertyModel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.validation.IValidator;
@@ -85,6 +86,8 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
         boolean disableFields = !isCreate() && RepoLayoutUtils.isReservedName(layout.getName());
 
         FormComponent<String> nameTextField = new TextField<String>("name");
+        setDefaultFocusField(nameTextField);
+
         if (isCreate()) {
             nameTextField.add(new JcrNameValidator("Invalid layout name '%s'."));
             nameTextField.add(new XsdNCNameValidator("Invalid layout name '%s'."));
@@ -132,6 +135,8 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
         addLayoutField("fileIntegrationRevisionRegExp", layoutFields, true, disableFields);
 
         addTestBorder();
+
+        addRegExBorder();
 
         // add the panel display which shows the association of the layout with the repositories.
         if (isCreate()) {
@@ -194,6 +199,46 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
         return textField;
     }
 
+    private void addRegExBorder() {
+        TitledBorder regExBorder = new TitledBorder("regExBorder");
+        regExBorder.add(new CollapsibleBehavior());
+        form.add(regExBorder);
+
+        final Label artifactRegExLabel = new Label("artifactRegExLabel", Model.of());
+        artifactRegExLabel.setOutputMarkupId(true);
+        regExBorder.add(artifactRegExLabel);
+
+        final Label descriptorRegExLabel = new Label("descriptorRegExLabel", Model.of());
+        descriptorRegExLabel.setOutputMarkupId(true);
+        regExBorder.add(descriptorRegExLabel);
+
+        TitledAjaxSubmitLink resolveRegExButton = new TitledAjaxSubmitLink("resolveRegEx", "Resolve", form) {
+
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+                try {
+                    String artifactRegEx = RepoLayoutUtils.generateRegExpFromPattern(entity,
+                            entity.getArtifactPathPattern());
+                    artifactRegExLabel.setDefaultModelObject(artifactRegEx);
+
+                    if (entity.isDistinctiveDescriptorPathPattern()) {
+                        String descriptorRegEx = RepoLayoutUtils.generateRegExpFromPattern(entity,
+                                entity.getDescriptorPathPattern());
+                        descriptorRegExLabel.setDefaultModelObject(descriptorRegEx);
+                    }
+                    target.addComponent(artifactRegExLabel);
+                    target.addComponent(descriptorRegExLabel);
+                } catch (Exception e) {
+                    error("Failed to resolve regular expression: " + ExceptionUtils.getRootCause(e).getMessage());
+                }
+                ModalHandler.resizeAndCenterCurrent(target);
+                AjaxUtils.refreshFeedback();
+            }
+        };
+
+        regExBorder.add(resolveRegExButton);
+    }
+
     private void addTestBorder() {
         final TitledBorder testBorder = new TitledBorder("testBorder", new CompoundPropertyModel(new ModuleInfo()));
         form.add(testBorder);
@@ -209,6 +254,7 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
         testBorder.add(new Label("classifier"));
         testBorder.add(new Label("ext"));
         testBorder.add(new Label("type"));
+        testBorder.add(new Label("customFields"));
 
         testBorder.add(new TextField<String>("pathToTest", new PropertyModel<String>(this, "pathToTest")));
 
@@ -224,9 +270,11 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                 try {
                     ModuleInfo moduleInfo = null;
                     if (entity.isDistinctiveDescriptorPathPattern()) {
+                        RepoLayoutUtils.generateRegExpFromPattern(entity, entity.getDescriptorPathPattern(), true);
                         moduleInfo = ModuleInfoUtils.moduleInfoFromDescriptorPath(pathToTest, entity);
                     }
                     if ((moduleInfo == null) || !moduleInfo.isValid()) {
+                        RepoLayoutUtils.generateRegExpFromPattern(entity, entity.getArtifactPathPattern(), true);
                         moduleInfo = ModuleInfoUtils.moduleInfoFromArtifactPath(pathToTest, entity);
                     }
                     testBorder.setDefaultModelObject(moduleInfo);

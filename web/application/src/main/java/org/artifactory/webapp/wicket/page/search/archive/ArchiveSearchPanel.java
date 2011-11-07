@@ -70,6 +70,13 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
     }
 
     @Override
+    protected void validateSearchControls() {
+        if (searchControls.isEmpty()) {
+            throw new IllegalArgumentException("The search term cannot be empty.");
+        }
+    }
+
+    @Override
     protected void addSearchComponents(Form form) {
         searchControls = new ArchiveSearchControls();
         getDataProvider().setGroupParam(new SortParam("searchResult.entry", true));

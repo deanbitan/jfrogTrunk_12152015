@@ -23,13 +23,14 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.security.GroupInfo;
+import org.artifactory.api.security.GroupNotFoundException;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.filteringselect.FilteringSelectBehavior;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.security.GroupInfo;
 
 import java.util.List;
 
@@ -69,11 +70,15 @@ public class GroupManagementPanel extends FieldSetPanel {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 List<String> selectedUsernames = usersListPanel.getSelectedUsernames();
                 if (selectedGroup != null && !selectedUsernames.isEmpty()) {
-                    userGroupService.addUsersToGroup(
-                            selectedGroup, selectedUsernames);
-                    info("Successfully added selected users  to group '" + selectedGroup + "'.");
-                    // refresh the users table
-                    usersListPanel.refreshUsersList(target);
+                    try {
+                        userGroupService.addUsersToGroup(
+                                selectedGroup, selectedUsernames);
+                        info("Successfully added selected users  to group '" + selectedGroup + "'.");
+                        // refresh the users table
+                        usersListPanel.refreshUsersList(target);
+                    } catch (GroupNotFoundException gnfe) {
+                        error("Could not find group '" + selectedGroup + "': " + gnfe.getMessage());
+                    }
                     AjaxUtils.refreshFeedback(target);
                 }
             }

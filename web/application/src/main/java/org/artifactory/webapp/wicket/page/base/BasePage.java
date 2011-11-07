@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.base;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.IHeaderContributor;
@@ -31,6 +32,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.apache.wicket.spring.injection.annot.SpringBean;
@@ -48,14 +50,14 @@ import org.artifactory.common.wicket.component.panel.feedback.FeedbackMessagesPa
 import org.artifactory.common.wicket.component.panel.feedback.aggregated.AggregateFeedbackPanel;
 import org.artifactory.common.wicket.component.panel.sidemenu.MenuPanel;
 import org.artifactory.common.wicket.resources.domutils.CommonJsPackage;
-import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.web.ui.skins.GreenSkin;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
-import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
 import org.slf4j.Logger;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
@@ -173,9 +175,12 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 String query = searchTextField.getDefaultModelObjectAsString();
-
-                StringBuilder urlBuilder =
-                        new StringBuilder(WicketUtils.absoluteMountPathForPage(ArtifactSearchPage.class));
+                HttpServletRequest req = ((WebRequest) RequestCycle.get().getRequest()).getHttpServletRequest();
+                //TODO: [by YS] A hack for RTFACT-4233.
+                //StringBuilder urlBuilder =
+                //        new StringBuilder(WicketUtils.absoluteMountPathForPage(ArtifactSearchPage.class));
+                StringBuilder urlBuilder = new StringBuilder(HttpUtils.getServletContextUrl(req));
+                urlBuilder.append("/webapp/search/artifact");
                 if (StringUtils.isNotBlank(query)) {
                     try {
                         urlBuilder.append("?").append(BaseSearchPage.QUERY_PARAM).append("=").

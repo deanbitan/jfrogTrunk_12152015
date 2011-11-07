@@ -49,7 +49,7 @@ public class PomViewTabPanel extends Panel {
         super(id);
         add(new CssClass("veiw-tab"));
 
-        org.artifactory.fs.FileInfo fileInfo = repoItem.getFileInfo();
+        FileInfo fileInfo = repoItem.getFileInfo();
         addPomContent(fileInfo);
     }
 

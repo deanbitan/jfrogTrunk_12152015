@@ -29,7 +29,6 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.LdapGroupWebAddon;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.security.GroupInfo;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -38,7 +37,10 @@ import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AccessLogger;
+import org.artifactory.security.GroupInfo;
+import org.artifactory.security.MutableGroupInfo;
 import org.artifactory.webapp.wicket.page.security.group.permission.GroupPermissionsPanel;
 
 import java.util.List;
@@ -103,7 +105,8 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
 
     @Override
     protected BaseModalPanel newCreateItemPanel() {
-        return new GroupCreateUpdatePanel(CreateUpdateAction.CREATE, new GroupInfo(), this);
+        MutableGroupInfo group = InfoFactoryHolder.get().createGroup();
+        return new GroupCreateUpdatePanel(CreateUpdateAction.CREATE, group, this);
     }
 
     @Override

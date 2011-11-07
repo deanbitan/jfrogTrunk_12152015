@@ -25,11 +25,19 @@
         <div wicket:id="repoPath"/>
         <div wicket:id="localLayout"/>
         <div wicket:id="remoteLayout"/>
-        <span class="field small-buttons">
-        <span wicket:id="licenses" class="inline"/>
-        <a wicket:id="add"></a>
-        <a wicket:id="edit"></a>
-        <a wicket:id="delete"></a>
+        <span class="field">
+            <div class="labeled-value">
+                <span wicket:id="licensesLabel" class="label"></span>
+                <span wicket:id="licensesListView"><a wicket:id="licensesLink" target="_blank"></a><span
+                        wicket:id="commaLabel"/></span>
+
+                <span class="small-buttons">
+                    <a wicket:id="add"></a>
+                    <a wicket:id="edit"></a>
+                    <a wicket:id="delete"></a>
+                    <a wicket:id="view"></a>
+                </span>
+            </div>
             </span>
 
         <div wicket:id="filteredResourceContainer">

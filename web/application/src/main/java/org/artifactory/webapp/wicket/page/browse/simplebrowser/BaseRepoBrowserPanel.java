@@ -20,9 +20,9 @@ package org.artifactory.webapp.wicket.page.browse.simplebrowser;
 
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 import org.springframework.util.StringUtils;
 
@@ -46,9 +46,9 @@ public abstract class BaseRepoBrowserPanel extends TitledPanel {
         BrowsableItem upDirItem;
         if (StringUtils.hasLength(repoPath.getPath())) {
             upDirItem = new BrowsableItem(BaseBrowsableItem.UP, true,
-                    0, 0, 0, new RepoPathImpl(repoKey, repoPath.getParent().getPath()));
+                    0, 0, 0, InternalRepoPathFactory.create(repoKey, repoPath.getParent().getPath()));
         } else {
-            upDirItem = new BrowsableItem(BaseBrowsableItem.UP, true, 0, 0, 0, new RepoPathImpl("", "/"));
+            upDirItem = new BrowsableItem(BaseBrowsableItem.UP, true, 0, 0, 0, InternalRepoPathFactory.create("", "/"));
         }
         return upDirItem;
     }

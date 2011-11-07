@@ -24,12 +24,14 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WatchAddon;
-import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.security.ArtifactoryPermission;
+import org.artifactory.addon.wicket.YumWebAddon;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.ivy.IvyNaming;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.MimeType;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.FileActionable;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
@@ -45,6 +47,7 @@ import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.jnlp.JnlpViewT
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.PomViewTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.stats.StatsTabPanel;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
+import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Set;
@@ -56,6 +59,7 @@ import static org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.ivy.Xml
  * @author Yoav Landman
  */
 public class FileActionableItem extends RepoAwareActionableItemBase implements FileActionable {
+    private static final Logger log = LoggerFactory.getLogger(FileActionableItem.class);
 
     private final org.artifactory.fs.FileInfo fileInfo;
     private ItemAction downloadAction;
@@ -90,7 +94,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
         actions.add(watchAction);
     }
 
-    public org.artifactory.fs.FileInfo getFileInfo() {
+    public FileInfo getFileInfo() {
         return fileInfo;
     }
 
@@ -148,6 +152,22 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
                 }
             });
         }
+
+        if (isRpmFile()) {
+            AddonsManager addonsProvider = getAddonsProvider();
+            YumWebAddon yumWebAddon = addonsProvider.addonByType(YumWebAddon.class);
+            try {
+                ITab rpmInfoTab = yumWebAddon.getRpmInfoTab("RPM Info", getRepoPath());
+                if (rpmInfoTab != null) {
+                    tabs.add(rpmInfoTab);
+                }
+            } catch (Exception e) {
+                log.error("Error occurred while processing RPM display info: " + e.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Error occurred while processing RPM display info.", e);
+                }
+            }
+        }
     }
 
 
@@ -173,13 +193,11 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
             downloadAction.setEnabled(false);
         }
 
-        if (!canDelete || NamingUtils.isSystem(repoPath.getPath()) ||
-                !authService.hasPermission(ArtifactoryPermission.DEPLOY)) {
+        if (!canDelete || NamingUtils.isSystem(repoPath.getPath()) || !authService.canDeployToLocalRepository()) {
             moveAction.setEnabled(false);
         }
 
-        if (!canDelete || NamingUtils.isSystem(repoPath.getPath()) ||
-                !authService.hasPermission(ArtifactoryPermission.DEPLOY)) {
+        if (!canRead || NamingUtils.isSystem(repoPath.getPath()) || !authService.canDeployToLocalRepository()) {
             copyAction.setEnabled(false);
         }
 
@@ -205,6 +223,9 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
         return "application/x-java-jnlp-file".equalsIgnoreCase(mimeType.getType());
     }
 
+    private boolean isRpmFile() {
+        return getFileInfo().getName().endsWith(".rpm");
+    }
 
     private boolean shouldShowTabs() {
         //Hack - dont display anything for checksums or metadata

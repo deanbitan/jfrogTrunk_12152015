@@ -120,6 +120,37 @@
                             <span class="label">Type:</span>
                             <span wicket:id="type"></span>
                         </div>
+                        <div>
+                            <span class="label">Custom Fields:</span>
+                            <span wicket:id="customFields"></span>
+                        </div>
+                    </div>
+                </div>
+            </wicket:enclosure>
+        </div>
+
+        <div wicket:id="regExBorder">
+            <wicket:enclosure child="artifactRegExLabel">
+                <div class="field test-result small-buttons">
+
+                    <div class="value">
+                        <a wicket:id="resolveRegEx"></a>
+                    </div>
+
+                    <div class="textbox field-sep" style="padding: 7px;">
+                        <label>Artifact Path</label>
+
+                        <div>
+                            <span wicket:id="artifactRegExLabel"></span>
+                        </div>
+                    </div>
+
+                    <div class="textbox field-sep" style="padding: 7px;">
+                        <label>Descriptor Path</label>
+
+                        <div>
+                            <span wicket:id="descriptorRegExLabel"></span>
+                        </div>
                     </div>
                 </div>
             </wicket:enclosure>

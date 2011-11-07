@@ -18,11 +18,13 @@
 
 package org.artifactory.webapp.wicket.page.security.acl;
 
-import org.artifactory.api.security.AceInfo;
-import org.artifactory.api.security.AclInfo;
-import org.artifactory.api.security.GroupInfo;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
+import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.security.AceInfo;
+import org.artifactory.security.GroupInfo;
+import org.artifactory.security.MutableAceInfo;
+import org.artifactory.security.MutableAclInfo;
+import org.artifactory.security.UserInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,10 +36,10 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 public class PermissionTargetAceInfoRowDataProvider extends BaseSortableAceInfoRowDataProvider {
-    private AclInfo aclInfo;
+    private MutableAclInfo aclInfo;
     private UserGroupService userGroupService;
 
-    public PermissionTargetAceInfoRowDataProvider(UserGroupService userGroupService, AclInfo aclInfo) {
+    public PermissionTargetAceInfoRowDataProvider(UserGroupService userGroupService, MutableAclInfo aclInfo) {
         this.userGroupService = userGroupService;
         this.aclInfo = aclInfo;
         loadData();
@@ -46,9 +48,9 @@ public class PermissionTargetAceInfoRowDataProvider extends BaseSortableAceInfoR
     @Override
     public void loadData() {
         //Restore the roles
-        Set<AceInfo> aceInfos = aclInfo.getAces();
-        Map<AceInfo, AceInfo> acesMap = new HashMap<AceInfo, AceInfo>(aceInfos.size());
-        for (AceInfo aceInfo : aceInfos) {
+        Set<MutableAceInfo> aceInfos = aclInfo.getMutableAces();
+        Map<AceInfo, MutableAceInfo> acesMap = new HashMap<AceInfo, MutableAceInfo>(aceInfos.size());
+        for (MutableAceInfo aceInfo : aceInfos) {
             acesMap.put(aceInfo, aceInfo);
         }
         //List of recipients except for admins that are filtered out from acl management
@@ -74,19 +76,19 @@ public class PermissionTargetAceInfoRowDataProvider extends BaseSortableAceInfoR
         return userGroupService.getAllUsers(false);
     }
 
-    private void addAceRow(List<AceInfoRow> rows, Map<AceInfo, AceInfo> aces, String username, boolean group) {
-        AceInfo aceInfo = new AceInfo(username, group, 0);
-        AceInfo existingAceInfo = aces.get(aceInfo);
+    private void addAceRow(List<AceInfoRow> rows, Map<AceInfo, MutableAceInfo> aces, String username, boolean group) {
+        MutableAceInfo aceInfo = InfoFactoryHolder.get().createAce(username, group, 0);
+        MutableAceInfo existingAceInfo = aces.get(aceInfo);
         if (existingAceInfo == null) {
-            aclInfo.getAces().add(aceInfo);
+            aclInfo.getMutableAces().add(aceInfo);
         } else {
             aceInfo = existingAceInfo;
         }
-        AceInfoRow row = new AceInfoRow(aceInfo);
+        AceInfoRow row = AceInfoRow.createMutableAceInfoRow(aceInfo);
         rows.add(row);
     }
 
-    public void setAclInfo(AclInfo aclInfo) {
+    public void setAclInfo(MutableAclInfo aclInfo) {
         this.aclInfo = aclInfo;
     }
 }

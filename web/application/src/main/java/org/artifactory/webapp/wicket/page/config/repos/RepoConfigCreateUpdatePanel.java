@@ -79,6 +79,8 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         setWidth(650);
         TitledBorder repoConfigBorder = new TitledBorder("repoConfigBorder");
         TextField<String> repoKeyField = new TextField<String>("key", new PropertyModel<String>(this, "key"));
+        setDefaultFocusField(repoKeyField);
+
         boolean create = isCreate();
         repoKeyField.setEnabled(create);// don't allow key update
         if (create) {
@@ -161,6 +163,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
                     getPage().info("Repository '" + repoDescriptor.getKey() + "' successfully updated.");
                 }
 
+                cachingDescriptorHelper.reset();
                 ((RepositoryConfigPage) getPage()).refresh(target);
                 AjaxUtils.refreshFeedback(target);
                 close(target);
@@ -191,5 +194,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
             // if not create, reload the repo from the latest config to handle cancel actions
             getCachingDescriptorHelper().reloadRepository(getRepoDescriptor().getKey());
         }
+        // reset caching descriptor caches
+        cachingDescriptorHelper.reset();
     }
 }

@@ -18,9 +18,12 @@
 
 package org.artifactory.webapp.wicket.page.security.user;
 
+import com.google.common.collect.Sets;
 import com.ocpsoft.pretty.time.PrettyTime;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.security.UserInfo;
+import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.security.UserGroupInfo;
+import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.page.security.profile.ProfileModel;
 
 import java.util.Date;
@@ -37,7 +40,7 @@ public class UserModel extends ProfileModel {
     private boolean admin;
     private boolean updatableProfile;
     private boolean selected;
-    private Set<UserInfo.UserGroupInfo> groups;
+    private Set<UserGroupInfo> groups;
     private long lastLoginTimeMillis;
     private long lastAccessTimeMillis;
     private Status status;
@@ -48,7 +51,7 @@ public class UserModel extends ProfileModel {
         admin = false;
         updatableProfile = true;
         selected = false;
-        groups = UserInfo.UserGroupInfo.getInternalGroups(defaultGroupsNames);
+        groups = InfoFactoryHolder.get().createGroups(defaultGroupsNames);
     }
 
     public UserModel(UserInfo userInfo) {
@@ -56,7 +59,7 @@ public class UserModel extends ProfileModel {
         setEmail(userInfo.getEmail());
         this.admin = userInfo.isAdmin();
         this.updatableProfile = userInfo.isUpdatableProfile();
-        groups = userInfo.getGroups();
+        groups = Sets.newHashSet(userInfo.getGroups());
         // if user we update is not admin has invalid password the internal password is disabled
         disableInternalPassword = !admin && userInfo.hasInvalidPassword();
         lastLoginTimeMillis = userInfo.getLastLoginTimeMillis();
@@ -64,11 +67,11 @@ public class UserModel extends ProfileModel {
         realm = userInfo.getRealm();
     }
 
-    public void removeGroup(UserInfo.UserGroupInfo group) {
+    public void removeGroup(UserGroupInfo group) {
         this.groups.remove(group);
     }
 
-    public void addGroups(Set<UserInfo.UserGroupInfo> groups) {
+    public void addGroups(Set<UserGroupInfo> groups) {
         this.groups.addAll(groups);
     }
 
@@ -131,8 +134,8 @@ public class UserModel extends ProfileModel {
     /**
      * @return A copy of the user group. We deliberately Don't allow updating it directly.
      */
-    public Set<UserInfo.UserGroupInfo> getGroups() {
-        return (groups == null ? groups : new HashSet<UserInfo.UserGroupInfo>(groups));
+    public Set<UserGroupInfo> getGroups() {
+        return (groups == null ? groups : new HashSet<UserGroupInfo>(groups));
     }
 
     public long getLastLoginTimeMillis() {

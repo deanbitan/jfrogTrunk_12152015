@@ -25,7 +25,7 @@ import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvid
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.artifactory.api.util.SerializablePair;
+import org.artifactory.util.SerializablePair;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.util.ListPropertySorter;

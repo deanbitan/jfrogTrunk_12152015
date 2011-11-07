@@ -20,8 +20,8 @@ package org.artifactory.webapp.wicket.page.admin;
 
 import org.apache.wicket.authorization.UnauthorizedInstantiationException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.security.ArtifactoryPermission;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.config.general.GeneralConfigPage;
 import org.artifactory.webapp.wicket.page.security.acl.AclsPage;

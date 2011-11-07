@@ -32,7 +32,7 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 public interface ReplicationWebAddon extends Addon {
 
     ITab getHttpRepoReplicationPanel(String tabTitle, HttpRepoDescriptor repoDescriptor,
-            RemoteReplicationDescriptor replicationDescriptor);
+            RemoteReplicationDescriptor replicationDescriptor, CreateUpdateAction action);
 
     ITab getLocalRepoReplicationPanel(String tabTitle, LocalReplicationDescriptor replicationDescriptor,
             MutableCentralConfigDescriptor mutableDescriptor, CreateUpdateAction action);

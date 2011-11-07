@@ -29,6 +29,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.panel.sidemenu.SubMenuPanel;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
@@ -112,12 +113,14 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
         ITab searchPanel = propertiesWebAddon.getPropertySearchTabPanel(this, "Property Search");
         tabs.add(searchPanel);
 
-        tabs.add(new AbstractTab(Model.of("POM/XML Search")) {
-            @Override
-            public Panel getPanel(String panelId) {
-                return new MetadataSearchPanel(BaseSearchPage.this, panelId);
-            }
-        });
+        if (ConstantValues.searchXmlIndexing.getBoolean()) {
+            tabs.add(new AbstractTab(Model.of("POM/XML Search")) {
+                @Override
+                public Panel getPanel(String panelId) {
+                    return new MetadataSearchPanel(BaseSearchPage.this, panelId);
+                }
+            });
+        }
         TabbedPanel tabbedPanel = new StyledTabbedPanel("searchTabs", tabs) {
             /*
             Renders the side menu panel, because after we "redirect" between the different search pages, it disappears

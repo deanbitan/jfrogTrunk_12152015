@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.zipentry;
 
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.api.tree.fs.ZipEntryInfo;
+import org.artifactory.fs.ZipEntryInfo;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 
@@ -37,6 +37,7 @@ public class ZipEntryPanel extends Panel {
         add(infoBorder);
 
         infoBorder.add(new LabeledValue("name", "Name: ", zipEntry.getName()));
+        infoBorder.add(new LabeledValue("path", "Path: ", zipEntry.getPath()));
         infoBorder.add(new LabeledValue("size", "Size: ", zipEntry.getSize() + ""));
         infoBorder.add(new LabeledValue("compressedSize", "Compressed Size: ", zipEntry.getCompressedSize() + ""));
         infoBorder.add(new LabeledValue("time", "Modification Time: ", zipEntry.getTime() + ""));

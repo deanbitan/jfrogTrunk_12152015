@@ -24,12 +24,13 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
@@ -122,7 +123,7 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
 
             String key = aggregatedRepo.getKey();
             if (aggregatedRepo instanceof HttpRepoDescriptor) {
-                if (authorizationService.canRead(RepoPathImpl.repoRootPath(key + "-cache"))) {
+                if (authorizationService.canRead(InternalRepoPathFactory.repoRootPath(key + "-cache"))) {
                     return true;
                 }
             } else if ((aggregatedRepo instanceof VirtualRepoDescriptor) &&
@@ -131,7 +132,7 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
                     return true;
                 }
             } else {
-                if (authorizationService.canRead(RepoPathImpl.repoRootPath(key))) {
+                if (authorizationService.canRead(InternalRepoPathFactory.repoRootPath(key))) {
                     return true;
                 }
             }

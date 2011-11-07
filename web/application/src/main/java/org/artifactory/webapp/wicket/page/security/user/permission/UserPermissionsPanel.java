@@ -30,16 +30,19 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.security.AclInfo;
 import org.artifactory.api.security.AclService;
-import org.artifactory.api.security.PermissionTargetInfo;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.util.ListPropertySorter;
+import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.security.AclInfo;
+import org.artifactory.security.MutablePermissionTargetInfo;
+import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.PermissionTargetInfo;
+import org.artifactory.security.UserGroupInfo;
 import org.artifactory.webapp.wicket.page.security.acl.AclsPage;
 import org.artifactory.webapp.wicket.page.security.acl.PermissionsRow;
 import org.artifactory.webapp.wicket.page.security.user.UserModel;
@@ -60,16 +63,16 @@ public class UserPermissionsPanel extends BaseModalPanel {
     @SpringBean
     private AclService aclService;
 
-    private UserInfo userInfo;
+    private MutableUserInfo userInfo;
 
     public UserPermissionsPanel(UserModel user) {
         setWidth(500);
         setTitle(String.format("%s's Permission Targets", user.getUsername()));
-        userInfo = userGroupService.findUser(user.getUsername());
-        Set<UserInfo.UserGroupInfo> groups = user.getGroups();
+        userInfo = InfoFactoryHolder.get().copyUser(userGroupService.findUser(user.getUsername()));
+        Set<UserGroupInfo> groups = user.getGroups();
         //Add groups that may have been added from an external source.
-        for (UserInfo.UserGroupInfo userGroupInfo : groups) {
-            userInfo.addGroup(userGroupInfo.getGroupName());
+        for (UserGroupInfo userGroupInfo : groups) {
+            userInfo.addGroup(userGroupInfo.getGroupName(), userGroupInfo.getRealm());
         }
         TitledBorder border = new TitledBorder("border");
         add(border);
@@ -97,10 +100,10 @@ public class UserPermissionsPanel extends BaseModalPanel {
     }
 
     class PermissionsTabTableDataProvider extends SortableDataProvider<PermissionsRow> {
-        private final UserInfo userInfo;
+        private final MutableUserInfo userInfo;
         private List<PermissionsRow> userPermissions;
 
-        public PermissionsTabTableDataProvider(UserInfo userInfo) {
+        public PermissionsTabTableDataProvider(MutableUserInfo userInfo) {
             setSort("permissionTarget.name", true);
             this.userInfo = userInfo;
             loadData();
@@ -152,7 +155,8 @@ public class UserPermissionsPanel extends BaseModalPanel {
         private LinkPanel(String id, IModel<PermissionsRow> model) {
             super(id, model);
             PermissionsRow permRow = model.getObject();
-            final PermissionTargetInfo permissionTarget = permRow.getPermissionTarget();
+            final MutablePermissionTargetInfo permissionTarget = InfoFactoryHolder.get()
+                    .copyPermissionTarget(permRow.getPermissionTarget());
             Link link = new Link("link") {
                 @Override
                 public void onClick() {

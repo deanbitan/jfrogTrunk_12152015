@@ -58,7 +58,7 @@ public class DescriptionExtractorTest {
         String description = extractor.getDescription(cc, "fileUploadMaxSizeMb");
 
         assertNotNull(description, "Description should not be null");
-        assertTrue(description.startsWith("The maximum size in megabytes for uploaded artifact files."));
+        assertTrue(description.startsWith("The maximum size in megabytes"));
     }
 
     public void simplePropertyDescriptionWithinCData() {

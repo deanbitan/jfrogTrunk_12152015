@@ -21,7 +21,7 @@ package org.artifactory.webapp.actionable.action;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
-import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.CodeModalPanel;

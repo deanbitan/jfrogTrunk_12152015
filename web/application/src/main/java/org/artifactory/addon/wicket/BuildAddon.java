@@ -22,7 +22,7 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.AddonType;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.repo.Lock;
+import org.artifactory.sapi.common.Lock;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;

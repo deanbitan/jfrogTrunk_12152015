@@ -182,6 +182,7 @@ span.textbox {
     overflow: auto;
     height: 400px;
     background: white;
+    white-space: pre-wrap;
 }
 
 pre {
@@ -2246,6 +2247,22 @@ div.quick-search-box .button:hover .button-right, div.quick-search-box .button:f
     background: url("images/fieldset/fieldset-bottom-right.gif") no-repeat bottom right;
 }
 
+.gray-fieldset .fieldset-border-top-left {
+    background: url("images/fieldset/fieldset-top-left-gray.gif") no-repeat top left;
+}
+
+.gray-fieldset .fieldset-border-top-right {
+    background: url("images/fieldset/fieldset-top-right-gray.gif") no-repeat top right;
+}
+
+.gray-fieldset .fieldset-border-bottom-left {
+    background: url("images/fieldset/fieldset-bottom-left-gray.gif") no-repeat bottom left;
+}
+
+.gray-fieldset .fieldset-border-bottom-right {
+    background: url("images/fieldset/fieldset-bottom-right-gray.gif") no-repeat bottom right;
+}
+
 /*-- AuthenticatedPage --*/
 
 .outer-border-wrapper {
@@ -3727,6 +3744,14 @@ div.general-settings-panel input.text-file {
     background-image: url("images/buttons/toolbox-buttons/BTN-gotobuildserver-mo.gif");
 }
 
+.RefreshNodeAction {
+    background-image: url("images/buttons/toolbox-buttons/BTN-gotobuildserver.gif");
+}
+
+.RefreshNodeAction:hover, .RefreshNodeAction:focus {
+    background-image: url("images/buttons/toolbox-buttons/BTN-gotobuildserver-mo.gif");
+}
+
 .doc {
     background-image: url("images/icons/ICN-file.gif");
 }
@@ -3745,6 +3770,10 @@ div.general-settings-panel input.text-file {
 
 .nupkg {
     background-image: url("images/icons/ICN-nupkg.gif");
+}
+
+.apk {
+    background-image: url("images/icons/ICN-apk.png");
 }
 
 .pom {
@@ -5026,6 +5055,14 @@ table.data-table td.add-value-row {
     background: url(images/addons/16replication.png) no-repeat left top;
 }
 
+.addon-p2 {
+    background: url(images/addons/16p2.png) no-repeat left top;
+}
+
+.addon-yum {
+    background: url(images/addons/16yum.png) no-repeat left top;
+}
+
 /*-- ProfilePanel --*/
 
 .settings-snippet {
@@ -5645,11 +5682,6 @@ table.sep {
     margin-top: 7px;
 }
 
-/*HttpRepoPanel*/
-.http-repo-panel .basic-checkbox {
-    padding-left: 28px;
-}
-
 /*RemoteRepoBrowserPanel*/
 .local-repos-list .remote-repo-browser-panel {
     background: url("images/icons/globe.gif") center center no-repeat;
@@ -5710,11 +5742,6 @@ table.legend .e-value {
     top: 5px;
 }
 
-/*HttpRepoAdvancedPanel*/
-.http-advanced-repo-panel .basic-checkbox {
-    padding-left: 28px;
-}
-
 .styled-checkbox .addon-icon {
     position: relative;
     top: 5px;
@@ -5773,4 +5800,20 @@ textarea.linkable {
 
 .missing-checksum-warning {
     color: black;
+}
+
+.rpm-info-border {
+    margin-bottom: 0;
+}
+
+.rpm-info-list-view {
+    width: 100%;
+}
+
+.license-unapproved {
+    color: red;
+}
+
+.license-neutral {
+    color: gray;
 }

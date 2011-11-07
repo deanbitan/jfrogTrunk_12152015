@@ -26,7 +26,8 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.PermissionTargetInfo;
+import org.artifactory.security.MutablePermissionTargetInfo;
+import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
@@ -48,7 +49,7 @@ public class AclsPage extends AuthenticatedPage {
      *
      * @param ptiToEdit Permission target to edit
      */
-    public AclsPage(final PermissionTargetInfo ptiToEdit) {
+    public AclsPage(final MutablePermissionTargetInfo ptiToEdit) {
         // only admins can reach here
         if (!authService.isAdmin()) {
             throw new UnauthorizedInstantiationException(AclsPage.class);

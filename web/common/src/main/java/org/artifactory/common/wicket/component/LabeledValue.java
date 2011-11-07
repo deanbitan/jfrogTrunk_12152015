@@ -38,6 +38,11 @@ public class LabeledValue extends Panel {
         add(new Label("value", getDefaultModel()));
     }
 
+    public LabeledValue setEscapeValue(boolean escapeValue) {
+        get("value").setEscapeModelStrings(escapeValue);
+        return this;
+    }
+
     @SuppressWarnings({"unchecked"})
     public void setValue(String value) {
         ((IModel<String>) getDefaultModel()).setObject(value);

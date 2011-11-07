@@ -27,7 +27,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.config.ImportSettings;
+import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.SearchService;
@@ -205,7 +205,7 @@ public class ImportSystemPanel extends TitledPanel {
                     }
                     status.setStatus("Importing from directory...", log);
                     ArtifactoryContext context = ContextHelper.get();
-                    ImportSettings importSettings = new ImportSettings(importFromFolder, status);
+                    ImportSettingsImpl importSettings = new ImportSettingsImpl(importFromFolder, status);
                     importSettings.setFailFast(false);
                     importSettings.setFailIfEmpty(true);
                     importSettings.setVerbose(verbose);

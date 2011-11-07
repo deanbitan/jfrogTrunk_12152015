@@ -30,8 +30,9 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserAwareAuthenticationProvider;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.component.deletable.listview.DeletableLabelGroup;
+import org.artifactory.security.UserGroupInfo;
+import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.page.config.security.general.SecurityGeneralConfigPage;
 import org.artifactory.webapp.wicket.page.security.user.UserModel;
 
@@ -66,13 +67,13 @@ public class UsernamePanel extends Panel {
             add(new Label("username", username));
         }
 
-        Set<UserInfo.UserGroupInfo> userGroups = userModel.getGroups();
+        Set<UserGroupInfo> userGroups = userModel.getGroups();
         provider.addExternalGroups(username, userModel.getRealm(), userGroups);
 
-        DeletableLabelGroup<UserInfo.UserGroupInfo> groups =
-                new DeletableLabelGroup<UserInfo.UserGroupInfo>("groups", userGroups) {
+        DeletableLabelGroup<UserGroupInfo> groups =
+                new DeletableLabelGroup<UserGroupInfo>("groups", userGroups) {
                     @Override
-                    public void onDelete(UserInfo.UserGroupInfo value, AjaxRequestTarget target) {
+                    public void onDelete(UserGroupInfo value, AjaxRequestTarget target) {
                         super.onDelete(value, target);
                         //Save the group changes on each delete
                         userGroupService.removeUsersFromGroup(value.getGroupName(), Lists.newArrayList(username));

@@ -232,6 +232,12 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
         target.appendJavascript(format("ActionsMenuPanel.show('%s');", item.getMarkupId()));
     }
 
+    /**
+     * User clicked on the junction link to expand/collapse a (hierarchical) node. In case of expand, refresh the node
+     * children.
+     *
+     * @param node The node to expand/collapse.
+     */
     @Override
     public void onJunctionLinkClicked(AjaxRequestTarget target, TreeNode node) {
         super.onJunctionLinkClicked(target, node);
@@ -357,9 +363,9 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
     }
 
     /**
-     * Collapse the parent node of the node containing the item and refreshe the tree.
+     * Collapse the parent node of the node containing the item and refresh the tree.
      *
-     * @param item The item to look for
+     * @param item The item the node contains
      */
     public void collapseItemNode(ActionableItem item) {
         ActionableItemTreeNode node = searchForNodeByItem(item);
@@ -369,6 +375,20 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
             if (AjaxRequestTarget.get() != null) {
                 expandNode(AjaxRequestTarget.get(), parent);
             }
+        }
+    }
+
+    /**
+     * Expand the node and refresh the node children.
+     *
+     * @param item The item the node contains
+     */
+    public void refreshAndExpandItemNode(ActionableItem item) {
+        ActionableItemTreeNode node = searchForNodeByItem(item);
+        if (AjaxRequestTarget.get() != null) {
+            getTreeState().collapseNode(node);
+            refreshChildren(node);
+            expandNode(AjaxRequestTarget.get(), node);
         }
     }
 

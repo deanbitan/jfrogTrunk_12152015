@@ -44,10 +44,8 @@ import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.DeployService;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoRejectException;
-import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
@@ -63,6 +61,8 @@ import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
+import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.FileUtils;
 import org.artifactory.util.PathUtils;
@@ -291,7 +291,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                         MavenModelUtils.mavenModelToArtifactInfo(MavenModelUtils.toMavenModel(model.mavenArtifactInfo))
                                 .getPath();
                 String pomPath = PathUtils.stripExtension(path) + ".pom";
-                return repoService.exists(new RepoPathImpl(repo.getKey(), pomPath));
+                return repoService.exists(InternalRepoPathFactory.create(repo.getKey(), pomPath));
             } catch (RepositoryRuntimeException e) {
                 cleanupResources();
                 throw e;
@@ -507,7 +507,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
             private void deployFileAndPom() throws IOException, RepoRejectException {
                 ModuleInfo moduleInfo = repoService.getItemModuleInfo(
-                        new RepoPathImpl(model.targetRepo.getKey(), model.getTargetPathFieldValue()));
+                        InternalRepoPathFactory.create(model.targetRepo.getKey(), model.getTargetPathFieldValue()));
                 deployService.validatePom(model.pomXml, model.getTargetPathFieldValue(),
                         moduleInfo, model.targetRepo.isSuppressPomConsistencyChecks());
                 deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, model.pomXml, true, false);

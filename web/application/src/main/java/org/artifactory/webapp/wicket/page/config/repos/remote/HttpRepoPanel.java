@@ -29,8 +29,10 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.artifactory.addon.AddonType;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
@@ -38,9 +40,12 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.HttpClientConfigurator;
+import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -53,29 +58,28 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescriptor> {
+    private static final Logger log = LoggerFactory.getLogger(HttpRepoPanel.class);
 
-    private final CreateUpdateAction action;
     private RemoteReplicationDescriptor replicationDescriptor;
 
     public HttpRepoPanel(CreateUpdateAction action, HttpRepoDescriptor repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor, cachingDescriptorHelper);
-        setWidth(640);
-        this.action = action;
+        setWidth(750);
     }
 
     @Override
     protected List<ITab> getConfigurationTabs() {
         List<ITab> tabs = Lists.newArrayList();
 
-        tabs.add(new AbstractTab(Model.<String>of("Basic Settings")) {
+        tabs.add(new AbstractTab(Model.of("Basic Settings")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new HttpRepoBasicPanel(panelId, entity);
             }
         });
 
-        tabs.add(new AbstractTab(Model.<String>of("Advanced Settings")) {
+        tabs.add(new AbstractTab(Model.of("Advanced Settings")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new HttpRepoAdvancedPanel(panelId, action, entity,
@@ -94,8 +98,19 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
             replicationDescriptor.setRepoKey(entity.getKey());
         }
         ReplicationWebAddon replicationWebAddon = addons.addonByType(ReplicationWebAddon.class);
-        tabs.add(replicationWebAddon.getHttpRepoReplicationPanel("Replication", entity, replicationDescriptor));
+        tabs.add(replicationWebAddon.getHttpRepoReplicationPanel("Replication", entity, replicationDescriptor, action));
 
+        // packages tab contains add-ons configuration
+        if (!addons.isLicenseInstalled()) {
+            tabs.add(new DisabledAddonTab(Model.of("Packages"), AddonType.P2));
+        } else {
+            tabs.add(new AbstractTab(Model.of("Packages")) {
+                @Override
+                public Panel getPanel(String panelId) {
+                    return new HttpRepoPackagesPanel(panelId);
+                }
+            });
+        }
         return tabs;
     }
 
@@ -146,10 +161,12 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     AjaxUtils.refreshFeedback();
                     return;
                 }
-                HttpClient client = new HttpClientConfigurator(true)
-                        .hostFromUrl(repo.getUrl())
-                        .defaultMaxConnectionsPerHost(50)
-                        .maxTotalConnections(50)
+                // always test with url trailing slash
+                String url = PathUtils.addTrailingSlash(repo.getUrl());
+                HttpClient client = new HttpClientConfigurator()
+                        .hostFromUrl(url)
+                        .defaultMaxConnectionsPerHost(5)
+                        .maxTotalConnections(5)
                         .connectionTimeout(repo.getSocketTimeoutMillis())
                         .soTimeout(repo.getSocketTimeoutMillis())
                         .staleCheckingEnabled(true)
@@ -158,7 +175,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                         .proxy(repo.getProxy())
                         .authentication(repo.getUsername(), repo.getPassword())
                         .getClient();
-                HeadMethod head = new HeadMethod(repo.getUrl());
+                HeadMethod head = new HeadMethod(url);
                 try {
                     int status = client.executeMethod(head);
                     if (status != HttpStatus.SC_OK) {
@@ -169,10 +186,16 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     }
                 } catch (UnknownHostException e) {
                     error("Unknown host: " + e.getMessage());
+                    log.debug("Test connection to '" + url + "' failed with exception", e);
                 } catch (ConnectException e) {
                     error(e.getMessage());
+                    log.debug("Test connection to '" + url + "' failed with exception", e);
                 } catch (IOException e) {
                     error("Connection failed with exception: " + e.getMessage());
+                    log.debug("Test connection to '" + url + "' failed with exception", e);
+                } catch (Exception e) {
+                    error("Connection failed with general exception: " + e.getMessage());
+                    log.debug("Test connection to '" + url + "' failed with exception", e);
                 } finally {
                     head.releaseConnection();
                 }

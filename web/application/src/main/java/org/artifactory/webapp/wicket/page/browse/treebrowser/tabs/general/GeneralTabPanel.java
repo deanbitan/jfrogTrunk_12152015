@@ -53,7 +53,7 @@ public class GeneralTabPanel extends Panel {
         setOutputMarkupId(true);
         this.repoItem = repoItem;
 
-        add(new GeneralInfoPanel("generalInfoPanel", repoItem));
+        add(new GeneralInfoPanel("generalInfoPanel").init(repoItem));
 
         if (shouldDisplayDistributionManagement()) {
             add(new DistributionManagementPanel("distributionManagement", repoItem));
@@ -95,7 +95,7 @@ public class GeneralTabPanel extends Panel {
         RepoPath repoPath = repoItem.getRepoPath();
 
         // display warning for unaccepted file
-        boolean accepted = repositoryService.isLocalRepoPathAccepted(repoPath);
+        boolean accepted = repositoryService.isRepoPathAccepted(repoPath);
         if (!accepted) {
             Label message = new Label(messages.newChildId(), getString("repo.unaccepted", null));
             message.add(new CssClass("warn"));
@@ -103,7 +103,7 @@ public class GeneralTabPanel extends Panel {
         }
 
         // display warning for unhandled file
-        boolean handled = repositoryService.isLocalRepoPathHandled(repoPath);
+        boolean handled = repositoryService.isRepoPathHandled(repoPath);
         if (!handled) {
             Label message = new Label(messages.newChildId(), getString("repo.unhandled", null));
             message.add(new CssClass("warn"));

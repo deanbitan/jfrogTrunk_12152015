@@ -20,12 +20,13 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.artifactory.api.maven.MavenNaming;
-import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.MavenNaming;
+import org.artifactory.mime.NamingUtils;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
@@ -50,7 +51,7 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
         String pathId = getRequest().getParameter(PATH_ID_PARAM);
         if (StringUtils.isNotBlank(pathId)) {
             try {
-                repoPath = new RepoPathImpl(pathId);
+                repoPath = InternalRepoPathFactory.fromId(pathId);
             } catch (Exception e) {
                 error("Unable to find path " + pathId);
             }
@@ -103,7 +104,7 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
             // checksums are not displayed in the tree, link to the target file
             artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
         }
-        String repoPathId = new RepoPathImpl(repoItem.getRepo().getKey(), artifactPath).getId();
+        String repoPathId = InternalRepoPathFactory.create(repoItem.getRepo().getKey(), artifactPath).getId();
 
         String encodedPathId;
         try {

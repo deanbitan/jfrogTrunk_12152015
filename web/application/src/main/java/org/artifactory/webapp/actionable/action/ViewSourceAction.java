@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.actionable.action;
 
-import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;

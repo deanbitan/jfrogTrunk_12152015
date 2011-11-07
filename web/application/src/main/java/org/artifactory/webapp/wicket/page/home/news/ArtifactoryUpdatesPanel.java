@@ -69,7 +69,7 @@ public class ArtifactoryUpdatesPanel extends Panel {
         template.setVisible(false);
         add(template);
 
-        if (message == null) {
+        if (message == null || message == ArtifactoryUpdatesService.PROCESSING_MESSAGE) {
             // no cached message, retry again in 5 secs
             scheduleMessageFetch();
         } else {
@@ -88,7 +88,7 @@ public class ArtifactoryUpdatesPanel extends Panel {
             protected void onTimer(AjaxRequestTarget target) {
                 stop();
                 final Message message = artifactoryUpdatesService.getCachedMessage();
-                if (message != null) {
+                if (message != null && message != ArtifactoryUpdatesService.PROCESSING_MESSAGE) {
                     setupMessage(message);
                     target.addComponent(ArtifactoryUpdatesPanel.this);
                 }

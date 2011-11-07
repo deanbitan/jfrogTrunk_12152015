@@ -27,7 +27,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.config.ExportSettings;
+import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.repo.BackupService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.StatusEntry;
@@ -139,7 +139,7 @@ public class ExportRepoPanel extends TitledPanel {
                     Session.get().cleanupFeedbackMessages();
                     //If we chose "All" run manual backup to dest dir, else export a single repo
                     MultiStatusHolder status = new MultiStatusHolder();
-                    ExportSettings exportSettings = new ExportSettings(exportToPath, status);
+                    ExportSettingsImpl exportSettings = new ExportSettingsImpl(exportToPath, status);
                     exportSettings.setIncludeMetadata(!excludeMetadata);
                     exportSettings.setM2Compatible(m2Compatible);
                     exportSettings.setVerbose(verbose);

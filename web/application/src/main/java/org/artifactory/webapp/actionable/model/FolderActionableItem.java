@@ -21,18 +21,18 @@ package org.artifactory.webapp.actionable.model;
 import com.google.common.collect.Lists;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WatchAddon;
-import org.artifactory.api.mime.NamingUtils;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.mime.MimeType;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
+import org.artifactory.webapp.actionable.RefreshableActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.CopyAction;
@@ -40,6 +40,7 @@ import org.artifactory.webapp.actionable.action.DeleteAction;
 import org.artifactory.webapp.actionable.action.DeleteVersionsAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.action.MoveAction;
+import org.artifactory.webapp.actionable.action.RefreshNodeAction;
 import org.artifactory.webapp.actionable.action.ZapAction;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 
@@ -49,8 +50,8 @@ import java.util.Set;
 /**
  * @author yoavl
  */
-public class FolderActionableItem extends RepoAwareActionableItemBase implements HierarchicActionableItem,
-        CannonicalEnabledActionableFolder {
+public class FolderActionableItem extends RepoAwareActionableItemBase
+        implements HierarchicActionableItem, CannonicalEnabledActionableFolder, RefreshableActionableItem {
 
     /**
      * The folder info of the last element of the compacted folder or the current folder if not compacted.
@@ -112,6 +113,7 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
 
     private void addActions() {
         Set<ItemAction> actions = getActions();
+        actions.add(new RefreshNodeAction());
         moveAction = new MoveAction();
         actions.add(moveAction);
         copyAction = new CopyAction();
@@ -132,7 +134,7 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
     /**
      * The folder info of the last element of the compacted folder or the current folder if not compacted.
      */
-    public org.artifactory.fs.FolderInfo getFolderInfo() {
+    public FolderInfo getFolderInfo() {
         return folderInfo;
     }
 
@@ -142,6 +144,10 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
 
     public String getCssClass() {
         return isCompacted() ? ItemCssClass.folderCompact.getCssClass() : ItemCssClass.folder.getCssClass();
+    }
+
+    public void refresh() {
+        children = null;    // set the children to null will force reload
     }
 
     public List<ActionableItem> getChildren(AuthorizationService authService) {
@@ -157,9 +163,9 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
                 //Check if we should return the child
                 String relativePath = pathItem.getRelPath();
 
-                RepoPath childRepoPath = new RepoPathImpl(pathItem.getRepoKey(), relativePath);
+                RepoPath childRepoPath = InternalRepoPathFactory.create(pathItem.getRepoKey(), relativePath);
 
-                if (!repoService.isLocalRepoPathDisplayable(childRepoPath)) {
+                if (!repoService.isRepoPathVisible(childRepoPath)) {
                     continue;
                 }
 
@@ -202,7 +208,7 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
                     repoPath = ((FolderActionableItem) repoAwareItem).getCanonicalPath();
                 }
                 RepositoryService repoService = getRepoService();
-                if (!repoService.exists(repoPath) || !repoService.isLocalRepoPathDisplayable(repoPath)) {
+                if (!repoService.exists(repoPath) || !repoService.isRepoPathVisible(repoPath)) {
                     return false;
                 }
             }
@@ -232,17 +238,15 @@ public class FolderActionableItem extends RepoAwareActionableItemBase implements
             delVersions.setEnabled(false);
         }
 
-        if (!canDelete || NamingUtils.isSystem(repoPath.getPath()) ||
-                !authService.hasPermission(ArtifactoryPermission.DEPLOY)) {
+        if (!canDelete || NamingUtils.isSystem(repoPath.getPath()) || !authService.canDeployToLocalRepository()) {
             moveAction.setEnabled(false);
         }
 
-        if (!canDelete || NamingUtils.isSystem(repoPath.getPath()) ||
-                !authService.hasPermission(ArtifactoryPermission.DEPLOY)) {
+        boolean canRead = authService.canRead(repoPath);
+        if (!canRead || NamingUtils.isSystem(repoPath.getPath()) || !authService.canDeployToLocalRepository()) {
             copyAction.setEnabled(false);
         }
 
-        boolean canRead = authService.canRead(repoPath);
         if (!canRead || authService.isAnonymous()) {
             watchAction.setEnabled(false);
         }

@@ -19,8 +19,8 @@
 package org.artifactory.webapp.wicket.page.build.tabs.list;
 
 import com.google.common.collect.Lists;
-import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
 import org.slf4j.Logger;
 

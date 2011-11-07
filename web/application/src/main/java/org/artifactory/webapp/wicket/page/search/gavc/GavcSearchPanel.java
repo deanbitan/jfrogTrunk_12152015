@@ -53,6 +53,13 @@ public class GavcSearchPanel extends BaseSearchPanel<GavcSearchResult> {
     }
 
     @Override
+    protected void validateSearchControls() {
+        if (searchControls.isEmpty()) {
+            throw new IllegalArgumentException("Please specify at least one search term.");
+        }
+    }
+
+    @Override
     protected void addSearchComponents(Form form) {
         add(new CssClass("gavc-panel"));
         searchControls = new GavcSearchControls();

@@ -95,6 +95,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
     private AddonsManager addons;
 
     private MutableCentralConfigDescriptor mutableDescriptor;
+
     private CachingDescriptorHelper cachingDescriptorHelper;
 
     public static final String REPO_ID = "repoKey";
@@ -337,7 +338,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             @Override
             protected void saveItems(AjaxRequestTarget target) {
                 try {
-                    cachingDescriptorHelper.syncAndSaveVirtualRepositories();
+                    cachingDescriptorHelper.syncAndSaveVirtualRepositories(false);
                     info("Virtual repositories order was successfully saved.");
                 } catch (Exception e) {
                     error("Could not save virtual repositories order: " + e.getMessage());

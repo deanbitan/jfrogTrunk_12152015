@@ -29,11 +29,13 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.page.security.login.LoginPage;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
 import org.slf4j.Logger;
@@ -92,17 +94,18 @@ public class ResetPasswordPanel extends TitledActionPanel {
                      * We double check the key validity, since after the first reset, the user can back up into the page
                      * And won't have to pass the validity checks on init
                      */
-                    UserInfo user = userGroupService.findUser(userInfo.getUsername());
+                    MutableUserInfo user = InfoFactoryHolder.get().copyUser(
+                            userGroupService.findUser(userInfo.getUsername()));
                     String passwordKey = user.getGenPasswordKey();
                     if ((StringUtils.isEmpty(passwordKey)) || (!passwordKey.equals(passwordGenKey))) {
                         invalidKeyResponse();
                         return;
                     }
                     String chosenPassword = passwordTextField.getValue();
-                    userInfo.setPassword(DigestUtils.md5Hex(chosenPassword));
-                    userInfo.setGenPasswordKey(null);
-                    userGroupService.updateUser(userInfo);
-                    log.info("The user: '{}' has successfully reset his password.", userInfo.getUsername());
+                    user.setPassword(DigestUtils.md5Hex(chosenPassword));
+                    user.setGenPasswordKey(null);
+                    userGroupService.updateUser(user);
+                    log.info("The user: '{}' has successfully reset his password.", user.getUsername());
                     Session.get().info("Password reset successfully.");
                     setResponse();
                 }

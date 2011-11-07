@@ -20,6 +20,7 @@ package org.artifactory.webapp.servlet;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryBrowsingService;
@@ -102,6 +103,12 @@ public class RepoFilter extends DelayedFilterBase {
             ArtifactoryResponse artifactoryResponse = new HttpArtifactoryResponse(response);
 
             if ("get".equals(method) && servletPath.endsWith("/")) {
+                //Check that this is not a recursive call
+                if (artifactoryRequest.isRecursive()) {
+                    String msg = "Recursive call detected for '" + request + "'. Returning nothing.";
+                    artifactoryResponse.sendError(HttpStatus.SC_NOT_FOUND, msg, log);
+                    return;
+                }
                 log.debug("Serving a directory get request.");
                 if (RequestUtils.isWebdavRequest(request)) {
                     doWebDavDirectory(response, artifactoryRequest);
@@ -200,6 +207,10 @@ public class RepoFilter extends DelayedFilterBase {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND,
                         "Expected file response but received a directory response: " + e.getRepoPath());
             }
+        } catch (Exception e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Could not process download request: " + e.getMessage());
+            log.debug("Error processing download request.", e);
         }
     }
 

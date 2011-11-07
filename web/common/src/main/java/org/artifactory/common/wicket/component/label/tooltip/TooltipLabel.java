@@ -31,6 +31,10 @@ import org.artifactory.common.wicket.behavior.tooltip.TooltipBehavior;
  * @author Yoav Aharoni
  */
 public class TooltipLabel extends Label {
+    /**
+     * Maximum length of the text in the label. If the text the column will display characters up to the maxLength
+     * and trailing dots ('...')
+     */
     private int maxLength;
 
     @WicketProperty

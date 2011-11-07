@@ -27,9 +27,9 @@ import org.apache.wicket.markup.repeater.data.DataView;
 import org.apache.wicket.markup.repeater.data.IDataProvider;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.component.StringChoiceRenderer;
 import org.artifactory.common.wicket.component.deletable.label.DeletableLabel;
+import org.artifactory.security.UserGroupInfo;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -115,8 +115,8 @@ public class DeletableLabelGroup<T extends Serializable> extends Panel {
                 onDelete(value, target);
             }
         };
-        if (value instanceof UserInfo.UserGroupInfo) {
-            UserInfo.UserGroupInfo userGroupInfo = (UserInfo.UserGroupInfo) value;
+        if (value instanceof UserGroupInfo) {
+            UserGroupInfo userGroupInfo = (UserGroupInfo) value;
             label.setLabelClickable(!userGroupInfo.isExternal());
             label.setLabelDeletable(!userGroupInfo.isExternal());
         } else {

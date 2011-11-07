@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.search.actionable;
 
-import org.artifactory.api.mime.NamingUtils;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.webapp.actionable.action.DownloadAction;

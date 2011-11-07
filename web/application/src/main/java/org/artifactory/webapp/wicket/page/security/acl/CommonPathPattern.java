@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.security.acl;
 
-import org.artifactory.api.security.PermissionTargetInfo;
+import org.artifactory.security.PermissionTargetInfo;
 
 /**
  * @author Yoav Landman

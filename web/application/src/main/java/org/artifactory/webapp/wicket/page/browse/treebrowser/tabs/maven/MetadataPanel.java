@@ -31,9 +31,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
@@ -45,6 +43,8 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.webapp.wicket.actionable.tree.ActionableItemsTree;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
 import org.slf4j.Logger;
@@ -110,7 +110,7 @@ public class MetadataPanel extends TitledPanel {
         TitledAjaxSubmitLink removeButton = new TitledAjaxSubmitLink("remove", "Remove", metadataSelectorForm) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                RepoPath metadataRepoPath = new RepoPathImpl(canonicalRepoPath.getRepoKey(),
+                RepoPath metadataRepoPath = InternalRepoPathFactory.create(canonicalRepoPath.getRepoKey(),
                         canonicalRepoPath.getPath() + ":" + metadataType);
                 repoService.undeploy(metadataRepoPath);
                 MarkupContainer browsePanel = findParent(TreeBrowsePanel.class);

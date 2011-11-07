@@ -109,7 +109,7 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
         addColumns(columns);
 
         final GroupableTable table = new GroupableTable<ActionableSearchResult<T>>("results", columns, dataProvider,
-                20) {
+                ConstantValues.uiSearchMaxRowsPerPage.getInt()) {
             public String getSearchExpression() {
                 return BaseSearchPanel.this.getSearchExpression();
             }
@@ -174,10 +174,15 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
         TitledAjaxSubmitLink searchButton = new TitledAjaxSubmitLink("submit", "Search", form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                onSearch();
-                fetchResults(parent);
-                table.setCurrentPage(0);    // scroll back to the first page
-                target.addComponent(searchBorder);
+                try {
+                    validateSearchControls();
+                    onSearch();
+                    fetchResults(parent);
+                    table.setCurrentPage(0);    // scroll back to the first page
+                    target.addComponent(searchBorder);
+                } catch (IllegalArgumentException iae) {
+                    error(iae.getMessage());
+                }
                 AjaxUtils.refreshFeedback(target);
             }
 
@@ -189,6 +194,9 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
         addSearchButton(form, searchButton);
 
         form.add(new DefaultButtonBehavior(searchButton));
+    }
+
+    protected void validateSearchControls() {
     }
 
     protected void onSearch() {

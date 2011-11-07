@@ -73,6 +73,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
 
         // Proxy key
         RequiredTextField<String> proxyKeyField = new RequiredTextField<String>("key");
+        setDefaultFocusField(proxyKeyField);
         proxyKeyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
             proxyKeyField.add(new JcrNameValidator("Invalid proxy key '%s'."));

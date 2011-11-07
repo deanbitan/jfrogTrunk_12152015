@@ -21,6 +21,7 @@ package org.artifactory.addon.wicket;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DurationFormatUtils;
@@ -30,6 +31,7 @@ import org.apache.wicket.Page;
 import org.apache.wicket.ajax.AbstractAjaxTimerBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
+import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.injection.web.InjectorHolder;
 import org.apache.wicket.markup.html.WebComponent;
@@ -42,6 +44,8 @@ import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
+import org.apache.wicket.markup.html.list.ListItem;
+import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.list.Loop;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
@@ -53,6 +57,8 @@ import org.artifactory.addon.AddonType;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.addon.OssAddonsManager;
+import org.artifactory.addon.p2.P2RemoteRepository;
+import org.artifactory.addon.p2.P2WebAddon;
 import org.artifactory.addon.wicket.disabledaddon.AddonNeededBehavior;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonHelpBubble;
@@ -62,21 +68,18 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.md.PropertiesImpl;
-import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.GroupInfo;
+import org.artifactory.api.license.LicenseInfo;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.api.version.VersionHolder;
 import org.artifactory.api.version.VersionInfoService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.collapsible.DisabledCollapsibleBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
-import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.PlaceHolder;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
@@ -102,17 +105,23 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupPopulatorStrategies;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.descriptor.security.sso.CrowdSettings;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.Request;
+import org.artifactory.security.GroupInfo;
+import org.artifactory.security.UserGroupInfo;
+import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.action.ItemAction;
@@ -143,6 +152,7 @@ import org.artifactory.webapp.wicket.page.config.layout.RepoLayoutPage;
 import org.artifactory.webapp.wicket.page.config.license.LicensePage;
 import org.artifactory.webapp.wicket.page.config.mail.MailConfigPage;
 import org.artifactory.webapp.wicket.page.config.proxy.ProxyConfigPage;
+import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepositoryConfigPage;
 import org.artifactory.webapp.wicket.page.config.security.LdapGroupListPanel;
 import org.artifactory.webapp.wicket.page.config.security.LdapsListPage;
@@ -170,7 +180,7 @@ import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.Module;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
 import org.springframework.security.core.Authentication;
 
 import javax.servlet.http.HttpServletRequest;
@@ -195,22 +205,8 @@ import static org.artifactory.addon.AddonType.*;
 @org.springframework.stereotype.Component
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesWebAddon, SearchAddon,
         WatchAddon, WebstartWebAddon, SsoAddon, LdapGroupWebAddon, BuildAddon, LicensesWebAddon, LayoutsWebAddon,
-        FilteredResourcesWebAddon, ReplicationWebAddon {
-
-    @Autowired
-    private CentralConfigService centralConfigService;
-
-    @Autowired
-    private UserGroupService userGroupService;
-
-    @Autowired
-    private AddonsManager addonsManager;
-
-    @Autowired
-    private VersionInfoService versionInfoService;
-
-    @Autowired
-    private AuthorizationService authorizationService;
+        FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon, P2WebAddon {
+    private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     public String getPageTitle(BasePage page) {
         String serverName = getCentralConfig().getServerName();
@@ -235,6 +231,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         adminConfiguration.addChild(new MenuNode("General", GeneralConfigPage.class));
         adminConfiguration.addChild(new MenuNode("Repositories", RepositoryConfigPage.class));
         adminConfiguration.addChild(new MenuNode("Repository Layouts", RepoLayoutPage.class));
+        AddonsManager addonsManager = getAddonsManager();
         LicensesWebAddon licensesAddon = addonsManager.addonByType(LicensesWebAddon.class);
         adminConfiguration.addChild(licensesAddon.getLicensesMenuNode("Licenses"));
         adminConfiguration.addChild(propertiesWebAddon.getPropertySetsPage("Property Sets"));
@@ -273,7 +270,8 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public String resetPassword(String userName, String remoteAddress, String resetPageUrl) {
-        return userGroupService.resetPassword(userName, remoteAddress, resetPageUrl);
+        return ContextHelper.get().beanForType(UserGroupService.class).
+                resetPassword(userName, remoteAddress, resetPageUrl);
     }
 
     public boolean isInstantiationAuthorized(Class componentClass) {
@@ -285,7 +283,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         String uptimeStr = DurationFormatUtils.formatDuration(uptime, "d'd' H'h' m'm' s's'");
         Label uptimeLabel = new Label(wicketId, uptimeStr);
         //Only show uptime for admins
-        if (!authorizationService.isAdmin()) {
+        if (!ContextHelper.get().getAuthorizationService().isAdmin()) {
             uptimeLabel.setVisible(false);
         }
         return uptimeLabel;
@@ -300,9 +298,10 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         latestLabel.setEscapeModelStrings(false);   // to include a link easily...
         latestLabel.setOutputMarkupId(true);
         String latestWikiUrl = VersionHolder.VERSION_UNAVAILABLE.getWikiUrl();
-        CentralConfigDescriptor configDescriptor = centralConfigService.getDescriptor();
+        CentralConfigDescriptor configDescriptor = getCentralConfig().getDescriptor();
         if (ConstantValues.versionQueryEnabled.getBoolean() && !configDescriptor.isOfflineMode()) {
             // try to get the latest version from the cache with a non-blocking call
+            VersionInfoService versionInfoService = ContextHelper.get().beanForType(VersionInfoService.class);
             VersionHolder latestVersion = versionInfoService.getLatestVersion(headersMap, true);
             latestWikiUrl = latestVersion.getWikiUrl();
             if (VersionInfoService.SERVICE_UNAVAILABLE.equals(latestVersion.getVersion())) {
@@ -384,12 +383,39 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public BaseModalPanel getChangeLicensePanel(EditValueButtonRefreshBehavior refreshBehavior, RepoPath path,
-            String currentValues) {
+            List<LicenseInfo> currentValues) {
         return null;
     }
 
+    public ListView<LicenseInfo> getLicensesListView(String id, RepoPath repoPath) {
+        ListView<LicenseInfo> listView = new ListView<LicenseInfo>(id, Lists.<LicenseInfo>newArrayList()) {
+            @Override
+            protected void populateItem(ListItem<LicenseInfo> licenseInfoListItem) {
+            }
+        };
+        listView.setVisible(false);
+        return listView;
+    }
+
+    public Component getAddLicenseLink(String id, RepoPath repoPath, ListView<LicenseInfo> listView) {
+        return getInvisibleLink(id);
+    }
+
+    public Component getEditLicenseLink(String id, RepoPath repoPath, ListView<LicenseInfo> listView) {
+        return getInvisibleLink(id);
+    }
+
+    public Component getDeleteLink(String id, RepoPath repoPath, FieldSetBorder infoBorder,
+            ListView<LicenseInfo> listView) {
+        return getInvisibleLink(id);
+    }
+
+    public Component getViewLink(String id, RepoAwareActionableItem actionableItem, FieldSetBorder infoBorder) {
+        return getInvisibleLink(id);
+    }
+
     public Properties getProperties(RepoPath repoPath) {
-        return new PropertiesImpl();
+        return (Properties) InfoFactoryHolder.get().createProperties();
     }
 
     public Map<RepoPath, Properties> getProperties(Set<RepoPath> repoPaths) {
@@ -494,7 +520,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return false;
     }
 
-    public void addExternalGroups(String userName, Set<UserInfo.UserGroupInfo> groups) {
+    public void addExternalGroups(String userName, Set<UserGroupInfo> groups) {
         // nop
     }
 
@@ -507,6 +533,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public WebMarkupContainer getAddonsInfoPanel(String panelId) {
+        AddonsManager addonsManager = getAddonsManager();
         List<AddonInfo> installedAddons = addonsManager.getInstalledAddons(null);
         List<String> enabledAddonNames = addonsManager.getEnabledAddonNames();
         return new AddonsInfoPanel(panelId, installedAddons, enabledAddonNames.isEmpty());
@@ -643,28 +670,14 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return new DisabledAddonTab(Model.of(title), AddonType.LICENSES);
     }
 
-    public LabeledValue getLicenseLabel(String id, RepoPath repoPath) {
-        LabeledValue label = new LabeledValue(id, "");
+    public Label getLicenseLabel(String id) {
+        Label label = new Label(id, "");
         label.setVisible(false);
         return label;
     }
 
-    public AbstractLink getEditLicenseLink(String id, RepoPath path, String currentValues,
-            LabeledValue licensesLabel) {
-        return getInvisibleLink(id);
-    }
-
-    public AbstractLink getAddLicenseLink(String id, RepoPath path, String currentValues,
-            LabeledValue licensesLabel) {
-        return getInvisibleLink(id);
-    }
-
-    public AbstractLink getDeleteLink(String id, RepoPath path, String currentValues, FieldSetBorder border) {
-        return getInvisibleLink(id);
-    }
-
     public String getCompanyLogoUrl() {
-        String descriptorLogo = centralConfigService.getDescriptor().getLogo();
+        String descriptorLogo = getCentralConfig().getDescriptor().getLogo();
         if (StringUtils.isNotBlank(descriptorLogo)) {
             return descriptorLogo;
         }
@@ -684,6 +697,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     public String getVersionInfo() {
         VersionInfo versionInfo = getCentralConfig().getVersionInfo();
+        AddonsManager addonsManager = getAddonsManager();
         String product = addonsManager.getProductName();
         return format("%s %s (rev. %s)", product, versionInfo.getVersion(), versionInfo.getRevision());
     }
@@ -696,7 +710,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return true;
     }
 
-    public boolean isAolDashboardAdmin(String username, String address) {
+    public boolean isAolAdmin(UserInfo userInfo) {
+        return false;
+    }
+
+    @Override
+    public boolean isAol() {
         return false;
     }
 
@@ -723,13 +742,37 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     public ITab getHttpRepoReplicationPanel(String tabTitle, HttpRepoDescriptor repoDescriptor,
-            RemoteReplicationDescriptor replicationDescriptor) {
+            RemoteReplicationDescriptor replicationDescriptor, CreateUpdateAction action) {
         return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.REPLICATION);
     }
 
     public ITab getLocalRepoReplicationPanel(String tabTitle, LocalReplicationDescriptor replicationDescriptor,
             MutableCentralConfigDescriptor mutableDescriptor, CreateUpdateAction action) {
         return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.REPLICATION);
+    }
+
+    public ITab getLocalRepoYumTab(String tabTitle, LocalRepoDescriptor descriptor, boolean isCreate) {
+        return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.YUM);
+    }
+
+    public ITab getRpmInfoTab(String tabTitle, RepoPath repoPath) {
+        return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.YUM);
+    }
+
+    public AbstractTab getVirtualRepoConfigurationTab(String tabTitle, VirtualRepoDescriptor repoDescriptor,
+            CachingDescriptorHelper cachingDescriptorHelper) {
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.P2);
+    }
+
+    public List<P2RemoteRepository> verifyRemoteRepositories(MutableCentralConfigDescriptor currentDescriptor,
+            VirtualRepoDescriptor virtualRepo, List<P2RemoteRepository> currentList, MutableStatusHolder statusHolder) {
+        statusHolder.setError("Error: the P2 addon is required for this operation.",
+                HttpStatus.SC_BAD_REQUEST, log);
+        return null;
+    }
+
+    private AddonsManager getAddonsManager() {
+        return ContextHelper.get().beanForType(AddonsManager.class);
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

@@ -18,8 +18,10 @@
 
 package org.artifactory.webapp.wicket.page.config.repos;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.injection.web.InjectorHolder;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.addon.p2.P2RemoteRepositoryModel;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
@@ -31,6 +33,7 @@ import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Helper class to RepositoryConfigPage, help syncing between mutableDescriptor model and mutableDescriptor cache
@@ -38,10 +41,7 @@ import java.io.Serializable;
  * @author Eli Givoni
  */
 public class CachingDescriptorHelper implements Serializable {
-    /**
-     * All the saved changes are applied to this config object and this is sent to the central config to be persisted.
-     */
-    //private MutableCentralConfigDescriptor cachingMutableDescriptor;
+
     /**
      * Used as the model for the repositories config page.
      */
@@ -49,6 +49,8 @@ public class CachingDescriptorHelper implements Serializable {
 
     @SpringBean
     private CentralConfigService centralConfigService;
+
+    private List<P2RemoteRepositoryModel> p2RemoteRepositoryModels = Lists.newArrayList();
 
     {
         InjectorHolder.getInjector().inject(this);
@@ -59,10 +61,10 @@ public class CachingDescriptorHelper implements Serializable {
     }
 
     /**
-     * @return MutableCentralConfigDescriptor from the db
+     * @return New mutable descriptor loaded from the database.
      */
     public MutableCentralConfigDescriptor getSavedMutableDescriptor() {
-        return getDescriptor();
+        return centralConfigService.getMutableDescriptor();
     }
 
     /**
@@ -73,38 +75,46 @@ public class CachingDescriptorHelper implements Serializable {
     }
 
     public void syncAndSaveLocalRepositories() {
-        MutableCentralConfigDescriptor configDescriptor = getDescriptor();
+        MutableCentralConfigDescriptor configDescriptor = getSavedMutableDescriptor();
         configDescriptor.setLocalRepositoriesMap(modelMutableDescriptor.getLocalRepositoriesMap());
         configDescriptor.setLocalReplications(modelMutableDescriptor.getLocalReplications());
         saveDescriptor(configDescriptor);
     }
 
     public void syncAndSaveRemoteRepositories() {
-        MutableCentralConfigDescriptor configDescriptor = getDescriptor();
+        MutableCentralConfigDescriptor configDescriptor = getSavedMutableDescriptor();
         configDescriptor.setRemoteRepositoriesMap(modelMutableDescriptor.getRemoteRepositoriesMap());
         configDescriptor.setRemoteReplications(modelMutableDescriptor.getRemoteReplications());
         saveDescriptor(configDescriptor);
     }
 
-    public void syncAndSaveVirtualRepositories() {
-        MutableCentralConfigDescriptor configDescriptor = getDescriptor();
+    public void syncAndSaveVirtualRepositories(boolean updateRemotes) {
+        MutableCentralConfigDescriptor configDescriptor = getSavedMutableDescriptor();
         configDescriptor.setVirtualRepositoriesMap(modelMutableDescriptor.getVirtualRepositoriesMap());
+        if (updateRemotes) {
+            configDescriptor.setRemoteRepositoriesMap(modelMutableDescriptor.getRemoteRepositoriesMap());
+            configDescriptor.setRemoteReplications(modelMutableDescriptor.getRemoteReplications());
+        }
         saveDescriptor(configDescriptor);
+    }
+
+    public void setP2RemoteRepositoryModels(List<P2RemoteRepositoryModel> p2RemoteRepositoryModels) {
+        this.p2RemoteRepositoryModels = p2RemoteRepositoryModels;
+    }
+
+    public List<P2RemoteRepositoryModel> getP2RemoteRepositoryModels() {
+        return p2RemoteRepositoryModels;
     }
 
     protected void removeRepositoryAndSave(String repoKey) {
         modelMutableDescriptor.removeRepository(repoKey);
-        MutableCentralConfigDescriptor savedDescriptor = getDescriptor();
+        MutableCentralConfigDescriptor savedDescriptor = getSavedMutableDescriptor();
         savedDescriptor.removeRepository(repoKey);
         saveDescriptor(savedDescriptor);
     }
 
     private void saveDescriptor(MutableCentralConfigDescriptor descriptor) {
         centralConfigService.saveEditedDescriptorAndReload(descriptor);
-    }
-
-    private MutableCentralConfigDescriptor getDescriptor() {
-        return centralConfigService.getMutableDescriptor();
     }
 
     /**
@@ -139,5 +149,14 @@ public class CachingDescriptorHelper implements Serializable {
         if (repoToReload != null) {
             modelMutableDescriptor.getVirtualRepositoriesMap().put(repoKey, (VirtualRepoDescriptor) repoToReload);
         }
+    }
+
+    /**
+     * Reset the transient objects in the caching descriptor
+     */
+    public void reset() {
+        // TODO: check if it's possible to reset the model (it is shared by all the tables)
+        //modelMutableDescriptor = getSavedMutableDescriptor();
+        p2RemoteRepositoryModels.clear();
     }
 }

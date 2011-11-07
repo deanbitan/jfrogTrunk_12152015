@@ -38,7 +38,6 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.repo.RepoPathImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
@@ -64,6 +63,7 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepositoryConfigPage;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
@@ -220,7 +220,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
 
                             //Add the repo to the zap list
                             if (repoToImport.isStoreArtifactsLocally()) {
-                                reposToZap.add(new RepoPathImpl(key + "-cache", ""));
+                                reposToZap.add(InternalRepoPathFactory.create(key + "-cache", ""));
                             }
                         }
                         // add the Artifactory reserved property set if it exists and is not associated with the new repo.

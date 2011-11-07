@@ -20,13 +20,15 @@ package org.artifactory.webapp.actionable.model;
 
 import com.google.common.collect.Lists;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.tree.fs.ZipEntriesTree;
-import org.artifactory.api.tree.fs.ZipTreeNode;
+import org.artifactory.fs.ZipEntryInfo;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.util.Tree;
+import org.artifactory.util.TreeNode;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -48,7 +50,7 @@ public class ZipFileActionableItem extends FileActionableItem implements Hierarc
     }
 
     public List<ActionableItem> getChildren(AuthorizationService authService) {
-        ZipEntriesTree tree;
+        Tree<ZipEntryInfo> tree;
         try {
             tree = getRepoService().zipEntriesToTree(getFileInfo().getRepoPath());
         } catch (IOException e) {
@@ -56,15 +58,15 @@ public class ZipFileActionableItem extends FileActionableItem implements Hierarc
             return Collections.emptyList();
         }
 
-        ZipTreeNode root = tree.getRoot();
+        TreeNode<ZipEntryInfo> root = tree.getRoot();
         if (!root.hasChildren()) {
             return Collections.emptyList();
         }
 
         List<ActionableItem> items = Lists.newArrayList();
-        Set<ZipTreeNode> children = root.getChildren();
-        for (ZipTreeNode childTreeNode : children) {
-            if (childTreeNode.isDirectory()) {
+        Collection<? extends TreeNode<ZipEntryInfo>> children = root.getChildren();
+        for (TreeNode<ZipEntryInfo> childTreeNode : children) {
+            if (childTreeNode.getData().isDirectory()) {
                 items.add(new ArchivedFolderActionableItem(getRepoPath(), childTreeNode, isCompactAllowed()));
             } else {
                 items.add(new ArchivedFileActionableItem(getRepoPath(), childTreeNode));

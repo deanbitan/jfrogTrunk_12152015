@@ -36,6 +36,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
+ * This is the root node of the tree browser. It contains all the repository nodes.
+ *
  * @author Yoav Landman
  */
 public class GlobalRepoActionableItem extends ActionableItemBase implements HierarchicActionableItem {

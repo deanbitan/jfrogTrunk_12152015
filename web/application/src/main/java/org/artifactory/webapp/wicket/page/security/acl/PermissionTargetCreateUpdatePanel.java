@@ -44,13 +44,9 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.security.AclInfo;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.GroupInfo;
-import org.artifactory.api.security.PermissionTargetInfo;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.api.security.UserInfo;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -65,8 +61,14 @@ import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.checkbox.AjaxCheckboxColumn;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
+import org.artifactory.security.GroupInfo;
+import org.artifactory.security.MutableAclInfo;
+import org.artifactory.security.MutablePermissionTargetInfo;
+import org.artifactory.security.PermissionTargetInfo;
+import org.artifactory.security.UserInfo;
 import org.artifactory.util.AlreadyExistsException;
 import org.artifactory.webapp.wicket.page.config.security.general.SecurityGeneralConfigPage;
 import org.artifactory.webapp.wicket.page.security.acl.tabs.PermissionPanel;
@@ -85,7 +87,7 @@ import java.util.List;
  * @author Yoav Landman
  * @author Yoav Aharoni
  */
-public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<PermissionTargetInfo> {
+public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<MutablePermissionTargetInfo> {
     private static final Logger log = LoggerFactory.getLogger(PermissionTargetCreateUpdatePanel.class);
 
     @SpringBean
@@ -98,6 +100,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
     }
 
     private PermissionTargetInfo permissionTarget;
+
     @SpringBean
     private RepositoryService repositoryService;
 
@@ -109,11 +112,11 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
 
     private RepoKeysData repoKeysData;
 
-    private AclInfo aclInfo;
+    private MutableAclInfo aclInfo;
     private PermissionTargetAceInfoRowDataProvider groupsDataProvider;
     private PermissionTargetAceInfoRowDataProvider usersDataProvider;
 
-    public PermissionTargetCreateUpdatePanel(CreateUpdateAction action, PermissionTargetInfo target,
+    public PermissionTargetCreateUpdatePanel(CreateUpdateAction action, MutablePermissionTargetInfo target,
             final Component targetsTable) {
         super(action, target);
         add(new CssClass("permissions-panel"));
@@ -131,10 +134,9 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
         permissionTarget = target;
 
         if (isCreate()) {
-            aclInfo = new AclInfo();
-            aclInfo.setPermissionTarget(permissionTarget);
+            aclInfo = InfoFactoryHolder.get().createAcl(permissionTarget);
         } else {
-            aclInfo = aclService.getAcl(permissionTarget);
+            aclInfo = InfoFactoryHolder.get().copyAcl(aclService.getAcl(permissionTarget));
         }
 
         groupsDataProvider = new PermissionTargetAceInfoRowDataProvider(userGroupService, aclInfo) {
@@ -159,6 +161,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
 
     private void addPermissionTargetNameField(TitledBorder border) {
         TextField nameTf = new TextField("name");
+        setDefaultFocusField(nameTf);
         border.add(nameTf);
         if (!isSystemAdmin() || !isCreate()) {
             nameTf.setEnabled(false);
@@ -202,9 +205,10 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
                 repoKeysData.setAnyRepository(anySelected);
 
                 entity.setRepoKeys(repoKeysData.getSelectedKeysList());
+                aclInfo.setPermissionTarget(entity);
                 if (isCreate()) {
                     try {
-                        aclService.createAcl(getAclInfo());
+                        aclService.createAcl(aclInfo);
                         AccessLogger.created("Permission target " + name + " was created successfully");
                     } catch (Exception e) {
                         String msg;
@@ -222,8 +226,8 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
                     getPage().info("Permission target '" + name + "' created successfully.");
                 } else {
                     try {
-                        getAclInfo().setPermissionTarget(entity);
-                        save();
+                        aclService.updateAcl(aclInfo);
+                        reloadData();
                         String message = "Permission target '" + name + "' updated successfully.";
                         AccessLogger.updated(message);
                         getPage().info(message);
@@ -410,14 +414,9 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
         target.addChildren(row, StyledCheckbox.class);
     }
 
-    public void save() {
-        aclService.updateAcl(aclInfo);
-        reloadData();
-    }
-
     private void reloadData() {
         //Reload from backend
-        aclInfo = aclService.getAcl(permissionTarget);
+        aclInfo = InfoFactoryHolder.get().copyAcl(aclService.getAcl(permissionTarget));
         groupsDataProvider.setAclInfo(aclInfo);
         groupsDataProvider.loadData();
 
@@ -431,7 +430,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Permiss
         }
     }
 
-    public AclInfo getAclInfo() {
+    public MutableAclInfo getAclInfo() {
         return aclInfo;
     }
 

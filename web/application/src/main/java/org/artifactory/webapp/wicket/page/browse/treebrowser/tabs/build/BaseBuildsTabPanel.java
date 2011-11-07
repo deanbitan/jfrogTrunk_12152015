@@ -28,7 +28,6 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.repo.exception.RepositoryRuntimeException;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
@@ -36,8 +35,9 @@ import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn;
 import org.artifactory.common.wicket.component.table.masterdetail.MasterDetailEntry;
 import org.artifactory.common.wicket.component.table.masterdetail.MasterDetailTable;
-import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
@@ -81,8 +81,8 @@ public abstract class BaseBuildsTabPanel extends Panel {
      */
     public BaseBuildsTabPanel(String id, RepoAwareActionableItem item) {
         super(id);
-        sha1 = ((FileInfo) item.getItemInfo()).getSha1();
-        md5 = ((FileInfo) item.getItemInfo()).getMd5();
+        sha1 = ((MutableFileInfo) item.getItemInfo()).getSha1();
+        md5 = ((MutableFileInfo) item.getItemInfo()).getMd5();
         textContentViewer = new ModalHandler("contentDialog");
         add(textContentViewer);
 

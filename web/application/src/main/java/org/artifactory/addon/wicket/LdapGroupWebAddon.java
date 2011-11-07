@@ -22,7 +22,6 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.security.GroupInfo;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
@@ -31,6 +30,7 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupPopulatorStrategies;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
+import org.artifactory.security.GroupInfo;
 import org.artifactory.webapp.wicket.page.config.security.LdapGroupListPanel;
 
 import java.util.List;

@@ -28,7 +28,7 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.config.ExportSettings;
+import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -44,11 +44,13 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -157,7 +159,7 @@ public class ExportSystemPanel extends TitledPanel {
                 try {
                     Session.get().cleanupFeedbackMessages();
                     status.reset();
-                    ExportSettings settings = new ExportSettings(exportToPath, status);
+                    ExportSettingsImpl settings = new ExportSettingsImpl(exportToPath, status);
                     settings.setCreateArchive(createArchive);
                     settings.setFailFast(false);
                     settings.setVerbose(verbose);
@@ -166,7 +168,7 @@ public class ExportSystemPanel extends TitledPanel {
                     settings.setM2Compatible(m2Compatible);
                     settings.setExcludeContent(excludeContent);
                     if (!excludeContent) {
-                        settings.setRepositories(repositoryService.getLocalAndCachedRepoDescriptors());
+                        settings.setRepositories(getAllLocalRepoKeys());
                     }
                     context.exportTo(settings);
                     List<StatusEntry> warnings = status.getWarnings();
@@ -183,7 +185,7 @@ public class ExportSystemPanel extends TitledPanel {
                         }
                         error("Failed to export system to '" + exportToPath + "': " + message);
                     } else {
-                        File exportFile = status.getCallback();
+                        File exportFile = status.getOutputFile();
                         info("Successfully exported system to '" + exportFile.getPath() + "'.");
                     }
                 } catch (Exception e) {
@@ -205,5 +207,13 @@ public class ExportSystemPanel extends TitledPanel {
             }
         });
         //exportForm.add(statusLabel);
+    }
+
+    private List<String> getAllLocalRepoKeys() {
+        List<String> repoKeys = new ArrayList<String>();
+        for (LocalRepoDescriptor localRepoDescriptor : repositoryService.getLocalAndCachedRepoDescriptors()) {
+            repoKeys.add(localRepoDescriptor.getKey());
+        }
+        return repoKeys;
     }
 }
