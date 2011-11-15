@@ -18,14 +18,10 @@
 
 package org.artifactory.request;
 
-import java.util.regex.Pattern;
-
 /**
  * @author Yoav Landman
  */
 public interface InternalRequestContext extends RequestContext {
-
-    Pattern PATTERN_JAVA_AGENT = Pattern.compile("[Jj]ava/(.+)");
 
     /**
      * Tests that the client's "User-Agent" header value does not match the pattern of older Maven versions (prior to

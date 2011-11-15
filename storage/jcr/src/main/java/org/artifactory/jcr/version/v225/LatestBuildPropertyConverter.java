@@ -22,12 +22,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.jcr.JcrSession;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.PathFactoryHolder;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.version.converter.ConfigurationConverter;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;

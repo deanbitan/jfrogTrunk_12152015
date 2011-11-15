@@ -18,14 +18,11 @@
 
 package org.artifactory.version.converter.v150;
 
-import org.artifactory.common.ConstantValues;
 import org.artifactory.convert.XmlConverterTest;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.testng.annotations.Test;
-
-import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -36,27 +33,7 @@ import static org.testng.Assert.assertNotNull;
 public class GcSystemPropertyConverterTest extends XmlConverterTest {
 
     @Test
-    public void testDefaultGcInterval() throws Exception {
-        testConversion(ConstantValues.gcIntervalSecs.getDefValue(), "0 0 /4 * * ?");
-    }
-
-    @Test
-    public void testGcIntervalShorterThanHour() throws Exception {
-        testConversion("150", "0 0 /1 * * ?");
-    }
-
-    @Test
-    public void testGcIntervalLessThanADay() throws Exception {
-        testConversion(Long.toString(TimeUnit.HOURS.toSeconds(4)), "0 0 /4 * * ?");
-    }
-
-    @Test
-    public void testGcIntervalMoreThanADay() throws Exception {
-        testConversion(Long.toString(TimeUnit.HOURS.toSeconds(52)), "0 0 4 /2 * ?");
-    }
-
-    private void testConversion(String intervalSecs, String expectedCron) throws Exception {
-        getBound().setProperty(ConstantValues.gcIntervalSecs, intervalSecs);
+    public void testCreateDefaultGcInterval() throws Exception {
         Document document = convertXml("/config/test/config.1.4.9.no.gc.xml", new GcSystemPropertyConverter());
         Element rootElement = document.getRootElement();
         Namespace namespace = rootElement.getNamespace();
@@ -65,6 +42,6 @@ public class GcSystemPropertyConverterTest extends XmlConverterTest {
         assertNotNull(gcConfigElement, "Expected to find a GC configuration element.");
 
         String cronExp = gcConfigElement.getChildText("cronExp", namespace);
-        assertEquals(cronExp, expectedCron, "Unexpected default GC cron exp");
+        assertEquals(cronExp, "0 0 /4 * * ?", "Unexpected default GC cron exp");
     }
 }

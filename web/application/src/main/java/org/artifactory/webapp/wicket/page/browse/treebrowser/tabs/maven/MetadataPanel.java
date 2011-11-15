@@ -42,13 +42,13 @@ import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlight
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.repo.RepoPath;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.webapp.wicket.actionable.tree.ActionableItemsTree;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

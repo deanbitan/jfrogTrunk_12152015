@@ -57,6 +57,7 @@ import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
@@ -73,6 +74,8 @@ import org.artifactory.fs.RepoResource;
 import org.artifactory.fs.ZipEntryInfo;
 import org.artifactory.info.InfoWriter;
 import org.artifactory.io.StringResourceStreamHandle;
+import org.artifactory.io.checksum.Checksum;
+import org.artifactory.io.checksum.Checksums;
 import org.artifactory.jcr.JcrRepoService;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.factory.VfsItemFactory;
@@ -126,6 +129,7 @@ import org.artifactory.spring.Reloadable;
 import org.artifactory.storage.StorageConstants;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
+import org.artifactory.util.Pair;
 import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.util.Tree;
 import org.artifactory.util.ZipUtils;
@@ -1883,11 +1887,36 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
         MutableFileInfo fileInfo = file.getMutableInfo();
         ChecksumsInfo checksumsInfo = new ChecksumsInfo(fileInfo.getChecksumsInfo());   // work on a copy
-        for (org.artifactory.checksum.ChecksumInfo checksumInfo : checksumsInfo.getChecksums()) {
+        for (ChecksumInfo checksumInfo : checksumsInfo.getChecksums()) {
+            String actual = checksumInfo.getActual();
+            if (!checksumInfo.getType().isValid(actual)) {
+                // Actual not valid => try using original
+                String original = checksumInfo.getOriginal();
+                if (checksumInfo.getType().isValid(original)) {
+                    fileInfo.addChecksumInfo(new ChecksumInfo(
+                            checksumInfo.getType(), ChecksumInfo.TRUSTED_FILE_MARKER, original));
+                    continue;
+                } else {
+                    // Need a recalculation
+                    try {
+                        Pair<Long, Checksum[]> longPair = Checksums.calculateWithLength(file.getStream(),
+                                ChecksumType.sha1, ChecksumType.md5);
+                        Checksum[] second = longPair.getSecond();
+                        for (Checksum checksum : second) {
+                            fileInfo.addChecksumInfo(new ChecksumInfo(
+                                    checksum.getType(), ChecksumInfo.TRUSTED_FILE_MARKER, checksum.getChecksum()));
+                        }
+                        break;
+                    } catch (IOException e) {
+                        throw new RepositoryRuntimeException(
+                                "Could not read stream from " + fileRepoPath + " dues to " + e.getMessage(), e);
+                    }
+                }
+            }
             if (!checksumInfo.checksumsMatch()) {
                 // replace inconsistent checksum with a trusted one
                 fileInfo.addChecksumInfo(new ChecksumInfo(
-                        checksumInfo.getType(), ChecksumInfo.TRUSTED_FILE_MARKER, checksumInfo.getActual()));
+                        checksumInfo.getType(), ChecksumInfo.TRUSTED_FILE_MARKER, actual));
             }
         }
     }

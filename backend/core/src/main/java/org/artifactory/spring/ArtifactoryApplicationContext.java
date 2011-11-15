@@ -487,6 +487,10 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                     "into Artifactory.");
         }
         ((ImportSettingsImpl) settings).setExportVersion(backupVersion);
+        if (ArtifactoryVersion.v240.equals(backupVersion)) {
+            log.info("Forcing trust server checksums for import from version 2.4.0!");
+            settings.setTrustServerChecksums(true);
+        }
         List<String> stoppedTasks = Lists.newArrayList();
         try {
             stopRelatedTasks(ImportJob.class, stoppedTasks);

@@ -24,39 +24,44 @@ import org.apache.jackrabbit.JcrConstants;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.fs.MutableStatsInfo;
+import org.artifactory.fs.StatsInfo;
 import org.artifactory.fs.WatchersInfo;
 import org.artifactory.jcr.JcrService;
+import org.artifactory.jcr.JcrServiceImpl;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.factory.JcrPathFactory;
+import org.artifactory.jcr.md.MetadataAwareAdapter;
+import org.artifactory.jcr.md.MetadataDefinition;
+import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.jcr.spring.ArtifactoryStorageContext;
 import org.artifactory.jcr.spring.StorageContextHelper;
+import org.artifactory.jcr.utils.JcrUtils;
+import org.artifactory.jcr.version.MarkerFileConverterBase;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.PathFactoryHolder;
 import org.artifactory.storage.StorageConstants;
 import org.artifactory.util.XmlUtils;
-import org.artifactory.version.converter.ConfigurationConverter;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
-import javax.jcr.query.Query;
-import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
  * @author Noam Y. Tenne
  */
-public class MarkerFileConverter implements ConfigurationConverter<JcrSession> {
+public class MarkerFileConverter extends MarkerFileConverterBase {
     private static final Logger log = LoggerFactory.getLogger(MarkerFileConverter.class);
     public static final String CREATE_DEFAULT_STATS_MARKER_FILENAME = ".stats.create.default";
     public static final String REPAIR_WATCHERS_MARKER_FILENAME = ".watch.convert";
@@ -67,6 +72,19 @@ public class MarkerFileConverter implements ConfigurationConverter<JcrSession> {
         createMarkerFile(REPAIR_WATCHERS_MARKER_FILENAME, "conversion of watchers");
     }
 
+    @Override
+    public boolean needConversion() {
+        File defaultStatsCreationMarker = new File(ArtifactoryHome.get().getDataDir(),
+                MarkerFileConverter.CREATE_DEFAULT_STATS_MARKER_FILENAME);
+        File repairWatchersMarker = new File(ArtifactoryHome.get().getDataDir(),
+                MarkerFileConverter.REPAIR_WATCHERS_MARKER_FILENAME);
+        if (defaultStatsCreationMarker.exists() || repairWatchersMarker.exists()) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void applyConversion() {
         /**
          * Create default stats metadata so that even files the were never downloaded will be considered in the last
@@ -84,23 +102,6 @@ public class MarkerFileConverter implements ConfigurationConverter<JcrSession> {
         }
     }
 
-    private void createMarkerFile(String markerFileName, String actionDesc) {
-        log.info("Marking for {} metadata.", actionDesc);
-        File markerFile = new File(ArtifactoryHome.get().getDataDir(), markerFileName);
-        try {
-            boolean fileWasCreated = markerFile.createNewFile();
-            if (!fileWasCreated) {
-                String message = String.format("Failed to mark for %s metadata: marker file was not created: '%s'.",
-                        actionDesc, markerFile.getAbsolutePath());
-                message += markerFile.exists() ? "File already exist" : "File doesn't exist";
-                log.warn(message, actionDesc);
-            }
-        } catch (IOException e) {
-            log.error("Error while marking for {} metadata: {}", e.getMessage(), actionDesc);
-            log.debug("Error while marking for " + actionDesc + " metadata.", e);
-        }
-    }
-
     private void createDefaultStats() {
         JcrQuerySpec querySpec = JcrQuerySpec.xpath(new StringBuilder().append("/jcr:root").
                 append(PathFactoryHolder.get().getAllRepoRootPath()).append("//element(*, ").
@@ -111,13 +112,12 @@ public class MarkerFileConverter implements ConfigurationConverter<JcrSession> {
         JcrService jcrService = context.getJcrService();
         JcrSession unmanagedSession = jcrService.getUnmanagedSession();
         try {
-            QueryManager queryManager = unmanagedSession.getWorkspace().getQueryManager();
-            Query query = queryManager.createQuery(querySpec.query(), querySpec.jcrType());
-            QueryResult result = query.execute();
+            JcrServiceImpl.keepUnmanagedSession(unmanagedSession);
+            QueryResult result = jcrService.executeQuery(querySpec, unmanagedSession);
             NodeIterator resultNodes = result.getNodes();
 
             while (resultNodes.hasNext()) {
-                jcrService.createDefaultStatsNode(resultNodes.nextNode());
+                createDefaultStatsNode(resultNodes.nextNode());
                 unmanagedSession.save();
             }
             FileUtils.deleteQuietly(new File(ArtifactoryHome.get().getDataDir(),
@@ -127,7 +127,39 @@ public class MarkerFileConverter implements ConfigurationConverter<JcrSession> {
             log.error("Error occurred while creating default stats metadata: {}", e.getMessage());
             log.debug("Error occurred while creating default stats metadata.", e);
         } finally {
+            JcrServiceImpl.removeUnmanagedSession();
             unmanagedSession.logout();
+        }
+    }
+
+    public void createDefaultStatsNode(Node artifactNode) throws RepositoryException {
+        boolean artifactHasStats = false;
+
+        if (artifactNode.hasNode(StorageConstants.NT_ARTIFACTORY_METADATA)) {
+            Node artifactoryMetadataNode = artifactNode.getNode(StorageConstants.NT_ARTIFACTORY_METADATA);
+            artifactHasStats = artifactoryMetadataNode.hasNode(StatsInfo.ROOT);
+        }
+
+        if (artifactHasStats) {
+            if (log.isDebugEnabled()) {
+                log.debug("Stats metadata already exists for '{}', no need to create.",
+                        JcrUtils.nodePathFromUuid(artifactNode.getIdentifier()));
+            }
+            return;
+        }
+        String artifactCreatedBy = artifactNode.getProperty(StorageConstants.PROP_ARTIFACTORY_CREATED_BY).getString();
+
+        MutableStatsInfo statsInfo = InfoFactoryHolder.get().createStats();
+        statsInfo.setLastDownloadedBy(artifactCreatedBy);
+
+        MetadataDefinitionService metadataDefService = StorageContextHelper.get().getMetadataDefinitionService();
+        MetadataDefinition<StatsInfo, MutableStatsInfo> statsDef =
+                metadataDefService.getMetadataDefinition(StatsInfo.class);
+        statsDef.getPersistenceHandler().update(new MetadataAwareAdapter(artifactNode), statsInfo);
+        artifactNode.getSession().save();
+        if (log.isDebugEnabled()) {
+            log.debug("Creating default stats metadata for '{}' with last downloaded by '{}'.", new Object[]{
+                    JcrUtils.nodePathFromUuid(artifactNode.getIdentifier()), artifactCreatedBy});
         }
     }
 
@@ -137,25 +169,29 @@ public class MarkerFileConverter implements ConfigurationConverter<JcrSession> {
         ArtifactoryStorageContext context = StorageContextHelper.get();
         JcrService jcrService = context.getJcrService();
         JcrSession unmanagedSession = jcrService.getUnmanagedSession();
-        JcrQuerySpec jcrQuerySpec = JcrQuerySpec.xpath(
-                new StringBuilder("/jcr:root").append(new JcrPathFactory().getAllRepoRootPath()).append("//. [@")
-                        .append(StorageConstants.PROP_ARTIFACTORY_METADATA_NAME).append(" = '")
-                        .append(WatchersInfo.ROOT).append("']").toString()).noLimit();
-        QueryResult queryResult = jcrService.executeQuery(jcrQuerySpec, unmanagedSession);
-        NodeIterator resultNodes;
         try {
-            resultNodes = queryResult.getNodes();
-        } catch (Exception e) {
-            log.error("Error occurred while searching for watchers metadata: {}", e.getMessage());
-            log.debug("Error occurred while searching for watchers metadata.", e);
-            return;
+            JcrQuerySpec jcrQuerySpec = JcrQuerySpec.xpath(
+                    new StringBuilder("/jcr:root").append(new JcrPathFactory().getAllRepoRootPath()).append("//. [@")
+                            .append(StorageConstants.PROP_ARTIFACTORY_METADATA_NAME).append(" = '")
+                            .append(WatchersInfo.ROOT).append("']").toString()).noLimit();
+            QueryResult queryResult = jcrService.executeQuery(jcrQuerySpec, unmanagedSession);
+            NodeIterator resultNodes;
+            try {
+                resultNodes = queryResult.getNodes();
+            } catch (Exception e) {
+                log.error("Error occurred while searching for watchers metadata: {}", e.getMessage());
+                log.debug("Error occurred while searching for watchers metadata.", e);
+                return;
+            }
+
+            repairWatchersNodes(unmanagedSession, resultNodes);
+
+            FileUtils.deleteQuietly(new File(ArtifactoryHome.get().getDataDir(),
+                    MarkerFileConverter.REPAIR_WATCHERS_MARKER_FILENAME));
+            log.info("Finished converting watchers metadata.");
+        } finally {
+            unmanagedSession.logout();
         }
-
-        repairWatchersNodes(unmanagedSession, resultNodes);
-
-        FileUtils.deleteQuietly(new File(ArtifactoryHome.get().getDataDir(),
-                MarkerFileConverter.REPAIR_WATCHERS_MARKER_FILENAME));
-        log.info("Finished converting watchers metadata.");
     }
 
     private void repairWatchersNodes(JcrSession unmanagedSession, NodeIterator resultNodes) {

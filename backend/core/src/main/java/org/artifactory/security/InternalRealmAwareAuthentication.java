@@ -18,9 +18,9 @@
 
 package org.artifactory.security;
 
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.jcr.JcrAuthenticationProvider;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;

@@ -48,4 +48,6 @@ public interface StorageService {
     void pruneUnreferencedFileInDataStore(MultiStatusHolder statusHolder);
 
     void ping();
+
+    void convertActualChecksums(MultiStatusHolder statusHolder);
 }

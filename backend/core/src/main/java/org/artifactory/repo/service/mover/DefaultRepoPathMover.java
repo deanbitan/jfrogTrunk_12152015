@@ -26,18 +26,17 @@ import org.artifactory.jcr.factory.VfsItemFactory;
 import org.artifactory.jcr.md.MetadataAware;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataPersistenceHandler;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoRepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.sapi.fs.VfsItem;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -160,7 +159,8 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
     private VfsFolder shallowCopyDirectory(VfsFolder sourceFolder, RepoRepoPath<LocalRepo> targetRrp) {
         assertNotDryRun();
         LocalRepo targetRepo = targetRrp.getRepo();
-        RepoPath targetRepoPath = InternalRepoPathFactory.create(targetRepo.getKey(), targetRrp.getRepoPath().getPath());
+        RepoPath targetRepoPath = InternalRepoPathFactory.create(targetRepo.getKey(),
+                targetRrp.getRepoPath().getPath());
         VfsFolder targetFolder = (VfsFolder) targetRepo.getLockedJcrFsItem(targetRepoPath);
         if (targetFolder == null) {
             // create target folder

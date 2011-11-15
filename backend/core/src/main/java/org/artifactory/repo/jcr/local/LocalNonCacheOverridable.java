@@ -16,19 +16,23 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.repo.jcr.cache.expirable;
+package org.artifactory.repo.jcr.local;
 
-import org.artifactory.mime.MavenNaming;
-import org.artifactory.repo.jcr.JcrCacheRepo;
-import org.springframework.stereotype.Component;
+import org.artifactory.repo.LocalRepo;
 
 /**
+ * Interface for classes that determine whether an artifact can be overridden from a local non-cache with no delete permissions
+ *
  * @author Noam Y. Tenne
  */
-@Component
-public class IntegrationArtifactCacheExpirable implements CacheExpirable {
+public interface LocalNonCacheOverridable {
 
-    public boolean isExpirable(JcrCacheRepo jcrCacheRepo, String path) {
-        return jcrCacheRepo.getItemModuleInfo(path).isIntegration() && !MavenNaming.isUniqueSnapshot(path);
-    }
+    /**
+     * Indicates whether an artifact can be overridden from a local non-cache repo without delete permissions
+     *
+     * @param repo Local non-cache repo
+     * @param path Path to check
+     * @return True if the path can be overridden with no delete permissions
+     */
+    boolean isOverridable(LocalRepo repo, String path);
 }

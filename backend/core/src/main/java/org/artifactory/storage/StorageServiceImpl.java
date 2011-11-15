@@ -39,6 +39,7 @@ import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
 import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.jcr.utils.DerbyUtils;
 import org.artifactory.jcr.utils.JcrUtils;
+import org.artifactory.jcr.version.v240.ActualChecksumsConverter;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.BaseTaskServiceDescriptorHandler;
 import org.artifactory.schedule.Task;
@@ -128,6 +129,15 @@ public class StorageServiceImpl implements InternalStorageService {
     @Override
     public void ping() {
         jcrService.ping();
+    }
+
+    @Override
+    public void convertActualChecksums(MultiStatusHolder statusHolder) {
+        if (new ActualChecksumsConverter().convertAllActualChecksumsProperties()) {
+            statusHolder.setStatus("Conversion was successful", log);
+        } else {
+            statusHolder.setError("Conversion failed", log);
+        }
     }
 
     @Override

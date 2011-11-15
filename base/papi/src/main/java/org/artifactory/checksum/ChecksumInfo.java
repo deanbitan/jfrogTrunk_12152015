@@ -19,6 +19,8 @@
 package org.artifactory.checksum;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.io.Serializable;
 
@@ -29,6 +31,8 @@ import java.io.Serializable;
  */
 @XStreamAlias("checksum")
 public class ChecksumInfo implements Serializable {
+    private static final Logger log = LoggerFactory.getLogger(ChecksumInfo.class);
+
     // marks a checksum type with no original checksum to be safe.
     // this marker is used when a file is deployed and we don't have the remote
     // checksum but we have the actual file
@@ -42,6 +46,9 @@ public class ChecksumInfo implements Serializable {
         this.type = type;
         this.original = original;
         this.actual = actual;
+        if (actual != null && TRUSTED_FILE_MARKER.equals(actual)) {
+            log.warn("Actual checksum cannot be " + TRUSTED_FILE_MARKER);
+        }
     }
 
     public ChecksumType getType() {

@@ -18,14 +18,23 @@
 
 package org.artifactory.repo.jcr.cache.expirable;
 
-import org.artifactory.repo.jcr.JcrCacheRepo;
+import org.artifactory.repo.LocalCacheRepo;
 
 import java.io.Serializable;
 
 /**
+ * Interface for classes that determine whether an artifact can expire when in a cache
+ *
  * @author Noam Y. Tenne
  */
 public interface CacheExpirable extends Serializable {
 
-    boolean isExpirable(JcrCacheRepo jcrCacheRepo, String path);
+    /**
+     * Indicates whether the specified path can ever expire
+     *
+     * @param localCacheRepo Holding cache
+     * @param path           Path to check
+     * @return True if the path can ever expire
+     */
+    boolean isExpirable(LocalCacheRepo localCacheRepo, String path);
 }

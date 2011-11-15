@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <!--
   ~ Artifactory is a binaries repository manager.
   ~ Copyright (C) 2011 JFrog Ltd.
@@ -15,7 +15,12 @@
   ~
   ~ You should have received a copy of the GNU Lesser General Public License
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
-  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/maven-v4_0_0.xsd">
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>artifactory-papi</artifactId>
     <packaging>jar</packaging>
@@ -24,7 +29,7 @@
     <parent>
         <artifactId>artifactory-base-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.4.0</version>
+        <version>2.4.1</version>
     </parent>
 
     <dependencies>
@@ -32,7 +37,7 @@
             <groupId>org.artifactory</groupId>
             <artifactId>artifactory-log</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.jfrog.buildinfo</groupId>
             <artifactId>build-info-api</artifactId>

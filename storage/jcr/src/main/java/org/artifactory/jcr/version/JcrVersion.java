@@ -30,6 +30,7 @@ import org.artifactory.jcr.version.v228.DeleteForConsistencyFixConverter;
 import org.artifactory.jcr.version.v228.FileStoreLayoutConverter;
 import org.artifactory.jcr.version.v228.MarkerFileConverter;
 import org.artifactory.jcr.version.v228.MavenPluginPropertyConverter;
+import org.artifactory.jcr.version.v240.ActualChecksumsConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
@@ -63,7 +64,8 @@ public enum JcrVersion implements SubConfigElementVersion {
     v225(ArtifactoryVersion.v230, ArtifactoryVersion.v2341, new FileStoreLayoutConverter(),
             new CompositeJcrConverter(new DeleteForConsistencyFixConverter(), new MavenPluginPropertyConverter()),
             new MarkerFileConverter()),
-    v228(ArtifactoryVersion.v240, ArtifactoryVersion.getCurrent(), null, null, null);
+    v228(ArtifactoryVersion.v240, ArtifactoryVersion.v240, null, null, new ActualChecksumsConverter()),
+    v241(ArtifactoryVersion.v241, ArtifactoryVersion.getCurrent(), null, null, null);
 
     private final VersionComparator comparator;
     private final ConfigurationConverter<ArtifactoryHome> preInitConverter;
@@ -87,6 +89,25 @@ public enum JcrVersion implements SubConfigElementVersion {
         this.jcrConverter = jcrConverter;
         this.postInitConverter = postInitConverter;
         this.comparator = new VersionComparator(this, from, until);
+    }
+
+    public static boolean hasMarkerConvertersInNeed() {
+        for (JcrVersion jcrVersion : values()) {
+            if (jcrVersion.postInitConverter != null && (jcrVersion.postInitConverter instanceof MarkerFileConverterBase)) {
+                if (((MarkerFileConverterBase) jcrVersion.postInitConverter).needConversion()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static void applyMarkerConvertersConversion() {
+        for (JcrVersion jcrVersion : values()) {
+            if (jcrVersion.postInitConverter != null && (jcrVersion.postInitConverter instanceof MarkerFileConverterBase)) {
+                ((MarkerFileConverterBase) jcrVersion.postInitConverter).applyConversion();
+            }
+        }
     }
 
     /**

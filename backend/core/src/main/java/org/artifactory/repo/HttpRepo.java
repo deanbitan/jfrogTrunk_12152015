@@ -111,6 +111,11 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 updateMethod(method);
                 return client.executeMethod(method);
             }
+
+            @Override
+            public InputStream getResponseStream(GetMethod method) throws IOException {
+                return HttpRepo.this.getResponseStream(method);
+            }
         };
         boolean s3Repository = S3RepositoryBrowser.isS3Repository(getUrl(), client);
         if (s3Repository) {

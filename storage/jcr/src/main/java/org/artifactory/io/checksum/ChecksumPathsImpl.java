@@ -50,12 +50,12 @@ import org.artifactory.jcr.jackrabbit.ArtifactoryDbDataRecord;
 import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
 import org.artifactory.jcr.spring.StorageContextHelper;
 import org.artifactory.jcr.utils.JcrUtils;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.PathUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

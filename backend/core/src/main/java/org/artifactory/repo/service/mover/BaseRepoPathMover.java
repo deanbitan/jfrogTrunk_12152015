@@ -32,12 +32,13 @@ import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.factory.JcrFsItemFactory;
 import org.artifactory.jcr.factory.VfsItemFactory;
 import org.artifactory.jcr.lock.LockingHelper;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.PomTargetPathValidator;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoRepoPath;
 import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -46,7 +47,6 @@ import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.sapi.fs.VfsItem;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 

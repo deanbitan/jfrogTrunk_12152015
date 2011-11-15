@@ -25,17 +25,21 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableFileInfo;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.repo.RepoPath;
+import org.slf4j.Logger;
 
 import javax.jcr.Node;
 
+import static org.artifactory.checksum.ChecksumInfo.TRUSTED_FILE_MARKER;
 import static org.artifactory.jcr.utils.JcrHelper.*;
 
 /**
  * @author freds
  */
 public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<FileInfo, MutableFileInfo> {
+    private static final Logger log = LoggerFactory.getLogger(FileInfoPersistenceHandler.class);
 
     public FileInfoPersistenceHandler(XmlMetadataProvider<FileInfo, MutableFileInfo> xmlProvider) {
         super(xmlProvider);
@@ -59,7 +63,20 @@ public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<FileI
             String original = getStringProperty(node, ChecksumStorageHelper.getOriginalPropName(type), null, true);
             String actual = getStringProperty(node, ChecksumStorageHelper.getActualPropName(type), null, true);
             if (StringUtils.isNotBlank(actual) || StringUtils.isNotBlank(original)) {
-                fileInfo.addChecksumInfo(new ChecksumInfo(type, original, actual));
+                ChecksumInfo info;
+                if (actual != null && TRUSTED_FILE_MARKER.equals(actual)) {
+                    log.error("Actual checksum cannot be " + TRUSTED_FILE_MARKER);
+                    if (type.isValid(original)) {
+                        // Switch original and actual
+                        info = new ChecksumInfo(type, actual, original);
+                    } else {
+                        // Force null
+                        info = new ChecksumInfo(type, original, null);
+                    }
+                } else {
+                    info = new ChecksumInfo(type, original, actual);
+                }
+                fileInfo.addChecksumInfo(info);
             }
         }
         return fileInfo;
@@ -83,7 +100,7 @@ public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<FileI
     private String getRealOriginal(ChecksumInfo checksumInfo) {
         if (checksumInfo != null) {
             if (checksumInfo.isMarkedAsTrusted()) {
-                return ChecksumInfo.TRUSTED_FILE_MARKER;
+                return TRUSTED_FILE_MARKER;
             } else {
                 return checksumInfo.getOriginal();
             }

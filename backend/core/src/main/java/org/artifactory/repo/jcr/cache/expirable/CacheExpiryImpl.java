@@ -23,7 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.jcr.JcrCacheRepo;
+import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.spring.ArtifactoryApplicationContext;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.version.CompoundVersionDetails;
@@ -38,6 +38,8 @@ import java.util.Collection;
 import java.util.Set;
 
 /**
+ * Aggregates and polls all the cache expirable components when needing to determine if a path can expire
+ *
  * @author Noam Y. Tenne
  */
 @Service
@@ -49,14 +51,17 @@ public class CacheExpiryImpl implements CacheExpiry, BeanNameAware, ApplicationC
     private Set<CacheExpirable> expirable = Sets.newHashSet();
     private String beanName;
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         context = ((ArtifactoryApplicationContext) applicationContext);
     }
 
+    @Override
     public void setBeanName(String name) {
         beanName = name;
     }
 
+    @Override
     public void init() {
         Collection<CacheExpirable> allExpirableIncludingMe = context.beansForType(CacheExpirable.class).values();
         Object thisAsBean = context.getBean(beanName);
@@ -68,19 +73,23 @@ public class CacheExpiryImpl implements CacheExpiry, BeanNameAware, ApplicationC
         log.debug("Loaded expirable: {}", expirable);
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
-    public boolean isExpirable(JcrCacheRepo jcrCacheRepo, String path) {
+    @Override
+    public boolean isExpirable(LocalCacheRepo localCacheRepo, String path) {
         if (StringUtils.isNotBlank(path)) {
             for (CacheExpirable cacheExpirable : expirable) {
-                if (cacheExpirable.isExpirable(jcrCacheRepo, path)) {
+                if (cacheExpirable.isExpirable(localCacheRepo, path)) {
                     return true;
                 }
             }

@@ -19,7 +19,7 @@
 package org.artifactory.repo.jcr.cache.expirable;
 
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.repo.jcr.JcrCacheRepo;
+import org.artifactory.repo.LocalCacheRepo;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,7 +28,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class MavenMetadataCacheExpirable implements CacheExpirable {
 
-    public boolean isExpirable(JcrCacheRepo jcrCacheRepo, String path) {
+    @Override
+    public boolean isExpirable(LocalCacheRepo localCacheRepo, String path) {
         return MavenNaming.isMavenMetadata(path);
     }
 }

@@ -22,6 +22,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.BeforeClass;
@@ -29,6 +30,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.List;
 
@@ -52,6 +54,11 @@ public class HtmlRepositoryBrowserTest {
             @Override
             public int executeMethod(HttpMethod method) throws IOException {
                 return hc.executeMethod(method);
+            }
+
+            @Override
+            public InputStream getResponseStream(GetMethod method) throws IOException {
+                return method.getResponseBodyAsStream();
             }
         };
         urlLister = new HtmlRepositoryBrowser(httpExecutor);

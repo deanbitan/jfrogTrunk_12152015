@@ -51,9 +51,6 @@ import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.config.xml.ArtifactoryXmlFactory;
 import org.artifactory.config.xml.EntityResolvingContentHandler;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
-import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.fs.MutableStatsInfo;
-import org.artifactory.fs.StatsInfo;
 import org.artifactory.io.NonClosingInputStream;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.ChecksumInputStream;
@@ -67,8 +64,6 @@ import org.artifactory.jcr.fs.JcrTreeNodeFileFilter;
 import org.artifactory.jcr.gc.JcrGarbageCollector;
 import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
 import org.artifactory.jcr.lock.aop.LockingAdvice;
-import org.artifactory.jcr.md.MetadataAwareAdapter;
-import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.jcr.spring.ArtifactoryStorageContext;
 import org.artifactory.jcr.spring.StorageContextHelper;
@@ -76,7 +71,6 @@ import org.artifactory.jcr.trash.Trashman;
 import org.artifactory.jcr.utils.JcrHelper;
 import org.artifactory.jcr.utils.JcrUtils;
 import org.artifactory.jcr.version.JcrVersion;
-import org.artifactory.jcr.version.v228.MarkerFileConverter;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
@@ -800,41 +794,9 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         SecurityService securityService = context.beanForType(SecurityService.class);
         securityService.authenticateAsSystem();
         try {
-            new MarkerFileConverter().applyConversion();
+            JcrVersion.applyMarkerConvertersConversion();
         } finally {
             securityService.nullifyContext();
-        }
-    }
-
-    @Override
-    public void createDefaultStatsNode(Node artifactNode) throws RepositoryException {
-        boolean artifactHasStats = false;
-
-        if (artifactNode.hasNode(StorageConstants.NT_ARTIFACTORY_METADATA)) {
-            Node artifactoryMetadataNode = artifactNode.getNode(StorageConstants.NT_ARTIFACTORY_METADATA);
-            artifactHasStats = artifactoryMetadataNode.hasNode(StatsInfo.ROOT);
-        }
-
-        if (artifactHasStats) {
-            if (log.isDebugEnabled()) {
-                log.debug("Stats metadata already exists for '{}', no need to create.",
-                        JcrUtils.nodePathFromUuid(artifactNode.getIdentifier()));
-            }
-            return;
-        }
-        String artifactCreatedBy = artifactNode.getProperty(StorageConstants.PROP_ARTIFACTORY_CREATED_BY).getString();
-
-        MutableStatsInfo statsInfo = InfoFactoryHolder.get().createStats();
-        statsInfo.setLastDownloadedBy(artifactCreatedBy);
-
-        MetadataDefinitionService metadataDefService = StorageContextHelper.get().getMetadataDefinitionService();
-        MetadataDefinition<StatsInfo, MutableStatsInfo> statsDef =
-                metadataDefService.getMetadataDefinition(StatsInfo.class);
-        statsDef.getPersistenceHandler().update(new MetadataAwareAdapter(artifactNode), statsInfo);
-        artifactNode.getSession().save();
-        if (log.isDebugEnabled()) {
-            log.debug("Creating default stats metadata for '{}' with last downloaded by '{}'.", new Object[]{
-                    JcrUtils.nodePathFromUuid(artifactNode.getIdentifier()), artifactCreatedBy});
         }
     }
 
@@ -1155,11 +1117,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
 
     @Override
     public void onContextCreated() {
-        File defaultStatsCreationMarker = new File(ArtifactoryHome.get().getDataDir(),
-                MarkerFileConverter.CREATE_DEFAULT_STATS_MARKER_FILENAME);
-        File repairWatchersMarker = new File(ArtifactoryHome.get().getDataDir(),
-                MarkerFileConverter.REPAIR_WATCHERS_MARKER_FILENAME);
-        if (defaultStatsCreationMarker.exists() || repairWatchersMarker.exists()) {
+        if (JcrVersion.hasMarkerConvertersInNeed()) {
             StorageContextHelper.get().getJcrService().activateMarkerFileConverters();
         }
     }

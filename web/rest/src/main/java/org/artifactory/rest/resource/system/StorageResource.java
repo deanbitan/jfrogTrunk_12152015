@@ -87,4 +87,14 @@ public class StorageResource {
         return lastError == null ? Response.ok().build() :
                 Response.serverError().entity(lastError.getMessage()).build();
     }
+
+    @POST
+    @Path("convertActual")
+    public Response activateConvertActual() {
+        MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
+        storageService.convertActualChecksums(statusHolder);
+        StatusEntry lastError = statusHolder.getLastError();
+        return lastError == null ? Response.ok().build() :
+                Response.serverError().entity(lastError.getMessage()).build();
+    }
 }

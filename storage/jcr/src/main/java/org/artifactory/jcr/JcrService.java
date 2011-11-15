@@ -243,8 +243,5 @@ public interface JcrService extends ReloadableBean {
     @Async
     void activateMarkerFileConverters();
 
-    @Transactional
-    void createDefaultStatsNode(Node artifactNode) throws RepositoryException;
-
     void ping();
 }

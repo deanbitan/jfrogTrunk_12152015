@@ -19,11 +19,11 @@
 package org.artifactory.backup;
 
 import org.artifactory.common.ConstantValues;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.FileExportCallback;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 

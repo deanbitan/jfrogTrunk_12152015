@@ -21,6 +21,7 @@ package org.artifactory.repo.remote.browse;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.io.IOUtils;
@@ -173,6 +174,11 @@ public class S3RepositoryBrowserTest {
             @Override
             public int executeMethod(HttpMethod method) throws IOException {
                 return client.executeMethod(method);
+            }
+
+            @Override
+            public InputStream getResponseStream(GetMethod method) throws IOException {
+                return method.getResponseBodyAsStream();
             }
         };
         s3Browser = new S3RepositoryBrowser(httpExecutor);

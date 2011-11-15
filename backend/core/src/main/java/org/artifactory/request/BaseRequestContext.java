@@ -22,11 +22,13 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.Nonnull;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Noam Y. Tenne
  */
 public abstract class BaseRequestContext implements InternalRequestContext {
+    private static final Pattern PATTERN_JAVA_AGENT = Pattern.compile("[Jj]ava/(.+)");
 
     protected final ArtifactoryRequest request;
 
@@ -45,6 +47,10 @@ public abstract class BaseRequestContext implements InternalRequestContext {
         String userAgent = request.getHeader("User-Agent");
         if (StringUtils.isBlank(userAgent)) {
             return true;
+        }
+
+        if (userAgent.startsWith("Wharf Ivy/") || userAgent.startsWith("Apache Ivy/")) {
+            return false;
         }
 
         /**

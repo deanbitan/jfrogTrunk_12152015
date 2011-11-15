@@ -4,10 +4,10 @@ import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

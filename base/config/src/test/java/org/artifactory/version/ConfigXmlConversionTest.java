@@ -20,6 +20,7 @@ package org.artifactory.version;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
@@ -38,7 +39,6 @@ import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.ArtifactoryHomeStub;
 import org.artifactory.test.TestUtils;
 import org.artifactory.util.RepoLayoutUtils;
@@ -69,15 +69,17 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class ConfigXmlConversionTest extends ArtifactoryHomeBoundTest {
+public class ConfigXmlConversionTest /** Don't extend ArtHomeBoundTest */
+{
     private static final Logger log = LoggerFactory.getLogger(ConfigXmlConversionTest.class);
 
     public void convert100() throws Exception {
-        ArtifactoryHomeStub artifactory = getBound();
+        ArtifactoryHomeStub artifactory = new ArtifactoryHomeStub();
+        ArtifactoryHome.bind(artifactory);
         artifactory.setProperty(substituteRepoKeys.getPropertyName() + "3rdp-releases", "third-party-releases")
                 .setProperty(substituteRepoKeys.getPropertyName() + "3rdp-snapshots", "third-party-snapshots");
         artifactory.setProperty(substituteRepoKeys.getPropertyName() + "3rd-party", "third-party");
-        // load the repo key substitute
+        //load the repo key substitute
         TestUtils.invokeMethodNoArgs(artifactory.getArtifactoryProperties(), "fillRepoKeySubstitute");
 
         // convert the default config
@@ -101,13 +103,15 @@ public class ConfigXmlConversionTest extends ArtifactoryHomeBoundTest {
         LocalRepoDescriptor pluginsReleases = localRepos.get("plugins-releases");
         assertEquals(pluginsReleases.getSnapshotVersionBehavior(), SnapshotVersionBehavior.UNIQUE,
                 "Should have kept the default");
+        ArtifactoryHome.unbind();
     }
 
     public void convert100NoBackupCron() throws Exception {
-        CentralConfigDescriptor cc =
-                transform("/config/test/config.1.0.0_no-backup-cron.xml", v100);
+        ArtifactoryHome.bind(new ArtifactoryHomeStub());
+        CentralConfigDescriptor cc = transform("/config/test/config.1.0.0_no-backup-cron.xml", v100);
         assertNotNull(cc.getBackups());
         assertTrue(cc.getBackups().isEmpty());
+        ArtifactoryHome.unbind();
     }
 
     public void convert110() throws Exception {

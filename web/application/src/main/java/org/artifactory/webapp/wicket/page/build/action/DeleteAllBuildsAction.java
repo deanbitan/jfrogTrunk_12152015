@@ -28,12 +28,12 @@ import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.component.confirm.AjaxConfirm;
 import org.artifactory.common.wicket.component.confirm.ConfirmDialog;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.action.DeleteAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 

@@ -21,6 +21,9 @@
 
 package org.apache.jackrabbit.core.util.db;
 
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,6 +33,8 @@ import java.sql.SQLException;
  * @author Yoav Landman
  */
 public final class ArtifactoryConnectionHelper extends ConnectionHelper {
+
+    private static final Logger log = LoggerFactory.getLogger(ArtifactoryConnectionHelper.class);
 
     public ArtifactoryConnectionHelper(DataSource dataSrc) {
         super(dataSrc, false);

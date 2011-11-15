@@ -76,10 +76,13 @@ import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.LocalCacheRepo;
+import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.jcr.cache.expirable.CacheExpiry;
+import org.artifactory.repo.jcr.local.LocalNonCacheOverridable;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.Request;
@@ -142,6 +145,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         }
     }
 
+    @Override
     public void init() {
         InternalArtifactoryContext context = InternalContextHelper.get();
 
@@ -188,50 +192,62 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         }
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public String getKey() {
         return delegator.getKey();
     }
 
+    @Override
     public String getDescription() {
         return delegator.getDescription();
     }
 
+    @Override
     public boolean isReal() {
         return delegator.isReal();
     }
 
+    @Override
     public boolean isLocal() {
         return delegator.isLocal();
     }
 
+    @Override
     public boolean isCache() {
         return delegator.isCache();
     }
 
+    @Override
     public InternalRepositoryService getRepositoryService() {
         return delegator.getRepositoryService();
     }
 
+    @Override
     public String getRepoRootPath() {
         return repoRootPath;
     }
 
+    @Override
     public void clearCaches() {
         fsItemCache.clear();
         locks.clear();
     }
 
+    @Override
     public VfsFolder getRootFolder() {
         return getJcrFolder(rootRepoPath);
     }
 
+    @Override
     public JcrFolder getLockedRootFolder() {
         return getLockedJcrFolder(rootRepoPath, false);
     }
 
+    @Override
     public void updateCache(JcrFsItem fsItem) {
         RepoPath repoPath = fsItem.getRepoPath();
         if (fsItem.isDeleted()) {
@@ -247,6 +263,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     /**
      * {@inheritDoc}
      */
+    @Override
     public JcrFsItem getLocalJcrFsItem(String relPath) {
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), relPath);
         return getJcrFsItem(repoPath);
@@ -255,6 +272,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     /**
      * {@inheritDoc}
      */
+    @Override
     public JcrFsItem getJcrFsItem(RepoPath repoPath) {
         return internalGetFsItem(new JcrFsItemLocator(repoPath, true, false));
     }
@@ -262,15 +280,18 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     /**
      * {@inheritDoc}
      */
+    @Override
     public JcrFsItem getJcrFsItem(Node node) {
         return internalGetFsItem(new JcrFsItemLocator(node, true));
     }
 
+    @Override
     public JcrFile getLocalJcrFile(String relPath) throws FileExpectedException {
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), relPath);
         return getJcrFile(repoPath);
     }
 
+    @Override
     public JcrFile getJcrFile(RepoPath repoPath) throws FileExpectedException {
         JcrFsItem item = getJcrFsItem(repoPath);
         if (item != null && !item.isFile()) {
@@ -279,11 +300,13 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return (JcrFile) item;
     }
 
+    @Override
     public JcrFolder getLocalJcrFolder(String relPath) throws FolderExpectedException {
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), relPath);
         return getJcrFolder(repoPath);
     }
 
+    @Override
     public JcrFolder getJcrFolder(RepoPath repoPath) throws FolderExpectedException {
         JcrFsItem item = getJcrFsItem(repoPath);
         if (item != null && !item.isDirectory()) {
@@ -292,37 +315,44 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return (JcrFolder) item;
     }
 
+    @Override
     public JcrFsItem getLockedJcrFsItem(String relPath) {
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), relPath);
         return getLockedJcrFsItem(repoPath);
     }
 
+    @Override
     public JcrFsItem getLockedJcrFsItem(RepoPath repoPath) {
         JcrFsItemLocator locator = new JcrFsItemLocator(repoPath, false, false);
         return internalGetLockedJcrFsItem(locator);
     }
 
+    @Override
     public JcrFsItem getLockedJcrFsItem(Node node) {
         JcrFsItemLocator locator = new JcrFsItemLocator(node, false);
         return internalGetLockedJcrFsItem(locator);
     }
 
+    @Override
     public JcrFile getLockedJcrFile(String relPath, boolean createIfMissing) throws FileExpectedException {
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), relPath);
         return getLockedJcrFile(repoPath, createIfMissing);
     }
 
+    @Override
     public JcrFile getLockedJcrFile(RepoPath repoPath, boolean createIfMissing) throws FileExpectedException {
         JcrFsItemLocator locator = new JcrFsItemLocator(repoPath, false, createIfMissing);
         locator.setCreator(jcrFileCreator);
         return (JcrFile) internalGetLockedJcrFsItem(locator);
     }
 
+    @Override
     public JcrFolder getLockedJcrFolder(String relPath, boolean createIfMissing) throws FolderExpectedException {
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), relPath);
         return getLockedJcrFolder(repoPath, createIfMissing);
     }
 
+    @Override
     public JcrFolder getLockedJcrFolder(RepoPath repoPath, boolean createIfMissing) throws FolderExpectedException {
         JcrFsItemLocator locator = new JcrFsItemLocator(repoPath, false, createIfMissing);
         locator.setCreator(jcrFolderCreator);
@@ -333,6 +363,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
      * Return <b>locally</b> stored file resource. Unfound resource will be returned if the requested resource doesn't
      * exist locally.
      */
+    @Override
     public RepoResource getInfo(InternalRequestContext context) throws FileExpectedException {
         final String path = context.getResourcePath();
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), path);
@@ -393,6 +424,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return localRes;
     }
 
+    @Override
     public ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, final RepoResource res)
             throws IOException, RepositoryException {
         log.debug("Transferring {} directly to user from {}.", res, this);
@@ -446,22 +478,27 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return handle;
     }
 
+    @Override
     public ModuleInfo getItemModuleInfo(String itemPath) {
         return delegator.getItemModuleInfo(itemPath);
     }
 
+    @Override
     public ModuleInfo getArtifactModuleInfo(String artifactPath) {
         return delegator.getArtifactModuleInfo(artifactPath);
     }
 
+    @Override
     public ModuleInfo getDescriptorModuleInfo(String descriptorPath) {
         return delegator.getDescriptorModuleInfo(descriptorPath);
     }
 
+    @Override
     public RepoPath getRepoPath(String path) {
         return delegator.getRepoPath(path);
     }
 
+    @Override
     public String getChecksum(String checksumFileUrl, RepoResource resource) throws IOException {
         if (resource == null || !resource.isFound()) {
             throw new IOException("Could not get resource stream. Path not found: " + checksumFileUrl + ".");
@@ -473,14 +510,17 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return getChecksumPolicy().getChecksum(checksumType, resource.getInfo().getChecksums(), resource.getRepoPath());
     }
 
+    @Override
     public ChecksumPolicy getChecksumPolicy() {
         return delegator.getChecksumPolicy();
     }
 
+    @Override
     public void undeploy(RepoPath repoPath) {
         undeploy(repoPath, true);
     }
 
+    @Override
     public void undeploy(RepoPath repoPath, boolean calcMavenMetadata) {
         VfsItem item = getLockedJcrFsItem(repoPath);
         if (item == null || item.isDeleted()) {
@@ -521,6 +561,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     /**
      * Create the resource in the local repository
      */
+    @Override
     public RepoResource saveResource(SaveResourceContext context) throws IOException, RepoRejectException {
         RepoResource res = context.getRepoResource();
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), res.getRepoPath().getPath());
@@ -774,6 +815,14 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         for (ChecksumType checksumType : ChecksumType.values()) {
             ChecksumInfo existingChecksum = existingChecksumsToCompare.getChecksumInfo(checksumType);
             ChecksumInfo newChecksum = newChecksumsToCompare.getChecksumInfo(checksumType);
+            if (newChecksum == null || newChecksum.getActual() == null) {
+                log.warn("New {} checksum is null ({}).", checksumType, newChecksum);
+                return true;
+            }
+            if (existingChecksum == null || existingChecksum.getActual() == null) {
+                log.warn("Existing {} checksum is null ({}).", checksumType, existingChecksum);
+                return true;
+            }
             if (!existingChecksum.getActual().equals(newChecksum.getActual())) {
                 return true;
             }
@@ -781,28 +830,44 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return false;
     }
 
+    @Override
     public boolean shouldProtectPathDeletion(String path, boolean overwrite) {
-        //Never protect checksums
-        boolean protect = !NamingUtils.isChecksum(path);
+        if (NamingUtils.isChecksum(path)) {
+            //Never protect checksums
+            return false;
+        }
 
         if (overwrite) {
-            protect &= !(isCache() && ContextHelper.get().beanForType(CacheExpiry.class).isExpirable(
-                    ((JcrCacheRepo) delegator), path));
+            if (isCache()) {
+                if ((ContextHelper.get().beanForType(CacheExpiry.class).isExpirable(
+                        ((LocalCacheRepo) delegator), path))) {
+                    return false;
+                }
+            } else {
+                if (ContextHelper.get().beanForType(LocalNonCacheOverridable.class)
+                        .isOverridable(((LocalRepo) delegator), path)) {
+                    return false;
+                }
+            }
+            if (NamingUtils.isMetadata(path)) {
+                return false;
+            }
 
-            //Any metadata should be overridable
-            boolean metadata = NamingUtils.isMetadata(path);
-            protect &= !metadata;
-            //For non metadata, never protect folders
-            if (!metadata) {
-                // Should not acquire a FsItem here!
-                RepoPath repoPath = InternalRepoPathFactory.create(getKey(), path);
-                protect &= jcrService.isFile(repoPath);
+            /**
+             * This condition determines:
+             * - If the item is a file (means that is also exists), protect.
+             * - If the item is not a file (it's either a folder or doesn't exist), don't protect.
+             */
+            RepoPath repoPath = InternalRepoPathFactory.create(getKey(), path);
+            if (!jcrService.isFile(repoPath)) {
+                return false;
             }
         }
-        return protect;
+
+        return true;
     }
 
-    @SuppressWarnings({"SimplifiableIfStatement"})
+    @Override
     public boolean itemExists(String relPath) {
         assert relPath != null;
         if (relPath.length() > 0) {
@@ -813,6 +878,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         }
     }
 
+    @Override
     public List<String> getChildrenNames(String relPath) {
         return jcrRepoService.getChildrenNames(repoRootPath + "/" + relPath);
     }
@@ -835,6 +901,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         jcrRepoService.trash(children);
     }
 
+    @Override
     public void onCreate(JcrFsItem fsItem) {
         MutableStatusHolder holder = new MultiStatusHolder();
         // update the item info as late as possible, just before calling the on create interceptors (normally the update
@@ -850,16 +917,19 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         AccessLogger.deployed(repoPath);
     }
 
+    @Override
     public void onDelete(JcrFsItem fsItem) {
         interceptors.afterDelete(fsItem, new BasicStatusHolder());
         AccessLogger.deleted(fsItem.getRepoPath());
     }
 
+    @Override
     public void setDescriptor(T descriptor) {
         repoRootPath = PathFactoryHolder.get().getRepoRootPath(getKey());
         rootRepoPath = InternalRepoPathFactory.create(getKey(), "");
     }
 
+    @Override
     public T getDescriptor() {
         return delegator.getDescriptor();
     }
@@ -917,11 +987,13 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return fsItem;
     }
 
+    @Override
     public boolean isWriteLocked(RepoPath path) {
         MonitoringReadWriteLock lock = locks.get(path);
         return lock != null && lock.isWriteLocked();
     }
 
+    @Override
     public StoringRepo<T> getStorageMixin() {
         return this;
     }
@@ -1062,6 +1134,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         return new FileResource(file.getInfo(), exactMatch);
     }
 
+    @Override
     public boolean isSuppressPomConsistencyChecks() {
         return false;
     }
@@ -1200,16 +1273,19 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             return null;
         }
 
+        @Override
         public JcrFile newFsItem(RepoPath repoPath, StoringRepo repo) {
             return new JcrFile(repoPath, repo);
         }
 
+        @Override
         public JcrFile newFsItem(JcrFsItem copy, StoringRepo repo) {
             return new JcrFile((JcrFile) copy, repo);
         }
     }
 
     private static class JcrFolderCreator implements FsItemCreator<JcrFolder> {
+        @Override
         public RuntimeException checkItemType(JcrFsItem item) {
             if (!item.isDirectory()) {
                 return new FolderExpectedException(item.getRepoPath());
@@ -1217,10 +1293,12 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             return null;
         }
 
+        @Override
         public JcrFolder newFsItem(RepoPath repoPath, StoringRepo repo) {
             return new JcrFolder(repoPath, repo);
         }
 
+        @Override
         public JcrFolder newFsItem(JcrFsItem copy, StoringRepo repo) {
             return new JcrFolder((JcrFolder) copy, repo);
         }

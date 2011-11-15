@@ -20,16 +20,28 @@ package org.artifactory.repo.jcr.cache.expirable;
 
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.LocalCacheRepo;
+import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.repo.jcr.local.LocalNonCacheOverridable;
 import org.springframework.stereotype.Component;
 
 /**
  * @author Noam Y. Tenne
  */
 @Component
-public class MavenIndexCacheExpirable implements CacheExpirable {
+public class NonUniqueSnapshotArtifactExpirableOrOverridable implements CacheExpirable, LocalNonCacheOverridable {
 
     @Override
     public boolean isExpirable(LocalCacheRepo localCacheRepo, String path) {
-        return MavenNaming.isIndex(path);
+        return isIntegrationAndNonUnique(localCacheRepo, path);
+    }
+
+    @Override
+    public boolean isOverridable(LocalRepo repo, String path) {
+        return isIntegrationAndNonUnique(repo, path);
+    }
+
+    private boolean isIntegrationAndNonUnique(StoringRepo repo, String path) {
+        return repo.getItemModuleInfo(path).isIntegration() && !MavenNaming.isUniqueSnapshot(path);
     }
 }

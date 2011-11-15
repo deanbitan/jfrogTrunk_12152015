@@ -19,8 +19,10 @@
 package org.artifactory.repo.remote.browse;
 
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.methods.GetMethod;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Basic single method interface for controlling HttpMethod execution. Needed by HttpRepo to add all used headers for
@@ -30,4 +32,12 @@ import java.io.IOException;
  */
 public interface HttpExecutor {
     int executeMethod(HttpMethod method) throws IOException;
+
+    /**
+     * Returns the response input stream. Also handles GZip streams.
+     *
+     * @param method The executed method
+     * @return The response input stream
+     */
+    InputStream getResponseStream(GetMethod method) throws IOException;
 }

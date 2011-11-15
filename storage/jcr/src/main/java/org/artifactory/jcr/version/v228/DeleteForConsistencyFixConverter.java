@@ -19,9 +19,9 @@
 package org.artifactory.jcr.version.v228;
 
 import org.artifactory.io.checksum.ChecksumPathsImpl;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.converter.ConfigurationConverter;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.Session;
 
