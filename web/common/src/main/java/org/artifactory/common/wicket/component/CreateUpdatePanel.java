@@ -18,8 +18,6 @@
 
 package org.artifactory.common.wicket.component;
 
-import org.apache.wicket.Component;
-import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
@@ -34,7 +32,6 @@ public abstract class CreateUpdatePanel<E> extends BaseModalPanel {
     protected E entity;
     protected Form<E> form;
     protected CreateUpdateAction action;
-    private Component defaultFocusField;
 
     public CreateUpdatePanel(CreateUpdateAction action, E entity) {
         this.entity = entity;
@@ -58,21 +55,5 @@ public abstract class CreateUpdatePanel<E> extends BaseModalPanel {
 
     public boolean isCreate() {
         return action.equals(CreateUpdateAction.CREATE);
-    }
-
-    public void setDefaultFocusField(Component defaultFocusField) {
-        this.defaultFocusField = defaultFocusField;
-        if (defaultFocusField != null) {
-            defaultFocusField.setOutputMarkupId(true);
-        }
-    }
-
-    @Override
-    public void onShow(AjaxRequestTarget target) {
-        super.onShow(target);
-        if (defaultFocusField != null && defaultFocusField.isEnabled()) {
-            target.focusComponent(defaultFocusField);
-        }
-        defaultFocusField = null;
     }
 }

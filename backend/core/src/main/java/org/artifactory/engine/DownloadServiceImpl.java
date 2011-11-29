@@ -51,6 +51,7 @@ import org.artifactory.request.RequestResponseHelper;
 import org.artifactory.resource.ChecksumResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.resource.UnfoundRepoResourceReason;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.traffic.InternalTrafficService;
@@ -316,8 +317,8 @@ public class DownloadServiceImpl implements InternalDownloadService {
     private void respondResourceNotFound(ArtifactoryResponse response, RepoResource resource) throws IOException {
         String reason = "Resource not found";
         int status = HttpStatus.SC_NOT_FOUND;
-        if (resource instanceof UnfoundRepoResource) {
-            UnfoundRepoResource unfound = (UnfoundRepoResource) resource;
+        if (resource instanceof UnfoundRepoResourceReason) {
+            UnfoundRepoResourceReason unfound = (UnfoundRepoResourceReason) resource;
             // use the reason and status from the resource unless it's authorization response and the
             // settings prohibit revealing this information
             boolean hideUnauthorizedResources =

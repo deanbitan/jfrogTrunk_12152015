@@ -67,30 +67,53 @@ public final class ArtifactoryConnectionHelper extends ConnectionHelper {
     public void txBegin() {
         try {
             startBatch();
-            log.trace("Batch tx begin " + getConnection());
+            if (log.isTraceEnabled()) {
+                log.trace("Batch tx begin " + getBatchConnection());
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Could not start batch.", e);
         }
     }
 
-    public void txEnd(boolean commit) {
+    public void commit() {
+        if (log.isTraceEnabled()) {
+            log.trace("Batch tx end " + getBatchConnection());
+        }
         try {
-            log.trace("Batch tx end " + getConnection());
-            endBatch(commit);
+            endBatch(true);
+        } catch (SQLException e) {
+            throw new RuntimeException("Could not commit transaction.", e);
+        }
+    }
+
+    public void rollback() {
+        try {
+            if (log.isTraceEnabled()) {
+                log.trace("Batch tx end " + getBatchConnection());
+            }
+            endBatch(false);
         } catch (Exception e) {
-            if (commit) {
-                throw new RuntimeException("Could not commit.", e);
+            if (log.isDebugEnabled()) {
+                log.error("Rollback failed.", e);
             } else {
-                if (log.isDebugEnabled()) {
-                    log.error("Rollback failed.", e);
-                } else {
-                    log.warn("Rollback failed: " + e.getMessage());
-                }
+                log.warn("Rollback failed: " + e.getMessage());
             }
         }
     }
 
     public boolean isTxActive() {
         return inBatchMode();
+    }
+
+    protected final Connection getBatchConnection() {
+        if (inBatchMode()) {
+            try {
+                return getConnection();
+            } catch (SQLException e) {
+                log.error("Could not get batch connection.", e);
+                return null;
+            }
+        }
+        return null;
     }
 }

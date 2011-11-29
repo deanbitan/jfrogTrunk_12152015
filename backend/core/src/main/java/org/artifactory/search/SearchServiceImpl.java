@@ -63,7 +63,6 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RemoteRepoBase;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.common.PathFactoryHolder;
@@ -352,8 +351,8 @@ public class SearchServiceImpl implements InternalSearchService {
                     } else {
                         repoKey = ((RemoteRepoBase) repo).getLocalCacheRepo().getKey();
                     }
-                    collectLocalRepoItemsRecursively(patternFragments, pathsToReturn, InternalRepoPathFactory.create(repoKey,
-                            ""));
+                    collectLocalRepoItemsRecursively(patternFragments, pathsToReturn,
+                            InternalRepoPathFactory.create(repoKey, ""));
                 } else {
                     collectVirtualRepoItemsRecursively(patternFragments, pathsToReturn,
                             InternalRepoPathFactory.create(repo.getKey(), ""));
@@ -465,7 +464,11 @@ public class SearchServiceImpl implements InternalSearchService {
             log.debug("Scheduling indexing for marked archives.");
             getAdvisedMe().index(archiveRepoPaths);
         } finally {
-            session.save();
+            try {
+                session.save();
+            } catch (Exception e) {
+                log.error("Could not save partial archive indexes.");
+            }
             session.logout();
         }
     }

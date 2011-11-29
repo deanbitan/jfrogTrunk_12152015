@@ -18,6 +18,7 @@
 
 package org.artifactory.api.rest.artifact;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class FileList implements Serializable {
      * @param created The ISO8601 time the result was assembled
      * @param files   List of folders found
      */
-    public FileList(String uri, String created, List<FileListElement> files) {
+    public FileList(@Nullable String uri, String created, List<FileListElement> files) {
         this.uri = uri;
         this.created = created;
         this.files = files;
@@ -56,6 +57,7 @@ public class FileList implements Serializable {
      *
      * @return Request URI
      */
+    @Nullable
     public String getUri() {
         return uri;
     }
@@ -65,7 +67,7 @@ public class FileList implements Serializable {
      *
      * @param uri Request URI
      */
-    public void setUri(String uri) {
+    public void setUri(@Nullable String uri) {
         this.uri = uri;
     }
 

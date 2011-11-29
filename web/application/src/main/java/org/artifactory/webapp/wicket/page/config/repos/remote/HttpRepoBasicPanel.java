@@ -24,6 +24,7 @@ import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
@@ -40,6 +41,7 @@ public class HttpRepoBasicPanel extends Panel {
 
     public HttpRepoBasicPanel(String id, final HttpRepoDescriptor repoDescriptor) {
         super(id);
+        add(new CssClass("advanced-remote-repo"));
 
         HttpRepoGeneralSettingsPanel generalSettings = new HttpRepoGeneralSettingsPanel("generalSettings");
         add(generalSettings);

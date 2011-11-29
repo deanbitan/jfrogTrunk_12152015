@@ -350,11 +350,16 @@ public class JcrSession implements XASession, ArtifactorySession {
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     private void validateSessionCleaness() {
-        SessionResourceManager resourceManager = getSessionResourceManager();
-        if (resourceManager != null && resourceManager.hasPendingResources()) {
-            IllegalStateException e = new IllegalStateException("Tried to return a session with unprocessed pending " +
-                    "resources: " + resourceManager.pendingResources());
-            log.error("Session is not clean: ", e);
+        try {
+            SessionResourceManager resourceManager = getSessionResourceManager();
+            if (resourceManager != null && resourceManager.hasPendingResources()) {
+                IllegalStateException e = new IllegalStateException(
+                        "Tried to return a session with unprocessed pending resources: " +
+                                resourceManager.pendingResources());
+                log.error("Session is not clean: ", e);
+            }
+        } catch (Exception e) {
+            log.error("Could not verify no pending changes.", e);
         }
     }
 

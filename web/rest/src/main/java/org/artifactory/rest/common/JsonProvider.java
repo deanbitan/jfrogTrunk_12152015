@@ -130,7 +130,8 @@ import javax.ws.rs.ext.Provider;
         SecurityRestConstants.MT_GROUPS,
         SecurityRestConstants.MT_USERS,
         SecurityRestConstants.MT_PERMISSION_TARGETS,
-        ReplicationRestConstants.MT_REPLICATION_REQUEST
+        ReplicationRestConstants.MT_REPLICATION_REQUEST,
+        ReplicationRestConstants.MT_REPLICATION_STATUS
 })
 public class JsonProvider extends JacksonJsonProvider implements ContextResolver<ObjectMapper> {
 

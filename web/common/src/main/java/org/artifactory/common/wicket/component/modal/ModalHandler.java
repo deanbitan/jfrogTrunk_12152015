@@ -28,6 +28,8 @@ import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 import org.artifactory.common.wicket.model.TitleModel;
 
+import static java.lang.String.format;
+
 /**
  * @author Yoav Aharoni
  */
@@ -137,6 +139,7 @@ public class ModalHandler extends ModalWindow implements TitleModel {
 
         // setPageCreator() will reset getModalPanel()
         setPageCreator(new PageCreator() {
+            @Override
             public Page createPage() {
                 return new ModalShowPage(panel);
             }
@@ -144,16 +147,21 @@ public class ModalHandler extends ModalWindow implements TitleModel {
         show(target);
     }
 
-    public static void resizeAndCenterCurrent(AjaxRequestTarget target) {
-        resizeCurrent(target);
-        centerCurrent(target);
+    public static void resizeAndCenterCurrent() {
+        resizeCurrent();
+        centerCurrent();
     }
 
-    public static void resizeCurrent(AjaxRequestTarget target) {
-        target.appendJavascript("ModalHandler.resizeCurrent();");
+    public static void resizeCurrent() {
+        AjaxRequestTarget.get().appendJavascript("ModalHandler.resizeCurrent();");
     }
 
-    public static void centerCurrent(AjaxRequestTarget target) {
-        target.appendJavascript("ModalHandler.centerCurrent();");
+    public static void centerCurrent() {
+        AjaxRequestTarget.get().appendJavascript("ModalHandler.centerCurrent();");
+    }
+
+    public static void bindHeightTo(String markupId) {
+        AjaxRequestTarget.get().appendJavascript(format("ModalHandler.bindModalHeight(dojo.byId('%s'));", markupId));
+        ModalHandler.resizeAndCenterCurrent();
     }
 }

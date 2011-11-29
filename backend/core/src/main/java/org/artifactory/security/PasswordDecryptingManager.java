@@ -56,14 +56,14 @@ public class PasswordDecryptingManager implements AuthenticationManager {
         log.trace("Received authentication request for {}", authentication);
         String password = authentication.getCredentials().toString();
         UsernamePasswordAuthenticationToken decryptedAuthentication = null;
-        if (needsDecryption(password, (authentication instanceof InternalUsernamePasswordAuthenticationToken))) {
-            String username = authentication.getPrincipal().toString();
-            log.trace("Decrypting user password for user '{}'", username);
-            password = decryptPassword(password, username);
-            decryptedAuthentication = new UsernamePasswordAuthenticationToken(username, password);
-            decryptedAuthentication.setDetails(authentication.getDetails());
-        }
         try {
+            if (needsDecryption(password, (authentication instanceof InternalUsernamePasswordAuthenticationToken))) {
+                String username = authentication.getPrincipal().toString();
+                log.trace("Decrypting user password for user '{}'", username);
+                password = decryptPassword(password, username);
+                decryptedAuthentication = new UsernamePasswordAuthenticationToken(username, password);
+                decryptedAuthentication.setDetails(authentication.getDetails());
+            }
             Authentication result;
             if (decryptedAuthentication != null) {
                 result = delegate.authenticate(decryptedAuthentication);

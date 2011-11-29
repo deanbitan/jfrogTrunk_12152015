@@ -24,17 +24,19 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.ReplicationRestConstants;
 import org.artifactory.api.rest.replication.ReplicationRequest;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -50,6 +52,28 @@ import java.io.IOException;
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class ReplicationResource {
 
+    /**
+     * Returns the latest replication status of the given path if annotated
+     *
+     * @param path Path to check for annotations
+     * @return Response
+     */
+    @GET
+    @Produces({ReplicationRestConstants.MT_REPLICATION_STATUS, MediaType.APPLICATION_JSON})
+    @Path("{path: .+}")
+    public Response getReplicationStatus(@PathParam("path") String path) {
+        RepoPath repoPath = InternalRepoPathFactory.create(path);
+        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+        return addonsManager.addonByType(RestAddon.class).getReplicationStatus(repoPath);
+    }
+
+    /**
+     * Executes replication operations
+     *
+     * @param path               Replication root
+     * @param replicationRequest Replication settings
+     * @return Response
+     */
     @POST
     @Consumes({ReplicationRestConstants.MT_REPLICATION_REQUEST, MediaType.APPLICATION_JSON})
     @Path("{path: .+}")

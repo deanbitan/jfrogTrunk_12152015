@@ -94,7 +94,7 @@ public class VirtualRepoBasicPanel extends Panel {
                     protected void onOrderChanged(AjaxRequestTarget target) {
                         super.onOrderChanged(target);
                         target.addComponent(resolvedRepo);
-                        ModalHandler.resizeCurrent(target);
+                        ModalHandler.resizeCurrent();
                     }
                 };
         add(reposSelection);

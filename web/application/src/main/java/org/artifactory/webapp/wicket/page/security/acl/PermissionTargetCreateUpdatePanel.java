@@ -93,14 +93,6 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
     @SpringBean
     private UserGroupService userGroupService;
 
-    @Override
-    public void onShow(AjaxRequestTarget target) {
-        super.onShow(target);
-        target.appendJavascript("PermissionTabPanel.onShow()");
-    }
-
-    private PermissionTargetInfo permissionTarget;
-
     @SpringBean
     private RepositoryService repositoryService;
 
@@ -110,8 +102,8 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
     @SpringBean
     private AuthorizationService authService;
 
+    private PermissionTargetInfo permissionTarget;
     private RepoKeysData repoKeysData;
-
     private MutableAclInfo aclInfo;
     private PermissionTargetAceInfoRowDataProvider groupsDataProvider;
     private PermissionTargetAceInfoRowDataProvider usersDataProvider;
@@ -157,6 +149,12 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
 
         addCancelButton();
         addSubmitButton(targetsTable);
+    }
+
+    @Override
+    public void onShow(AjaxRequestTarget target) {
+        super.onShow(target);
+        target.appendJavascript("PermissionTabPanel.onShow()");
     }
 
     private void addPermissionTargetNameField(TitledBorder border) {

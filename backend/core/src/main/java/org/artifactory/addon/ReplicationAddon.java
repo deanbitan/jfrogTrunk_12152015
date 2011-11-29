@@ -32,6 +32,11 @@ import java.io.IOException;
 public interface ReplicationAddon extends Addon {
 
     String DESCRIPTOR = "descriptor";
+    //replication
+    String PROP_REPLICATION_PREFIX = "artifactory.replication.";
+    String PROP_REPLICATION_STARTED_SUFFIX = ".started";
+    String PROP_REPLICATION_FINISHED_SUFFIX = ".finished";
+    String PROP_REPLICATION_RESULT_SUFFIX = ".result";
 
     public enum Overwrite {
         never, force

@@ -34,6 +34,11 @@ import java.util.HashSet;
  * @author Yossi Shaul
  */
 public abstract class ChecksumPolicyBaseTest {
+    public static final String DUMMY_SHA1 = "1234567890123456789012345678901234567890";
+    public static final String DUMMY2_SHA1 = "3234567890123456789012345678901234567890";
+    public static final String DUMMY_MD5 = "12345678901234567890123456789012";
+    public static final String DUMMY2_MD5 = "32345678901234567890123456789012";
+
     ChecksumInfo matchedChecksums;
     ChecksumInfo notMatchedChecksums;
     ChecksumInfo noOriginalChecksum;
@@ -51,9 +56,9 @@ public abstract class ChecksumPolicyBaseTest {
     @BeforeMethod
     void generateTestData() {
         // Match checksum should be the only sha1
-        matchedChecksums = new ChecksumInfo(ChecksumType.sha1, "1234567890", "1234567890");
-        notMatchedChecksums = new ChecksumInfo(ChecksumType.md5, "thiswontmatch", "1234567890");
-        noOriginalChecksum = new ChecksumInfo(ChecksumType.md5, null, "calculatedchecksum123");
+        matchedChecksums = new ChecksumInfo(ChecksumType.sha1, DUMMY_SHA1, DUMMY_SHA1);
+        notMatchedChecksums = new ChecksumInfo(ChecksumType.md5, "thiswontmatch", DUMMY_MD5);
+        noOriginalChecksum = new ChecksumInfo(ChecksumType.md5, null, DUMMY2_MD5);
 
     }
 

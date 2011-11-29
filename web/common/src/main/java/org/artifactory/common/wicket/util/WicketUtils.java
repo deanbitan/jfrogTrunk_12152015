@@ -163,7 +163,8 @@ public abstract class WicketUtils {
      * @return Text displaying component
      */
     public static Component getSyntaxHighlighter(String componentId, String toDisplay, Syntax syntaxType) {
-        if (ConstantValues.uiSyntaxColoringMaxTextSizeBytes.getLong() >= toDisplay.getBytes().length) {
+        if (toDisplay != null &&
+                ConstantValues.uiSyntaxColoringMaxTextSizeBytes.getLong() >= toDisplay.getBytes().length) {
             return new SyntaxHighlighter(componentId, toDisplay, syntaxType);
         } else {
             TextContentPanel contentPanel = new TextContentPanel(componentId);

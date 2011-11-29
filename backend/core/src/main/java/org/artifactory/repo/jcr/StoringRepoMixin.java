@@ -1018,11 +1018,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             FsItemCreator creator;
             if (fsItem != null) {
                 creator = locator.getCreator();
-                RuntimeException exception = creator.checkItemType(fsItem);
-                if (exception != null) {
-                    LockingHelper.removeLockEntry(repoPath);
-                    throw exception;
-                }
+                creator.verifyItemType(fsItem);
                 return internalGetLockedJcrFsItem(fsItem, false, creator, sessionLockEntry);
             } else if (locator.createIfEmpty) {
                 creator = locator.creator;
@@ -1258,7 +1254,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     private static interface FsItemCreator<T extends JcrFsItem<? extends ItemInfo, ? extends MutableItemInfo>> {
-        public RuntimeException checkItemType(JcrFsItem item);
+        public void verifyItemType(JcrFsItem item);
 
         public T newFsItem(RepoPath repoPath, StoringRepo repo);
 
@@ -1266,11 +1262,11 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     private static class JcrFileCreator implements FsItemCreator<JcrFile> {
-        public RuntimeException checkItemType(JcrFsItem item) {
+        @Override
+        public void verifyItemType(JcrFsItem item) {
             if (item.isDirectory()) {
-                return new FileExpectedException(item.getRepoPath());
+                throw new FileExpectedException(item.getRepoPath());
             }
-            return null;
         }
 
         @Override
@@ -1286,11 +1282,10 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
     private static class JcrFolderCreator implements FsItemCreator<JcrFolder> {
         @Override
-        public RuntimeException checkItemType(JcrFsItem item) {
+        public void verifyItemType(JcrFsItem item) {
             if (!item.isDirectory()) {
-                return new FolderExpectedException(item.getRepoPath());
+                throw new FolderExpectedException(item.getRepoPath());
             }
-            return null;
         }
 
         @Override

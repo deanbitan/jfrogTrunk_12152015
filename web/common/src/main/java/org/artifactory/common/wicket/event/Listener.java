@@ -16,13 +16,11 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.api.rest.constant;
+package org.artifactory.common.wicket.event;
 
 /**
- * @author Noam Y. Tenne
+ * @author Yoav Aharoni
  */
-public interface ReplicationRestConstants {
-    String ROOT = "replication";
-    String MT_REPLICATION_REQUEST = RestConstants.MT_ARTIFACTORY_APP + ROOT + ".ReplicationRequest+json";
-    String MT_REPLICATION_STATUS = RestConstants.MT_ARTIFACTORY_APP + ROOT + ".ReplicationStatus+json";
+public interface Listener<E> {
+    void onEvent(E event);
 }

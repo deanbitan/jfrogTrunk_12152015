@@ -190,18 +190,18 @@ public class RepoLayoutUtilsTest {
                 RepoLayoutUtils.MAVEN_2_DEFAULT.getArtifactPathPattern(),
                 "(?<orgPath>.+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>SNAPSHOT))?/" +
                         "(?<module>\\2)\\-(?<baseRev>\\3)(?:\\-(?<fileItegRev>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-" +
-                        "(?:[0-9]+))))?(?:\\-(?<classifier>(?:(?!\\d))[^\\./]+))?\\.(?<ext>[^\\-/]+)");
+                        "(?:[0-9]+))))?(?:\\-(?<classifier>[^/]+?))?\\.(?<ext>(?:(?!\\d))[^\\-/]+)");
         testGeneratedPatternRegExp(RepoLayoutUtils.MAVEN_2_DEFAULT,
                 RepoLayoutUtils.MAVEN_2_DEFAULT.getDescriptorPathPattern(),
                 "(?<orgPath>.+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>SNAPSHOT))?/" +
                         "(?<module>\\2)\\-(?<baseRev>\\3)(?:\\-(?<fileItegRev>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-" +
-                        "(?:[0-9]+))))?(?:\\-(?<classifier>(?:(?!\\d))[^\\./]+))?\\.pom");
+                        "(?:[0-9]+))))?(?:\\-(?<classifier>[^/]+?))?\\.pom");
 
         testGeneratedPatternRegExp(RepoLayoutUtils.IVY_DEFAULT,
                 RepoLayoutUtils.IVY_DEFAULT.getArtifactPathPattern(),
                 "(?<org>[^/]+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>\\d{14}))?/" +
-                        "(?<type>[^/]+?)s/(?<module>\\2)(?:\\-(?<classifier>(?:(?!\\d))[^\\./]+))?\\-" +
-                        "(?<baseRev>\\3)(?:\\-(?<fileItegRev>\\d{14}))?\\.(?<ext>[^\\-/]+)");
+                        "(?<type>[^/]+?)s/(?<module>\\2)(?:\\-(?<classifier>[^/]+?))?\\-" +
+                        "(?<baseRev>\\3)(?:\\-(?<fileItegRev>\\d{14}))?\\.(?<ext>(?:(?!\\d))[^\\-/]+)");
         testGeneratedPatternRegExp(RepoLayoutUtils.IVY_DEFAULT,
                 RepoLayoutUtils.IVY_DEFAULT.getDescriptorPathPattern(),
                 "(?<org>[^/]+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>\\d{14}))?/" +
@@ -211,7 +211,7 @@ public class RepoLayoutUtilsTest {
                 RepoLayoutUtils.GRADLE_DEFAULT.getArtifactPathPattern(),
                 "(?<org>[^/]+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>\\d{14}))?/" +
                         "(?<module>\\2)\\-(?<baseRev>\\3)(?:\\-(?<fileItegRev>\\d{14}))?(?:\\-" +
-                        "(?<classifier>(?:(?!\\d))[^\\./]+))?\\.(?<ext>[^\\-/]+)");
+                        "(?<classifier>[^/]+?))?\\.(?<ext>(?:(?!\\d))[^\\-/]+)");
         testGeneratedPatternRegExp(RepoLayoutUtils.GRADLE_DEFAULT,
                 RepoLayoutUtils.GRADLE_DEFAULT.getDescriptorPathPattern(),
                 "(?<org>[^/]+?)/(?<module>[^/]+)/ivy\\-(?<baseRev>[^/]+?)(?:\\-(?<fileItegRev>\\d{14}))?\\.xml");
@@ -227,9 +227,9 @@ public class RepoLayoutUtilsTest {
         testGeneratedPatternRegExp(RepoLayoutUtils.MAVEN_2_DEFAULT,
                 RepoLayoutUtils.wrapKeywordAsToken(RepoLayoutUtils.BASE_REVISION), "(?<baseRev>[^/]+?)");
         testGeneratedPatternRegExp(RepoLayoutUtils.MAVEN_2_DEFAULT,
-                RepoLayoutUtils.wrapKeywordAsToken(RepoLayoutUtils.CLASSIFIER), "(?<classifier>(?:(?!\\d))[^\\./]+)");
+                RepoLayoutUtils.wrapKeywordAsToken(RepoLayoutUtils.CLASSIFIER), "(?<classifier>[^/]+?)");
         testGeneratedPatternRegExp(RepoLayoutUtils.MAVEN_2_DEFAULT,
-                RepoLayoutUtils.wrapKeywordAsToken(RepoLayoutUtils.EXT), "(?<ext>[^\\-/]+)");
+                RepoLayoutUtils.wrapKeywordAsToken(RepoLayoutUtils.EXT), "(?<ext>(?:(?!\\d))[^\\-/]+)");
         testGeneratedPatternRegExp(RepoLayoutUtils.MAVEN_2_DEFAULT,
                 RepoLayoutUtils.wrapKeywordAsToken(RepoLayoutUtils.TYPE), "(?<type>[^/]+?)");
 

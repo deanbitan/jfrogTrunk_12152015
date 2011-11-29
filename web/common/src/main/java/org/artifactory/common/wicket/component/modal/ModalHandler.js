@@ -72,7 +72,7 @@ var ModalHandler = {
                 ModalHandler.autoHeight(node)
             }, 100);
         }
-        modal.resizing = function() {
+        modal.onresize = function() {
             ModalHandler.autoHeight(node);
         };
     },
@@ -84,7 +84,7 @@ var ModalHandler = {
         }
 
         var content = modal.content;
-        var height = node.clientHeight + content.offsetHeight - content.firstChild.offsetHeight - 5;
+        var height = node.clientHeight + content.offsetHeight - content.firstChild.offsetHeight - 6;
 
         if (height > 0) {
             node.style.height = height + 'px';
@@ -120,15 +120,12 @@ var ModalHandler = {
         var maxWidth = Wicket.Window.getViewportWidth();
         var maxHeight = Wicket.Window.getViewportHeight() - 70;
 
-        if (width > maxWidth) {
-            width = maxWidth;
-        }
-        if (height > maxHeight) {
-            height = maxHeight;
-        }
+        width = Math.min(width, maxWidth);
+        height = Math.min(height, maxHeight);
 
         modal.window.style.width = width + modal.settings.widthUnit;
         modal.content.style.height = height + modal.settings.heightUnit;
+        modal.onresize();
     },
 
     resizeAndCenter:function() {
@@ -137,16 +134,21 @@ var ModalHandler = {
     }
 };
 
+Wicket.Window.prototype.onresize = function() {
+};
 
 Wicket.Window.prototype.resizing = function() {
-    Wicket.Window.current.wasResized = true;
+    var modal = Wicket.Window.current;
+    modal.wasResized = true;
+    modal.onresize();
 };
 
 /**
  * Returns the modal window markup with specified element identifiers.
  */
 Wicket.Window.getMarkup =
-        function(idWindow, idClassElement, idCaption, idContent, idTop, idTopLeft, idTopRight, idLeft, idRight, idBottomLeft, idBottomRight, idBottom, idCaptionText, isFrame) {
+        function(idWindow, idClassElement, idCaption, idContent, idTop, idTopLeft, idTopRight, idLeft, idRight,
+                idBottomLeft, idBottomRight, idBottom, idCaptionText, isFrame) {
             var s =
                     "<div class=\"wicket-modal\" id=\"" + idWindow +
                             "\" style=\"top: 10px; left: 10px; width: 100px;\">" +

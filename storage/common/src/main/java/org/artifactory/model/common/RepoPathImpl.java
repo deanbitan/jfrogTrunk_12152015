@@ -69,18 +69,22 @@ public final class RepoPathImpl implements RepoPath {
         this.path = PathUtils.formatRelativePath(id.substring(idx + 1));
     }
 
+    @Override
     public String getRepoKey() {
         return repoKey;
     }
 
+    @Override
     public String getPath() {
         return path;
     }
 
+    @Override
     public String getId() {
         return repoKey + REPO_PATH_SEP + path;
     }
 
+    @Override
     public String getName() {
         return NamingUtils.stripMetadataFromPath(PathUtils.getFileName(getPath()));
     }
@@ -88,6 +92,7 @@ public final class RepoPathImpl implements RepoPath {
     /**
      * @return Parent of this repo path. Null if has no parent
      */
+    @Override
     public RepoPath getParent() {
         if (isRoot()) {
             return null;
@@ -99,6 +104,7 @@ public final class RepoPathImpl implements RepoPath {
     /**
      * @return True if this path is the root (ie, getPath() is empty string)
      */
+    @Override
     public boolean isRoot() {
         return StringUtils.isBlank(getPath());
     }

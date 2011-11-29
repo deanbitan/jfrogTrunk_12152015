@@ -35,13 +35,10 @@ import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
-import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
-import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
-import org.artifactory.webapp.wicket.panel.tabbed.SubmittingTabbedPanel;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 import org.artifactory.webapp.wicket.util.validation.ReservedPathPrefixValidator;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
@@ -73,6 +70,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
     protected RepoConfigCreateUpdatePanel(CreateUpdateAction action, E repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor);
+
         this.cachingDescriptorHelper = cachingDescriptorHelper;
         form.setOutputMarkupId(true);
         add(new CssClass("repo-config"));
@@ -95,17 +93,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         repoConfigBorder.add(repoKeyField);
         repoConfigBorder.add(new SchemaHelpBubble("key.help"));
 
-        StyledTabbedPanel repoConfigTabbedPanel =
-                new SubmittingTabbedPanel("repoConfigTabbedPanel", getConfigurationTabs()) {
-                    @Override
-                    protected void onAjaxUpdate(AjaxRequestTarget target) {
-                        super.onAjaxUpdate(target);
-                        ModalHandler.resizeCurrent(target);
-                        ModalHandler.centerCurrent(target);
-                    }
-                };
-        repoConfigTabbedPanel.setOutputMarkupId(true);
-        repoConfigBorder.add(repoConfigTabbedPanel);
+        repoConfigBorder.add(new RepoTabbedPanel("repoConfigTabbedPanel", getConfigurationTabs()));
 
         form.add(repoConfigBorder);
 
@@ -123,6 +111,8 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         form.add(new DefaultButtonBehavior(test));
 
         add(form);
+
+        bindHeightTo("modalScroll");
     }
 
     protected abstract List<ITab> getConfigurationTabs();
@@ -197,4 +187,5 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         // reset caching descriptor caches
         cachingDescriptorHelper.reset();
     }
+
 }

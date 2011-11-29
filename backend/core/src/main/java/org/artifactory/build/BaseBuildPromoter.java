@@ -157,7 +157,7 @@ public class BaseBuildPromoter {
     private void handleDependency(Collection<String> scopes, Set<RepoPath> itemsToMove, String buildName,
             String buildNumber, Dependency dependency) {
         List<String> dependencyScopes = dependency.getScopes();
-        if (scopes == null || scopes.isEmpty() || (dependencyScopes != null &&
+        if (org.artifactory.util.CollectionUtils.isNullOrEmpty(scopes) || (dependencyScopes != null &&
                 CollectionUtils.containsAny(dependencyScopes, scopes))) {
             Set<FileInfo> dependencyInfos = locateItems(buildName, buildNumber, dependency, false);
             for (FileInfo dependencyInfo : dependencyInfos) {

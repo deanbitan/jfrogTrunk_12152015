@@ -48,12 +48,14 @@ import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.jackrabbit.ArtifactoryDataStore;
 import org.artifactory.jcr.jackrabbit.ArtifactoryDbDataRecord;
 import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
+import org.artifactory.jcr.lock.aop.LockingAdvice;
 import org.artifactory.jcr.spring.StorageContextHelper;
 import org.artifactory.jcr.utils.JcrUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.PathUtils;
+import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 
@@ -130,11 +132,17 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
             //For v1 - drop the table is exist and leave
             if (ConstantValues.gcUseV1.getBoolean()) {
                 if (!createTable) {
-                    log.info("Using legacy garbage collector. Removing the checksumPaths table...");
-                    connHelper.update(SQL_DROP_TABLE);
-                    log.info("ChecksumPaths table removed.");
+                    log.info("Using legacy garbage collector");
+                    dropTable();
                 }
                 return;
+            }
+            //If started from a v1 version drop and recreate the table to cover for a failed conversion
+            if (!createTable && ArtifactoryHome.get().getOriginalVersionDetails().getVersion().before(
+                    ArtifactoryVersion.v240)) {
+                log.info("ChecksumPaths table exists from incomplete conversion.");
+                dropTable();
+                createTable = true;
             }
             if (createTable) {
                 log.info("Creating the checksumPaths table...");
@@ -149,7 +157,7 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
         } catch (Exception e) {
             throw new RuntimeException("Could not create/drop the checksumPaths table.", e);
         }
-        boolean fixConsistency = createConsistencyFixFile();
+        boolean fixConsistency = !getConsistencyFixFile().exists();
         //When fixConsistency is on or when table is new, delete the table content and populate it from binary props
         //Protect against double init caused by converters
         if (createTable || fixConsistency) {
@@ -162,6 +170,7 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
         } else {
             nextTimestamp.compareAndSet(UNINITIALIZED_TS, getLastTimestamp() + 1);
         }
+        createConsistencyFixFile();
         ready = true;
     }
 
@@ -435,7 +444,9 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
     public boolean txBegin() {
         if (connHelper != null && !connHelper.isTxActive()) {
             connHelper.txBegin();
-            return true;
+            // If inside a global transaction the commit/rollback is going to be called
+            // by the Transaction Manager. So return false here to avoid calls to txEnd()
+            return !LockingAdvice.isInJcrTransaction();
         }
         return false;
     }
@@ -443,7 +454,11 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
     @Override
     public void txEnd(boolean commit) {
         if (connHelper != null) {
-            connHelper.txEnd(commit);
+            if (commit) {
+                connHelper.commit();
+            } else {
+                connHelper.rollback();
+            }
         }
     }
 
@@ -482,12 +497,7 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
             long totalBinarySize = 0;
             IterablePersistenceManager[] persistenceManagers = JcrUtils.getIterablePersistenceManagers(session);
             log.info("Initializing binary nodes...");
-            if (fixConsistency) {
-                //First gc to make sure all pending deletion items were removed
-                jcrService.garbageCollect(false);
-                log.info("Note: Binary nodes consistency fix may take some time depending on your repository size.");
-            }
-            // Cleanup the table here (the init might be called twice)
+            //Cleanup the table here (init might be called twice)
             connHelper.update(SQL_DELETE_ALL);
             Name name = sessionImpl.getQName(JcrConstants.JCR_DATA);
             for (IterablePersistenceManager pm : persistenceManagers) {
@@ -793,5 +803,11 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
                     cp.getBinaryNodeId(), cp.getTimestamp(), cp.getPath()));
         }
         log.trace("Dumping Checksum Paths Table ({} records):\n {}", checksumPaths.size(), sb);
+    }
+
+    private void dropTable() throws SQLException {
+        log.info("Removing the checksumPaths table...");
+        connHelper.update(SQL_DROP_TABLE);
+        log.info("ChecksumPaths table removed.");
     }
 }

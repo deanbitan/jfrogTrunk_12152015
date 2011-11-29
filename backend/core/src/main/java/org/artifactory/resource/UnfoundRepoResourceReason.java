@@ -16,13 +16,22 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.api.rest.constant;
+package org.artifactory.resource;
 
 /**
- * @author Noam Y. Tenne
+ * Unfound {@link org.artifactory.fs.RepoResource} should implement this interface to provide a reason and status code
+ * when a resource is not found.
+ *
+ * @author Yossi Shaul
  */
-public interface ReplicationRestConstants {
-    String ROOT = "replication";
-    String MT_REPLICATION_REQUEST = RestConstants.MT_ARTIFACTORY_APP + ROOT + ".ReplicationRequest+json";
-    String MT_REPLICATION_STATUS = RestConstants.MT_ARTIFACTORY_APP + ROOT + ".ReplicationStatus+json";
+public interface UnfoundRepoResourceReason {
+    /**
+     * @return HTTP status code to return to the client
+     */
+    int getStatusCode();
+
+    /**
+     * @return The reason a resource is not found
+     */
+    String getReason();
 }

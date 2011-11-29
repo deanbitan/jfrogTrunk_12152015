@@ -37,6 +37,12 @@ import static org.testng.Assert.*;
  */
 @Test
 public class FileAdditionalInfoTest {
+    public static final String DUMMY_SHA1 = "1234567890123456789012345678901234567890";
+    public static final String DUMMY2_SHA1 = "3234567890123456789012345678901234567890";
+
+    public static final String DUMMY_MD5 = "12345678901234567890123456789012";
+    public static final String DUMMY2_MD5 = "32345678901234567890123456789012";
+
     private FileAdditionalInfo info;
     private ChecksumInfo sha1;
     private ChecksumInfo md5;
@@ -44,8 +50,8 @@ public class FileAdditionalInfoTest {
     @BeforeMethod
     public void setup() {
         info = new FileAdditionalInfo();
-        sha1 = new ChecksumInfo(ChecksumType.sha1, "121232434534", "34387534754");
-        md5 = new ChecksumInfo(ChecksumType.md5, "efhiehfeih", "efhiehfeih");
+        sha1 = new ChecksumInfo(ChecksumType.sha1, DUMMY_SHA1, DUMMY2_SHA1);
+        md5 = new ChecksumInfo(ChecksumType.md5, DUMMY_MD5, DUMMY_MD5);
         HashSet<org.artifactory.checksum.ChecksumInfo> checksums = new HashSet<ChecksumInfo>(Arrays.asList(sha1, md5));
         info.setChecksums(checksums);
     }
@@ -61,7 +67,6 @@ public class FileAdditionalInfoTest {
         //Assert.assertEquals(info.getChecksums(), new HashSet<ChecksumInfo>(Arrays.asList(md5, sha1)));
         assertEquals(info.getSha1(), sha1.getActual());
         assertEquals(info.getMd5(), md5.getActual());
-
     }
 
     public void testIsIdentical() {
@@ -72,12 +77,13 @@ public class FileAdditionalInfoTest {
 
     public void testNotIdentical() {
         FileAdditionalInfo copy = new FileAdditionalInfo(info);
-        copy.getChecksumsInfo().addChecksumInfo(new ChecksumInfo(ChecksumType.md5, md5.getOriginal(), "not good"));
+        copy.getChecksumsInfo().addChecksumInfo(
+                new ChecksumInfo(ChecksumType.md5, md5.getOriginal(), DUMMY_MD5.replace('3', 'a')));
         assertFalse(info.isIdentical(copy), "Orig and copy should differ");
     }
 
     public void copyConstructor() {
-        ChecksumInfo checksum = new ChecksumInfo(ChecksumType.sha1, "1", "2");
+        ChecksumInfo checksum = new ChecksumInfo(ChecksumType.sha1, DUMMY2_SHA1, DUMMY_SHA1);
         FileAdditionalInfo orig = new FileAdditionalInfo();
         orig.addChecksumInfo(checksum);
         FileAdditionalInfo copy = new FileAdditionalInfo(orig);

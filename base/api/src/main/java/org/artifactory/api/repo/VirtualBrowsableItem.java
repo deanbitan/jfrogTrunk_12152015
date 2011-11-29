@@ -19,11 +19,11 @@
 package org.artifactory.api.repo;
 
 import org.artifactory.checksum.ChecksumType;
-import org.artifactory.fs.MutableFileInfo;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableItemInfo;
 import org.artifactory.md.MetadataInfo;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 
 import java.util.List;
 
@@ -73,7 +73,7 @@ public class VirtualBrowsableItem extends BaseBrowsableItem {
                     itemInfo.getLastModified(), 0, repoPath, repoKeys);
         }
         return new VirtualBrowsableItem(itemInfo.getName(), false, itemInfo.getCreated(), itemInfo.getLastModified(),
-                ((MutableFileInfo) itemInfo).getSize(), repoPath, repoKeys);
+                ((FileInfo) itemInfo).getSize(), repoPath, repoKeys);
     }
 
     /**
@@ -148,6 +148,7 @@ public class VirtualBrowsableItem extends BaseBrowsableItem {
         return repoPath.getPath().hashCode();
     }
 
+    @Override
     public int compareTo(BaseBrowsableItem o) {
 
         if (name.equals(UP) || (isFolder() && !o.isFolder())) {

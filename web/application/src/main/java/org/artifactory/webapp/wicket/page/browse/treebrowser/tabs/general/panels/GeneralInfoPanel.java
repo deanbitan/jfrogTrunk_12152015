@@ -49,14 +49,14 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
@@ -320,7 +320,7 @@ public class GeneralInfoPanel extends Panel {
             sizeLabel.setVisible(false);
             moduleId.setVisible(false);
         } else {
-            MutableFileInfo file = (MutableFileInfo) itemInfo;
+            FileInfo file = (FileInfo) itemInfo;
 
             ModuleInfo moduleInfo = repositoryService.getItemModuleInfo(file.getRepoPath());
 

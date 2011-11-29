@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.build.actionable;
 
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.util.CollectionUtils;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.DownloadAction;
 import org.artifactory.webapp.actionable.action.ShowInTreeAction;
@@ -79,7 +80,7 @@ public class ModuleDependencyActionableItem extends RepoAwareActionableItemBase 
      */
     public String getDependencyScope() {
         List<String> scopes = dependency.getScopes();
-        if ((scopes == null) || scopes.isEmpty()) {
+        if (CollectionUtils.isNullOrEmpty(scopes)) {
             return "";
         }
 

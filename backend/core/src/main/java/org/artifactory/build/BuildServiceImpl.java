@@ -388,6 +388,7 @@ public class BuildServiceImpl implements InternalBuildService {
                                 releaseStatus);
                     }
                     results.add(buildRun);
+                    log.debug("Found {} in build '{}'.", buildRun, buildName);
                 }
             }
         }

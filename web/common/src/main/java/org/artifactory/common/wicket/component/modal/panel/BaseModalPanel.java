@@ -18,6 +18,7 @@
 
 package org.artifactory.common.wicket.component.modal.panel;
 
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -28,6 +29,8 @@ import org.artifactory.common.wicket.behavior.JavascriptEvent;
 import org.artifactory.common.wicket.component.modal.HasModalHandler;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.panel.feedback.aggregated.AggregateFeedbackPanel;
+import org.artifactory.common.wicket.event.EventBus;
+import org.artifactory.common.wicket.event.Listener;
 import org.artifactory.common.wicket.model.Titled;
 
 import java.io.Serializable;
@@ -38,6 +41,8 @@ import java.io.Serializable;
 public class BaseModalPanel<E extends Serializable> extends Panel implements Titled, HasModalHandler {
     public static final String MODAL_ID = ModalHandler.CONTENT_ID;
     protected static final String TITLE_KEY = "panel.title";
+
+    private EventBus eventBus = new EventBus();
 
     private int minimalWidth = 100;
     private int minimalHeight = 50;
@@ -119,6 +124,11 @@ public class BaseModalPanel<E extends Serializable> extends Panel implements Tit
     }
 
     public void onShow(AjaxRequestTarget target) {
+        eventBus.fire(ShowEvent.INSTANCE);
+    }
+
+    public void addShowListener(Listener<ShowEvent> listener) {
+        eventBus.addListener(ShowEvent.class, listener);
     }
 
     public int getMinimalWidth() {
@@ -187,5 +197,43 @@ public class BaseModalPanel<E extends Serializable> extends Panel implements Tit
     }
 
     public void onCloseButtonClicked(AjaxRequestTarget target) {
+    }
+
+    /**
+     * Bind modal panel height to a given component.
+     *
+     * @param component
+     */
+    public void bindHeightTo(Component component) {
+        component.setOutputMarkupId(true);
+        bindHeightTo(component.getMarkupId());
+    }
+
+    /**
+     * Bind modal panel height to an html element with a given.
+     *
+     * @param markupId
+     */
+    public void bindHeightTo(final String markupId) {
+        addShowListener(new Listener<ShowEvent>() {
+            @Override
+            public void onEvent(ShowEvent event) {
+                ModalHandler.bindHeightTo(markupId);
+            }
+        });
+    }
+
+    public void setDefaultFocusField(final Component defaultFocusField) {
+        defaultFocusField.setOutputMarkupId(true);
+        addShowListener(new Listener<ShowEvent>() {
+            @Override
+            public void onEvent(ShowEvent event) {
+                AjaxRequestTarget.get().focusComponent(defaultFocusField);
+            }
+        });
+    }
+
+    public static class ShowEvent {
+        public static final ShowEvent INSTANCE = new ShowEvent();
     }
 }

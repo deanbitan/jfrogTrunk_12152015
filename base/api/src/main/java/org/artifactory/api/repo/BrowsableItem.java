@@ -21,13 +21,13 @@ package org.artifactory.api.repo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.factory.InfoFactory;
 import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 
 /**
  * Local\cache repo display item for all the simple browsers
@@ -67,7 +67,7 @@ public class BrowsableItem extends BaseBrowsableItem {
                     itemInfo.getLastModified(), 0, itemInfo.getRepoPath());
         }
         return new BrowsableItem(itemInfo.getName(), false, itemInfo.getCreated(),
-                itemInfo.getLastModified(), ((MutableFileInfo) itemInfo).getSize(), itemInfo.getRepoPath()
+                itemInfo.getLastModified(), ((FileInfo) itemInfo).getSize(), itemInfo.getRepoPath()
         );
     }
 

@@ -18,13 +18,13 @@
 
 package org.artifactory.repo.snapshot;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
+import org.artifactory.api.module.ModuleInfoBuilder;
 import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -34,8 +34,8 @@ import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.util.PathUtils;
+import org.artifactory.util.RepoLayoutUtils;
 import org.slf4j.Logger;
 
 import java.util.Date;
@@ -84,13 +84,14 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
     private String adjustChecksum(MavenSnapshotVersionAdapterContext context) {
         // find latest unique file matching the checksum coordinates
         RepositoryService repoService = ContextHelper.get().getRepositoryService();
-        RepoPath parentRepoPath = context.getRepoPath().getParent();
+        RepoPath repoPath = context.getRepoPath();
+        RepoPath parentRepoPath = repoPath.getParent();
         RepoDescriptor repoDescriptor = repoService.repoDescriptorByKey(parentRepoPath.getRepoKey());
         RepoLayout repoLayout = repoDescriptor.getRepoLayout();
 
         String latestMatching = null;
 
-        String originalChecksumRequestPath = context.getRepoPath().getPath();
+        String originalChecksumRequestPath = repoPath.getPath();
         String originalRequestPathWithNoChecksum = PathUtils.stripExtension(originalChecksumRequestPath);
 
         if (repoService.exists(parentRepoPath)) {
@@ -133,7 +134,7 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
                 MavenNaming.getUniqueSnapshotVersionBuildNumber(latestMatching) : 0;
 
         // use the timestamp and build number from it. if not found return something that will fail?
-        return buildUniqueSnapshotFileName(originalChecksumRequestPath, buildNumber, timestamp);
+        return buildUniqueSnapshotFileName(buildNumber, timestamp, context.getModuleInfo());
     }
 
     private String replaceIntegration(String constructedPath, String artifactRevision) {
@@ -142,14 +143,16 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
 
     private String adjustUsingServerData(MavenSnapshotVersionAdapterContext context) {
         //Get the latest build number from the metadata
-        String filePath = context.getRepoPath().getPath();
-        int metadataBuildNumber = getLastBuildNumber(context.getRepoPath());
+        RepoPath repoPath = context.getRepoPath();
+        String filePath = repoPath.getPath();
+        int metadataBuildNumber = getLastBuildNumber(repoPath);
         int nextBuildNumber = metadataBuildNumber + 1;
 
-        RepoPath parentPath = context.getRepoPath().getParent();
+        RepoPath parentPath = repoPath.getParent();
 
         // determine if the next build number should be the one read from the metadata
-        String classifier = context.getModuleInfo().getClassifier();
+        ModuleInfo moduleInfo = context.getModuleInfo();
+        String classifier = moduleInfo.getClassifier();
         boolean isPomChecksum = MavenNaming.isChecksum(filePath) && MavenNaming.isPom(
                 PathUtils.stripExtension(filePath));
         if (metadataBuildNumber > 0 && (StringUtils.isNotBlank(classifier) || isPomChecksum)) {
@@ -176,29 +179,30 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
             // probably the first deployed file for this build, use now for the timestamp
             timestamp = MavenModelUtils.dateToUniqueSnapshotTimestamp(new Date());
         }
-        return buildUniqueSnapshotFileName(filePath, nextBuildNumber, timestamp);
+        return buildUniqueSnapshotFileName(nextBuildNumber, timestamp, moduleInfo);
     }
 
     private String adjustUsingClientTimestamp(MavenSnapshotVersionAdapterContext context) {
         // artifact was uploaded with a timestamp, we use it for the unique snapshot timestamp and to locate build number
         long timestamp = context.getTimestamp();
         String uniqueTimestamp = MavenModelUtils.dateToUniqueSnapshotTimestamp(new Date(timestamp));
-        String existingArtifact = findSnapshotFileByTimestamp(context.getRepoPath().getParent(), uniqueTimestamp);
+        RepoPath repoPath = context.getRepoPath();
+        String existingArtifact = findSnapshotFileByTimestamp(repoPath.getParent(), uniqueTimestamp);
         int buildNumber;
         if (existingArtifact != null) {
             buildNumber = MavenNaming.getUniqueSnapshotVersionBuildNumber(existingArtifact);
         } else {
-            buildNumber = getLastBuildNumber(context.getRepoPath()) + 1;
+            buildNumber = getLastBuildNumber(repoPath) + 1;
         }
 
-        return buildUniqueSnapshotFileName(context.getRepoPath().getPath(), buildNumber, uniqueTimestamp);
+        return buildUniqueSnapshotFileName(buildNumber, uniqueTimestamp, context.getModuleInfo());
     }
 
-    private String buildUniqueSnapshotFileName(String filePath, int nextBuildNumber, String timestamp) {
+    private String buildUniqueSnapshotFileName(int nextBuildNumber, String timestamp, ModuleInfo moduleInfo) {
         // replace the SNAPSHOT string with timestamp-buildNumber
-        String fileName = PathUtils.getFileName(filePath);
-        String adaptedFileName = fileName.replace(MavenNaming.SNAPSHOT, timestamp + "-" + nextBuildNumber);
-        return FilenameUtils.getPath(filePath) + adaptedFileName;
+        ModuleInfo transformedModuleInfo = new ModuleInfoBuilder(moduleInfo).fileIntegrationRevision(
+                timestamp + "-" + nextBuildNumber).build();
+        return ModuleInfoUtils.constructArtifactPath(transformedModuleInfo, RepoLayoutUtils.MAVEN_2_DEFAULT);
     }
 
     /**

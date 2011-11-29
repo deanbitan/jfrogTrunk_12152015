@@ -64,14 +64,13 @@ public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<FileI
             String actual = getStringProperty(node, ChecksumStorageHelper.getActualPropName(type), null, true);
             if (StringUtils.isNotBlank(actual) || StringUtils.isNotBlank(original)) {
                 ChecksumInfo info;
-                if (actual != null && TRUSTED_FILE_MARKER.equals(actual)) {
-                    log.error("Actual checksum cannot be " + TRUSTED_FILE_MARKER);
+                if (actual != null && !type.isValid(actual)) {
                     if (type.isValid(original)) {
                         // Switch original and actual
+                        log.warn("Actual checksum " + actual + " cannot be invalid! Using valid original " + original);
                         info = new ChecksumInfo(type, actual, original);
                     } else {
-                        // Force null
-                        info = new ChecksumInfo(type, original, null);
+                        throw new IllegalStateException("Actual checksum " + actual + " cannot be invalid!");
                     }
                 } else {
                     info = new ChecksumInfo(type, original, actual);
@@ -92,6 +91,10 @@ public class FileInfoPersistenceHandler extends AbstractPersistenceHandler<FileI
             ChecksumInfo checksumInfo = fileInfo.getChecksumsInfo().getChecksumInfo(type);
             String actual = checksumInfo != null ? checksumInfo.getActual() : null;
             String original = getRealOriginal(checksumInfo);
+            if (!type.isValid(actual)) {
+                throw new IllegalStateException(
+                        "Actual checksum " + type + ":" + actual + " is invalid for " + metadataAware.getAbsolutePath());
+            }
             setStringProperty(node, ChecksumStorageHelper.getOriginalPropName(type), original);
             setStringProperty(node, ChecksumStorageHelper.getActualPropName(type), actual);
         }

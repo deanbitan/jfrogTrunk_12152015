@@ -5567,6 +5567,27 @@ td.warn span {
     height: 100px;
 }
 
+.http-advanced-repo-panel .field {
+    min-width: 240px;
+}
+
+.advanced-remote-repo .field-row select {
+    width: 300px;
+}
+
+.advanced-remote-repo .field-row input.text, .advanced-remote-repo .field-row textarea {
+    width: 295px;
+}
+
+#modalScroll {
+    overflow: auto;
+    position: relative;
+}
+
+div.styled-tab-panel div.tab-row .wide-tab span {
+    min-width: 120px;
+}
+
 /*-- HighlightedCodeLabel --*/
 
 div.syntaxhighlighter {

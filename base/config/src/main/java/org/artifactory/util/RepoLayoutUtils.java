@@ -150,8 +150,8 @@ public abstract class RepoLayoutUtils {
     }
 
     /**
-     * Find all optional areas that their token values were provided and remove the "optional" brackets that
-     * surround them.
+     * Find all optional areas that their token values were provided and remove the "optional" brackets that surround
+     * them.
      *
      * @param itemPathTemplate     Item path template to modify
      * @param removeBracketContent True if the content of the optional bracket should be disposed
@@ -291,7 +291,6 @@ public abstract class RepoLayoutUtils {
                 currentTokenBuilder.append(c);
             }
         }
-
         return itemPathPatternRegExpBuilder.toString();
     }
 
@@ -412,13 +411,12 @@ public abstract class RepoLayoutUtils {
         } else if (FILE_INTEGRATION_REVISION.equals(tokenName)) {
             return repoLayout.getFileIntegrationRevisionRegExp();
         } else if (CLASSIFIER.equals(tokenName)) {
-            return "(?:(?!\\d))[^\\./]+";
+            return "[^/]+?";
         } else if (EXT.equals(tokenName)) {
-            return "[^\\-/]+";
+            return "(?:(?!\\d))[^\\-/]+";
         } else if (TYPE.equals(tokenName)) {
             return "[^/]+?";
         }
-
         return null;
     }
 

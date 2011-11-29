@@ -21,8 +21,8 @@ package org.artifactory.io.checksum.policy;
 import com.google.common.collect.Sets;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -31,7 +31,8 @@ import java.util.Set;
 
 import static org.artifactory.checksum.ChecksumType.md5;
 import static org.artifactory.checksum.ChecksumType.sha1;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * Tests the LocalRepoChecksumPolicyTest class.
@@ -40,26 +41,31 @@ import static org.testng.Assert.*;
  */
 @Test
 public class LocalRepoChecksumPolicyTest extends ArtifactoryHomeBoundTest {
+    public static final String SERVER_SHA1 = "a234567890123456789012345678901234567890";
+    public static final String CLIENT_SHA1 = "b234567890123456789012345678901234567890";
+    public static final String SERVER_MD5 = "a2345678901234567890123456789012";
+    public static final String CLIENT_MD5 = "b2345678901234567890123456789012";
+
     private Set<ChecksumInfo> checksums;
 
     @BeforeClass
     public void createChecksumPolicy() {
         checksums = Sets.newHashSet(
-                new ChecksumInfo(sha1, "clientsha1", "serversha1"),
-                new ChecksumInfo(md5, "clientmd5", "servermd5"));
+                new ChecksumInfo(sha1, CLIENT_SHA1, SERVER_SHA1),
+                new ChecksumInfo(md5, CLIENT_MD5, SERVER_MD5));
     }
 
     public void clientPolicyType() {
         LocalRepoChecksumPolicy policy = new LocalRepoChecksumPolicy(); // client type is the default
-        assertEquals(policy.getChecksum(sha1, checksums), "clientsha1");
-        assertEquals(policy.getChecksum(md5, checksums), "clientmd5");
+        assertEquals(policy.getChecksum(sha1, checksums), CLIENT_SHA1);
+        assertEquals(policy.getChecksum(md5, checksums), CLIENT_MD5);
     }
 
     public void serverPolicyType() {
         LocalRepoChecksumPolicy policy = new LocalRepoChecksumPolicy();
         policy.setPolicyType(LocalRepoChecksumPolicyType.SERVER);
-        assertEquals(policy.getChecksum(sha1, checksums), "serversha1");
-        assertEquals(policy.getChecksum(md5, checksums), "servermd5");
+        assertEquals(policy.getChecksum(sha1, checksums), SERVER_SHA1);
+        assertEquals(policy.getChecksum(md5, checksums), SERVER_MD5);
     }
 
     public void checksumTypeNotFound() {
@@ -71,28 +77,28 @@ public class LocalRepoChecksumPolicyTest extends ArtifactoryHomeBoundTest {
 
     public void checksumValueNotFound() {
         LocalRepoChecksumPolicy policy = new LocalRepoChecksumPolicy();
-        Set<ChecksumInfo> noOriginal = Sets.newHashSet(new ChecksumInfo(sha1, null, "serversha1"));
+        Set<ChecksumInfo> noOriginal = Sets.newHashSet(new ChecksumInfo(sha1, null, SERVER_SHA1));
         assertNull(policy.getChecksum(sha1, noOriginal));
 
         policy.setPolicyType(LocalRepoChecksumPolicyType.SERVER);
-        assertNotNull(policy.getChecksum(sha1, noOriginal), "serversha1");
+        assertEquals(policy.getChecksum(sha1, noOriginal), SERVER_SHA1);
     }
 
     public void checksumOfMetadata() {
         LocalRepoChecksumPolicy policy = new LocalRepoChecksumPolicy();
         RepoPath metadataPath = InternalRepoPathFactory.create("repo", "test/test/1.0/maven-metadata.xml");
-        assertEquals(policy.getChecksum(sha1, checksums, metadataPath), "serversha1");
+        assertEquals(policy.getChecksum(sha1, checksums, metadataPath), SERVER_SHA1);
 
         policy.setPolicyType(LocalRepoChecksumPolicyType.SERVER);
-        assertNotNull(policy.getChecksum(sha1, checksums, metadataPath), "serversha1");
+        assertEquals(policy.getChecksum(sha1, checksums, metadataPath), SERVER_SHA1);
     }
 
     public void checksumOfSnapshotMetadata() {
         LocalRepoChecksumPolicy policy = new LocalRepoChecksumPolicy();
         RepoPath metadataPath = InternalRepoPathFactory.create("repo", "test/test/1.0-SNAPSHOT/maven-metadata.xml");
-        assertEquals(policy.getChecksum(sha1, checksums, metadataPath), "serversha1");
+        assertEquals(policy.getChecksum(sha1, checksums, metadataPath), SERVER_SHA1);
 
         policy.setPolicyType(LocalRepoChecksumPolicyType.SERVER);
-        assertNotNull(policy.getChecksum(sha1, checksums, metadataPath), "serversha1");
+        assertEquals(policy.getChecksum(sha1, checksums, metadataPath), SERVER_SHA1);
     }
 }

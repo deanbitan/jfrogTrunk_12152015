@@ -30,41 +30,74 @@ import static org.testng.Assert.*;
 @Test
 public class ChecksumInfoTest {
 
+    public static final String DUMMY_SHA1 = "1234567890123456789012345678901234567890";
+    public static final String DUMMY2_SHA1 = "3234567890123456789012345678901234567890";
+
+    public static final String DUMMY_MD5 = "12345678901234567890123456789012";
+    public static final String DUMMY2_MD5 = "32345678901234567890123456789012";
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void wrongSha1Actual() {
+        new ChecksumInfo(ChecksumType.sha1, DUMMY_SHA1, "f");
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void wrongMd5Actual() {
+        new ChecksumInfo(ChecksumType.md5, DUMMY_MD5, "f");
+    }
+
     public void matchSameOriginalAndActual() {
-        ChecksumInfo info = new ChecksumInfo(ChecksumType.sha1, "123", "123");
-        assertTrue(info.checksumsMatch(), "Checksums should match");
+        ChecksumInfo infoSha1 = new ChecksumInfo(ChecksumType.sha1, DUMMY_SHA1, DUMMY_SHA1);
+        assertTrue(infoSha1.checksumsMatch(), "SHA1 Checksums should match");
+        ChecksumInfo infoMd5 = new ChecksumInfo(ChecksumType.md5, DUMMY2_MD5, DUMMY2_MD5);
+        assertTrue(infoMd5.checksumsMatch(), "MD5 Checksums should match");
     }
 
     public void matchDifferentOriginalAndActual() {
-        ChecksumInfo info = new ChecksumInfo(ChecksumType.sha1, "123", "321");
-        assertFalse(info.checksumsMatch(), "Checksums shouldn't match");
+        ChecksumInfo infoSha1 = new ChecksumInfo(ChecksumType.sha1, DUMMY_SHA1, DUMMY2_SHA1);
+        assertFalse(infoSha1.checksumsMatch(), "SHA1 Checksums shouldn't match");
+        ChecksumInfo infoMd5 = new ChecksumInfo(ChecksumType.md5, DUMMY_MD5, DUMMY2_MD5);
+        assertFalse(infoMd5.checksumsMatch(), "MD5 Checksums shouldn't match");
     }
 
     public void matchNullOriginal() {
-        ChecksumInfo info = new org.artifactory.checksum.ChecksumInfo(ChecksumType.sha1, null, "321");
-        assertFalse(info.checksumsMatch(), "Checksums shouldn't if one is null");
+        ChecksumInfo infoSha1 = new org.artifactory.checksum.ChecksumInfo(ChecksumType.sha1, null, DUMMY_SHA1);
+        assertFalse(infoSha1.checksumsMatch(), "SHA1 Checksums shouldn't if one is null");
+        ChecksumInfo infoMd5 = new org.artifactory.checksum.ChecksumInfo(ChecksumType.md5, null, DUMMY_MD5);
+        assertFalse(infoMd5.checksumsMatch(), "MD5 Checksums shouldn't if one is null");
     }
 
     public void matchNullActual() {
-        ChecksumInfo info = new ChecksumInfo(ChecksumType.sha1, "123", null);
-        assertFalse(info.checksumsMatch(), "Checksums shouldn't if one is null");
+        ChecksumInfo infoSha1 = new ChecksumInfo(ChecksumType.sha1, DUMMY_SHA1, null);
+        assertFalse(infoSha1.checksumsMatch(), "SHA1 Checksums shouldn't if one is null");
+        ChecksumInfo infoMd5 = new ChecksumInfo(ChecksumType.md5, DUMMY_MD5, null);
+        assertFalse(infoMd5.checksumsMatch(), "MD5 Checksums shouldn't if one is null");
     }
 
     public void matchNullOriginalAndActual() {
-        ChecksumInfo info = new ChecksumInfo(ChecksumType.sha1, null, null);
-        assertFalse(info.checksumsMatch(), "Checksums shouldn't if one is null");
+        ChecksumInfo infoSha1 = new ChecksumInfo(ChecksumType.sha1, null, null);
+        assertFalse(infoSha1.checksumsMatch(), "SHA1 Checksums shouldn't if one is null");
+        ChecksumInfo infoMd5 = new ChecksumInfo(ChecksumType.md5, null, null);
+        assertFalse(infoMd5.checksumsMatch(), "MD5 Checksums shouldn't if one is null");
     }
 
     public void trustedOriginalShouldReturnActual() {
-        ChecksumInfo info = new ChecksumInfo(ChecksumType.sha1, ChecksumInfo.TRUSTED_FILE_MARKER, "123");
-        assertTrue(info.isMarkedAsTrusted(), "Shouls have been marked as trusted");
-        assertEquals(info.getOriginal(), info.getActual(), "Original should return actual if marked " +
+        ChecksumInfo infoSha1 = new ChecksumInfo(ChecksumType.sha1, ChecksumInfo.TRUSTED_FILE_MARKER, DUMMY_SHA1);
+        assertTrue(infoSha1.isMarkedAsTrusted(), "SHA1 Should have been marked as trusted");
+        assertEquals(infoSha1.getOriginal(), infoSha1.getActual(), "SHA1 Original should return actual if marked " +
+                "as trusted");
+        ChecksumInfo infoMd5 = new ChecksumInfo(ChecksumType.md5, ChecksumInfo.TRUSTED_FILE_MARKER, DUMMY_MD5);
+        assertTrue(infoMd5.isMarkedAsTrusted(), "MD5 Should have been marked as trusted");
+        assertEquals(infoMd5.getOriginal(), infoMd5.getActual(), "MD5 Original should return actual if marked " +
                 "as trusted");
     }
 
     public void matchIfOriginalIsTruetedAndActualIsSet() {
-        ChecksumInfo info = new ChecksumInfo(ChecksumType.sha1, ChecksumInfo.TRUSTED_FILE_MARKER, "123");
-        assertTrue(info.checksumsMatch(), "Checksums should match if " +
+        ChecksumInfo infoSha1 = new ChecksumInfo(ChecksumType.sha1, ChecksumInfo.TRUSTED_FILE_MARKER, DUMMY_SHA1);
+        assertTrue(infoSha1.checksumsMatch(), "SHA1 Checksums should match if " +
+                "marked as trusted and actual not null");
+        ChecksumInfo infoMd5 = new ChecksumInfo(ChecksumType.md5, ChecksumInfo.TRUSTED_FILE_MARKER, DUMMY_MD5);
+        assertTrue(infoMd5.checksumsMatch(), "SHA1 Checksums should match if " +
                 "marked as trusted and actual not null");
     }
 

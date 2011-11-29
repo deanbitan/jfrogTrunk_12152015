@@ -18,10 +18,12 @@
 
 package org.artifactory.repo.virtual.interceptor;
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.log.LoggerFactory;
@@ -62,6 +64,9 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
     @Autowired
     private CentralConfigService centralConfig;
 
+    @Autowired
+    private AuthorizationService authorizationService;
+
     @Override
     public RepoResource interceptGetInfo(VirtualRepo virtualRepo, InternalRequestContext context, RepoPath repoPath,
             List<RealRepo> repositories) {
@@ -96,7 +101,17 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
                 }
                 continue;
             }
-            findAndMergeMavenMetadata(mergedMavenMetadata, repo, translatedContext, res);
+            try {
+                findAndMergeMavenMetadata(mergedMavenMetadata, repo, translatedContext, res);
+            } catch (RepoRejectException rre) {
+                int status = rre.getErrorCode();
+                if (status == HttpStatus.SC_FORBIDDEN && authorizationService.isAnonymous()) {
+                    // Create forbidden repo resource to allow 401 challenge in case it is required
+                    forbidden = new UnfoundRepoResource(res.getRepoPath(), rre.getMessage(), HttpStatus.SC_FORBIDDEN);
+                } else {
+                    log.info("Metadata retrieval failed on repo '{}': {}", repo, rre.getMessage());
+                }
+            }
         }   // end repositories iteration
 
         String path = repoPath.getPath();
@@ -127,7 +142,7 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
      * @param res                 Resource info
      */
     private void findAndMergeMavenMetadata(MergeableMavenMetadata mergedMavenMetadata, RealRepo repo,
-            InternalRequestContext context, RepoResource res) {
+            InternalRequestContext context, RepoResource res) throws RepoRejectException {
         String resourcePath = context.getResourcePath();
         Metadata metadata = getMavenMetadataContent(context, repo, res);
         if (metadata != null) {
@@ -139,7 +154,8 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
         }
     }
 
-    private Metadata getMavenMetadataContent(InternalRequestContext requestContext, Repo repo, RepoResource res) {
+    private Metadata getMavenMetadataContent(InternalRequestContext requestContext, Repo repo, RepoResource res)
+            throws RepoRejectException {
         ResourceStreamHandle handle = null;
         try {
             handle = repoService.getResourceStreamHandle(requestContext, repo, res);
@@ -150,8 +166,6 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
             metadataInputStream = handle.getInputStream();
             String metadataContent = IOUtils.toString(metadataInputStream, "utf-8");
             return MavenModelUtils.toMavenMetadata(metadataContent);
-        } catch (RepoRejectException rre) {
-            log.warn("Metadata retrieval failed on repo '{}': {}", repo, rre.getMessage());
         } catch (IOException ioe) {
             log.error("IO exception retrieving maven metadata content from repo '{}': {}.", repo, ioe.getMessage());
         } catch (RepositoryException re) {

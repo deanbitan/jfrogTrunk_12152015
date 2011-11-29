@@ -181,8 +181,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
                 target.addComponent(MoveAndCopyBasePanel.this);
                 target.addComponent(form);
                 AjaxUtils.refreshFeedback(target);
-                ModalHandler.resizeAndCenterCurrent(target);
-                target.appendJavascript("ModalHandler.bindModalHeight(dojo.byId('dryRunResult'))");
+                ModalHandler.bindHeightTo("dryRunResult");
             }
         };
     }

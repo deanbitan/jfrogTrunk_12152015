@@ -62,8 +62,8 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepositoryConfigPage;
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
@@ -172,7 +172,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
                     }
                     provider.setData(importableRepoList);
                     target.addComponent(repoTable);
-                    resizeAndCenterCurrent(target);
+                    resizeAndCenterCurrent();
                 } catch (Exception e) {
                     error("An error occurred while locating shared repositories: " + e.getMessage());
                 } finally {

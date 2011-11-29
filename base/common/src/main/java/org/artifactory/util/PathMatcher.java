@@ -31,7 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * An Ant based path matcher util class.
+ * An Ant-based path matcher util class.
  *
  * @author Yossi Shaul
  */
@@ -60,8 +60,8 @@ public abstract class PathMatcher {
             "**/.DS_Store");
 
     /**
-     * The global excludes that applies to all repositories. Configurable by the user with
-     * {@link org.artifactory.common.ConstantValues#globalExcludes}.
+     * The global excludes that applies to all repositories. Configurable by the user with {@link
+     * org.artifactory.common.ConstantValues#globalExcludes}.
      */
     private static List<String> GLOBAL_EXCLUDES;
 
@@ -99,9 +99,7 @@ public abstract class PathMatcher {
         if (!CollectionUtils.isNullOrEmpty(includes)) {
             for (String include : includes) {
                 // If path is smaller than include verify if it's a sub path then return true
-                if (path.length() < include.length() &&
-                        include.startsWith(path) &&
-                        include.charAt(path.length()) == '/') {
+                if (path.length() <= include.length() && antPathMatcher.matchStart(include, path)) {
                     return true;
                 }
                 boolean match = antPathMatcher.match(include, path);

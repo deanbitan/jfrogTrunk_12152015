@@ -38,6 +38,7 @@ import org.jfrog.build.api.release.Promotion;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
@@ -86,7 +87,9 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
-    public FileList getFileList(String uri, String path, int deep, int depth, int listFolders, int mdTimestamps) {
+    @Override
+    public FileList getFileList(@Nullable String uri, String path, int deep, int depth, int listFolders,
+            int mdTimestamps) {
         throw new MissingRestAddonException();
     }
 
@@ -196,6 +199,11 @@ public class RestAddonDefaultImpl implements RestAddon {
 
     @Override
     public Response updateSecurityEntity(String entityType, String entityKey, HttpServletRequest request) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response getReplicationStatus(RepoPath repoPath) {
         throw new MissingRestAddonException();
     }
 }

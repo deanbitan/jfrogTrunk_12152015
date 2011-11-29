@@ -268,7 +268,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
 
             /**
              * Keep track if we opened the session or not (might be opened by JCR metadata converter before us), and if
-             * not, don't close it and remote from the thread local, as it is expected in other places
+             * not, don't close it and remove from the thread local, as it is expected in other places
              */
             JcrSession unManagedSession = UNMANAGED_SESSION_HOLDER.get();
             boolean sessionOpenedByMe = false;

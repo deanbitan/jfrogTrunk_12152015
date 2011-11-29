@@ -30,7 +30,6 @@ import org.springframework.extensions.jcr.jackrabbit.LocalTransactionManager;
 import org.springframework.extensions.jcr.jackrabbit.support.UserTxSessionHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -75,6 +74,16 @@ public class JcrTransactionManager extends LocalTransactionManager implements Tr
         //Now send the commit
         try {
             super.doCommit(status);
+            //Close the transaction and commit the datastore connection helper batch (same instance used by cspaths)
+            JcrSession session = getCurrentSession();
+            ArtifactoryConnectionHelper connectionHelper = JcrUtils.getExtendedDataStore(session).getConnectionHelper();
+            if (connectionHelper.isTxActive()) {
+                if (status.isGlobalRollbackOnly()) {
+                    connectionHelper.rollback();
+                } else {
+                    connectionHelper.commit();
+                }
+            }
         } catch (RuntimeException e) {
             String msg = "Could not commit transaction: " + e.getMessage();
             StaleItemStateException staleItem =
@@ -125,6 +134,7 @@ public class JcrTransactionManager extends LocalTransactionManager implements Tr
         }
     }
 
+
     public void beforeCompletion() {
     }
 
@@ -134,24 +144,18 @@ public class JcrTransactionManager extends LocalTransactionManager implements Tr
     public void flush() {
     }
 
-
-    @Override
-    protected void doBegin(Object transaction, TransactionDefinition transactionDefinition)
-            throws TransactionException {
-        super.doBegin(transaction, transactionDefinition);
-        JcrSession session = getCurrentSession();
-        ArtifactoryConnectionHelper connectionHelper = JcrUtils.getExtendedDataStore(session).getConnectionHelper();
-        if (!connectionHelper.isTxActive()) {
-            connectionHelper.txBegin();
-        }
-    }
-
     public void afterCompletion(int status) {
         boolean success = status == TransactionSynchronization.STATUS_COMMITTED;
         JcrSession session = getCurrentSession();
-        //Close the transaction and commit the datastore connetion helper batch (same instance used by cspaths)
         ArtifactoryConnectionHelper connectionHelper = JcrUtils.getExtendedDataStore(session).getConnectionHelper();
-        connectionHelper.txEnd(success);
+        if (connectionHelper.isTxActive()) {
+            if (success) {
+                log.error("Active transaction is not expected after commit.");
+                success = false;
+            }
+            //Close the transaction and rollback the datastore connection helper batch (same instance used by cspaths)
+            connectionHelper.rollback();
+        }
         // Commit the locks/discard changes on rollback
         session.getSessionResourceManager().afterCompletion(success);
         if (!success) {

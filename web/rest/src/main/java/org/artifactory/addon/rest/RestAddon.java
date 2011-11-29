@@ -40,6 +40,7 @@ import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.release.Promotion;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
@@ -145,7 +146,7 @@ public interface RestAddon extends Addon {
      *                     should
      */
     @Lock(transactional = true)
-    FileList getFileList(String uri, String path, int deep, int depth, int listFolders, int mdTimestamps)
+    FileList getFileList(@Nullable String uri, String path, int deep, int depth, int listFolders, int mdTimestamps)
             throws BlackedOutException;
 
     /**
@@ -306,4 +307,12 @@ public interface RestAddon extends Addon {
             throws IOException;
 
     Response updateSecurityEntity(String entityType, String entityKey, HttpServletRequest request) throws IOException;
+
+    /**
+     * Returns the latest replication status information
+     *
+     * @param repoPath Item to check for information annotations
+     * @return Response
+     */
+    Response getReplicationStatus(RepoPath repoPath);
 }

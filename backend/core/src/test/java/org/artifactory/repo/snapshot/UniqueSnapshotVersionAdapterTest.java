@@ -18,7 +18,18 @@
 
 package org.artifactory.repo.snapshot;
 
+import org.artifactory.api.context.ArtifactoryContextThreadBinder;
+import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.RepoPathFactory;
+import org.artifactory.spring.InternalArtifactoryContext;
+import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.easymock.EasyMock.*;
 
 /**
  * Unit tests for {@link UniqueSnapshotVersionAdapter}.<p/> Only the easy to unit test are here, the rest are in the
@@ -62,5 +73,25 @@ public class UniqueSnapshotVersionAdapterTest extends BaseSnapshotAdapterTest<Un
         String path = SNAPSHOT_PATH + "blabla.xml";
 
         adapt(path, path, "Non-maven structured files with release version should not be affected");
+    }
+
+    public void testArtifactWithSnapshotInTheClassifier() throws Exception {
+        String path = SNAPSHOT_PATH + "artifactId-2.5-SNAPSHOT-lib-2.3-SNAPSHOT-jdk5.jar";
+        RepoPath repoPath = RepoPathFactory.create("local", path);
+        RepositoryService repositoryServiceMock = createMock(RepositoryService.class);
+        expect(repositoryServiceMock.exists(repoPath)).andReturn(false).anyTimes();
+        expect(repositoryServiceMock.exists(repoPath.getParent())).andReturn(false).anyTimes();
+        InternalArtifactoryContext contextMock = createMock(InternalArtifactoryContext.class);
+        expect(contextMock.getRepositoryService()).andReturn(repositoryServiceMock).anyTimes();
+        ArtifactoryContextThreadBinder.bind(contextMock);
+        replay(repositoryServiceMock, contextMock);
+        String adjustedPath = adjust(path);
+        verify(repositoryServiceMock, contextMock);
+        Pattern pattern = Pattern.compile(
+                "groupPart1/groupPart2/artifactId/2\\.5\\-SNAPSHOT/artifactId\\-2\\.5\\-(\\d{8}\\.\\d{6}\\-\\d{1})\\" +
+                        "-lib\\-2\\.3\\-SNAPSHOT\\-jdk5\\.jar");
+        Matcher matcher = pattern.matcher(adjustedPath);
+        Assert.assertTrue(matcher.matches(), "Unexpected transformed path");
+        ArtifactoryContextThreadBinder.unbind();
     }
 }

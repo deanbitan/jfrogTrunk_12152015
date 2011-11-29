@@ -47,7 +47,7 @@ public class CodeModalPanel extends PanelNestingBorderedModal implements IHeader
     public void onShow(AjaxRequestTarget target) {
         String markupId = get("form:border:content").getMarkupId();
         target.appendJavascript(format("ModelCode.onShow('%s');", markupId));
-        ModalHandler.resizeAndCenterCurrent(target);
+        ModalHandler.resizeAndCenterCurrent();
     }
 
     @Override

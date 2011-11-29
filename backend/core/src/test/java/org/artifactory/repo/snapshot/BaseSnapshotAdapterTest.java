@@ -47,14 +47,18 @@ public abstract class BaseSnapshotAdapterTest<T extends MavenSnapshotVersionAdap
     }
 
     protected void adapt(String pathToAdjust, String expectedResult, String errorMessage) {
-        MavenSnapshotVersionAdapterContext context = new MavenSnapshotVersionAdapterContext(
-                InternalRepoPathFactory.create("local", pathToAdjust), getModuleInfo(pathToAdjust));
-        String result = adapter.adaptSnapshotPath(context);
+        String result = adjust(pathToAdjust);
 
         if (StringUtils.isBlank(errorMessage)) {
             assertEquals(result, expectedResult);
         } else {
             assertEquals(result, expectedResult, errorMessage);
         }
+    }
+
+    protected String adjust(String pathToAdjust) {
+        MavenSnapshotVersionAdapterContext context = new MavenSnapshotVersionAdapterContext(
+                InternalRepoPathFactory.create("local", pathToAdjust), getModuleInfo(pathToAdjust));
+        return adapter.adaptSnapshotPath(context);
     }
 }

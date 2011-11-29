@@ -23,6 +23,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
@@ -33,6 +34,7 @@ import org.artifactory.addon.AddonType;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
@@ -45,6 +47,7 @@ import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
+import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -65,7 +68,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     public HttpRepoPanel(CreateUpdateAction action, HttpRepoDescriptor repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor, cachingDescriptorHelper);
-        setWidth(750);
+        setWidth(770);
     }
 
     @Override
@@ -79,11 +82,17 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
             }
         });
 
-        tabs.add(new AbstractTab(Model.of("Advanced Settings")) {
+        tabs.add(new BaseTab(Model.of("Advanced Settings")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new HttpRepoAdvancedPanel(panelId, action, entity,
                         cachingDescriptorHelper.getModelMutableDescriptor());
+            }
+
+            @Override
+            public void onNewTabLink(Component link) {
+                super.onNewTabLink(link);
+                link.add(new CssClass("wide-tab"));
             }
         });
 

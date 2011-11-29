@@ -118,19 +118,15 @@ public class BuildRun implements Serializable {
             return false;
         }
 
-        BuildRun that = (BuildRun) o;
+        BuildRun run = (BuildRun) o;
 
-        if (releaseStatus != null ? !releaseStatus.equals(that.releaseStatus) :
-                that.releaseStatus != null) {
+        if (!name.equals(run.name)) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!number.equals(run.number)) {
             return false;
         }
-        if (number != null ? !number.equals(that.number) : that.number != null) {
-            return false;
-        }
-        if (started != null ? !started.equals(that.started) : that.started != null) {
+        if (started != null ? !started.equals(run.started) : run.started != null) {
             return false;
         }
 
@@ -139,10 +135,18 @@ public class BuildRun implements Serializable {
 
     @Override
     public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (number != null ? number.hashCode() : 0);
+        int result = name.hashCode();
+        result = 31 * result + number.hashCode();
         result = 31 * result + (started != null ? started.hashCode() : 0);
-        result = 31 * result + (releaseStatus != null ? releaseStatus.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "BuildRun{" +
+                "name='" + name + '\'' +
+                ", number='" + number + '\'' +
+                ", started='" + started + '\'' +
+                '}';
     }
 }

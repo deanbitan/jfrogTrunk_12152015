@@ -44,11 +44,12 @@ public class ChecksumInfo implements Serializable {
 
     public ChecksumInfo(ChecksumType type, String original, String actual) {
         this.type = type;
+        if (actual != null && !type.isValid(actual)) {
+            throw new IllegalStateException(
+                    "Actual checksum invalid " + actual + " : " + original + " for type " + type);
+        }
         this.original = original;
         this.actual = actual;
-        if (actual != null && TRUSTED_FILE_MARKER.equals(actual)) {
-            log.warn("Actual checksum cannot be " + TRUSTED_FILE_MARKER);
-        }
     }
 
     public ChecksumType getType() {

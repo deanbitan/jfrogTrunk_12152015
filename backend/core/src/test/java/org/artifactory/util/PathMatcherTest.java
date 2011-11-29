@@ -48,15 +48,38 @@ public class PathMatcherTest extends ArtifactoryHomeBoundTest {
     }
 
     public void matchWithIncludesOnly() {
-        List<String> includes = Arrays.asList("apath", "**/my/test/path", "public/**");
+        List<String> includes = Arrays.asList("apath/*", "**/my/test/path", "public/in/**");
         List<String> excludes = Arrays.asList("");
         assertTrue(PathMatcher.matches("apath", includes, excludes));
-        assertFalse(PathMatcher.matches("apath2", includes, excludes));
         assertTrue(PathMatcher.matches("this/is/my/test/path", includes, excludes));
         assertFalse(PathMatcher.matches("this/is/my/test/path/andmore", includes, excludes));
         assertFalse(PathMatcher.matches("this/is/my/test/path/andmore", includes, excludes));
         assertTrue(PathMatcher.matches("public/in/the/public.jar", includes, excludes));
         assertTrue(PathMatcher.matches("public", includes, excludes));
+        assertTrue(PathMatcher.matches("public/i", includes, excludes));
+        assertFalse(PathMatcher.matches("public2", Arrays.asList("apath/*", "public/in/**"), excludes));
+    }
+
+    public void matchWithIncludesOnlyPartial() {
+        List<String> excludes = Arrays.asList("");
+        assertTrue(PathMatcher.matches("ap/x", Arrays.asList("*p/x/y"), excludes));
+        assertTrue(PathMatcher.matches("ap/x", Arrays.asList("**/y/*"), excludes));
+        assertTrue(PathMatcher.matches("ap/x", Arrays.asList("*/x/*"), excludes));
+        assertTrue(PathMatcher.matches("ap/x", Arrays.asList("*/*/*"), excludes));
+        assertTrue(PathMatcher.matches("ap/x", Arrays.asList("*/*/t"), excludes));
+        assertTrue(PathMatcher.matches("ap/x", Arrays.asList("*/x/t"), excludes));
+        assertTrue(PathMatcher.matches("ap/x", Arrays.asList("a?/x"), excludes));
+        assertTrue(PathMatcher.matches("ap/x", Arrays.asList("?p*/?"), excludes));
+        assertFalse(PathMatcher.matches("ap/x", Arrays.asList("?p*/??"), excludes));
+        assertFalse(PathMatcher.matches("ap/x", Arrays.asList("aa?/x"), excludes));
+        assertFalse(PathMatcher.matches("ap/x", Arrays.asList("*/d/*"), excludes));
+        assertTrue(PathMatcher.matches("apath", Arrays.asList("apath/some/other/*"), excludes));
+        assertTrue(PathMatcher.matches("apath/some", Arrays.asList("apath/some/other/*"), excludes));
+        assertFalse(PathMatcher.matches("apath/some2", Arrays.asList("apath/some/other/*"), excludes));
+        assertFalse(PathMatcher.matches("apath2", Arrays.asList("apath/some/other/*"), excludes));
+        assertFalse(PathMatcher.matches("apath2", Arrays.asList("apath/*"), excludes));
+        assertFalse(PathMatcher.matches("apath", Arrays.asList("apath2/*"), excludes));
+        assertFalse(PathMatcher.matches("apath", Arrays.asList("apath2"), excludes));
     }
 
     public void matchWithExcludesOnly() {

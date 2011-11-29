@@ -18,12 +18,10 @@
 
 package org.artifactory.api.search.artifact;
 
-import com.google.common.collect.Sets;
 import org.artifactory.api.search.SearchControlsBase;
-import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 
-import java.util.Set;
+import java.util.EnumMap;
 
 /**
  * Search controls to be used for checksum searches
@@ -32,23 +30,23 @@ import java.util.Set;
  */
 public class ChecksumSearchControls extends SearchControlsBase {
 
-    private Set<ChecksumInfo> checksums;
+    private EnumMap<ChecksumType, String> checksums;
 
     public ChecksumSearchControls() {
     }
 
-    public Set<ChecksumInfo> getChecksums() {
+    public boolean isEmpty() {
+        return checksums == null || checksums.isEmpty();
+    }
+
+    public EnumMap<ChecksumType, String> getChecksums() {
         return checksums;
     }
 
     public void addChecksum(ChecksumType checksumType, String checksumValue) {
         if (checksums == null) {
-            checksums = Sets.newHashSet();
+            checksums = new EnumMap<ChecksumType, String>(ChecksumType.class);
         }
-        checksums.add(new ChecksumInfo(checksumType, checksumValue, checksumValue));
-    }
-
-    public boolean isEmpty() {
-        return false;
+        checksums.put(checksumType, checksumValue);
     }
 }

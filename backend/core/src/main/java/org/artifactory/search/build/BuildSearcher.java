@@ -43,6 +43,9 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Set;
 
+import static org.artifactory.api.build.BuildService.PROP_BUILD_LATEST_NUMBER;
+import static org.artifactory.api.build.BuildService.PROP_BUILD_LATEST_START_TIME;
+
 /**
  * Holds the build search logic
  *
@@ -51,6 +54,7 @@ import java.util.Set;
 public class BuildSearcher extends SearcherBase {
 
     private static final Logger log = LoggerFactory.getLogger(BuildSearcher.class);
+    private static final String MISSING_BUILD_LATEST_NUMBER = "_latest_";
 
     /**
      * Returns a set of build concentrated by name and latest date
@@ -67,10 +71,23 @@ public class BuildSearcher extends SearcherBase {
         Set<BuildRun> buildsToReturn = Sets.newHashSet();
         for (VfsNode node : queryResult.getNodes()) {
             String buildName = PathFactoryHolder.get().unEscape(node.getName());
-
-            String latestNumber = node.getStringProperty(BuildService.PROP_BUILD_LATEST_NUMBER);
-            Calendar latestStartTime = node.getDateProperty(BuildService.PROP_BUILD_LATEST_START_TIME);
-
+            boolean bereaved = false;
+            String latestNumber = node.getStringProperty(PROP_BUILD_LATEST_NUMBER);
+            if (latestNumber == null) {
+                latestNumber = MISSING_BUILD_LATEST_NUMBER;
+                bereaved = true;
+            }
+            Calendar latestStartTime;
+            if (node.hasProperty(PROP_BUILD_LATEST_START_TIME)) {
+                latestStartTime = node.getDateProperty(PROP_BUILD_LATEST_START_TIME);
+            } else {
+                latestStartTime = Calendar.getInstance();
+                bereaved = true;
+            }
+            if (bereaved) {
+                log.warn("The build '{}/{}' might contain partial data. You may wish to delete this build.", buildName,
+                        latestNumber);
+            }
             buildsToReturn.add(new BuildRun(buildName, latestNumber, latestStartTime.getTime()));
         }
         return buildsToReturn;

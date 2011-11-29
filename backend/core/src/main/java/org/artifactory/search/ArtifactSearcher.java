@@ -27,8 +27,8 @@ import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.artifact.ChecksumSearchControls;
-import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumStorageHelper;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.io.checksum.ChecksumPaths;
 import org.artifactory.jcr.factory.VfsItemFactory;
@@ -45,7 +45,9 @@ import org.artifactory.sapi.search.VfsQueryResult;
 import org.artifactory.sapi.search.VfsRepoQuery;
 
 import javax.annotation.Nullable;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.artifactory.storage.StorageConstants.PROP_ARTIFACTORY_NAME;
@@ -146,10 +148,10 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
     public Set<RepoPath> searchArtifactsByChecksum(ChecksumSearchControls searchControls) {
         Set<RepoPath> repoPathSet = Sets.newHashSet();
 
-        Set<ChecksumInfo> checksums = searchControls.getChecksums();
-        for (ChecksumInfo checksumInfo : checksums) {
-            if (repoPathSet.isEmpty() && StringUtils.isNotBlank(checksumInfo.getActual())) {
-                findArtifactsByChecksum(checksumInfo, searchControls, repoPathSet);
+        EnumMap<ChecksumType, String> checksums = searchControls.getChecksums();
+        for (Map.Entry<ChecksumType, String> checksumEntry : checksums.entrySet()) {
+            if (repoPathSet.isEmpty() && StringUtils.isNotBlank(checksumEntry.getValue())) {
+                findArtifactsByChecksum(checksumEntry.getKey(), checksumEntry.getValue(), searchControls, repoPathSet);
             }
         }
         return repoPathSet;
@@ -158,17 +160,19 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
     /**
      * Locates artifacts by the given checksum value and adds them to the given list
      *
-     * @param checksumInfo           Checksum info to search for
+     * @param checksumType           Checksum type (sha1, md5) to search for
+     * @param checksumValue          Checksum value to match
      * @param checksumSearchControls controls
      * @param repoPathSet            Set of repo paths to append the results to
      */
-    private void findArtifactsByChecksum(ChecksumInfo checksumInfo, ChecksumSearchControls checksumSearchControls,
+    private void findArtifactsByChecksum(ChecksumType checksumType, String checksumValue,
+            ChecksumSearchControls checksumSearchControls,
             Set<RepoPath> repoPathSet) {
         VfsRepoQuery query = createRepoQuery(checksumSearchControls);
         query.addAllSubPathFilter();
         query.setNodeTypeFilter(VfsNodeType.FILE);
-        query.addCriterion(ChecksumStorageHelper.getActualPropName(checksumInfo.getType()), VfsComparatorType.EQUAL,
-                checksumInfo.getActual());
+        query.addCriterion(ChecksumStorageHelper.getActualPropName(checksumType), VfsComparatorType.EQUAL,
+                checksumValue);
         VfsQueryResult queryResult = query.execute(false);
         PathFactory pathFactory = PathFactoryHolder.get();
         String allRepoRootPath = pathFactory.getAllRepoRootPath();

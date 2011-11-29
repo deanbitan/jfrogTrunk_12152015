@@ -12,7 +12,7 @@
                     return;
                 }
                 var shouldScroll = logDiv.scrollTop + logDiv.offsetHeight >=
-                                   logDiv.scrollHeight - 10;
+                        logDiv.scrollHeight - 10;
                 var newLog = document.createElement('span');
                 newLog.innerHTML = message;
                 logDiv.appendChild(newLog);
@@ -50,6 +50,7 @@
             }, 100);
 
             DomUtils.bindHeight(logDiv, function(docHeight) {
+                logDiv.style.width = document.documentElement.clientWidth - 230 + 'px';
                 return Math.max(200, docHeight - 270);
             }, true);
         })();

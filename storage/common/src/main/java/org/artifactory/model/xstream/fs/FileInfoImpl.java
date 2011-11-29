@@ -19,12 +19,13 @@
 package org.artifactory.model.xstream.fs;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.fs.MutableItemInfo;
-import org.artifactory.mime.NamingUtils;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumsInfo;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.MutableFileInfo;
+import org.artifactory.fs.MutableItemInfo;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 
@@ -67,26 +68,32 @@ public class FileInfoImpl extends ItemInfoImpl implements InternalFileInfo {
         this((InternalFileInfo) info);
     }
 
+    @Override
     public boolean isFolder() {
         return false;
     }
 
+    @Override
     public long getSize() {
         return size;
     }
 
+    @Override
     public void setSize(long size) {
         this.size = size;
     }
 
+    @Override
     public long getAge() {
         return getLastModified() != 0 ? System.currentTimeMillis() - getLastModified() : -1;
     }
 
+    @Override
     public String getMimeType() {
         return mimeType;
     }
 
+    @Override
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
         if (this.mimeType == null) {
@@ -94,14 +101,17 @@ public class FileInfoImpl extends ItemInfoImpl implements InternalFileInfo {
         }
     }
 
+    @Override
     public String getSha1() {
         return additionalInfo.getSha1();
     }
 
+    @Override
     public String getMd5() {
         return additionalInfo.getMd5();
     }
 
+    @Override
     @Nonnull
     public ChecksumsInfo getChecksumsInfo() {
         return additionalInfo.getChecksumsInfo();
@@ -117,6 +127,7 @@ public class FileInfoImpl extends ItemInfoImpl implements InternalFileInfo {
                 '}';
     }
 
+    @Override
     public boolean isIdentical(ItemInfo info) {
         if (!super.isIdentical(info)) {
             return false;
@@ -134,6 +145,7 @@ public class FileInfoImpl extends ItemInfoImpl implements InternalFileInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     @Deprecated
     public FileAdditionalInfo getAdditionalInfo() {
         return additionalInfo;
@@ -144,22 +156,27 @@ public class FileInfoImpl extends ItemInfoImpl implements InternalFileInfo {
      *
      * @return
      */
+    @Override
     public void setAdditionalInfo(FileAdditionalInfo additionalInfo) {
         this.additionalInfo = additionalInfo;
     }
 
+    @Override
     public Set<ChecksumInfo> getChecksums() {
         return additionalInfo.getChecksums();
     }
 
+    @Override
     public void setChecksums(Set<ChecksumInfo> checksums) {
         additionalInfo.setChecksums(checksums);
     }
 
+    @Override
     public void createTrustedChecksums() {
         this.additionalInfo.createTrustedChecksums();
     }
 
+    @Override
     public void addChecksumInfo(org.artifactory.checksum.ChecksumInfo info) {
         additionalInfo.addChecksumInfo(info);
     }
@@ -168,7 +185,7 @@ public class FileInfoImpl extends ItemInfoImpl implements InternalFileInfo {
     public boolean merge(MutableItemInfo itemInfo) {
         boolean modified = super.merge(itemInfo);
         if (itemInfo instanceof MutableFileInfo) {
-            MutableFileInfo fileInfo = (MutableFileInfo) itemInfo;
+            FileInfo fileInfo = (FileInfo) itemInfo;
             if (fileInfo.getSize() > 0 && this.size != fileInfo.getSize()) {
                 this.size = fileInfo.getSize();
                 modified = true;

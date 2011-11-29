@@ -66,6 +66,7 @@ import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -316,7 +317,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     @Override
-    protected RepoResource retrieveInfo(String path, Properties requestProperties) {
+    protected RepoResource retrieveInfo(String path, @Nullable Properties requestProperties) {
         assert !isOffline() : "Should never be called in offline mode";
         RepoPath repoPath = InternalRepoPathFactory.create(this.getKey(), path);
 

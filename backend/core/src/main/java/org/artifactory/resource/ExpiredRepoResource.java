@@ -18,10 +18,11 @@
 
 package org.artifactory.resource;
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.repo.RepoPath;
 
-public class ExpiredRepoResource implements RepoResource {
+public class ExpiredRepoResource implements RepoResource, UnfoundRepoResourceReason {
 
     private RepoResource wrappedResource;
 
@@ -29,50 +30,72 @@ public class ExpiredRepoResource implements RepoResource {
         this.wrappedResource = wrappedResource;
     }
 
+    @Override
+    public int getStatusCode() {
+        return HttpStatus.SC_NOT_FOUND;
+    }
+
+    @Override
+    public String getReason() {
+        return "Resource has expired";
+    }
+
+    @Override
     public RepoPath getRepoPath() {
         return wrappedResource.getRepoPath();
     }
 
+    @Override
     public RepoPath getResponseRepoPath() {
         return wrappedResource.getResponseRepoPath();
     }
 
+    @Override
     public void setResponseRepoPath(RepoPath responsePath) {
         wrappedResource.setResponseRepoPath(responsePath);
     }
 
+    @Override
     public RepoResourceInfo getInfo() {
         return wrappedResource.getInfo();
     }
 
+    @Override
     public long getSize() {
         return wrappedResource.getSize();
     }
 
+    @Override
     public long getCacheAge() {
         return wrappedResource.getCacheAge();
     }
 
+    @Override
     public long getLastModified() {
         return wrappedResource.getLastModified();
     }
 
+    @Override
     public String getMimeType() {
         return wrappedResource.getMimeType();
     }
 
+    @Override
     public boolean isFound() {
         return false;
     }
 
+    @Override
     public boolean isExactQueryMatch() {
         return wrappedResource.isExactQueryMatch();
     }
 
+    @Override
     public boolean isExpired() {
         return true;
     }
 
+    @Override
     public boolean isMetadata() {
         return wrappedResource.isMetadata();
     }

@@ -207,5 +207,72 @@ public class Maven23ModuleInfoUtilsTest extends BaseModuleInfoUtilsTest {
 
         testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/bob-mcmoo-mbob/1.0/" +
                 "bob-mcmoo-mbob-1.0-sources.tar.gz.sha1", moduleInfo);
+
+    }
+
+    public void testClassifierWithDots() {
+        ModuleInfo moduleInfo = new ModuleInfoBuilder().organization("this.is.a-super.ultra-really.mega-long.org").
+                module("DAS").baseRevision("10.0").fileIntegrationRevision("SNAPSHOT").classifier(
+                "lib+spring-aop-1.2-rc1").ext("jar.sha1").build();
+        testArtifactModuleToModule(moduleInfo);
+        testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/DAS/10.0/" +
+                "DAS-10.0-SNAPSHOT-lib+spring-aop-1.2-rc1.jar.sha1", moduleInfo);
+
+        moduleInfo = new ModuleInfoBuilder().organization("this.is.a-super.ultra-really.mega-long.org").
+                module("common.dcs").baseRevision("1.0.0").fileIntegrationRevision("SNAPSHOT").classifier(
+                "lib+ack-order-1.0.0-SNAPSHOT").ext("jar.md5").build();
+        testArtifactModuleToModule(moduleInfo);
+        testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/common.dcs/1.0.0/" +
+                "common.dcs-1.0.0-SNAPSHOT-lib+ack-order-1.0.0-SNAPSHOT.jar.md5", moduleInfo);
+
+        moduleInfo = new ModuleInfoBuilder().organization("this.is.a-super.ultra-really.mega-long.org").
+                module("common.dcs").baseRevision("1.0.0").fileIntegrationRevision("SNAPSHOT").classifier(
+                "lib+ack-order-1.0.0-SNAPSHOT").ext("jar").build();
+        testArtifactModuleToModule(moduleInfo);
+        testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/common.dcs/1.0.0/" +
+                "common.dcs-1.0.0-SNAPSHOT-lib+ack-order-1.0.0-SNAPSHOT.jar", moduleInfo);
+
+        moduleInfo = new ModuleInfoBuilder().organization("this.is.a-super.ultra-really.mega-long.org").
+                module("common.dcs").baseRevision("1.0.0").fileIntegrationRevision("SNAPSHOT").classifier(
+                "lib+ack-order-1.0.0-SNAPSHOT").ext("jar.md5").build();
+        testArtifactModuleToModule(moduleInfo);
+        testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/common.dcs/1.0.0/" +
+                "common.dcs-1.0.0-SNAPSHOT-lib+ack-order-1.0.0-SNAPSHOT.jar.md5", moduleInfo);
+
+        moduleInfo = new ModuleInfoBuilder().organization("this.is.a-super.ultra-really.mega-long.org").
+                module("common.dcs").baseRevision("1.0.0").folderIntegrationRevision("SNAPSHOT").
+                fileIntegrationRevision("20111104.160931-1").classifier("lib+ack-order-1.0.0-SNAPSHOT").ext("tar.gzip")
+                .build();
+        testArtifactModuleToModule(moduleInfo);
+        testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/common.dcs/1.0.0-SNAPSHOT/" +
+                "common.dcs-1.0.0-20111104.160931-1-lib+ack-order-1.0.0-SNAPSHOT.tar.gzip", moduleInfo);
+
+        moduleInfo = new ModuleInfoBuilder().organization("this.is.a-super.ultra-really.mega-long.org").
+                module("common.dcs").baseRevision("1.0.0").folderIntegrationRevision("SNAPSHOT").
+                fileIntegrationRevision("20111104.160931-1").classifier("lib+ack-order").ext("tar.gzip").build();
+        testArtifactModuleToModule(moduleInfo);
+        testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/common.dcs/1.0.0-SNAPSHOT/" +
+                "common.dcs-1.0.0-20111104.160931-1-lib+ack-order.tar.gzip", moduleInfo);
+
+        moduleInfo = new ModuleInfoBuilder().organization("this.is.a-super.ultra-really.mega-long.org").
+                module("common.dcs").baseRevision("1.0.0").folderIntegrationRevision("SNAPSHOT").
+                fileIntegrationRevision("20111104.160931-1").classifier("1classifier").ext("tar.gzip").build();
+        testArtifactModuleToModule(moduleInfo);
+        testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/common.dcs/1.0.0-SNAPSHOT/" +
+                "common.dcs-1.0.0-20111104.160931-1-1classifier.tar.gzip", moduleInfo);
+
+        moduleInfo = new ModuleInfoBuilder().organization("this.is.a-super.ultra-really.mega-long.org").
+                module("common.dcs").baseRevision("1.0.0").folderIntegrationRevision("SNAPSHOT").
+                fileIntegrationRevision("20111104.160931-1").classifier("classifier1").ext("tar.gzip").build();
+        testArtifactModuleToModule(moduleInfo);
+        testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/common.dcs/1.0.0-SNAPSHOT/" +
+                "common.dcs-1.0.0-20111104.160931-1-classifier1.tar.gzip", moduleInfo);
+
+        moduleInfo = new ModuleInfoBuilder().organization("this.is.a-super.ultra-really.mega-long.org").
+                module("common.xyz").baseRevision("1.0.0").folderIntegrationRevision("SNAPSHOT").
+                fileIntegrationRevision("SNAPSHOT").classifier("123abc-3.1").ext("jar").build();
+        testArtifactModuleToModule(moduleInfo);
+        testArtifactPathToModule("this/is/a-super/ultra-really/mega-long/org/common.xyz/1.0.0-SNAPSHOT/" +
+                "common.xyz-1.0.0-SNAPSHOT-123abc-3.1.jar", moduleInfo);
     }
 }

@@ -29,6 +29,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextField;
+import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
@@ -60,6 +61,8 @@ import org.artifactory.webapp.wicket.page.config.layout.validators.ReservedLayou
 import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
+
+import java.util.Map;
 
 /**
  * @author Yoav Aharoni
@@ -155,6 +158,8 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
         submit.setEnabled(!disableFields);
         form.add(submit);
         form.add(new DefaultButtonBehavior(submit));
+
+        bindHeightTo("modalScroll");
     }
 
     private TitledAjaxSubmitLink createSubmitButton() {
@@ -231,7 +236,7 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                 } catch (Exception e) {
                     error("Failed to resolve regular expression: " + ExceptionUtils.getRootCause(e).getMessage());
                 }
-                ModalHandler.resizeAndCenterCurrent(target);
+                ModalHandler.resizeAndCenterCurrent();
                 AjaxUtils.refreshFeedback();
             }
         };
@@ -254,7 +259,8 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
         testBorder.add(new Label("classifier"));
         testBorder.add(new Label("ext"));
         testBorder.add(new Label("type"));
-        testBorder.add(new Label("customFields"));
+        final RepeatingView customFieldsView = new RepeatingView("customFields");
+        testBorder.add(customFieldsView);
 
         testBorder.add(new TextField<String>("pathToTest", new PropertyModel<String>(this, "pathToTest")));
 
@@ -279,16 +285,29 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                     }
                     testBorder.setDefaultModelObject(moduleInfo);
                     organization.setVisible(true);
+                    updateCustomFields(customFieldsView, moduleInfo.getCustomFields());
                     target.addComponent(testBorder);
                 } catch (Exception e) {
                     error("Failed to test path: " + ExceptionUtils.getRootCause(e).getMessage());
                 }
-                ModalHandler.resizeAndCenterCurrent(target);
+                ModalHandler.resizeAndCenterCurrent();
                 AjaxUtils.refreshFeedback();
             }
         };
 
         testBorder.add(testPatternsButton);
+    }
+
+    private void updateCustomFields(RepeatingView customFieldsView, Map<String, String> customFields) {
+        customFieldsView.removeAll();
+        if (customFields != null) {
+            for (Map.Entry<String, String> entry : customFields.entrySet()) {
+                WebMarkupContainer container = new WebMarkupContainer(customFieldsView.newChildId());
+                container.add(new Label("key", entry.getKey() + ":"));
+                container.add(new Label("value", entry.getValue()));
+                customFieldsView.add(container);
+            }
+        }
     }
 
     private static class ReadOnlyOnDisabledTextField<T> extends TextField<T> {

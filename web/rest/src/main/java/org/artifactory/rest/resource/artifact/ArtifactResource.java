@@ -48,14 +48,14 @@ import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
@@ -414,7 +414,7 @@ public class ArtifactResource {
         if (itemInfo.isFolder()) {
             return createFolderInfoData(repoKey, (FolderInfo) itemInfo, requestPath);
         } else {
-            return createFileInfoData((MutableFileInfo) itemInfo, requestPath);
+            return createFileInfoData((FileInfo) itemInfo, requestPath);
         }
     }
 
@@ -461,7 +461,7 @@ public class ArtifactResource {
         return sb.toString();
     }
 
-    private RestFileInfo createFileInfoData(MutableFileInfo itemInfo, String requestPath) {
+    private RestFileInfo createFileInfoData(FileInfo itemInfo, String requestPath) {
         RestFileInfo fileInfo = new RestFileInfo();
         setBaseStorageInfo(fileInfo, itemInfo, requestPath);
 

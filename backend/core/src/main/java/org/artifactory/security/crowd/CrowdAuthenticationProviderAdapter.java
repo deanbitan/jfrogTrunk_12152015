@@ -21,8 +21,10 @@ package org.artifactory.security.crowd;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.sso.CrowdAddon;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.security.AnonymousAuthenticationToken;
 import org.artifactory.security.RealmAwareAuthenticationProvider;
 import org.artifactory.security.UserGroupInfo;
+import org.artifactory.security.UserInfo;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
@@ -43,6 +45,11 @@ public class CrowdAuthenticationProviderAdapter implements RealmAwareAuthenticat
     }
 
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        String userName = authentication.getName();
+        // If it's an anonymous user, don't bother searching for the user.
+        if (UserInfo.ANONYMOUS.equals(userName)) {
+            return null;
+        }
         return addonsManager.addonByType(CrowdAddon.class).authenticateCrowd(authentication);
     }
 

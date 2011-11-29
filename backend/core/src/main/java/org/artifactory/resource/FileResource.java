@@ -18,10 +18,12 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.fs.RepoResource;
-import org.artifactory.mime.NamingUtils;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.MutableFileInfo;
+import org.artifactory.fs.RepoResource;
 import org.artifactory.mime.MimeType;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 
 /**
@@ -29,7 +31,7 @@ import org.artifactory.repo.RepoPath;
  */
 public class FileResource implements RepoResource {
 
-    private final FileInfo info;
+    private final MutableFileInfo info;
     /**
      * Response repo path represents the exact repo path the resource came from which might be different from the
      * request repo path. An example is when file is requested from remote repo and served from the remote cache or
@@ -43,10 +45,13 @@ public class FileResource implements RepoResource {
     }
 
     public FileResource(FileInfo fileInfo, boolean exactQueryMatch) {
-        this.info = fileInfo;
+        // create mutable copy of the file info. this will guarantee that changes done to the resource file info
+        // doesn't change the original (possibly immutable) file info
+        this.info = InfoFactoryHolder.get().copyFileInfo(fileInfo);
         this.exactQueryMatch = exactQueryMatch;
     }
 
+    @Override
     public RepoPath getRepoPath() {
         return info.getRepoPath();
     }
@@ -54,6 +59,7 @@ public class FileResource implements RepoResource {
     /**
      * @see FileResource#responseRepoPath
      */
+    @Override
     public RepoPath getResponseRepoPath() {
         return responseRepoPath != null ? responseRepoPath : getRepoPath();
     }
@@ -61,43 +67,53 @@ public class FileResource implements RepoResource {
     /**
      * @see FileResource#responseRepoPath
      */
+    @Override
     public void setResponseRepoPath(RepoPath responsePath) {
         this.responseRepoPath = responsePath;
     }
 
-    public FileInfo getInfo() {
+    @Override
+    public MutableFileInfo getInfo() {
         return info;
     }
 
+    @Override
     public boolean isFound() {
         return true;
     }
 
+    @Override
     public boolean isExactQueryMatch() {
         return exactQueryMatch;
     }
 
+    @Override
     public boolean isExpired() {
         return false;
     }
 
+    @Override
     public boolean isMetadata() {
         return false;
     }
 
+    @Override
     public long getSize() {
         return info.getSize();
     }
 
+    @Override
     public long getLastModified() {
         return info.getLastModified();
     }
 
+    @Override
     public String getMimeType() {
         MimeType contentType = NamingUtils.getMimeType(info.getRelPath());
         return contentType.getType();
     }
 
+    @Override
     public long getCacheAge() {
         long lastUpdated = info.getLastUpdated();
         if (lastUpdated <= 0) {

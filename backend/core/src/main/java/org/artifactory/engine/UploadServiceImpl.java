@@ -49,9 +49,9 @@ import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
@@ -361,7 +361,7 @@ public class UploadServiceImpl implements InternalUploadService {
             log.debug("Found md5 '{}' for file '{}", md5, request.getRepoPath());
             checksumControls.addChecksum(ChecksumType.md5, md5);
         }
-        if (CollectionUtils.isNullOrEmpty(checksumControls.getChecksums())) {
+        if (checksumControls.isEmpty()) {
             return Sets.newHashSet();
         }
         return searchService.searchArtifactsByChecksum(checksumControls);

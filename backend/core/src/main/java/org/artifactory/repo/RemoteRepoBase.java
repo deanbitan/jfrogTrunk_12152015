@@ -71,6 +71,8 @@ import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.jcr.RepositoryException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -121,6 +123,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
     }
 
+    @Override
     public void init() {
         if (isStoreArtifactsLocally()) {
             LocalCacheRepo oldCacheRepo = null;
@@ -187,38 +190,47 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
     }
 
+    @Override
     public boolean isStoreArtifactsLocally() {
         return getDescriptor().isStoreArtifactsLocally();
     }
 
+    @Override
     public String getUrl() {
         return getDescriptor().getUrl();
     }
 
+    @Override
     public boolean isCache() {
         return false;
     }
 
+    @Override
     public boolean isHardFail() {
         return getDescriptor().isHardFail();
     }
 
+    @Override
     public boolean isOffline() {
         return getDescriptor().isOffline() || globalOfflineMode;
     }
 
+    @Override
     public boolean isListRemoteFolderItems() {
         return getDescriptor().isListRemoteFolderItems() && !getDescriptor().isBlackedOut() && !isOffline();
     }
 
+    @Override
     public long getRetrievalCachePeriodSecs() {
         return getDescriptor().getRetrievalCachePeriodSecs();
     }
 
+    @Override
     public long getFailedRetrievalCachePeriodSecs() {
         return getDescriptor().getFailedRetrievalCachePeriodSecs();
     }
 
+    @Override
     public long getMissedRetrievalCachePeriodSecs() {
         return getDescriptor().getMissedRetrievalCachePeriodSecs();
     }
@@ -230,6 +242,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @param context The request context holding additional parameters
      * @return A repository resource updated with the uptodate metadata
      */
+    @Override
     public final RepoResource getInfo(InternalRequestContext context) throws FileExpectedException {
         // make sure the repo key is of this repository
         String path = context.getResourcePath();
@@ -367,8 +380,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return cachedResource;
     }
 
-    protected abstract RepoResource retrieveInfo(String path, Properties requestProperties);
+    protected abstract RepoResource retrieveInfo(String path, @Nullable Properties requestProperties);
 
+    @Override
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
         String path = repoPath.getPath();
         StatusHolder status = assertValidPath(path, true);
@@ -382,6 +396,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return status;
     }
 
+    @Override
     public ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, RepoResource res)
             throws IOException, RepositoryException,
             RepoRejectException {
@@ -411,6 +426,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
     }
 
+    @Override
     public ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext, RepoResource remoteResource,
             RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectException {
         RepoPath remoteRepoPath = remoteResource.getRepoPath();
@@ -544,10 +560,10 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     private void unexpire(RepoResource cachedResource) {
         String relativePath = cachedResource.getRepoPath().getPath();
-        if (MavenNaming.isSnapshotMavenMetadata(relativePath) || !cachedResource.isMetadata()) {
-            if (MavenNaming.isSnapshotMavenMetadata(relativePath)) {
+        if (MavenNaming.isMavenMetadata(relativePath) || !cachedResource.isMetadata()) {
+            if (MavenNaming.isMavenMetadata(relativePath)) {
                 // unexpire the parent folder
-                localCacheRepo.unexpire(PathUtils.getParent(relativePath));
+                localCacheRepo.unexpire(NamingUtils.stripMetadataFromPath(relativePath));
             } else {
                 // unexpire the file
                 localCacheRepo.unexpire(relativePath);
@@ -658,6 +674,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return checksums;
     }
 
+    @Override
     public String getChecksum(String path, RepoResource res) throws IOException {
         String value = null;
         if (isStoreArtifactsLocally()) {
@@ -676,10 +693,13 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return value;
     }
 
+    @Override
     public LocalCacheRepo getLocalCacheRepo() {
         return localCacheRepo;
     }
 
+    @Override
+    @Nonnull
     public List<RemoteItem> listRemoteResources(String directoryPath) throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
         List<RemoteItem> cachedUrls = remoteResourceCache.get(directoryPath);
@@ -744,10 +764,12 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     protected abstract List<RemoteItem> getChildUrls(String dirUrl) throws IOException;
 
+    @Override
     public void clearCaches() {
         clearCaches(failedRetrievalsCache, missedRetrievalsCache, remoteResourceCache);
     }
 
+    @Override
     public void removeFromCaches(String path, boolean removeSubPaths) {
         removeFromCaches(path, removeSubPaths, failedRetrievalsCache, missedRetrievalsCache, remoteResourceCache);
     }
@@ -958,8 +980,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     /**
      * Allow plugins to override the path
      *
-     * @param path
-     * @return
+     * @param repoPath The original repo path
+     * @return Alternative path from the plugin or the same if no plugin changes it
      */
     private String getAltRemotePath(RepoPath repoPath) {
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);

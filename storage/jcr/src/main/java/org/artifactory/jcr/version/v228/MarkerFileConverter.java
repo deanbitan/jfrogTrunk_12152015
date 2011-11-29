@@ -170,6 +170,7 @@ public class MarkerFileConverter extends MarkerFileConverterBase {
         JcrService jcrService = context.getJcrService();
         JcrSession unmanagedSession = jcrService.getUnmanagedSession();
         try {
+            JcrServiceImpl.keepUnmanagedSession(unmanagedSession);
             JcrQuerySpec jcrQuerySpec = JcrQuerySpec.xpath(
                     new StringBuilder("/jcr:root").append(new JcrPathFactory().getAllRepoRootPath()).append("//. [@")
                             .append(StorageConstants.PROP_ARTIFACTORY_METADATA_NAME).append(" = '")
@@ -190,6 +191,7 @@ public class MarkerFileConverter extends MarkerFileConverterBase {
                     MarkerFileConverter.REPAIR_WATCHERS_MARKER_FILENAME));
             log.info("Finished converting watchers metadata.");
         } finally {
+            JcrServiceImpl.removeUnmanagedSession();
             unmanagedSession.logout();
         }
     }
