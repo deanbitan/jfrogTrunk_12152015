@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,10 +30,12 @@ public class PropertiesXmlProvider extends XStreamMetadataProvider<PropertiesInf
         super(PropertiesInfo.ROOT);
     }
 
+    @Override
     public MutablePropertiesInfo fromXml(String xmlData) {
         return (MutablePropertiesInfo) getXstream().fromXML(xmlData);
     }
 
+    @Override
     public String toXml(PropertiesInfo metadata) {
         return getXstream().toXML(metadata);
     }

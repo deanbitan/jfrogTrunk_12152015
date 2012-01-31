@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,5 +26,9 @@ import org.artifactory.schedule.quartz.QuartzCommand;
  * Time: 3:00 PM
  */
 public abstract class AbstractIndexerJobs extends QuartzCommand {
-    public static final String MANUAL_RUN = "manualRun";
+
+    // Force remote download even when locally found and not expired
+    public static final String FORCE_REMOTE = "forceRemote";
+
+    public static final String SETTINGS = "settings";
 }

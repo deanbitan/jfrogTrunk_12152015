@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -132,6 +132,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         List<PropertySet> propertySets = repoDescriptor.getPropertySets();
         if (propertySets != null && !propertySets.isEmpty()) {
             setPropertySets(Lists.transform(propertySets, new Function<PropertySet, String>() {
+                @Override
                 public String apply(@Nonnull PropertySet input) {
                     return input.getName();
                 }
@@ -145,6 +146,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         }
     }
 
+    @Override
     public int getMaxUniqueSnapshots() {
         return maxUniqueSnapshots;
     }
@@ -153,6 +155,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.maxUniqueSnapshots = maxUniqueSnapshots;
     }
 
+    @Override
     public boolean isSuppressPomConsistencyChecks() {
         return suppressPomConsistencyChecks;
     }
@@ -161,6 +164,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.suppressPomConsistencyChecks = suppressPomConsistencyChecks;
     }
 
+    @Override
     public boolean isHandleReleases() {
         return handleReleases;
     }
@@ -169,6 +173,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.handleReleases = handleReleases;
     }
 
+    @Override
     public boolean isHandleSnapshots() {
         return handleSnapshots;
     }
@@ -177,6 +182,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.handleSnapshots = handleSnapshots;
     }
 
+    @Override
     public String getUrl() {
         return url;
     }
@@ -185,6 +191,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.url = url;
     }
 
+    @Override
     public boolean isBlackedOut() {
         return blackedOut;
     }
@@ -193,6 +200,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.blackedOut = blackedOut;
     }
 
+    @Override
     public long getFailedRetrievalCachePeriodSecs() {
         return failedRetrievalCachePeriodSecs;
     }
@@ -201,6 +209,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.failedRetrievalCachePeriodSecs = failedRetrievalCachePeriodSecs;
     }
 
+    @Override
     public boolean isFetchJarsEagerly() {
         return fetchJarsEagerly;
     }
@@ -209,6 +218,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.fetchJarsEagerly = fetchJarsEagerly;
     }
 
+    @Override
     public boolean isFetchSourcesEagerly() {
         return fetchSourcesEagerly;
     }
@@ -217,6 +227,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.fetchSourcesEagerly = fetchSourcesEagerly;
     }
 
+    @Override
     public boolean isHardFail() {
         return hardFail;
     }
@@ -225,6 +236,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.hardFail = hardFail;
     }
 
+    @Override
     public String getLocalAddress() {
         return localAddress;
     }
@@ -233,6 +245,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.localAddress = localAddress;
     }
 
+    @Override
     public long getMissedRetrievalCachePeriodSecs() {
         return missedRetrievalCachePeriodSecs;
     }
@@ -241,6 +254,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.missedRetrievalCachePeriodSecs = missedRetrievalCachePeriodSecs;
     }
 
+    @Override
     public boolean isOffline() {
         return offline;
     }
@@ -249,6 +263,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.offline = offline;
     }
 
+    @Override
     public String getPassword() {
         return password;
     }
@@ -257,6 +272,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.password = password;
     }
 
+    @Override
     public List<String> getPropertySets() {
         return propertySets;
     }
@@ -265,6 +281,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.propertySets = propertySets;
     }
 
+    @Override
     public String getProxy() {
         return proxy;
     }
@@ -273,6 +290,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.proxy = proxy;
     }
 
+    @Override
     public String getRemoteRepoChecksumPolicyType() {
         return remoteRepoChecksumPolicyType;
     }
@@ -281,6 +299,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.remoteRepoChecksumPolicyType = remoteRepoChecksumPolicyType;
     }
 
+    @Override
     public long getRetrievalCachePeriodSecs() {
         return retrievalCachePeriodSecs;
     }
@@ -289,6 +308,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.retrievalCachePeriodSecs = retrievalCachePeriodSecs;
     }
 
+    @Override
     public boolean isShareConfiguration() {
         return shareConfiguration;
     }
@@ -297,6 +317,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.shareConfiguration = shareConfiguration;
     }
 
+    @Override
     public int getSocketTimeoutMillis() {
         return socketTimeoutMillis;
     }
@@ -305,6 +326,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.socketTimeoutMillis = socketTimeoutMillis;
     }
 
+    @Override
     public boolean isStoreArtifactsLocally() {
         return storeArtifactsLocally;
     }
@@ -313,6 +335,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.storeArtifactsLocally = storeArtifactsLocally;
     }
 
+    @Override
     public boolean isSynchronizeProperties() {
         return synchronizeProperties;
     }
@@ -321,6 +344,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.synchronizeProperties = synchronizeProperties;
     }
 
+    @Override
     public int getUnusedArtifactsCleanupPeriodHours() {
         return unusedArtifactsCleanupPeriodHours;
     }
@@ -329,6 +353,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.unusedArtifactsCleanupPeriodHours = unusedArtifactsCleanupPeriodHours;
     }
 
+    @Override
     public String getUsername() {
         return username;
     }
@@ -337,6 +362,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         this.username = username;
     }
 
+    @Override
     public String getRemoteRepoLayoutRef() {
         return remoteRepoLayoutRef;
     }

@@ -32,6 +32,7 @@ public class BinaryContentJcrImpl extends BinaryContentBase {
         this.binary = jcrBinary;
     }
 
+    @Override
     public long getSize() {
         try {
             return binary.getSize();
@@ -40,6 +41,7 @@ public class BinaryContentJcrImpl extends BinaryContentBase {
         }
     }
 
+    @Override
     public InputStream getStream() {
         try {
             return binary.getStream();
@@ -52,6 +54,7 @@ public class BinaryContentJcrImpl extends BinaryContentBase {
         return binary;
     }
 
+    @Override
     public void checkClosed() {
         // Nothing here it's the other side needs check
     }

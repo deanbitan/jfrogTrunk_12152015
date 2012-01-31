@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,9 +27,9 @@ import java.util.List;
 
 /**
  * A Dojo FilteringSelect widget.<br/> <br/> <b>NOTE!</b> You cannot add FilteringSelect to ajax target regularly,
- * meaning <b>you can't do <code>target.addComponent(dropDown)</code></b>. Instead add a containing parent:
- * <code>target.addComponent(anyParent)</code> or pass getAjaxTargetMarkupId() as target markup id like so:
- * <code>target.addComponent(dropDown<b>, dropDown.getAjaxTargetMarkupId()</b>)</code>
+ * meaning <b>you can't do <code>target.add(dropDown)</code></b>. Instead add a containing parent:
+ * <code>target.add(anyParent)</code> or pass getAjaxTargetMarkupId() as target markup id like so:
+ * <code>target.add(dropDown<b>, dropDown.getAjaxTargetMarkupId()</b>)</code>
  *
  * @author Yoav Aharoni
  * @see FilteringSelect#getAjaxTargetMarkupId()

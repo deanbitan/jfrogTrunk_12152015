@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,14 +18,17 @@
 
 package org.artifactory.backup;
 
+import com.google.common.collect.Sets;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.FileExportCallback;
+import org.artifactory.sapi.common.FileExportEvent;
+import org.artifactory.sapi.common.FileExportInfo;
 import org.slf4j.Logger;
 
 import java.util.Date;
+import java.util.Set;
 
 /**
  * Should be used for system backups only.<br>
@@ -42,7 +45,7 @@ public class SystemBackupPauseCallback implements FileExportCallback {
     private boolean jobTimeThresholdReached = false;
     private long lastPauseTimeMillis = 0;
 
-    public void callback(ExportSettings currentSettings, RepoPath fileRepoPath) {
+    public void callback(ExportSettings currentSettings, FileExportInfo info) {
         if (!jobTimeThresholdReached &&
                 (System.currentTimeMillis() - currentSettings.getTime().getTime() > jobTimeThreshold)) {
             jobTimeThresholdReached = true;
@@ -59,5 +62,14 @@ public class SystemBackupPauseCallback implements FileExportCallback {
                 log.warn("Scheduled system backup pause callback was interrupted: " + e.getMessage());
             }
         }
+    }
+
+    @Override
+    public void cleanup() {
+    }
+
+    @Override
+    public Set<FileExportEvent> triggeringEvents() {
+        return Sets.newHashSet(FileExportEvent.BEFORE_FILE_EXPORT);
     }
 }

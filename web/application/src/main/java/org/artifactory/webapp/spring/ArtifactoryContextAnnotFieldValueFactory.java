@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,6 +43,7 @@ public class ArtifactoryContextAnnotFieldValueFactory implements IFieldValueFact
         this.contextLocator = contextLocator;
     }
 
+    @Override
     public Object getFieldValue(Field field, Object fieldOwner) {
         if (supportsField(field)) {
             IProxyTargetLocator locator = new ArtifactoryBeanLocator(field.getType(), contextLocator);
@@ -56,6 +57,7 @@ public class ArtifactoryContextAnnotFieldValueFactory implements IFieldValueFact
     /**
      * @see org.apache.wicket.injection.IFieldValueFactory#supportsField(java.lang.reflect.Field)
      */
+    @Override
     public boolean supportsField(Field field) {
         return field.isAnnotationPresent(SpringBean.class);
     }

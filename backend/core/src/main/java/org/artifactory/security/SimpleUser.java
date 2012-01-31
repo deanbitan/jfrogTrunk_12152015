@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,22 +54,27 @@ public class SimpleUser implements UserDetails, Comparable {
         return userInfo;
     }
 
+    @Override
     public Collection<GrantedAuthority> getAuthorities() {
         return authorities;
     }
 
+    @Override
     public String getPassword() {
         return userInfo.getPassword();
     }
 
+    @Override
     public String getUsername() {
         return userInfo.getUsername();
     }
 
+    @Override
     public boolean isAccountNonExpired() {
         return userInfo.isAccountNonExpired();
     }
 
+    @Override
     public boolean isAccountNonLocked() {
         return userInfo.isAccountNonLocked();
     }
@@ -78,10 +83,12 @@ public class SimpleUser implements UserDetails, Comparable {
         return userInfo.isTransientUser();
     }
 
+    @Override
     public boolean isCredentialsNonExpired() {
         return userInfo.isCredentialsNonExpired();
     }
 
+    @Override
     public boolean isEnabled() {
         return userInfo.isEnabled();
     }
@@ -133,6 +140,7 @@ public class SimpleUser implements UserDetails, Comparable {
         return getUsername();
     }
 
+    @Override
     public int compareTo(Object o) {
         if (o == null || !getClass().isAssignableFrom(o.getClass())) {
             throw new IllegalArgumentException();

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.common.wicket.component.table.toolbar;
 
-import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractToolbar;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.DataTable;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -41,8 +41,8 @@ public class BaseRowToolbar extends AbstractToolbar {
         add(tr);
 
         WebMarkupContainer td = newCellItem("td");
-        String colSpan = String.valueOf(getTable().getColumns().length);
-        td.add(new SimpleAttributeModifier("colspan", colSpan));
+        String colSpan = String.valueOf(getTable().getColumns().size());
+        td.add(new AttributeModifier("colspan", colSpan));
         tr.add(td);
     }
 

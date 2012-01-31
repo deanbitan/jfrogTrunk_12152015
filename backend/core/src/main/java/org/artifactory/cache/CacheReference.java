@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,17 +24,23 @@ package org.artifactory.cache;
  */
 public enum CacheReference {
     HARD {
+        @Override
         public <V> CacheElement<V> createCacheElement(V value) {
             return new HardCacheElement<V>(value);
-        }},
+        }
+    },
     SOFT {
+        @Override
         public <V> CacheElement<V> createCacheElement(V value) {
             return new SoftCacheElement<V>(value);
-        }},
+        }
+    },
     WEAK {
+        @Override
         public <V> CacheElement<V> createCacheElement(V value) {
             return new WeakCacheElement<V>(value);
-        }};
+        }
+    };
 
     public abstract <V> CacheElement<V> createCacheElement(V value);
 }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -67,16 +67,19 @@ public class ZipResourceStreamHandle implements ResourceStreamHandle {
 
     }
 
+    @Override
     public InputStream getInputStream() {
         // the zip stream is in a state where it points to the start of the requested entry. calling getInputStream will
         // return the stream of the requested entry (not of the zip file)
         return zipStream;
     }
 
+    @Override
     public long getSize() {
         return zipResource.getSize();
     }
 
+    @Override
     public void close() {
         IOUtils.closeQuietly(stream);   // in case the zip stream creation failed
         IOUtils.closeQuietly(zipStream);

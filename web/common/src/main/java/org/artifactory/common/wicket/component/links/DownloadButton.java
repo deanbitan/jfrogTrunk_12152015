@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,11 +18,11 @@
 
 package org.artifactory.common.wicket.component.links;
 
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.Response;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.protocol.http.WebResponse;
-import org.apache.wicket.request.target.resource.ResourceStreamRequestTarget;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.handler.resource.ResourceStreamRequestHandler;
+import org.apache.wicket.request.http.WebResponse;
+import org.apache.wicket.request.resource.ContentDisposition;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.artifactory.log.LoggerFactory;
@@ -59,22 +59,15 @@ public abstract class DownloadButton extends TitledLink {
     @Override
     public void onClick() {
         IResourceStream resourceStream = getResourceStream();
-        getRequestCycle().setRequestTarget(new ResourceStreamRequestTarget(resourceStream) {
-            @Override
-            protected void configure(RequestCycle requestCycle, Response response, IResourceStream resourceStream) {
-                super.configure(requestCycle, response, resourceStream);
-                if (response instanceof WebResponse) {
-                    WebResponse webResponse = (WebResponse) response;
-                    webResponse.setHeader("Pragma", "no-cache");
-                    webResponse.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
-                }
-            }
+        RequestCycle requestCycle = getRequestCycle();
+        WebResponse response = (WebResponse) requestCycle.getResponse();
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
 
-            @Override
-            public String getFileName() {
-                return DownloadButton.this.getFileName();
-            }
-        });
+        requestCycle.scheduleRequestHandlerAfterCurrent(
+                new ResourceStreamRequestHandler(resourceStream)
+                        .setFileName(getFileName())
+                        .setContentDisposition(ContentDisposition.ATTACHMENT));
     }
 
     protected abstract String getFileName();

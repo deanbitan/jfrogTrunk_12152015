@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,7 @@ package org.artifactory.webapp.wicket.page.home.settings.ivy;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.home.settings.ivy.base.BaseIvySettingsGeneratorPanel;
 import org.artifactory.webapp.wicket.page.home.settings.ivy.base.IvySettingsRepoSelectorPanel;
@@ -54,7 +54,8 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
      * @param servletContextUrl      Running context URL
      * @param virtualRepoDescriptors List of virtual repository descriptors
      */
-    public IvySettingsPanel(String id, String servletContextUrl, List<VirtualRepoDescriptor> virtualRepoDescriptors) {
+    public IvySettingsPanel(String id, String servletContextUrl,
+            List<? extends RepoDescriptor> virtualRepoDescriptors) {
         super(id, servletContextUrl);
 
         resolverPanel = new IvySettingsRepoSelectorPanel("resolverPanel", virtualRepoDescriptors, servletContextUrl,
@@ -62,6 +63,7 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
         form.add(resolverPanel);
     }
 
+    @Override
     public String generateSettings() {
         Document document = new Document();
         Element rootNode = new Element("ivy-settings");
@@ -163,5 +165,10 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
     @Override
     protected String getSaveToFileName() {
         return "ivysettings.xml";
+    }
+
+    @Override
+    protected String getDownloadButtonTitle() {
+        return "Download Settings";
     }
 }

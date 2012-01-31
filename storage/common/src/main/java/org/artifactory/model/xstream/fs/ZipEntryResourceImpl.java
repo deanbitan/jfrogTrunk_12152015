@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -71,10 +71,12 @@ public class ZipEntryResourceImpl extends ItemInfoImpl implements ZipEntryResour
         additionalInfo = new FileAdditionalInfo((FileAdditionalInfo) ((InternalItemInfo) info).getAdditionalInfo());
     }
 
+    @Override
     public FileInfo getZipFileInfo() {
         return zipFileInfo;
     }
 
+    @Override
     public ZipEntryInfo getZipEntryInfo() {
         return zipEntryInfo;
     }
@@ -82,44 +84,54 @@ public class ZipEntryResourceImpl extends ItemInfoImpl implements ZipEntryResour
     /**
      * @return The name of the zip entry
      */
+    @Override
     public String getEntryPath() {
         return zipEntryInfo.getPath();
     }
 
+    @Override
     public ItemAdditionalInfo getAdditionalInfo() {
         return additionalInfo;
     }
 
+    @Override
     public boolean isFolder() {
         return false;
     }
 
+    @Override
     public long getAge() {
         return zipFileInfo.getAge();
     }
 
+    @Override
     public String getMimeType() {
         MimeType contentType = NamingUtils.getMimeType(zipEntryInfo.getName());
         return contentType.getType();
     }
 
+    @Override
     @Nonnull
     public ChecksumsInfo getChecksumsInfo() {
         return additionalInfo.getChecksumsInfo();
     }
 
+    @Override
     public long getSize() {
         return actualSize;
     }
 
+    @Override
     public String getSha1() {
         return getChecksumsInfo().getSha1();
     }
 
+    @Override
     public String getMd5() {
         return getChecksumsInfo().getMd5();
     }
 
+    @Override
     public Set<ChecksumInfo> getChecksums() {
         return getChecksumsInfo().getChecksums();
     }

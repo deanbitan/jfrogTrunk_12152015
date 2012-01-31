@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -50,6 +50,7 @@ public class RequestAdvice implements MethodInterceptor {
         log.info("Creating request advice interceptor");
     }
 
+    @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
         Request annotation = invocation.getMethod().getAnnotation(Request.class);
         boolean aggregate = annotation.aggregateEventsByTimeWindow();

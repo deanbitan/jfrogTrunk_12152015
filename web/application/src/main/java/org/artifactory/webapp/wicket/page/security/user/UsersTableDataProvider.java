@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.security.user;
 
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.model.IModel;
@@ -52,7 +53,7 @@ class UsersTableDataProvider extends SortableDataProvider<UserModel> {
         this.usersFilterPanel = usersFilterPanel;
         this.userGroupService = userGroupService;
         //Set default sort
-        setSort("username", true);
+        setSort("username", SortOrder.ASCENDING);
         previousSort = getSort();
         recalcUsersList();
     }
@@ -61,6 +62,7 @@ class UsersTableDataProvider extends SortableDataProvider<UserModel> {
         return users;
     }
 
+    @Override
     public Iterator<UserModel> iterator(int first, int count) {
         if (!previousSort.equals(getSort())) {
             sortUsers();
@@ -69,10 +71,12 @@ class UsersTableDataProvider extends SortableDataProvider<UserModel> {
         return usersSubList.iterator();
     }
 
+    @Override
     public int size() {
         return users.size();
     }
 
+    @Override
     public IModel<UserModel> model(UserModel userModel) {
         return new Model<UserModel>(userModel);
     }

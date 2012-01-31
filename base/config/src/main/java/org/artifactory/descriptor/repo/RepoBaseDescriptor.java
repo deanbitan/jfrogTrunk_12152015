@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RepoType", propOrder = {"key", "description", "notes", "includesPattern", "excludesPattern",
-        "repoLayout"}, namespace = Descriptor.NS)
+        "repoLayout", "enableNuGetSupport"}, namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     @XmlID
@@ -51,6 +51,9 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
     @XmlElement(name = "repoLayoutRef")
     private RepoLayout repoLayout;
 
+    private boolean enableNuGetSupport;
+
+    @Override
     public String getKey() {
         return key;
     }
@@ -59,6 +62,7 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
         this.key = key;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
@@ -67,6 +71,7 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
         this.description = description;
     }
 
+    @Override
     public String getNotes() {
         return notes;
     }
@@ -75,6 +80,7 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
         this.notes = notes;
     }
 
+    @Override
     public String getIncludesPattern() {
         return includesPattern;
     }
@@ -83,6 +89,7 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
         this.includesPattern = includesPattern;
     }
 
+    @Override
     public String getExcludesPattern() {
         return excludesPattern;
     }
@@ -91,6 +98,7 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
         this.excludesPattern = excludesPattern;
     }
 
+    @Override
     public RepoLayout getRepoLayout() {
         return repoLayout;
     }
@@ -99,10 +107,20 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
         this.repoLayout = repoLayout;
     }
 
+    public boolean isEnableNuGetSupport() {
+        return enableNuGetSupport;
+    }
+
+    public void setEnableNuGetSupport(boolean enableNuGetSupport) {
+        this.enableNuGetSupport = enableNuGetSupport;
+    }
+
+    @Override
     public boolean isMavenRepoLayout() {
         return RepoLayoutUtils.isDefaultM2(repoLayout);
     }
 
+    @Override
     public boolean identicalCache(RepoDescriptor oldDescriptor) {
         if (!(oldDescriptor instanceof RepoBaseDescriptor)) {
             return false;
@@ -137,6 +155,7 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
         return key;
     }
 
+    @Override
     public int compareTo(Object o) {
         if (o instanceof RepoDescriptor) {
             return key.compareTo(((RepoDescriptor) o).getKey());

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,26 +45,32 @@ import java.io.IOException;
 public class LoggingServiceImpl implements LoggingService {
     private static final Logger log = LoggerFactory.getLogger(LoggingServiceImpl.class);
 
+    @Override
     public void init() {
         InternalContextHelper.get().registerArtifactoryMBean(new Error(), ErrorMBean.class, null);
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         /**
          * All conversions are done in org.artifactory.log.logback.LogbackContextHelper#configure
          */
     }
 
+    @Override
     public void exportTo(ExportSettings settings) {
         // export is handled by the application context (all the etc directory is copied)
     }
 
+    @Override
     public void importFrom(ImportSettings settings) {
         File logFileToImport = new File(settings.getBaseDir(), "etc/logback.xml");
         if (logFileToImport.exists()) {

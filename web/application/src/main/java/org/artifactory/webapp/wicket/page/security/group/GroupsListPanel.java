@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,9 +18,10 @@
 
 package org.artifactory.webapp.wicket.page.security.group;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.repeater.Item;
@@ -58,7 +59,7 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
 
     public GroupsListPanel(String id) {
         super(id);
-        getDataProvider().setSort("groupName", true);
+        getDataProvider().setSort("groupName", SortOrder.ASCENDING);
     }
 
     @Override
@@ -89,8 +90,7 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
                 super.populateItem(item, componentId, model);
                 GroupInfo groupInfo = model.getObject();
                 String description = groupInfo.getDescription();
-                item.add(new SimpleAttributeModifier("title",
-                        description != null ? description : ""));
+                item.add(new AttributeModifier("title", description != null ? description : ""));
                 item.add(new CssClass("one-line"));
             }
         });

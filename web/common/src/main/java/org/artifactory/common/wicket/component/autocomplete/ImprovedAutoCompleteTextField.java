@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,12 +18,17 @@
 
 package org.artifactory.common.wicket.component.autocomplete;
 
-import org.apache.wicket.ResourceReference;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
-import org.apache.wicket.extensions.ajax.markup.html.autocomplete.*;
+import org.apache.wicket.AttributeModifier;
+import org.apache.wicket.Component;
+import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteBehavior;
+import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteSettings;
+import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTextField;
+import org.apache.wicket.extensions.ajax.markup.html.autocomplete.IAutoCompleteRenderer;
+import org.apache.wicket.extensions.ajax.markup.html.autocomplete.StringAutoCompleteRenderer;
 import org.apache.wicket.markup.html.IHeaderResponse;
-import org.apache.wicket.markup.html.resources.JavascriptResourceReference;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.request.resource.JavaScriptResourceReference;
+import org.apache.wicket.request.resource.ResourceReference;
 import org.artifactory.common.wicket.behavior.CssClass;
 
 import java.util.Iterator;
@@ -35,7 +40,7 @@ public abstract class ImprovedAutoCompleteTextField<T> extends AutoCompleteTextF
     public static final AutoCompleteSettings DEFAULT_SETTINGS =
             new AutoCompleteSettings().setShowListOnEmptyInput(true).setMaxHeightInPx(200);
 
-    private static final ResourceReference AUTOCOMPLETE_JS = new JavascriptResourceReference(
+    private static final ResourceReference AUTOCOMPLETE_JS = new JavaScriptResourceReference(
             ImprovedAutoCompleteBehavior.class, "improved-autocomplete.js");
 
     public ImprovedAutoCompleteTextField(String id, IModel<T> model, Class<T> type, AutoCompleteSettings settings) {
@@ -70,21 +75,23 @@ public abstract class ImprovedAutoCompleteTextField<T> extends AutoCompleteTextF
         this(id, model, null, renderer, DEFAULT_SETTINGS);
     }
 
-    public ImprovedAutoCompleteTextField(String id, IModel<T> model, Class<T> type, IAutoCompleteRenderer<T> renderer, AutoCompleteSettings settings) {
+    public ImprovedAutoCompleteTextField(String id, IModel<T> model, Class<T> type, IAutoCompleteRenderer<T> renderer,
+            AutoCompleteSettings settings) {
         super(id, model, type, renderer, settings);
 
         add(new CssClass("text autocomplete"));
-        add(new SimpleAttributeModifier("autocomplete", "off"));
+        add(new AttributeModifier("autocomplete", "off"));
     }
 
     @Override
-    protected AutoCompleteBehavior<T> newAutoCompleteBehavior(IAutoCompleteRenderer<T> renderer, AutoCompleteSettings settings) {
+    protected AutoCompleteBehavior<T> newAutoCompleteBehavior(IAutoCompleteRenderer<T> renderer,
+            AutoCompleteSettings settings) {
         return new AutoCompleteBehavior<T>(renderer, settings) {
 
             @Override
-            public void renderHead(IHeaderResponse response) {
-                super.renderHead(response);
-                response.renderJavascriptReference(AUTOCOMPLETE_JS);
+            public void renderHead(Component component, IHeaderResponse response) {
+                super.renderHead(component, response);
+                response.renderJavaScriptReference(AUTOCOMPLETE_JS);
             }
 
             @Override

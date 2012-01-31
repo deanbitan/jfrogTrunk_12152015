@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,10 +37,12 @@ public class SelectedItemModel<T> implements IModel<Boolean> {
         this.item = item;
     }
 
+    @Override
     public Boolean getObject() {
         return items.contains(item);
     }
 
+    @Override
     public void setObject(Boolean object) {
         if ((Boolean) object) {
             if (!items.contains(item)) {
@@ -51,6 +53,7 @@ public class SelectedItemModel<T> implements IModel<Boolean> {
         }
     }
 
+    @Override
     public void detach() {
     }
 }

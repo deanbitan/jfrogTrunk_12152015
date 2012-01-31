@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,46 +52,57 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
 
     private long modificationTime = -1;
 
+    @Override
     public RepoPath getRepoPath() {
         return repoPath;
     }
 
+    @Override
     public String getRepoKey() {
         return repoPath.getRepoKey();
     }
 
+    @Override
     public String getPath() {
         return repoPath.getPath();
     }
 
+    @Override
     public Properties getProperties() {
         return properties;
     }
 
+    @Override
     public boolean hasProperties() {
         return !properties.isEmpty();
     }
 
+    @Override
     public String getZipResourcePath() {
         return zipResourcePath;
     }
 
+    @Override
     public boolean isZipResourceRequest() {
         return StringUtils.isNotBlank(zipResourcePath);
     }
 
+    @Override
     public boolean isMetadata() {
         return NamingUtils.isMetadata(getPath());
     }
 
+    @Override
     public boolean isChecksum() {
         return NamingUtils.isChecksum(getPath()) || NamingUtils.isChecksum(zipResourcePath);
     }
 
+    @Override
     public String getName() {
         return PathUtils.getFileName(getPath());
     }
 
+    @Override
     public boolean isNewerThan(long resourceLastModified) {
         long modificationTime = getModificationTime();
         //Check that the resource has a modification time and that it is older than the request's one.
@@ -101,6 +112,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         return resourceLastModified >= 0 && roundMillis(resourceLastModified) <= modificationTime;
     }
 
+    @Override
     public long getModificationTime() {
         //If not calculated yet
         if (modificationTime < 0) {
@@ -141,10 +153,12 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         return time;
     }
 
+    @Override
     public String getParameter(String name) {
         return null;
     }
 
+    @Override
     public String[] getParameterValues(String name) {
         return new String[0];
     }
@@ -276,5 +290,13 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
             } // else no key declared, ignore
             matrixParamStart = matrixParamEnd;
         } while (matrixParamStart > 0 && matrixParamStart < matrixParams.length());
+    }
+
+    public boolean isDirectoryRequest() {
+        String uri = this.getUri();
+        boolean endsWithSlash = uri.endsWith("/");
+        boolean containsSlashWithSemicolon = uri.contains("/;");
+        boolean lastSlashIndex = uri.lastIndexOf("/;") >= uri.lastIndexOf("/");
+        return endsWithSlash || (containsSlashWithSemicolon && lastSlashIndex);
     }
 }

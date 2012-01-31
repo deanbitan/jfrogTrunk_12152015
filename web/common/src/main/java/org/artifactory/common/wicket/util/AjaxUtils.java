@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,11 +19,11 @@
 package org.artifactory.common.wicket.util;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.feedback.IFeedback;
+import org.apache.wicket.util.visit.IVisit;
+import org.apache.wicket.util.visit.IVisitor;
 
 /**
  * @author Yoav Aharoni
@@ -34,7 +34,7 @@ public abstract class AjaxUtils {
     }
 
     public static void refreshFeedback() {
-        refreshFeedback(getAjaxRequestTarget());
+        refreshFeedback(AjaxRequestTarget.get());
     }
 
     public static void refreshFeedback(final AjaxRequestTarget target) {
@@ -42,31 +42,19 @@ public abstract class AjaxUtils {
         if (page == null || target == null) {
             return;
         }
-        page.visitChildren(IFeedback.class, new Component.IVisitor<Component>() {
-            public Object component(Component component) {
+        page.visitChildren(IFeedback.class, new IVisitor<Component, Void>() {
+            @Override
+            public void component(Component component, IVisit<Void> visit) {
                 if (component.getOutputMarkupId()) {
-                    target.addComponent(component);
+                    target.add(component);
                 }
-                return CONTINUE_TRAVERSAL;
             }
         });
     }
 
-    public static boolean isAjaxRequest() {
-        return RequestCycle.get().getRequestTarget() instanceof AjaxRequestTarget;
-    }
-
-    public static AjaxRequestTarget getAjaxRequestTarget() {
-        IRequestTarget target = RequestCycle.get().getRequestTarget();
-        if (target instanceof AjaxRequestTarget) {
-            return (AjaxRequestTarget) target;
-        }
-        return null;
-    }
-
     public static void render(Component component, String markupId) {
         final String componentId = component.getMarkupId();
-        AjaxRequestTarget.get().addComponent(component, markupId);
+        AjaxRequestTarget.get().add(component, markupId);
         component.setMarkupId(componentId);
     }
 

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -91,136 +91,169 @@ public class UserImpl implements MutableUserInfo {
         setLastAccessTimeMillis(user.getLastAccessTimeMillis());
     }
 
+    @Override
     public String getUsername() {
         return username;
     }
 
+    @Override
     public void setUsername(String username) {
         this.username = username;
     }
 
+    @Override
     public String getPassword() {
         return password;
     }
 
+    @Override
     public void setPassword(String password) {
         this.password = password;
     }
 
+    @Override
     public String getEmail() {
         return email;
     }
 
+    @Override
     public void setEmail(String email) {
         this.email = email;
     }
 
+    @Override
     public String getPrivateKey() {
         return privateKey;
     }
 
+    @Override
     public void setPrivateKey(String privateKey) {
         this.privateKey = privateKey;
     }
 
+    @Override
     public String getPublicKey() {
         return publicKey;
     }
 
+    @Override
     public void setPublicKey(String publicKey) {
         this.publicKey = publicKey;
     }
 
+    @Override
     public String getGenPasswordKey() {
         return genPasswordKey;
     }
 
+    @Override
     public void setGenPasswordKey(String genPasswordKey) {
         this.genPasswordKey = genPasswordKey;
     }
 
+    @Override
     public boolean isAdmin() {
         return admin;
     }
 
+    @Override
     public void setAdmin(boolean admin) {
         this.admin = admin;
     }
 
+    @Override
     public boolean isEnabled() {
         return enabled;
     }
 
+    @Override
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
 
+    @Override
     public boolean isUpdatableProfile() {
         return updatableProfile;
     }
 
+    @Override
     public void setUpdatableProfile(boolean updatableProfile) {
         this.updatableProfile = updatableProfile;
     }
 
+    @Override
     public boolean isAccountNonExpired() {
         return accountNonExpired;
     }
 
+    @Override
     public void setAccountNonExpired(boolean accountNonExpired) {
         this.accountNonExpired = accountNonExpired;
     }
 
+    @Override
     public boolean isAccountNonLocked() {
         return accountNonLocked;
     }
 
+    @Override
     public void setAccountNonLocked(boolean accountNonLocked) {
         this.accountNonLocked = accountNonLocked;
     }
 
+    @Override
     public boolean isTransientUser() {
         return transientUser;
     }
 
+    @Override
     public void setTransientUser(boolean transientUser) {
         this.transientUser = transientUser;
     }
 
+    @Override
     public String getRealm() {
         return realm;
     }
 
+    @Override
     public boolean isExternal() {
         return !SecurityConstants.DEFAULT_REALM.equals(realm);
     }
 
+    @Override
     public void setRealm(String realm) {
         this.realm = realm;
     }
 
+    @Override
     public boolean isCredentialsNonExpired() {
         return credentialsNonExpired;
     }
 
+    @Override
     public void setCredentialsNonExpired(boolean credentialsNonExpired) {
         this.credentialsNonExpired = credentialsNonExpired;
     }
 
+    @Override
     public boolean isAnonymous() {
         return (username != null && username.equalsIgnoreCase(ANONYMOUS));
     }
 
+    @Override
     public boolean isInGroup(String groupName) {
         //Use the equals() behavior with a dummy userGroupInfo
         UserGroupInfo userGroupInfo = getDummyGroup(groupName);
         return getGroups().contains(userGroupInfo);
     }
 
+    @Override
     public void addGroup(String groupName) {
         addGroup(groupName, SecurityConstants.DEFAULT_REALM);
     }
 
+    @Override
     public void addGroup(String groupName, String realm) {
         UserGroupInfo userGroupInfo = new UserGroupImpl(groupName, realm);
         // group equality is currently using group name only, so make sure to remove existing group with the same name
@@ -228,6 +261,7 @@ public class UserImpl implements MutableUserInfo {
         _groups().add(userGroupInfo);
     }
 
+    @Override
     public void removeGroup(String groupName) {
         //Use the equals() behavior with a dummy userGroupInfo
         UserGroupInfo userGroupInfo = getDummyGroup(groupName);
@@ -237,6 +271,7 @@ public class UserImpl implements MutableUserInfo {
     /**
      * @return The _groups() names this user belongs to. Empty list if none.
      */
+    @Override
     public Set<UserGroupInfo> getGroups() {
         return ImmutableSet.copyOf(_groups());
     }
@@ -249,6 +284,7 @@ public class UserImpl implements MutableUserInfo {
         return groups;
     }
 
+    @Override
     public void setGroups(Set<UserGroupInfo> groups) {
         if (groups == null) {
             this.groups = new HashSet<UserGroupInfo>(1);
@@ -257,6 +293,7 @@ public class UserImpl implements MutableUserInfo {
         }
     }
 
+    @Override
     public void setInternalGroups(Set<String> groups) {
         if (groups == null) {
             this.groups = new HashSet<UserGroupInfo>(1);
@@ -269,34 +306,42 @@ public class UserImpl implements MutableUserInfo {
         }
     }
 
+    @Override
     public long getLastLoginTimeMillis() {
         return lastLoginTimeMillis;
     }
 
+    @Override
     public void setLastLoginTimeMillis(long lastLoginTimeMillis) {
         this.lastLoginTimeMillis = lastLoginTimeMillis;
     }
 
+    @Override
     public String getLastLoginClientIp() {
         return lastLoginClientIp;
     }
 
+    @Override
     public void setLastLoginClientIp(String lastLoginClientIp) {
         this.lastLoginClientIp = lastLoginClientIp;
     }
 
+    @Override
     public long getLastAccessTimeMillis() {
         return lastAccessTimeMillis;
     }
 
+    @Override
     public void setLastAccessTimeMillis(long lastAccessTimeMillis) {
         this.lastAccessTimeMillis = lastAccessTimeMillis;
     }
 
+    @Override
     public String getLastAccessClientIp() {
         return lastAccessClientIp;
     }
 
+    @Override
     public void setLastAccessClientIp(String lastAccessClientIp) {
         this.lastAccessClientIp = lastAccessClientIp;
     }
@@ -325,6 +370,7 @@ public class UserImpl implements MutableUserInfo {
         return userGroupInfo;
     }
 
+    @Override
     public boolean hasInvalidPassword() {
         return INVALID_PASSWORD.equals(getPassword());
     }

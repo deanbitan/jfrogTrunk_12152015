@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +18,10 @@
 
 package org.artifactory.common.wicket.component.table.columns.checkbox;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.DataTable;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.ISortableDataProvider;
 import org.apache.wicket.markup.html.form.FormComponent;
@@ -52,7 +52,7 @@ public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
         CheckboxPanel panel = new CheckboxPanel(componentId);
         selectAllCheckbox = new StyledCheckbox(CHECKBOX_ID, getSelectAllModel());
         selectAllCheckbox.setTitle(getDisplayModel().getObject());
-        selectAllCheckbox.add(new SimpleAttributeModifier("title", "Select All"));
+        selectAllCheckbox.add(new AttributeModifier("title", "Select All"));
         selectAllCheckbox.setOutputMarkupId(true);
         selectAllCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @SuppressWarnings({"unchecked"})
@@ -78,7 +78,7 @@ public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
             }
         }
         onSelectAll(iterator, target);
-        target.addComponent(table);
+        target.add(table);
     }
 
     /**
@@ -99,7 +99,7 @@ public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
     protected void onUpdate(FormComponent checkbox, T rowObject, boolean value, AjaxRequestTarget target) {
         super.onUpdate(checkbox, rowObject, value, target);
         setSelectAll(false);
-        target.addComponent(selectAllCheckbox);
+        target.add(selectAllCheckbox);
     }
 
     /**

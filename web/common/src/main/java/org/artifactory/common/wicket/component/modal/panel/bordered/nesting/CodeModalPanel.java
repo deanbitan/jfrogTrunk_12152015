@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,10 +19,10 @@
 package org.artifactory.common.wicket.component.modal.panel.bordered.nesting;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.ResourceReference;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.IHeaderContributor;
 import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.request.resource.PackageResourceReference;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 
@@ -39,19 +39,20 @@ public class CodeModalPanel extends PanelNestingBorderedModal implements IHeader
         content.add(new CssClass("modal-code"));
     }
 
+    @Override
     public void renderHead(IHeaderResponse response) {
-        response.renderJavascriptReference(new ResourceReference(CodeModalPanel.class, "CodeModalPanel.js"));
+        response.renderJavaScriptReference(new PackageResourceReference(CodeModalPanel.class, "CodeModalPanel.js"));
     }
 
     @Override
     public void onShow(AjaxRequestTarget target) {
-        String markupId = get("form:border:content").getMarkupId();
-        target.appendJavascript(format("ModelCode.onShow('%s');", markupId));
+        String markupId = getContent().getMarkupId();
+        target.appendJavaScript(format("ModelCode.onShow('%s');", markupId));
         ModalHandler.resizeAndCenterCurrent();
     }
 
     @Override
     public void onClose(AjaxRequestTarget target) {
-        target.appendJavascript("ModelCode.onClose();");
+        target.appendJavaScript("ModelCode.onClose();");
     }
 }

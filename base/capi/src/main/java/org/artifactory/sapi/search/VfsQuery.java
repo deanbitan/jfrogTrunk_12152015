@@ -19,6 +19,9 @@ public interface VfsQuery {
             @Nullable String value);
 
     VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
+            @Nonnull VfsFunctionType function, @Nullable String value);
+
+    VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
             @Nullable Long value);
 
     VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,

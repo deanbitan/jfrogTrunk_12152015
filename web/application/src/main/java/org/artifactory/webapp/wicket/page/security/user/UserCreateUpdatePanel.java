@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -141,12 +141,12 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                 super.onError(target, e);
                 String password = getFormComponent().getRawInput();
                 passwordField.setDefaultModelObject(password);
-                target.addComponent(strength);
+                target.add(strength);
             }
 
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                target.addComponent(strength);
+                target.add(strength);
             }
         }.setThrottleDelay(Duration.seconds(0.5)));
 
@@ -216,8 +216,8 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                 if (entity.isDisableInternalPassword()) {
                     entity.setPassword("");
                 }
-                target.addComponent(passwordField);
-                target.addComponent(retypedPasswordField);
+                target.add(passwordField);
+                target.add(retypedPasswordField);
             }
         });
         border.add(disableInternalPassword.setOutputMarkupId(true));
@@ -233,10 +233,10 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                     entity.setUpdatableProfile(true);
                     entity.setDisableInternalPassword(false);
                 }
-                target.addComponent(updatableProfileCheckbox);
-                target.addComponent(disableInternalPassword);
-                target.addComponent(passwordField);
-                target.addComponent(retypedPasswordField);
+                target.add(updatableProfileCheckbox);
+                target.add(disableInternalPassword);
+                target.add(passwordField);
+                target.add(retypedPasswordField);
             }
         });
         adminCheckbox.setLabel(Model.of("Admin"));

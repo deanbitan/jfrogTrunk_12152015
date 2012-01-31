@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -44,6 +44,7 @@ import java.util.Set;
  */
 public abstract class AbstractInfoFactory implements InfoFactory {
 
+    @Override
     public MutablePermissionTargetInfo createPermissionTarget(String permName, List<String> repoKeys) {
         MutablePermissionTargetInfo permissionTarget = createPermissionTarget();
         permissionTarget.setName(permName);
@@ -51,6 +52,7 @@ public abstract class AbstractInfoFactory implements InfoFactory {
         return permissionTarget;
     }
 
+    @Override
     public MutableAceInfo createAce(String principal, boolean group, int mask) {
         MutableAceInfo aceInfo = createAce();
         aceInfo.setPrincipal(principal);
@@ -59,6 +61,7 @@ public abstract class AbstractInfoFactory implements InfoFactory {
         return aceInfo;
     }
 
+    @Override
     public Set<UserGroupInfo> createGroups(Set<String> names) {
         if (names == null) {
             return null;
@@ -72,24 +75,28 @@ public abstract class AbstractInfoFactory implements InfoFactory {
         return userGroupInfos;
     }
 
+    @Override
     public MutableGroupInfo createGroup(String groupName) {
         MutableGroupInfo group = createGroup();
         group.setGroupName(groupName);
         return group;
     }
 
+    @Override
     public MutableUserInfo createUser(String userName) {
         MutableUserInfo user = createUser();
         user.setUsername(userName);
         return user;
     }
 
+    @Override
     public MutableAclInfo createAcl(PermissionTargetInfo permissionTarget) {
         MutableAclInfo acl = createAcl();
         acl.setPermissionTarget(permissionTarget);
         return acl;
     }
 
+    @Override
     public MutableAclInfo createAcl(PermissionTargetInfo permissionTarget, Set<AceInfo> aces, String updatedBy) {
         MutableAclInfo acl = createAcl(permissionTarget);
         acl.setAces(aces);
@@ -97,6 +104,7 @@ public abstract class AbstractInfoFactory implements InfoFactory {
         return acl;
     }
 
+    @Override
     public MutableMetadataInfo createMetadata(RepoPath repoPath, String metadataName) {
         return createMetadata(new RepoPathImpl(repoPath.getRepoKey(),
                 NamingUtils.getMetadataPath(repoPath.getPath(), metadataName)));

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,20 +38,13 @@ public abstract class SingleSelectionTable<T> extends SortableTable<T> {
     protected SingleSelectionTable(String id, List<IColumn<T>> columns,
             ISortableDataProvider<T> dataProvider, int rowsPerPage) {
         super(id, columns, dataProvider, rowsPerPage);
-    }
 
-    protected SingleSelectionTable(String id, IColumn<T>[] columns, ISortableDataProvider<T> dataProvider,
-            int rowsPerPage) {
-        super(id, columns, dataProvider, rowsPerPage);
-    }
-
-    {
         add(new CssClass("selectable"));
         setOutputMarkupId(true);
     }
 
     protected void onRowSelected(T selection, final AjaxRequestTarget target) {
-        target.addComponent(this);
+        target.add(this);
     }
 
     @Override
@@ -64,12 +57,12 @@ public abstract class SingleSelectionTable<T> extends SortableTable<T> {
     }
 
     @Override
-    protected Item<T> newCellItem(final String id, final int index, final IModel<T> model) {
-        Item<T> cellItem = super.newCellItem(id, index, model);
+    protected Item<IColumn<T>> newCellItem(final String id, final int index, final IModel<IColumn<T>> model) {
+        Item<IColumn<T>> item = super.newCellItem(id, index, model);
         if (model.getObject() instanceof PropertyColumn) {
-            cellItem.add(new SelectRowBehavior());
+            item.add(new SelectRowBehavior());
         }
-        return cellItem;
+        return item;
     }
 
     public T getSelection() {

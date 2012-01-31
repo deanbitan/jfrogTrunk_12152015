@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,16 +19,13 @@ package org.artifactory.webapp.wicket.page.browse.listing;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.Response;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.protocol.http.WebRequestCycle;
-import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
+import org.apache.wicket.request.Response;
+import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.BaseBrowsableItem;
@@ -36,6 +33,7 @@ import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.storage.StorageUnit;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RepoFilter;
@@ -71,22 +69,17 @@ public class ArtifactListPage extends WebPage {
         setVersioned(false);
 
         //Retrieve the repository path from the request
-        WebRequestCycle requestCycle = (WebRequestCycle) RequestCycle.get();
-        WebRequest request = requestCycle.getWebRequest();
-        RepoPath repoPath =
-                (RepoPath) request.getHttpServletRequest().getAttribute(RepoFilter.ATTR_ARTIFACTORY_REPOSITORY_PATH);
-        if (repoPath == null) {
-            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
-        }
-        if (StringUtils.isEmpty(repoPath.getRepoKey())) {
-            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
+        HttpServletRequest httpServletRequest = WicketUtils.getHttpServletRequest();
+        RepoPath repoPath = (RepoPath) httpServletRequest.getAttribute(RepoFilter.ATTR_ARTIFACTORY_REPOSITORY_PATH);
+        if (repoPath == null || StringUtils.isEmpty(repoPath.getRepoKey())) {
+            throw new AbortWithHttpErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }
 
         addTitle(repoPath);
-        Properties requestProps = (Properties) request.getHttpServletRequest()
+        Properties requestProps = (Properties) httpServletRequest
                 .getAttribute(RepoFilter.ATTR_ARTIFACTORY_REQUEST_PROPERTIES);
         addFileList(repoPath, requestProps);
-        addAddress(request.getHttpServletRequest());
+        addAddress(httpServletRequest);
     }
 
     private void addTitle(RepoPath repoPath) {
@@ -140,7 +133,7 @@ public class ArtifactListPage extends WebPage {
                 items = repoBrowsingService.getVirtualRepoBrowsableChildren(criteria);
             }
         } catch (Exception e) {
-            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+            throw new AbortWithHttpErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
         }
         Collections.sort(items, new ItemInfoComparator());
         return items;
@@ -161,13 +154,13 @@ public class ArtifactListPage extends WebPage {
         }
 
         @Override
-        protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+        public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
             final Response response = getResponse();
             if (printParent) {
-                response.println("<a href=\"../\">../</a>");
+                response.write("<a href=\"../\">../</a>\n");
 
             } else if (items.isEmpty()) {
-                response.println("No items found.");
+                response.write("No items found.\n");
                 return;
             }
 
@@ -197,16 +190,17 @@ public class ArtifactListPage extends WebPage {
 
                 long size = item.getSize();
                 if (item.isFolder() || size <= 0) {
-                    response.println("  -");
+                    response.write("  -");
                 } else {
-                    response.println(StorageUnit.toReadableString(size));
+                    response.write(StorageUnit.toReadableString(size));
                 }
+                response.write("\n");
             }
         }
     }
 
     private static class ItemInfoComparator implements Comparator<BaseBrowsableItem>, Serializable {
-
+        @Override
         public int compare(BaseBrowsableItem o1, BaseBrowsableItem o2) {
             final int folderCmp = Boolean.valueOf(o2.isFolder()).compareTo(o1.isFolder());
             if (folderCmp != 0) {

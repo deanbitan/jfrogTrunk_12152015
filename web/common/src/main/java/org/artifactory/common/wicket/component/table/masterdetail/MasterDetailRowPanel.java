@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,9 +18,9 @@
 
 package org.artifactory.common.wicket.component.table.masterdetail;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.grid.DataGridView;
 import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
@@ -50,6 +50,7 @@ import java.util.List;
 /**
  * @author Yoav Aharoni
  */
+@SuppressWarnings({"unchecked"})
 class MasterDetailRowPanel<M extends Serializable, D extends Serializable> extends Panel {
     MasterDetailRowPanel(String id, M masterObject, MasterDetailTable<M, D> table) {
         super(id, new Model<M>(masterObject));
@@ -59,7 +60,6 @@ class MasterDetailRowPanel<M extends Serializable, D extends Serializable> exten
         addDetailRows(table, masterObject, expanded);
     }
 
-    @SuppressWarnings({"unchecked"})
     private void sortList(List<D> list, SortParam sortParam) {
         if (sortParam != null && sortParam.getProperty().startsWith("detail.")) {
             ListPropertySorter.sort(list, sortParam);
@@ -84,8 +84,8 @@ class MasterDetailRowPanel<M extends Serializable, D extends Serializable> exten
         // create master cell
         final WebMarkupContainer cell = new WebMarkupContainer("cell");
         row.add(cell);
-        String colspan = String.valueOf(table.getColumns().length);
-        cell.add(new SimpleAttributeModifier("colspan", colspan));
+        String colspan = String.valueOf(table.getColumns().size());
+        cell.add(new AttributeModifier("colspan", colspan));
         cell.add(new CssClass("first-cell last-cell"));
         cell.add(new ToggleMasterBehavior());
 
@@ -133,35 +133,24 @@ class MasterDetailRowPanel<M extends Serializable, D extends Serializable> exten
     }
 
     private static class DetailsGridView extends DataGridView {
-        public DetailsGridView(String id, ICellPopulator[] populators, IDataProvider dataProvider) {
+        public DetailsGridView(String id, List<? extends ICellPopulator<?>> populators, IDataProvider dataProvider) {
             super(id, populators, dataProvider);
         }
 
+        @Override
         protected Item newCellItem(String id, int index, IModel model) {
             Item item = new Item(id, index, model);
-            final IColumn column = (IColumn) getPopulators()[index];
+            final IColumn column = (IColumn) getPopulators().get(index);
             if (column instanceof IStyledColumn) {
                 item.add(new CssClass(((IStyledColumn) column).getCssClass()));
             }
             return item;
         }
 
+        @Override
         protected Item newRowItem(String id, int index, IModel model) {
             return new OddEvenItem(id, index, model);
         }
     }
 
-    private static class DetailsDataProvider<M extends Serializable, D extends Serializable> extends ListDataProvider {
-        private final M master;
-
-        public DetailsDataProvider(List<D> list, M master) {
-            super(list);
-            this.master = master;
-        }
-
-        @SuppressWarnings({"unchecked"})
-        public IModel model(Object object) {
-            return new Model(new MasterDetailEntry<M, D>(master, (D) object));
-        }
-    }
 }

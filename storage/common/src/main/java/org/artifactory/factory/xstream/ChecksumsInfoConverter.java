@@ -22,10 +22,12 @@ public class ChecksumsInfoConverter implements Converter {
 
     private static final String CHECKSUMS_FIELD_NAME = "checksums";
 
+    @Override
     public boolean canConvert(Class type) {
         return type.equals(ChecksumsInfo.class);
     }
 
+    @Override
     public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
         ChecksumsInfo checksumsInfo = (ChecksumsInfo) source;
         writer.startNode(CHECKSUMS_FIELD_NAME);
@@ -33,6 +35,7 @@ public class ChecksumsInfoConverter implements Converter {
         writer.endNode();
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
         reader.moveDown();

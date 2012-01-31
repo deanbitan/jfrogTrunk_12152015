@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,6 +33,7 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.util.RepoLayoutUtils;
@@ -45,7 +46,7 @@ import java.util.List;
  *
  * @author Noam Y. Tenne
  */
-public class IvySettingsRepoSelectorPanel extends Panel {
+public class IvySettingsRepoSelectorPanel<T extends RepoDescriptor> extends Panel {
 
     @SpringBean
     private CentralConfigService centralConfigService;
@@ -67,13 +68,13 @@ public class IvySettingsRepoSelectorPanel extends Panel {
 
     private final String servletContextUrl;
 
-    private DropDownChoice<VirtualRepoDescriptor> repoDropDownChoice;
+    private DropDownChoice<T> repoDropDownChoice;
     private DropDownChoice<RepoLayout> layoutDropDownChoice;
     private List<RepoLayout> repoLayouts;
     private StyledCheckbox useIbiblioResolverCheckBox;
     private StyledCheckbox m2CompatibleCheckBox;
 
-    public IvySettingsRepoSelectorPanel(String id, List<VirtualRepoDescriptor> virtualRepoDescriptors,
+    public IvySettingsRepoSelectorPanel(String id, List<T> virtualRepoDescriptors,
             String servletContextUrl, RepoType repoType) {
         super(id);
         this.servletContextUrl = servletContextUrl;
@@ -126,10 +127,10 @@ public class IvySettingsRepoSelectorPanel extends Panel {
                 RepoLayoutUtils.getDescriptorLayoutAsIvyPattern(layout));
     }
 
-    private void addRepoFields(List<VirtualRepoDescriptor> virtualRepoDescriptors, RepoType repoType) {
+    private void addRepoFields(List<T> virtualRepoDescriptors, RepoType repoType) {
         add(new Label("repositoryLabel", getRepositoryLabel(repoType)));
-        repoDropDownChoice = new DropDownChoice<VirtualRepoDescriptor>("repository",
-                new PropertyModel<VirtualRepoDescriptor>(this, "repository"), virtualRepoDescriptors);
+        repoDropDownChoice = new DropDownChoice<T>("repository",
+                new PropertyModel<T>(this, "repository"), virtualRepoDescriptors);
 
         repoDropDownChoice.add(new AjaxFormComponentUpdatingBehavior("onchange") {
 
@@ -144,12 +145,11 @@ public class IvySettingsRepoSelectorPanel extends Panel {
                 layoutDropDownChoice.setEnabled(enabled);
                 layoutDropDownChoice.setDefaultModelObject(selection);
                 onLayoutChoiceChange(target, selection);
-                target.addComponent(layoutDropDownChoice);
+                target.add(layoutDropDownChoice);
             }
         });
 
-        VirtualRepoDescriptor defaultSelection = getDefaultSelection(virtualRepoDescriptors,
-                repoType.getDefaultVirtualRepoKeySelector());
+        T defaultSelection = getDefaultSelection(virtualRepoDescriptors, repoType.getDefaultVirtualRepoKeySelector());
         if (defaultSelection == null) {
             defaultSelection = virtualRepoDescriptors.get(0);
         }
@@ -174,7 +174,7 @@ public class IvySettingsRepoSelectorPanel extends Panel {
             }
         });
 
-        VirtualRepoDescriptor defaultRepo = repoDropDownChoice.getModelObject();
+        RepoDescriptor defaultRepo = repoDropDownChoice.getModelObject();
         RepoLayout defaultSelection = getDefaultSelection(repoLayouts, new DefaultLayoutSelector(defaultRepo));
         boolean enabled = false;
         if (defaultSelection == null) {
@@ -206,7 +206,7 @@ public class IvySettingsRepoSelectorPanel extends Panel {
         }
         onIbiblioChoiceChange(target, useIbiblioResolverCheckBox.getModelObject());
         if (target != null) {
-            target.addComponent(useIbiblioResolverCheckBox);
+            target.add(useIbiblioResolverCheckBox);
         }
     }
 
@@ -256,7 +256,7 @@ public class IvySettingsRepoSelectorPanel extends Panel {
         }
         m2CompatibleCheckBox.setEnabled(m2enabled);
         if (target != null) {
-            target.addComponent(m2CompatibleCheckBox);
+            target.add(m2CompatibleCheckBox);
         }
     }
 
@@ -291,9 +291,9 @@ public class IvySettingsRepoSelectorPanel extends Panel {
         return repoType.getTypeLabel() + " " + baseLabel;
     }
 
-    private <T> T getDefaultSelection(List<T> options, DefaultOptionSelector<T> selector) {
+    private <Y> Y getDefaultSelection(List<Y> options, DefaultOptionSelector selector) {
 
-        for (T option : options) {
+        for (Y option : options) {
             if (selector.acceptedAsDefault(option)) {
                 return option;
             }
@@ -324,7 +324,7 @@ public class IvySettingsRepoSelectorPanel extends Panel {
             return defaultVirtualRepoKeySelector;
         }
 
-        public static class DefaultVirtualRepoKeySelector extends DefaultOptionSelector<VirtualRepoDescriptor> {
+        public static class DefaultVirtualRepoKeySelector<T extends RepoDescriptor> extends DefaultOptionSelector<T> {
 
             private final String keyword;
 
@@ -333,7 +333,7 @@ public class IvySettingsRepoSelectorPanel extends Panel {
             }
 
             @Override
-            public boolean acceptedAsDefault(VirtualRepoDescriptor virtualRepoDescriptor) {
+            public boolean acceptedAsDefault(T virtualRepoDescriptor) {
                 return StringUtils.containsIgnoreCase(virtualRepoDescriptor.getKey(), keyword);
             }
         }
@@ -341,9 +341,9 @@ public class IvySettingsRepoSelectorPanel extends Panel {
 
     private static class DefaultLayoutSelector extends DefaultOptionSelector<RepoLayout> {
 
-        private final VirtualRepoDescriptor virtualRepoDescriptor;
+        private final RepoDescriptor virtualRepoDescriptor;
 
-        private DefaultLayoutSelector(VirtualRepoDescriptor virtualRepoDescriptor) {
+        private DefaultLayoutSelector(RepoDescriptor virtualRepoDescriptor) {
             this.virtualRepoDescriptor = virtualRepoDescriptor;
         }
 

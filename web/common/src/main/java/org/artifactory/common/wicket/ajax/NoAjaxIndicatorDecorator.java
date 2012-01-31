@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.common.wicket.ajax;
 
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.calldecorator.AjaxCallDecorator;
 
 /**
@@ -25,7 +26,7 @@ import org.apache.wicket.ajax.calldecorator.AjaxCallDecorator;
  */
 public class NoAjaxIndicatorDecorator extends AjaxCallDecorator {
     @Override
-    public CharSequence decorateScript(CharSequence script) {
+    public CharSequence decorateScript(Component c, CharSequence script) {
         return "ajaxIndicator.disableOnce();" + script;
     }
 }

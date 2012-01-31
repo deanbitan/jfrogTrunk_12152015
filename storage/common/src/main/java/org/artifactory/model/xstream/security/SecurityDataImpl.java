@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -61,26 +61,37 @@ public class SecurityDataImpl implements SecurityInfo {
         }
     }
 
+    @Override
     public String getVersion() {
         return version;
     }
 
+    @Override
     public void setVersion(String version) {
         this.version = version;
     }
 
+    @Override
     public List<UserInfo> getUsers() {
-        if (users == null) return null;
+        if (users == null) {
+            return null;
+        }
         return ImmutableList.<UserInfo>copyOf(users);
     }
 
+    @Override
     public List<GroupInfo> getGroups() {
-        if (groups == null) return null;
+        if (groups == null) {
+            return null;
+        }
         return ImmutableList.<GroupInfo>copyOf(groups);
     }
 
+    @Override
     public List<AclInfo> getAcls() {
-        if (acls == null) return null;
+        if (acls == null) {
+            return null;
+        }
         return ImmutableList.<AclInfo>copyOf(acls);
     }
 }

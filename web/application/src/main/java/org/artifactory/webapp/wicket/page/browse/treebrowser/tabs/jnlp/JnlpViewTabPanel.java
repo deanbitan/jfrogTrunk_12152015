@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -102,8 +102,8 @@ public class JnlpViewTabPanel extends Panel {
                     protected void onUpdate(AjaxRequestTarget target) {
                         RepoDescriptor repo = (VirtualRepoDescriptor) getComponent().getDefaultModelObject();
                         setRepository(repo);
-                        target.addComponent(get("jnlpLinksBorder"));
-                        target.addComponent(get("scriptSnippetBorder"));
+                        target.add(get("jnlpLinksBorder"));
+                        target.add(get("scriptSnippetBorder"));
                     }
                 });
                 add(select);
@@ -178,6 +178,7 @@ public class JnlpViewTabPanel extends Panel {
             this.appletInfo = appletInfo;
         }
 
+        @Override
         public void onClick(AjaxRequestTarget target) {
             ModalHandler modalHandler = ModalHandler.getInstanceFor(this);
             BaseModalPanel panel = new JavafxAppletPreviewPanel(appletInfo);

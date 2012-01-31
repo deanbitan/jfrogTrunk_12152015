@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -140,6 +140,7 @@ public class DerbyDelegate extends StdJDBCDelegate {
         return insertResult;
     }
 
+    @Override
     public int insertTrigger(Connection conn, Trigger trigger, String state,
             JobDetail jobDetail) throws SQLException, IOException {
 
@@ -201,6 +202,7 @@ public class DerbyDelegate extends StdJDBCDelegate {
         return insertResult;
     }
 
+    @Override
     public int updateTrigger(Connection conn, Trigger trigger, String state,
             JobDetail jobDetail) throws SQLException, IOException {
 
@@ -273,6 +275,7 @@ public class DerbyDelegate extends StdJDBCDelegate {
         return insertResult;
     }
 
+    @Override
     public int updateJobData(Connection conn, JobDetail job)
             throws IOException, SQLException {
         //log.debug( "Updating Job Data for Job " + job );
@@ -293,6 +296,7 @@ public class DerbyDelegate extends StdJDBCDelegate {
         }
     }
 
+    @Override
     public int insertCalendar(Connection conn, String calendarName,
             Calendar calendar) throws IOException, SQLException {
         //log.debug( "Inserting Calendar " + calendarName + " : " + calendar
@@ -314,6 +318,7 @@ public class DerbyDelegate extends StdJDBCDelegate {
         }
     }
 
+    @Override
     public int updateCalendar(Connection conn, String calendarName,
             Calendar calendar) throws IOException, SQLException {
         //log.debug( "Updating calendar " + calendarName + " : " + calendar );
@@ -334,6 +339,7 @@ public class DerbyDelegate extends StdJDBCDelegate {
         }
     }
 
+    @Override
     protected Object getObjectFromBlob(ResultSet rs, String colName)
             throws ClassNotFoundException, IOException, SQLException {
         //log.debug( "Getting blob from column: " + colName );
@@ -353,6 +359,7 @@ public class DerbyDelegate extends StdJDBCDelegate {
         return obj;
     }
 
+    @Override
     protected Object getJobDetailFromBlob(ResultSet rs, String colName)
             throws ClassNotFoundException, IOException, SQLException {
         if (canUseProperties()) {

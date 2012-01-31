@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -67,6 +67,15 @@ public interface SearchService {
      */
     @Lock(transactional = true)
     Set<RepoPath> searchArtifactsByChecksum(ChecksumSearchControls searchControls);
+
+    /**
+     * Searches for artifacts by their checksum values
+     *
+     * @param searchControls Search controls
+     * @return List of ItemSearchResults
+     */
+    @Lock(transactional = true)
+    ItemSearchResults getArtifactsByChecksumResults(ChecksumSearchControls searchControls);
 
     /**
      * @param from          The time to start the search exclusive (eg, >). If empty will start from 1st Jan 1970

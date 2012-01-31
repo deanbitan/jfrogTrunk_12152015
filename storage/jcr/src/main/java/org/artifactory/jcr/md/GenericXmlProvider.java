@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,14 +29,17 @@ public class GenericXmlProvider implements XmlMetadataProvider<String, String> {
         this.metadataName = metadataName;
     }
 
+    @Override
     public String getMetadataName() {
         return metadataName;
     }
 
+    @Override
     public String fromXml(String xmlData) {
         return xmlData;
     }
 
+    @Override
     public String toXml(String metadata) {
         return metadata;
     }

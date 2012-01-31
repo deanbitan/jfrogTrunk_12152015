@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -149,6 +149,7 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
      * @throws org.apache.jackrabbit.core.state.ItemStateException
      *
      */
+    @Override
     public boolean scan() throws RepositoryException,
             IllegalStateException, IOException, ItemStateException {
         // This test should always be true since the flow should be:
@@ -379,11 +380,13 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
         info.totalBinaryPropertiesQueryTime = System.currentTimeMillis() - start;
     }
 
+    @Override
     public void stopScan() throws RepositoryException {
         checkScanStarted();
         info.stopScanTimestamp = System.currentTimeMillis();
     }
 
+    @Override
     public int deleteUnused() throws RepositoryException {
         checkScanStarted();
         checkScanStopped();
@@ -476,10 +479,12 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
         }
     }
 
+    @Override
     public ArtifactoryDataStore getDataStore() {
         return store;
     }
 
+    @Override
     public GarbageCollectorInfo getInfo() {
         return info;
     }

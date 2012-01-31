@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,6 +47,7 @@ public class MetadataReader125 implements MetadataReader {
     private final MetadataConverter fileConverter = new MdFileConverter();
     private final MetadataConverter statsConverter = new MdStatsConverter();
 
+    @Override
     public List<MetadataEntryInfo> getMetadataEntries(File file, ImportSettings settings, MutableStatusHolder status) {
         if (!file.isFile()) {
             status.setError("Expecting a file but got a directory: " + file.getAbsolutePath(), log);

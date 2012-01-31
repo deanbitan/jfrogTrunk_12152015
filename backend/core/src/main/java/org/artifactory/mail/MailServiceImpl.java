@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -65,6 +65,7 @@ public class MailServiceImpl implements MailService {
      * @param body       The body of the message
      * @throws Exception
      */
+    @Override
     public void sendMail(String[] recipients, String subject, String body) throws EmailException {
         MailServerConfiguration mailServerConfiguration = getMailServerConfig();
         if (mailServerConfiguration == null) {
@@ -83,6 +84,7 @@ public class MailServiceImpl implements MailService {
      * @param config     A mail server configuration to use
      * @throws Exception
      */
+    @Override
     public void sendMail(String[] recipients, String subject, String body, final MailServerConfiguration config)
             throws EmailException {
 

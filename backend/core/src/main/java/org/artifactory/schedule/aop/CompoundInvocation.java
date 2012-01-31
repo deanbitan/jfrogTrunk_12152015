@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,6 +47,7 @@ public class CompoundInvocation implements MethodInvocation {
         invocations.add(invocation);
     }
 
+    @Override
     public Object proceed() throws Throwable {
         List<MethodInvocation> tmpInvocations = ImmutableList.copyOf(invocations);
         invocations.clear();
@@ -77,18 +78,22 @@ public class CompoundInvocation implements MethodInvocation {
         currentInvocation = null;
     }
 
+    @Override
     public Object getThis() {
         throw new UnsupportedOperationException("Not supported in compound invocation");
     }
 
+    @Override
     public AccessibleObject getStaticPart() {
         throw new UnsupportedOperationException("Not supported in compound invocation");
     }
 
+    @Override
     public Method getMethod() {
         throw new UnsupportedOperationException("Not supported in compound invocation");
     }
 
+    @Override
     public Object[] getArguments() {
         throw new UnsupportedOperationException("Not supported in compound invocation");
     }

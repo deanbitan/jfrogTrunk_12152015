@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -155,15 +155,15 @@ public class SystemLogsViewPanel extends Panel {
      */
     private void updateComponents(AjaxRequestTarget target, boolean cleanPanel) {
         //Make sure the bottom of the text area will be displayed after every update
-        target.appendJavascript(jsFunctionCall("ArtifactoryLog.log",
+        target.appendJavaScript(jsFunctionCall("ArtifactoryLog.log",
                 contentLabel.getMarkupId(),
                 readLogAndUpdateSize(cleanPanel),
                 cleanPanel)
         );
-        target.addComponent(downloadLink);
-        target.addComponent(sizeLabel);
-        target.addComponent(linkLabel);
-        target.addComponent(lastUpdateLabel);
+        target.add(downloadLink);
+        target.add(sizeLabel);
+        target.add(linkLabel);
+        target.add(lastUpdateLabel);
     }
 
     /**
@@ -243,8 +243,7 @@ public class SystemLogsViewPanel extends Panel {
 
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
-        }
-        finally {
+        } finally {
             try {
                 if (logRandomAccessFile != null) {
                     logRandomAccessFile.close();

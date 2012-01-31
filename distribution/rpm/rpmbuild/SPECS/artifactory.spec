@@ -1,6 +1,6 @@
 Name:           artifactory
 Version:        %{artifactory_version}
-Release:        1%{?dist}
+Release:        %{artifactory_release}
 Summary:        Binary Repository Manager
 Vendor:         JFrog Ltd.
 Group:          Development/Tools
@@ -16,12 +16,13 @@ Requires:       %{_sbindir}/useradd, %{_sbindir}/groupadd, %{_bindir}/pkill, %{_
 %define group_name artifactory
 %define extracted_standalone %{_sourcedir}/*artifactory*
 %define extracted_tomcat %{_sourcedir}/*tomcat*
+
 %define artifactory_bin_home /opt/%{name}
 %define tomcat_home %{artifactory_bin_home}/tomcat
 %define user_home %{_localstatedir}/lib/%{name}
 %define log_dir %{_localstatedir}/log/%{name}
 %define etc_dir %{_sysconfdir}/%{name}
-%define pid_dir %{_localstatedir}/run/%{name}
+%define pid_dir %{_localstatedir}/lib/%{name}/run
 %define _rpmfilename %{filename_prefix}-%{full_version}.rpm
 
 %description
@@ -81,6 +82,7 @@ rsync -r --exclude=jetty.xml --exclude=artifactory.config.xml %{extracted_standa
 # Create the bin dir
 %__install -d "%{buildroot}/opt"
 %__cp -r %{_builddir}/opt/* "%{buildroot}/opt/"
+%__cp -r %{_builddir}/var/* "%{buildroot}/var/"
 
 %__cp %{extracted_standalone}/bin/artadmin "%{buildroot}%{artifactory_bin_home}/bin/"
 %__cp -r %{extracted_standalone}/clilib "%{buildroot}%{artifactory_bin_home}/"
@@ -124,41 +126,33 @@ if [ "$CURRENT_USER" != "root" ]; then
 fi
 
 echo "Checking if group %{group_name} exists..."
-EXISTING_GROUP=`id -ng %{group_name}`
+EXISTING_GROUP="`grep %{group_name} /etc/group | awk -F ':' '{ print $1 }' 2>/dev/null`"
 
 if [ "$EXISTING_GROUP" != "%{group_name}" ]; then
-
   echo "Group %{group_name} doesn't exist. Creating ..."
   %{_sbindir}/groupadd -r %{group_name} || exit $?
 else
-
   echo "Group %{group_name} exists."
 fi
 
 echo "Checking if user %{username} exists..."
-EXISTING_USER=`id -nu %{username}`
-
+EXISTING_USER=`id -nu %{username} 2>/dev/null`
 if [ "$EXISTING_USER" != "%{username}" ]; then
-
   echo "User %{username} doesn't exist. Creating ..."
-  %{_sbindir}/useradd %{username} -g %{username} --home "%{user_home}" || exit $?
+  %__mkdir_p %{user_home}
+  %{_sbindir}/useradd %{username} --system --gid %{username} --create-home --home %{user_home} || exit $?
 else
-
   echo "User %{username} exists."
 fi
 
 # Shutting down the artifactory service
 
 SERVICE_FILE=%{_sysconfdir}/init.d/%{name}
-
-if [ -f $SERVICE_FILE ];
-then
-  SERVICE_STATUS="$SERVICE_FILE status"
-
+if [ -f $SERVICE_FILE ]; then
+  SERVICE_STATUS="`$SERVICE_FILE status`"
   if [[ ! "$SERVICE_STATUS" =~ .*[sS]topped.* ]]; then
-
     echo "Stopping the artifactory service..."
-    $SERVICE_FILE stop || $?
+    $SERVICE_FILE stop || exit $?
   fi
 fi
 
@@ -166,18 +160,17 @@ fi
 
 echo "Removing tomcat work directory"
 if [ -d %{tomcat_home}/work ]; then
-  %__rm -rf %{tomcat_home}/work || $?
+  %__rm -rf %{tomcat_home}/work || exit $?
 fi
 
 if [ -d %{tomcat_home}/webapps/%{name} ]; then
   echo "Removing Artifactory's exploded WAR directory"
-  %__rm -rf %{tomcat_home}/webapps/%{name}
+  %__rm -rf %{tomcat_home}/webapps/%{name} || exit $?
 fi
 exit 0
 
 %post
 if [ "$1" = "1" ]; then
-  
   echo "Adding the artifactory service to auto-start"
   /sbin/chkconfig --add %{name} || $?
   
@@ -205,28 +198,26 @@ if [ "$1" = "0" ]; then
 
   SERVICE_FILE=%{_sysconfdir}/init.d/%{name}
 
-  if [ -f $SERVICE_FILE ];
-  then
-    SERVICE_STATUS="$SERVICE_FILE status"
-
+  if [ -f $SERVICE_FILE ]; then
+    SERVICE_STATUS="`$SERVICE_FILE status`"
     if [[ ! "$SERVICE_STATUS" =~ .*[sS]topped.* ]]; then
-
       echo "Stopping the artifactory service..."
-      $SERVICE_FILE stop || $?
+      $SERVICE_FILE stop || exit $?
     fi
   fi
 
   echo "Removing the artifactory service from auto-start"
-  /sbin/chkconfig --del %{name} || $?
+  /sbin/chkconfig --del %{name} || exit $?
 
-  TIMESTAMP=`echo "$(date '+%T')" | tr -d ":"`
-  CURRENT_TIME="$(date '+%Y%m%d').$TIMESTAMP"
-  BACKUP_DIR="%{user_home}.backup.${CURRENT_TIME}"
+  # if some files in user home move them to a backup folder
+  if [ "`ls -A %{user_home}`" ]; then
+    TIMESTAMP=`echo "$(date '+%T')" | tr -d ":"`
+    CURRENT_TIME="$(date '+%Y%m%d').$TIMESTAMP"
+    BACKUP_DIR="%{user_home}.backup.${CURRENT_TIME}"
 
-  find %{user_home} -maxdepth 1 -type l -exec rm -f {} \;
-  
-  echo "Creating a backup of the artifactory home folder in ${BACKUP_DIR}"
-  %__mkdir_p "${BACKUP_DIR}" && %__mv %{user_home}/* "${BACKUP_DIR}" || $?
+    echo "Creating a backup of the artifactory home folder in ${BACKUP_DIR}"
+    %__mkdir_p "${BACKUP_DIR}" && %__mv %{user_home}/* "${BACKUP_DIR}" || exit $?
+  fi
 fi
 exit 0
 
@@ -237,15 +228,19 @@ if [ "$1" = "0" ]; then
   echo "Logging off user %{username}"
   %{_bindir}/pkill -KILL -u %{username}
 
+  # Ignoring user folders since the home dir is deleted already by the RPM spec
   echo "Removing user %{username}"
-  %{_sbindir}/userdel -r %{username} || $?
+  %{_sbindir}/userdel %{username} || exit $?
 
-  echo "Removing group %{group_name}"
-  %{_sbindir}/groupdel %{group_name}
+  EXISTING_GROUP="`grep %{group_name} /etc/group | awk -F ':' '{ print $1 }' 2>/dev/null`"
+  if [ "$EXISTING_GROUP" == "%{group_name}" ]; then
+    echo "Removing group %{group_name}"
+    %{_sbindir}/groupdel %{group_name}
+  fi
 
-  %__rm -rf %{artifactory_bin_home} || $?
-  %__rm -rf %{etc_dir} || $?
-  %__rm -rf %{log_dir} || $?
+  %__rm -rf %{artifactory_bin_home} || exit $?
+  %__rm -rf %{etc_dir} || exit $?
+  %__rm -rf %{log_dir} || exit $?
 fi
 exit 0
 

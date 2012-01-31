@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,50 +47,62 @@ public class RemoteRepoResource implements RepoResource {
         info.setChecksums(checksums);
     }
 
+    @Override
     public RepoPath getRepoPath() {
         return info.getRepoPath();
     }
 
+    @Override
     public RepoPath getResponseRepoPath() {
         return (responseRepoPath != null) ? responseRepoPath : getRepoPath();
     }
 
+    @Override
     public void setResponseRepoPath(RepoPath responsePath) {
         responseRepoPath = responsePath;
     }
 
+    @Override
     public MutableRepoResourceInfo getInfo() {
         return info;
     }
 
+    @Override
     public boolean isFound() {
         return true;
     }
 
+    @Override
     public boolean isExactQueryMatch() {
         return true;
     }
 
+    @Override
     public boolean isExpired() {
         return false;
     }
 
+    @Override
     public boolean isMetadata() {
         return NamingUtils.isMetadata(getRepoPath().getPath());
     }
 
+    @Override
     public long getSize() {
         return info.getSize();
     }
 
+    @Override
     public long getCacheAge() {
         return 0;
     }
 
+    @Override
     public long getLastModified() {
         return info.getLastModified();
     }
 
+    @Override
     public String getMimeType() {
         return NamingUtils.getMimeType(getRepoPath().getPath()).getType();
     }

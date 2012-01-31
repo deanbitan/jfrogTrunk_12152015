@@ -29,6 +29,7 @@ public class VfsQueryResultJcrImpl implements VfsQueryResult {
         this.queryResult = queryResult;
     }
 
+    @Override
     public Iterable<VfsNode> getNodes() {
         try {
             List<VfsNode> result = Lists.newArrayList();
@@ -47,6 +48,7 @@ public class VfsQueryResultJcrImpl implements VfsQueryResult {
         }
     }
 
+    @Override
     public Iterator<VfsQueryRow> rowsIterator() {
         final RowIterator rows;
         try {
@@ -55,20 +57,24 @@ public class VfsQueryResultJcrImpl implements VfsQueryResult {
             throw new RepositoryRuntimeException(e);
         }
         return new Iterator<VfsQueryRow>() {
+            @Override
             public boolean hasNext() {
                 return rows.hasNext();
             }
 
+            @Override
             public VfsQueryRow next() {
                 return new VfsQueryRowJcrImpl(rows.nextRow());
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException("Cannot remove elements from a row result iterator");
             }
         };
     }
 
+    @Override
     public long getCount() {
         return nbResult;
     }

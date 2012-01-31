@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -73,10 +73,12 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
     @Autowired
     private SearchService searchService;
 
+    @Override
     public void init() {
         reload(null);
     }
 
+    @Override
     public void reload(@Nullable CentralConfigDescriptor oldDescriptor) {
         List<LocalCacheRepoDescriptor> oldCacheRepoDescriptors = Lists.newArrayList();
         if (oldDescriptor != null) {
@@ -93,10 +95,12 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
                 oldCacheRepoDescriptors).reschedule();
     }
 
+    @Override
     public void destroy() {
         new LocalCacheDescriptorHandler(null, null).unschedule();
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
@@ -105,6 +109,7 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
         final List<LocalCacheRepoDescriptor> oldCacheRepoDescriptors = Lists.newArrayList();
         final int cleanupIntervalHours;
 
+        @Override
         public String jobName() {
             return "Artifact Cleanup";
         }
@@ -124,24 +129,30 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
             }
         }
 
+        @Override
         public List<LocalCacheRepoDescriptor> getNewDescriptors() {
             return this.newCacheRepoDescriptors;
         }
 
+        @Override
         public List<LocalCacheRepoDescriptor> getOldDescriptors() {
             return this.oldCacheRepoDescriptors;
         }
 
+        @Override
         public Predicate<Task> getAllPredicate() {
             return new Predicate<Task>() {
+                @Override
                 public boolean apply(@Nullable Task input) {
                     return input == null || ArtifactCleanupJob.class.isAssignableFrom(input.getType());
                 }
             };
         }
 
+        @Override
         public Predicate<Task> getPredicate(@Nonnull final LocalCacheRepoDescriptor descriptor) {
             return new Predicate<Task>() {
+                @Override
                 public boolean apply(@Nullable Task input) {
                     return input == null || (
                             ArtifactCleanupJob.class.isAssignableFrom(input.getType()) &&
@@ -151,6 +162,7 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
             };
         }
 
+        @Override
         public LocalCacheRepoDescriptor findOldFromNew(@Nonnull LocalCacheRepoDescriptor newDescriptor) {
             for (LocalCacheRepoDescriptor oldLocalCacheDescriptor : oldCacheRepoDescriptors) {
                 if (oldLocalCacheDescriptor.getKey().equals(newDescriptor.getKey())) {
@@ -160,6 +172,7 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
             return null;
         }
 
+        @Override
         public void activate(@Nonnull LocalCacheRepoDescriptor descriptor, boolean manual) {
             int periodHours = descriptor.getRemoteRepo().getUnusedArtifactsCleanupPeriodHours();
             if (periodHours > 0) {
@@ -187,6 +200,7 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
         }
     }
 
+    @Override
     public void clean(String repoKey, long periodMillis) {
         LocalRepoDescriptor descriptor = repositoryService.localOrCachedRepoDescriptorByKey(repoKey);
         LocalRepo storingRepo = (LocalRepo) repositoryService.repositoryByKey(repoKey);

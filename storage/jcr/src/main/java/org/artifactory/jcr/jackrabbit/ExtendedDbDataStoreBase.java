@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -192,6 +192,7 @@ public abstract class ExtendedDbDataStoreBase implements ExtendedDbDataStore {
         selectDbStoreSizeSQL = getProperty(prop, "selectDbStoreSize", selectDbStoreSizeSQL);
     }
 
+    @Override
     public long getStorageSize() throws RepositoryException {
         long totalSize = 0L;
         ResultSet rs = null;
@@ -237,14 +238,17 @@ public abstract class ExtendedDbDataStoreBase implements ExtendedDbDataStore {
      *
      * @return the database type
      */
+    @Override
     public String getDatabaseType() {
         return databaseType;
     }
 
+    @Override
     public String getDataStoreTableName() {
         return tableSQL.trim();
     }
 
+    @Override
     public String getDataStoreTablePrefix() {
         return (tablePrefix + schemaObjectPrefix).trim();
     }

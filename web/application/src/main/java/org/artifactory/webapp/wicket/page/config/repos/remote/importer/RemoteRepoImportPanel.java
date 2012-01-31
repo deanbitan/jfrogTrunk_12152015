@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,6 +28,7 @@ import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.html.form.Form;
@@ -54,7 +55,7 @@ import org.artifactory.common.wicket.component.table.columns.TextFieldColumn;
 import org.artifactory.common.wicket.component.table.columns.TooltipLabelColumn;
 import org.artifactory.common.wicket.component.table.columns.checkbox.SelectAllCheckboxColumn;
 import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.common.wicket.util.ComponentUtils;
+import org.artifactory.common.wicket.util.ComponentPersister;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -78,6 +79,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.artifactory.common.wicket.component.modal.ModalHandler.resizeAndCenterCurrent;
+import static org.artifactory.common.wicket.util.ComponentPersister.setPersistent;
 import static org.artifactory.descriptor.property.PropertySet.ARTIFACTORY_RESERVED_PROP_SET;
 
 /**
@@ -114,7 +116,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
                 "Enter the base URL of another Artifactory server you wish to import repository definitions from."));
         FormComponent<String> urlTextField = new TextField<String>("url", new PropertyModel<String>(this, "url"));
         urlTextField.add(new UriValidator("http", "https"));
-        urlTextField.setPersistent(true);
+        setPersistent(urlTextField);
         urlTextField.setOutputMarkupId(true);
         urlTextField.setRequired(true);
         urlTextField.setDefaultModelObject("http://repo.jfrog.org/artifactory");
@@ -134,14 +136,12 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
         importButton.setOutputMarkupId(true);
         add(importButton);
         listForm.add(new DefaultButtonBehavior(importButton));
-        loadForm.loadPersistentFormComponentValues();
     }
-
 
     @Override
     protected void onBeforeRender() {
+        ComponentPersister.loadChildren(this);
         super.onBeforeRender();
-        ComponentUtils.updatePersistentFormComponents(this);
     }
 
     @Override
@@ -160,6 +160,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
 
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
+                ComponentPersister.saveChildren(RemoteRepoImportPanel.this);
                 Session.get().cleanupFeedbackMessages();
 
                 //Reset the provider data
@@ -171,7 +172,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
                         return;
                     }
                     provider.setData(importableRepoList);
-                    target.addComponent(repoTable);
+                    target.add(repoTable);
                     resizeAndCenterCurrent();
                 } catch (Exception e) {
                     error("An error occurred while locating shared repositories: " + e.getMessage());
@@ -194,6 +195,8 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
 
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
+                ComponentPersister.saveChildren(RemoteRepoImportPanel.this);
+
                 try {
                     Session.get().cleanupFeedbackMessages();
                     List<ImportableRemoteRepo> importableRepos = provider.getData();
@@ -276,6 +279,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
     private PropertySet getArtifactoryPropertySet(CentralConfigDescriptor centralConfig) {
         List<PropertySet> propertySets = centralConfig.getPropertySets();
         PropertySet propertySet = Iterables.find(propertySets, new Predicate<PropertySet>() {
+            @Override
             public boolean apply(PropertySet input) {
                 return input.getName().equals(ARTIFACTORY_RESERVED_PROP_SET);
             }
@@ -386,12 +390,12 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
                     AjaxRequestTarget target) {
                 super.onUpdate(checkbox, rowObject, value, target);
                 //On each update, refresh import button to customize the warning messages of the call decorator
-                target.addComponent(importButton);
+                target.add(importButton);
             }
 
             @Override
             protected void onSelectAllUpdate(AjaxRequestTarget target) {
-                target.addComponent(importButton);
+                target.add(importButton);
             }
         });
         columns.add(new KeyTextFieldColumn());
@@ -423,7 +427,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
                 protected void onUpdate(AjaxRequestTarget target) {
                     validateRepoKey(rowObject);
                     //On each update, refresh import button to customize the warning messages of the call decorator
-                    target.addComponent(importButton);
+                    target.add(importButton);
                 }
 
                 @Override
@@ -455,19 +459,22 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
          * Default constructor
          */
         private RepoDataProvider() {
-            setSort("repoKey", true);
+            setSort("repoKey", SortOrder.ASCENDING);
         }
 
+        @Override
         public Iterator<ImportableRemoteRepo> iterator(int first, int count) {
             ListPropertySorter.sort(list, getSort());
             List<ImportableRemoteRepo> listToReturn = list.subList(first, first + count);
             return listToReturn.iterator();
         }
 
+        @Override
         public int size() {
             return list.size();
         }
 
+        @Override
         public IModel<ImportableRemoteRepo> model(ImportableRemoteRepo object) {
             return new Model<ImportableRemoteRepo>(object);
         }

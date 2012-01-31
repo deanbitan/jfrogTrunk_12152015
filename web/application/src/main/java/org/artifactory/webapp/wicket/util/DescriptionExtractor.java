@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -169,6 +169,7 @@ public class DescriptionExtractor {
     }
 
     public static class SchemaNamespaceContext implements NamespaceContext {
+        @Override
         public String getNamespaceURI(String prefix) {
             if (prefix == null) {
                 throw new IllegalArgumentException("Null prefix");
@@ -182,12 +183,14 @@ public class DescriptionExtractor {
 
         // This method isn't necessary for XPath processing.
 
+        @Override
         public String getPrefix(String uri) {
             throw new UnsupportedOperationException();
         }
 
         // This method isn't necessary for XPath processing either.
 
+        @Override
         public Iterator getPrefixes(String uri) {
             throw new UnsupportedOperationException();
         }

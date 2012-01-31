@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -159,6 +159,13 @@ public interface RepositoryService extends ImportableExportable {
      */
     @Lock(transactional = true)
     FileInfo getFileInfo(RepoPath repoPath);
+
+    /**
+     * @param repoPath Repository path of the folder
+     * @return The folder info. Throws exception if the path doesn't exist or it doesn't point to a folder.
+     */
+    @Lock(transactional = true)
+    FolderInfo getFolderInfo(RepoPath repoPath);
 
     /**
      * @param repoPath     Repository path of the metadata aware item

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -443,6 +443,30 @@ public class PathUtils {
         String[] elements = getPathElements(path);
         if (elements.length > 0) {
             return elements[0];
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * Returns the last path element of the input path.
+     * <pre>
+     * getFirstPathElement("/a/b/c") = "c"
+     * getFirstPathElement("a/b/c") = "c"
+     * getFirstPathElement("a") = "a"
+     * getFirstPathElement("") = ""
+     * </pre>
+     *
+     * @param path The path to parse (can be absolute or relative)
+     * @return The path's path elements
+     */
+    public static String getLastPathElement(String path) {
+        if (path == null) {
+            return null;
+        }
+        String[] elements = getPathElements(path);
+        if (elements.length > 0) {
+            return elements[elements.length - 1];
         } else {
             return "";
         }

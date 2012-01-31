@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +18,10 @@
 
 package org.artifactory.webapp.wicket.page.build.action;
 
-import org.apache.wicket.PageParameters;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
@@ -66,11 +66,13 @@ public class DeleteBuildAction extends ItemAction {
     @Override
     public void onAction(final ItemEvent e) {
         AjaxConfirm.get().confirm(new ConfirmDialog() {
+            @Override
             public String getMessage() {
                 return String.format("Are you sure you wish to delete the build '%s' #%s?",
                         buildRun.getName(), buildRun.getNumber());
             }
 
+            @Override
             public void onConfirm(boolean approved, AjaxRequestTarget target) {
                 if (approved) {
                     delete(e);
@@ -123,7 +125,7 @@ public class DeleteBuildAction extends ItemAction {
         PageParameters pageParameters = new PageParameters();
 
         if (!remainingBuilds.isEmpty()) {
-            pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildName);
+            pageParameters.set(BuildBrowserConstants.BUILD_NAME, buildName);
         }
 
         RequestCycle.get().setResponsePage(BuildBrowserRootPage.class, pageParameters);

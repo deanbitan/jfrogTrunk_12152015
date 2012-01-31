@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,8 +21,10 @@ package org.artifactory.addon;
 import org.artifactory.addon.replication.LocalReplicationSettings;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.rest.replication.ReplicationStatus;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
+import org.artifactory.repo.RepoPath;
 
 import java.io.IOException;
 
@@ -51,4 +53,6 @@ public interface ReplicationAddon extends Addon {
 
     void scheduleImmediateRemoteReplicationTask(RemoteReplicationDescriptor replicationDescriptor,
             MultiStatusHolder statusHolder);
+
+    ReplicationStatus getReplicationStatus(RepoPath repoPath);
 }

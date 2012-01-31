@@ -1,6 +1,6 @@
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2011 JFrog Ltd.
+  ~ Copyright (C) 2012 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -200,6 +200,8 @@
             <includes>
                 <include>org.artifactory:artifactory-web-war</include>
             </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </dependencySet>
         <!-- add some mandatory dependencies to jetty lib directory -->
         <dependencySet>
@@ -208,6 +210,8 @@
             <includes>
                 <include>org.eclipse.jetty:*</include>
             </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </dependencySet>
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
@@ -216,6 +220,8 @@
             <includes>
                 <include>javax.servlet:servlet-api</include>
             </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </dependencySet>
     </dependencySets>
 </assembly>

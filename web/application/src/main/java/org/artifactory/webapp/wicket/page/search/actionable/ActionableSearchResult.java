@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -64,6 +64,7 @@ public abstract class ActionableSearchResult<T extends ItemSearchResult> extends
      *
      * @param authService For auth purposes
      */
+    @Override
     public abstract void filterActions(AuthorizationService authService);
 
     public T getSearchResult() {
@@ -80,10 +81,12 @@ public abstract class ActionableSearchResult<T extends ItemSearchResult> extends
         throw new UnsupportedOperationException("method not allowed on search result");
     }
 
+    @Override
     public String getDisplayName() {
         return getItemInfo().getName();
     }
 
+    @Override
     public String getCssClass() {
         return ItemCssClass.getFileCssClass(getItemInfo().getRelPath()).getCssClass();
     }

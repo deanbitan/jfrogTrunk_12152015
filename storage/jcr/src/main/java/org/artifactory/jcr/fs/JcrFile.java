@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.backup.FileExportInfoImpl;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
@@ -41,7 +42,6 @@ import org.artifactory.io.checksum.policy.ChecksumPolicyException;
 import org.artifactory.ivy.IvyNaming;
 import org.artifactory.jcr.data.JcrVfsHelper;
 import org.artifactory.jcr.factory.JcrFsItemFactory;
-import org.artifactory.jcr.jackrabbit.MissingOrInvalidDataStoreRecordException;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.jcr.md.MetadataPersistenceHandler;
 import org.artifactory.jcr.utils.JcrHelper;
@@ -52,18 +52,18 @@ import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.ExportSettings;
+import org.artifactory.sapi.common.FileExportEvent;
+import org.artifactory.sapi.common.FileExportInfo;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.storage.StorageConstants;
-import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
 import javax.jcr.Binary;
 import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
@@ -252,6 +252,7 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         return getInfo().getLastModified();
     }
 
+    @Override
     public String getChecksum(ChecksumType checksumType) {
         if (checksumType.equals(ChecksumType.sha1)) {
             return getInfo().getSha1();
@@ -281,6 +282,7 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
      *
      * @return null if deleted, the InputStream of the content of the file otherwise
      */
+    @Override
     public InputStream getStream() {
         try {
             Node node = getNode();
@@ -289,20 +291,7 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
             InputStream is = attachedDataValue.getBinary().getStream();
             return is;
         } catch (RepositoryException e) {
-            Throwable notFound = ExceptionUtils.getCauseOfTypes(e,
-                    MissingOrInvalidDataStoreRecordException.class, PathNotFoundException.class,
-                    FileNotFoundException.class);
-            if (notFound != null) {
-                log.warn("Jcr file node {} does not have binary content!", getPath());
-                if (ConstantValues.jcrAutoRemoveMissingBinaries.getBoolean()) {
-                    log.warn("Auto-deleting item {}.", getPath());
-                    bruteForceDelete(true);
-                }
-                return null;
-            } else {
-                throw new RepositoryRuntimeException(
-                        "Failed to retrieve file node's " + getRepoPath() + " data stream.", e);
-            }
+            throw new RepositoryRuntimeException("Failed to retrieve file node's " + getPath() + " data stream.", e);
         }
     }
 
@@ -310,10 +299,12 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         return getInfo().getSize();
     }
 
+    @Override
     public boolean isDirectory() {
         return false;
     }
 
+    @Override
     public VfsItem save(VfsItem originalFsItem) {
         if (isDeleted()) {
             throw new IllegalStateException("Cannot save item " + getRepoPath() + " it is scheduled for deletion.");
@@ -378,14 +369,23 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         File targetFile = new File(settings.getBaseDir(), getRelativePath());
         try {
             //Invoke the callback if exists
-            settings.executeCallbacks(getRepoPath());
+            settings.executeCallbacks(
+                    new FileExportInfoImpl(getInfo(), targetFile, FileExportInfo.FileExportStatus.PENDING),
+                    FileExportEvent.BEFORE_FILE_EXPORT);
 
             File parentFile = targetFile.getParentFile();
             if (!parentFile.exists()) {
                 FileUtils.forceMkdir(parentFile);
             }
 
-            exportFileContent(targetFile, settings);
+            final boolean skipped = exportFileContent(targetFile, settings);
+
+            settings.executeCallbacks(
+                    new FileExportInfoImpl(
+                            getInfo(),
+                            targetFile,
+                            skipped ? FileExportInfo.FileExportStatus.SKIPPED : FileExportInfo.FileExportStatus.ADDED),
+                    FileExportEvent.AFTER_FILE_EXPORT);
 
             if (settings.isIncludeMetadata()) {
                 exportMetadata(targetFile, status, settings.isIncremental());
@@ -405,26 +405,26 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         }
     }
 
-    private void exportFileContent(File targetFile, ExportSettings settings) throws IOException {
+    private boolean exportFileContent(File targetFile, ExportSettings settings) throws IOException {
         if (settings.isIncremental() && targetFile.exists()) {
             // incremental export - only export the file if it is newer
             if (getInfo().getLastModified() <= targetFile.lastModified()) {
                 log.debug("Skipping not modified file {}", getPath());
-                return;
+                return true;
             }
         }
         log.debug("Exporting file content to {}", targetFile.getAbsolutePath());
         OutputStream os = null;
         InputStream is = null;
         try {
-            os = new BufferedOutputStream(new FileOutputStream(targetFile));
             is = getStream();
-            if (is == null) {
-                // File was deleted
-                throw new FileNotFoundException();
-            }
-
+            os = new BufferedOutputStream(new FileOutputStream(targetFile));
             IOUtils.copy(is, os);
+        } catch (RepositoryRuntimeException e) {
+            FileNotFoundException fileNotFoundException = new FileNotFoundException(
+                    "Data stream for " + getPath() + " not found! Due to " + e.getMessage());
+            fileNotFoundException.initCause(e);
+            throw fileNotFoundException;
         } finally {
             IOUtils.closeQuietly(os);
             IOUtils.closeQuietly(is);
@@ -433,36 +433,45 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         if (getLastModified() >= 0) {
             targetFile.setLastModified(getLastModified());
         }
+        return false;
     }
 
+    @Override
     public long length() {
         return getInfo().getSize();
     }
 
+    @Override
     public String[] list() {
         return null;
     }
 
+    @Override
     public String[] list(FilenameFilter filter) {
         return null;
     }
 
+    @Override
     public File[] listFiles() {
         return null;
     }
 
+    @Override
     public File[] listFiles(FilenameFilter filter) {
         return null;
     }
 
+    @Override
     public File[] listFiles(FileFilter filter) {
         return null;
     }
 
+    @Override
     public boolean mkdir() {
         return false;
     }
 
+    @Override
     public boolean mkdirs() {
         return false;
     }

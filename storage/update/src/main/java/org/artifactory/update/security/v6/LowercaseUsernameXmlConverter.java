@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,6 +36,7 @@ import java.util.Set;
  */
 public class LowercaseUsernameXmlConverter implements XmlConverter {
 
+    @Override
     public void convert(Document doc) {
         // 1. aggregate all usenames in a map (username->user element)
         // 2. for each user check if another lowercase username exists in the map

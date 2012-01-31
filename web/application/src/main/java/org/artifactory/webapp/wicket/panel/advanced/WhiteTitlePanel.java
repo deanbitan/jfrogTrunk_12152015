@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,6 +48,7 @@ public class WhiteTitlePanel extends Panel implements Titled {
         add(newToolbar("tool"));
     }
 
+    @Override
     public String getTitle() {
         return getString(TITLE_KEY, null);
     }

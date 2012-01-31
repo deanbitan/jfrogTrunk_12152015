@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,7 +54,6 @@ import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
@@ -85,6 +84,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     @Autowired
     private InternalRepositoryService repoService;
 
+    @Override
     public BrowsableItem getLocalRepoBrowsableItem(RepoPath repoPath) {
         JcrFsItem fsItem = getFsItem(repoPath);
         if (fsItem != null) {
@@ -110,6 +110,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         return repo.getJcrFsItem(repoPath);
     }
 
+    @Override
     @Nonnull
     public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(BrowsableItemCriteria criteria) {
         RepoPath repoPath = criteria.getRepoPath();
@@ -170,6 +171,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         return !Properties.MatchResult.CONFLICT.equals(result);
     }
 
+    @Override
     @Nonnull
     public List<BaseBrowsableItem> getRemoteRepoBrowsableChildren(BrowsableItemCriteria criteria) {
         RepoPath repoPath = criteria.getRepoPath();
@@ -189,7 +191,8 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         if (repo.isStoreArtifactsLocally()) {
             try {
                 BrowsableItemCriteria cacheCriteria = new BrowsableItemCriteria.Builder(criteria).
-                        repoPath(InternalRepoPathFactory.create(repo.getLocalCacheRepo().getKey(), relativePath)).build();
+                        repoPath(InternalRepoPathFactory.create(repo.getLocalCacheRepo().getKey(),
+                                relativePath)).build();
                 children = getLocalRepoBrowsableChildren(cacheCriteria);
                 pathExistsInCache = true;
             } catch (ItemNotFoundRuntimeException e) {
@@ -234,6 +237,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         }
     }
 
+    @Override
     @Nonnull
     public List<BaseBrowsableItem> getVirtualRepoBrowsableChildren(BrowsableItemCriteria criteria) {
         RepoPath repoPath = criteria.getRepoPath();
@@ -265,7 +269,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                     virtualItem = new VirtualBrowsableItem(child.getName(), child.isFolder(), child.getCreated(),
                             child.getLastModified(), child.getSize(), InternalRepoPathFactory.create(virtualRepoKey,
                             childRelativePath),
-                            Lists.<String>newArrayList(getSearchableReposKeys(virtualRepos)));
+                            Lists.<String>newArrayList(getSearchableRepoKeys(virtualRepos)));
                     virtualItem.setRemote(true);    // default to true
                     childrenToReturn.put(childRelativePath, virtualItem);
                 }
@@ -307,7 +311,8 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         List<RemoteRepo> remoteRepositories = repo.getRemoteRepositories();
         // add children from all remote repos (and their caches)
         for (RemoteRepo remoteRepo : remoteRepositories) {
-            RepoPath remoteRepoPath = InternalRepoPathFactory.create(remoteRepo.getKey(), criteria.getRepoPath().getPath());
+            RepoPath remoteRepoPath = InternalRepoPathFactory.create(remoteRepo.getKey(),
+                    criteria.getRepoPath().getPath());
             try {
                 BrowsableItemCriteria remoteCriteria = new BrowsableItemCriteria.Builder(criteria).
                         repoPath(remoteRepoPath).build();
@@ -337,8 +342,9 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         return repos;
     }
 
-    private Collection<String> getSearchableReposKeys(Collection<VirtualRepo> virtualRepos) {
+    private Collection<String> getSearchableRepoKeys(Collection<VirtualRepo> virtualRepos) {
         return Collections2.transform(virtualRepos, new Function<VirtualRepo, String>() {
+            @Override
             public String apply(@Nonnull VirtualRepo input) {
                 return input.getKey();
             }
@@ -361,6 +367,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 virtualRepo.accepts(FilenameUtils.removeExtension(relativePath));
     }
 
+    @Override
     public VirtualRepoItem getVirtualRepoItem(RepoPath repoPath) {
         VirtualRepo virtualRepo = repoService.virtualRepositoryByKey(repoPath.getRepoKey());
         if (virtualRepo == null) {
@@ -391,6 +398,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         }
     }
 
+    @Override
     public List<VirtualRepoItem> getVirtualRepoItems(RepoPath folderPath) {
         VirtualRepo virtualRepo = repoService.virtualRepositoryByKey(folderPath.getRepoKey());
         if (virtualRepo == null) {
@@ -421,6 +429,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             this.localItems = localItems;
         }
 
+        @Override
         public boolean apply(@Nonnull RemoteItem input) {
             for (BaseBrowsableItem localItem : localItems) {
                 if (localItem.getName().equals(input.getName())) {

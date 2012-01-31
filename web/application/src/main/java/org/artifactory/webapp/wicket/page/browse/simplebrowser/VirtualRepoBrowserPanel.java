@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.OrderByBorder;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.html.link.AbstractLink;
@@ -35,7 +36,7 @@ import org.apache.wicket.markup.repeater.data.DataView;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
+import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
@@ -45,8 +46,8 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.slf4j.Logger;
@@ -83,7 +84,7 @@ public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
             browsableChildren = repoBrowsingService.getVirtualRepoBrowsableChildren(criteria);
         } catch (Exception e) {
             log.debug("Exception occurred while trying to get browsable children for repo path " + repoPath, e);
-            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
+            throw new AbortWithHttpErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }
         browsableChildren.add(getPseudoUpLink(repoPath));
         final String repoKey = repoPath.getRepoKey();
@@ -134,7 +135,7 @@ public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
                     }
                 };
                 listItem.add(repositoriesList);
-                listItem.add(new AttributeModifier("class", true, new AbstractReadOnlyModel() {
+                listItem.add(new AttributeModifier("class", new AbstractReadOnlyModel() {
                     @Override
                     public Object getObject() {
                         return (listItem.getIndex() % 2 == 0) ? "even" : "odd";
@@ -150,7 +151,7 @@ public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
     /**
      * Creates a virtual repo "up directory"\.. browsable item
      *
-     * @param startingRelativePath Relative path of starting point
+     * @param repoPath Relative path of starting point
      * @return Virtual up-dir Browsable item
      */
     @Override
@@ -205,9 +206,10 @@ public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
             this.browsableChildren = browsableChildren;
             //Set the initial sort direction
             ISortState state = getSortState();
-            state.setPropertySortOrder("name", ISortState.ASCENDING);
+            state.setPropertySortOrder("name", SortOrder.ASCENDING);
         }
 
+        @Override
         public Iterator<? extends BaseBrowsableItem> iterator(int first, int count) {
             SortParam sortParam = getSort();
             if (sortParam.isAscending()) {
@@ -222,10 +224,12 @@ public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
             return list.iterator();
         }
 
+        @Override
         public IModel<BaseBrowsableItem> model(BaseBrowsableItem object) {
             return new Model<BaseBrowsableItem>(object);
         }
 
+        @Override
         public int size() {
             return browsableChildren.size();
         }

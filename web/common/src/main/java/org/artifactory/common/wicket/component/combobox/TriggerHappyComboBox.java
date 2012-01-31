@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.common.wicket.component.combobox;
 
-import org.apache.wicket.behavior.IBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.model.IModel;
 import org.artifactory.common.wicket.behavior.combobox.TriggerHappyComboBoxBehavior;
 
@@ -31,12 +31,24 @@ import java.util.List;
  */
 public class TriggerHappyComboBox extends ComboBox {
 
+    public TriggerHappyComboBox(String id) {
+        super(id);
+    }
+
+    public TriggerHappyComboBox(String id, List<String> choices) {
+        super(id, choices);
+    }
+
     public TriggerHappyComboBox(String id, IModel<String> model, List<String> choices) {
         super(id, model, choices);
     }
 
+    public TriggerHappyComboBox(String id, IModel<String> model, IModel<? extends List<? extends String>> choices) {
+        super(id, model, choices);
+    }
+
     @Override
-    protected IBehavior newComboBehavior() {
+    protected Behavior newComboBehavior() {
         return new TriggerHappyComboBoxBehavior();
     }
 }

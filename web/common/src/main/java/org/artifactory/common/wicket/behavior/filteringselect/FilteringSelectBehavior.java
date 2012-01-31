@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,9 +27,9 @@ import org.artifactory.common.wicket.resources.dojo.DojoPackage;
 /**
  * Adding this behavior to DropDownChoice will convert it to Dojo FilteringSelect widget.<br/> <br/> <b>NOTE!</b> When
  * using this behavior will not be able add the dropdown to ajax target regularly, meaning <b>you can't do
- * <code>target.addComponent(dropDown)</code></b>. Instead add a containing parent:
- * <code>target.addComponent(anyParent)</code> or add <b>"-widget"</b> to target markup id like so:
- * <code>target.addComponent(dropdown, dropdown.getMarkupId() <b>+ "-widget"</b>)</code>
+ * <code>target.add(dropDown)</code></b>. Instead add a containing parent:
+ * <code>target.add(anyParent)</code> or add <b>"-widget"</b> to target markup id like so:
+ * <code>target.add(dropdown, dropdown.getMarkupId() <b>+ "-widget"</b>)</code>
  *
  * @author Yoav Aharoni
  */

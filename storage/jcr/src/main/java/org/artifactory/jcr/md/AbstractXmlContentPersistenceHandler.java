@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -97,6 +97,7 @@ public abstract class AbstractXmlContentPersistenceHandler<T, MT> extends Abstra
         return true;
     }
 
+    @Override
     public MetadataInfo getMetadataInfo(MetadataAware metadataAware) {
         Node metadataNode = getMetadataNode(metadataAware, false);
         if (metadataNode == null) {
@@ -126,6 +127,7 @@ public abstract class AbstractXmlContentPersistenceHandler<T, MT> extends Abstra
         setXml(metadataAware, null);
     }
 
+    @Override
     public T read(MetadataAware metadataAware) {
         String xmlData = getXml(metadataAware);
         if (xmlData == null) {
@@ -134,11 +136,13 @@ public abstract class AbstractXmlContentPersistenceHandler<T, MT> extends Abstra
         return (T) getXmlProvider().fromXml(xmlData);
     }
 
+    @Override
     public void update(MetadataAware metadataAware, MT metadataValue) {
         String s = getXmlProvider().toXml((T) metadataValue);
         setXml(metadataAware, s);
     }
 
+    @Override
     public void remove(MetadataAware metadataAware) {
         removeXml(metadataAware);
     }

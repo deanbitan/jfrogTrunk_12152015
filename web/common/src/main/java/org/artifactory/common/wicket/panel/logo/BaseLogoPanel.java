@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,17 +23,17 @@ import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.Page;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
+import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.PropertyModel;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.image.ExternalImage;
-import org.artifactory.common.wicket.component.panel.PanelWithBody;
 
 /**
  * @author Tomer Cohen
  */
-public abstract class BaseLogoPanel extends PanelWithBody {
+public abstract class BaseLogoPanel extends Panel {
     @WicketProperty
     private String logoUrl;
 

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,12 +35,19 @@ public class UploadArtifactPanel extends TitledPanel implements UploadListener {
         add(new ArtifactUploadForm(this));
     }
 
+    @Override
     public void onException() {
         error("Error occurred while uploading file.");
     }
 
+    @Override
     public void onFileSaved(File file) {
         replaceWith(new DeployArtifactPanel(getId(), file));
+    }
+
+    @Override
+    public void info(String message) {
+        super.info(message);
     }
 
     private static class ArtifactUploadForm extends DefaultFileUploadForm {

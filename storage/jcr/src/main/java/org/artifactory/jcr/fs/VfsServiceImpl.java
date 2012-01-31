@@ -41,26 +41,33 @@ public class VfsServiceImpl implements InternalVfsService {
     @Autowired
     private VfsDataService vfsDataService;
 
+    @Override
     public void init() {
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @Override
     public boolean nodeExists(String absolutePath) {
         return JcrHelper.itemNodeExists(absolutePath, jcrService.getManagedSession());
     }
 
+    @Override
     public boolean delete(String absolutePath) {
         return jcrService.delete(absolutePath) > 0;
     }
 
+    @Override
     public InputStream getStream(String absolutePath) {
         if (nodeExists(absolutePath)) {
             VfsNode node = vfsDataService.findByPath(absolutePath);
@@ -71,6 +78,7 @@ public class VfsServiceImpl implements InternalVfsService {
         return null;
     }
 
+    @Override
     public String getContentAsString(String absolutePath) {
         if (nodeExists(absolutePath)) {
             VfsNode node = vfsDataService.findByPath(absolutePath);
@@ -82,6 +90,7 @@ public class VfsServiceImpl implements InternalVfsService {
     }
 
 
+    @Override
     public MetadataReader fillBestMatchMetadataReader(ImportSettings importSettings, File metadataFolder) {
         ImportSettingsImpl settings = (ImportSettingsImpl) importSettings;
         MetadataReader metadataReader = settings.getMetadataReader();
@@ -97,14 +106,17 @@ public class VfsServiceImpl implements InternalVfsService {
         return metadataReader;
     }
 
+    @Override
     public void createIfNeeded(String absolutePath) {
         vfsDataService.getOrCreate(absolutePath);
     }
 
+    @Override
     public ArtifactorySession getUnmanagedSession() {
         JcrSession unmanagedSession = jcrService.getUnmanagedSession();
         JcrServiceImpl.keepUnmanagedSession(unmanagedSession);
         unmanagedSession.addLogoutListener(new Callable() {
+            @Override
             public Object call() throws Exception {
                 JcrServiceImpl.removeUnmanagedSession();
                 return null;
@@ -113,10 +125,12 @@ public class VfsServiceImpl implements InternalVfsService {
         return unmanagedSession;
     }
 
+    @Override
     public VfsQuery createQuery() {
         return new VfsQueryJcrImpl();
     }
 
+    @Override
     public VfsRepoQuery createRepoQuery() {
         return new VfsRepoQueryJcrImpl();
     }

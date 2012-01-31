@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.common.wicket.component.combobox;
 
-import org.apache.wicket.behavior.IBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.model.IModel;
@@ -29,9 +29,9 @@ import java.util.List;
 /**
  * A Dojo ComboBox widget.<br/> This combo only works with string models and lists.<br/>
  * <b>NOTE!</b> You cannot add ComboBox to ajax target regularly, meaning <b>you
- * can't do <code>target.addComponent(comboBox)</code></b>. Instead add a containing parent:
- * <code>target.addComponent(anyParent)</code> or pass getAjaxTargetMarkupId() as target markup id like so:
- * <code>target.addComponent(comboBox<b>, comboBox.getAjaxTargetMarkupId()</b>)</code>
+ * can't do <code>target.add(comboBox)</code></b>. Instead add a containing parent:
+ * <code>target.add(anyParent)</code> or pass getAjaxTargetMarkupId() as target markup id like so:
+ * <code>target.add(comboBox<b>, comboBox.getAjaxTargetMarkupId()</b>)</code>
  *
  * @author Yoav Aharoni
  * @see ComboBox#getAjaxTargetMarkupId()
@@ -59,25 +59,24 @@ public class ComboBox extends DropDownChoice<String> {
     }
 
     @Override
-    protected CharSequence getDefaultChoice(Object selected) {
+    protected CharSequence getDefaultChoice(final String selectedValue) {
         return "";
     }
 
     {
-        setType(String.class);
         setChoiceRenderer(new StringChoiceRenderer());
         add(newComboBehavior());
     }
 
-    protected IBehavior newComboBehavior() {
+    protected Behavior newComboBehavior() {
         return new ComboBoxBehavior();
     }
 
     /**
      * When adding ComboBox to ajax target you must also provide the markupId return by this method, like so:
-     * <code>target.addComponent(comboBox<b>, comboBox.getAjaxTargetMarkupId()</b>)</code>.
+     * <code>target.add(comboBox<b>, comboBox.getAjaxTargetMarkupId()</b>)</code>.
      *
-     * @return markupId to be used when calling target.addComponent()
+     * @return markupId to be used when calling target.add()
      */
     public String getAjaxTargetMarkupId() {
         return getMarkupId() + "-widget";
@@ -90,10 +89,12 @@ public class ComboBox extends DropDownChoice<String> {
     }
 
     private static class StringChoiceRenderer implements IChoiceRenderer<String> {
+        @Override
         public String getDisplayValue(String object) {
             return object;
         }
 
+        @Override
         public String getIdValue(String string, int index) {
             return string;
         }

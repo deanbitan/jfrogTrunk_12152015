@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -213,6 +213,7 @@ public class ChecksumsPanel extends Panel {
             this.file = file;
         }
 
+        @Override
         public void onClick(AjaxRequestTarget target) {
             try {
                 repoService.fixChecksums(file.getRepoPath());
@@ -222,7 +223,7 @@ public class ChecksumsPanel extends Panel {
                 ChecksumsPanel newPanel = new ChecksumsPanel(
                         currentPanel.getId(), repoService.getFileInfo(file.getRepoPath()));
                 currentPanel.replaceWith(newPanel);
-                target.addComponent(newPanel);
+                target.add(newPanel);
             } catch (Exception e) {
                 error("Could not fix checksum inconsistency: " + e.getMessage() + ".");
             }

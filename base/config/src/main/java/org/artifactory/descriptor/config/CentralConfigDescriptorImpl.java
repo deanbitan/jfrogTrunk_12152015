@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -152,38 +152,47 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @XmlElement
     private GcConfigDescriptor gcConfig;
 
+    @Override
     public Map<String, LocalRepoDescriptor> getLocalRepositoriesMap() {
         return localRepositoriesMap;
     }
 
+    @Override
     public void setLocalRepositoriesMap(Map<String, LocalRepoDescriptor> localRepositoriesMap) {
         this.localRepositoriesMap = localRepositoriesMap;
     }
 
+    @Override
     public Map<String, RemoteRepoDescriptor> getRemoteRepositoriesMap() {
         return remoteRepositoriesMap;
     }
 
+    @Override
     public void setRemoteRepositoriesMap(Map<String, RemoteRepoDescriptor> remoteRepositoriesMap) {
         this.remoteRepositoriesMap = remoteRepositoriesMap;
     }
 
+    @Override
     public Map<String, VirtualRepoDescriptor> getVirtualRepositoriesMap() {
         return virtualRepositoriesMap;
     }
 
+    @Override
     public void setVirtualRepositoriesMap(Map<String, VirtualRepoDescriptor> virtualRepositoriesMap) {
         this.virtualRepositoriesMap = virtualRepositoriesMap;
     }
 
+    @Override
     public List<ProxyDescriptor> getProxies() {
         return proxies;
     }
 
+    @Override
     public void setProxies(List<ProxyDescriptor> proxies) {
         this.proxies = proxies;
     }
 
+    @Override
     public ProxyDescriptor getDefaultProxy() {
         for (ProxyDescriptor proxy : proxies) {
             if (proxy.isDefaultProxy()) {
@@ -193,62 +202,77 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return null;
     }
 
+    @Override
     public String getDateFormat() {
         return dateFormat;
     }
 
+    @Override
     public void setDateFormat(String dateFormat) {
         this.dateFormat = dateFormat;
     }
 
+    @Override
     public int getFileUploadMaxSizeMb() {
         return fileUploadMaxSizeMb;
     }
 
+    @Override
     public void setFileUploadMaxSizeMb(int fileUploadMaxSizeMb) {
         this.fileUploadMaxSizeMb = fileUploadMaxSizeMb;
     }
 
+    @Override
     public List<BackupDescriptor> getBackups() {
         return backups;
     }
 
+    @Override
     public void setBackups(List<BackupDescriptor> backups) {
         this.backups = backups;
     }
 
+    @Override
     public IndexerDescriptor getIndexer() {
         return indexer;
     }
 
+    @Override
     public void setIndexer(IndexerDescriptor descriptor) {
         this.indexer = descriptor;
     }
 
+    @Override
     public String getServerName() {
         return serverName;
     }
 
+    @Override
     public void setServerName(String serverName) {
         this.serverName = serverName;
     }
 
+    @Override
     public SecurityDescriptor getSecurity() {
         return security;
     }
 
+    @Override
     public AddonSettings getAddons() {
         return addons;
     }
 
+    @Override
     public void setAddons(AddonSettings addons) {
         this.addons = addons;
     }
 
+    @Override
     public MailServerDescriptor getMailServer() {
         return mailServer;
     }
 
+    @Override
     public void setSecurity(SecurityDescriptor security) {
         if (security == null) {
             security = new SecurityDescriptor();
@@ -256,26 +280,32 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         this.security = security;
     }
 
+    @Override
     public void setMailServer(MailServerDescriptor mailServer) {
         this.mailServer = mailServer;
     }
 
+    @Override
     public List<PropertySet> getPropertySets() {
         return propertySets;
     }
 
+    @Override
     public void setPropertySets(List<PropertySet> propertySets) {
         this.propertySets = propertySets;
     }
 
+    @Override
     public String getUrlBase() {
         return urlBase;
     }
 
+    @Override
     public void setUrlBase(String urlBase) {
         this.urlBase = urlBase;
     }
 
+    @Override
     public RepoDescriptor removeRepository(String repoKey) {
         // first remove the repository itself
         RepoDescriptor removedRepo = localRepositoriesMap.remove(repoKey);
@@ -328,6 +358,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
 
+    @Override
     public String getFooter() {
         return footer;
     }
@@ -336,6 +367,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         this.footer = footer;
     }
 
+    @Override
     public boolean isKeyAvailable(String key) {
         return !(VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY.equals(key) ||
                 isRepositoryExists(key) ||
@@ -346,12 +378,14 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
                 isRepoLayoutExists(key));
     }
 
+    @Override
     public boolean isRepositoryExists(String repoKey) {
         return localRepositoriesMap.containsKey(repoKey)
                 || remoteRepositoriesMap.containsKey(repoKey)
                 || virtualRepositoriesMap.containsKey(repoKey);
     }
 
+    @Override
     public void addLocalRepository(LocalRepoDescriptor localRepoDescriptor)
             throws AlreadyExistsException {
         String repoKey = localRepoDescriptor.getKey();
@@ -359,6 +393,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         localRepositoriesMap.put(repoKey, localRepoDescriptor);
     }
 
+    @Override
     public void addRemoteRepository(RemoteRepoDescriptor remoteRepoDescriptor) {
         String repoKey = remoteRepoDescriptor.getKey();
         repoKeyExists(repoKey, false);
@@ -371,16 +406,19 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         }
     }
 
+    @Override
     public void addVirtualRepository(VirtualRepoDescriptor virtualRepoDescriptor) {
         String repoKey = virtualRepoDescriptor.getKey();
         repoKeyExists(repoKey, false);
         virtualRepositoriesMap.put(repoKey, virtualRepoDescriptor);
     }
 
+    @Override
     public boolean isProxyExists(String proxyKey) {
         return getProxy(proxyKey) != null;
     }
 
+    @Override
     public void addProxy(ProxyDescriptor proxyDescriptor, boolean defaultForAllRemoteRepo) {
         String proxyKey = proxyDescriptor.getKey();
         if (isProxyExists(proxyKey)) {
@@ -396,6 +434,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         proxies.add(proxyDescriptor);
     }
 
+    @Override
     public ProxyDescriptor removeProxy(String proxyKey) {
         ProxyDescriptor proxyDescriptor = getProxy(proxyKey);
         if (proxyDescriptor == null) {
@@ -419,6 +458,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return proxyDescriptor;
     }
 
+    @Override
     public void proxyChanged(ProxyDescriptor proxy, boolean updateExistingRepos) {
         if (proxy.isDefaultProxy()) {
             if (updateExistingRepos) {
@@ -460,25 +500,30 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     private ProxyDescriptor findPreviousProxyDescriptor(final ProxyDescriptor proxyDescriptor) {
         return Iterables.find(proxies, new Predicate<ProxyDescriptor>() {
+            @Override
             public boolean apply(@Nullable ProxyDescriptor input) {
                 return (input != null) && input.isDefaultProxy() && !input.getKey().equals(proxyDescriptor.getKey());
             }
         }, null);
     }
 
+    @Override
     public boolean isBackupExists(String backupKey) {
         return getBackup(backupKey) != null;
     }
 
 
+    @Override
     public String getLogo() {
         return logo;
     }
 
+    @Override
     public void setLogo(String logo) {
         this.logo = logo;
     }
 
+    @Override
     public void addBackup(BackupDescriptor backupDescriptor) {
         String backupKey = backupDescriptor.getKey();
         if (isBackupExists(backupKey)) {
@@ -487,6 +532,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         backups.add(backupDescriptor);
     }
 
+    @Override
     public BackupDescriptor removeBackup(String backupKey) {
         BackupDescriptor backupDescriptor = getBackup(backupKey);
         if (backupDescriptor == null) {
@@ -499,10 +545,12 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return backupDescriptor;
     }
 
+    @Override
     public boolean isPropertySetExists(String propertySetName) {
         return getPropertySet(propertySetName) != null;
     }
 
+    @Override
     public void addPropertySet(PropertySet propertySet) {
         String propertySetName = propertySet.getName();
         if (isPropertySetExists(propertySetName)) {
@@ -511,6 +559,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         propertySets.add(propertySet);
     }
 
+    @Override
     public PropertySet removePropertySet(String propertySetName) {
         PropertySet propertySet = getPropertySet(propertySetName);
         if (propertySet == null) {
@@ -535,14 +584,17 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return propertySet;
     }
 
+    @Override
     public void setOfflineMode(boolean offlineMode) {
         this.offlineMode = offlineMode;
     }
 
+    @Override
     public boolean isOfflineMode() {
         return offlineMode;
     }
 
+    @Override
     public ProxyDescriptor defaultProxyDefined() {
         for (ProxyDescriptor proxyDescriptor : proxies) {
             if (proxyDescriptor.isDefaultProxy()) {
@@ -595,10 +647,12 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         }
     }
 
+    @Override
     public List<RepoLayout> getRepoLayouts() {
         return repoLayouts;
     }
 
+    @Override
     public boolean isRepoLayoutExists(String repoLayoutName) {
         for (RepoLayout repoLayout : repoLayouts) {
             if (repoLayout.getName().equals(repoLayoutName)) {
@@ -609,6 +663,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return false;
     }
 
+    @Override
     public void addRepoLayout(RepoLayout repoLayout) {
         String repoLayoutName = repoLayout.getName();
         if (isRepoLayoutExists(repoLayoutName)) {
@@ -617,6 +672,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         repoLayouts.add(repoLayout);
     }
 
+    @Override
     public RepoLayout removeRepoLayout(String repoLayoutName) {
         RepoLayout repoLayout = getRepoLayout(repoLayoutName);
         if (repoLayout == null) {
@@ -653,10 +709,12 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return repoLayout;
     }
 
+    @Override
     public void setRepoLayouts(List<RepoLayout> repoLayouts) {
         this.repoLayouts = repoLayouts;
     }
 
+    @Override
     public RepoLayout getRepoLayout(String repoLayoutName) {
         for (RepoLayout repoLayout : repoLayouts) {
             if (repoLayout.getName().equals(repoLayoutName)) {
@@ -667,35 +725,43 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return null;
     }
 
+    @Override
     public boolean isRemoteReplicationExists(RemoteReplicationDescriptor descriptor) {
         return remoteReplications.contains(descriptor);
     }
 
+    @Override
     public boolean isLocalReplicationExists(LocalReplicationDescriptor descriptor) {
         return localReplications.contains(descriptor);
     }
 
+    @Override
     public List<RemoteReplicationDescriptor> getRemoteReplications() {
         return remoteReplications;
     }
 
+    @Override
     public List<LocalReplicationDescriptor> getLocalReplications() {
         return localReplications;
     }
 
+    @Override
     public RemoteReplicationDescriptor getRemoteReplication(String replicatedRepoKey) {
 
         return getReplication(replicatedRepoKey, remoteReplications);
     }
 
+    @Override
     public LocalReplicationDescriptor getLocalReplication(String replicatedRepoKey) {
         return getReplication(replicatedRepoKey, localReplications);
     }
 
+    @Override
     public void addRemoteReplication(RemoteReplicationDescriptor replicationDescriptor) {
         addReplication(replicationDescriptor, remoteReplications);
     }
 
+    @Override
     public void addLocalReplication(LocalReplicationDescriptor replicationDescriptor) {
         addReplication(replicationDescriptor, localReplications);
         ProxyDescriptor defaultProxyDescriptor = defaultProxyDefined();
@@ -704,26 +770,53 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         }
     }
 
+    @Override
     public void removeRemoteReplication(RemoteReplicationDescriptor replicationDescriptor) {
         removeReplication(replicationDescriptor, remoteReplications);
     }
 
+    @Override
     public void removeLocalReplication(LocalReplicationDescriptor replicationDescriptor) {
         removeReplication(replicationDescriptor, localReplications);
     }
 
+    @Override
     public void setRemoteReplications(List<RemoteReplicationDescriptor> replicationDescriptors) {
         remoteReplications = replicationDescriptors;
     }
 
+    @Override
     public void setLocalReplications(List<LocalReplicationDescriptor> localReplications) {
         this.localReplications = localReplications;
     }
 
+    @Override
     public GcConfigDescriptor getGcConfig() {
         return gcConfig;
     }
 
+    @Override
+    public String getServerUrlForEmail() {
+        String serverUrl = "";
+        if (mailServer != null) {
+            String artifactoryUrl = mailServer.getArtifactoryUrl();
+            if (StringUtils.isNotBlank(artifactoryUrl)) {
+                serverUrl = artifactoryUrl;
+            }
+        }
+
+        if (StringUtils.isBlank(serverUrl) && StringUtils.isNotBlank(urlBase)) {
+            serverUrl = urlBase;
+        }
+
+        if (StringUtils.isNotBlank(serverUrl) && !serverUrl.endsWith("/")) {
+            serverUrl += "/";
+        }
+
+        return serverUrl;
+    }
+
+    @Override
     public void setGcConfig(GcConfigDescriptor gcConfig) {
         this.gcConfig = gcConfig;
     }

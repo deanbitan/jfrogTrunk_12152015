@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,7 +39,7 @@ public interface ArtifactoryAuthenticationFilter extends Filter, AuthenticationE
      * @param authentication A valid authenticated authentication
      * @return True if the client should be re-authenticated
      */
-    boolean requiresReauthentication(ServletRequest request, Authentication authentication);
+    boolean requiresReAuthentication(ServletRequest request, Authentication authentication);
 
     boolean acceptFilter(ServletRequest request);
 

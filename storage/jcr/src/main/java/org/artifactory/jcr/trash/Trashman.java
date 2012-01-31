@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,6 +52,7 @@ public class Trashman implements SessionResource {
     private String sessionFolderName;
     private Set<String> itemFolderNames = new HashSet<String>();
 
+    @Override
     public void afterCompletion(boolean commit) {
         if (sessionFolderName != null && commit && hasPendingResources()) {
             StorageContextHelper.get().getJcrService().emptyTrash();
@@ -61,10 +62,12 @@ public class Trashman implements SessionResource {
         itemFolderNames.clear();
     }
 
+    @Override
     public boolean hasPendingResources() {
         return itemFolderNames.size() > 0;
     }
 
+    @Override
     public void onSessionSave() {
         //Nothing to do as part of the transaction
     }

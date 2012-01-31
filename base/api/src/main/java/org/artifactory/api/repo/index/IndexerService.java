@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +20,8 @@ package org.artifactory.api.repo.index;
 
 import org.artifactory.common.MutableStatusHolder;
 
+import java.util.List;
+
 /**
  * @author yoavl
  */
@@ -29,4 +31,13 @@ public interface IndexerService {
      * Schedule the indexer to run immediately even if it is disabled
      */
     void scheduleImmediateIndexing(MutableStatusHolder statusHolder);
+
+    /**
+     * Run the indexer immediately for a specific repo even if it's not included
+     *
+     * @param statusHolder        holds the status of the started task which runs the indexer task
+     * @param repoKeys            Keys of repositories to index
+     * @param forceRemoteDownload force remote repo index download even if there is one at the cache and even if not
+     */
+    void runSpecificIndexer(MutableStatusHolder statusHolder, List<String> repoKeys, boolean forceRemoteDownload);
 }

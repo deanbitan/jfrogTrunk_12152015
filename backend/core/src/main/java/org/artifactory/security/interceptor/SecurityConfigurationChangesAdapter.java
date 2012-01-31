@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,33 +29,43 @@ import java.util.List;
  */
 public abstract class SecurityConfigurationChangesAdapter implements SecurityConfigurationChangesInterceptor {
 
+    @Override
     public void onUserAdd(String user) {
     }
 
+    @Override
     public void onUserDelete(String user) {
     }
 
+    @Override
     public void onAddUsersToGroup(String groupName, List<String> usernames) {
     }
 
+    @Override
     public void onRemoveUsersFromGroup(String groupName, List<String> usernames) {
     }
 
+    @Override
     public void onGroupAdd(String group) {
     }
 
+    @Override
     public void onGroupDelete(String group) {
     }
 
+    @Override
     public void onPermissionsAdd() {
     }
 
+    @Override
     public void onPermissionsUpdate() {
     }
 
+    @Override
     public void onPermissionsDelete() {
     }
 
+    @Override
     public void onBeforeSecurityImport(SecurityInfo securityInfo) {
     }
 }

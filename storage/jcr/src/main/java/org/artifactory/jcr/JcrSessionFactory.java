@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,6 +34,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.observation.Event;
 
 /**
  * User: freds Date: Jul 21, 2008 Time: 7:10:02 PM
@@ -70,11 +71,11 @@ public class JcrSessionFactory extends JackrabbitSessionFactory {
     public Session getSession() throws RepositoryException {
         JcrSession session = newSession();
         if (!v1) {
-            EventListenerDefinition repoPathsListenerDef = new EventListenerDefinition();
-            //repoPathsListenerDef.setNodeTypeName(BINARY_CONTAINERS);
+            EventListenerDefinition listenerDefinition = new EventListenerDefinition();
+            listenerDefinition.setEventTypes(listenerDefinition.getEventTypes() | Event.NODE_MOVED);
             LocalItemStateManager ism = ((WorkspaceImpl) session.getWorkspace()).getItemStateManager();
-            repoPathsListenerDef.setListener(new ChecksumPathsListener(ism));
-            setEventListeners(new EventListenerDefinition[]{repoPathsListenerDef});
+            listenerDefinition.setListener(new ChecksumPathsListener(ism));
+            setEventListeners(new EventListenerDefinition[]{listenerDefinition});
         }
         return addListeners(session);
     }

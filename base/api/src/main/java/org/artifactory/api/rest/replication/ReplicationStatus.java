@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,8 @@
 
 package org.artifactory.api.rest.replication;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import javax.annotation.Nullable;
 import java.io.Serializable;
 
@@ -28,23 +30,33 @@ import java.io.Serializable;
  */
 public class ReplicationStatus implements Serializable {
 
-    private String status;
+    private ReplicationStatusType status;
     private String lastCompleted;
 
     public ReplicationStatus() {
     }
 
-    public ReplicationStatus(String status, @Nullable String lastCompleted) {
+    public ReplicationStatus(ReplicationStatusType status, @Nullable String lastCompleted) {
         this.status = status;
         this.lastCompleted = lastCompleted;
     }
 
     public String getStatus() {
+        return status.getId();
+    }
+
+    @JsonIgnore
+    public String getDisplayName() {
+        return status.getDisplayName();
+    }
+
+    @JsonIgnore
+    public ReplicationStatusType getType() {
         return status;
     }
 
     public void setStatus(String status) {
-        this.status = status;
+        this.status = ReplicationStatusType.findTypeById(status);
     }
 
     @Nullable

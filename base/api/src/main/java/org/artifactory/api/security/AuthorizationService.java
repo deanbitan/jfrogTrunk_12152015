@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,6 +22,8 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.security.ArtifactoryPermission;
 import org.artifactory.security.GroupInfo;
 import org.artifactory.security.UserInfo;
+
+import javax.annotation.Nonnull;
 
 /**
  * These are the usage of security data and logged in user methods.
@@ -152,6 +154,7 @@ public interface AuthorizationService {
     /**
      * @return The current logged in username.
      */
+    @Nonnull
     String currentUsername();
 
     boolean isAuthenticated();

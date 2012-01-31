@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,6 +54,7 @@ public class NullJackrabbitSecurityManager implements JackrabbitSecurityManager 
     private Object unsupportedOperationProxy;
     private AccessManager nullAccessManager;
 
+    @Override
     public void init(Repository repository, Session systemSession) {
         log.debug("Using null security manager for jackrabbit");
 
@@ -61,35 +62,44 @@ public class NullJackrabbitSecurityManager implements JackrabbitSecurityManager 
                 this.getClass().getClassLoader(),
                 new Class[]{UserManager.class, PrincipalManager.class},
                 new InvocationHandler() {
+                    @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                         throw new UnsupportedOperationException("Method not supported: " + method.getName());
                     }
                 });
 
         nullAccessManager = new AccessManager() {
+            @Override
             public void init(AMContext context) {
             }
 
+            @Override
             public void init(AMContext context, AccessControlProvider acProvider, WorkspaceAccessManager wspAccessMgr) {
             }
 
+            @Override
             public void close() {
             }
 
+            @Override
             public void checkPermission(ItemId id, int permissions) {
             }
 
+            @Override
             public void checkPermission(Path absPath, int permissions) throws RepositoryException {
             }
 
+            @Override
             public boolean isGranted(ItemId id, int permissions) {
                 return true;
             }
 
+            @Override
             public boolean isGranted(Path absPath, int permissions) throws RepositoryException {
                 return true;
             }
 
+            @Override
             public boolean isGranted(Path parentPath, Name childName, int permissions) throws RepositoryException {
                 return true;
             }
@@ -98,48 +108,60 @@ public class NullJackrabbitSecurityManager implements JackrabbitSecurityManager 
                 return true;
             }
 
+            @Override
             public boolean canRead(Path itemPath, ItemId itemId) throws RepositoryException {
                 return true;
             }
 
+            @Override
             public boolean canAccess(String workspaceName) throws RepositoryException {
                 return true;
             }
         };
     }
 
+    @Override
     public void dispose(String workspaceName) {
     }
 
+    @Override
     public void close() {
     }
 
+    @Override
     public AuthContext getAuthContext(Credentials creds, final Subject subject, String workspaceName) {
         return new AuthContext() {
+            @Override
             public void login() throws LoginException {
             }
 
+            @Override
             public Subject getSubject() {
                 return subject;
             }
 
+            @Override
             public void logout() throws LoginException {
             }
         };
     }
 
+    @Override
     public AccessManager getAccessManager(Session session, AMContext amContext) {
         return nullAccessManager;
     }
 
+    @Override
     public PrincipalManager getPrincipalManager(Session session) {
         return (PrincipalManager) unsupportedOperationProxy;
     }
 
+    @Override
     public UserManager getUserManager(Session session) {
         return (UserManager) unsupportedOperationProxy;
     }
 
+    @Override
     public String getUserID(Subject subject, String workspaceName) throws RepositoryException {
         return SecurityConstants.ADMIN_ID;
     }

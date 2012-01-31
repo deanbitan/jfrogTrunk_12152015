@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,7 +22,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Page;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
@@ -34,13 +33,11 @@ import org.artifactory.common.wicket.component.table.groupable.column.GroupableC
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPanel;
+import org.artifactory.webapp.wicket.page.search.LastModifiedColumn;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableArtifactSearchResult;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableSearchResult;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Displays the simple artifact searcher
@@ -151,27 +148,5 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
         }
         controlsCopy.setLimitSearchResults(limitResults);
         return searchService.searchArtifacts(controlsCopy);
-    }
-
-    private static class LastModifiedColumn extends GroupableColumn<ActionableSearchResult<ArtifactSearchResult>>
-            implements IChoiceRenderer<ActionableSearchResult<ArtifactSearchResult>> {
-        private static final SimpleDateFormat DISPLAY_FORMAT = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
-
-        private LastModifiedColumn() {
-            super(Model.of("Modified"), "searchResult.lastModified", "searchResult.lastModifiedString");
-        }
-
-        @Override
-        public String getGroupProperty() {
-            return "searchResult.lastModifiedDay";
-        }
-
-        public Object getDisplayValue(ActionableSearchResult<ArtifactSearchResult> object) {
-            return DISPLAY_FORMAT.format(new Date(object.getSearchResult().getLastModified()));
-        }
-
-        public String getIdValue(ActionableSearchResult<ArtifactSearchResult> object, int index) {
-            return object.getSearchResult().getLastModifiedDay();
-        }
     }
 }

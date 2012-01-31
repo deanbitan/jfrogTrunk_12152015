@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -172,14 +172,14 @@ public interface Repositories {
      * Deletes the specified repoPath
      *
      * @param repoPath The repository path to delete
-     * @return
+     * @return Deletion status
      * @since 2.4.0
      */
     StatusHolder delete(RepoPath repoPath);
 
     /**
      * @param repoPath
-     * @return
+     * @return Result of the undeploy operation
      * @deprecated Use {@link #delete(RepoPath)} instead
      */
     @Deprecated
@@ -190,7 +190,7 @@ public interface Repositories {
      * repository.
      *
      * @param repoPath
-     * @return
+     * @return True if repoPath is handled by the snapshot(integration)/release policy of the repoPath's repository
      */
     boolean isRepoPathHandled(RepoPath repoPath);
 
@@ -204,7 +204,7 @@ public interface Repositories {
      * Checks if the specified repoPath is accepted by the include/exclude rules of the repoPath's repository.
      *
      * @param repoPath
-     * @return
+     * @return True if the specified repoPath is accepted by the include/exclude rules of the repoPath's repository
      */
     boolean isRepoPathAccepted(RepoPath repoPath);
 

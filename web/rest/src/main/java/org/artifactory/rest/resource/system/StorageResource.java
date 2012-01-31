@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,9 @@ package org.artifactory.rest.resource.system;
 
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.storage.StorageService;
+import org.artifactory.backup.InternalBackupService;
 import org.artifactory.common.StatusEntry;
+import org.artifactory.descriptor.backup.BackupDescriptor;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -38,10 +40,13 @@ import javax.ws.rs.core.Response;
 public class StorageResource {
     private HttpServletResponse httpResponse;
     private StorageService storageService;
+    private InternalBackupService backupService;
 
-    public StorageResource(StorageService storageService, HttpServletResponse httpResponse) {
+    public StorageResource(StorageService storageService, InternalBackupService backupService,
+            HttpServletResponse httpResponse) {
         this.storageService = storageService;
         this.httpResponse = httpResponse;
+        this.backupService = backupService;
     }
 
     @POST
@@ -49,9 +54,7 @@ public class StorageResource {
     public Response compress() {
         MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
         storageService.compress(statusHolder);
-        StatusEntry lastError = statusHolder.getLastError();
-        return lastError == null ? Response.ok().build() :
-                Response.serverError().entity(lastError.getMessage()).build();
+        return response(statusHolder);
     }
 
     @GET
@@ -73,9 +76,7 @@ public class StorageResource {
     public Response activateGc() {
         MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
         storageService.callManualGarbageCollect(statusHolder);
-        StatusEntry lastError = statusHolder.getLastError();
-        return lastError == null ? Response.ok().build() :
-                Response.serverError().entity(lastError.getMessage()).build();
+        return response(statusHolder);
     }
 
     @POST
@@ -83,9 +84,7 @@ public class StorageResource {
     public Response activatePruneEmptyDirs() {
         MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
         storageService.pruneUnreferencedFileInDataStore(statusHolder);
-        StatusEntry lastError = statusHolder.getLastError();
-        return lastError == null ? Response.ok().build() :
-                Response.serverError().entity(lastError.getMessage()).build();
+        return response(statusHolder);
     }
 
     @POST
@@ -93,6 +92,28 @@ public class StorageResource {
     public Response activateConvertActual() {
         MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
         storageService.convertActualChecksums(statusHolder);
+        return response(statusHolder);
+    }
+
+    @POST
+    @Path("backup")
+    public Response activateBackup(@QueryParam("key") String backupKey) {
+        final MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
+        BackupDescriptor backupDescriptor = backupService.getBackup(backupKey);
+        if (backupDescriptor != null) {
+            if (backupDescriptor.isEnabled()) {
+                backupService.scheduleImmediateSystemBackup(backupDescriptor, statusHolder);
+                return response(statusHolder);
+            } else {
+                return Response.serverError().entity(
+                        "Backup identified with key '" + backupKey + "' is disabled").build();
+            }
+        } else {
+            return Response.serverError().entity("No backup identified with key '" + backupKey + "'").build();
+        }
+    }
+
+    private Response response(MultiStatusHolder statusHolder) {
         StatusEntry lastError = statusHolder.getLastError();
         return lastError == null ? Response.ok().build() :
                 Response.serverError().entity(lastError.getMessage()).build();

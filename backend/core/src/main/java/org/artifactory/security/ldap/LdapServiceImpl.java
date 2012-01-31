@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,6 +54,7 @@ import static org.apache.commons.lang.StringUtils.isBlank;
 public class LdapServiceImpl extends AbstractLdapService implements LdapService {
     private static final Logger log = LoggerFactory.getLogger(LdapServiceImpl.class);
 
+    @Override
     public MultiStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
         MultiStatusHolder status = new MultiStatusHolder();
         try {
@@ -95,6 +96,7 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
     }
 
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public LdapUser getDnFromUserName(LdapSetting ldapSetting, String userName) {
         if (ldapSetting == null) {

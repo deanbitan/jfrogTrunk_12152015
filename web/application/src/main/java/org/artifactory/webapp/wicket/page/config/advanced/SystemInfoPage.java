@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,7 @@ package org.artifactory.webapp.wicket.page.config.advanced;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInstantiation;
+import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ArtifactoryHome;
@@ -28,6 +28,8 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
+import org.artifactory.info.InfoWriter;
+import org.artifactory.util.Strings;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
 import java.lang.management.ManagementFactory;
@@ -77,8 +79,8 @@ public class SystemInfoPage extends AuthenticatedPage {
             jcrConfigHome = ContextHelper.get().getArtifactoryHome().getEtcDir() + "/" + ArtifactoryHome.ARTIFACTORY_JCR_CONFIG_DIR_DEFAULT;
         }
         properties.setProperty(ConstantValues.jcrConfigDir.getPropertyName(), jcrConfigHome);
-        TreeSet keys = new TreeSet<Object>(properties.keySet());
-        for (Object key : keys) {
+        TreeSet sortedSystemPropKeys = new TreeSet<Object>(properties.keySet());
+        for (Object key : sortedSystemPropKeys) {
             addInfo(infoBuilder, String.valueOf(key), String.valueOf(properties.get(key)));
         }
         infoBuilder.append("\n").append("General JVM Info:").append("\n");
@@ -104,6 +106,9 @@ public class SystemInfoPage extends AuthenticatedPage {
         List<String> vmArguments = RuntimemxBean.getInputArguments();
         if (vmArguments != null) {
             for (String vmArgument : vmArguments) {
+                if (InfoWriter.shouldMaskValue(vmArgument)) {
+                    vmArgument = Strings.maskKeyValue(vmArgument);
+                }
                 vmArgumentBuilder.append(vmArgument);
                 if (vmArguments.indexOf(vmArgument) != (vmArguments.size() - 1)) {
                     vmArgumentBuilder.append("\n");
@@ -124,7 +129,11 @@ public class SystemInfoPage extends AuthenticatedPage {
      * @param propertyValue Value of property to display
      */
     private void addInfo(StringBuilder infoBuilder, String propertyKey, String propertyValue) {
-        propertyValue = StringEscapeUtils.escapeJava(propertyValue);
+        if (InfoWriter.shouldMaskValue(propertyKey)) {
+            propertyValue = Strings.mask(propertyValue);
+        } else {
+            propertyValue = StringEscapeUtils.escapeJava(propertyValue);
+        }
         infoBuilder.append(String.format(listFormat, propertyKey, propertyValue));
     }
 

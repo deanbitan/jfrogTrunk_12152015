@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -77,6 +77,7 @@ public class JcrAclManager implements InternalAclManager {
         return PathFactoryHolder.get().getConfigPath(ACLS_KEY);
     }
 
+    @Override
     public void init() {
         //Init the cache
         acls = new MapMaker().initialCapacity(30).makeMap();
@@ -85,14 +86,17 @@ public class JcrAclManager implements InternalAclManager {
         jcr.getOrCreateUnstructuredNode(confNode, ACLS_KEY);
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         acls.clear();
     }
 
+    @Override
     public void destroy() {
         // Nothing for the moment
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
@@ -103,11 +107,13 @@ public class JcrAclManager implements InternalAclManager {
      * @return the new ACL created
      * @throws AlreadyExistsException
      */
+    @Override
     public Acl createAcl(AclInfo aclInfo) throws AlreadyExistsException {
         Acl acl = new Acl(aclInfo);
         return createAcl(acl);
     }
 
+    @Override
     public Acl createAcl(Acl acl) {
         ObjectContentManager ocm = jcr.getOcm();
         String aclPath = acl.getJcrPath();
@@ -122,6 +128,7 @@ public class JcrAclManager implements InternalAclManager {
         return acl;
     }
 
+    @Override
     public void deleteAcl(PermissionTarget objectIdentity) {
         Acl acl = toAcl(objectIdentity);
         ObjectContentManager ocm = jcr.getOcm();
@@ -131,6 +138,7 @@ public class JcrAclManager implements InternalAclManager {
         removeFormCache(acl);
     }
 
+    @Override
     public Acl updateAcl(Acl acl) throws NotFoundException {
         //Delete and recreate the ACL
         ObjectContentManager ocm = jcr.getOcm();
@@ -141,6 +149,7 @@ public class JcrAclManager implements InternalAclManager {
         return acl;
     }
 
+    @Override
     public Acl findAclById(PermissionTarget permissionTarget) throws NotFoundException {
         return findAclById(permissionTarget.getName());
     }
@@ -160,6 +169,7 @@ public class JcrAclManager implements InternalAclManager {
         return findAclById(key) != null;
     }
 
+    @Override
     public void createDefaultSecurityEntities(SimpleUser anonUser, Group readersGroup) {
         if (!UserInfo.ANONYMOUS.equals(anonUser.getUsername())) {
             throw new IllegalArgumentException(
@@ -202,6 +212,7 @@ public class JcrAclManager implements InternalAclManager {
         }
     }
 
+    @Override
     public List<PermissionTarget> getAllPermissionTargets() {
         Collection<Acl> acls = getAllAclsFromCache();
         List<PermissionTarget> repoPaths = new ArrayList<PermissionTarget>(acls.size());
@@ -211,10 +222,12 @@ public class JcrAclManager implements InternalAclManager {
         return repoPaths;
     }
 
+    @Override
     public List<Acl> getAllAcls() {
         return new ArrayList<Acl>(getAllAclsFromCache());
     }
 
+    @Override
     public List<Acl> getAllAcls(ArtifactorySid[] sids) {
         Collection<Acl> acls = getAllAclsFromCache();
         List<Acl> aclsForSids = new ArrayList<Acl>();
@@ -233,6 +246,7 @@ public class JcrAclManager implements InternalAclManager {
     /**
      * Reload all configured ACLs within a new transction
      */
+    @Override
     public void reloadAcls() {
         InternalAclManager internalAclManager = InternalContextHelper.get().beanForType(InternalAclManager.class);
         internalAclManager.reloadAndReturnAcls();
@@ -243,6 +257,7 @@ public class JcrAclManager implements InternalAclManager {
      *
      * @return List of reloaded ACLs
      */
+    @Override
     @SuppressWarnings({"unchecked"})
     public Collection<Acl> reloadAndReturnAcls() {
         ObjectContentManager ocm = jcr.getOcm();
@@ -258,6 +273,7 @@ public class JcrAclManager implements InternalAclManager {
         return aclFromDbs;
     }
 
+    @Override
     public void removeAllUserAces(String username) {
         ArtifactorySid sid = new ArtifactorySid(username);
         //Work on a copy of the list to avoid CME
@@ -270,6 +286,7 @@ public class JcrAclManager implements InternalAclManager {
         }
     }
 
+    @Override
     public void deleteAllAcls() {
         acls.clear();
         jcr.delete(getAclsJcrPath());

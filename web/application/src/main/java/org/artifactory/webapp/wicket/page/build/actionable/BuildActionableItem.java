@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -66,18 +66,22 @@ public class BuildActionableItem extends ActionableItemBase {
         }
     }
 
+    @Override
     public Panel newItemDetailsPanel(String id) {
         return null;
     }
 
+    @Override
     public String getDisplayName() {
         return buildRun.getName();
     }
 
+    @Override
     public String getCssClass() {
         return ItemCssClass.doc.getCssClass();
     }
 
+    @Override
     public void filterActions(AuthorizationService authService) {
         if (authService.isAdmin()) {
             getActions().add(new DeleteBuildAction(buildRun));

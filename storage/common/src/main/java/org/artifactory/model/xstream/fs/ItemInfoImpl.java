@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,14 +54,17 @@ public abstract class ItemInfoImpl implements InternalItemInfo {
         this.lastModified = info.getLastModified();
     }
 
+    @Override
     public RepoPath getRepoPath() {
         return repoPath;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getRepoKey() {
         return repoPath.getRepoKey();
     }
@@ -69,50 +72,62 @@ public abstract class ItemInfoImpl implements InternalItemInfo {
     /**
      * @return The path part of the repo path of this item (ie, path without the repository key).
      */
+    @Override
     public String getRelPath() {
         return repoPath.getPath();
     }
 
+    @Override
     public long getCreated() {
         return created;
     }
 
+    @Override
     public void setCreated(long created) {
         this.created = created;
     }
 
+    @Override
     public long getLastModified() {
         return lastModified;
     }
 
+    @Override
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
 
+    @Override
     public String getModifiedBy() {
         return getAdditionalInfo().getModifiedBy();
     }
 
+    @Override
     public void setModifiedBy(String name) {
         getAdditionalInfo().setModifiedBy(name);
     }
 
+    @Override
     public String getCreatedBy() {
         return getAdditionalInfo().getCreatedBy();
     }
 
+    @Override
     public void setCreatedBy(String name) {
         getAdditionalInfo().setCreatedBy(name);
     }
 
+    @Override
     public long getLastUpdated() {
         return getAdditionalInfo().getLastUpdated();
     }
 
+    @Override
     public void setLastUpdated(long lastUpdated) {
         getAdditionalInfo().setLastUpdated(lastUpdated);
     }
 
+    @Override
     public boolean isIdentical(ItemInfo info) {
         return this.getClass() == info.getClass() &&
                 this.lastModified == info.getLastModified() &&
@@ -122,6 +137,7 @@ public abstract class ItemInfoImpl implements InternalItemInfo {
                 this.getAdditionalInfo().isIdentical(((InternalItemInfo) info).getAdditionalInfo());
     }
 
+    @Override
     public boolean merge(MutableItemInfo itemInfo) {
         if (this == itemInfo || this.isIdentical(itemInfo)) {
             // They are equal nothing to do

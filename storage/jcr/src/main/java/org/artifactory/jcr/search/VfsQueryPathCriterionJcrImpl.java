@@ -42,6 +42,7 @@ class VfsQueryPathCriterionJcrImpl extends VfsQueryCriterionJcrImpl implements V
         }
     }
 
+    @Override
     public void setNodeTypeFilter(VfsNodeType nodeType) {
         if (nodeType == VfsNodeType.METADATA && !PROP_ARTIFACTORY_METADATA_NAME.equals(propertyName)) {
             throw new InvalidQueryRuntimeException("Cannot change a path to metadata after creation!");
@@ -49,6 +50,7 @@ class VfsQueryPathCriterionJcrImpl extends VfsQueryCriterionJcrImpl implements V
         this.matchNodeType = nodeType;
     }
 
+    @Override
     public boolean isContains() {
         return comparator == VfsComparatorType.CONTAINS;
     }

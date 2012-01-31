@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,12 +23,13 @@ import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.mail.MailService;
-import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.descriptor.backup.BackupDescriptor;
@@ -43,7 +44,6 @@ import org.artifactory.schedule.Task;
 import org.artifactory.schedule.TaskBase;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.schedule.TaskUtils;
-import org.artifactory.security.UserInfo;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
@@ -86,12 +86,13 @@ public class BackupServiceImpl implements InternalBackupService {
     private MailService mailService;
 
     @Autowired
-    private UserGroupService userGroupService;
+    private AddonsManager addonsManager;
 
     public void init() {
         reload(null);
     }
 
+    @Override
     public void reload(@Nullable CentralConfigDescriptor oldDescriptor) {
         List<BackupDescriptor> backupDescriptors = centralConfig.getDescriptor().getBackups();
         BackupDescriptorHandler backupDescriptorHandler = new BackupDescriptorHandler(backupDescriptors,
@@ -103,6 +104,7 @@ public class BackupServiceImpl implements InternalBackupService {
         final List<BackupDescriptor> newBackupDescriptors;
         final List<BackupDescriptor> oldBackupDescriptors;
 
+        @Override
         public String jobName() {
             return "Backup";
         }
@@ -117,24 +119,30 @@ public class BackupServiceImpl implements InternalBackupService {
             }
         }
 
+        @Override
         public List<BackupDescriptor> getNewDescriptors() {
             return this.newBackupDescriptors;
         }
 
+        @Override
         public List<BackupDescriptor> getOldDescriptors() {
             return this.oldBackupDescriptors;
         }
 
+        @Override
         public Predicate<Task> getAllPredicate() {
             return new Predicate<Task>() {
+                @Override
                 public boolean apply(@Nullable Task input) {
                     return BackupJob.class.isAssignableFrom(input.getType());
                 }
             };
         }
 
+        @Override
         public Predicate<Task> getPredicate(@Nonnull final BackupDescriptor descriptor) {
             return new Predicate<Task>() {
+                @Override
                 public boolean apply(@Nullable Task input) {
                     return BackupJob.class.isAssignableFrom(input.getType()) &&
                             descriptor.getKey().equals(input.getAttribute(BackupJob.BACKUP_KEY));
@@ -142,6 +150,7 @@ public class BackupServiceImpl implements InternalBackupService {
             };
         }
 
+        @Override
         public void activate(BackupDescriptor descriptor, boolean manual) {
             //Schedule the cron'd backup
             String key = descriptor.getKey();
@@ -163,6 +172,7 @@ public class BackupServiceImpl implements InternalBackupService {
             }
         }
 
+        @Override
         public BackupDescriptor findOldFromNew(@Nonnull BackupDescriptor newDescriptor) {
             for (BackupDescriptor oldBackupDescriptor : oldBackupDescriptors) {
                 if (oldBackupDescriptor.getKey().equals(newDescriptor.getKey())) {
@@ -173,17 +183,21 @@ public class BackupServiceImpl implements InternalBackupService {
         }
     }
 
+    @Override
     public void destroy() {
         new BackupDescriptorHandler(null, null).unschedule();
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @Override
     public void backupRepos(File backupDir, ExportSettingsImpl exportSettings) {
         backupRepos(backupDir, Collections.<RealRepoDescriptor>emptyList(), exportSettings);
     }
 
+    @Override
     public void backupRepos(File backupDir, List<RealRepoDescriptor> excludeRepositories,
             ExportSettingsImpl exportSettings) {
         List<String> backedupRepos = getBackedupRepos(excludeRepositories);
@@ -192,23 +206,26 @@ public class BackupServiceImpl implements InternalBackupService {
         repositoryService.exportTo(settings);
     }
 
+    @Override
     public void scheduleImmediateSystemBackup(BackupDescriptor backupDescriptor, MultiStatusHolder statusHolder) {
         TaskService taskService = InternalContextHelper.get().getTaskService();
         String backupKey = backupDescriptor.getKey();
         taskService.checkCanStartManualTask(BackupJob.class, statusHolder, backupKey);
         if (!statusHolder.isError()) {
             try {
-                log.info("Activating manual system backup '" + backupKey + "'");
+                statusHolder.setStatus("Activating manual system backup '" + backupKey + "'", log);
                 TaskBase task = TaskUtils.createManualTask(BackupJob.class, 0L);
                 task.addAttribute(BackupJob.MANUAL_BACKUP, backupDescriptor);
                 task.addAttribute(BackupJob.BACKUP_KEY, backupKey);
-                taskService.startTask(task, true);
+                String taskToken = taskService.startTask(task, true);
+                statusHolder.setStatus("Started " + taskToken + " successfully", log);
             } catch (Exception e) {
-                log.error("Error scheduling manual system backup '" + backupKey + "'", e);
+                statusHolder.setError("Error scheduling manual system backup '" + backupKey + "'", e, log);
             }
         }
     }
 
+    @Override
     public MultiStatusHolder backupSystem(InternalArtifactoryContext context, @Nonnull BackupDescriptor backup) {
         MultiStatusHolder status = new MultiStatusHolder();
         if (!backup.isEnabled()) {
@@ -220,6 +237,7 @@ public class BackupServiceImpl implements InternalBackupService {
         File backupDir = getBackupDir(backup);
         boolean createArchive = backup.isCreateArchive();
         boolean incremental = backup.isIncremental();
+        boolean excludeBuilds = backup.isExcludeBuilds();
         if (incremental && createArchive) {
             status.setWarning("An incremental backup cannot be archived!\n" +
                     "Please change the configuration of backup " + backup.getKey() + ".", log);
@@ -230,11 +248,14 @@ public class BackupServiceImpl implements InternalBackupService {
         settings.setCreateArchive(createArchive);
         settings.setIncremental(incremental);
         settings.addCallback(new SystemBackupPauseCallback());
+        settings.setExcludeBuilds(excludeBuilds);
+
         context.exportTo(settings);
 
         return status;
     }
 
+    @Override
     public void cleanupOldBackups(Date now, String backupKey) {
         BackupDescriptor descriptor = getBackup(backupKey);
         if (descriptor == null) {
@@ -270,6 +291,7 @@ public class BackupServiceImpl implements InternalBackupService {
         }
     }
 
+    @Override
     public File getBackupDir(BackupDescriptor descriptor) {
         File dir = descriptor.getDir();
         File backupDir;
@@ -288,9 +310,8 @@ public class BackupServiceImpl implements InternalBackupService {
         return backupDir;
     }
 
+    @Override
     public void sendBackupErrorNotification(String backupName, MultiStatusHolder statusHolder) throws Exception {
-        List<UserInfo> userInfoList = userGroupService.getAllUsers(true);
-
         InputStream stream = null;
         try {
             //Get message body from properties and substitute variables
@@ -299,14 +320,17 @@ public class BackupServiceImpl implements InternalBackupService {
             String body = resourceBundle.getString("body");
             String errorListBlock = getErrorListBlock(statusHolder);
 
-            for (UserInfo userInfo : userInfoList) {
-                if (userInfo.isAdmin()) {
-                    String adminEmail = userInfo.getEmail();
-                    if (StringUtils.isNotBlank(adminEmail)) {
-                        log.debug("Sending backup error notification to '{}'.", adminEmail);
-                        String message = MessageFormat.format(body, backupName, errorListBlock);
-                        mailService.sendMail(new String[]{adminEmail}, "Backup Error Notification", message);
-                    }
+            CoreAddons coreAddons = addonsManager.addonByType(CoreAddons.class);
+            List<String> adminEmails = coreAddons.getUsersForBackupNotifications();
+            if (CollectionUtils.isNullOrEmpty(adminEmails)) {
+                log.warn("Couldn't find admin account with valid email address. " +
+                        "Skipping backup failure email notification");
+            }
+            for (String adminEmail : adminEmails) {
+                if (StringUtils.isNotBlank(adminEmail)) {
+                    log.debug("Sending backup error notification to '{}'.", adminEmail);
+                    String message = MessageFormat.format(body, backupName, errorListBlock);
+                    mailService.sendMail(new String[]{adminEmail}, "Backup Error Notification", message);
                 }
             }
         } catch (EmailException e) {
@@ -351,6 +375,7 @@ public class BackupServiceImpl implements InternalBackupService {
         return backedupRepos;
     }
 
+    @Override
     public BackupDescriptor getBackup(String backupKey) {
         final List<BackupDescriptor> list = centralConfig.getDescriptor().getBackups();
         for (BackupDescriptor backupDescriptor : list) {

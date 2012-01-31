@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,9 +19,9 @@
 package org.artifactory.webapp.wicket.actionable.link;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.model.Model;
 import org.artifactory.common.wicket.ajax.AllowNewWindowDecorator;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
@@ -53,8 +53,8 @@ public class ActionLink extends TitledAjaxLink {
         // set href for link actions
         String actionURL = action.getActionLinkURL(actionableItem);
         if (StringUtils.isNotEmpty(actionURL)) {
-            add(new SimpleAttributeModifier("onclick", "window.open(this.href); return false;"));
-            add(new SimpleAttributeModifier("href", actionURL));
+            add(new AttributeModifier("onclick", "window.open(this.href); return false;"));
+            add(new AttributeModifier("href", actionURL));
         }
     }
 
@@ -63,6 +63,7 @@ public class ActionLink extends TitledAjaxLink {
         return action.isEnabled();
     }
 
+    @Override
     public void onClick(AjaxRequestTarget target) {
         action.actionPerformed(newEvent(target));
     }

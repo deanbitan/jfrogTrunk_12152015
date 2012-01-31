@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,6 +47,7 @@ public abstract class LinksColumn<T> extends AbstractColumn<T> implements Attach
         super(titleModel);
     }
 
+    @Override
     public void populateItem(Item cellItem, String componentId, IModel rowModel) {
         cellItem.add(new CssClass("actions"));
 
@@ -72,6 +73,7 @@ public abstract class LinksColumn<T> extends AbstractColumn<T> implements Attach
 
     protected abstract Collection<? extends AbstractLink> getLinks(T rowObject, String linkId);
 
+    @Override
     public void onColumnAttached(SortableTable table) {
         table.add(new CssClass("selectable"));
     }

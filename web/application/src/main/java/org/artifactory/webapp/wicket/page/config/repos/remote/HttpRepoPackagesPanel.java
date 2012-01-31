@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,31 +18,32 @@
 
 package org.artifactory.webapp.wicket.page.config.repos.remote;
 
-import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.common.wicket.behavior.border.TitledBorderBehavior;
-import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
-import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
+import org.apache.wicket.model.CompoundPropertyModel;
+import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.p2.P2WebAddon;
+import org.artifactory.addon.wicket.NuGetWebAddon;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 
 /**
  * Packages configuration panel.
  *
  * @author Yossi Shaul
  */
-public class HttpRepoPackagesPanel extends Panel {
+public class HttpRepoPackagesPanel<T extends RemoteRepoDescriptor> extends Panel {
 
-    public HttpRepoPackagesPanel(String id) {
+    @SpringBean
+    private AddonsManager addonsManager;
+
+    public HttpRepoPackagesPanel(String id, T descriptor) {
         super(id);
 
-        addP2Fields();
-    }
+        Form<T> form = new Form<T>("form", new CompoundPropertyModel<T>(descriptor));
+        add(form);
 
-    private void addP2Fields() {
-        WebMarkupContainer p2Border = new WebMarkupContainer("p2Border");
-        p2Border.add(new TitledBorderBehavior("fieldset-border", "P2 Support"));
-        add(p2Border);
-
-        p2Border.add(new StyledCheckbox("p2Support"));
-        p2Border.add(new SchemaHelpBubble("p2Support.help"));
+        addonsManager.addonByType(NuGetWebAddon.class).createAndAddRepoConfigNuGetSection(form, descriptor);
+        addonsManager.addonByType(P2WebAddon.class).createAndAddRemoteRepoConfigP2Section(form);
     }
 }

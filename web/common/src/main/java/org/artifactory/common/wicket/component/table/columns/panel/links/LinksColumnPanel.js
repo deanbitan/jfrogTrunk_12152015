@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,12 +28,12 @@ function LinksColumn(iconId, panelId) {
     this.connentEvents();
 }
 
-LinksColumn.prototype.connentEvents = function() {
+LinksColumn.prototype.connentEvents = function () {
     var me = this;
 
-    var hideIfNoFocus = function() {
+    var hideIfNoFocus = function () {
         me.hasFocus = false;
-        setTimeout(function() {
+        setTimeout(function () {
             if (!me.hasFocus) {
                 me.hide();
             }
@@ -41,9 +41,9 @@ LinksColumn.prototype.connentEvents = function() {
     };
 
     // connent row mouse events
-    dojo.connect(this.row, 'onmouseover', function() {
+    dojo.connect(this.row, 'onmouseover', function () {
         me.hasFocus = true;
-        setTimeout(function() {
+        setTimeout(function () {
             if (me.hasFocus) {
                 me.show();
             }
@@ -53,7 +53,7 @@ LinksColumn.prototype.connentEvents = function() {
     dojo.connect(this.row, 'onmouseout', hideIfNoFocus);
 
     // connenct panel mouse events
-    dojo.connect(me.domNode, 'onmouseover', function() {
+    dojo.connect(me.domNode, 'onmouseover', function () {
         me.hasFocus = true;
     });
 
@@ -63,20 +63,20 @@ LinksColumn.prototype.connentEvents = function() {
 
     // fix RTFACT-2103
     if (dojo.isIE) {
-        links.connect('onmouseover', function() {
+        links.connect('onmouseover', function () {
             DomUtils.removeStyle(this, 'normal', true);
         });
-        links.connect('onclick', function() {
+        links.connect('onclick', function () {
             DomUtils.addStyle(this, 'normal');
         });
     }
 
-    links.connect('onclick', function() {
+    links.connect('onclick', function () {
         me.hide();
     });
 };
 
-LinksColumn.prototype.getRowAnchor = function() {
+LinksColumn.prototype.getRowAnchor = function () {
     var rowAnchor = this.icon;
     var tagName;
     do {
@@ -87,7 +87,7 @@ LinksColumn.prototype.getRowAnchor = function() {
     return rowAnchor;
 };
 
-LinksColumn.prototype.show = function() {
+LinksColumn.prototype.show = function () {
     var parent = this.domNode.parentNode;
     var cord = dojo.coords(this.icon, true);
     if (parent == this.parentNode) {
@@ -108,7 +108,7 @@ LinksColumn.prototype.show = function() {
     }
 };
 
-LinksColumn.prototype.hide = function() {
+LinksColumn.prototype.hide = function () {
     if (this.domNode.parentNode != this.parentNode) {
         this.domNode.parentNode.removeChild(this.domNode);
         this.parentNode.appendChild(this.domNode);
@@ -121,7 +121,7 @@ LinksColumn.prototype.hide = function() {
     LinksColumn.connection = null;
 };
 
-LinksColumn.hideCurrent = function() {
+LinksColumn.hideCurrent = function () {
     if (LinksColumn.current) {
         try {
             LinksColumn.current.hide();

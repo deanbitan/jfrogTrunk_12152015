@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -383,7 +383,7 @@ public class ArtifactoryHome {
     public void initAndLoadSystemPropertyFile() {
         // Expose the properties inside artifactory.properties and artifactory.system.properties
         // as system properties, available to ArtifactoryConstants
-        File systemPropertiesFile = new File(etcDir, ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
+        File systemPropertiesFile = getArtifactorySystemPropertiesFile();
         if (!systemPropertiesFile.exists()) {
             try {
                 //Copy from default
@@ -401,6 +401,7 @@ public class ArtifactoryHome {
         }
 
         runningVersion = readRunningArtifactoryVersion();
+        originalVersion = runningVersion;
         File artifactoryPropertiesFile = getArtifactoryPropertiesFile();
         if (artifactoryPropertiesFile.exists()) {
             CompoundVersionDetails storedStorageVersion = ArtifactoryVersionReader.read(artifactoryPropertiesFile);
@@ -428,6 +429,10 @@ public class ArtifactoryHome {
         }
         artifactorySystemProperties = new ArtifactorySystemProperties();
         artifactorySystemProperties.loadArtifactorySystemProperties(systemPropertiesFile, artifactoryPropertiesFile);
+    }
+
+    public File getArtifactorySystemPropertiesFile() {
+        return new File(etcDir, ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
     }
 
     public void initAndLoadMimeTypes() {
@@ -495,6 +500,7 @@ public class ArtifactoryHome {
     }
 
     public static class SystemOutLog implements SimpleLog {
+        @Override
         public void log(String message) {
             System.out.println(message);
         }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,11 +19,10 @@
 package org.artifactory.webapp.wicket.panel.tabbed;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
-import org.apache.wicket.protocol.http.WebRequest;
 import org.artifactory.common.wicket.util.CookieUtils;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledTab;
 
 import java.util.List;
@@ -68,7 +67,7 @@ public class PersistentTabbedPanel extends StyledTabbedPanel {
      */
     @SuppressWarnings({"unchecked"})
     private int getLastTabIndex() {
-        List<ITab> tabs = getTabs();
+        List<? extends ITab> tabs = getTabs();
 
         /**
          * If a parameter of a tab title to select was included in the request, give it priority over the
@@ -104,11 +103,10 @@ public class PersistentTabbedPanel extends StyledTabbedPanel {
      * @return Default selection tab title. May be null if not included in request
      */
     private String getDefaultSelectionTabTitle() {
-        WebRequest request = (WebRequest) RequestCycle.get().getRequest();
-        return request.getParameter(SELECT_TAB_PARAM);
+        return WicketUtils.getParameter(SELECT_TAB_PARAM);
     }
 
-    private int getTabIndexByTitle(String tabTitle, List<ITab> tabs) {
+    private int getTabIndexByTitle(String tabTitle, List<? extends ITab> tabs) {
         if (StringUtils.isNotBlank(tabTitle)) {
             for (int i = 0; i < tabs.size(); i++) {
                 ITab tab = tabs.get(i);

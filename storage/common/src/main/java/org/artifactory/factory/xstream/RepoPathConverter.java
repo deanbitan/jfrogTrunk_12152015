@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,10 +33,12 @@ public class RepoPathConverter implements Converter {
     private static final String REPO_KEY = "repoKey";
     private static final String PATH = "path";
 
+    @Override
     public boolean canConvert(Class type) {
         return type.equals(RepoPath.class);
     }
 
+    @Override
     public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
         RepoPath repoPath = (RepoPath) source;
         //Key
@@ -49,6 +51,7 @@ public class RepoPathConverter implements Converter {
         writer.endNode();
     }
 
+    @Override
     public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
         String repoKey = null;
         String path = null;

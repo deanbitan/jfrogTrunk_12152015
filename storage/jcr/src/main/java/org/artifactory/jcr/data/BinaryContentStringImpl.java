@@ -45,14 +45,17 @@ public class BinaryContentStringImpl extends BinaryContentBase {
         }
     }
 
+    @Override
     public long getSize() {
         return size;
     }
 
+    @Override
     public InputStream getStream() {
         return new ByteArrayInputStream(bytes);
     }
 
+    @Override
     public void checkClosed() {
         // Nothing to close
     }

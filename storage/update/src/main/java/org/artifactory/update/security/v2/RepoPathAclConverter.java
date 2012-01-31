@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,7 +22,6 @@ import org.apache.jackrabbit.util.Text;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.security.ArtifactoryPermission;
 import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.version.converter.XmlConverter;
@@ -45,6 +44,7 @@ public class RepoPathAclConverter implements XmlConverter {
     private static final String MASK = "mask";
     private static final String PRINCIPAL = "principal";
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public void convert(Document doc) {
         Element aclsTag = doc.getRootElement().getChild("acls");

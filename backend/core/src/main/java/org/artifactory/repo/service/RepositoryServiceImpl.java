@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,6 +29,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.NuGetAddon;
 import org.artifactory.addon.WebstartAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MoveMultiStatusHolder;
@@ -44,6 +45,7 @@ import org.artifactory.api.module.VersionUnit;
 import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.exception.FileExpectedException;
+import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.UploadService;
@@ -257,8 +259,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     private void deleteOrphanRepos(CentralConfigDescriptor oldDescriptor) {
         CentralConfigDescriptor currentDescriptor = centralConfigService.getDescriptor();
-        Set<String> newRepoKeys = getConfigReposKeys(currentDescriptor);
-        Set<String> oldRepoKeys = getConfigReposKeys(oldDescriptor);
+        Set<String> newRepoKeys = getConfigRepoKeys(currentDescriptor);
+        Set<String> oldRepoKeys = getConfigRepoKeys(oldDescriptor);
         for (String key : oldRepoKeys) {
             if (!newRepoKeys.contains(key)) {
                 log.warn("Removing the no-longer-referenced repository " + key);
@@ -310,7 +312,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return status;
     }
 
-    private Set<String> getConfigReposKeys(CentralConfigDescriptor descriptor) {
+    private Set<String> getConfigRepoKeys(CentralConfigDescriptor descriptor) {
         Set<String> repoKeys = new HashSet<String>();
         repoKeys.addAll(descriptor.getLocalRepositoriesMap().keySet());
         repoKeys.addAll(descriptor.getRemoteRepositoriesMap().keySet());
@@ -387,13 +389,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (oldDescriptor != null && globalVirtualRepo != null) {
             oldRemoteRepos = globalVirtualRepo.getRemoteRepositoriesMap();
         }
+        NuGetAddon nuGetAddon = addonsManager.addonByType(NuGetAddon.class);
         for (RemoteRepoDescriptor repoDescriptor : remoteRepoDescriptorMap.values()) {
             RemoteRepo oldRemoteRepo = null;
             if (oldRemoteRepos != null) {
                 oldRemoteRepo = oldRemoteRepos.get(repoDescriptor.getKey());
             }
-            RemoteRepo repo = new HttpRepo(
-                    transactionalMe, (HttpRepoDescriptor) repoDescriptor,
+            RemoteRepo repo = nuGetAddon.createRemoteRepo(transactionalMe, repoDescriptor,
                     centralConfig.isOfflineMode(), oldRemoteRepo);
             try {
                 repo.init();
@@ -813,6 +815,16 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             return (FileInfo) itemInfo;
         } else {
             throw new FileExpectedException(repoPath);
+        }
+    }
+
+    @Override
+    public FolderInfo getFolderInfo(RepoPath repoPath) {
+        org.artifactory.fs.ItemInfo itemInfo = getItemInfo(repoPath);
+        if (itemInfo instanceof FolderInfo) {
+            return (FolderInfo) itemInfo;
+        } else {
+            throw new FolderExpectedException(repoPath);
         }
     }
 

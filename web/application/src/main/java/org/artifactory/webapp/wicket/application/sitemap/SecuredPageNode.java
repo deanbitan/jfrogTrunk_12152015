@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.application.sitemap;
 
 import org.apache.wicket.Page;
-import org.apache.wicket.injection.web.InjectorHolder;
+import org.apache.wicket.injection.Injector;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.repo.RepositoryService;
@@ -41,10 +41,8 @@ public abstract class SecuredPageNode extends MenuNode {
 
     protected SecuredPageNode(Class<? extends Page> pageClass, String name) {
         super(name, pageClass);
-    }
 
-    {
-        InjectorHolder.getInjector().inject(this);
+        Injector.get().inject(this);
     }
 
     public AuthorizationService getAuthorizationService() {

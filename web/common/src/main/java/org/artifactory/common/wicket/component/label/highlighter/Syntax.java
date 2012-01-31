@@ -1,8 +1,8 @@
 package org.artifactory.common.wicket.component.label.highlighter;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.wicket.ResourceReference;
-import org.apache.wicket.markup.html.resources.JavascriptResourceReference;
+import org.apache.wicket.request.resource.JavaScriptResourceReference;
+import org.apache.wicket.request.resource.ResourceReference;
 import org.artifactory.mime.MimeType;
 
 import static java.lang.String.format;
@@ -50,7 +50,7 @@ public enum Syntax {
 
     private Syntax(String jsFile) {
         String cssPath = format("resources/scripts/%s", jsFile);
-        jsReference = new JavascriptResourceReference(Syntax.class, cssPath);
+        jsReference = new JavaScriptResourceReference(Syntax.class, cssPath);
     }
 
     String getBrush() {

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,6 +26,7 @@ import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.artifactory.traffic.entry.TrafficEntry;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -65,7 +66,7 @@ public class TrafficReader {
         this.logDir = logDir;
     }
 
-    public List<TrafficEntry> getEntries(Calendar from, Calendar to) {
+    public List<TrafficEntry> getEntries(@Nullable Calendar from, @Nullable Calendar to) {
         //If from is null get all entries from the epoch, if to is null get all entries up to now
         Date fromDate = from != null ? from.getTime() : new Date(0);
         Date toDate = to != null ? to.getTime() : new Date();
@@ -160,33 +161,29 @@ public class TrafficReader {
             }
         };
         Collection<File> collection = FileUtils.listFiles(logDir, trafficLogFileFilter, DirectoryFileFilter.DIRECTORY);
+        List<File> trafficLogFiles = Lists.newArrayList(collection);
+        Collections.sort(trafficLogFiles);
         List<File> selectedFiles = new ArrayList<File>();
-        if (collection instanceof List) {
-            List<File> fileList = Lists.newArrayList(collection);
-            Collections.sort(fileList);
-            for (File logFile : fileList) {
+        for (File logFile : trafficLogFiles) {
+            Date[] logFileDates = getLogFileDates(logFile);
 
-                Date[] logFileDates = getLogFileDates(logFile);
+            //Sanity check
+            if (logFileDates.length != 2) {
+                throw new RuntimeException("Could not read log file dates.");
+            }
 
-                //Sanity check
-                if (logFileDates.length != 2) {
-                    throw new RuntimeException("Could not read log file dates.");
-                }
+            //Sanity check
+            Date logFileStartDate = logFileDates[0];
+            Date logFileEndDate = logFileDates[1];
+            if ((logFileStartDate == null) || (logFileEndDate == null)) {
+                throw new RuntimeException("Log file dates cannot be null.");
+            }
 
-                //Sanity check
-                Date logFileStartDate = logFileDates[0];
-                Date logFileEndDate = logFileDates[1];
-                if ((logFileStartDate == null) || (logFileEndDate == null)) {
-                    throw new RuntimeException("Log file dates cannot be null.");
-                }
-
-                boolean withinRange = isDateWithinRange(logFileStartDate, logFileEndDate, startDate, endDate);
-                if (withinRange) {
-                    selectedFiles.add(logFile);
-                }
+            boolean withinRange = isDateWithinRange(logFileStartDate, logFileEndDate, startDate, endDate);
+            if (withinRange) {
+                selectedFiles.add(logFile);
             }
         }
-
         return selectedFiles;
     }
 

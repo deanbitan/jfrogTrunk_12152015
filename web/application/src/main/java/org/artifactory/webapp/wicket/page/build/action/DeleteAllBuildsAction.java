@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,9 +18,9 @@
 
 package org.artifactory.webapp.wicket.page.build.action;
 
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
@@ -61,10 +61,12 @@ public class DeleteAllBuildsAction extends ItemAction {
     @Override
     public void onAction(final ItemEvent e) {
         AjaxConfirm.get().confirm(new ConfirmDialog() {
+            @Override
             public String getMessage() {
                 return String.format("Are you sure you wish to delete all the builds of '%s'?", buildName);
             }
 
+            @Override
             public void onConfirm(boolean approved, AjaxRequestTarget target) {
                 if (approved) {
                     delete(e);

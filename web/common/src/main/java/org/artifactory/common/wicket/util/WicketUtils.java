@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,25 +25,30 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Application;
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
-import org.apache.wicket.PageParameters;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.protocol.http.RequestUtils;
-import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.protocol.http.WebRequestCycle;
-import org.apache.wicket.protocol.http.WebResponse;
+import org.apache.wicket.request.Request;
+import org.apache.wicket.request.Url;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.http.WebRequest;
+import org.apache.wicket.request.http.WebResponse;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.io.Streams;
 import org.apache.wicket.util.lang.Packages;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
+import org.apache.wicket.util.string.Strings;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.common.wicket.application.ResponsePageSupport;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.TextContentPanel;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.util.Pair;
 
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
@@ -71,6 +76,7 @@ public abstract class WicketUtils {
             maker.expireAfterWrite(30, TimeUnit.SECONDS);
         }
         return maker.makeComputingMap(new Function<Pair<Class, String>, String>() {
+            @Override
             public String apply(@Nonnull Pair<Class, String> pair) {
                 return readResourceNoCache(pair.getFirst(), pair.getSecond());
             }
@@ -84,7 +90,7 @@ public abstract class WicketUtils {
      * @return Bookmarkable path
      */
     public static String absoluteMountPathForPage(Class<? extends Page> pageClass) {
-        return absoluteMountPathForPage(pageClass, PageParameters.NULL);
+        return absoluteMountPathForPage(pageClass, new PageParameters());
     }
 
     /**
@@ -95,25 +101,30 @@ public abstract class WicketUtils {
      * @return Bookmarkable path
      */
     public static String absoluteMountPathForPage(Class<? extends Page> pageClass, PageParameters pageParameters) {
-        return RequestUtils.toAbsolutePath(RequestCycle.get().urlFor(pageClass, pageParameters).toString());
+        HttpServletRequest req = getHttpServletRequest();
+        RequestCycle requestCycle = RequestCycle.get();
+        Url url = requestCycle.mapUrlFor(pageClass, pageParameters);
+        String renderedUrl = url.toString();
+        renderedUrl = Strings.isEmpty(renderedUrl) ? "." : renderedUrl;
+        return RequestUtils.toAbsolutePath(HttpUtils.getWebappContextUrl(req),
+                requestCycle.getOriginalResponse().encodeURL(renderedUrl));
     }
 
     public static WebRequest getWebRequest() {
-        WebRequestCycle webRequestCycle = (WebRequestCycle) RequestCycle.get();
-        if (webRequestCycle == null) {
+        RequestCycle requestCycle = RequestCycle.get();
+        if (requestCycle == null) {
             return null;
         }
-        return webRequestCycle.getWebRequest();
+        return (WebRequest) requestCycle.getRequest();
     }
 
     public static WebResponse getWebResponse() {
-        WebRequestCycle webRequestCycle = (WebRequestCycle) RequestCycle.get();
-        return webRequestCycle.getWebResponse();
+        return (WebResponse) RequestCycle.get().getResponse();
     }
 
     public static Map<String, String> getHeadersMap() {
         Map<String, String> map = new HashMap<String, String>();
-        HttpServletRequest request = getWebRequest().getHttpServletRequest();
+        HttpServletRequest request = getHttpServletRequest();
         if (request != null) {
             Enumeration headerNames = request.getHeaderNames();
             while (headerNames.hasMoreElements()) {
@@ -124,12 +135,17 @@ public abstract class WicketUtils {
         return map;
     }
 
+    public static HttpServletRequest getHttpServletRequest() {
+        return (HttpServletRequest) WicketUtils.getWebRequest().getContainerRequest();
+    }
+
     public static Page getPage() {
-        return RequestCycle.get().getResponsePage();
+        return ResponsePageSupport.getResponsePage();
     }
 
     public static String getWicketAppPath() {
-        return RequestCycle.get().getRequest().getRelativePathPrefixToWicketHandler();
+        Request request = RequestCycle.get().getRequest();
+        return request.getContextPath() + request.getFilterPath() + "/";
     }
 
     public static String readResource(Class scope, String file) {
@@ -171,5 +187,18 @@ public abstract class WicketUtils {
             contentPanel.add(new CssClass("lines"));
             return contentPanel.setContent(toDisplay);
         }
+    }
+
+    public static String toAbsolutePath(final String relativePagePath) {
+        HttpServletRequest req = getHttpServletRequest();
+        return RequestUtils.toAbsolutePath(req.getRequestURL().toString(), relativePagePath);
+    }
+
+    public static String getParameter(String confirm) {
+        return RequestCycle.get().getRequest().getRequestParameters().getParameterValue(confirm).toString();
+    }
+
+    public static HttpServletResponse getHttpServletResponse() {
+        return (HttpServletResponse) getWebResponse().getContainerResponse();
     }
 }

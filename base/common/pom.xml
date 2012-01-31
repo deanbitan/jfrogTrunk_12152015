@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2011 JFrog Ltd.
+  ~ Copyright (C) 2012 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-base-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.4.2</version>
+        <version>2.5.0</version>
     </parent>
 
     <dependencies>

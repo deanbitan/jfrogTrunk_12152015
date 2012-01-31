@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -50,14 +50,17 @@ public abstract class TrafficEntryBase implements TrafficEntry {
         this.duration = duration;
     }
 
+    @Override
     public Date getDate() {
         return date;
     }
 
+    @Override
     public long getDuration() {
         return this.duration;
     }
 
+    @Override
     public abstract TrafficAction getAction();
 
     /**
@@ -66,6 +69,7 @@ public abstract class TrafficEntryBase implements TrafficEntry {
      * @param o Entry to compare to
      * @return int - Date comparison result
      */
+    @Override
     public int compareTo(TrafficEntry that) {
         Date dateToCompare = that.getDate();
         return date.compareTo(dateToCompare);

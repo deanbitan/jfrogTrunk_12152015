@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,26 +20,25 @@ package org.artifactory.webapp.wicket.application;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.Request;
 import org.apache.wicket.Session;
-import org.apache.wicket.authentication.AuthenticatedWebSession;
-import org.apache.wicket.authorization.strategies.role.Roles;
-import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.authroles.authentication.AuthenticatedWebSession;
+import org.apache.wicket.authroles.authorization.strategies.role.Roles;
 import org.apache.wicket.proxy.IProxyTargetLocator;
 import org.apache.wicket.proxy.LazyInitProxyFactory;
+import org.apache.wicket.request.Request;
 import org.artifactory.UiAuthenticationDetails;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.SavedSearchResults;
-import org.artifactory.security.ArtifactoryPermission;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
-import org.artifactory.security.UserInfo;
-import org.artifactory.util.SerializablePair;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
+import org.artifactory.security.ArtifactoryPermission;
 import org.artifactory.security.HttpAuthenticationDetails;
+import org.artifactory.security.UserInfo;
+import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.slf4j.Logger;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -86,8 +85,8 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
     public boolean authenticate(final String username, final String password) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(username, password);
-        HttpServletRequest servletRequest = WicketUtils.getWebRequest().getHttpServletRequest();
-        HttpServletResponse servletResponse = WicketUtils.getWebResponse().getHttpServletResponse();
+        HttpServletRequest servletRequest = WicketUtils.getHttpServletRequest();
+        HttpServletResponse servletResponse = WicketUtils.getHttpServletResponse();
         WebAuthenticationDetails details = new UiAuthenticationDetails(servletRequest, servletResponse);
         authenticationToken.setDetails(details);
         boolean authenticated;
@@ -134,16 +133,15 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
     @Override
     public void signOut() {
         super.signOut();
-        //Remove the authentication attribute early
-        RequestUtils.removeAuthentication(WicketUtils.getWebRequest().getHttpServletRequest());
-        // clear authentication and authorization data saved in this session
+
+        // Remove the authentication attribute early
+        RequestUtils.removeAuthentication(WicketUtils.getHttpServletRequest());
+
+        // Clear authentication and authorization data saved in this session
         // (this session will still be used in the logout page)
         roles = null;
         authentication = null;
-        // invalidate the wicket and http session
-        invalidate();
-        // detach session and clear the security context - will call invalidateNow()
-        detach();
+        SecurityContextHolder.clearContext();
     }
 
     void setAuthentication(Authentication authentication) {
@@ -155,15 +153,26 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
                 AccessLogger.loggedIn(authentication);
             }
             //Set a http session token so that we can reuse the login in direct repo browsing
-            WebRequest request = WicketUtils.getWebRequest();
-            if (request != null) {
-                HttpServletRequest httpServletRequest = request.getHttpServletRequest();
-                RequestUtils.setAuthentication(httpServletRequest, authentication, true);
-            }
+            HttpServletRequest httpServletRequest = WicketUtils.getHttpServletRequest();
+            RequestUtils.setAuthentication(httpServletRequest, authentication, true);
+
             //Update the spring  security context
             bindAuthentication();
         }
         dirty();
+    }
+
+    void initAnonymousAuthentication() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            if (!isSignedIn() ||
+                    (isAnonymous() && !UserInfo.ANONYMOUS.equals("" + authentication.getPrincipal()))) {
+                // session is not logged in yet, but was already authenticated (probably by a filter) so set the
+                // authentication and call signIn with empty params which will mark the session as authenticated
+                setAuthentication(authentication);
+                markSignedIn();
+            }
+        }
     }
 
     /**
@@ -230,7 +239,7 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
     }
 
     @Override
-    protected void detach() {
+    public void detach() {
         SecurityContextHolder.clearContext();
         super.detach();
     }
@@ -249,6 +258,7 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
     }
 
     private static class SecurityServiceLocator implements IProxyTargetLocator {
+        @Override
         public Object locateProxyTarget() {
             ArtifactoryContext context = ContextHelper.get();
             // get the "ui" authentication manager (no password encryption stuff)

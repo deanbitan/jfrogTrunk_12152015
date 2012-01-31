@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -68,13 +68,15 @@ public class RepoFilter extends DelayedFilterBase {
         List<String> nonUiPrefixes = PathUtils.delimitedListToStringList(nonUiPathPrefixes, ",");
         RequestUtils.setNonUiPathPrefixes(nonUiPrefixes);
         List<String> uiPrefixes = PathUtils.delimitedListToStringList(uiPathPrefixes, ",");
-        uiPrefixes.add(RequestUtils.WEBAPP_URL_PATH_PREFIX);
+        uiPrefixes.add(HttpUtils.WEBAPP_URL_PATH_PREFIX);
         RequestUtils.setUiPathPrefixes(uiPrefixes);
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) req;
@@ -232,7 +234,7 @@ public class RepoFilter extends DelayedFilterBase {
         HttpServletRequestWrapper requestWrapper = new InnerRequestWrapper(request, wicketRequest);
 
         RequestDispatcher dispatcher = request.getRequestDispatcher(
-                "/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/" + SimpleRepoBrowserPage.PATH);
+                "/" + HttpUtils.WEBAPP_URL_PATH_PREFIX + "/" + SimpleRepoBrowserPage.PATH);
         dispatcher.forward(requestWrapper, response);
     }
 
@@ -252,7 +254,7 @@ public class RepoFilter extends DelayedFilterBase {
         request.setAttribute(ATTR_ARTIFACTORY_REQUEST_PROPERTIES, artifactoryRequest.getProperties());
 
         RequestDispatcher dispatcher =
-                request.getRequestDispatcher("/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/" + ArtifactListPage.PATH);
+                request.getRequestDispatcher("/" + HttpUtils.WEBAPP_URL_PATH_PREFIX + "/" + ArtifactListPage.PATH);
         dispatcher.forward(request, response);
     }
 
@@ -317,6 +319,7 @@ public class RepoFilter extends DelayedFilterBase {
             this.repoKey = repoKey;
         }
 
+        @Override
         public boolean apply(@Nonnull VirtualRepoDescriptor input) {
             return repoKey.equals(input.getKey());
         }
@@ -350,7 +353,7 @@ public class RepoFilter extends DelayedFilterBase {
             if (wicketRequest) {
                 //All wicket request that come after direct repository
                 //browsing need to have the repo+path stripped
-                return "/" + RequestUtils.WEBAPP_URL_PATH_PREFIX + "/";
+                return "/" + HttpUtils.WEBAPP_URL_PATH_PREFIX + "/";
             } else if (removedRepoPath != null) {
                 //After login redirection
                 return "/" + removedRepoPath.getRepoKey() + "/" + removedRepoPath.getPath();

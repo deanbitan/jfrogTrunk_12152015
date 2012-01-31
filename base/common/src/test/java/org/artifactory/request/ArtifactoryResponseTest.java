@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,39 +48,50 @@ public class ArtifactoryResponseTest {
             protected void sendErrorInternal(int code, String reason) throws IOException {
             }
 
+            @Override
             public void setLastModified(long lastModified) {
             }
 
+            @Override
             public void setEtag(String etag) {
             }
 
+            @Override
             public void setSha1(String sha1) {
             }
 
+            @Override
             public void setMd5(String md5) {
             }
 
+            @Override
             public void setContentType(String contentType) {
             }
 
+            @Override
             public OutputStream getOutputStream() throws IOException {
                 return null;
             }
 
+            @Override
             public Writer getWriter() throws IOException {
                 return null;
             }
 
+            @Override
             public void setHeader(String header, String value) {
             }
 
+            @Override
             public boolean isCommitted() {
                 return false;
             }
 
+            @Override
             public void flush() {
             }
 
+            @Override
             public void sendAuthorizationRequired(String message, String realm) throws IOException {
             }
         };

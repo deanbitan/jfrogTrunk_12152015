@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -77,6 +77,10 @@ public class PathMatcherTest extends ArtifactoryHomeBoundTest {
         assertTrue(PathMatcher.matches("apath/some", Arrays.asList("apath/some/other/*"), excludes));
         assertFalse(PathMatcher.matches("apath/some2", Arrays.asList("apath/some/other/*"), excludes));
         assertFalse(PathMatcher.matches("apath2", Arrays.asList("apath/some/other/*"), excludes));
+        assertTrue(
+                PathMatcher.matches("com", Arrays.asList("com/some/other/*", "com/acme/***", "com/toto/*"), excludes));
+        assertFalse(
+                PathMatcher.matches("org", Arrays.asList("com/some/other/*", "com/acme/***", "com/toto/*"), excludes));
         assertFalse(PathMatcher.matches("apath2", Arrays.asList("apath/*"), excludes));
         assertFalse(PathMatcher.matches("apath", Arrays.asList("apath2/*"), excludes));
         assertFalse(PathMatcher.matches("apath", Arrays.asList("apath2"), excludes));

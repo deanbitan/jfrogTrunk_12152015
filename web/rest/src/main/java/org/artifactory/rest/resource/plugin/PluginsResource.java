@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -57,6 +58,11 @@ public class PluginsResource {
     @Autowired
     AddonsManager addonsManager;
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPluginInfo() {
+        return addonsManager.addonByType(RestAddon.class).getUserPluginInfo();
+    }
 
     @POST
     @Path(PATH_EXECUTE + "/{executionName: .+}")

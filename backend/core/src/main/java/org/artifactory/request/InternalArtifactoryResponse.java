@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.request;
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.io.output.NullWriter;
 import org.apache.commons.lang.StringUtils;
@@ -32,7 +33,8 @@ import java.io.Writer;
 
 /**
  * An internal response that is used as a dummy client to consume responses from Artifactory. It is used when
- * Artifactory is sending itself a request (e.g., to eager fetch sources jar)
+ * Artifactory is sending itself a request (e.g., to eager fetch sources jar). When using this response the download
+ * traffic is not counted.
  *
  * @author Yossi Shaul
  */
@@ -45,18 +47,22 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
     public InternalArtifactoryResponse() {
     }
 
+    @Override
     public void setLastModified(long lastModified) {
         // ignore
     }
 
+    @Override
     public void setEtag(String etag) {
         // ignore
     }
 
+    @Override
     public void setMd5(String md5) {
         // ignore
     }
 
+    @Override
     public void setSha1(String sha1) {
         // ignore
     }
@@ -67,30 +73,37 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
         statusMessage = reason;
     }
 
+    @Override
     public void sendAuthorizationRequired(String message, String realm) throws IOException {
-        // ignore
+        super.sendError(HttpStatus.SC_FORBIDDEN, message, log);
     }
 
+    @Override
     public OutputStream getOutputStream() throws IOException {
         return new NullOutputStream();
     }
 
+    @Override
     public Writer getWriter() throws IOException {
         return new NullWriter();
     }
 
+    @Override
     public void setHeader(String header, String value) {
         // ignore
     }
 
+    @Override
     public void flush() {
         // ignore
     }
 
+    @Override
     public void setContentType(String contentType) {
         // ignore
     }
 
+    @Override
     public boolean isCommitted() {
         return false;
     }

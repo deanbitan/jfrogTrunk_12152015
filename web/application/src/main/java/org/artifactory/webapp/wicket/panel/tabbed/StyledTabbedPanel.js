@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,7 +17,7 @@
  */
 
 var StyledTabbedPanel = {
-    init: function(tabsContainerId, moveLeftId, moveRightId) {
+    init:function (tabsContainerId, moveLeftId, moveRightId) {
         var tabsContainer = dojo.byId(tabsContainerId);
         var moveLeft = dojo.byId(moveLeftId);
         var moveRight = dojo.byId(moveRightId);
@@ -40,7 +40,7 @@ var StyledTabbedPanel = {
             // move buttons
             moveLeft.style.visibility = (tabsContainer.scrollTop - height >= 0) ? 'visible' : 'hidden';
             moveRight.style.visibility =
-            (tabsContainer.scrollTop + height <= tabsContainer.scrollHeight - height) ? 'visible' : 'hidden';
+                    (tabsContainer.scrollTop + height <= tabsContainer.scrollHeight - height) ? 'visible' : 'hidden';
 
             fixScrollAlignment();
         }
@@ -58,7 +58,7 @@ var StyledTabbedPanel = {
 
         function initTabs() {
             var prevTab;
-            dojo.forEach(tabs, function(tab) {
+            dojo.forEach(tabs, function (tab) {
                 DomUtils.removeStyle(tab, 'first-tab');
                 DomUtils.removeStyle(tab, 'last-tab');
 
@@ -80,11 +80,11 @@ var StyledTabbedPanel = {
             initTabs();
         }
 
-        moveLeft.onclick = function() {
+        moveLeft.onclick = function () {
             return move(-1);
         };
 
-        moveRight.onclick = function() {
+        moveRight.onclick = function () {
             return move(1);
         };
 
@@ -94,7 +94,7 @@ var StyledTabbedPanel = {
         dojo.disconnect(StyledTabbedPanel.onresize);
         StyledTabbedPanel.onresize = dojo.connect(window, 'onresize', onResize);
 
-        dojo.addOnLoad(function() {
+        dojo.addOnLoad(function () {
             setTimeout(onResize, 100);
         });
 

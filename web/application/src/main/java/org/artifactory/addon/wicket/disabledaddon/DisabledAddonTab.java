@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.addon.wicket.disabledaddon;
 
-import org.apache.wicket.markup.html.list.Loop;
+import org.apache.wicket.markup.html.list.LoopItem;
 import org.apache.wicket.model.IModel;
 import org.artifactory.addon.AddonType;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledTab;
@@ -37,7 +37,7 @@ public class DisabledAddonTab extends DisabledTab {
     }
 
     @Override
-    public void onNewTabItem(Loop.LoopItem item) {
+    public void onNewTabItem(LoopItem item) {
         super.onNewTabItem(item);
         item.add(new DisabledAddonBehavior(addon));
     }

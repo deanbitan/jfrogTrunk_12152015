@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -69,6 +69,7 @@ public abstract class TaskBase implements Task {
         this.token = callbackType.getName() + "#" + UUID.randomUUID().toString();
     }
 
+    @Override
     public State getInitialState() {
         return TaskState.VIRGIN;
     }
@@ -77,6 +78,7 @@ public abstract class TaskBase implements Task {
         return state == TaskState.PAUSING || state == TaskState.STOPPING;
     }
 
+    @Override
     public boolean isRunning() {
         return state == TaskState.RUNNING || waitingForProcess();
     }
@@ -236,10 +238,12 @@ public abstract class TaskBase implements Task {
         }
     }
 
+    @Override
     public Class<? extends TaskCallback> getType() {
         return callbackType;
     }
 
+    @Override
     public String getToken() {
         return token;
     }
@@ -525,6 +529,7 @@ public abstract class TaskBase implements Task {
 
     public abstract void addAttribute(String key, Object value);
 
+    @Override
     public boolean keyEquals(Object... keyValues) {
         JobCommand jobCommand = this.getType().getAnnotation(JobCommand.class);
         String[] keys = jobCommand.keyAttributes();
@@ -540,6 +545,7 @@ public abstract class TaskBase implements Task {
         return true;
     }
 
+    @Override
     public boolean keyEquals(Task task) {
         JobCommand otherJobCommand = (JobCommand) task.getType().getAnnotation(JobCommand.class);
         JobCommand myJobCommand = this.getType().getAnnotation(JobCommand.class);
@@ -558,6 +564,7 @@ public abstract class TaskBase implements Task {
         return true;
     }
 
+    @Override
     public Object[] getKeyValues() {
         JobCommand myJobCommand = this.getType().getAnnotation(JobCommand.class);
         String[] myKeys = myJobCommand.keyAttributes();
@@ -578,6 +585,7 @@ public abstract class TaskBase implements Task {
         PAUSED, //Blocked by executions thread (and will not start if refired by scheduler)
         CANCELED;
 
+        @Override
         @SuppressWarnings({"SuspiciousMethodCalls"})
         public boolean canTransitionTo(State newState) {
             Set<TaskState> states = getPossibleTransitionStates(this);

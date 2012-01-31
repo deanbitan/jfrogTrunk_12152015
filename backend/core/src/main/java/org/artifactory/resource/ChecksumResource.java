@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,11 +18,11 @@
 
 package org.artifactory.resource;
 
-import org.artifactory.fs.RepoResource;
 import org.artifactory.checksum.ChecksumType;
+import org.artifactory.fs.RepoResource;
 import org.artifactory.mime.MimeType;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 
 /**
  * A checksum resource is used as a response for checksum request and it wraps the actual file resource for which the

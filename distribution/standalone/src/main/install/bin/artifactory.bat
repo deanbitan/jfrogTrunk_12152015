@@ -23,7 +23,7 @@ goto :end
 
 :next
 
-%_JAVACMD% -server -Xmx512m -XX:MaxPermSize=128m -Djetty.home="%ARTIFACTORY_HOME%" -Dartifactory.home="%ARTIFACTORY_HOME%" -Dfile.encoding=UTF8 -cp "%CLASSPATH%" org.artifactory.standalone.main.Main %*
+%_JAVACMD% -server -Xms1g -Xmx1g -XX:PermSize=128m -XX:MaxPermSize=128m -XX:NewSize=512m -XX:MaxNewSize=512m -XX:-UseConcMarkSweepGC -XX:+UseParNewGC -Djetty.home="%ARTIFACTORY_HOME%" -Dartifactory.home="%ARTIFACTORY_HOME%" -Dfile.encoding=UTF8 -cp "%CLASSPATH%" org.artifactory.standalone.main.Main %*
 
 @endlocal
 :end

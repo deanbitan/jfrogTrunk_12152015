@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,8 @@
 
 package org.artifactory.common.wicket.component.dnd.list;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.behavior.AttributeAppender;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.html.list.ListItem;
@@ -41,8 +41,8 @@ public abstract class DragDropList<T> extends Panel {
         super(id, listModel);
         this.renderer = renderer;
 
-        add(new SimpleAttributeModifier("dojoType", "artifactory.dnd.Source"));
-        add(new AttributeAppender("accept", true, new PropertyModel(this, "acceptedDndTypes"), ","));
+        add(new AttributeModifier("dojoType", "artifactory.dnd.Source"));
+        add(new AttributeAppender("accept", new PropertyModel(this, "acceptedDndTypes"), ","));
         add(new DndListView("list", listModel));
     }
 
@@ -51,7 +51,7 @@ public abstract class DragDropList<T> extends Panel {
     public abstract String getDndValue(ListItem item);
 
     protected void populateItem(ListItem<T> item) {
-        item.add(new SimpleAttributeModifier("dndType", getDndValue(item)));
+        item.add(new AttributeModifier("dndType", getDndValue(item)));
         item.add(new CssClass("dojoDndItem"));
 
         String displayValue = renderer.getDisplayValue(item.getModelObject()).toString();

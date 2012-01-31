@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.common.wicket.component.file.path;
 
-import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.util.convert.IConverter;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -56,7 +56,7 @@ public class PathAutoCompleteTextField extends ImprovedAutoCompleteTextField<Fil
         converter = new PathAutoCompleteConverter(pathHelper);
 
         add(new CssClass("pathAutoComplete"));
-        add(new SimpleAttributeModifier("autoCompleteCssClass", "wicket-aa pathAutoComplete_menu"));
+        add(new AttributeModifier("autoCompleteCssClass", "wicket-aa pathAutoComplete_menu"));
     }
 
     public PathMask getMask() {

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,9 +18,8 @@
 
 package org.artifactory.addon;
 
-import org.artifactory.fs.RepoResource;
 import org.artifactory.fs.FileInfo;
-import org.artifactory.fs.MutableFileInfo;
+import org.artifactory.fs.RepoResource;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.Request;
@@ -47,7 +46,6 @@ public interface FilteredResourcesAddon extends Addon {
 
     /**
      * Returns the file's content after filtering it. Always auto closes the input stream
-     *
      *
      * @param request         File request
      * @param fileInfo        File info

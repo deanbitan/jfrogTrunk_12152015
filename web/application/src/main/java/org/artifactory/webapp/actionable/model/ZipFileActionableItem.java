@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * A zip file actionable item which is a file actionable item with hierarchy behavior that allows browsing the internals
@@ -49,6 +48,7 @@ public class ZipFileActionableItem extends FileActionableItem implements Hierarc
         this.compactAllowed = compactAllowed;
     }
 
+    @Override
     public List<ActionableItem> getChildren(AuthorizationService authService) {
         Tree<ZipEntryInfo> tree;
         try {
@@ -75,15 +75,18 @@ public class ZipFileActionableItem extends FileActionableItem implements Hierarc
         return items;
     }
 
+    @Override
     public boolean hasChildren(AuthorizationService authService) {
         // always assume the zip has children (we'll make sure it does later)
         return true;
     }
 
+    @Override
     public boolean isCompactAllowed() {
         return compactAllowed;
     }
 
+    @Override
     public void setCompactAllowed(boolean compactAllowed) {
         this.compactAllowed = compactAllowed;
     }

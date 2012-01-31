@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -106,28 +106,34 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         storageMixin = new StoringRepoMixin<T>(this, oldStoringRepo);
     }
 
+    @Override
     public void init() {
         jcrRepoService = InternalContextHelper.get().getJcrRepoService();
         anonAccessEnabled = getRepositoryService().isAnonAccessEnabled();
         storageMixin.init();
     }
 
+    @Override
     public StoringRepo<T> getStorageMixin() {
         return storageMixin;
     }
 
+    @Override
     public boolean isCache() {
         return false;
     }
 
+    @Override
     public SnapshotVersionBehavior getMavenSnapshotVersionBehavior() {
         return getDescriptor().getSnapshotVersionBehavior();
     }
 
+    @Override
     public boolean isAnonAccessEnabled() {
         return anonAccessEnabled;
     }
 
+    @Override
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
         BasicStatusHolder status = assertValidPath(repoPath.getPath(), true);
         if (status.isError()) {
@@ -143,6 +149,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         return status;
     }
 
+    @Override
     public void exportTo(ExportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         TaskService taskService = InternalContextHelper.get().getTaskService();
@@ -164,6 +171,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         folder.exportTo(settings);
     }
 
+    @Override
     public void importFrom(ImportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         File baseDir = settings.getBaseDir();
@@ -232,6 +240,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         status.setStatus("Repository '" + getKey() + "' imported from " + baseDir + ".", log);
     }
 
+    @Override
     public String getTextFileContent(RepoPath repoPath) {
         String relativePath = repoPath.getPath();
         JcrFile jcrFile = getLocalJcrFile(relativePath);
@@ -255,6 +264,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
      * @param repoPath
      * @return
      */
+    @Override
     public ResourceStreamHandle getFileContent(RepoPath repoPath) {
         String relativePath = repoPath.getPath();
         JcrFile jcrFile = getLocalJcrFile(relativePath);
@@ -266,6 +276,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         }
     }
 
+    @Override
     public ArchiveFileContent getArchiveFileContent(RepoPath archivePath, String archiveEntryPath) throws IOException {
         String content = null;
         String sourceJarPath = null;
@@ -350,6 +361,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         Set<String> possibleLicenseFileNames = Sets.newHashSet(
                 Iterables.transform(Sets.newHashSet(StringUtils.split(licenseFileNames, ",")),
                         new Function<String, String>() {
+                            @Override
                             public String apply(@Nullable String input) {
                                 return StringUtils.isBlank(input) ? input : StringUtils.trim(input);
                             }
@@ -367,46 +379,57 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         storageMixin.setDescriptor(descriptor);
     }
 
+    @Override
     public VfsFolder getRootFolder() {
         return storageMixin.getRootFolder();
     }
 
+    @Override
     public JcrFolder getLockedRootFolder() {
         return storageMixin.getLockedRootFolder();
     }
 
+    @Override
     public String getRepoRootPath() {
         return storageMixin.getRepoRootPath();
     }
 
+    @Override
     public void undeploy(RepoPath repoPath) {
         undeploy(repoPath, true);
     }
 
+    @Override
     public void undeploy(RepoPath repoPath, boolean calcMavenMetadata) {
         storageMixin.undeploy(repoPath, calcMavenMetadata);
     }
 
+    @Override
     public RepoResource saveResource(SaveResourceContext context) throws IOException, RepoRejectException {
         return storageMixin.saveResource(context);
     }
 
+    @Override
     public boolean shouldProtectPathDeletion(String path, boolean assertOverwrite) {
         return storageMixin.shouldProtectPathDeletion(path, assertOverwrite);
     }
 
+    @Override
     public boolean itemExists(String relPath) {
         return storageMixin.itemExists(relPath);
     }
 
+    @Override
     public List<String> getChildrenNames(String relPath) {
         return storageMixin.getChildrenNames(relPath);
     }
 
+    @Override
     public void onDelete(JcrFsItem fsItem) {
         storageMixin.onDelete(fsItem);
     }
 
+    @Override
     public void updateCache(JcrFsItem fsItem) {
         storageMixin.updateCache(fsItem);
     }
@@ -414,6 +437,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     /**
      * {@inheritDoc}
      */
+    @Override
     public JcrFsItem getJcrFsItem(RepoPath repoPath) {
         return storageMixin.getJcrFsItem(repoPath);
     }
@@ -421,34 +445,42 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     /**
      * {@inheritDoc}
      */
+    @Override
     public JcrFsItem getJcrFsItem(Node node) {
         return storageMixin.getJcrFsItem(node);
     }
 
+    @Override
     public JcrFile getJcrFile(RepoPath repoPath) throws FileExpectedException {
         return storageMixin.getJcrFile(repoPath);
     }
 
+    @Override
     public JcrFolder getJcrFolder(RepoPath repoPath) throws FolderExpectedException {
         return storageMixin.getJcrFolder(repoPath);
     }
 
+    @Override
     public JcrFsItem getLockedJcrFsItem(RepoPath repoPath) {
         return storageMixin.getLockedJcrFsItem(repoPath);
     }
 
+    @Override
     public JcrFsItem getLockedJcrFsItem(Node node) {
         return storageMixin.getLockedJcrFsItem(node);
     }
 
+    @Override
     public JcrFile getLockedJcrFile(RepoPath repoPath, boolean createIfMissing) throws FileExpectedException {
         return storageMixin.getLockedJcrFile(repoPath, createIfMissing);
     }
 
+    @Override
     public JcrFolder getLockedJcrFolder(RepoPath repoPath, boolean createIfMissing) throws FolderExpectedException {
         return storageMixin.getLockedJcrFolder(repoPath, createIfMissing);
     }
 
+    @Override
     public RepoResource getInfo(InternalRequestContext context) throws FileExpectedException {
         final String path = context.getResourcePath();
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), path);
@@ -459,11 +491,13 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         return storageMixin.getInfo(context);
     }
 
+    @Override
     public ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, final RepoResource res)
             throws IOException, RepositoryException, RepoRejectException {
         return storageMixin.getResourceStreamHandle(requestContext, res);
     }
 
+    @Override
     public String getChecksum(String checksumFilePath, RepoResource res) throws IOException {
         return storageMixin.getChecksum(checksumFilePath, res);
     }
@@ -471,34 +505,42 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     /**
      * {@inheritDoc}
      */
+    @Override
     public JcrFsItem getLocalJcrFsItem(String relPath) {
         return storageMixin.getLocalJcrFsItem(relPath);
     }
 
+    @Override
     public JcrFsItem getLockedJcrFsItem(String relPath) {
         return storageMixin.getLockedJcrFsItem(relPath);
     }
 
+    @Override
     public JcrFile getLocalJcrFile(String relPath) throws FileExpectedException {
         return storageMixin.getLocalJcrFile(relPath);
     }
 
+    @Override
     public JcrFile getLockedJcrFile(String relPath, boolean createIfMissing) throws FileExpectedException {
         return storageMixin.getLockedJcrFile(relPath, createIfMissing);
     }
 
+    @Override
     public JcrFolder getLocalJcrFolder(String relPath) throws FolderExpectedException {
         return storageMixin.getLocalJcrFolder(relPath);
     }
 
+    @Override
     public JcrFolder getLockedJcrFolder(String relPath, boolean createIfMissing) throws FolderExpectedException {
         return storageMixin.getLockedJcrFolder(relPath, createIfMissing);
     }
 
+    @Override
     public boolean isWriteLocked(RepoPath path) {
         return storageMixin.isWriteLocked(path);
     }
 
+    @Override
     public void clearCaches() {
         storageMixin.clearCaches();
     }

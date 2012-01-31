@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,12 +20,9 @@ package org.artifactory.traffic;
 
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.ArtifactorySession;
-import org.artifactory.traffic.entry.TrafficEntry;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -52,24 +49,29 @@ public class TrafficCollectorImpl implements TrafficCollector {
         calcNextCollection(collectorNextCollection);
     }
 
+    @Override
     public String getName() {
         return resolution.getName();
     }
 
+    @Override
     public TrafficCollectorResolution getResolution() {
         return resolution;
     }
 
+    @Override
     public void addListener(TrafficCollectorListener listener) {
         listeners.add(listener);
     }
 
+    @Override
     public void removeListener(TrafficCollectorListener listener) {
         listeners.remove(listener);
     }
 
+    @Override
     public void collect(Calendar entriesCollection, InternalTrafficService trafficService, ArtifactorySession session) {
-        Calendar collectorLastCollected = trafficService.getLastCollected(resolution, session);
+        /*Calendar collectorLastCollected = trafficService.getLastCollected(resolution, session);
         if (collectorLastCollected == null) {
             //No last collected
             log.trace("#### {}: Never collected before.", resolution.getName());
@@ -97,7 +99,7 @@ public class TrafficCollectorImpl implements TrafficCollector {
             fireCollectionEvent(trafficService, entriesIterator);
             //Update the collector's last collected
             trafficService.updateLastCollected(resolution, collectorNextCollection, session);
-        }
+        }*/
     }
 
     @Override
@@ -117,7 +119,7 @@ public class TrafficCollectorImpl implements TrafficCollector {
         return resolution.hashCode();
     }
 
-    void elapseColletionFields(Calendar collection) {
+    void elapseCollectionFields(Calendar collection) {
         for (int field : fieldsToElapse) {
             collection.clear(field);
         }
@@ -126,24 +128,8 @@ public class TrafficCollectorImpl implements TrafficCollector {
     private void calcNextCollection(Calendar lastCollected) {
         collectorNextCollection.setTime(lastCollected.getTime());
         //Remove irrelevant fields (sec, mins etc.)
-        elapseColletionFields(collectorNextCollection);
+        elapseCollectionFields(collectorNextCollection);
         //Add the resolution to get the next collection time
         collectorNextCollection.add(Calendar.SECOND, resolution.getSecs());
-    }
-
-    private void fireCollectionEvent(InternalTrafficService service, TrafficEntriesIterator entriesIterator) {
-        List<TrafficEntry> collectedEntries = new ArrayList<TrafficEntry>((int) entriesIterator.size());
-        while (entriesIterator.hasNext()) {
-            collectedEntries.add(entriesIterator.next());
-        }
-        final TrafficCollectionEvent trafficCollectionEvent = new TrafficCollectionEvent(collectedEntries);
-        for (TrafficCollectorListener listener : listeners) {
-            //Notify asynchronously
-            service.notifyCollectionListener(listener, trafficCollectionEvent);
-        }
-    }
-
-    private String calendarToDateString(Calendar collectorLastCollected) {
-        return collectorLastCollected != null ? "" + collectorLastCollected.getTime() : "any";
     }
 }

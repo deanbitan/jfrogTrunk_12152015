@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,19 +18,20 @@
 
 package org.artifactory.webapp.wicket.resource;
 
-import org.apache.wicket.markup.html.WebResource;
-import org.apache.wicket.util.resource.FileResourceStream;
-import org.apache.wicket.util.resource.IResourceStream;
+import org.apache.wicket.request.resource.DynamicImageResource;
+import org.apache.wicket.util.file.File;
+import org.apache.wicket.util.io.IOUtils;
 import org.artifactory.common.ArtifactoryHome;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Resource to get the uploaded user logo
  *
  * @author Tomer Cohen
  */
-public class LogoResource extends WebResource {
+public class LogoResource extends DynamicImageResource {
 
     private ArtifactoryHome artifactoryHome;
 
@@ -39,8 +40,16 @@ public class LogoResource extends WebResource {
     }
 
     @Override
-    public IResourceStream getResourceStream() {
-        File logoFile = new File(artifactoryHome.getLogoDir(), "logo");
-        return new FileResourceStream(logoFile);
+    protected byte[] getImageData(Attributes attributes) {
+        InputStream inputStream = null;
+        try {
+            File file = new File(artifactoryHome.getLogoDir(), "logo");
+            inputStream = file.inputStream();
+            return IOUtils.toByteArray(inputStream);
+        } catch (IOException e) {
+            throw new RuntimeException("Can't read image file", e);
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+        }
     }
 }

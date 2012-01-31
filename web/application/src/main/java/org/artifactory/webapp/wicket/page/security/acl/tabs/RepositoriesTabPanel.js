@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,9 +16,9 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-(function() {
+(function () {
     var superResize = PermissionTabPanel.resize;
-    PermissionTabPanel.resize = function() {
+    PermissionTabPanel.resize = function () {
         var modalHeight = superResize();
 
         var modal = Wicket.Window.current;
@@ -33,7 +33,7 @@
             var height = modalHeight - offset;
             height = Math.max(height, 120);
 
-            dojo.query('#${repoListId} ul').forEach(function(ul) {
+            dojo.query('#${repoListId} ul').forEach(function (ul) {
                 ul.style.height = height + 'px';
             });
             var marginTop = Math.max(0, (height - 100) / 2);

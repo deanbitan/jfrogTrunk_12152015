@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.addon.rest;
 
+import com.sun.jersey.multipart.FormDataMultiPart;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
@@ -55,34 +56,41 @@ import java.util.Set;
 @Component
 public class RestAddonDefaultImpl implements RestAddon {
 
+    @Override
     public boolean isDefault() {
         return true;
     }
 
+    @Override
     public MoveCopyResult copy(String path, String target, int dryRun, int suppressLayouts, int failFast)
             throws Exception {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public MoveCopyResult move(String path, String target, int dryRun, int suppressLayouts, int failFast)
             throws Exception {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response download(String path, DownloadResource.Content content, int mark,
             HttpServletResponse response) throws Exception {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Set<String> searchArtifactsByPattern(String pattern) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public MoveCopyResult moveOrCopyBuildItems(boolean move, String buildName, String buildNumber, String started,
             String to, int arts, int deps, StringList scopes, KeyValueList properties, int dry) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public PromotionResult promoteBuild(String buildName, String buildNumber, Promotion promotion) {
         throw new MissingRestAddonException();
     }
@@ -93,6 +101,7 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response replicate(RemoteReplicationSettings remoteReplicationSettings) {
         throw new MissingRestAddonException();
     }
@@ -102,77 +111,95 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public void renameBuilds(String from, String to) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public void renameBuildsAsync(String from, String to) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers, int artifacts) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public void discardOldBuilds(String name, BuildRetention discard, MultiStatusHolder multiStatusHolder) {
         // nop
     }
 
+    @Override
     public ItemInfo getLastModified(String pathToSearch) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public LicensesSearchResult findLicensesInRepos(LicenseStatus status, StringList repos, String servletContextUrl) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response deleteRepository(String repoKey) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response getRepositoryConfiguration(String repoKey, List<MediaType> mediaTypes) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response createOrReplaceRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes,
             int position) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response updateRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Set<RepoPath> searchArtifactsByChecksum(String md5Checksum, String sha1Checksum, StringList reposToSearch) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     @Nonnull
     public Response searchBadChecksumArtifacts(String type, StringList reposToSearch,
             HttpServletRequest request) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response savePathProperties(String path, String recursive, KeyValueList properties) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response deletePathProperties(String path, String recursive, StringList properties) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public ResponseCtx runPluginExecution(String executionName, Map params, boolean async) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public ItemPermissions getItemPermissions(HttpServletRequest request, String path) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response searchDependencyBuilds(HttpServletRequest request, String sha1) {
         throw new MissingRestAddonException();
     }
 
+    @Override
     public Response calculateYumMetadata(String repoKey, int async) {
         throw new MissingRestAddonException();
     }
@@ -204,6 +231,54 @@ public class RestAddonDefaultImpl implements RestAddon {
 
     @Override
     public Response getReplicationStatus(RepoPath repoPath) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response handleNuGetTestRequest(@Nonnull String repoKey) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response handleNuGetMetadataDescriptorRequest(@Nonnull String repoKey) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response handleNuGetQueryRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
+            @Nullable String actionParam) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response handleNuGetPackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response handleNuGetDownloadRequest(@Nonnull HttpServletResponse response, @Nonnull String repoKey,
+            @Nonnull String packageId, @Nonnull String packageVersion) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response runMavenIndexer(List<String> reposToIndex, int force) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response handleNuGetPublishRequest(@Nonnull String repoKey, @Nonnull FormDataMultiPart content) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response getUserPluginInfo() {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response handleNuGetDeleteRequest(@Nonnull String repoKey, @Nonnull String packageId,
+            @Nonnull String packageVersion) {
         throw new MissingRestAddonException();
     }
 }

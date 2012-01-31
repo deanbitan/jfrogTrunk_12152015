@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,19 +17,19 @@
  */
 
 var StyledRadio = {
-    onmouseover: function(button) {
+    onmouseover:function (button) {
         DomUtils.removeHoverStyle(button);
     },
 
-    onmouseout: function(button) {
+    onmouseout:function (button) {
         DomUtils.removeHoverStyle(button);
     },
 
-    onclick: function(button) {
+    onclick:function (button) {
         var checkbox = button.parentNode.getElementsByTagName('input')[0];
         checkbox.checked = true;
 
-        dojo.forEach(document.getElementsByName(checkbox.name), function(checkbox) {
+        dojo.forEach(document.getElementsByName(checkbox.name), function (checkbox) {
             var button = checkbox.parentNode.getElementsByTagName('button')[0];
             if (checkbox.checked) {
                 button.className = 'styled-checkbox styled-checkbox-checked';

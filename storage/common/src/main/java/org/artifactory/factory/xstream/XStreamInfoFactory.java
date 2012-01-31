@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,18 +52,22 @@ import java.util.zip.ZipEntry;
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class XStreamInfoFactory extends AbstractInfoFactory {
+    @Override
     public RepoPath createRepoPathFromId(String repoPathId) {
         return new RepoPathImpl(repoPathId);
     }
 
+    @Override
     public RepoPath createRepoPath(String repoKey, String path) {
         return new RepoPathImpl(repoKey, path);
     }
 
+    @Override
     public RepoPath createRepoPath(RepoPath parent, String relPath) {
         return new RepoPathImpl(parent, relPath);
     }
 
+    @Override
     public MutableRepoResourceInfo copyRepoResource(RepoResourceInfo repoResourceInfo) {
         if (repoResourceInfo == null) {
             return null;
@@ -81,6 +85,7 @@ public class XStreamInfoFactory extends AbstractInfoFactory {
         }
     }
 
+    @Override
     public MutableItemInfo copyItemInfo(ItemInfo itemInfo) {
         if (itemInfo == null) {
             return null;
@@ -100,84 +105,104 @@ public class XStreamInfoFactory extends AbstractInfoFactory {
         }
     }
 
+    @Override
     public MutableFileInfo createFileInfo(RepoPath repoPath) {
         return new FileInfoImpl(repoPath);
     }
 
+    @Override
     public MutableFileInfo copyFileInfo(FileInfo fileInfo) {
         // TODO: Really implement it
         return new FileInfoImpl((InternalFileInfo) fileInfo);
     }
 
+    @Override
     public MutableFolderInfo createFolderInfo(RepoPath repoPath) {
         return new FolderInfoImpl(repoPath);
     }
 
+    @Override
     public MutableFolderInfo copyFolderInfo(FolderInfo folderInfo) {
         // TODO: Really implement it
         return new FolderInfoImpl((InternalFolderInfo) folderInfo);
     }
 
+    @Override
     public MutablePropertiesInfo createProperties() {
         return new PropertiesImpl();
     }
 
+    @Override
     public MutablePropertiesInfo copyProperties(PropertiesInfo copy) {
         return new PropertiesImpl(copy);
     }
 
+    @Override
     public MutablePermissionTargetInfo createPermissionTarget() {
         return new PermissionTargetImpl();
     }
 
+    @Override
     public MutablePermissionTargetInfo copyPermissionTarget(PermissionTargetInfo copy) {
         return new PermissionTargetImpl(copy);
     }
 
+    @Override
     public MutableUserInfo createUser() {
         return new UserImpl();
     }
 
+    @Override
     public MutableUserInfo copyUser(UserInfo copy) {
         return new UserImpl(copy);
     }
 
+    @Override
     public UserGroupInfo createUserGroup(String groupName) {
         return new UserGroupImpl(groupName);
     }
 
+    @Override
     public UserGroupInfo createUserGroup(String groupName, String realm) {
         return new UserGroupImpl(groupName, realm);
     }
 
+    @Override
     public MutableGroupInfo createGroup() {
         return new GroupImpl();
     }
 
+    @Override
     public MutableGroupInfo copyGroup(GroupInfo copy) {
         return new GroupImpl(copy);
     }
 
+    @Override
     public MutableAclInfo createAcl() {
         return new AclImpl();
     }
 
+    @Override
     public MutableAclInfo copyAcl(AclInfo copy) {
         return new AclImpl(copy);
     }
 
+    @Override
     public MutableAceInfo createAce() {
         return new AceImpl();
     }
 
+    @Override
     public MutableAceInfo copyAce(AceInfo copy) {
         return new AceImpl(copy);
     }
 
+    @Override
     public SecurityInfo createSecurityInfo(List<UserInfo> users, List<GroupInfo> groups, List<AclInfo> acls) {
         return new SecurityDataImpl(users, groups, acls);
     }
 
+    @Override
     public XStream getSecurityXStream() {
         return XStreamFactory.create(SecurityDataImpl.class,
                 PermissionTargetImpl.class,
@@ -189,6 +214,7 @@ public class XStreamInfoFactory extends AbstractInfoFactory {
         );
     }
 
+    @Override
     public XStream getFileSystemXStream() {
         return XStreamFactory.create(FileInfoImpl.class,
                 FileAdditionalInfo.class,
@@ -200,43 +226,53 @@ public class XStreamInfoFactory extends AbstractInfoFactory {
                 WatcherImpl.class);
     }
 
+    @Override
     public MutableStatsInfo createStats() {
         return new StatsImpl();
     }
 
+    @Override
     public MutableStatsInfo copyStats(StatsInfo copy) {
         return new StatsImpl(copy);
     }
 
+    @Override
     public MutableWatchersInfo createWatchers() {
         return new WatchersImpl();
     }
 
+    @Override
     public MutableWatcherInfo createWatcher(String watcherUsername, long watchCreationDate) {
         return new WatcherImpl(watcherUsername, watchCreationDate);
     }
 
+    @Override
     public MetadataEntryInfo createMetadataEntry(String metadataName, String xmlContent) {
         return new MetadataEntry(metadataName, xmlContent);
     }
 
+    @Override
     public MutableWatchersInfo copyWatchers(WatchersInfo copy) {
         return new WatchersImpl(copy);
     }
 
+    @Override
     public Tree<ZipEntryInfo> createZipEntriesTree() {
         return new ZipEntriesTree();
     }
 
+    @Override
     public ZipEntryInfo createZipEntry(ZipEntry zipEntry) {
         return new ZipEntryImpl(zipEntry);
     }
 
+    @Override
     public ZipEntryResourceInfo createZipEntryResource(FileInfo info, ZipEntryInfo zipEntryInfo, Long first,
             ChecksumsInfo checksumsInfo) {
         return new ZipEntryResourceImpl(info, zipEntryInfo, first, checksumsInfo);
     }
 
+    @Override
     public MutableMetadataInfo createMetadata(RepoPath repoPath) {
         return new MetadataInfoImpl(repoPath);
     }

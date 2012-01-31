@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +27,7 @@ import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.util.List;
@@ -40,6 +41,7 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
 
     String getUrl();
 
+    @Nullable
     LocalCacheRepo getLocalCacheRepo();
 
     /**
@@ -52,9 +54,9 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
     ResourceStreamHandle downloadResource(String relPath, RequestContext requestContext) throws IOException;
 
     /**
-     * Retrieves a resource remotely if the remote resource was found and is newer
+     * Retrieves a resource remotely if the remote resource was found and is newer or if forced
      */
-    ResourceStreamHandle conditionalRetrieveResource(String relPath) throws IOException;
+    ResourceStreamHandle conditionalRetrieveResource(String relPath, boolean forceRemoteDownload) throws IOException;
 
     long getFailedRetrievalCachePeriodSecs();
 

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2010 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -87,6 +87,8 @@ public interface StorageConstants {
     //licenses
     String PROP_LICENSE_STATE = ARTIFACTORY_PREFIX + "license.state";
 
+    //Nuget
+    String PROP_NUGET_NUSPEC = ARTIFACTORY_PREFIX + "nuget.nuspec";
 
     //JCR namespaces
     String ARTIFACTORY_NAMESPACE_PREFIX = "artifactory";

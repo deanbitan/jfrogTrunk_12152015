@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.security.acl;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.model.Model;
@@ -52,7 +53,7 @@ public class PermissionTargetListPanel extends ModalListPanel<PermissionTargetIn
             disableNewItemLink();
         }
 
-        getDataProvider().setSort("name", true);
+        getDataProvider().setSort("name", SortOrder.ASCENDING);
     }
 
     @Override

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -61,6 +61,7 @@ public class WatcherImpl implements Comparable, MutableWatcherInfo {
      *
      * @return Username
      */
+    @Override
     public String getUsername() {
         return username;
     }
@@ -70,6 +71,7 @@ public class WatcherImpl implements Comparable, MutableWatcherInfo {
      *
      * @param username Username
      */
+    @Override
     public void setUsername(String username) {
         this.username = username;
     }
@@ -79,6 +81,7 @@ public class WatcherImpl implements Comparable, MutableWatcherInfo {
      *
      * @return Watching since time
      */
+    @Override
     public long getWatchingSinceTime() {
         return watchingSinceTime;
     }
@@ -88,6 +91,7 @@ public class WatcherImpl implements Comparable, MutableWatcherInfo {
      *
      * @return Watching since date
      */
+    @Override
     public Date getWatchingSinceDate() {
         return new Date(watchingSinceTime);
     }
@@ -97,6 +101,7 @@ public class WatcherImpl implements Comparable, MutableWatcherInfo {
      *
      * @param watchingSinceTime Watching since time
      */
+    @Override
     public void setWatchingSinceTime(long watchingSinceTime) {
         this.watchingSinceTime = watchingSinceTime;
     }
@@ -129,6 +134,7 @@ public class WatcherImpl implements Comparable, MutableWatcherInfo {
         return result;
     }
 
+    @Override
     public int compareTo(Object o) {
         if (o instanceof WatcherInfo) {
             WatcherImpl other = (WatcherImpl) o;

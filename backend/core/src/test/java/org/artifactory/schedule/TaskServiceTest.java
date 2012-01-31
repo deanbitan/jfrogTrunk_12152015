@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -99,6 +99,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         final CyclicBarrier pauseBarrier2 = new CyclicBarrier(2);
         final TaskBase tsk = TaskUtils.createRepeatingTask(DummyQuartzCommand.class, 0, 0);
         Callable<String> c1 = new Callable<String>() {
+            @Override
             public String call() throws Exception {
                 try {
                     log.debug("........... PAUSING-1");
@@ -113,6 +114,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
             }
         };
         Callable<String> c2 = new Callable<String>() {
+            @Override
             public String call() throws Exception {
                 boolean resumed;
                 try {
@@ -217,6 +219,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         final CyclicBarrier barrier2 = new CyclicBarrier(2);
         final TaskBase tsk = TaskUtils.createRepeatingTask(DummyQuartzCommand.class, 0, 0);
         Callable<String> c1 = new Callable<String>() {
+            @Override
             public String call() throws Exception {
                 barrier1.await();
                 log.debug("........... PAUSING-1");
@@ -226,6 +229,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
             }
         };
         Callable<String> c2 = new Callable<String>() {
+            @Override
             public String call() throws Exception {
                 barrier1.await();
                 log.debug("........... STOPING-2");

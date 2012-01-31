@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,10 +40,12 @@ public class ArtifactoryFilter implements Filter {
 
     private FilterConfig filterConfig;
 
+    @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
     }
 
+    @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
         if (filterConfig.getServletContext()
@@ -81,6 +83,7 @@ public class ArtifactoryFilter implements Filter {
         ArtifactoryHome.unbind();
     }
 
+    @Override
     public void destroy() {
         unbind();
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -67,24 +67,29 @@ public class AclImpl implements MutableAclInfo {
         this.updatedBy = updatedBy;
     }
 
+    @Override
     public PermissionTargetInfo getPermissionTarget() {
         return permissionTarget;
     }
 
+    @Override
     public void setPermissionTarget(PermissionTargetInfo permissionTarget) {
         this.permissionTarget = new PermissionTargetImpl(permissionTarget);
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public Set<AceInfo> getAces() {
-        return ImmutableSet.<AceInfo>copyOf((Set)aces);
+        return ImmutableSet.<AceInfo>copyOf((Set) aces);
     }
 
+    @Override
     @SuppressWarnings({"unchecked", "RedundantCast"})
     public Set<MutableAceInfo> getMutableAces() {
-        return (Set<MutableAceInfo>)((Set)aces);
+        return (Set<MutableAceInfo>) ((Set) aces);
     }
 
+    @Override
     public void setAces(Set<AceInfo> aces) {
         this.aces.clear();
         if (aces != null) {
@@ -94,10 +99,12 @@ public class AclImpl implements MutableAclInfo {
         }
     }
 
+    @Override
     public String getUpdatedBy() {
         return updatedBy;
     }
 
+    @Override
     public void setUpdatedBy(String updatedBy) {
         this.updatedBy = updatedBy;
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,10 +54,12 @@ public class FolderInfoImpl extends ItemInfoImpl implements InternalFolderInfo {
      *
      * @return
      */
+    @Override
     public void setAdditionalInfo(FolderAdditionalInfo additionalInfo) {
         this.additionalInfo = additionalInfo;
     }
 
+    @Override
     public boolean isFolder() {
         return true;
     }
@@ -67,6 +69,7 @@ public class FolderInfoImpl extends ItemInfoImpl implements InternalFolderInfo {
         return "FolderInfo{" + super.toString() + ", extension=" + additionalInfo + '}';
     }
 
+    @Override
     public boolean isIdentical(org.artifactory.fs.ItemInfo info) {
         return super.isIdentical(info);
     }
@@ -76,6 +79,7 @@ public class FolderInfoImpl extends ItemInfoImpl implements InternalFolderInfo {
      *
      * @return
      */
+    @Override
     @Deprecated
     public FolderAdditionalInfo getAdditionalInfo() {
         return additionalInfo;

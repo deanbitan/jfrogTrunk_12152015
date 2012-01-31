@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -83,6 +83,7 @@ public class ArchiveEntryTermPositionVector implements TermPositionVector {
         CachedThreadPoolTaskExecutor executor =
                 InternalContextHelper.get().beanForType(CachedThreadPoolTaskExecutor.class);
         Callable<Multimap<String, String>> futureEntryMapCallable = new Callable<Multimap<String, String>>() {
+            @Override
             public Multimap<String, String> call() throws Exception {
                 Multimap<String, String> map = HashMultimap.create();
                 for (String term : terms) {
@@ -102,10 +103,12 @@ public class ArchiveEntryTermPositionVector implements TermPositionVector {
         futureEntryMap = executor.submit(futureEntryMapCallable);
     }
 
+    @Override
     public int[] getTermPositions(int index) {
         return null;
     }
 
+    @Override
     public TermVectorOffsetInfo[] getOffsets(int index) {
         TermVectorOffsetInfo[] info = TermVectorOffsetInfo.EMPTY_OFFSET_INFO;
         if (index >= 0 && index < terms.length) {
@@ -114,18 +117,22 @@ public class ArchiveEntryTermPositionVector implements TermPositionVector {
         return info;
     }
 
+    @Override
     public String getField() {
         return "";
     }
 
+    @Override
     public int size() {
         return terms.length;
     }
 
+    @Override
     public String[] getTerms() {
         return terms;
     }
 
+    @Override
     public int[] getTermFrequencies() {
         int[] freqs = new int[terms.length];
         for (int i = 0; i < terms.length; i++) {
@@ -134,11 +141,13 @@ public class ArchiveEntryTermPositionVector implements TermPositionVector {
         return freqs;
     }
 
+    @Override
     public int indexOf(String term) {
         int res = Arrays.binarySearch(terms, term);
         return res >= 0 ? res : -1;
     }
 
+    @Override
     public int[] indexesOf(String[] terms, int start, int len) {
         Multimap<String, String> map;
         try {

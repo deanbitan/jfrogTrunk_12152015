@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -44,10 +44,11 @@ import java.util.List;
  */
 public enum LoggingVersion implements SubConfigElementVersion {
     v1(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v208, new LogbackConfigSwapper()),
-    v2(ArtifactoryVersion.v210, ArtifactoryVersion.v213, new JackrabbitLoggerConverter()),
+    v2(ArtifactoryVersion.v210, ArtifactoryVersion.v213, null),
     v3(ArtifactoryVersion.v220, ArtifactoryVersion.v221, new LineNumberLayoutLoggerConverter()),
-    v4(ArtifactoryVersion.v221, ArtifactoryVersion.v225, new PublicApiPackageChangeLoggerConverter()),
-    v5(ArtifactoryVersion.v230, ArtifactoryVersion.getCurrent(), null);
+    v4(ArtifactoryVersion.v222, ArtifactoryVersion.v225, new PublicApiPackageChangeLoggerConverter()),
+    v5(ArtifactoryVersion.v230, ArtifactoryVersion.v242, new JackrabbitLoggerConverter()),
+    v6(ArtifactoryVersion.v250, ArtifactoryVersion.getCurrent(), null);
 
     public static final String LOGGING_CONVERSION_PERFORMED = "loggingConversionPerformed";
 
@@ -98,6 +99,7 @@ public enum LoggingVersion implements SubConfigElementVersion {
         }
     }
 
+    @Override
     public VersionComparator getComparator() {
         return comparator;
     }
@@ -116,7 +118,7 @@ public enum LoggingVersion implements SubConfigElementVersion {
             if (originalBackup.exists()) {
                 FileUtils.deleteQuietly(originalBackup);
             }
-            logbackConfigFile.renameTo(originalBackup);
+            FileUtils.moveFile(logbackConfigFile, originalBackup);
         }
 
         FileUtils.writeStringToFile(logbackConfigFile, result, "utf-8");

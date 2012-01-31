@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,9 +19,9 @@
 package org.artifactory.webapp.wicket.page.build.tabs;
 
 import com.google.common.collect.Lists;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
@@ -32,6 +32,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
@@ -73,6 +74,7 @@ public class PublishedModulesTabPanel extends Panel {
     private void addTable() {
         List<IColumn<Module>> columns = Lists.newArrayList();
         columns.add(new AbstractColumn<Module>(Model.of("Module ID"), "id") {
+            @Override
             public void populateItem(Item cellItem, String componentId, IModel rowModel) {
                 Module module = (Module) cellItem.getParent().getParent().getDefaultModelObject();
                 cellItem.add(getModuleNameLink(componentId, module.getId()));
@@ -99,17 +101,17 @@ public class PublishedModulesTabPanel extends Panel {
         AjaxLink link = new AjaxLink<String>(componentId, Model.of(moduleId)) {
 
             @Override
-            protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+            public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
                 replaceComponentTagBody(markupStream, openTag, moduleId);
             }
 
             @Override
             public void onClick(AjaxRequestTarget target) {
                 PageParameters pageParameters = new PageParameters();
-                pageParameters.put(BUILD_NAME, build.getName());
-                pageParameters.put(BUILD_NUMBER, build.getNumber());
-                pageParameters.put(BUILD_STARTED, build.getStarted());
-                pageParameters.put(MODULE_ID, moduleId);
+                pageParameters.set(BUILD_NAME, build.getName());
+                pageParameters.set(BUILD_NUMBER, build.getNumber());
+                pageParameters.set(BUILD_STARTED, build.getStarted());
+                pageParameters.set(MODULE_ID, moduleId);
                 setResponsePage(BuildBrowserRootPage.class, pageParameters);
             }
         };
@@ -130,20 +132,23 @@ public class PublishedModulesTabPanel extends Panel {
          * @param publishedModules Modules to display
          */
         public ModulesDataProvider(List<Module> publishedModules) {
-            setSort("id", true);
+            setSort("id", SortOrder.ASCENDING);
             moduleList = (publishedModules != null) ? publishedModules : Lists.<Module>newArrayList();
         }
 
+        @Override
         public Iterator<Module> iterator(int first, int count) {
             ModuleItemListSorter.sort(moduleList, getSort());
             List<Module> listToReturn = moduleList.subList(first, first + count);
             return listToReturn.iterator();
         }
 
+        @Override
         public int size() {
             return moduleList.size();
         }
 
+        @Override
         public IModel<Module> model(Module object) {
             return new Model<Module>(object);
         }

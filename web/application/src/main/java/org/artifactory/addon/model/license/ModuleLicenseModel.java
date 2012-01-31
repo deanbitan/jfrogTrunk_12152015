@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 JFrog Ltd. All rights reserved.
+ * Copyright 2012 JFrog Ltd. All rights reserved.
  * JFROG PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 
@@ -159,14 +159,17 @@ public class ModuleLicenseModel extends RepoAwareActionableItemBase {
         return result;
     }
 
+    @Override
     public String getDisplayName() {
         return getId();
     }
 
+    @Override
     public String getCssClass() {
         return null;
     }
 
+    @Override
     public void filterActions(AuthorizationService authService) {
         if (getRepoPath() != null && authService.canRead(getRepoPath())) {
             getActions().add(new ShowInTreeAction());

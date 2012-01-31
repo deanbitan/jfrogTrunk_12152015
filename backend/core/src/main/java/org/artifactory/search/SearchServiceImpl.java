@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,6 +52,7 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
+import org.artifactory.jcr.factory.VfsItemFactory;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
@@ -139,6 +140,7 @@ public class SearchServiceImpl implements InternalSearchService {
         this.context = (InternalArtifactoryContext) context;
     }
 
+    @Override
     public ItemSearchResults<ArtifactSearchResult> searchArtifacts(ArtifactSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
             return new ItemSearchResults<ArtifactSearchResult>(Lists.<ArtifactSearchResult>newArrayList());
@@ -148,11 +150,23 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
+    @Override
     public Set<RepoPath> searchArtifactsByChecksum(ChecksumSearchControls searchControls) {
         ArtifactSearcher searcher = new ArtifactSearcher();
         return searcher.searchArtifactsByChecksum(searchControls);
     }
 
+    @Override
+    public ItemSearchResults getArtifactsByChecksumResults(ChecksumSearchControls searchControls) {
+        List<ArtifactSearchResult> resultList = Lists.newArrayList();
+        Set<RepoPath> repoPaths = searchArtifactsByChecksum(searchControls);
+        for (RepoPath repoPath : repoPaths) {
+            resultList.add(new ArtifactSearchResult(VfsItemFactory.createFileInfoProxy(repoPath)));
+        }
+        return new ItemSearchResults<ArtifactSearchResult>(resultList, resultList.size());
+    }
+
+    @Override
     public ItemSearchResults<ArchiveSearchResult> searchArchiveContent(ArchiveSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
             return new ItemSearchResults<ArchiveSearchResult>(Lists.<ArchiveSearchResult>newArrayList());
@@ -162,6 +176,7 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
+    @Override
     public ItemSearchResults<MetadataSearchResult> searchMetadata(MetadataSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
             return new ItemSearchResults<MetadataSearchResult>(Lists.<MetadataSearchResult>newArrayList());
@@ -171,6 +186,7 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
+    @Override
     public <T> ItemSearchResults<GenericMetadataSearchResult<T>> searchGenericMetadata(
             GenericMetadataSearchControls<T> controls) {
         if (shouldReturnEmptyResults(controls)) {
@@ -194,6 +210,7 @@ public class SearchServiceImpl implements InternalSearchService {
         return new LastDownloadedSearcher().search(controls);
     }
 
+    @Override
     public ItemSearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
             return new ItemSearchResults<GavcSearchResult>(Lists.<GavcSearchResult>newArrayList());
@@ -205,6 +222,7 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
+    @Override
     public ItemSearchResults<XmlSearchResult> searchXmlContent(MetadataSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
             return new ItemSearchResults<XmlSearchResult>(Lists.<XmlSearchResult>newArrayList());
@@ -216,6 +234,7 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
+    @Override
     public ItemSearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
             return new ItemSearchResults<PropertySearchResult>(Lists.<PropertySearchResult>newArrayList());
@@ -227,6 +246,7 @@ public class SearchServiceImpl implements InternalSearchService {
         return results;
     }
 
+    @Override
     public List<SerializablePair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(Calendar from,
             Calendar to,
             List<String> reposToSearch) {
@@ -279,12 +299,14 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
+    @Override
     public ItemSearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls)
             throws RepositoryException {
         VersionUnitSearcher searcher = new VersionUnitSearcher();
         return searcher.doSearch(controls);
     }
 
+    @Override
     public Set<BuildRun> getLatestBuilds() {
         BuildSearcher searcher = new BuildSearcher();
         try {
@@ -294,6 +316,7 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
+    @Override
     public List<BuildRun> findBuildsByArtifactChecksum(String sha1, String md5) {
         BuildSearcher searcher = new BuildSearcher();
         try {
@@ -303,6 +326,7 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
+    @Override
     public List<BuildRun> findBuildsByDependencyChecksum(String sha1, String md5) {
         BuildSearcher searcher = new BuildSearcher();
         try {
@@ -312,6 +336,7 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
+    @Override
     public Set<String> searchArtifactsByPattern(String pattern) throws ExecutionException, InterruptedException,
             TimeoutException {
         if (StringUtils.isBlank(pattern)) {
@@ -340,6 +365,7 @@ public class SearchServiceImpl implements InternalSearchService {
 
         Callable<Set<String>> callable = new Callable<Set<String>>() {
 
+            @Override
             public Set<String> call() throws Exception {
                 Set<String> pathsToReturn = Sets.newHashSet();
                 List<String> patternFragments = Lists.newArrayList(StringUtils.split(innerPattern, "/"));
@@ -378,15 +404,19 @@ public class SearchServiceImpl implements InternalSearchService {
         return unauthorized;
     }
 
+    @Override
     public void init() {
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         SearchVersion.values();
         //We cannot convert the indexes straight away since the JCR will initialize and close the session on us,
@@ -395,6 +425,7 @@ public class SearchServiceImpl implements InternalSearchService {
         originalVersion.convert(this);
     }
 
+    @Override
     public void transactionalIndexMarkedArchives() {
         JcrSession session = jcrService.getManagedSession();
         List<RepoPath> archiveRepoPaths = ArchiveIndexer.searchMarkedArchives(session);
@@ -403,6 +434,7 @@ public class SearchServiceImpl implements InternalSearchService {
         index(archiveRepoPaths);
     }
 
+    @Override
     public void markArchivesForIndexing(boolean force) {
         markArchivesForIndexing(null, force);
     }
@@ -413,6 +445,7 @@ public class SearchServiceImpl implements InternalSearchService {
      * @param searchPath Path to search under, search under root if null is passed
      * @param force      True if should force marking
      */
+    @Override
     public void markArchivesForIndexing(RepoPath searchPath, boolean force) {
         Session usession = context.getJcrService().getUnmanagedSession();
         try {
@@ -439,16 +472,14 @@ public class SearchServiceImpl implements InternalSearchService {
      * @param newJcrFile
      * @return boolean - Was archive marked
      */
+    @Override
     @SuppressWarnings({"SimplifiableIfStatement"})
     public boolean markArchiveForIndexing(JcrFile newJcrFile, boolean force) {
         Node archiveNode = newJcrFile.getNode();
-        String name = newJcrFile.getName();
-        if (NamingUtils.isJarVariant(name)) {
-            try {
-                return ArchiveIndexer.markArchiveForIndexing(archiveNode, force);
-            } catch (RepositoryException e) {
-                log.warn("Could not mark the archive '" + newJcrFile + "' for indexing.", e);
-            }
+        try {
+            return ArchiveIndexer.markArchiveForIndexing(archiveNode, force);
+        } catch (RepositoryException e) {
+            log.warn("Could not mark the archive '" + newJcrFile + "' for indexing.", e);
         }
         return false;
     }
@@ -456,6 +487,7 @@ public class SearchServiceImpl implements InternalSearchService {
     /**
      * Indexes all the archives that were marked
      */
+    @Override
     public void asyncIndexMarkedArchives() {
         JcrSession session = jcrService.getUnmanagedSession();
         try {
@@ -478,12 +510,14 @@ public class SearchServiceImpl implements InternalSearchService {
      *
      * @param archiveRepoPaths Repo paths to index
      */
+    @Override
     public void index(List<RepoPath> archiveRepoPaths) {
         for (RepoPath repoPath : archiveRepoPaths) {
             getAdvisedMe().index(repoPath);
         }
     }
 
+    @Override
     public void index(RepoPath archiveRepoPath) {
         if (!NamingUtils.isJarVariant(archiveRepoPath.getPath())) {
             log.trace("Not indexing non jar variant path '{}' - with mime type '{}'.", archiveRepoPath,
@@ -504,6 +538,7 @@ public class SearchServiceImpl implements InternalSearchService {
         }
     }
 
+    @Override
     public void asyncIndex(RepoPath repoPath) {
         index(repoPath);
     }

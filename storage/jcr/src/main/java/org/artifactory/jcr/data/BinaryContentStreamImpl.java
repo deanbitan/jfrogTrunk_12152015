@@ -30,6 +30,7 @@ public class BinaryContentStreamImpl extends BinaryContentBase {
         this.inputStream = new ChecksumInputStream(inputStream, JcrVfsHelper.getChecksumsToCompute());
     }
 
+    @Override
     public String binaryId() {
         if (!inputStream.isClosed()) {
             return tempId;
@@ -45,14 +46,17 @@ public class BinaryContentStreamImpl extends BinaryContentBase {
         return checksumsInfo;
     }
 
+    @Override
     public long getSize() {
         return inputStream.getTotalBytesRead();
     }
 
+    @Override
     public InputStream getStream() {
         return inputStream;
     }
 
+    @Override
     public void checkClosed() {
         IOUtils.closeQuietly(inputStream);
         Checksums.fillChecksumInfo(checksumsInfo, inputStream.getChecksums());

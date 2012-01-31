@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.config.license;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInstantiation;
+import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
 import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
@@ -51,6 +51,7 @@ public class LicensePage extends AuthenticatedPage {
      */
     private TitledAjaxLink createCancelButton() {
         return new TitledAjaxLink("cancel", "Cancel") {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 setResponsePage(LicensePage.class);
             }

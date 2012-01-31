@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,7 @@ package org.artifactory.webapp.servlet;
 
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.request.Request;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -29,8 +29,8 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
@@ -48,6 +48,8 @@ import java.util.Locale;
 import java.util.Set;
 
 import static org.apache.commons.lang.StringUtils.EMPTY;
+import static org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REMOVED_REPOSITORY_PATH;
+import static org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REPOSITORY_PATH;
 
 /**
  * User: freds Date: Aug 13, 2008 Time: 10:56:25 AM
@@ -58,7 +60,6 @@ public abstract class RequestUtils {
     private static final Set<String> NON_UI_PATH_PREFIXES = new HashSet<String>();
     private static final Set<String> UI_PATH_PREFIXES = new HashSet<String>();
     public static final String LAST_USER_KEY = "artifactory:lastUserId";
-    public static final String WEBAPP_URL_PATH_PREFIX = "webapp";
     private static boolean USE_PATH_INFO = false;
     private static final String DEFAULT_ENCODING = "utf-8";
 
@@ -202,7 +203,9 @@ public abstract class RequestUtils {
      * Sets the value which indicates if to use path info instead of servlet path in getServletPathFromRequest method
      *
      * @param usePathInfo True if to prefer path info over servlet path
+     * @deprecated deprecated by yoava, this value is never used
      */
+    @Deprecated
     public static void setUsePathInfo(boolean usePathInfo) {
         USE_PATH_INFO = usePathInfo;
     }
@@ -252,10 +255,8 @@ public abstract class RequestUtils {
         return (ArtifactoryContext) servletContext.getAttribute(ArtifactoryContext.APPLICATION_CONTEXT_KEY);
     }
 
-    public static RepoPath getRepoPath(WebRequest request) {
-        HttpServletRequest httpServletRequest = request.getHttpServletRequest();
-        return (RepoPath) httpServletRequest
-                .getAttribute(org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REPOSITORY_PATH);
+    public static RepoPath getRepoPath(HttpServletRequest servletRequest) {
+        return (RepoPath) servletRequest.getAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH);
     }
 
     /**
@@ -267,15 +268,12 @@ public abstract class RequestUtils {
         return InternalRepoPathFactory.create(repoKey, path);
     }
 
-
-    public static void removeRepoPath(WebRequest request, boolean storeAsRemoved) {
-        HttpServletRequest httpServletRequest = request.getHttpServletRequest();
-        RepoPath removedRepoPath = getRepoPath(request);
-        httpServletRequest.removeAttribute(org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REPOSITORY_PATH);
+    public static void removeRepoPath(Request request, boolean storeAsRemoved) {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) request.getContainerRequest();
+        RepoPath removedRepoPath = getRepoPath(httpServletRequest);
+        httpServletRequest.removeAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH);
         if (removedRepoPath != null && storeAsRemoved) {
-            httpServletRequest
-                    .setAttribute(org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REMOVED_REPOSITORY_PATH,
-                            removedRepoPath);
+            httpServletRequest.setAttribute(ATTR_ARTIFACTORY_REMOVED_REPOSITORY_PATH, removedRepoPath);
         }
     }
 
@@ -310,13 +308,12 @@ public abstract class RequestUtils {
         return EMPTY;
     }
 
-    public static boolean isAuthPresent(WebRequest request) {
-        return isAuthHeaderPresent(request.getHttpServletRequest());
+    public static boolean isAuthPresent(Request request) {
+        return isAuthHeaderPresent((HttpServletRequest) request.getContainerRequest());
     }
 
     public static String getWicketServletContextUrl() {
-        WebRequest request = WicketUtils.getWebRequest();
-        HttpServletRequest httpRequest = request.getHttpServletRequest();
+        final HttpServletRequest httpRequest = WicketUtils.getHttpServletRequest();
         return HttpUtils.getServletContextUrl(httpRequest);
     }
 }

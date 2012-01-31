@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -33,9 +34,8 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
-import org.artifactory.api.module.VersionUnit;
-import org.artifactory.mime.MavenNaming;
 import org.artifactory.api.module.ModuleInfo;
+import org.artifactory.api.module.VersionUnit;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.confirm.AjaxConfirm;
 import org.artifactory.common.wicket.component.confirm.ConfirmDialog;
@@ -46,6 +46,7 @@ import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.checkbox.SelectAllCheckboxColumn;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.ListPropertySorter;
+import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
@@ -140,12 +141,14 @@ public class DeleteVersionsPanel extends Panel {
                     return; // keep popup open
                 }
                 AjaxConfirm.get().confirm(new ConfirmDialog() {
+                    @Override
                     public String getMessage() {
                         BuildAddon buildAddon = addonsManager.addonByType(BuildAddon.class);
                         return buildAddon.getDeleteVersionsWarningMessage(getVersionUnitParents(selectedVersionUnits),
                                 "Are you sure you wish to delete the selected versions?");
                     }
 
+                    @Override
                     public void onConfirm(boolean approved, AjaxRequestTarget target) {
                         if (approved) {
                             repoService.undeployVersionUnits(selectedVersionUnits);
@@ -168,7 +171,7 @@ public class DeleteVersionsPanel extends Panel {
                                 tree.getTreeState().collapseNode(parent);
                             }
 
-                            target.addComponent(tree);
+                            target.add(tree);
                             tree.adjustLayout(target);
                             ModalHandler.closeCurrent(target);
                         }
@@ -200,19 +203,22 @@ public class DeleteVersionsPanel extends Panel {
             for (String key : groupVersionKeys) {
                 vuModels.add(new VersionUnitModel(key, vuGroupAndVersion.get(key).size()));
             }
-            setSort("groupId", true);
+            setSort("groupId", SortOrder.ASCENDING);
         }
 
+        @Override
         public Iterator<VersionUnitModel> iterator(int first, int count) {
             ListPropertySorter.sort(vuModels, getSort());
             List<VersionUnitModel> vusSubList = vuModels.subList(first, first + count);
             return vusSubList.iterator();
         }
 
+        @Override
         public int size() {
             return vuModels.size();
         }
 
+        @Override
         public IModel<VersionUnitModel> model(VersionUnitModel object) {
             return new Model<VersionUnitModel>(object);
         }

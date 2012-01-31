@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,22 +25,23 @@ public enum AddonType {
     //
     //PLEASE MAKE SURE THESE DETAILS ARE CONSISTENT WITH THE ONES IN THE PROPERTY FILES
     //
-    WEBSTART("webstart", "WebStart & Jar Signing", 1300),
-    SEARCH("search", "Smart Searches", 700),
-    PROPERTIES("properties", "Properties", 600),
-    WATCH("watch", "Watches", 1200),
-    SSO("sso", "Crowd & SSO Integration", 1100),
-    LDAP("ldap", "LDAP Group", 400),
     AOL("aol", "Artifactory Online", -1),
     BUILD("build", "Build Integration", 100),
     LICENSES("license", "3rd Party License Control", 200),
-    PLUGINS("plugins", "Plugins", 900),
-    LAYOUTS("layouts", "Repository Layouts", 1000),
-    FILTERED_RESOURCES("filtered-resources", "Filtered Resources", 800),
-    REPLICATION("replication", "Replication", 500),
     REST("rest", "Advanced REST", 300),
-    P2("p2", "P2", 950),
-    YUM("yum", "YUM", 1400);
+    LDAP("ldap", "LDAP Groups", 400),
+    REPLICATION("replication", "Replication", 500),
+    PROPERTIES("properties", "Properties", 600),
+    SEARCH("search", "Smart Searches", 700),
+    PLUGINS("plugins", "Plugins", 800),
+    YUM("yum", "YUM", 900),
+    P2("p2", "P2", 1000),
+    NUGET("nuget", "NuGet", 1100),
+    LAYOUTS("layouts", "Repository Layouts", 1200),
+    FILTERED_RESOURCES("filtered-resources", "Filtered Resources", 1300),
+    SSO("sso", "Crowd & SSO Integration", 1400),
+    WATCH("watch", "Watches", 1500),
+    WEBSTART("webstart", "WebStart & Jar Signing", 1600);
 
     private String addonName;
     private String addonDisplayName;

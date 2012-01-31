@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,41 +17,41 @@
  */
 
 dojo.declare('artifactory.SortedDragDropSelection', artifactory.DragDropSelection, {
-    init: function() {
+    init:function () {
         this.inherited('init', arguments);
         this.sort();
     },
 
-    onDrop: function() {
+    onDrop:function () {
         this.sort();
         this.inherited(arguments);
     },
 
-    sort: function() {
+    sort:function () {
         this.sortList(this.sourceNode);
         this.sortList(this.targetNode);
     },
 
-    moveSelectedItems: function(fromList, toList) {
+    moveSelectedItems:function (fromList, toList) {
         this.inherited(arguments);
         this.sortList(toList);
     },
 
-    sortList: function(ul) {
+    sortList:function (ul) {
         var liList = ul.childNodes;
         var liArray = this.nodeListToArray(liList);
-        liArray = liArray.sort(function(o1, o2) {
+        liArray = liArray.sort(function (o1, o2) {
             var s1 = o1.innerHTML.toLowerCase();
             var s2 = o2.innerHTML.toLowerCase();
             return ((s1 < s2) ? -1 : ((s1 > s2) ? 1 : 0));
         });
 
-        dojo.forEach(liArray, function(li) {
+        dojo.forEach(liArray, function (li) {
             ul.appendChild(li);
         });
     },
 
-    nodeListToArray: function (collection) {
+    nodeListToArray:function (collection) {
         var ary = [];
         for (var i = 0, len = collection.length; i < len; i++) {
             ary.push(collection[i]);
@@ -61,5 +61,5 @@ dojo.declare('artifactory.SortedDragDropSelection', artifactory.DragDropSelectio
 });
 
 dojo.declare('artifactory.DisabledSortedDragDropSelection', artifactory.SortedDragDropSelection, {
-    instantiate: DomUtils.cancel
+    instantiate:DomUtils.cancel
 });

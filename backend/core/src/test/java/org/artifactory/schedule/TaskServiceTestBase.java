@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -122,6 +122,7 @@ public class TaskServiceTestBase extends ArtifactoryHomeBoundTest {
     @AfterMethod(enabled = HIGH_DEBUG, lastTimeOnly = true)
     public void assertNoActiveTasks() throws SchedulerException {
         List<TaskBase> activeTasks = taskService.getActiveTasks(new Predicate<Task>() {
+            @Override
             public boolean apply(@Nullable Task input) {
                 return true;
             }

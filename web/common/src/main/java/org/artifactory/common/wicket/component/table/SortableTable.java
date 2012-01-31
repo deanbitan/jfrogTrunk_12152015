@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -42,11 +42,6 @@ public class SortableTable<T> extends DataTable<T> {
     @SuppressWarnings({"unchecked"})
     public SortableTable(String id, final List<IColumn<T>> columns, ISortableDataProvider<T> dataProvider,
             int rowsPerPage) {
-        this(id, columns.toArray(new IColumn[columns.size()]), dataProvider, rowsPerPage);
-    }
-
-    public SortableTable(String id, final IColumn<T>[] columns, ISortableDataProvider<T> dataProvider,
-            int rowsPerPage) {
         super(id, columns, dataProvider, rowsPerPage);
         setOutputMarkupId(true);
         setVersioned(false);
@@ -85,11 +80,11 @@ public class SortableTable<T> extends DataTable<T> {
     }
 
     @Override
-    protected Item<T> newCellItem(final String id, final int index, final IModel<T> model) {
-        Item<T> item = super.newCellItem(id, index, model);
+    protected Item<IColumn<T>> newCellItem(final String id, final int index, final IModel<IColumn<T>> model) {
+        Item<IColumn<T>> item = super.newCellItem(id, index, model);
         if (index == 0) {
             item.add(new CssClass("first-cell"));
-        } else if (index == getColumns().length - 1) {
+        } else if (index == getColumns().size() - 1) {
             item.add(new CssClass("last-cell"));
         }
         return item;
@@ -102,6 +97,7 @@ public class SortableTable<T> extends DataTable<T> {
         tag.put("cellspacing", "0");
     }
 
+    @SuppressWarnings({"unchecked"})
     private void notifyColumnsAttached() {
         for (IColumn column : getColumns()) {
             if (column instanceof AttachColumnListener) {

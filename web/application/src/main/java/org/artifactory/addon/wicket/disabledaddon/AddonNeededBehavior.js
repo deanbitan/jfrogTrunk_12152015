@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,7 +17,7 @@
  */
 
 var DisabledAddon = {
-    create: function(id, position) {
+    create:function (id, position, iconClassName) {
         // create only once
         var node = dojo.byId(id);
         if (node.DisabledAddon) {
@@ -33,17 +33,17 @@ var DisabledAddon = {
 
         // add icon
         var icon = document.createElement('span');
-        icon.className = 'addon-icon';
+        icon.className = iconClassName;
         node.insertBefore(icon, node.firstChild);
     },
 
-    toogle: function(link, id, serverToken, addon) {
+    toogle:function (link, id, serverToken, addon) {
         // toggle show/hide
         if (!link.className.match(/checked/)) {
-            dojo.cookie('addon-' + addon, serverToken, {expires: 3650, path: artApp});
+            dojo.cookie('addon-' + addon, serverToken, {expires:3650, path:artApp});
             link.className = 'hide-link hide-link-checked';
         } else {
-            dojo.cookie('addon-' + addon, null, {expires: -1, path: artApp});
+            dojo.cookie('addon-' + addon, null, {expires:-1, path:artApp});
             link.className = 'hide-link';
         }
 

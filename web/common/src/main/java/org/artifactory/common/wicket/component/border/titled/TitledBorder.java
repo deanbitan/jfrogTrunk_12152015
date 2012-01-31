@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,9 +19,8 @@
 package org.artifactory.common.wicket.component.border.titled;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
-import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.border.Border;
 import org.apache.wicket.model.IModel;
@@ -34,9 +33,6 @@ import org.artifactory.common.wicket.model.Titled;
  * @author Yoav Aharoni
  */
 public class TitledBorder extends Border implements Titled {
-    private static final String[] CSS_CLASS =
-            {"-top", "-left", "-right", "-top-left", "-top-right", "-bottom", "-bottom-left", "-bottom-right"};
-
     private String cssPrefix;
 
     public TitledBorder(String id) {
@@ -62,52 +58,59 @@ public class TitledBorder extends Border implements Titled {
         add(new CssClass(cssPrefix + "-wrapper"));
 
         // building the borders
-        MarkupContainer container = addBorders();
+        WebMarkupContainer border = createBorder("top");
+        addToBorder(border);
+        border = addBorder(border, "left");
+        border = addBorder(border, "right");
+        border = addBorder(border, "top-left");
+        border = addBorder(border, "top-right");
+        border = addBorder(border, "bottom");
+        border = addBorder(border, "bottom-left");
+        border = addBorder(border, "bottom-right");
 
-        // container - is a last border
-        WebMarkupContainer title = new WebMarkupContainer("title") {
-            @Override
-            public boolean isVisible() {
-                return super.isVisible() && StringUtils.isNotEmpty(getTitle());
-            }
-        };
-        title.add(new CssClass(cssPrefix + "-title"));
-        container.add(title);
+        HeaderContainer headerContainer = new HeaderContainer();
+        headerContainer.add(new CssClass(cssPrefix + "-title"));
+        border.add(headerContainer);
 
         TitleLabel titleLabel = new TitleLabel(this);
-        title.add(titleLabel);
-        title.add(newToolbar("tool"));
+        headerContainer.add(titleLabel);
+        headerContainer.add(newToolbar("tool"));
     }
 
-    private MarkupContainer addBorders() {
-        MarkupContainer container = this;
+    private WebMarkupContainer addBorder(WebMarkupContainer container, String cssClass) {
+        WebMarkupContainer border = createBorder(cssClass);
+        container.add(border);
+        return border;
+    }
 
-        for (String div : CSS_CLASS) {
-            // creating new container
-            WebMarkupContainer border = new WebMarkupContainer("border");
-
-            // modifiying the the class-attribute
-            border.add(new SimpleAttributeModifier("class", getCssPrefix() + div));
-
-            // adding to the current container
-            container.add(border);
-
-            // replacing the container variable with wicketContainer
-            container = border;
-        }
-
-        return container;
+    private WebMarkupContainer createBorder(String cssClass) {
+        WebMarkupContainer border = new WebMarkupContainer("border");
+        border.add(new AttributeModifier("class", getCssPrefix() + "-" + cssClass));
+        return border;
     }
 
     protected String getCssPrefix() {
         return cssPrefix;
     }
 
+    @Override
     public String getTitle() {
         return getString(getId(), null, "");
     }
 
     protected Component newToolbar(String id) {
         return new PlaceHolder(id);
+    }
+
+    private class HeaderContainer extends WebMarkupContainer {
+        public HeaderContainer() {
+            super("title");
+        }
+
+        @Override
+        protected void onConfigure() {
+            super.onConfigure();
+            setVisible(StringUtils.isNotEmpty(getTitle()));
+        }
     }
 }

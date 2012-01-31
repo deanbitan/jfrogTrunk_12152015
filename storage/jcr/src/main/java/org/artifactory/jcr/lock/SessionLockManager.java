@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,11 +34,13 @@ import org.artifactory.tx.SessionResource;
  */
 public class SessionLockManager implements SessionResource {
 
+    @Override
     public boolean hasPendingResources() {
         InternalLockManager lockManager = LockingAdvice.getLockManager();
         return lockManager != null && lockManager.hasPendingResources();
     }
 
+    @Override
     public void onSessionSave() {
         InternalLockManager lockManager = LockingAdvice.getLockManager();
         if (lockManager != null) {
@@ -52,6 +54,7 @@ public class SessionLockManager implements SessionResource {
      *
      * @param commit true if committed
      */
+    @Override
     public void afterCompletion(boolean commit) {
         InternalLockManager lockManager = LockingAdvice.getLockManager();
         if (lockManager != null) {

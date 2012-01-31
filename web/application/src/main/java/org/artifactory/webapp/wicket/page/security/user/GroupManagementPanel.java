@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,7 +45,7 @@ public class GroupManagementPanel extends FieldSetPanel {
     private UserGroupService userGroupService;
 
     @WicketProperty
-    private String selectedGroup;
+    private GroupInfo selectedGroup;
 
     public GroupManagementPanel(String id, final UsersPanel usersListPanel) {
         super(id);
@@ -56,12 +56,7 @@ public class GroupManagementPanel extends FieldSetPanel {
         List<GroupInfo> groupInfos = userGroupService.getInternalGroups();
         // Drop-down choice of groups to add/remove users to/from
         DropDownChoice groupDdc = new UsersPanel.TargetGroupDropDownChoice("groupManagement",
-                new PropertyModel(this, "selectedGroup"), groupInfos) {
-            @Override
-            protected CharSequence getDefaultChoice(Object selected) {
-                return "";
-            }
-        };
+                new PropertyModel<GroupInfo>(this, "selectedGroup"), groupInfos);
         groupDdc.add(new FilteringSelectBehavior());
         form.add(groupDdc);
 
@@ -72,7 +67,7 @@ public class GroupManagementPanel extends FieldSetPanel {
                 if (selectedGroup != null && !selectedUsernames.isEmpty()) {
                     try {
                         userGroupService.addUsersToGroup(
-                                selectedGroup, selectedUsernames);
+                                selectedGroup.getGroupName(), selectedUsernames);
                         info("Successfully added selected users  to group '" + selectedGroup + "'.");
                         // refresh the users table
                         usersListPanel.refreshUsersList(target);
@@ -90,7 +85,7 @@ public class GroupManagementPanel extends FieldSetPanel {
                 List<String> selectedUsernames = usersListPanel.getSelectedUsernames();
                 if (selectedGroup != null && !selectedUsernames.isEmpty()) {
                     userGroupService.removeUsersFromGroup(
-                            selectedGroup, selectedUsernames);
+                            selectedGroup.getGroupName(), selectedUsernames);
                     info("Successfully removed selected users from group '" + selectedGroup + "'.");
                     // refresh the users table
                     usersListPanel.refreshUsersList(target);

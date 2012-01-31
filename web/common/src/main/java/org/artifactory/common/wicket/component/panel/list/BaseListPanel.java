@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@ import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.html.link.AbstractLink;
@@ -46,7 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Contains most of the implementations of the former ListPanel (Now ModalListPanel). Enables seperation between list
+ * Contains most of the implementations of the former ListPanel (Now ModalListPanel). Enables separation between list
  * panel and the action link behavior.
  *
  * @author Noam Tenne
@@ -112,7 +113,7 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
         });
     }
 
-    protected int getRowsPerPage() {
+    protected int getItemsPerPage() {
         return DEFAULT_ROWS_PER_PAGE;
     }
 
@@ -145,10 +146,11 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
     private class DefaultSortableDataProvider extends SortableDataProvider<T> {
         private DefaultSortableDataProvider() {
             if (defaultInitialSortProperty != null) {
-                setSort(defaultInitialSortProperty, true);
+                setSort(defaultInitialSortProperty, SortOrder.ASCENDING);
             }
         }
 
+        @Override
         public Iterator<? extends T> iterator(int first, int count) {
             List<T> items = getList();
             ListPropertySorter.sort(items, getSort());
@@ -156,10 +158,12 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
             return itemsSubList.iterator();
         }
 
+        @Override
         public int size() {
             return getList().size();
         }
 
+        @Override
         public IModel<T> model(T object) {
             return new Model<T>(object);
         }
@@ -171,7 +175,7 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
 
     private class MySortableTable extends SortableTable<T> {
         private MySortableTable(List<IColumn<T>> columns, SortableDataProvider<T> dataProvider) {
-            super("table", columns, dataProvider, BaseListPanel.this.getRowsPerPage());
+            super("table", columns, dataProvider, BaseListPanel.this.getItemsPerPage());
         }
 
         @Override
@@ -216,9 +220,10 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
         // add delete link
         if (canAddDeleteItemLink(itemObject)) {
             TitledAjaxLink deleteLink = new TitledAjaxLink(linkId, "Delete") {
+                @Override
                 public void onClick(AjaxRequestTarget target) {
                     deleteItem(itemObject, target);
-                    target.addComponent(BaseListPanel.this);
+                    target.add(BaseListPanel.this);
                 }
 
                 @Override

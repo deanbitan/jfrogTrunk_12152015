@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -163,11 +163,12 @@ public class VirtualRepoDownloadStrategy {
 
             ModuleInfo artifactModuleInfo = virtualRepo.getItemModuleInfo(path);
 
+            result = virtualRepo.interceptGetInfo(context, repoPath, repositories);
+
             /**
              * The repo might not define a layout, so also check specifically for a Maven snapshot if the resulting
              * module info is invalid
              */
-            result = virtualRepo.interceptGetInfo(context, repoPath, repositories);
             if (result == null) {
                 if (artifactModuleInfo.isIntegration() ||
                         (!artifactModuleInfo.isValid() && MavenNaming.isSnapshot(path))) {

@@ -20,6 +20,7 @@ public class VfsQueryRowJcrImpl implements VfsQueryRow {
         this.row = row;
     }
 
+    @Override
     public String nodeAbsolutePath() {
         try {
             return row.getValue(JcrConstants.JCR_PATH).getString();
@@ -28,6 +29,7 @@ public class VfsQueryRowJcrImpl implements VfsQueryRow {
         }
     }
 
+    @Override
     public String excerpt(String propertyName) {
         try {
             return row.getValue("rep:excerpt(" + propertyName + ")").getString();

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -58,6 +58,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
     private final Map<Class, MetadataDefinition> mdDefsByClass = new FastHashMap();
     private final Map<String, MetadataDefinition> mdDefsByName = new FastHashMap();
 
+    @Override
     public void init() {
         // Internal metadata
         FolderInfoXmlProvider folderInfoXmlProvider = new FolderInfoXmlProvider();
@@ -92,17 +93,21 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         ((FastHashMap) mdDefsByName).setFast(true);
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
     }
 
+    @Override
     public void destroy() {
         mdDefsByClass.clear();
         mdDefsByName.clear();
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public <T, MT> MetadataDefinition<T, MT> getMetadataDefinition(Class<T> clazz) {
         MetadataDefinition<T, MT> definition = mdDefsByClass.get(clazz);
@@ -113,6 +118,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         return definition;
     }
 
+    @Override
     public MetadataDefinition getMetadataDefinition(String metadataName, boolean createIfEmpty) {
         if (StringUtils.isBlank(metadataName)) {
             throw new IllegalArgumentException("Metadata type name to locate cannot be null.");
@@ -129,6 +135,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         return definition;
     }
 
+    @Override
     public Set<MetadataDefinition<?, ?>> getAllMetadataDefinitions(boolean includeInternal) {
         Set<MetadataDefinition<?, ?>> result = new HashSet<MetadataDefinition<?, ?>>();
         Collection<MetadataDefinition> mdDefColl = mdDefsByName.values();
@@ -140,10 +147,12 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         return result;
     }
 
+    @Override
     public MetadataDefinition<FileInfo, MutableFileInfo> getFileInfoMd() {
         return mdDefsByClass.get(FileInfo.class);
     }
 
+    @Override
     public MetadataDefinition<FolderInfo, MutableFolderInfo> getFolderInfoMd() {
         return mdDefsByClass.get(FolderInfo.class);
     }

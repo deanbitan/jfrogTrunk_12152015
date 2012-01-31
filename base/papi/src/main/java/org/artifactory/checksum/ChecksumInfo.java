@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,8 +19,6 @@
 package org.artifactory.checksum;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
 
 import java.io.Serializable;
 
@@ -31,7 +29,6 @@ import java.io.Serializable;
  */
 @XStreamAlias("checksum")
 public class ChecksumInfo implements Serializable {
-    private static final Logger log = LoggerFactory.getLogger(ChecksumInfo.class);
 
     // marks a checksum type with no original checksum to be safe.
     // this marker is used when a file is deployed and we don't have the remote
@@ -84,9 +81,6 @@ public class ChecksumInfo implements Serializable {
 
     /**
      * Compares checksum by type and value.
-     *
-     * @param o
-     * @return
      */
     public boolean isIdentical(Object o) {
         if (this == o) {
@@ -111,9 +105,6 @@ public class ChecksumInfo implements Serializable {
 
     /**
      * Compares checksum by type only
-     *
-     * @param o
-     * @return
      */
     @Override
     public boolean equals(Object o) {

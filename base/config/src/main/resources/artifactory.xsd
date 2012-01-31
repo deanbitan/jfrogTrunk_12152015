@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2011 JFrog Ltd.
+  ~ Copyright (C) 2012 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.10"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.10"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.11"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.11"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -394,6 +394,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="enableNuGetSupport" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Handle NuGet requests for hosted NuGet libraries.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
 
@@ -620,7 +627,14 @@
                     <xs:element name="p2Support" type="xs:boolean" default="false" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                Additional support for P2 repositories (mainly expiration and updates of P2 resources).
+                                Support remote P2 metadata updates.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="nuget" type="NuGetConfigurationType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Proxy and cache NuGet libraries from the remote repository.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -710,6 +724,34 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         A set of local and remote P2 repository urls to aggregate under this virtual repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="NuGetConfigurationType">
+        <xs:sequence>
+            <xs:element name="feedContextPath" type="xs:string" default="api/v2" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The context path prefix through which the NuGet feeds are served.
+                        For example, the NuGet Gallery feed URL is 'https://nuget.org/api/v2', so the repository URL should
+                        be configured as 'https://nuget.org' and the feed context path should be configured as 'api/v2'.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="downloadContextPath" type="xs:string" default="api/v2/package" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The context path prefix through which NuGet downloads are served.
+                        For example, the NuGet Gallery download URL is 'https://nuget.org/api/v2/package', so the repository
+                        URL should be configured as 'https://nuget.org' and the download context path should be configured
+                        as 'api/v2/package'.
+                        ]]>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -885,6 +927,13 @@
                     <xs:documentation source="description">
                         Send email notifications to admin users if errors were encountered during the backup process
                         (requires properly configured email settings and valid email addresses for admin users).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="excludeBuilds" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Exclude all builds from the backup.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

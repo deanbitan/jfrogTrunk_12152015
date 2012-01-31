@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -76,7 +76,7 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
             boolean forceDownloadIfNewer = false;
             Request request = context.getRequest();
             if (request != null) {
-                String forcePropValue = request.getParameter(ArtifactoryRequest.FORCE_DOWNLOAD_IF_NEWER);
+                String forcePropValue = request.getParameter(ArtifactoryRequest.PARAM_FORCE_DOWNLOAD_IF_NEWER);
                 if (StringUtils.isNotBlank(forcePropValue)) {
                     forceDownloadIfNewer = Boolean.valueOf(forcePropValue);
                 }
@@ -97,6 +97,7 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         return true;
     }
 
+    @Override
     public boolean isSuppressPomConsistencyChecks() {
         return getDescriptor().getRemoteRepo().isSuppressPomConsistencyChecks();
     }
@@ -106,23 +107,28 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         return remoteRepo.getMaxUniqueSnapshots();
     }
 
+    @Override
     public RemoteRepo<? extends RemoteRepoDescriptor> getRemoteRepo() {
         return remoteRepo;
     }
 
+    @Override
     public ChecksumPolicy getChecksumPolicy() {
         return checksumPolicy;
     }
 
+    @Override
     public void onCreate(JcrFsItem fsItem) {
     }
 
+    @Override
     public void unexpire(String path) {
         //Reset the resource age so it is kept being cached
         JcrFsItem item = getLockedJcrFsItem(path);
         item.unexpire();
     }
 
+    @Override
     public int zap(RepoPath repoPath) {
         int itemsZapped = 0;
         //Zap all nodes recursively from all retrieval caches
@@ -139,6 +145,7 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         return itemsZapped;
     }
 
+    @Override
     public void updateCache(JcrFsItem fsItem) {
         super.updateCache(fsItem);
         remoteRepo.removeFromCaches(fsItem.getRelativePath(), false);
@@ -176,6 +183,7 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         return retrievalCachePeriodMillis;
     }
 
+    @Override
     public MavenSnapshotVersionAdapter getMavenSnapshotVersionAdapter() {
         throw new UnsupportedOperationException("Local cache repositories doesn't have snapshot version adapter");
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,7 +39,8 @@ public class JackrabbitLoggerConverter implements XmlConverter {
 
     private static final String LOGGER = "logger";
     private static final String NAME = "name";
-    private static final String BDBPM_NAME = "org.apache.jackrabbit.core.persistence.pool.BundleDbPersistenceManager";
+    private static final String BDBPM_OLD_NAME = "org.apache.jackrabbit.core.persistence.bundle.BundleDbPersistenceManager";
+    private static final String BDBPM_NEW_NAME = "org.apache.jackrabbit.core.persistence.pool.BundleDbPersistenceManager";
     private static final String MULTI_INDEX_NAME = "org.apache.jackrabbit.core.query.lucene.MultiIndex";
     private static final String XML_TEXT_EXTRACTOR_NAME = "org.apache.jackrabbit.extractor.XMLTextExtractor";
     private static final String INFO = "INFO";
@@ -49,6 +50,7 @@ public class JackrabbitLoggerConverter implements XmlConverter {
      *
      * @param doc Doc to convert
      */
+    @Override
     public void convert(Document doc) {
         Element root = doc.getRootElement();
         Namespace namespace = root.getNamespace();
@@ -75,7 +77,16 @@ public class JackrabbitLoggerConverter implements XmlConverter {
             Attribute loggerName = logger.getAttribute(NAME, namespace);
             if (loggerName != null) {
                 String nameValue = loggerName.getValue();
-                if (!hasBDBPMLogger && (BDBPM_NAME.equals(nameValue))) {
+
+                //The logger name still contains the old qualified name of the persistence manager
+                if (!hasBDBPMLogger && BDBPM_OLD_NAME.equals(nameValue)) {
+                    //Just need to replace the element name with the new qualified name
+                    loggerName.setValue(BDBPM_NEW_NAME);
+                    hasBDBPMLogger = true;
+                    continue;
+                }
+                //The logger name already contains the new qualified name of the persistence manager
+                if (!hasBDBPMLogger && (BDBPM_NEW_NAME.equals(nameValue))) {
                     hasBDBPMLogger = true;
                     continue;
                 }
@@ -94,7 +105,7 @@ public class JackrabbitLoggerConverter implements XmlConverter {
         }
         if (!hasBDBPMLogger) {
             root.addContent(Lists.newArrayList(getAddedComment(), getNewLine(),
-                    createAndGetLogger(namespace, BDBPM_NAME, INFO), getNewLine()));
+                    createAndGetLogger(namespace, BDBPM_NEW_NAME, INFO), getNewLine()));
         }
 
         if (!hasMultiIndexLogger) {

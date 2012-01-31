@@ -5,6 +5,7 @@ import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.util.Text;
 import org.artifactory.sapi.search.VfsBoolType;
 import org.artifactory.sapi.search.VfsComparatorType;
+import org.artifactory.sapi.search.VfsFunctionType;
 import org.artifactory.sapi.search.VfsQueryCriterion;
 
 import javax.annotation.Nonnull;
@@ -22,6 +23,7 @@ class VfsQueryCriterionJcrImpl extends BaseVfsQueryCriterion {
     final VfsComparatorType comparator;
     String value;
     String[] propertySubPath;
+    VfsFunctionType function = VfsFunctionType.NONE;
 
     VfsQueryCriterionJcrImpl(String propertyName, VfsComparatorType comparator) {
         super();
@@ -57,6 +59,13 @@ class VfsQueryCriterionJcrImpl extends BaseVfsQueryCriterion {
         }
     }
 
+    public VfsQueryCriterionJcrImpl(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
+            @Nonnull VfsFunctionType function, @Nullable String value) {
+        this(propertyName, comparator, value);
+        this.function = function;
+    }
+
+    @Override
     public VfsQueryCriterion addPropertySubPath(String... pathElements) {
         propertySubPath = pathElements;
         return this;
@@ -91,7 +100,14 @@ class VfsQueryCriterionJcrImpl extends BaseVfsQueryCriterion {
             fillPropertyName(query);
             query.append(", ").append(value).append(")");
         } else {
+            boolean applyFunction = VfsFunctionType.NONE != function;
+            if (applyFunction) {
+                query.append("fn:").append(function.str).append("(");
+            }
             fillPropertyName(query);
+            if (applyFunction) {
+                query.append(")");
+            }
             query.append(" ").append(comparator.str).append(" ");
             if (!StringUtils.isEmpty(value)) {
                 query.append(value);

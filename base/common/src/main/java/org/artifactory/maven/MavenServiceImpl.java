@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -49,6 +49,7 @@ public class MavenServiceImpl implements MavenService {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String generateSettings(MavenSettings mavenSettings) throws IOException {
         Settings settings = transformSettings(mavenSettings);
         SettingsXpp3Writer settingsWriter = new SettingsXpp3Writer();

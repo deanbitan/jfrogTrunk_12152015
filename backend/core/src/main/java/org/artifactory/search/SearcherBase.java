@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -74,6 +74,7 @@ public abstract class SearcherBase<C extends SearchControls, R extends ItemSearc
         repoService = context.beanForType(InternalRepositoryService.class);
     }
 
+    @Override
     public final ItemSearchResults<R> search(C controls) {
         long start = System.currentTimeMillis();
         ItemSearchResults<R> results;
@@ -104,9 +105,8 @@ public abstract class SearcherBase<C extends SearchControls, R extends ItemSearc
         VfsRepoQuery query = getVfsQueryService().createRepoQuery();
         if (controls.isSpecificRepoSearch()) {
             query.setRepoKeys(controls.getSelectedRepoForSearch());
-        } else {
-            query.addAllSubPathFilter();
         }
+        query.addAllSubPathFilter();
         return query;
     }
 

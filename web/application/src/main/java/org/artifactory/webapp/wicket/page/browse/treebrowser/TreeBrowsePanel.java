@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,16 +23,18 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.form.persistence.IValuePersister;
+import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.util.cookies.CookieDefaults;
+import org.apache.wicket.util.cookies.CookieUtils;
+import org.apache.wicket.util.time.Duration;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
-import org.artifactory.common.wicket.persister.EscapeCookieValuePersister;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.action.ItemActionListener;
 import org.artifactory.webapp.actionable.event.ItemEvent;
@@ -50,7 +52,19 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public abstract class TreeBrowsePanel extends TitledPanel implements ActionableItemsProvider, ItemActionListener {
-    private static final IValuePersister COMPACT_PERSISTER = new CompactPersister();
+    public static final CookieUtils PERSISTER;
+
+    static {
+        CookieDefaults settings = new CookieDefaults();
+        int year = (int) Duration.days(365).seconds();
+        settings.setMaxAge(year);
+        PERSISTER = new CookieUtils(settings) {
+            @Override
+            protected String getKey(FormComponent<?> component) {
+                return "browseRepoPanel.compactCheckbox";
+            }
+        };
+    }
 
     /**
      * Wicket container for the tabs panel
@@ -105,8 +119,10 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
         add(new TreeKeyEventHandler("keyEventHandler", tree));
     }
 
+    @Override
     public abstract HierarchicActionableItem getRoot();
 
+    @Override
     public List<? extends ActionableItem> getChildren(HierarchicActionableItem parent) {
         List<? extends ActionableItem> children = parent.getChildren(authService);
         for (ActionableItem item : children) {
@@ -140,18 +156,22 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
         return children;
     }
 
+    @Override
     public boolean hasChildren(HierarchicActionableItem parent) {
         return parent.hasChildren(authService);
     }
 
+    @Override
     public Panel getItemDisplayPanel() {
         return nodeDisplayPanel;
     }
 
+    @Override
     public void setItemDisplayPanel(Panel panel) {
         nodeDisplayPanel = panel;
     }
 
+    @Override
     public void actionPerformed(ItemEvent e) {
         tree.actionPerformed(e);
     }
@@ -170,7 +190,7 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
         dummyPanel.setOutputMarkupId(true);
         setItemDisplayPanel(dummyPanel);
         nodePanelContainer.replace(dummyPanel);
-        target.addComponent(dummyPanel);
+        target.add(dummyPanel);
     }
 
     /**
@@ -180,27 +200,19 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
         private CompactFoldersCheckbox(String id) {
             super(id, new Model<Boolean>(false));
 
-            setPersistent(true);
-            COMPACT_PERSISTER.load(this);
+            PERSISTER.load(this);
             add(new AjaxFormComponentUpdatingBehavior("onclick") {
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {
-                    COMPACT_PERSISTER.save(CompactFoldersCheckbox.this);
+                    PERSISTER.save(CompactFoldersCheckbox.this);
                     tree.setCompactAllowed(getModelObject());
-                    target.addComponent(tree);
-                    target.addComponent(tree.refreshDisplayPanel());
+                    target.add(tree);
+                    target.add(tree.refreshDisplayPanel());
                     tree.adjustLayout(target);
                 }
             });
 
         }
 
-    }
-
-    private static class CompactPersister extends EscapeCookieValuePersister {
-        @Override
-        protected String getSaveKey(String key) {
-            return "browseRepoPanel.compactCheckbox";
-        }
     }
 }

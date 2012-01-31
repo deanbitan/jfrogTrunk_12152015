@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -116,12 +116,15 @@ public class JcrTransactionManager extends LocalTransactionManager implements Tr
         }
     }
 
+    @Override
     public void suspend() {
     }
 
+    @Override
     public void resume() {
     }
 
+    @Override
     public void beforeCommit(boolean readOnly) {
         //Save any pending changes (no need to test for rollback at this phase)
         JcrSession session = getCurrentSession();
@@ -138,9 +141,11 @@ public class JcrTransactionManager extends LocalTransactionManager implements Tr
     public void beforeCompletion() {
     }
 
+    @Override
     public void afterCommit() {
     }
 
+    @Override
     public void flush() {
     }
 

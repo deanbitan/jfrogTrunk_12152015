@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,12 +48,14 @@ public abstract class ExpiringDelayed implements Delayed {
      */
     public abstract String getSubject();
 
+    @Override
     public final long getDelay(TimeUnit unit) {
         long delta = expiry - System.currentTimeMillis();
         long delay = unit.convert(delta < 0 ? 0 : delta, TimeUnit.MILLISECONDS);
         return delay;
     }
 
+    @Override
     public final int compareTo(Delayed o) {
         long d = getDelay(TimeUnit.MILLISECONDS) - o.getDelay(TimeUnit.MILLISECONDS);
         return (d == 0) ? 0 : ((d < 0) ? -1 : 1);

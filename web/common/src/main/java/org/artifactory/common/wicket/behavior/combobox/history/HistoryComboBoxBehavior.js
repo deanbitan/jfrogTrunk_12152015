@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,24 +20,24 @@ dojo.require("dojo.parser");
 dojo.require("dijit.form.ComboBox");
 
 dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
-    CLEAR: 'Clear History',
+    CLEAR:'Clear History',
 
     /* @Override */
-    postMixInProperties: function() {
+    postMixInProperties:function () {
         this._restoreHistory();
         this.inherited(arguments);
     },
 
     /* @Override */
-    _startSearch: function() {
+    _startSearch:function () {
         var _this = this;
 
         //-- copy & paste from ComboBox.js
         var popupId = this.id + "_popup";
         if (!this._popupWidget) {
             this._popupWidget = new dijit.form._ComboBoxMenu({
-                onChange: dojo.hitch(this, this._selectOption),
-                id: popupId
+                onChange:dojo.hitch(this, this._selectOption),
+                id:popupId
             });
             dijit.removeWaiState(this.focusNode, "activedescendant");
             dijit.setWaiState(this.textbox, "owns", popupId); // associate popup with textbox
@@ -45,12 +45,12 @@ dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
             //-- override _popupWidget.createOptions
             //   to add "Clear History" link set items CSS class
             var superCreate = this._popupWidget.createOptions;
-            this._popupWidget.createOptions = function() {
+            this._popupWidget.createOptions = function () {
                 // call super
                 var result = superCreate.apply(_this._popupWidget, arguments);
 
                 // add css class to items
-                dojo.forEach(this.domNode.childNodes, function(item) {
+                dojo.forEach(this.domNode.childNodes, function (item) {
                     var className = _this.css[item.innerHTML];
                     if (className) {
                         item.className += ' ' + className;
@@ -70,14 +70,14 @@ dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
 
 
     /* @Override */
-    destroy: function() {
+    destroy:function () {
         delete this.css;
         this.inherited(arguments);
     },
 
-    clearHistory: function() {
+    clearHistory:function () {
         // delete cookie
-        dojo.cookie(this.cookie, null, {expires: -1});
+        dojo.cookie(this.cookie, null, {expires:-1});
         // remove from <select>
         var options = this.store.root.options;
         var l = options.length;
@@ -96,7 +96,7 @@ dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
     /**
      * Add current value to history list.
      */
-    addHistory: function(value) {
+    addHistory:function (value) {
         if (value && !this._optionExist(value)) {
             // add value to <select> field
             var option = document.createElement('option');
@@ -111,11 +111,11 @@ dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
             } else {
                 history = value;
             }
-            dojo.cookie(this.cookie, history, {expires: 3650})
+            dojo.cookie(this.cookie, history, {expires:3650})
         }
     },
 
-    _createClearHistoryItem: function() {
+    _createClearHistoryItem:function () {
         var _this = this;
         var clearItem = dojo.doc.createElement("li");
         clearItem.className = 'dijitReset dijitMenuItem sep clear-history';
@@ -129,7 +129,7 @@ dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
         return clearItem;
     },
 
-    _optionExist: function(value) {
+    _optionExist:function (value) {
         var options = this.store.root.options;
         var l = options.length;
         for (var i = 0; i < l; i++) {
@@ -140,7 +140,7 @@ dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
         return false;
     },
 
-    _restoreHistory: function() {
+    _restoreHistory:function () {
         var node = this.srcNodeRef;
 
         // setup css
@@ -160,20 +160,20 @@ dojo.declare('artifactory.HistoryComboBox', dijit.form.ComboBox, {
                 return option;
             }
 
-            var add = function(option) {
+            var add = function (option) {
                 node.appendChild(option);
             };
 
             var firstOption = node.options[0];
             if (firstOption) {
                 this.css[firstOption.value] = 'sep';
-                add = function(option) {
+                add = function (option) {
                     node.insertBefore(option, node.firstChild);
                 };
             }
 
             // add history options
-            dojo.forEach(history.split('|'), function(value) {
+            dojo.forEach(history.split('|'), function (value) {
                 add(toOption(value));
             });
         }

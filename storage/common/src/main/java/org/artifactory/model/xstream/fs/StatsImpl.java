@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,26 +39,32 @@ public class StatsImpl implements MutableStatsInfo {
         this.downloadCount = statsInfo.getDownloadCount();
     }
 
+    @Override
     public long getDownloadCount() {
         return downloadCount;
     }
 
+    @Override
     public void setDownloadCount(long downloadCount) {
         this.downloadCount = downloadCount;
     }
 
+    @Override
     public long getLastDownloaded() {
         return lastDownloaded;
     }
 
+    @Override
     public void setLastDownloaded(long lastDownloaded) {
         this.lastDownloaded = lastDownloaded;
     }
 
+    @Override
     public String getLastDownloadedBy() {
         return lastDownloadedBy;
     }
 
+    @Override
     public void setLastDownloadedBy(String lastDownloadedBy) {
         this.lastDownloadedBy = lastDownloadedBy;
     }

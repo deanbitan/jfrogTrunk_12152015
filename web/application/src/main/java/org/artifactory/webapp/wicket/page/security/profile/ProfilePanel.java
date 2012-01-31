@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -156,6 +156,7 @@ public class ProfilePanel extends TitledActionPanel {
 
         //Cancel
         TitledAjaxLink cancelLink = new TitledAjaxLink("cancel", "Cancel") {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 setResponsePage(Application.get().getHomePage());
             }
@@ -199,12 +200,12 @@ public class ProfilePanel extends TitledActionPanel {
                     super.onError(target, e);
                     String password = getFormComponent().getRawInput();
                     newPassword.setDefaultModelObject(password);
-                    target.addComponent(strength);
+                    target.add(strength);
                 }
 
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {
-                    target.addComponent(strength);
+                    target.add(strength);
                 }
             }.setThrottleDelay(Duration.seconds(0.5)));
 
@@ -258,7 +259,7 @@ public class ProfilePanel extends TitledActionPanel {
                     info("Profile successfully updated.");
                 }
                 form.clearInput();
-                target.addComponent(ProfilePanel.this);
+                target.add(ProfilePanel.this);
                 AjaxUtils.refreshFeedback(target);
             }
         };
@@ -276,11 +277,11 @@ public class ProfilePanel extends TitledActionPanel {
     }
 
     private void unlockProfile(UserInfo userInfo) {
-        unlockForm.visitChildren(new SetEnableVisitor<Component>(false));
+        unlockForm.visitChildren(new SetEnableVisitor(false));
 
         if (authService.isUpdatableProfile()) {
-            profileForm.visitChildren(new SetEnableVisitor<Component>(true));
-            getButtonsContainer().visitChildren(new SetEnableVisitor<Component>(true));
+            profileForm.visitChildren(new SetEnableVisitor(true));
+            getButtonsContainer().visitChildren(new SetEnableVisitor(true));
         }
 
         MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
@@ -353,7 +354,7 @@ public class ProfilePanel extends TitledActionPanel {
             } else {
                 unlockProfile(userInfo);
             }
-            target.addComponent(ProfilePanel.this);
+            target.add(ProfilePanel.this);
             AjaxUtils.refreshFeedback(target);
         }
 

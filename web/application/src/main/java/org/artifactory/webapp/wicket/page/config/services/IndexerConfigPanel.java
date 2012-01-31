@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -92,6 +92,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
 
         // add the run link
         TitledAjaxLink runLink = new TitledAjaxLink("run", "Run Indexing Now") {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 MultiStatusHolder statusHolder = new MultiStatusHolder();
                 try {
@@ -147,7 +148,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
                 centralConfigService.saveEditedDescriptorAndReload(centralConfig);
                 info("Indexer service settings successfully updated.");
                 AjaxUtils.refreshFeedback(target);
-                target.addComponent(this);
+                target.add(this);
             }
         };
     }

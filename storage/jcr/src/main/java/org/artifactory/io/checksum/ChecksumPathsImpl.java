@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -138,8 +138,9 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
                 return;
             }
             //If started from a v1 version drop and recreate the table to cover for a failed conversion
-            if (!createTable && ArtifactoryHome.get().getOriginalVersionDetails().getVersion().before(
-                    ArtifactoryVersion.v240)) {
+            CompoundVersionDetails originalVersionDetails = ArtifactoryHome.get().getOriginalVersionDetails();
+            if (!createTable && originalVersionDetails != null &&
+                    originalVersionDetails.getVersion().before(ArtifactoryVersion.v240)) {
                 log.info("ChecksumPaths table exists from incomplete conversion.");
                 dropTable();
                 createTable = true;
@@ -222,21 +223,34 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
 
     /**
      * Removes (marks clear) the checksum for all entries identified by binaryNodeId
-     *
-     * @param binaryNodeId
      */
     @Override
     public void deleteChecksumPath(String binaryNodeId) {
         if (!ready) {
-            if (log.isDebugEnabled()) {
-                log.debug("Not ready - skipping clear checksum path for binary nodeId " + binaryNodeId + ".");
-            }
+            log.debug("Not ready - skipping clear checksum path for binary nodeId {}.", binaryNodeId);
             return;
         }
         try {
             connHelper.update(SQL_CLEAR_CSNODE, binaryNodeId, nextTimestamp.getAndIncrement());
         } catch (Exception e) {
             throw new RuntimeException("Could not clear checksum path for binary nodeId " + binaryNodeId + ".", e);
+        }
+    }
+
+    @Override
+    public void updateChecksumPath(ChecksumPathInfo newChecksumInfo) {
+        if (!ready) {
+            log.debug("Not ready - skipping clear checksum path for binary nodeId {}.", newChecksumInfo);
+            return;
+        }
+        try {
+            log.debug("Updating binary node path {}.", newChecksumInfo);
+            // instead of updating the existing node, insert a delete entry for the same node id and add the updated
+            // checksum info
+            deleteChecksumPath(newChecksumInfo.getBinaryNodeId());
+            addChecksumPath(newChecksumInfo);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not clear checksum path for binary nodeId " + newChecksumInfo + ".", e);
         }
     }
 
@@ -716,7 +730,7 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
                         "(SELECT MAX(TS) FROM ${tableName} TGT WHERE TGT.BINNODE=SRC.BINNODE)");
         SQL_RETRIEVE_ALL_CSPATHS = getProperty(dbprops, "retrievAllCsPaths",
                 "SELECT CHECKSUM, PATH, BSIZE, BINNODE, TS FROM ${tableName}");
-        SQL_RETRIEVE_PATHS = getProperty(dbprops, "retrievPaths", "SELECT PATH FROM ${tableName} SRC WHERE %s");
+        SQL_RETRIEVE_PATHS = getProperty(dbprops, "retrievePaths", "SELECT PATH FROM ${tableName} SRC WHERE %s");
         SQL_RETRIEVE_MAX_TS =
                 getProperty(dbprops, "retrieveMaxCreated", "SELECT MAX(TS) FROM ${tableName}");
 

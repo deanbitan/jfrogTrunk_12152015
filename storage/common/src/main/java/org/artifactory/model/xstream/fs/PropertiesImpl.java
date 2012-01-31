@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,59 +61,87 @@ public class PropertiesImpl implements Properties {
         }
     }
 
+    @Override
     public int size() {
         return props.size();
     }
 
+    @Override
     @Nullable
     public Set<String> get(@Nonnull String key) {
         return props.get(key);
     }
 
+    @Override
+    @Nullable
+    public String getFirst(@Nonnull String key) {
+        Set<String> propertyValues = props.get(key);
+        if (propertyValues != null) {
+            Iterator<String> iterator = propertyValues.iterator();
+            if (iterator.hasNext()) {
+                return iterator.next();
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public boolean putAll(@Nonnull String key, Iterable<? extends String> values) {
         return props.putAll(key, values);
     }
 
+    @Override
     public boolean putAll(Multimap<? extends String, ? extends String> multimap) {
         return props.putAll(multimap);
     }
 
+    @Override
     public Set<? extends String> replaceValues(@Nonnull String key, Iterable<? extends String> values) {
         return props.replaceValues(key, values);
     }
 
+    @Override
     public void clear() {
         props.clear();
     }
 
+    @Override
     public Set<String> removeAll(@Nonnull Object key) {
         return props.removeAll(key);
     }
 
+    @Override
     public boolean put(String key, String value) {
         return props.put(key, value);
     }
 
+    @Override
     public Collection<String> values() {
         return props.values();
     }
 
+    @Override
     public Set<Map.Entry<String, String>> entries() {
         return props.entries();
     }
 
+    @Override
     public Multiset<String> keys() {
         return props.keys();
     }
 
+    @Override
     public Set<String> keySet() {
         return props.keySet();
     }
 
+    @Override
     public boolean isEmpty() {
         return props.isEmpty();
     }
 
+    @Override
     public boolean hasMandatoryProperty() {
         for (String qPropKey : props.keySet()) {
             if (qPropKey != null && qPropKey.endsWith(MANDATORY_SUFFIX)) {
@@ -122,10 +151,12 @@ public class PropertiesImpl implements Properties {
         return false;
     }
 
+    @Override
     public boolean containsKey(String key) {
         return props.containsKey(key);
     }
 
+    @Override
     public MatchResult matchQuery(Properties queryProperties) {
         if (queryProperties == null) {
             return MatchResult.NO_MATCH;

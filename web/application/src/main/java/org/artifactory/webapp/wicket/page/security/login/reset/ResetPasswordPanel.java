@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,18 +20,19 @@ package org.artifactory.webapp.wicket.page.security.login.reset;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.RestartResponseException;
 import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.validation.EqualPasswordInputValidator;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.MutableUserInfo;
@@ -58,8 +59,7 @@ public class ResetPasswordPanel extends TitledActionPanel {
         super(id);
         setVersioned(false);
 
-        ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-        final String passwordGenKey = servletWebRequest.getParameter("key");
+        final String passwordGenKey = WicketUtils.getParameter("key");
 
         //If there is no key supplied, redirect to the login page
         if (StringUtils.isEmpty(passwordGenKey)) {
@@ -144,6 +144,6 @@ public class ResetPasswordPanel extends TitledActionPanel {
      * Set the login page as a response
      */
     private void setResponse() {
-        setResponsePage(LoginPage.class);
+        throw new RestartResponseException(LoginPage.class);
     }
 }

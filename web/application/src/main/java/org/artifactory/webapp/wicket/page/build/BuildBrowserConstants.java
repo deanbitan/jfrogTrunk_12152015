@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,5 +33,6 @@ public interface BuildBrowserConstants {
     String BUILD_NUMBER = "buildNumber";
     String BUILD_STARTED = "buildStarted";
     String MODULE_ID = "moduleName";
+    String MOUNT_PATH = "/" + BUILDS + "/#{" + BUILD_NAME + "}/#{" + BUILD_NUMBER + "}/#{" + BUILD_STARTED + "}/#{" + MODULE_ID + "}";
     List<String> PATH_CONSTANTS = Lists.newArrayList(BUILD_NAME, BUILD_NUMBER, BUILD_STARTED, MODULE_ID);
 }

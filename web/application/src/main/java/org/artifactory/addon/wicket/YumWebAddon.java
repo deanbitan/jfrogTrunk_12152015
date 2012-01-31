@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.addon.wicket;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
+import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.repo.RepoPath;
@@ -30,7 +31,14 @@ import javax.annotation.Nullable;
  */
 public interface YumWebAddon extends Addon {
 
-    ITab getLocalRepoYumTab(String tabTitle, LocalRepoDescriptor descriptor, boolean isCreate);
+    /**
+     * Assemble the YUM section of the local repository configuration and add it to the given form
+     *
+     * @param form     Local repository configuration form
+     * @param repoKey  Key of edited/created repository
+     * @param isCreate True if in configuration create mode, false if in edit mode
+     */
+    void createAndAddLocalRepoYumSection(Form<LocalRepoDescriptor> form, String repoKey, boolean isCreate);
 
     @Nullable
     ITab getRpmInfoTab(String tabTitle, RepoPath repoPath) throws Exception;

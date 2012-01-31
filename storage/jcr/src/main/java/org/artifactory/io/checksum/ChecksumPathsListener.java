@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,14 +18,13 @@
 
 package org.artifactory.io.checksum;
 
-import com.google.common.io.Closeables;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.id.NodeId;
 import org.apache.jackrabbit.core.id.PropertyId;
 import org.apache.jackrabbit.core.observation.EventImpl;
 import org.apache.jackrabbit.core.observation.EventState;
 import org.apache.jackrabbit.core.observation.SynchronousEventListener;
+import org.apache.jackrabbit.core.state.ChildNodeEntry;
 import org.apache.jackrabbit.core.state.ItemStateException;
 import org.apache.jackrabbit.core.state.ItemStateManager;
 import org.apache.jackrabbit.core.state.NodeState;
@@ -33,6 +32,7 @@ import org.apache.jackrabbit.core.state.PropertyState;
 import org.apache.jackrabbit.core.value.BLOBFileValue;
 import org.apache.jackrabbit.core.value.InternalValue;
 import org.apache.jackrabbit.spi.Name;
+import org.apache.jackrabbit.spi.commons.name.NameConstants;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
@@ -44,8 +44,7 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
-import java.io.IOException;
-import java.io.InputStream;
+import java.util.Map;
 
 /**
  * Listens to repository events to update the checksum paths
@@ -72,6 +71,7 @@ public class ChecksumPathsListener implements SynchronousEventListener {
      *
      * @param events Jcr tx change events
      */
+    @Override
     public void onEvent(EventIterator events) {
         try {
             //Only commit the tx if it has been started here
@@ -103,7 +103,7 @@ public class ChecksumPathsListener implements SynchronousEventListener {
                 log.trace("*{}* = {}", EventState.valueOf(ev.getType()), ev);
                 //Filter-out non-local events
                 if (!ev.getEventListenerSession().equals(ev.getEventSession())) {
-                    log.trace("Skiping non-local event {} from {} (local is {}).",
+                    log.trace("Skipping non-local event {} from {} (local is {}).",
                             new Object[]{ev, ev.getEventListenerSession(), ev.getEventSession()});
                     continue;
                 }
@@ -121,7 +121,7 @@ public class ChecksumPathsListener implements SynchronousEventListener {
                             break;
                         }
                     case Event.PROPERTY_ADDED:
-                        ChecksumPathInfo cpInfo = getBinaryPropertyInfo(ev);
+                        ChecksumPathInfo cpInfo = createChecksumPathInfoFromBinaryAddedEvent(ev);
                         if (cpInfo != null) {
                             log.debug("Adding checksumPath (prop_add) for jcr:content node id {}.",
                                     cpInfo.getBinaryNodeId());
@@ -144,6 +144,19 @@ public class ChecksumPathsListener implements SynchronousEventListener {
                             log.debug("Clearing checksumPath (node_remove) for jcr:content node id {}.", nodeId);
                             getCspaths().deleteChecksumPath(nodeId.toString());
                         }
+                        break;
+                    case Event.NODE_MOVED:
+                        // if the node moved to
+                        log.debug("Node moved event:" + ev);
+                        Map<String, String> eventInfo = ev.getInfo();
+                        String destination = eventInfo.get("destAbsPath");
+                        //String source = eventInfo.get("srcAbsPath");
+                        if (destination != null && !destination.startsWith("/trash")) {
+                            ChecksumPathInfo checksumPathInfo = createChecksumPathInfoFromMoveEvent(ev);
+                            if (checksumPathInfo != null) {
+                                getCspaths().updateChecksumPath(checksumPathInfo);
+                            }
+                        }
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Could not process item event.", e);
@@ -151,43 +164,14 @@ public class ChecksumPathsListener implements SynchronousEventListener {
         }
     }
 
-    private ChecksumPathInfo getBinaryPropertyInfo(EventImpl ev) throws ItemStateException {
+    private ChecksumPathInfo createChecksumPathInfoFromBinaryAddedEvent(EventImpl ev) throws ItemStateException {
         try {
             Name propName = ev.getQPath().getName();
             if (isJcrDataProp(propName)) {
-                NodeId nodeId;
-                PropertyState propState;
-                try {
-                    //Get the id of the node holding the jcr:data property (jcr:content)
-                    nodeId = ev.getParentId();
-                    NodeState nodeState = (NodeState) ism.getItemState(nodeId);
-                    if (nodeState == null) {
-                        return null;
-                    }
-                    PropertyId id = new PropertyId(nodeState.getNodeId(), propName);
-                    propState = (PropertyState) ism.getItemState(id);
-                } catch (ItemStateException ise) {
-                    //Node or property may not exist becasue of an external change event - ignore it
-                    if (ev.isExternal()) {
-                        log.info("Skipping node - no longer available {}", ev);
-                        return null;
-                    } else {
-                        throw ise;
-                    }
-                }
-                InternalValue value = propState.getValues()[0];
-                Binary binary = value.getBinary();
+                NodeId nodeId = ev.getParentId();
+                // event path ends with /jcr:content/jcr:data get grandparent path to the containing node path
                 String path = PathUtils.getAncesstor(ev.getPath(), 2);
-                DataIdentifier identifier = ((BLOBFileValue) binary).getDataIdentifier();
-                if (identifier == null) {
-                    //Can happen for memory blobs that are extracted from a bundle, in older versions
-                    return null;
-                }
-                String checksum = identifier.toString();
-                long size = binary.getSize();
-                String id = nodeId.toString();
-                log.trace("Calculating ChecksumPath for {} in parent node {}", propState.getName(), id);
-                return new ChecksumPathInfo(path, checksum, size, id);
+                return createChecksumPathInfo(ev, nodeId, path);
             }
             return null;
         } catch (Exception e) {
@@ -195,14 +179,59 @@ public class ChecksumPathsListener implements SynchronousEventListener {
         }
     }
 
-    private DataIdentifier createIndentifierForBinaryValue(Binary binary) throws RepositoryException, IOException {
-        InputStream binaryStream = null;
+    private ChecksumPathInfo createChecksumPathInfoFromMoveEvent(EventImpl ev)
+            throws ItemStateException, RepositoryException {
         try {
-            binaryStream = binary.getStream();
-            return new DataIdentifier(DigestUtils.sha(binaryStream));
-        } finally {
-            Closeables.closeQuietly(binaryStream);
+            NodeState itemState = (NodeState) ism.getItemState(ev.getChildId());
+            ChildNodeEntry childNodeEntry = itemState.getChildNodeEntry(NameConstants.JCR_CONTENT, 1);
+            if (childNodeEntry == null) {
+                log.debug("Skipping move node with no content child node: {}", ev);
+                return null;
+            }
+            return createChecksumPathInfo(ev, childNodeEntry.getId(), ev.getPath());
+        } catch (ItemStateException e) {
+            //Node or property may not exist because of an external change event - ignore it
+            if (ev.isExternal()) {
+                log.info("Skipping node - no longer available {}", ev);
+                return null;
+            } else {
+                throw e;
+            }
         }
+    }
+
+    private ChecksumPathInfo createChecksumPathInfo(EventImpl ev, NodeId binaryNodeId, String path)
+            throws ItemStateException, RepositoryException {
+        PropertyState propState;
+        try {
+            //Get the id of the node holding the jcr:data property (jcr:content)
+            NodeState nodeState = (NodeState) ism.getItemState(binaryNodeId);
+            if (nodeState == null) {
+                return null;
+            }
+            PropertyId id = new PropertyId(nodeState.getNodeId(), NameConstants.JCR_DATA);
+            propState = (PropertyState) ism.getItemState(id);
+        } catch (ItemStateException ise) {
+            //Node or property may not exist because of an external change event - ignore it
+            if (ev.isExternal()) {
+                log.info("Skipping node - no longer available {}", ev);
+                return null;
+            } else {
+                throw ise;
+            }
+        }
+        InternalValue value = propState.getValues()[0];
+        Binary binary = value.getBinary();
+        DataIdentifier identifier = ((BLOBFileValue) binary).getDataIdentifier();
+        if (identifier == null) {
+            //Can happen for memory blobs that are extracted from a bundle, in older versions
+            return null;
+        }
+        String checksum = identifier.toString();
+        long size = binary.getSize();
+        String id = binaryNodeId.toString();
+        log.trace("Calculating ChecksumPath for {} in parent node {}", propState.getName(), id);
+        return new ChecksumPathInfo(path, checksum, size, id);
     }
 
     private boolean isJcrDataProp(Name propertyName) {

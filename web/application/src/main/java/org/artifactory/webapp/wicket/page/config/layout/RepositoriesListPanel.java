@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,12 +22,12 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.wicket.Component;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
@@ -88,7 +88,7 @@ public class RepositoriesListPanel extends TitledPanel {
                     @Override
                     protected void onEvent(AjaxRequestTarget target) {
                         PageParameters parameters = new PageParameters();
-                        parameters.put(RepositoryConfigPage.REPO_ID, descriptor.getKey());
+                        parameters.set(RepositoryConfigPage.REPO_ID, descriptor.getKey());
                         setResponsePage(RepositoryConfigPage.class, parameters);
                     }
                 });
@@ -121,7 +121,7 @@ public class RepositoriesListPanel extends TitledPanel {
                     @Override
                     protected void onEvent(AjaxRequestTarget target) {
                         PageParameters parameters = new PageParameters();
-                        parameters.put(RepositoryConfigPage.REPO_ID, descriptor.getKey());
+                        parameters.set(RepositoryConfigPage.REPO_ID, descriptor.getKey());
                         setResponsePage(RepositoryConfigPage.class, parameters);
                     }
                 });
@@ -153,7 +153,7 @@ public class RepositoriesListPanel extends TitledPanel {
                     @Override
                     protected void onEvent(AjaxRequestTarget target) {
                         PageParameters parameters = new PageParameters();
-                        parameters.put(RepositoryConfigPage.REPO_ID, descriptor.getKey());
+                        parameters.set(RepositoryConfigPage.REPO_ID, descriptor.getKey());
                         setResponsePage(RepositoryConfigPage.class, parameters);
                     }
                 });
@@ -183,6 +183,7 @@ public class RepositoriesListPanel extends TitledPanel {
     private List<RepoDescriptor> filterDescriptorsWithCurrentLayout(List<RepoDescriptor> allDescriptors,
             final RepoLayout layout) {
         return Lists.newArrayList(Iterables.filter(allDescriptors, new Predicate<RepoDescriptor>() {
+            @Override
             public boolean apply(@Nonnull RepoDescriptor input) {
                 return input.getRepoLayout() != null && input.getRepoLayout().equals(layout);
             }
@@ -192,6 +193,7 @@ public class RepositoriesListPanel extends TitledPanel {
     private List<RepoDescriptor> filterLocalRepos(List<RepoDescriptor> allDescriptors) {
         List<RepoDescriptor> repoDescriptors = Lists.newArrayList(
                 Iterables.filter(allDescriptors, new Predicate<RepoDescriptor>() {
+                    @Override
                     public boolean apply(@Nonnull RepoDescriptor input) {
                         return input instanceof LocalRepoDescriptor;
                     }
@@ -203,6 +205,7 @@ public class RepositoriesListPanel extends TitledPanel {
     private List<RepoDescriptor> filterRemoteRepos(List<RepoDescriptor> allDescriptors) {
         List<RepoDescriptor> repoDescriptors = Lists.newArrayList(
                 Iterables.filter(allDescriptors, new Predicate<RepoDescriptor>() {
+                    @Override
                     public boolean apply(@Nonnull RepoDescriptor input) {
                         return input instanceof RemoteRepoDescriptor;
                     }
@@ -214,6 +217,7 @@ public class RepositoriesListPanel extends TitledPanel {
     private List<RepoDescriptor> filterVirtualRepos(List<RepoDescriptor> allDescriptors) {
         List<RepoDescriptor> repoDescriptors = Lists.newArrayList(
                 Iterables.filter(allDescriptors, new Predicate<RepoDescriptor>() {
+                    @Override
                     public boolean apply(@Nonnull RepoDescriptor input) {
                         return !input.isReal();
                     }
@@ -224,6 +228,7 @@ public class RepositoriesListPanel extends TitledPanel {
 
     private void sortDescriptorsAlphabetically(List<RepoDescriptor> descriptors) {
         Collections.sort(descriptors, new Comparator<RepoDescriptor>() {
+            @Override
             public int compare(RepoDescriptor o1, RepoDescriptor o2) {
                 return o1.getKey().compareTo(o2.getKey());
             }

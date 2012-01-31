@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,9 +19,9 @@
 package org.artifactory.common.wicket.component.confirm;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.artifactory.common.wicket.util.WicketUtils;
 
 import static org.artifactory.common.wicket.util.JavaScriptUtils.jsFunctionCall;
 
@@ -40,9 +40,9 @@ public class AjaxConfirm {
 
     public void confirm(ConfirmDialog dialog) {
         final ConfirmAjaxBehavior eventBehavior = new ConfirmAjaxBehavior(dialog);
-        RequestCycle.get().getResponsePage().add(eventBehavior);
+        WicketUtils.getPage().add(eventBehavior);
         final AjaxRequestTarget target = AjaxRequestTarget.get();
-        target.appendJavascript(eventBehavior.getConfirmScript());
+        target.appendJavaScript(eventBehavior.getConfirmScript());
     }
 
     private static class ConfirmAjaxBehavior extends AjaxEventBehavior {
@@ -55,7 +55,7 @@ public class AjaxConfirm {
 
         @Override
         protected void onEvent(AjaxRequestTarget target) {
-            String approvedString = RequestCycle.get().getRequest().getParameter("confirm");
+            String approvedString = WicketUtils.getParameter("confirm");
             boolean approved = StringUtils.isEmpty(approvedString) || Boolean.valueOf(approvedString);
             dialog.onConfirm(approved, target);
             getComponent().remove(this);

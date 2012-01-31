@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,6 @@ import com.google.common.collect.Multimap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.extensions.markup.html.basic.SmartLinkLabel;
@@ -42,6 +41,7 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.markup.repeater.OddEvenItem;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AclService;
@@ -154,7 +154,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
     @Override
     public void onShow(AjaxRequestTarget target) {
         super.onShow(target);
-        target.appendJavascript("PermissionTabPanel.onShow()");
+        target.appendJavaScript("PermissionTabPanel.onShow()");
     }
 
     private void addPermissionTargetNameField(TitledBorder border) {
@@ -180,6 +180,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
 
     private void addCancelButton() {
         TitledAjaxLink cancel = new TitledAjaxLink("cancel", "Cancel") {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 cancel();
                 ModalHandler.closeCurrent(target);
@@ -229,7 +230,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                         String message = "Permission target '" + name + "' updated successfully.";
                         AccessLogger.updated(message);
                         getPage().info(message);
-                        target.addComponent(PermissionTargetCreateUpdatePanel.this);
+                        target.add(PermissionTargetCreateUpdatePanel.this);
                     } catch (Exception e) {
                         String msg = "Failed to update permissions target: " + e.getMessage();
                         log.error(msg, e);
@@ -240,7 +241,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                 }
                 //Close the modal window and re-render the table
                 targetsTable.modelChanged();
-                target.addComponent(targetsTable);
+                target.add(targetsTable);
                 AjaxUtils.refreshFeedback(target);
                 ModalHandler.closeCurrent(target);
             }
@@ -307,7 +308,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                 //If the item is an anonymous user and the access is disabled, warn
                 String username = model.getObject().getPrincipal();
                 if (UserInfo.ANONYMOUS.equals(username) && !authService.isAnonAccessEnabled()) {
-                    CharSequence pageUrl = urlFor(SecurityGeneralConfigPage.class, PageParameters.NULL);
+                    CharSequence pageUrl = urlFor(SecurityGeneralConfigPage.class, new PageParameters());
 
                     StringBuilder usernameLabelBuilder = new StringBuilder(username).append(" (");
                     if (authService.isAdmin()) {

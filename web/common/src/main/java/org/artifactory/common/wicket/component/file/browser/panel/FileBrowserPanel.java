@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,11 +20,11 @@ package org.artifactory.common.wicket.component.file.browser.panel;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -34,6 +34,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.string.AppendingStringBuffer;
 import org.apache.wicket.util.string.Strings;
 import org.artifactory.common.ConstantValues;
@@ -78,7 +79,7 @@ public class FileBrowserPanel extends BaseModalPanel {
         setChRoot(pathHelper.getWorkingDirectoryPath());
 
         setOutputMarkupId(true);
-        add(new SimpleAttributeModifier("class", "fileBrowser"));
+        add(new AttributeModifier("class", "fileBrowser"));
 
         add(new ResourcePackage(FileBrowserPanel.class)
                 .addJavaScript()
@@ -127,7 +128,7 @@ public class FileBrowserPanel extends BaseModalPanel {
                 onOkClicked(target);
             } else {
                 setCurrentFolder(enforceRootFolder(file).getAbsolutePath());
-                target.addComponent(this);
+                target.add(this);
             }
             return;
         }
@@ -197,7 +198,7 @@ public class FileBrowserPanel extends BaseModalPanel {
     private static class OkButton extends BaseTitledLink {
         private OkButton(String id) {
             super(id, "OK");
-            add(new SimpleAttributeModifier("onclick", "FileBrowser.get().ok();"));
+            add(new AttributeModifier("onclick", "FileBrowser.get().ok();"));
         }
     }
 
@@ -206,6 +207,7 @@ public class FileBrowserPanel extends BaseModalPanel {
             super(id, "Cancel");
         }
 
+        @Override
         public void onClick(AjaxRequestTarget target) {
             FileBrowserPanel.this.setDefaultModelObject(null);
             onCancelClicked(target);
@@ -231,7 +233,7 @@ public class FileBrowserPanel extends BaseModalPanel {
 
             setCurrentFolder(parentFolder.getAbsolutePath());
             FileBrowserPanel.this.setDefaultModelObject(parentFolder);
-            target.addComponent(FileBrowserPanel.this);
+            target.add(FileBrowserPanel.this);
         }
     }
 
@@ -244,7 +246,7 @@ public class FileBrowserPanel extends BaseModalPanel {
         protected void populateItem(ListItem item) {
             File file = (File) item.getDefaultModelObject();
             item.add(new FileLink("fileNameLabel", file));
-            item.add(new SimpleAttributeModifier("class", file.isDirectory() ? "folder" : "file"));
+            item.add(new AttributeModifier("class", file.isDirectory() ? "folder" : "file"));
 
         }
     }
@@ -253,7 +255,7 @@ public class FileBrowserPanel extends BaseModalPanel {
         private FileLink(String id, final File file) {
             super(id, file.getName());
 
-            add(new SimpleAttributeModifier("onclick",
+            add(new AttributeModifier("onclick",
                     "FileBrowser.get().onFileClick(this, event);"));
 
             if (file.isDirectory()) {
@@ -262,7 +264,7 @@ public class FileBrowserPanel extends BaseModalPanel {
                     protected void onEvent(AjaxRequestTarget target) {
                         setCurrentFolder(file.getAbsolutePath());
                         FileBrowserPanel.this.setDefaultModelObject(file);
-                        target.addComponent(FileBrowserPanel.this);
+                        target.add(FileBrowserPanel.this);
                     }
                 });
             } else {
@@ -297,19 +299,20 @@ public class FileBrowserPanel extends BaseModalPanel {
                     setCurrentFolder(root.getAbsolutePath());
                     FileBrowserPanel.this.setDefaultModelObject(root);
 
-                    target.addComponent(FileBrowserPanel.this);
+                    target.add(FileBrowserPanel.this);
                 }
             });
         }
 
-        @SuppressWarnings({"RefusedBequest"})
+        @SuppressWarnings({"RefusedBequest", "unchecked"})
         @Override
         protected void appendOptionHtml(AppendingStringBuffer buffer, File choice, int index, String selected) {
             IChoiceRenderer<? super File> renderer = getChoiceRenderer();
             Object objectValue = renderer.getDisplayValue(choice);
             String displayValue = "";
             if (objectValue != null) {
-                displayValue = getConverter(objectValue.getClass())
+                IConverter converter = getConverter(objectValue.getClass());
+                displayValue = converter
                         .convertToString(objectValue, getLocale());
             }
 
@@ -411,17 +414,19 @@ public class FileBrowserPanel extends BaseModalPanel {
                     File root = getModelObject();
                     setCurrentFolder(root.getAbsolutePath());
                     FileBrowserPanel.this.setDefaultModelObject(root);
-                    target.addComponent(FileBrowserPanel.this);
+                    target.add(FileBrowserPanel.this);
                 }
             });
         }
     }
 
     private static class RootOnlyChoiceRenderer implements IChoiceRenderer<File> {
+        @Override
         public Object getDisplayValue(File object) {
             return "/";
         }
 
+        @Override
         public String getIdValue(File object, int index) {
             return "0";
         }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,7 +26,6 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
-import org.artifactory.addon.wicket.YumWebAddon;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
@@ -79,8 +78,12 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         tabList.add(replicationWebAddon.getLocalRepoReplicationPanel("Replication", replicationDescriptor,
                 mutableDescriptor, action));
 
-        YumWebAddon yumWebAddon = addons.addonByType(YumWebAddon.class);
-        tabList.add(yumWebAddon.getLocalRepoYumTab("YUM", entity, isCreate()));
+        tabList.add(new AbstractTab(Model.of("Packages")) {
+            @Override
+            public Panel getPanel(String panelId) {
+                return new LocalRepoPackagesPanel(panelId, entity, isCreate());
+            }
+        });
 
         return tabList;
     }

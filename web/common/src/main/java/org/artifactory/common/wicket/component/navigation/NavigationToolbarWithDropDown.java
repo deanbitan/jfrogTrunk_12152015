@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.common.wicket.component.navigation;
 
-import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractToolbar;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.DataTable;
 import org.apache.wicket.markup.html.WebComponent;
@@ -40,7 +40,7 @@ public class NavigationToolbarWithDropDown extends AbstractToolbar {
 
         WebMarkupContainer span = new WebMarkupContainer("span");
         add(span);
-        span.add(new SimpleAttributeModifier("colspan", String.valueOf(table.getColumns().length)));
+        span.add(new AttributeModifier("colspan", table.getColumns().size()));
 
         span.add(newPagingNavigator("navigator", table));
         span.add(newNavigatorLabel("navigatorLabel"));

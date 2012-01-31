@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,6 +36,7 @@ import org.artifactory.api.security.SecurityListener;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserInfoBuilder;
 import org.artifactory.api.security.ldap.LdapService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.config.ConfigurationException;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -50,7 +51,6 @@ import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.sapi.common.ExportSettings;
@@ -81,6 +81,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.jcr.Session;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -133,13 +134,13 @@ public class SecurityServiceImpl implements InternalSecurityService {
     private InternalArtifactoryContext context;
 
     private TreeSet<SecurityListener> securityListeners = new TreeSet<SecurityListener>();
-    private final long lastLoginBufferTime = TimeUnit.SECONDS.toMillis(5);
 
     @Autowired
     private void setApplicationContext(ApplicationContext context) throws BeansException {
         this.context = (InternalArtifactoryContext) context;
     }
 
+    @Override
     public void init() {
         //Locate and import external configuration file
         checkForExternalConfiguration();
@@ -151,13 +152,16 @@ public class SecurityServiceImpl implements InternalSecurityService {
         createDefaultAnonymousUser();
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         clearSecurityListeners();
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         SecurityVersion.values();
         SecurityVersion originalVersion = source.getVersion().getSubConfigElementVersion(SecurityVersion.class);
@@ -215,6 +219,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public void createOcmRoots() {
         jcr.getOrCreateUnstructuredNode(JcrAclManager.getAclsJcrPath());
         jcr.getOrCreateUnstructuredNode(JcrUserGroupManager.getUsersJcrPath());
@@ -229,26 +234,31 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public boolean isAnonymous() {
         Authentication authentication = AuthenticationHelper.getAuthentication();
         return authentication != null && UserInfo.ANONYMOUS.equals(authentication.getName());
     }
 
+    @Override
     public boolean isAnonAccessEnabled() {
         SecurityDescriptor security = centralConfig.getDescriptor().getSecurity();
         return security != null && security.isAnonAccessEnabled();
     }
 
+    @Override
     public boolean isAuthenticated() {
         Authentication authentication = AuthenticationHelper.getAuthentication();
         return isAuthenticated(authentication);
     }
 
+    @Override
     public boolean isAdmin() {
         Authentication authentication = AuthenticationHelper.getAuthentication();
         return isAdmin(authentication);
     }
 
+    @Override
     public AclInfo createAcl(MutableAclInfo aclInfo) {
         assertAdmin();
         if (StringUtils.isEmpty(aclInfo.getPermissionTarget().getName())) {
@@ -260,6 +270,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return createdAcl;
     }
 
+    @Override
     public void updateAcl(MutableAclInfo acl) {
         //If the editing user is not a sys-admin
         if (!isAdmin()) {
@@ -273,11 +284,13 @@ public class SecurityServiceImpl implements InternalSecurityService {
         interceptors.onPermissionsUpdate();
     }
 
+    @Override
     public void deleteAcl(PermissionTargetInfo target) {
         internalAclManager.deleteAcl(new PermissionTarget(target));
         interceptors.onPermissionsDelete();
     }
 
+    @Override
     public List<PermissionTargetInfo> getPermissionTargets(ArtifactoryPermission artifactoryPermission) {
         Permission permission = permissionFor(artifactoryPermission);
         return getPermissionTargetsByPermission(permission);
@@ -305,22 +318,27 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return result;
     }
 
+    @Override
     public boolean isUpdatableProfile() {
         UserInfo simpleUser = currentUser();
         return simpleUser != null && simpleUser.isUpdatableProfile();
     }
 
+    @Override
     public boolean isTransientUser() {
         UserInfo simpleUser = currentUser();
         return simpleUser != null && simpleUser.isTransientUser();
     }
 
+    @Override
+    @Nonnull
     public String currentUsername() {
         Authentication authentication = AuthenticationHelper.getAuthentication();
         //Do not return a null username or this will cause a jcr constraint violation
         return (authentication != null ? authentication.getName() : SecurityService.USER_SYSTEM);
     }
 
+    @Override
     public UserInfo currentUser() {
         Authentication authentication = AuthenticationHelper.getAuthentication();
         if (authentication == null) {
@@ -330,10 +348,12 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return user.getDescriptor();
     }
 
+    @Override
     public UserInfo findUser(String username) {
         return userGroupManager.loadUserByUsername(username).getDescriptor();
     }
 
+    @Override
     public AclInfo getAcl(PermissionTargetInfo permissionTarget) {
         Acl acl = internalAclManager.findAclById(new PermissionTarget(permissionTarget));
         if (acl != null) {
@@ -357,6 +377,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public List<AclInfo> getAllAcls() {
         Collection<Acl> acls = internalAclManager.getAllAcls();
         List<AclInfo> descriptors = new ArrayList<AclInfo>(acls.size());
@@ -366,6 +387,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return descriptors;
     }
 
+    @Override
     public List<UserInfo> getAllUsers(boolean includeAdmins) {
         Collection<User> allUsers = userGroupManager.getAllUsers();
         List<UserInfo> usersInfo = new ArrayList<UserInfo>(allUsers.size());
@@ -389,6 +411,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return false;
     }
 
+    @Override
     public boolean createUser(MutableUserInfo user) {
         user.setUsername(user.getUsername().toLowerCase());
         boolean userCreated = userGroupManager.createUser(new SimpleUser(user));
@@ -398,6 +421,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return userCreated;
     }
 
+    @Override
     public void updateUser(MutableUserInfo user) {
         user.setUsername(user.getUsername().toLowerCase());
         userGroupManager.updateUser(new SimpleUser(user));
@@ -406,6 +430,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public void deleteUser(String username) {
         internalAclManager.removeAllUserAces(username);
         userGroupManager.removeUser(username);
@@ -415,10 +440,12 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public void updateGroup(MutableGroupInfo groupInfo) {
         userGroupManager.updateGroup(new Group(groupInfo));
     }
 
+    @Override
     public boolean createGroup(MutableGroupInfo groupInfo) {
         boolean groupCreated = userGroupManager.createGroup(new Group(groupInfo));
         if (groupCreated) {
@@ -427,6 +454,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return groupCreated;
     }
 
+    @Override
     public void deleteGroup(String groupName) {
         List<UserInfo> userInGroup = findUsersInGroup(groupName);
         for (UserInfo userInfo : userInGroup) {
@@ -436,6 +464,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         interceptors.onGroupDelete(groupName);
     }
 
+    @Override
     public List<GroupInfo> getAllGroups() {
         Collection<Group> groups = userGroupManager.getAllGroups();
         List<GroupInfo> groupsInfo = new ArrayList<GroupInfo>(groups.size());
@@ -445,6 +474,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return groupsInfo;
     }
 
+    @Override
     public Set<GroupInfo> getNewUserDefaultGroups() {
         List<GroupInfo> allGroups = getAllGroups();
         Set<GroupInfo> defaultGroups = new HashSet<GroupInfo>();
@@ -456,6 +486,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return defaultGroups;
     }
 
+    @Override
     public List<GroupInfo> getAllExternalGroups() {
         List<GroupInfo> externalGroups = Lists.newArrayList();
         List<GroupInfo> allGroups = getAllGroups();
@@ -467,12 +498,14 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return externalGroups;
     }
 
+    @Override
     public List<GroupInfo> getInternalGroups() {
         List<GroupInfo> allGroups = getAllGroups();
         allGroups.removeAll(getAllExternalGroups());
         return allGroups;
     }
 
+    @Override
     public Set<String> getNewUserDefaultGroupsNames() {
         Set<GroupInfo> defaultGroups = getNewUserDefaultGroups();
         Set<String> defaultGroupsNames = new HashSet<String>(defaultGroups.size());
@@ -482,6 +515,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return defaultGroupsNames;
     }
 
+    @Override
     public void addUsersToGroup(String groupName, List<String> usernames) {
         for (String username : usernames) {
             addUserToGroup(username, groupName);
@@ -503,6 +537,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public void removeUsersFromGroup(String groupName, List<String> usernames) {
         for (String username : usernames) {
             removeUserFromGroup(username, groupName);
@@ -520,6 +555,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public List<UserInfo> findUsersInGroup(String groupName) {
         List<UserInfo> allUsers = getAllUsers(true);
         List<UserInfo> groupUsers = new ArrayList<UserInfo>();
@@ -531,6 +567,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return groupUsers;
     }
 
+    @Override
     public String resetPassword(String userName, String remoteAddress, String resetPageUrl) {
         UserInfo userInfo = null;
         try {
@@ -561,6 +598,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return "We have sent you via email a link for resetting your password. Please check your inbox.";
     }
 
+    @Override
     public UserInfo findOrCreateExternalAuthUser(String userName, boolean transientUser) {
         UserInfo userInfo;
         try {
@@ -585,6 +623,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return userInfo;
     }
 
+    @Override
     public GroupInfo findGroup(String groupName) {
         return userGroupManager.findGroup(groupName).getInfo();
     }
@@ -597,6 +636,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
      * @param resetPageUrl  The URL to the password reset page
      * @throws Exception
      */
+    @Override
     public void generatePasswordResetKey(String username, String remoteAddress, String resetPageUrl) throws Exception {
         UserInfo userInfo;
         try {
@@ -646,6 +686,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public SerializablePair<Date, String> getPasswordResetKeyInfo(String username) {
         UserInfo userInfo = findUser(username);
         String passwordKey = userInfo.getGenPasswordKey();
@@ -670,6 +711,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return new SerializablePair<Date, String>(date, ip);
     }
 
+    @Override
     public SerializablePair<String, Long> getUserLastLoginInfo(String username) {
         UserInfo userInfo;
         try {
@@ -689,7 +731,14 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return pair;
     }
 
+    @Override
     public void updateUserLastLogin(String username, String clientIp, long loginTimeMillis) {
+        long lastLoginBufferTimeSecs = ConstantValues.userLastAccessUpdatesResolutionSecs.getLong();
+        if (lastLoginBufferTimeSecs < 1) {
+            log.debug("Skipping the update of the last login time for the user '{}': tracking is disabled.", username);
+            return;
+        }
+        long lastLoginBufferTimeMillis = TimeUnit.SECONDS.toMillis(lastLoginBufferTimeSecs);
         /**
          * Avoid throwing a UsernameNotFoundException by checking if the user exists, since we are in an
          * async-transactional method, and any unchecked exception thrown will fire a rollback and an ugly exception
@@ -702,9 +751,9 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
         UserInfo userInfo = findUser(username);
         long timeSinceLastLogin = loginTimeMillis - userInfo.getLastLoginTimeMillis();
-        if (timeSinceLastLogin < lastLoginBufferTime) {
+        if (timeSinceLastLogin < lastLoginBufferTimeMillis) {
             log.debug("Skipping the update of the last login time for the user '{}': " +
-                    "was updated less than 5 seconds ago.", username);
+                    "was updated less than {} seconds ago.", username, lastLoginBufferTimeSecs);
             return;
         }
         MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
@@ -713,6 +762,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         updateUser(mutableUser);
     }
 
+    @Override
     public SerializablePair<String, Long> getUserLastAccessInfo(String username) {
         UserInfo userInfo;
         try {
@@ -731,6 +781,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return pair;
     }
 
+    @Override
     public void updateUserLastAccess(String username, String clientIp, long accessTimeMillis,
             long accessUpdatesResolutionMillis) {
         UserInfo userInfo;
@@ -750,16 +801,19 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public boolean isHttpSsoProxied() {
         HttpSsoSettings httpSsoSettings = centralConfig.getDescriptor().getSecurity().getHttpSsoSettings();
         return httpSsoSettings != null && httpSsoSettings.isHttpSsoProxied();
     }
 
+    @Override
     public boolean isNoHttpSsoAutoUserCreation() {
         HttpSsoSettings httpSsoSettings = centralConfig.getDescriptor().getSecurity().getHttpSsoSettings();
         return httpSsoSettings != null && httpSsoSettings.isNoAutoUserCreation();
     }
 
+    @Override
     public String getHttpSsoRemoteUserRequestVariable() {
         HttpSsoSettings httpSsoSettings = centralConfig.getDescriptor().getSecurity().getHttpSsoSettings();
         if (httpSsoSettings == null) {
@@ -785,114 +839,138 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public boolean hasPermission(ArtifactoryPermission artifactoryPermission) {
         return isAdmin() || !getPermissionTargets(artifactoryPermission).isEmpty();
     }
 
+    @Override
     public boolean canRead(RepoPath repoPath) {
         return hasPermission(repoPath, ArtifactoryPermission.READ, false);
     }
 
+    @Override
     public boolean canImplicitlyReadParentPath(RepoPath repoPath) {
         return hasPermission(repoPath, ArtifactoryPermission.READ, true);
     }
 
+    @Override
     public boolean canAnnotate(RepoPath repoPath) {
         return hasPermission(repoPath, ArtifactoryPermission.ANNOTATE, false);
     }
 
+    @Override
     public boolean canDeploy(RepoPath repoPath) {
         return hasPermission(repoPath, ArtifactoryPermission.DEPLOY, false);
     }
 
+    @Override
     public boolean canDelete(RepoPath repoPath) {
         return hasPermission(repoPath, ArtifactoryPermission.DELETE, false);
     }
 
+    @Override
     public boolean canAdmin(RepoPath repoPath) {
         return hasPermission(repoPath, ArtifactoryPermission.ADMIN, false);
     }
 
+    @Override
     public boolean canAdmin(PermissionTargetInfo target) {
         Permission adminPermission = permissionFor(ArtifactoryPermission.ADMIN);
         return hasPermissionOnPermissionTarget(new PermissionTarget(target), adminPermission);
     }
 
+    @Override
     public boolean canRead(UserInfo user, PermissionTargetInfo target) {
         Permission readPermission = permissionFor(ArtifactoryPermission.READ);
         return hasPermissionOnPermissionTarget(new PermissionTarget(target), readPermission, new SimpleUser(user));
     }
 
+    @Override
     public boolean canAnnotate(UserInfo user, PermissionTargetInfo target) {
         Permission annotatePermission = permissionFor(ArtifactoryPermission.ANNOTATE);
         return hasPermissionOnPermissionTarget(new PermissionTarget(target), annotatePermission, new SimpleUser(user));
     }
 
+    @Override
     public boolean canDeploy(UserInfo user, PermissionTargetInfo target) {
         Permission deployPermission = permissionFor(ArtifactoryPermission.DEPLOY);
         return hasPermissionOnPermissionTarget(new PermissionTarget(target), deployPermission, new SimpleUser(user));
     }
 
+    @Override
     public boolean canDelete(UserInfo user, PermissionTargetInfo target) {
         Permission deletePermission = permissionFor(ArtifactoryPermission.DELETE);
         return hasPermissionOnPermissionTarget(new PermissionTarget(target), deletePermission, new SimpleUser(user));
     }
 
+    @Override
     public boolean canAdmin(UserInfo user, PermissionTargetInfo target) {
         Permission adminPermission = permissionFor(ArtifactoryPermission.ADMIN);
         return hasPermissionOnPermissionTarget(new PermissionTarget(target), adminPermission, new SimpleUser(user));
     }
 
+    @Override
     public boolean canRead(UserInfo user, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.READ);
         return hasPermission(new SimpleUser(user), path, permission);
     }
 
+    @Override
     public boolean canAnnotate(UserInfo user, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.ANNOTATE);
         return hasPermission(new SimpleUser(user), path, permission);
     }
 
+    @Override
     public boolean canDelete(UserInfo user, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.DELETE);
         return hasPermission(new SimpleUser(user), path, permission);
     }
 
+    @Override
     public boolean canDeploy(UserInfo user, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.DEPLOY);
         return hasPermission(new SimpleUser(user), path, permission);
     }
 
+    @Override
     public boolean canAdmin(UserInfo user, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.ADMIN);
         return hasPermission(new SimpleUser(user), path, permission);
     }
 
+    @Override
     public boolean canRead(GroupInfo group, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.READ);
         return hasPermission(group, path, permission);
     }
 
+    @Override
     public boolean canAnnotate(GroupInfo group, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.ANNOTATE);
         return hasPermission(group, path, permission);
     }
 
+    @Override
     public boolean canDelete(GroupInfo group, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.DELETE);
         return hasPermission(group, path, permission);
     }
 
+    @Override
     public boolean canDeploy(GroupInfo group, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.DEPLOY);
         return hasPermission(group, path, permission);
     }
 
+    @Override
     public boolean canAdmin(GroupInfo group, RepoPath path) {
         Permission permission = permissionFor(ArtifactoryPermission.ADMIN);
         return hasPermission(group, path, permission);
     }
 
+    @Override
     public boolean userHasPermissions(String username) {
         SimpleUser user = new SimpleUser(findUser(username.toLowerCase()));
         for (ArtifactoryPermission permission : ArtifactoryPermission.values()) {
@@ -903,6 +981,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return false;
     }
 
+    @Override
     public boolean userHasPermissionsOnRepositoryRoot(String repoKey) {
         Repo repo = repositoryService.repositoryByKey(repoKey);
         // If it is a real (i.e local or cached simply check permission on root.
@@ -938,6 +1017,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return false;
     }
 
+    @Override
     public boolean isDisableInternalPassword() {
         UserInfo simpleUser = currentUser();
         return simpleUser != null && MutableUserInfo.INVALID_PASSWORD.equals(simpleUser.getPassword());
@@ -1095,6 +1175,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return acl.isGranted(new Permission[]{permission}, sids, false);
     }
 
+    @Override
     public void exportTo(ExportSettings settings) {
         exportSecurityInfo(settings);
     }
@@ -1115,6 +1196,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
+    @Override
     public SecurityInfo getSecurityData() {
         List<UserInfo> users = getAllUsers(true);
         List<GroupInfo> groups = getAllGroups();
@@ -1124,6 +1206,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return descriptor;
     }
 
+    @Override
     public void importFrom(ImportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         status.setStatus("Importing security...", log);
@@ -1198,10 +1281,12 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return sids;
     }
 
+    @Override
     public void importSecurityData(String securityXml) {
         importSecurityData(new SecurityInfoReader().read(securityXml));
     }
 
+    @Override
     public void importSecurityData(SecurityInfo securityInfo) {
         interceptors.onBeforeSecurityImport(securityInfo);
         clearSecurityData();
@@ -1241,10 +1326,12 @@ public class SecurityServiceImpl implements InternalSecurityService {
         clearSecurityListeners();
     }
 
+    @Override
     public void addListener(SecurityListener listener) {
         securityListeners.add(listener);
     }
 
+    @Override
     public void removeListener(SecurityListener listener) {
         securityListeners.remove(listener);
     }
@@ -1259,20 +1346,24 @@ public class SecurityServiceImpl implements InternalSecurityService {
         SecurityContextHolder.getContext().setAuthentication(null);
     }
 
+    @Override
     public MultiStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
         return ldapService.testLdapConnection(ldapSetting, username, password);
     }
 
+    @Override
     public boolean isPasswordEncryptionEnabled() {
         CentralConfigDescriptor cc = centralConfig.getDescriptor();
         return cc.getSecurity().getPasswordSettings().isEncryptionEnabled();
     }
 
+    @Override
     public boolean userPasswordMatches(String passwordToCheck) {
         Authentication authentication = AuthenticationHelper.getAuthentication();
         return authentication != null && passwordToCheck.equals(authentication.getCredentials());
     }
 
+    @Override
     public boolean canDeployToLocalRepository() {
         return !repositoryService.getDeployableRepoDescriptors().isEmpty();
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -44,8 +44,8 @@ public class LogoutPage extends BasePage {
 
     @Override
     protected void init() {
-        HttpServletRequest servletRequest = WicketUtils.getWebRequest().getHttpServletRequest();
-        HttpServletResponse servletResponse = WicketUtils.getWebResponse().getHttpServletResponse();
+        HttpServletRequest servletRequest = WicketUtils.getHttpServletRequest();
+        HttpServletResponse servletResponse = WicketUtils.getHttpServletResponse();
         Authentication authentication = AuthenticationHelper.getAuthentication();
 
         Map<String, LogoutHandler> logoutHandlers = ContextHelper.get().beansForType(LogoutHandler.class);

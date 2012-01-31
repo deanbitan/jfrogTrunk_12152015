@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -77,6 +77,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         List<PropertySet> propertySets = localRepoDescriptor.getPropertySets();
         if (propertySets != null && !propertySets.isEmpty()) {
             setPropertySets(Lists.transform(propertySets, new Function<PropertySet, String>() {
+                @Override
                 public String apply(@Nonnull PropertySet input) {
                     return input.getName();
                 }
@@ -86,6 +87,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         }
     }
 
+    @Override
     public boolean isBlackedOut() {
         return blackedOut;
     }
@@ -94,6 +96,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         this.blackedOut = blackedOut;
     }
 
+    @Override
     public String getChecksumPolicyType() {
         return checksumPolicyType;
     }
@@ -102,6 +105,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         this.checksumPolicyType = checksumPolicyType;
     }
 
+    @Override
     public boolean isHandleReleases() {
         return handleReleases;
     }
@@ -110,6 +114,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         this.handleReleases = handleReleases;
     }
 
+    @Override
     public boolean isHandleSnapshots() {
         return handleSnapshots;
     }
@@ -118,6 +123,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         this.handleSnapshots = handleSnapshots;
     }
 
+    @Override
     public int getMaxUniqueSnapshots() {
         return maxUniqueSnapshots;
     }
@@ -126,6 +132,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         this.maxUniqueSnapshots = maxUniqueSnapshots;
     }
 
+    @Override
     public List<String> getPropertySets() {
         return propertySets;
     }
@@ -134,6 +141,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         this.propertySets = propertySetKeys;
     }
 
+    @Override
     public String getSnapshotVersionBehavior() {
         return snapshotVersionBehavior;
     }
@@ -142,6 +150,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         this.snapshotVersionBehavior = snapshotVersionBehavior;
     }
 
+    @Override
     public boolean isSuppressPomConsistencyChecks() {
         return suppressPomConsistencyChecks;
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,9 +36,9 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
 import org.slf4j.Logger;
@@ -122,6 +122,7 @@ public class WebdavServiceImpl implements WebdavService {
     @Autowired
     private RepositoryBrowsingService repoBrowsing;
 
+    @Override
     @SuppressWarnings({"OverlyComplexMethod"})
     public void handlePropfind(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         // Retrieve the resources
@@ -211,6 +212,7 @@ public class WebdavServiceImpl implements WebdavService {
         response.flush();
     }
 
+    @Override
     public void handleMkcol(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         RepoPath repoPath = request.getRepoPath();
         String repoKey = request.getRepoKey();
@@ -253,6 +255,7 @@ public class WebdavServiceImpl implements WebdavService {
         response.setStatus(HttpStatus.SC_CREATED);
     }
 
+    @Override
     public void handleDelete(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         RepoPath repoPath = request.getRepoPath();
         String repoKey = repoPath.getRepoKey();
@@ -277,6 +280,7 @@ public class WebdavServiceImpl implements WebdavService {
         response.setStatus(HttpStatus.SC_NO_CONTENT);
     }
 
+    @Override
     public void handleOptions(ArtifactoryResponse response) throws IOException {
         response.setHeader("DAV", "1,2");
         response.setHeader("Allow", WEBDAV_METHODS_LIST);
@@ -284,6 +288,7 @@ public class WebdavServiceImpl implements WebdavService {
         response.sendSuccess();
     }
 
+    @Override
     public void handlePost(ArtifactoryRequest request, ArtifactoryResponse response) {
         RepoPath repoPath = request.getRepoPath();
         String repoKey = repoPath.getRepoKey();
@@ -299,6 +304,7 @@ public class WebdavServiceImpl implements WebdavService {
         response.setStatus(HttpStatus.SC_METHOD_NOT_ALLOWED);
     }
 
+    @Override
     public void handleMove(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         RepoPath repoPath = request.getRepoPath();
         if (StringUtils.isEmpty(repoPath.getPath())) {
@@ -316,7 +322,8 @@ public class WebdavServiceImpl implements WebdavService {
             response.sendError(HttpStatus.SC_NOT_FOUND, "Target local repository not found.", log);
             return;
         }
-        if (!authService.canDelete(repoPath) || !authService.canDeploy(InternalRepoPathFactory.create(targetRepoKey, ""))) {
+        if (!authService.canDelete(repoPath) || !authService.canDeploy(
+                InternalRepoPathFactory.create(targetRepoKey, ""))) {
             response.sendError(HttpStatus.SC_UNAUTHORIZED, "Insufficient permissions.", log);
             return;
         }

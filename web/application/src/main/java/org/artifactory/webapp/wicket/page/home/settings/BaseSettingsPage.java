@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,14 +22,13 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
@@ -50,10 +49,13 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
     @SpringBean
     private RepositoryService repositoryService;
 
-    protected List<VirtualRepoDescriptor> virtualRepoDescriptors;
+    protected List<? extends RepoDescriptor> virtualRepoDescriptors;
+
+    protected List<? extends RepoDescriptor> localRepoDescriptors;
 
     public BaseSettingsPage() {
         virtualRepoDescriptors = getReadableVirtualRepoDescriptors();
+        localRepoDescriptors = repositoryService.getLocalRepoDescriptors();
         addSettingsPanel();
     }
 
@@ -70,8 +72,7 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
                     "Settings Generator is disabled: Unable to find readable virtual repositories."));
         } else {
             //Get context URL
-            ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-            HttpServletRequest request = servletWebRequest.getHttpServletRequest();
+            HttpServletRequest request = WicketUtils.getHttpServletRequest();
             String servletContextUrl = HttpUtils.getServletContextUrl(request);
             if (servletContextUrl.endsWith("/")) {
                 servletContextUrl = StringUtils.removeEnd(servletContextUrl, "/");
@@ -95,8 +96,8 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
      *
      * @return Readable virtual repository definitions
      */
-    private List<VirtualRepoDescriptor> getReadableVirtualRepoDescriptors() {
-        List<VirtualRepoDescriptor> readableDescriptors = Lists.newArrayList();
+    private List<RepoDescriptor> getReadableVirtualRepoDescriptors() {
+        List<RepoDescriptor> readableDescriptors = Lists.newArrayList();
 
         List<VirtualRepoDescriptor> virtualRepoDescriptors = repositoryService.getVirtualRepoDescriptors();
         for (VirtualRepoDescriptor virtualRepoDescriptor : virtualRepoDescriptors) {

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,9 +22,9 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.AddonType;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.sapi.common.Lock;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.sapi.common.Lock;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
@@ -167,7 +167,7 @@ public interface BuildAddon extends Addon {
      * than the size of the set of builds, all builds will be retained.
      *
      * @param buildName         The name of the build.
-     * @param discard    Build retention model that holds information about which build to discard
+     * @param discard           Build retention model that holds information about which build to discard
      * @param multiStatusHolder Status holder
      */
     @Lock(transactional = true)

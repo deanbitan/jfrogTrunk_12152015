@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -70,6 +70,7 @@ public class JcrUserGroupManager implements UserGroupManager {
         return PathFactoryHolder.get().getConfigPath(GROUPS_KEY);
     }
 
+    @Override
     public void init() {
         //Create the storage folders if they do not already exist
         Node confNode = jcr.getOrCreateUnstructuredNode(PathFactoryHolder.get().getConfigurationRootPath());
@@ -77,18 +78,22 @@ public class JcrUserGroupManager implements UserGroupManager {
         jcr.getOrCreateUnstructuredNode(confNode, GROUPS_KEY);
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         // Any relation to LDAP should be done here
         anonymousUser = null;
     }
 
+    @Override
     public void destroy() {
         anonymousUser = null;
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public Collection<User> getAllUsers() {
         ObjectContentManager ocm = getOcm();
@@ -100,6 +105,7 @@ public class JcrUserGroupManager implements UserGroupManager {
         return users;
     }
 
+    @Override
     public boolean userExists(String username) {
         if (UserInfo.ANONYMOUS.equals(username)) {
             return true;
@@ -111,6 +117,7 @@ public class JcrUserGroupManager implements UserGroupManager {
         return false;
     }
 
+    @Override
     public SimpleUser loadUserByUsername(String username) throws UsernameNotFoundException, DataAccessException {
         if (UserInfo.ANONYMOUS.equals(username) && anonymousUser != null) {
             return anonymousUser;
@@ -132,6 +139,7 @@ public class JcrUserGroupManager implements UserGroupManager {
         throw new UsernameNotFoundException("No such user: " + username + ".");
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public Collection<Group> getAllGroups() {
         ObjectContentManager ocm = getOcm();
@@ -143,6 +151,7 @@ public class JcrUserGroupManager implements UserGroupManager {
         return groups;
     }
 
+    @Override
     public Group findGroup(String groupName) {
         log.debug("Loading group {} from storage.", groupName);
 
@@ -157,11 +166,13 @@ public class JcrUserGroupManager implements UserGroupManager {
         throw new GroupNotFoundException("No such group: " + groupName + ".");
     }
 
+    @Override
     public void updateGroup(Group group) {
         ObjectContentManager ocm = getOcm();
         ocm.update(group);
     }
 
+    @Override
     public void deleteAllGroupsAndUsers() {
         jcr.delete(getGroupsJcrPath());
         jcr.delete(getUsersJcrPath());
@@ -171,6 +182,7 @@ public class JcrUserGroupManager implements UserGroupManager {
         anonymousUser = null;
     }
 
+    @Override
     public boolean createGroup(Group group) {
         try {
             findGroup(group.getGroupName());
@@ -184,6 +196,7 @@ public class JcrUserGroupManager implements UserGroupManager {
         }
     }
 
+    @Override
     public void removeGroup(String groupName) {
         ObjectContentManager ocm = getOcm();
         Group group = new Group(groupName);
@@ -191,6 +204,7 @@ public class JcrUserGroupManager implements UserGroupManager {
         ocm.save();
     }
 
+    @Override
     public boolean createUser(SimpleUser user) {
         String username = user.getUsername();
         try {
@@ -205,16 +219,19 @@ public class JcrUserGroupManager implements UserGroupManager {
         }
     }
 
+    @Override
     public void updateUser(SimpleUser user) {
         // remove and then create see http://issues.jfrog.org/jira/browse/RTFACT-1740
         removeUser(user);
         createUser(user);
     }
 
+    @Override
     public void removeUser(SimpleUser user) {
         removeUser(user.getUsername());
     }
 
+    @Override
     public void removeUser(String username) {
         ObjectContentManager ocm = getOcm();
         User user = new User(username);

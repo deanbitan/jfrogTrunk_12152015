@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,11 +20,8 @@ package org.artifactory.addon.wicket;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
-import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.list.ListView;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.license.LicenseInfo;
-import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.modal.panel.EditValueButtonRefreshBehavior;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
@@ -49,21 +46,8 @@ public interface LicensesWebAddon extends Addon {
 
     /**
      * Get the licenses info tab that is displayed in the {@code builds} page
-     *
-     * @param title            The title of the tab.
-     * @param build
-     * @param hasDeployOnLocal
-     * @return The tab.
      */
     ITab getLicensesInfoTab(String title, Build build, boolean hasDeployOnLocal);
-
-    /**
-     * Get the licenses label for the "General info" panel.
-     *
-     * @param id The wicket id
-     * @return The licenses label
-     */
-    Label getLicenseLabel(String id);
 
     /**
      * Get the the panel to change the panel on an artifact according to its current values, and all licenses
@@ -77,13 +61,8 @@ public interface LicensesWebAddon extends Addon {
     BaseModalPanel getChangeLicensePanel(EditValueButtonRefreshBehavior refreshBehavior, RepoPath path,
             List<LicenseInfo> currentValues);
 
-    ListView<LicenseInfo> getLicensesListView(String id, RepoPath repoPath);
-
-    Component getAddLicenseLink(String id, RepoPath repoPath, ListView<LicenseInfo> listView);
-
-    Component getEditLicenseLink(String id, RepoPath repoPath, ListView<LicenseInfo> listView);
-
-    Component getDeleteLink(String id, RepoPath repoPath, FieldSetBorder infoBorder, ListView<LicenseInfo> listView);
-
-    Component getViewLink(String id, RepoAwareActionableItem actionableItem, FieldSetBorder infoBorder);
+    /**
+     * @return A panel to control licenses fro the tree browser general info panel
+     */
+    Component getLicenseGeneralInfoPanel(RepoAwareActionableItem actionableItem);
 }

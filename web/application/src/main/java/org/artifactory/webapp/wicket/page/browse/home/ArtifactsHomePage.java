@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,8 +19,7 @@
 package org.artifactory.webapp.wicket.page.browse.home;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.markup.html.WebPage;
-import org.apache.wicket.request.target.basic.RedirectRequestTarget;
+import org.apache.wicket.Page;
 import org.artifactory.common.wicket.util.CookieUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.util.HttpUtils;
@@ -29,17 +28,21 @@ import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 /**
  * @author Yoav Aharoni
  */
-public class ArtifactsHomePage extends WebPage {
+public class ArtifactsHomePage extends Page {
     public ArtifactsHomePage() {
         setVersioned(false);
         setStatelessHint(true);
 
+    }
+
+    @Override
+    public void renderPage() {
         String lastPage = CookieUtils.getCookie(RememberPageBehavior.COOKIE_NAME);
         if (StringUtils.isEmpty(lastPage)) {
             setResponsePage(BrowseRepoPage.class);
         } else {
-            String serverUrl = HttpUtils.getServerUrl(WicketUtils.getWebRequest().getHttpServletRequest());
-            getRequestCycle().setRequestTarget(new RedirectRequestTarget(serverUrl + lastPage));
+            String serverUrl = HttpUtils.getServerUrl(WicketUtils.getHttpServletRequest());
+            WicketUtils.getWebResponse().sendRedirect(serverUrl + lastPage);
         }
     }
 }

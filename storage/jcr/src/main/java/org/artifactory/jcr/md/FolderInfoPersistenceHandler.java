@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,10 +35,12 @@ public class FolderInfoPersistenceHandler extends AbstractPersistenceHandler<Fol
         super(xmlProvider);
     }
 
+    @Override
     public boolean hasMetadata(MetadataAware metadataAware) {
         return metadataAware.isDirectory();
     }
 
+    @Override
     public FolderInfo read(MetadataAware metadataAware) {
         RepoPath repoPath = metadataAware.getRepoPath();
         Node node = metadataAware.getNode();
@@ -47,20 +49,24 @@ public class FolderInfoPersistenceHandler extends AbstractPersistenceHandler<Fol
         return folderInfo;
     }
 
+    @Override
     public void update(MetadataAware metadataAware, MutableFolderInfo folderInfo) {
         Node node = metadataAware.getNode();
         setPropertiesInNodeFromInfo(node, folderInfo);
     }
 
+    @Override
     public void remove(MetadataAware metadataAware) {
         throw new IllegalArgumentException("Removing basic folder metadata is forbidden!\n" +
                 "Done on folder " + metadataAware);
     }
 
+    @Override
     public MutableFolderInfo copy(FolderInfo original) {
         return InfoFactoryHolder.get().copyFolderInfo(original);
     }
 
+    @Override
     public MetadataInfo getMetadataInfo(MetadataAware metadataAware) {
         // TODO: Can actual build one from FolderInfo
         return null;

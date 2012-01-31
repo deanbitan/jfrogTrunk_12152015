@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,42 +43,52 @@ public class ExtendedDbDataStoreWrapper extends ExtendedDbDataStoreBase {
         this.store = store;
     }
 
+    @Override
     public DataRecord addRecord(InputStream stream) throws DataStoreException {
         return store.addRecord(stream);
     }
 
+    @Override
     public int deleteAllOlderThan(long min) throws DataStoreException {
         return store.deleteAllOlderThan(min);
     }
 
+    @Override
     public Iterator<DataIdentifier> getAllIdentifiers() throws DataStoreException {
         return store.getAllIdentifiers();
     }
 
+    @Override
     public int getMinRecordLength() {
         return store.getMinRecordLength();
     }
 
+    @Override
     public DataRecord getRecord(DataIdentifier identifier) throws DataStoreException {
         return store.getRecord(identifier);
     }
 
+    @Override
     public DataRecord getRecordIfStored(DataIdentifier identifier) throws DataStoreException {
         return store.getRecordIfStored(identifier);
     }
 
+    @Override
     public void init(String homeDir) throws DataStoreException {
         store.init(homeDir);
     }
 
+    @Override
     public void updateModifiedDateOnAccess(long before) {
         store.updateModifiedDateOnAccess(before);
     }
 
+    @Override
     public String getDatabaseType() {
         return store.getDatabaseType();
     }
 
+    @Override
     public ArtifactoryConnectionHelper getConnectionHelper() {
         ConnectionHelper conHelper = store.conHelper;
         if (ArtifactoryConnectionHelper.class.getCanonicalName().equals(conHelper.getClass().getCanonicalName())) {
@@ -89,10 +99,12 @@ public class ExtendedDbDataStoreWrapper extends ExtendedDbDataStoreBase {
         }
     }
 
+    @Override
     public void close() throws DataStoreException {
         store.close();
     }
 
+    @Override
     public void clearInUse() {
         store.clearInUse();
     }

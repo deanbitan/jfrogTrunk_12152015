@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -72,6 +72,7 @@ public class BuildForNameListSorter {
      */
     private static class BuildNumberComparator implements Comparator<BuildRun>, Serializable {
 
+        @Override
         public int compare(BuildRun build1, BuildRun build2) {
             if ((build1 == null) || (build2 == null)) {
                 return 0;

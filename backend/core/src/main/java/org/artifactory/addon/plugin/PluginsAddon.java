@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +21,7 @@ package org.artifactory.addon.plugin;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.config.ImportableExportable;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,4 +32,6 @@ public interface PluginsAddon extends Addon, ImportableExportable {
     <C> void execPluginActions(Class<? extends PluginAction> type, C context, Object... args);
 
     ResponseCtx execute(String executionName, Map params, boolean async);
+
+    Map<String, List<PluginInfo>> getPluginInfo();
 }

@@ -8,6 +8,7 @@ import org.artifactory.jcr.spring.StorageContextHelper;
 import org.artifactory.sapi.data.VfsNodeType;
 import org.artifactory.sapi.search.InvalidQueryRuntimeException;
 import org.artifactory.sapi.search.VfsComparatorType;
+import org.artifactory.sapi.search.VfsFunctionType;
 import org.artifactory.sapi.search.VfsQuery;
 import org.artifactory.sapi.search.VfsQueryCriterion;
 import org.artifactory.sapi.search.VfsQueryPathCriterion;
@@ -43,41 +44,56 @@ public class VfsQueryJcrImpl implements VfsQuery {
         defaultGroup = new BaseGroupCriterion(this);
     }
 
+    @Override
     public void setRootPath(String rootPath) {
         this.rootPath = PathUtils.trimSlashes(rootPath).toString();
     }
 
+    @Override
     public void setNodeTypeFilter(@Nonnull VfsNodeType nodeType) {
         matchNodeTypes.add(nodeType);
     }
 
+    @Override
     public VfsQueryCriterion addSmartEqualCriterion(@Nonnull String propertyName, @Nullable String value) {
         return internalAddCriterion(createSmartEqualCriterion(propertyName, value));
     }
 
+    @Override
     public VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
             @Nullable String value) {
         return internalAddCriterion(new VfsQueryCriterionJcrImpl(propertyName, comparator, value));
     }
 
+    @Override
+    public VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
+            @Nonnull VfsFunctionType function, @Nullable String value) {
+        return internalAddCriterion(new VfsQueryCriterionJcrImpl(propertyName, comparator, function, value));
+    }
+
+    @Override
     public VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
             @Nullable Long value) {
         return internalAddCriterion(new VfsQueryCriterionJcrImpl(propertyName, value, comparator));
     }
 
+    @Override
     public VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
             @Nullable Calendar value) {
         return internalAddCriterion(new VfsQueryCriterionJcrImpl(propertyName, value, comparator));
     }
 
+    @Override
     public VfsQueryCriterion group(VfsQueryCriterion... vfsQueryCriteria) {
         return defaultGroup.group(vfsQueryCriteria);
     }
 
+    @Override
     public void orderByAscending(@Nonnull String propertyName) {
         orders.add(new OrderBy(propertyName, true));
     }
 
+    @Override
     public void orderByDescending(@Nonnull String propertyName) {
         orders.add(new OrderBy(propertyName, false));
     }
@@ -86,6 +102,7 @@ public class VfsQueryJcrImpl implements VfsQuery {
         return defaultGroup.addCriterion(criterion);
     }
 
+    @Override
     @Nonnull
     public VfsQueryResult execute(boolean limit) {
         StringBuilder query = new StringBuilder();
@@ -151,18 +168,22 @@ public class VfsQueryJcrImpl implements VfsQuery {
         return new VfsQueryCriterionJcrImpl(propertyName, type, value);
     }
 
+    @Override
     public void addAllSubPathFilter() {
         addPathFilter(ALL_PATH_VALUE);
     }
 
+    @Override
     public VfsQueryPathCriterion addPathFilter(String pathFilter) {
         return internalAddPathCriterion(createSmartPathCriterion(pathFilter, null));
     }
 
+    @Override
     public VfsQueryPathCriterion addMetadataNameFilter(String pathFilter) {
         return internalAddPathCriterion(createSmartPathCriterion(pathFilter, VfsNodeType.METADATA));
     }
 
+    @Override
     public VfsQueryPathCriterion addPathFilters(String... pathFilters) {
         VfsQueryPathCriterion pathCriterion = null;
         for (String pathFilter : pathFilters) {
@@ -175,6 +196,7 @@ public class VfsQueryJcrImpl implements VfsQuery {
         return pathCriterion;
     }
 
+    @Override
     public VfsQueryPathCriterion addRelativePathFilter(String relativePathFilter) {
         // We can have double // in this path,
         // Be careful when we split with slash // will return an empty string

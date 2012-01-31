@@ -1,19 +1,21 @@
 package org.artifactory.common.wicket.util;
 
 import org.apache.wicket.Component;
+import org.apache.wicket.util.visit.IVisit;
+import org.apache.wicket.util.visit.IVisitor;
 
 /**
  * @author Yoav Aharoni
  */
-public class SetEnableVisitor<T extends Component> implements Component.IVisitor<T> {
+public class SetEnableVisitor implements IVisitor<Component, Void> {
     private boolean enabled;
 
     public SetEnableVisitor(boolean enabled) {
         this.enabled = enabled;
     }
 
-    public Object component(T component) {
+    @Override
+    public void component(Component component, IVisit<Void> visit) {
         component.setEnabled(enabled);
-        return CONTINUE_TRAVERSAL;
     }
 }

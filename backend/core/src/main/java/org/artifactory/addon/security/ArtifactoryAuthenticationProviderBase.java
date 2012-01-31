@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -49,12 +49,14 @@ public abstract class ArtifactoryAuthenticationProviderBase implements RealmAwar
     @Autowired
     private UserGroupService userGroupservice;
 
+    @Override
     public boolean supports(Class authentication) {
         return (UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication));
     }
 
     protected abstract String getProviderName();
 
+    @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userName = authentication.getName();
         log.debug("Trying to authenticate user '{}' via {}", userName, getProviderName());

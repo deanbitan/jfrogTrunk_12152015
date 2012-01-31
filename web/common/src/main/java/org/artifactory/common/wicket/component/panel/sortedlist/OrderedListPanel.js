@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,40 +19,40 @@
 dojo.provide("artifactory.OrderedListPanel");
 
 dojo.declare('OrderedListPanel', artifactory.Selectable, {
-    init: function(listId, textFieldId, upLinkId, downLinkId) {
+    init:function (listId, textFieldId, upLinkId, downLinkId) {
         this.domNode = dojo.byId(listId);
         this.textField = dojo.byId(textFieldId);
         this.upLink = dojo.byId(upLinkId);
         this.downLink = dojo.byId(downLinkId);
         this.domNode.widget = this;
 
-        this.initSourceNode(this.domNode, function(item, i) {
+        this.initSourceNode(this.domNode, function (item, i) {
             item.idx = i;
         });
         this.updateIndices(true);
     },
 
-    onLoad: function() {
+    onLoad:function () {
         var me = this;
 
-        this.upLink.onclick = function() {
+        this.upLink.onclick = function () {
             me.moveUp();
             return false;
         };
 
-        this.downLink.onclick = function() {
+        this.downLink.onclick = function () {
             me.moveDown();
             return false;
         };
     },
 
-    updateIndices: function(silent) {
+    updateIndices:function (silent) {
         var textfield = this.textField;
         var prevValue = textfield.value;
 
         // update indices list
         var value = '';
-        dojo.forEach(this.domNode.childNodes, function(item, i) {
+        dojo.forEach(this.domNode.childNodes, function (item, i) {
             if (i % 2) {
                 item.className = item.className.replace(/even/, 'odd');
             } else {
@@ -72,7 +72,7 @@ dojo.declare('OrderedListPanel', artifactory.Selectable, {
         }
     },
 
-    updateMoveButtons: function() {
+    updateMoveButtons:function () {
         var source = this.domNode.sourceWidget;
         var anySelected = source.isAnySelected();
         var firstSelected = source.selection[this.domNode.firstChild.id];
@@ -81,34 +81,34 @@ dojo.declare('OrderedListPanel', artifactory.Selectable, {
         this.setButtonEnabled(this.upLink, 'up-link', anySelected && !firstSelected);
     },
 
-    moveUp: function() {
-        this.domNode.sourceWidget.forEachSelected(function(item) {
+    moveUp:function () {
+        this.domNode.sourceWidget.forEachSelected(function (item) {
             item.parentNode.insertBefore(item, item.previousSibling);
         });
         this.updateMoveButtons();
         this.updateIndices();
     },
 
-    moveDown: function() {
-        this.domNode.sourceWidget.forEachSelectedReverse(function(item) {
+    moveDown:function () {
+        this.domNode.sourceWidget.forEachSelectedReverse(function (item) {
             item.parentNode.insertBefore(item.nextSibling, item);
         });
         this.updateMoveButtons();
         this.updateIndices();
     },
 
-    onSelection:  function() {
+    onSelection:function () {
         this.updateMoveButtons();
     },
 
-    onDrop: function(source, target) {
+    onDrop:function (source, target) {
         if (source.parent == this.domNode || target.parent == this.domNode) {
             this.updateMoveButtons();
             this.updateIndices();
         }
     },
 
-    destroy: function() {
+    destroy:function () {
         this.inherited(arguments);
 
         this.upLink.onclick = undefined;

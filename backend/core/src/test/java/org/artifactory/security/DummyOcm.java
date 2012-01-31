@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,153 +54,193 @@ class DummyOcm implements ObjectContentManager {
         return objects;
     }
 
+    @Override
     public Object getObject(String path) throws ObjectContentManagerException {
         return objects.get(path);
     }
 
+    @Override
     public void insert(Object object) throws ObjectContentManagerException {
         OcmStorable ocmObj = (OcmStorable) object;
         objects.put(ocmObj.getJcrPath(), ocmObj);
     }
 
+    @Override
     public void update(Object object) throws ObjectContentManagerException {
         OcmStorable ocmObj = (OcmStorable) object;
         objects.put(ocmObj.getJcrPath(), ocmObj);
     }
 
+    @Override
     public void remove(String path) throws ObjectContentManagerException {
         objects.remove(path);
     }
 
+    @Override
     public void remove(Object object) throws ObjectContentManagerException {
         OcmStorable ocmObj = (OcmStorable) object;
         objects.remove(ocmObj.getJcrPath());
     }
 
+    @Override
     public boolean objectExists(String path) throws ObjectContentManagerException {
         return false;
     }
 
+    @Override
     public boolean isPersistent(Class clazz) {
         return false;
     }
 
+    @Override
     public Object getObjectByUuid(String uuid) throws ObjectContentManagerException {
         return null;
     }
 
+    @Override
     public Object getObject(String path, String versionNumber) throws ObjectContentManagerException {
         return null;
     }
 
+    @Override
     public Object getObject(Class objectClass, String path) throws ObjectContentManagerException {
         return null;
     }
 
+    @Override
     public Object getObject(Class objectClass, String path, String versionNumber)
             throws ObjectContentManagerException {
         return null;
     }
 
+    @Override
     public void retrieveMappedAttribute(Object object, String attributeName) {
     }
 
+    @Override
     public void retrieveAllMappedAttributes(Object object) {
     }
 
+    @Override
     public void remove(Query query) throws ObjectContentManagerException {
     }
 
+    @Override
     public Object getObject(Query query) throws ObjectContentManagerException {
         return null;
     }
 
+    @Override
     public Collection getObjects(Query query) throws ObjectContentManagerException {
         return null;
     }
 
+    @Override
     public Collection getObjects(Class objectClass, String path) throws ObjectContentManagerException {
         return null;
     }
 
+    @Override
     public Collection getObjects(String query, String language) {
         return null;
     }
 
+    @Override
     public Iterator getObjectIterator(Query query) throws ObjectContentManagerException {
         return null;
     }
 
+    @Override
     public Iterator getObjectIterator(String query, String language) {
         return null;
     }
 
+    @Override
     public void checkout(String path) throws VersionException {
     }
 
+    @Override
     public void checkin(String path) throws VersionException {
     }
 
+    @Override
     public void checkin(String path, String[] versionLabels) throws VersionException {
     }
 
+    @Override
     public String[] getVersionLabels(String path, String versionName) throws VersionException {
         return new String[0];
     }
 
+    @Override
     public String[] getAllVersionLabels(String path) throws VersionException {
         return new String[0];
     }
 
+    @Override
     public void addVersionLabel(String path, String versionName, String versionLabel) throws VersionException {
     }
 
+    @Override
     public VersionIterator getAllVersions(String path) throws VersionException {
         return null;
     }
 
+    @Override
     public Version getRootVersion(String path) throws VersionException {
         return null;
     }
 
+    @Override
     public Version getBaseVersion(String path) throws VersionException {
         return null;
     }
 
+    @Override
     public Version getVersion(String path, String versionName) throws VersionException {
         return null;
     }
 
+    @Override
     public void save() throws ObjectContentManagerException {
     }
 
+    @Override
     public void logout() throws ObjectContentManagerException {
     }
 
+    @Override
     public Lock lock(String path, boolean isDeep, boolean isSessionScoped) throws LockedException {
         return null;
     }
 
+    @Override
     public void unlock(String path, String lockToken) throws IllegalUnlockException {
     }
 
+    @Override
     public boolean isLocked(String absPath) {
         return false;
     }
 
+    @Override
     public QueryManager getQueryManager() {
         return null;
     }
 
+    @Override
     public void refresh(boolean keepChanges) {
     }
 
+    @Override
     public void move(String srcPath, String destPath) throws ObjectContentManagerException {
     }
 
+    @Override
     public void copy(String srcPath, String destPath) throws ObjectContentManagerException {
     }
 
+    @Override
     public Session getSession() {
         return null;
     }

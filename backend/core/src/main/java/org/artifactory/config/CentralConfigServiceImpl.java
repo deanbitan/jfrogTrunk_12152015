@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,6 +26,7 @@ import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
@@ -38,11 +39,11 @@ import org.artifactory.jaxb.JaxbHelper;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MimeType;
-import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.common.PathFactoryHolder;
 import org.artifactory.security.AccessLogger;
+import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
@@ -51,10 +52,14 @@ import org.artifactory.version.ArtifactoryConfigVersion;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -70,7 +75,7 @@ import java.util.Map;
  */
 @Repository("centralConfig")
 @Reloadable(beanClass = InternalCentralConfigService.class, initAfter = ChecksumPaths.class)
-public class CentralConfigServiceImpl implements InternalCentralConfigService {
+public class CentralConfigServiceImpl implements InternalCentralConfigService, ContextReadinessListener {
     private static final Logger log = LoggerFactory.getLogger(CentralConfigServiceImpl.class);
 
     private CentralConfigDescriptor descriptor;
@@ -81,7 +86,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     private AuthorizationService authService;
 
     @Autowired
-    private InternalRepositoryService repositoryService;
+    private SecurityService securityService;
 
     @Autowired
     private ConfigurationChangesInterceptors interceptors;
@@ -287,6 +292,46 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         } catch (IOException e) {
             log.error("Error occurred while performing a backup of the latest configuration.", e);
         }
+    }
+
+    @Override
+    public void onContextCreated() {
+        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
+        File logoUrlFile = new File(artifactoryHome.getLogoDir(), "logoUrl.txt");
+        if (logoUrlFile.exists()) {
+            BufferedReader fileReader = null;
+            try {
+                fileReader = new BufferedReader(new FileReader(logoUrlFile));
+                String url = fileReader.readLine();
+                IOUtils.closeQuietly(fileReader);
+                if (StringUtils.isNotBlank(url)) {
+                    log.info("Setting logo url: {}", url);
+                    MutableCentralConfigDescriptor mutableConfig = getMutableDescriptor();
+                    mutableConfig.setLogo(url);
+                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                    securityService.authenticateAsSystem();
+                    try {
+                        saveEditedDescriptorAndReload(mutableConfig);
+                    } finally {
+                        // restore the previous authentication
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
+                }
+                logoUrlFile.delete();
+            } catch (Exception e) {
+                log.error("Failed to read logo url", e);
+            } finally {
+                IOUtils.closeQuietly(fileReader);
+            }
+        }
+    }
+
+    @Override
+    public void onContextUnready() {
+    }
+
+    @Override
+    public void onContextReady() {
     }
 
     public void reload(CentralConfigDescriptor oldDescriptor) {

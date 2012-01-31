@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -129,6 +129,7 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, Repo repo, RepoResource res)
             throws IOException, RepoRejectException, RepositoryException;
 
+    @Override
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);
 
@@ -162,8 +163,10 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     @Async(delayUntilAfterCommit = true, transactional = true)
     void markForSaveOnCommit(RepoPath repoPath);
 
+    @Override
     Repository getJcrHandle();
 
+    @Override
     @Lock(transactional = true)
     void reload(CentralConfigDescriptor oldDescriptor);
 

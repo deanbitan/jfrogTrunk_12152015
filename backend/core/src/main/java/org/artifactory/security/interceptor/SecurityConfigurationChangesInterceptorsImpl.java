@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,60 +34,70 @@ import java.util.List;
 public class SecurityConfigurationChangesInterceptorsImpl extends Interceptors<SecurityConfigurationChangesInterceptor>
         implements SecurityConfigurationChangesInterceptors {
 
+    @Override
     public void onUserAdd(String user) {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onUserAdd(user);
         }
     }
 
+    @Override
     public void onUserDelete(String user) {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onUserDelete(user);
         }
     }
 
+    @Override
     public void onAddUsersToGroup(String groupName, List<String> usernames) {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onAddUsersToGroup(groupName, usernames);
         }
     }
 
+    @Override
     public void onRemoveUsersFromGroup(String groupName, List<String> usernames) {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onRemoveUsersFromGroup(groupName, usernames);
         }
     }
 
+    @Override
     public void onGroupAdd(String group) {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onGroupAdd(group);
         }
     }
 
+    @Override
     public void onGroupDelete(String group) {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onGroupDelete(group);
         }
     }
 
+    @Override
     public void onPermissionsAdd() {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onPermissionsAdd();
         }
     }
 
+    @Override
     public void onPermissionsUpdate() {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onPermissionsUpdate();
         }
     }
 
+    @Override
     public void onPermissionsDelete() {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onPermissionsDelete();
         }
     }
 
+    @Override
     public void onBeforeSecurityImport(SecurityInfo securityInfo) {
         for (SecurityConfigurationChangesInterceptor interceptor : this) {
             interceptor.onBeforeSecurityImport(securityInfo);

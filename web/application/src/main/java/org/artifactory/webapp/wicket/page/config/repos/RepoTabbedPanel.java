@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,10 +19,11 @@
 package org.artifactory.webapp.wicket.page.config.repos;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.AbstractBehavior;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
+import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.webapp.wicket.panel.tabbed.SubmittingTabbedPanel;
 
@@ -44,12 +45,13 @@ public class RepoTabbedPanel extends SubmittingTabbedPanel {
     }
 
     @Override
-    public void setSelectedTab(int index) {
+    public TabbedPanel setSelectedTab(int index) {
         setDefaultModelObject(index);
         ITab tab = getTabs().get(index);
         final Component component = tab.getPanel(TAB_PANEL_ID);
         component.add(new ScrollDivBehavior());
         addOrReplace(component);
+        return this;
     }
 
     private static class ScrollDivBehavior extends AbstractBehavior {

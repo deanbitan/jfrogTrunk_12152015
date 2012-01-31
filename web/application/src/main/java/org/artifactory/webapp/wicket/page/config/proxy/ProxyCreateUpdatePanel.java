@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -148,7 +148,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
                 }
                 centralConfigService.saveEditedDescriptorAndReload(mutableCentralConfig);
                 AjaxUtils.refreshFeedback(target);
-                target.addComponent(proxiesListPanel);
+                target.add(proxiesListPanel);
                 ModalHandler.closeCurrent(target);
             }
         };
@@ -164,10 +164,12 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
                     entity.setDefaultProxy(isChecked());
                     if (isChecked()) {
                         AjaxConfirm.get().confirm(new ConfirmDialog() {
+                            @Override
                             public String getMessage() {
                                 return "Do you wish to use this proxy with existing remote repositories (and override any assigned proxies)?";
                             }
 
+                            @Override
                             public void onConfirm(boolean approved, AjaxRequestTarget target) {
                                 defaultForAllRemotRepo = approved;
                             }

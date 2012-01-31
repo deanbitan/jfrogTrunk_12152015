@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ReplicationAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AltRemoteContentAction;
 import org.artifactory.addon.plugin.download.AltRemotePathAction;
@@ -67,6 +68,8 @@ import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.traffic.TrafficService;
+import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
@@ -340,7 +343,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         RepoResource remoteResource;
         path = getAltRemotePath(repoPath);
         try {
-            remoteResource = retrieveInfo(path, context.getProperties());
+            remoteResource = retrieveInfo(path, context);
             if (!remoteResource.isFound() && !foundExpiredInCache) {
                 //Update the non-found cache for a miss
                 if (log.isDebugEnabled()) {
@@ -380,7 +383,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return cachedResource;
     }
 
-    protected abstract RepoResource retrieveInfo(String path, @Nullable Properties requestProperties);
+    protected abstract RepoResource retrieveInfo(String path, @Nullable RequestContext context);
 
     @Override
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
@@ -458,18 +461,20 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
                     RepoResourceInfo remoteInfo = remoteResource.getInfo();
                     Set<ChecksumInfo> remoteChecksums = remoteInfo.getChecksumsInfo().getChecksums();
-                    boolean receivedRemoteChecksums = (remoteChecksums != null) && !remoteChecksums.isEmpty();
+                    boolean receivedRemoteChecksums = CollectionUtils.notNullOrEmpty(remoteChecksums);
 
                     //Allow plugins to provide an alternate content
                     handle = getAltContent(remoteRepoPath);
 
-                    if (shouldSearchForExistingResource(requestContext.getRequest()) && (handle == null) &&
+                    if (handle == null && shouldSearchForExistingResource(requestContext.getRequest()) &&
                             receivedRemoteChecksums) {
                         handle = getExistingResourceByChecksum(remoteChecksums, remoteResource.getSize());
                     }
 
+                    long remoteRequestStartTime = 0;
                     if (handle == null) {
                         //If we didn't get an alternate handle do the actual download
+                        remoteRequestStartTime = System.currentTimeMillis();
                         handle = downloadResource(path, requestContext);
                     }
 
@@ -499,6 +504,14 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     SaveResourceContext saveResourceContext = new SaveResourceContext.Builder(remoteResource, handle)
                             .properties(properties).build();
                     cachedResource = localCacheRepo.saveResource(saveResourceContext);
+
+                    if (remoteRequestStartTime > 0) {
+                        // fire upload event only if the resource was downloaded from the remote repository
+                        UploadEntry uploadEntry = new UploadEntry(remoteResource.getRepoPath().getId(),
+                                cachedResource.getSize(), System.currentTimeMillis() - remoteRequestStartTime);
+                        TrafficService trafficService = ContextHelper.get().beanForType(TrafficService.class);
+                        trafficService.handleTrafficEntry(uploadEntry);
+                    }
                     unexpire(cachedResource);
                     afterResourceDownload(remoteResource);
                 } finally {
@@ -530,7 +543,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     private boolean shouldSearchForExistingResource(Request request) {
         String searchForExistingResource = request.getParameter(
-                ArtifactoryRequest.SEARCH_FOR_EXISTING_RESOURCE_ON_REMOTE_REQUEST);
+                ArtifactoryRequest.PARAM_SEARCH_FOR_EXISTING_RESOURCE_ON_REMOTE_REQUEST);
         if (StringUtils.isNotBlank(searchForExistingResource)) {
             return Boolean.valueOf(searchForExistingResource);
         }
@@ -694,6 +707,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     @Override
+    @Nullable
     public LocalCacheRepo getLocalCacheRepo() {
         return localCacheRepo;
     }
@@ -847,7 +861,12 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             handle = downloadResource(relPath + ":" + Properties.ROOT);
             is = handle.getInputStream();
             if (is != null) {
-                properties = (Properties) InfoFactoryHolder.get().getFileSystemXStream().fromXML(is);
+                Properties remoteProperties = (Properties) InfoFactoryHolder.get().getFileSystemXStream().fromXML(is);
+                for (String remotePropertyKey : remoteProperties.keySet()) {
+                    if (!remotePropertyKey.startsWith(ReplicationAddon.PROP_REPLICATION_PREFIX)) {
+                        properties.putAll(remotePropertyKey, remoteProperties.get(remotePropertyKey));
+                    }
+                }
             }
         } catch (Exception e) {
             properties = null;
@@ -900,8 +919,13 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 InputStream inputStream = null;
                 try {
                     inputStream = resourceStreamHandle.getInputStream();
-                    properties = (Properties) InfoFactoryHolder.get()
-                            .getFileSystemXStream().fromXML(inputStream);
+                    Properties remoteProperties = (Properties) InfoFactoryHolder.get().getFileSystemXStream().fromXML(
+                            inputStream);
+                    for (String remotePropertyKey : remoteProperties.keySet()) {
+                        if (!remotePropertyKey.startsWith(ReplicationAddon.PROP_REPLICATION_PREFIX)) {
+                            properties.putAll(remotePropertyKey, remoteProperties.get(remotePropertyKey));
+                        }
+                    }
                 } finally {
                     IOUtils.closeQuietly(inputStream);
                 }

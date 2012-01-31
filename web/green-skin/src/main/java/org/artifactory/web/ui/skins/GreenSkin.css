@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -220,6 +220,7 @@ pre {
 .field-row .field-right {
     position: absolute;
     right: 0;
+    padding-right: 19px;
 }
 
 .field-100 input.text, .field-100 textarea, .field-100 select {
@@ -327,6 +328,11 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
     bottom: 0 !important;
     height: 100px !important;
     width: 100%;
+}
+
+.textbox.one-line {
+    min-height: 14px;
+    padding-bottom: 2px;
 }
 
 /*-- ActionsPanel --*/
@@ -743,7 +749,8 @@ button.help-link {
     border-right: none 0;
 }
 
-.IE-7 .search-form .search-box input {
+.IE-7 .search-form .search-box input,
+.Chrome .search-form .search-box input {
     height: 18px;
 }
 
@@ -4260,6 +4267,10 @@ textarea.modal-code {
 
 /*-- DeployArtifactPage --------------------------------------*/
 
+.wupb-container {
+    clear: both;
+}
+
 div.wupb-uploadStatus {
     margin: 5px;
     color: #aaa;
@@ -5063,6 +5074,10 @@ table.data-table td.add-value-row {
     background: url(images/addons/16yum.png) no-repeat left top;
 }
 
+.addon-nuget {
+    background: url(images/addons/16nuget.png) no-repeat left top;
+}
+
 /*-- ProfilePanel --*/
 
 .settings-snippet {
@@ -5088,6 +5103,11 @@ table.data-table td.add-value-row {
 
 .disabled-addon:hover .addon-icon {
     background-position: 0 -17px !important;
+}
+
+.border-icon .addon-icon {
+    position: absolute;
+    margin-left: 5px;
 }
 
 .addon-link {

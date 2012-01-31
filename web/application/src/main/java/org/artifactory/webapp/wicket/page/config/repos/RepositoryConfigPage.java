@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,17 +20,19 @@ package org.artifactory.webapp.wicket.page.config.repos;
 
 import com.google.common.collect.Maps;
 import org.apache.wicket.Component;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AbstractAjaxTimerBehavior;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
-import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInstantiation;
+import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
+import org.apache.wicket.util.visit.IVisit;
+import org.apache.wicket.util.visit.IVisitor;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.config.CentralConfigService;
@@ -104,8 +106,8 @@ public class RepositoryConfigPage extends AuthenticatedPage {
         mutableDescriptor = refreshDescriptor();
         cachingDescriptorHelper = new CachingDescriptorHelper(mutableDescriptor);
         RepoBaseDescriptor descriptor = null;
-        if (parameters.containsKey(REPO_ID)) {
-            String repoKey = parameters.get(REPO_ID).toString();
+        String repoKey = parameters.get(REPO_ID).toString();
+        if (repoKey != null) {
             descriptor = getDescriptorFromRepoKey(repoKey);
         }
         addLocalReposList(descriptor);
@@ -135,7 +137,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
     }
 
     private void addLocalReposList(final RepoBaseDescriptor descriptor) {
-        final IModel repoListModel = new RepoListModel<LocalRepoDescriptor>() {
+        final IModel<List<LocalRepoDescriptor>> repoListModel = new RepoListModel<LocalRepoDescriptor>() {
             @Override
             protected Collection<LocalRepoDescriptor> getRepos() {
                 return mutableDescriptor.getLocalRepositoriesMap().values();
@@ -229,7 +231,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
     }
 
     private void addRemoteReposList(final RepoBaseDescriptor descriptor) {
-        final IModel repoListModel = new RepoListModel<RemoteRepoDescriptor>() {
+        final IModel<List<RemoteRepoDescriptor>> repoListModel = new RepoListModel<RemoteRepoDescriptor>() {
             @Override
             protected Collection<RemoteRepoDescriptor> getRepos() {
                 return mutableDescriptor.getRemoteRepositoriesMap().values();
@@ -313,7 +315,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
     }
 
     private void addVirtualReposList(final RepoBaseDescriptor descriptor) {
-        final IModel repoListModel = new RepoListModel<VirtualRepoDescriptor>() {
+        final IModel<List<VirtualRepoDescriptor>> repoListModel = new RepoListModel<VirtualRepoDescriptor>() {
             @Override
             protected Collection<VirtualRepoDescriptor> getRepos() {
                 return mutableDescriptor.getVirtualRepositoriesMap().values();
@@ -390,11 +392,10 @@ public class RepositoryConfigPage extends AuthenticatedPage {
     }
 
     public void refresh(final AjaxRequestTarget target) {
-        visitChildren(RepoListPanel.class, new IVisitor() {
-            public Object component(Component component) {
-                RepoListPanel repoListPanel = (RepoListPanel) component;
+        visitChildren(RepoListPanel.class, new IVisitor<RepoListPanel, Void>() {
+            @Override
+            public void component(RepoListPanel repoListPanel, IVisit<Void> visit) {
                 repoListPanel.refresh(target);
-                return CONTINUE_TRAVERSAL;
             }
         });
     }
@@ -408,12 +409,15 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             this.repoDescriptor = repoDescriptor;
         }
 
+        @Override
         public void onClick(AjaxRequestTarget target) {
             AjaxConfirm.get().confirm(new ConfirmDialog() {
+                @Override
                 public String getMessage() {
                     return getDeleteConfirmMessage();
                 }
 
+                @Override
                 public void onConfirm(boolean approved, AjaxRequestTarget target) {
                     if (approved) {
                         deleteRepo(target);
@@ -452,8 +456,8 @@ public class RepositoryConfigPage extends AuthenticatedPage {
         }
 
         private LocalCacheRepoDescriptor findRemoteCacheDescriptor() {
-            List<LocalCacheRepoDescriptor> cachRepoDescriptorList = repositoryService.getCachedRepoDescriptors();
-            for (LocalCacheRepoDescriptor descriptor : cachRepoDescriptorList) {
+            List<LocalCacheRepoDescriptor> cacheRepoDescriptorList = repositoryService.getCachedRepoDescriptors();
+            for (LocalCacheRepoDescriptor descriptor : cacheRepoDescriptorList) {
                 RemoteRepoDescriptor remoteRepoDescriptor = descriptor.getRemoteRepo();
                 if (remoteRepoDescriptor.equals(repoDescriptor)) {
                     return descriptor;
@@ -472,7 +476,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
     }
 
     private abstract class RepoListPanel<T extends RepoDescriptor> extends OrderedListPanel<T> {
-        protected RepoListPanel(String id, IModel listModel) {
+        protected RepoListPanel(String id, IModel<List<T>> listModel) {
             super(id, listModel);
         }
 
@@ -491,7 +495,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
         }
 
         @Override
-        protected void populateItem(final ListItem item) {
+        protected void populateItem(final ListItem<T> item) {
             super.populateItem(item);
             item.add(new AjaxEventBehavior("ondblclick") {
                 @SuppressWarnings({"unchecked"})
@@ -535,16 +539,18 @@ public class RepositoryConfigPage extends AuthenticatedPage {
         }
     }
 
-    private abstract class RepoListModel<T extends RepoDescriptor> implements IModel {
-        public ArrayList<T> getObject() {
+    private abstract class RepoListModel<T extends RepoDescriptor> implements IModel<List<T>> {
+        @Override
+        public List<T> getObject() {
             return new ArrayList<T>(getRepos());
         }
 
-        @SuppressWarnings({"unchecked"})
-        public void setObject(Object object) {
-            reOrderReposList((List<T>) object);
+        @Override
+        public void setObject(List<T> object) {
+            reOrderReposList(object);
         }
 
+        @Override
         public void detach() {
         }
 

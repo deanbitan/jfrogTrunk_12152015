@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.security.group.permission;
 
 import com.google.common.collect.Lists;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -81,6 +82,7 @@ public class GroupPermissionsPanel extends BaseModalPanel {
 
         columns.add(new AbstractColumn<PermissionsRow>(
                 Model.of("Permission Target"), "permissionTarget.name") {
+            @Override
             public void populateItem(Item cellItem, String componentId, IModel rowModel) {
                 cellItem.add(new LinkPanel(componentId, rowModel));
             }
@@ -100,21 +102,24 @@ public class GroupPermissionsPanel extends BaseModalPanel {
         private List<PermissionsRow> groupPermissions;
 
         PermissionsTabTableDataProvider(GroupInfo groupInfo) {
-            setSort("permissionTarget.name", true);
+            setSort("permissionTarget.name", SortOrder.ASCENDING);
             this.groupInfo = groupInfo;
             loadData();
         }
 
+        @Override
         public Iterator<PermissionsRow> iterator(int first, int count) {
             ListPropertySorter.sort(groupPermissions, getSort());
             List<PermissionsRow> list = groupPermissions.subList(first, first + count);
             return list.iterator();
         }
 
+        @Override
         public int size() {
             return groupPermissions.size();
         }
 
+        @Override
         public IModel<PermissionsRow> model(PermissionsRow object) {
             return new Model<PermissionsRow>(object);
         }

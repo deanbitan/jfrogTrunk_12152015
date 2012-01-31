@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,10 +38,12 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         this.response = response;
     }
 
+    @Override
     public void setLastModified(long lastModified) {
         response.setDateHeader("Last-Modified", lastModified);
     }
 
+    @Override
     public void setEtag(String etag) {
         if (etag != null) {
             response.setHeader("ETag", etag);
@@ -50,6 +52,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         }
     }
 
+    @Override
     public void setMd5(String md5) {
         if (md5 != null) {
             response.setHeader(ArtifactoryRequest.CHECKSUM_MD5, md5);
@@ -58,6 +61,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         }
     }
 
+    @Override
     public void setSha1(String sha1) {
         if (sha1 != null) {
             response.setHeader(ArtifactoryRequest.CHECKSUM_SHA1, sha1);
@@ -75,6 +79,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
             return;
         }
         try {
+            log.trace("Sending back error code {}. Reason: {}", statusCode, reason);
             if (reason != null) {
                 //Send a description of the reason in the body
                 response.sendError(statusCode, reason);
@@ -89,6 +94,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         }
     }
 
+    @Override
     public void sendAuthorizationRequired(String message, String realm) throws IOException {
         try {
             response.addHeader("WWW-Authenticate", "Basic realm=\"" + realm + "\"");
@@ -114,10 +120,12 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         }
     }
 
+    @Override
     public OutputStream getOutputStream() throws IOException {
         return response.getOutputStream();
     }
 
+    @Override
     public PrintWriter getWriter() throws IOException {
         return response.getWriter();
     }
@@ -128,10 +136,12 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         response.setStatus(status);
     }
 
+    @Override
     public void setHeader(String header, String value) {
         response.setHeader(header, value);
     }
 
+    @Override
     public void flush() {
         try {
             response.flushBuffer();
@@ -142,10 +152,12 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         }
     }
 
+    @Override
     public void setContentType(String contentType) {
         response.setContentType(contentType);
     }
 
+    @Override
     public boolean isCommitted() {
         return response.isCommitted();
     }

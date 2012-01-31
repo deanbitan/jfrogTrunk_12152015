@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddons;
 import org.artifactory.addon.WebstartAddon;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
@@ -113,18 +114,22 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         contextCreated();
     }
 
+    @Override
     public ArtifactoryHome getArtifactoryHome() {
         return artifactoryHome;
     }
 
+    @Override
     public String getContextId() {
         return contextId;
     }
 
+    @Override
     public SpringConfigPaths getConfigPaths() {
         return springConfigPaths;
     }
 
+    @Override
     public MBeanServer getMBeanServer() {
         //Delegate to the mbean server already created by the platform
         //return JmxUtils.locateMBeanServer();
@@ -153,6 +158,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         */
     }
 
+    @Override
     public <T> T registerArtifactoryMBean(T mbean, Class<T> mbeanIfc, @Nullable String mbeanProps) {
         ObjectName mbeanName = createArtifactoryMBeanName(mbeanIfc, mbeanProps);
         try {
@@ -168,30 +174,37 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         return getArtifactoryMBean(mbeanIfc, mbeanProps);
     }
 
+    @Override
     public long getUptime() {
         return System.currentTimeMillis() - started;
     }
 
+    @Override
     public CentralConfigService getCentralConfig() {
         return beanForType(CentralConfigService.class);
     }
 
+    @Override
     public SecurityService getSecurityService() {
         return beanForType(SecurityService.class);
     }
 
+    @Override
     public AuthorizationService getAuthorizationService() {
         return beanForType(AuthorizationService.class);
     }
 
+    @Override
     public TaskService getTaskService() {
         return beanForType(TaskService.class);
     }
 
+    @Override
     public RepositoryService getRepositoryService() {
         return beanForType(InternalRepositoryService.class);
     }
 
+    @Override
     public void addReloadableBean(Class<? extends ReloadableBean> beanClass) {
         toInitialize.add(beanClass);
     }
@@ -277,6 +290,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         super.prepareBeanFactory(beanFactory);
         //Add our own post processor that registers all reloadable beans auto-magically after construction
         beanFactory.addBeanPostProcessor(new BeanPostProcessor() {
+            @Override
             public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
                 Class<?> targetClass = AopUtils.getTargetClass(bean);
                 if (ReloadableBean.class.isAssignableFrom(targetClass)) {
@@ -293,6 +307,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 return bean;
             }
 
+            @Override
             public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
                 //Do nothing
                 return bean;
@@ -300,6 +315,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         });
     }
 
+    @Override
     public void init() {
         // Nothing
     }
@@ -338,9 +354,11 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         setReady(false);
         log.debug("Reloading beans: {}", reloadableBeans);
@@ -416,10 +434,12 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
     }
 
+    @Override
     public boolean isReady() {
         return ready;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T beanForType(Class<T> type) {
         //No sync needed. Sync is done on write, so in the worst case we might end up with
@@ -446,30 +466,37 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         return bean;
     }
 
+    @Override
     public <T> Map<String, T> beansForType(Class<T> type) {
         return getBeansOfType(type);
     }
 
+    @Override
     public <T> T beanForType(String name, Class<T> type) {
         return getBean(name, type);
     }
 
+    @Override
     public JcrService getJcrService() {
         return beanForType(JcrService.class);
     }
 
+    @Override
     public JcrRepoService getJcrRepoService() {
         return beanForType(JcrRepoService.class);
     }
 
+    @Override
     public MetadataDefinitionService getMetadataDefinitionService() {
         return beanForType(MetadataDefinitionService.class);
     }
 
+    @Override
     public JcrFsItemFactory storingRepositoryByKey(String repoKey) {
         return beanForType(InternalRepositoryService.class).storingRepositoryByKey(repoKey);
     }
 
+    @Override
     public void importFrom(ImportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         status.setStatus("### Beginning full system import ###", log);
@@ -524,6 +551,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
     }
 
+    @Override
     public void exportTo(ExportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         status.setStatus("Beginning full system export...", log);
@@ -567,7 +595,12 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
         List<String> stoppedTasks = Lists.newArrayList();
         try {
+            AddonsManager addonsManager = beanForType(AddonsManager.class);
+
             stopRelatedTasks(ExportJob.class, stoppedTasks);
+            // AOL
+            CoreAddons coreAddons = addonsManager.addonByType(CoreAddons.class);
+
             // central config
             getCentralConfig().exportTo(exportSettings);
             if (status.isError() && settings.isFailFast()) {
@@ -579,7 +612,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 return;
             }
             // keystore
-            AddonsManager addonsManager = beanForType(AddonsManager.class);
             WebstartAddon webstartAddon = addonsManager.addonByType(WebstartAddon.class);
             webstartAddon.exportKeyStore(exportSettings);
             if (status.isError() && settings.isFailFast()) {
@@ -630,6 +662,12 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             } else {
                 status.setOutputFile(tmpExportDir);
             }
+
+            settings.cleanCallbacks();
+
+            // AOL backup should run after everything else is done
+            coreAddons.backup(exportSettings);
+
             status.setStatus("Full system export completed successfully.", log);
         } catch (RuntimeException e) {
             status.setError("Full system export failed: " + e.getMessage(), e, log);
@@ -648,11 +686,13 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             log.warn("Failed to delete existing final export directory.", e);
         }
         //Switch the directories
-        boolean success = tmpExportDir.renameTo(exportDir);
-        if (!success) {
-            log.error("Failed to move '" + tmpExportDir + "' to '" + exportDir + "'.");
+        try {
+            FileUtils.moveDirectory(tmpExportDir, exportDir);
+        } catch (IOException e) {
+            log.error("Failed to move '{}' to '{}': {}", new Object[]{tmpExportDir, exportDir, e.getMessage()});
+        } finally {
+            status.setOutputFile(exportDir);
         }
-        status.setOutputFile(exportDir);
     }
 
     private void createArchive(MutableStatusHolder status, String timestamp, File baseDir, File tmpExportDir) {
@@ -682,12 +722,14 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             }
         }
         //Rename the archive file
-        boolean success = tempArchiveFile.renameTo(archive);
-        if (!success) {
+        try {
+            FileUtils.moveFile(tempArchiveFile, archive);
+        } catch (IOException e) {
             status.setWarning(String.format("Failed to move '%s' to '%s'.", tempArchiveFile.getAbsolutePath(),
-                    archive.getAbsolutePath()), log);
+                    archive.getAbsolutePath()), e, log);
+        } finally {
+            status.setOutputFile(archive.getAbsoluteFile());
         }
-        status.setOutputFile(archive.getAbsoluteFile());
     }
 
     private void exportArtifactoryProperties(ExportSettings settings) {
@@ -768,6 +810,11 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
     private void exportBuildInfo(ExportSettingsImpl exportSettings) {
         MutableStatusHolder status = exportSettings.getStatusHolder();
+        if(exportSettings.isExcludeBuilds()) {
+            status.setStatus("Skipping build info ...", log);
+            return;
+        }
+
         ImportableExportable build = beanForType(BuildService.class);
         if (build != null) {
             status.setStatus("Exporting build info...", log);

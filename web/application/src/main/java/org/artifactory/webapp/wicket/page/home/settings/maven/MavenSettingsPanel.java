@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,7 +37,7 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.home.settings.BaseSettingsGeneratorPanel;
 import org.artifactory.webapp.wicket.page.home.settings.DefaultOptionSelector;
@@ -53,28 +53,28 @@ import java.util.List;
  *
  * @author Noam Tenne
  */
-public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
+public class MavenSettingsPanel<T extends RepoDescriptor> extends BaseSettingsGeneratorPanel {
 
     private static final Logger log = LoggerFactory.getLogger(MavenSettingsPanel.class);
 
     @WicketProperty
-    private VirtualRepoDescriptor releases;
+    private T releases;
 
     @WicketProperty
-    private VirtualRepoDescriptor snapshots;
+    private T snapshots;
 
     @WicketProperty
-    private VirtualRepoDescriptor pluginReleases;
+    private T pluginReleases;
 
     @WicketProperty
-    private VirtualRepoDescriptor pluginSnapshots;
+    private T pluginSnapshots;
 
     @WicketProperty
     private boolean mirrorAny;
 
     @WicketProperty
-    private VirtualRepoDescriptor mirrorAnySelection;
-    private final List<VirtualRepoDescriptor> virtualRepoDescriptors;
+    private T mirrorAnySelection;
+    private final List<T> virtualRepoDescriptors;
 
     /**
      * Default Constructor
@@ -83,7 +83,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
      * @param servletContextUrl      Servlet context URL
      * @param virtualRepoDescriptors List of virtual repository descriptors
      */
-    public MavenSettingsPanel(String id, String servletContextUrl, List<VirtualRepoDescriptor> virtualRepoDescriptors) {
+    public MavenSettingsPanel(String id, String servletContextUrl, List<T> virtualRepoDescriptors) {
         super(id, servletContextUrl);
         this.virtualRepoDescriptors = virtualRepoDescriptors;
 
@@ -101,8 +101,8 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
         addChoice("pluginReleases", true, false, true, false);
         addChoice("pluginSnapshots", false, true, true, false);
 
-        final DropDownChoice mirrorDropDownChoice = new DropDownChoice<VirtualRepoDescriptor>("mirrorAnySelection",
-                new PropertyModel<VirtualRepoDescriptor>(this, "mirrorAnySelection"), virtualRepoDescriptors);
+        final DropDownChoice mirrorDropDownChoice = new DropDownChoice<T>("mirrorAnySelection",
+                new PropertyModel<T>(this, "mirrorAnySelection"), virtualRepoDescriptors);
         mirrorDropDownChoice.setOutputMarkupId(true);
         if (!virtualRepoDescriptors.isEmpty()) {
             mirrorDropDownChoice.setDefaultModelObject(getDefaultChoice(false, false, false, true));
@@ -118,7 +118,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 mirrorDropDownChoice.setEnabled(mirrorAnyCheckbox.isChecked());
-                target.addComponent(mirrorDropDownChoice);
+                target.add(mirrorDropDownChoice);
             }
         });
         form.add(mirrorAnyCheckbox);
@@ -144,6 +144,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
         this.mirrorAny = mirrorAny;
     }
 
+    @Override
     public String generateSettings() {
         //Make sure URL ends with slash
         if (!servletContextUrl.endsWith("/")) {
@@ -197,6 +198,11 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
     @Override
     protected String getSaveToFileName() {
         return "settings.xml";
+    }
+
+    @Override
+    protected String getDownloadButtonTitle() {
+        return "Download Settings";
     }
 
     /**
@@ -294,8 +300,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
      * @param id Object ID
      */
     private void addChoice(String id, boolean isRelease, boolean isSnapshot, boolean isPlugin, boolean isRemote) {
-        DropDownChoice<VirtualRepoDescriptor> choice = new DropDownChoice<VirtualRepoDescriptor>(
-                id, new PropertyModel<VirtualRepoDescriptor>(this, id), virtualRepoDescriptors);
+        DropDownChoice<T> choice = new DropDownChoice<T>(id, new PropertyModel<T>(this, id), virtualRepoDescriptors);
         if (!virtualRepoDescriptors.isEmpty()) {
             choice.setDefaultModelObject(getDefaultChoice(isRelease, isSnapshot, isPlugin, isRemote));
         }
@@ -304,13 +309,13 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
     }
 
 
-    private VirtualRepoDescriptor getDefaultChoice(final boolean isRelease, final boolean isSnapshot,
-            final boolean isPlugin, final boolean isRemote) {
+    private T getDefaultChoice(final boolean isRelease, final boolean isSnapshot, final boolean isPlugin,
+            final boolean isRemote) {
 
-        DefaultOptionSelector<VirtualRepoDescriptor> selector = new DefaultOptionSelector<VirtualRepoDescriptor>() {
+        DefaultOptionSelector<RepoDescriptor> selector = new DefaultOptionSelector<RepoDescriptor>() {
 
             @Override
-            public boolean acceptedAsDefault(VirtualRepoDescriptor virtualRepoDescriptor) {
+            public boolean acceptedAsDefault(RepoDescriptor virtualRepoDescriptor) {
                 boolean canBeDefault = true;
                 String key = virtualRepoDescriptor.getKey();
                 if (isRelease && !repoKeyContains(key, "release")) {
@@ -334,7 +339,7 @@ public class MavenSettingsPanel extends BaseSettingsGeneratorPanel {
             }
         };
 
-        for (VirtualRepoDescriptor virtualRepoDescriptor : virtualRepoDescriptors) {
+        for (T virtualRepoDescriptor : virtualRepoDescriptors) {
             if (selector.acceptedAsDefault(virtualRepoDescriptor)) {
                 return virtualRepoDescriptor;
             }

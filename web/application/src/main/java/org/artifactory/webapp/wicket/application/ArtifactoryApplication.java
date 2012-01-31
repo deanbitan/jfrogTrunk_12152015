@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,23 +22,18 @@ import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.wicket.Application;
 import org.apache.wicket.Page;
-import org.apache.wicket.Request;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.Resource;
-import org.apache.wicket.ResourceReference;
-import org.apache.wicket.Response;
-import org.apache.wicket.authentication.AuthenticatedWebApplication;
-import org.apache.wicket.authentication.AuthenticatedWebSession;
+import org.apache.wicket.RuntimeConfigurationType;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
 import org.apache.wicket.authorization.IUnauthorizedComponentInstantiationListener;
 import org.apache.wicket.authorization.strategies.CompoundAuthorizationStrategy;
-import org.apache.wicket.extensions.ajax.markup.html.form.upload.UploadWebRequest;
-import org.apache.wicket.injection.web.InjectorHolder;
+import org.apache.wicket.authroles.authentication.AuthenticatedWebApplication;
+import org.apache.wicket.authroles.authentication.AuthenticatedWebSession;
+import org.apache.wicket.injection.Injector;
 import org.apache.wicket.markup.html.WebPage;
-import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.protocol.http.WebResponse;
-import org.apache.wicket.request.IRequestCycleProcessor;
-import org.apache.wicket.request.target.coding.IRequestTargetUrlCodingStrategy;
+import org.apache.wicket.request.http.WebRequest;
+import org.apache.wicket.request.http.WebResponse;
+import org.apache.wicket.request.resource.IResource;
+import org.apache.wicket.request.resource.ResourceReference;
 import org.apache.wicket.settings.IApplicationSettings;
 import org.apache.wicket.settings.IMarkupSettings;
 import org.apache.wicket.settings.IRequestCycleSettings;
@@ -57,18 +52,20 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.common.wicket.application.AddWicketPathListener;
 import org.artifactory.common.wicket.application.NoLocaleResourceStreamLocator;
+import org.artifactory.common.wicket.application.ResponsePageSupport;
 import org.artifactory.common.wicket.component.panel.sidemenu.SiteMapAware;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.common.wicket.model.sitemap.SiteMap;
 import org.artifactory.common.wicket.model.sitemap.SiteMapBuilder;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.version.CompoundVersionDetails;
 import org.artifactory.webapp.spring.ArtifactorySpringComponentInjector;
 import org.artifactory.webapp.wicket.application.sitemap.ArtifactorySiteMapBuilder;
 import org.artifactory.webapp.wicket.page.base.BasePage;
 import org.artifactory.webapp.wicket.page.browse.listing.ArtifactListPage;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.SimpleRepoBrowserPage;
+import org.artifactory.webapp.wicket.page.build.BuildBrowserConstants;
+import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 import org.artifactory.webapp.wicket.page.error.AccessDeniedPage;
 import org.artifactory.webapp.wicket.page.error.InternalErrorPage;
 import org.artifactory.webapp.wicket.page.error.PageExpiredErrorPage;
@@ -82,10 +79,7 @@ import org.artifactory.webapp.wicket.page.security.profile.ProfilePage;
 import org.artifactory.webapp.wicket.resource.LogoResource;
 import org.artifactory.webapp.wicket.service.authentication.LogoutService;
 import org.slf4j.Logger;
-import org.wicketstuff.annotation.scan.AnnotatedMountList;
-import org.wicketstuff.annotation.scan.AnnotatedMountScanner;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
@@ -93,12 +87,14 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Yoav Landman
  */
 public class ArtifactoryApplication extends AuthenticatedWebApplication implements SiteMapAware {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryApplication.class);
+    private static final String SHARED_RESOURCES_PATH = "wicket/resource/";
 
     @SpringBean
     private CentralConfigService centralConfig;
@@ -107,7 +103,6 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     private RepositoryService repositoryService;
 
     private SiteMap siteMap;
-    private String sharedResourcesPath;
 
     /**
      * Used to prevent logo caching in browsers
@@ -121,38 +116,14 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         return (ArtifactoryApplication) Application.get();
     }
 
-    public void mountResource(String path, ResourceReference resourceReference) {
-        mountSharedResource(path, resourceReference.getSharedResourceKey());
-    }
-
-    /**
-     * Mount a resource.
-     *
-     * @param path     The path of the resource.
-     * @param resource The resource itself
-     */
-    public void mountResource(String path, final Resource resource) {
-        mountResource(path, new ResourceReference(path) {
-            @Override
-            protected Resource newResource() {
-                return resource;
-            }
-        });
-    }
-
     public void mountPage(Class<? extends Page> pageClass) {
         String url = "/" + pageClass.getSimpleName().replaceFirst("Page", "").toLowerCase(Locale.ENGLISH) + ".html";
-        mountPage(url, pageClass);
+        safeMountPage(url, pageClass);
     }
 
-    private void mountPage(String url, Class<? extends Page> pageClass) {
+    private void safeMountPage(String url, Class<? extends Page> pageClass) {
         unmount(url);   // un-mount first (in case of re-mounting)
-        mountBookmarkablePage(url, pageClass);
-    }
-
-    @Override
-    public RequestCycle newRequestCycle(Request request, Response response) {
-        return new ArtifactoryRequestCycle(this, (WebRequest) request, response);
+        mountPage(url, pageClass);
     }
 
     /**
@@ -168,7 +139,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     }
 
     @Override
-    public String getConfigurationType() {
+    public RuntimeConfigurationType getConfigurationType() {
         //Init the modes from the constants if needed
         if (modes.isEmpty()) {
             // use configuration from the servlet context since properties are not bound to the thread when this method is called
@@ -185,7 +156,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
             }
         }
         if (modes.contains(ConstantValues.dev)) {
-            return DEVELOPMENT;
+            return RuntimeConfigurationType.DEVELOPMENT;
         } else {
             return super.getConfigurationType();
         }
@@ -208,12 +179,13 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         return repositoryService;
     }
 
+    @Override
     public SiteMap getSiteMap() {
         return siteMap;
     }
 
     public String getSharedResourcesPath() {
-        return sharedResourcesPath;
+        return SHARED_RESOURCES_PATH;
     }
 
     public boolean isLogoExists() {
@@ -225,12 +197,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     }
 
     boolean isDevelopmentMode() {
-        return DEVELOPMENT.equals(getConfigurationType());
-    }
-
-    @Override
-    protected IRequestCycleProcessor newRequestCycleProcessor() {
-        return new IgnoreAjaxUnfoundComponentRequestCycleProcessor();
+        return RuntimeConfigurationType.DEVELOPMENT.equals(getConfigurationType());
     }
 
     @Override
@@ -250,14 +217,9 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     }
 
     @Override
-    protected WebRequest newWebRequest(HttpServletRequest servletRequest) {
-        return new UploadWebRequest(servletRequest);
-    }
-
-    @Override
-    protected WebResponse newWebResponse(HttpServletResponse servletResponse) {
-        return (getRequestCycleSettings().getBufferResponse() ? new EofAwareBufferedWebResponse(servletResponse) :
-                new WebResponse(servletResponse));
+    protected WebResponse newWebResponse(WebRequest webRequest, HttpServletResponse httpServletResponse) {
+        return new IgnoreEofWebResponse(
+                new HeaderBufferingWebResponse(super.newWebResponse(webRequest, httpServletResponse)));
     }
 
     @Override
@@ -307,8 +269,23 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     }
 
     private void setupSpring() {
-        addComponentInstantiationListener(new ArtifactorySpringComponentInjector(this));
-        inject(this);
+        getComponentInstantiationListeners().add(new ArtifactorySpringComponentInjector(this));
+        Injector.get().inject(this);
+    }
+
+    /**
+     * Mount a resource.
+     *
+     * @param path     The path of the resource.
+     * @param resource The resource itself
+     */
+    private void mountResource(String path, final IResource resource) {
+        mountResource(path, new ResourceReference(path) {
+            @Override
+            public IResource getResource() {
+                return resource;
+            }
+        });
     }
 
     private void mountLogo() {
@@ -352,22 +329,20 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
         securitySettings.setUnauthorizedComponentInstantiationListener(
                 new RepoBrowsingAwareUnauthorizedComponentInstantiationListener(orig));
+
+        // add ArtifactoryRequestCycleListener
+        getRequestCycleListeners().add(new ArtifactoryRequestCycleListener());
+        getRequestCycleListeners().add(new ResponsePageSupport());
     }
 
     private void mountPages() {
-        AnnotatedMountList annotatedMountList = new AnnotatedMountScanner().scanPackage(
-                "org.artifactory.webapp.wicket.page.build.page");
-        // first make sure to un-mount all paths (required if we rebuild mounting)
-        for (IRequestTargetUrlCodingStrategy strategy : annotatedMountList) {
-            unmount(strategy.getMountPath());
-        }
-        annotatedMountList.mount(ArtifactoryApplication.get());
-
-        mountPage(SimpleRepoBrowserPage.PATH, SimpleRepoBrowserPage.class);
-        mountPage(ArtifactListPage.PATH, ArtifactListPage.class);
+        Set<Class<? extends Page>> hardMountPages = Sets.newHashSet();
+        
+        hardMountPage(hardMountPages, SimpleRepoBrowserPage.PATH, SimpleRepoBrowserPage.class);
+        hardMountPage(hardMountPages, ArtifactListPage.PATH, ArtifactListPage.class);
 
         // mount services
-        mountPage("/service/logout", LogoutService.class);
+        hardMountPage(hardMountPages, "/service/logout", LogoutService.class);
 
         // mount general pages
         mountPage(InternalErrorPage.class);
@@ -380,24 +355,21 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         mountPage(ResetPasswordPage.class);
         mountPage(ForgotPasswordPage.class);
 
-        mountPage("/search/artifact", ArtifactSearchPage.class);
+        hardMountPage(hardMountPages, "/search/artifact", ArtifactSearchPage.class);
+
+        // We need both of these since accessing modules without the trailing "/" mount fails
+        hardMountPage(hardMountPages, BuildBrowserConstants.MOUNT_PATH, BuildBrowserRootPage.class);
+        safeMountPage(BuildBrowserConstants.MOUNT_PATH + "/", BuildBrowserRootPage.class);
 
         for (MenuNode pageNode : siteMap.getPages()) {
-            if (pageNode.getMountUrl() != null) {
-                mountPage(pageNode.getMountUrl(), pageNode.getPageClass());
-            } else {
+            if (!hardMountPages.contains(pageNode.getPageClass()))
                 mountPage(pageNode.getPageClass());
-            }
         }
     }
-
-    /**
-     * Mount all resources to version-sensitive path, Keep in cache for 10 years.
-     */
-    private void mountResources() {
-        final CompoundVersionDetails details = ContextHelper.get().getArtifactoryHome().getRunningVersionDetails();
-        sharedResourcesPath = details.getVersion() + "/resources/";
-        mount(new VersionedSharedResourceUrlCodingStrategy(sharedResourcesPath, Duration.days(365)));
+    
+    private void hardMountPage(Set<Class<? extends Page>> hardMountPages, String url, Class<? extends Page> pageClass) {
+        safeMountPage(url, pageClass);
+        hardMountPages.add(pageClass);
     }
 
     private void buildSiteMap() {
@@ -407,16 +379,11 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         siteMap = builder.getSiteMap();
     }
 
-    private static void inject(Object injectable) {
-        InjectorHolder.getInjector().inject(injectable);
-    }
-
     protected void doInit() {
         setup();
 
         buildSiteMap();
         mountPages();
-        mountResources();
         mountLogo();
 
         deleteUploadsFolder();
@@ -426,6 +393,10 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
     protected void setup() {
         setupListeners();
+
+        // set HeaderRenderStrategy = ParentFirstHeaderRenderStrategy
+        System.setProperty("Wicket_HeaderRenderStrategy",
+                "org.apache.wicket.markup.renderStrategy.ParentFirstHeaderRenderStrategy");
 
         // look for pages at the root of the web-app
         IResourceSettings resourceSettings = getResourceSettings();
@@ -438,7 +409,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
         // add the addons authorization strategy
         AddonsAuthorizationStrategy addonsAuthorizationStrategy = new AddonsAuthorizationStrategy();
-        inject(addonsAuthorizationStrategy);
+        Injector.get().inject(addonsAuthorizationStrategy);
         getAuthorizationStrategy().add(addonsAuthorizationStrategy);
 
         // increase request timeout to support long running transactions
@@ -457,17 +428,22 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         markupSettings.setCompressWhitespace(true);
         markupSettings.setStripComments(true);
         markupSettings.setStripWicketTags(true);
-        markupSettings.setStripXmlDeclarationFromOutput(true);
 
         //QA settings
         if (modes.contains(ConstantValues.qa)) {
-            addComponentInstantiationListener(new AddWicketPathListener());
+            getComponentInstantiationListeners().add(new AddWicketPathListener());
         }
+
+        // RTFACT-4619, fixed by patching HeaderBufferingWebResponse
+        getRequestCycleSettings().setBufferResponse(false);
+
+        // RTFACT-4636
+        getPageSettings().setVersionPagesByDefault(false);
     }
 
     protected SiteMapBuilder newSiteMapBuilder() {
         SiteMapBuilder builder = new ArtifactorySiteMapBuilder();
-        inject(builder);
+        Injector.get().inject(builder);
         return builder;
     }
 }

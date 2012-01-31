@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,6 +30,7 @@ import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.HttpAuthenticationDetailsSource;
 import org.artifactory.security.UserInfo;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.servlet.authentication.ArtifactoryAuthenticationFilter;
 import org.artifactory.webapp.servlet.authentication.ArtifactoryAuthenticationFilterChain;
 import org.slf4j.Logger;
@@ -97,14 +98,17 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         securityService.addListener(this);
     }
 
+    @Override
     public void onClearSecurity() {
         nonUiAuthCache.clear();
     }
 
+    @Override
     public void onUserUpdate(String username) {
         invalidateUserAuthCache(username);
     }
 
+    @Override
     public void onUserDelete(String username) {
         invalidateUserAuthCache(username);
 
@@ -125,6 +129,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         }
     }
 
+    @Override
     public void destroy() {
         //May not be inited yet
         if (authFilter != null) {
@@ -136,6 +141,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         }
     }
 
+    @Override
     public void doFilter(final ServletRequest req, final ServletResponse resp, final FilterChain chain)
             throws IOException, ServletException {
         doFilterInternal((HttpServletRequest) req, ((HttpServletResponse) resp), chain);
@@ -148,13 +154,13 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         if ((servletPath == null || "/".equals(servletPath) || servletPath.length() == 0) &&
                 "get".equalsIgnoreCase(method)) {
             //We were called with an empty path - redirect to the app main page
-            response.sendRedirect(RequestUtils.WEBAPP_URL_PATH_PREFIX);
+            response.sendRedirect(HttpUtils.WEBAPP_URL_PATH_PREFIX);
             return;
         }
         //Reuse the authentication if it exists
         Authentication authentication = RequestUtils.getAuthentication(request);
         boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
-        boolean reauthenticationRequired = isAuthenticated && authFilter.requiresReauthentication(request,
+        boolean reauthenticationRequired = isAuthenticated && authFilter.requiresReAuthentication(request,
                 authentication);
         if (reauthenticationRequired) {
             /**
@@ -186,7 +192,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         // Try to see if authentication in cache based on the hashed header and client ip
         Authentication authentication = getNonUiCachedAuthentication(request);
         boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
-        if (isAuthenticated && !authFilter.requiresReauthentication(request, authentication)) {
+        if (isAuthenticated && !authFilter.requiresReAuthentication(request, authentication)) {
             log.debug("Header authentication {} found in cache.", authentication);
             useAuthentication(request, response, chain, authentication, securityContext);
             return;
@@ -273,6 +279,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         }
     }
 
+    @Override
     public int compareTo(SecurityListener o) {
         return 0;
     }

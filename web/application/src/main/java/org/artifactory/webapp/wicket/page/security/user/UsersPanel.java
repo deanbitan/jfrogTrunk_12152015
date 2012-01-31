@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -59,15 +59,18 @@ public class UsersPanel extends TitledPanel {
     static class TargetGroupDropDownChoice extends DropDownChoice<GroupInfo> {
         public TargetGroupDropDownChoice(String id, IModel<GroupInfo> model, List<GroupInfo> groups) {
             super(id, model, groups);
-            setPersistent(true);
             setOutputMarkupId(true);
+        }
+
+        @Override
+        protected CharSequence getDefaultChoice(String selectedValue) {
+            return "";
         }
     }
 
     static class FilterGroupDropDownChoice extends DropDownChoice<GroupInfo> {
         public FilterGroupDropDownChoice(String id, IModel<GroupInfo> model, List<GroupInfo> groups) {
             super(id, model, groups);
-            setPersistent(true);
             setOutputMarkupId(true);
             setNullValid(true);
         }

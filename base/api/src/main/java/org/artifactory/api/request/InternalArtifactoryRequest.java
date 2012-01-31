@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,10 +37,13 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     private Boolean searchForExistingResourceOnRemoteRequest;
 
+    private String alternativeRemoteDownloadUrl;
+
     public InternalArtifactoryRequest(RepoPath repoPath) {
         setRepoPath(repoPath);
     }
 
+    @Override
     public long getLastModified() {
         return 0;
     }
@@ -48,22 +51,27 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
     /**
      * @return false - internal requests are sent to download resources
      */
+    @Override
     public boolean isHeadOnly() {
         return false;
     }
 
+    @Override
     public String getClientAddress() {
         return null;
     }
 
+    @Override
     public long getIfModifiedSince() {
         return 0;
     }
 
+    @Override
     public boolean isFromAnotherArtifactory() {
         return false;
     }
 
+    @Override
     public boolean isRecursive() {
         return false;
     }
@@ -71,6 +79,7 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
     /**
      * @return null - the internal request has no input stream
      */
+    @Override
     public InputStream getInputStream() {
         return null;
     }
@@ -78,18 +87,22 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
     /**
      * @return 0 - the internal request has no content (only url and headers)
      */
+    @Override
     public int getContentLength() {
         return 0;
     }
 
+    @Override
     public String getHeader(String headerName) {
         return null;
     }
 
+    @Override
     public String getUri() {
         return "";
     }
 
+    @Override
     public String getServletContextUrl() {
         return "";
     }
@@ -122,6 +135,10 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         this.searchForExistingResourceOnRemoteRequest = searchForExistingResourceOnRemoteRequest;
     }
 
+    public void setAlternativeRemoteDownloadUrl(String alternativeRemoteDownloadUrl) {
+        this.alternativeRemoteDownloadUrl = alternativeRemoteDownloadUrl;
+    }
+
     @Override
     public void setZipResourcePath(String zipResourcePath) {
         super.setZipResourcePath(zipResourcePath);
@@ -129,15 +146,18 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     @Override
     public String getParameter(String name) {
-        if (SKIP_JAR_INDEXING.equals(name)) {
+        if (PARAM_SKIP_JAR_INDEXING.equals(name)) {
             return String.valueOf(skipJarIndexing);
         }
-        if (FORCE_DOWNLOAD_IF_NEWER.equals(name)) {
+        if (PARAM_FORCE_DOWNLOAD_IF_NEWER.equals(name)) {
             return String.valueOf(forceDownloadIfNewer);
         }
-        if (SEARCH_FOR_EXISTING_RESOURCE_ON_REMOTE_REQUEST.equals(name) &&
+        if (PARAM_SEARCH_FOR_EXISTING_RESOURCE_ON_REMOTE_REQUEST.equals(name) &&
                 searchForExistingResourceOnRemoteRequest != null) {
             return String.valueOf(searchForExistingResourceOnRemoteRequest);
+        }
+        if (PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL.equals(name)) {
+            return alternativeRemoteDownloadUrl;
         }
         return null;
     }

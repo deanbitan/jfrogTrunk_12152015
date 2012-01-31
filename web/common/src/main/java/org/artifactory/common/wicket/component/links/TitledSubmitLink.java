@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -64,10 +64,21 @@ public abstract class TitledSubmitLink extends BaseTitledLink implements IFormSu
         }
     }
 
+    @Override
     public boolean getDefaultFormProcessing() {
         return true;
     }
 
+    @Override
+    public Component setDefaultFormProcessing(boolean defaultFormProcessing) {
+        return null;
+    }
+
+    @Override
+    public void onError() {
+    }
+
+    @Override
     public final Form<?> getForm() {
         if (form == null) {
             // try to find form in the hierarchy of owning component
@@ -80,6 +91,7 @@ public abstract class TitledSubmitLink extends BaseTitledLink implements IFormSu
         return form;
     }
 
+    @Override
     public String getInputName() {
         // TODO: This is a copy & paste from the FormComponent class.
         String id = getId();

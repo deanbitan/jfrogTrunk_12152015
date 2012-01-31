@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.update.test;
 
+import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.factory.InfoFactory;
 import org.artifactory.factory.InfoFactoryHolder;
@@ -81,7 +82,7 @@ public class ReadOldBackupsTest {
         Assert.assertEquals(users.size(), 6, "Should have 6 users");
         UserInfo totoUser = users.get(users.indexOf(factory.createUser("toto")));
         Assert.assertFalse(totoUser.isAdmin(), "Toto user should not be admin");
-        UserInfo superUser = users.get(users.indexOf(factory.createUser("super")));
+        UserInfo superUser = users.get(users.indexOf(factory.createUser(CoreAddons.SUPER_USER_NAME)));
         Assert.assertTrue(superUser.isAdmin(), "Super user should be admin");
         List<GroupInfo> groups = securityConfig.getGroups();
         Assert.assertTrue(groups == null || groups.isEmpty(), "There should be no groups");

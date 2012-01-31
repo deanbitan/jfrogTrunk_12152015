@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,8 +29,6 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import java.util.Date;
-
 /**
  * @author yoavl
  */
@@ -49,8 +47,8 @@ public class IndexerJob extends AbstractIndexerJobs {
     protected void onExecute(JobExecutionContext context) throws JobExecutionException {
         InternalIndexerService indexer = ContextHelper.get().beanForType(InternalIndexerService.class);
         JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
-        boolean manualRun = Boolean.TRUE.equals(jobDataMap.get(MANUAL_RUN));
-        Date fireTime = context.getFireTime();
-        indexer.index(fireTime, manualRun);
+        IndexerRunSettings settings = (IndexerRunSettings) jobDataMap.get(SETTINGS);
+        settings.setFireTime(context.getFireTime());
+        indexer.index(settings);
     }
 }

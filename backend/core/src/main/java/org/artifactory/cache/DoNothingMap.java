@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,48 +28,60 @@ import java.util.Set;
  * @date Oct 19, 2008
  */
 public class DoNothingMap<K, V> implements Map<K, V> {
+    @Override
     public int size() {
         return 0;
     }
 
+    @Override
     public boolean isEmpty() {
         return true;
     }
 
+    @Override
     public boolean containsKey(Object key) {
         return false;
     }
 
+    @Override
     public boolean containsValue(Object value) {
         return false;
     }
 
+    @Override
     public V get(Object key) {
         return null;
     }
 
+    @Override
     public V put(K key, V value) {
         return null;
     }
 
+    @Override
     public V remove(Object key) {
         return null;
     }
 
+    @Override
     public void putAll(Map<? extends K, ? extends V> m) {
     }
 
+    @Override
     public void clear() {
     }
 
+    @Override
     public Set<K> keySet() {
         return Collections.emptySet();
     }
 
+    @Override
     public Collection<V> values() {
         return Collections.emptySet();
     }
 
+    @Override
     public Set<Map.Entry<K, V>> entrySet() {
         return Collections.emptySet();
     }

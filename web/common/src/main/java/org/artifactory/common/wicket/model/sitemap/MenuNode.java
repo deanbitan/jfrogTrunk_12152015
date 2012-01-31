@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -61,16 +61,13 @@ public class MenuNode implements TreeNode, Serializable {
         return name;
     }
 
+    @Override
     public MenuNode getParent() {
         return parent;
     }
 
     public void setParent(MenuNode parent) {
         this.parent = parent;
-    }
-
-    public String getMountUrl() {
-        return null;
     }
 
     public List<MenuNode> getChildren() {
@@ -143,27 +140,33 @@ public class MenuNode implements TreeNode, Serializable {
         return result;
     }
 
+    @Override
     public MenuNode getChildAt(int childIndex) {
         return children.get(childIndex);
     }
 
+    @Override
     public int getChildCount() {
         return children.size();
     }
 
+    @Override
     @SuppressWarnings({"SuspiciousMethodCalls"})
     public int getIndex(TreeNode node) {
         return children.indexOf(node);
     }
 
+    @Override
     public boolean getAllowsChildren() {
         return true;
     }
 
+    @Override
     public boolean isLeaf() {
         return children.isEmpty();
     }
 
+    @Override
     public Enumeration children() {
         return new IteratorEnumeration(children.iterator());
     }

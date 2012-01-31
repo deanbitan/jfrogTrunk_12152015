@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.browse.simplebrowser.root;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
@@ -45,7 +45,11 @@ public class RepoListPanel extends TitledPanel {
     public RepoListPanel(String id, List<? extends RepoBaseDescriptor> repoDescriptorList) {
         super(id);
         Collections.sort(repoDescriptorList, new RepoComparator());
-        final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
+        String hrefPrefix = RequestUtils.getWicketServletContextUrl();
+        if (!hrefPrefix.endsWith("/")) {
+            hrefPrefix += "/";
+        }
+        final String contextUrl = hrefPrefix;
         add(new ListView<RepoBaseDescriptor>("repos", repoDescriptorList) {
             @Override
             protected void populateItem(ListItem<RepoBaseDescriptor> item) {
@@ -53,13 +57,13 @@ public class RepoListPanel extends TitledPanel {
                 String key = repo.getKey();
 
                 Component browseLink = new ExternalLink("link",
-                        hrefPrefix + "/" + ArtifactoryRequest.SIMPLE_BROWSING_PATH + "/" + key + "/", key);
+                        contextUrl + ArtifactoryRequest.SIMPLE_BROWSING_PATH + "/" + key + "/", key);
                 String cssClass = ItemCssClass.getRepoDescriptorCssClass(repo);
                 browseLink.add(new CssClass(cssClass));
                 item.add(browseLink);
 
-                final ExternalLink listLink = new ExternalLink("listLink", hrefPrefix + "/list/" + key + "/", " ");
-                listLink.add(new SimpleAttributeModifier("title", "Directory Listing for " + key));
+                final ExternalLink listLink = new ExternalLink("listLink", contextUrl + "list/" + key + "/", " ");
+                listLink.add(new AttributeModifier("title", "Directory Listing for " + key));
                 listLink.add(new CssClass("ext-link"));
                 item.add(listLink);
             }
@@ -72,6 +76,7 @@ public class RepoListPanel extends TitledPanel {
     }
 
     private static class RepoComparator implements Comparator<RepoBaseDescriptor> {
+        @Override
         public int compare(RepoBaseDescriptor descriptor1, RepoBaseDescriptor descriptor2) {
 
             //Local repositories can be either ordinary or caches

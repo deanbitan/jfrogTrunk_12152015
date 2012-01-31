@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,8 +19,8 @@
 package org.artifactory.addon;
 
 import com.google.common.collect.Lists;
-import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.sapi.common.ImportSettings;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -34,18 +34,22 @@ import java.util.Set;
 @Component
 public class OssAddonsManager implements AddonsManager {
 
+    @Override
     public <T extends Addon> T addonByType(Class<T> type) {
         return ContextHelper.get().beanForType(type);
     }
 
+    @Override
     public String getProductName() {
         return "Artifactory";
     }
 
+    @Override
     public String getLicenseRequiredMessage(String licensePageUrl) {
         return "Add-ons are currently disabled.";
     }
 
+    @Override
     public List<AddonInfo> getInstalledAddons(Set<String> excludedAddonKeys) {
         List<AddonInfo> addonInfos = Lists.newArrayList();
         for (AddonType addonType : AddonType.values()) {
@@ -60,70 +64,87 @@ public class OssAddonsManager implements AddonsManager {
         return addonInfos;
     }
 
+    @Override
     public List<String> getEnabledAddonNames() {
         return Collections.emptyList();
     }
 
+    @Override
     public void importFrom(ImportSettings settings) {
 
     }
 
+    @Override
     public void refresh() {
 
     }
 
+    @Override
     public AddonInfo getAddonInfoByName(String addonName) {
         return null;
     }
 
+    @Override
     public boolean isLicenseInstalled() {
         return false;
     }
 
+    @Override
     public boolean isLicenseKeyValid(String licenseKey) {
         return false;
     }
 
+    @Override
     public String getAddonProperty(String addonName, String addonKey) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isAddonActivated(String addonName) {
         return false;
     }
 
+    @Override
     public void installLicense(String licenseKey) throws IOException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getLicenseKey() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getLicenseKeyHash() {
         return "";
     }
 
+    @Override
     public String[] getLicenseDetails() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getFooterMessage(boolean admin) {
         return null;
     }
 
+    @Override
     public String getLicenseFooterMessage() {
         return null;
     }
 
+    @Override
     public boolean lockdown() {
         return false;
     }
 
+    @Override
     public boolean isInstantiationAuthorized(Class componentClass) {
         return true;
     }
 
+    @Override
     public String interceptRequest() {
         return null;
     }

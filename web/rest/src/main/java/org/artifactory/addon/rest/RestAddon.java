@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.addon.rest;
 
+import com.sun.jersey.multipart.FormDataMultiPart;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
@@ -315,4 +316,88 @@ public interface RestAddon extends Addon {
      * @return Response
      */
     Response getReplicationStatus(RepoPath repoPath);
+
+    /**
+     * Handles the NuGet tool's test request
+     *
+     * @param repoKey Repo key
+     * @return Response
+     */
+    Response handleNuGetTestRequest(@Nonnull String repoKey);
+
+    /**
+     * Handles the NuPkg metadata descriptor test
+     *
+     * @param repoKey Repo key
+     * @return Response
+     */
+    Response handleNuGetMetadataDescriptorRequest(@Nonnull String repoKey);
+
+    /**
+     * Handles NuGet query requests
+     *
+     * @param request     Request
+     * @param repoKey     Repo key
+     * @param actionParam Path parameter identifying the action
+     * @return Response
+     */
+    Response handleNuGetQueryRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
+            @Nullable String actionParam);
+
+    /**
+     * Handles NuGet packages requests
+     *
+     * @param request Request
+     * @param repoKey Repo key
+     * @return Response
+     */
+    Response handleNuGetPackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey);
+
+    /**
+     * Handles a NuGet package download request
+     *
+     * @param response       Servlet response
+     * @param repoKey        Key of storing repo
+     * @param packageId      ID of requested package
+     * @param packageVersion Version of requested package
+     * @return Null if the result was written directly to the original response, a response object otherwise
+     */
+    Response handleNuGetDownloadRequest(@Nonnull HttpServletResponse response, @Nonnull String repoKey,
+            @Nonnull String packageId, @Nonnull String packageVersion);
+
+    /**
+     * Handles NuGet delete requests
+     *
+     * @param repoKey        Repo key
+     * @param packageId      ID of package to delete
+     * @param packageVersion Version of package to delete
+     * @return Response
+     */
+    Response handleNuGetDeleteRequest(@Nonnull String repoKey, @Nonnull String packageId,
+            @Nonnull String packageVersion);
+
+    /**
+     * Handles calculating maven index REST requests
+     *
+     * @param reposToIndex Keys of repositories to index
+     * @param force        force indexer execution
+     * @return Response
+     */
+    Response runMavenIndexer(List<String> reposToIndex, int force);
+
+    /**
+     * Handles NuGet publish requests
+     *
+     * @param repoKey Repo key
+     * @param content Request form data multi part
+     * @return Response
+     */
+    Response handleNuGetPublishRequest(@Nonnull String repoKey, @Nonnull FormDataMultiPart content);
+
+    /**
+     * Handles requests for active user plugin info
+     *
+     * @return Response
+     */
+    Response getUserPluginInfo();
 }

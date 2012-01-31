@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,6 +39,8 @@ import org.artifactory.webapp.wicket.page.search.actionable.ActionableSearchResu
 
 import java.util.List;
 
+import static org.artifactory.common.wicket.util.ComponentPersister.setPersistent;
+
 /**
  * Displays the GAVC searcher
  *
@@ -67,20 +69,20 @@ public class GavcSearchPanel extends BaseSearchPanel<GavcSearchResult> {
         TextField groupIdField = new TextField<String>("groupIdField",
                 new PropertyModel<String>(searchControls, "groupId"));
         groupIdField.setOutputMarkupId(true);
-        groupIdField.setPersistent(true);
+        setPersistent(groupIdField);
         form.add(groupIdField);
         form.add(new HelpBubble("groupIdHelp", "The artifact's group id.<br/>* and ? are accepted."));
 
         TextField artifactIdField = new TextField<String>("artifactIdField",
                 new PropertyModel<String>(searchControls, "artifactId"));
         artifactIdField.setOutputMarkupId(true);
-        artifactIdField.setPersistent(true);
+        setPersistent(artifactIdField);
         form.add(artifactIdField);
         form.add(new HelpBubble("artifactIdHelp", "The artifact's id.<br/>* and ? are accepted."));
 
         TextField versionField = new TextField<String>("versionField",
                 new PropertyModel<String>(searchControls, "version"));
-        versionField.setPersistent(true);
+        setPersistent(versionField);
         versionField.setOutputMarkupId(true);
         form.add(versionField);
         form.add(new HelpBubble("versionHelp", "The artifact's version.<br/>* and ? are accepted."));
@@ -88,7 +90,7 @@ public class GavcSearchPanel extends BaseSearchPanel<GavcSearchResult> {
         TextField classifierField = new TextField<String>("classifierField",
                 new PropertyModel<String>(searchControls, "classifier"));
         classifierField.setOutputMarkupId(true);
-        classifierField.setPersistent(true);
+        setPersistent(classifierField);
         form.add(classifierField);
         form.add(new HelpBubble("classifierHelp", "The artifact's classifier.<br/>* and ? are accepted."));
     }

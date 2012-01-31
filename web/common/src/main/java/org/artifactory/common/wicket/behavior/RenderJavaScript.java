@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,18 +19,18 @@
 package org.artifactory.common.wicket.behavior;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.Response;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.util.string.JavascriptUtils;
+import org.apache.wicket.request.Response;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.util.string.JavaScriptUtils;
 
 /**
  * @author Yoav Aharoni
  */
-public class RenderJavaScript extends AbstractBehavior {
+public class RenderJavaScript extends Behavior {
     private IModel javascript;
 
     public RenderJavaScript(String javascript) {
@@ -46,14 +46,14 @@ public class RenderJavaScript extends AbstractBehavior {
     }
 
     @Override
-    public void onRendered(Component component) {
-        super.onRendered(component);
+    public void afterRender(Component component) {
+        super.afterRender(component);
         final AjaxRequestTarget target = AjaxRequestTarget.get();
         if (target != null) {
-            target.appendJavascript(getJavascript());
+            target.appendJavaScript(getJavascript());
         } else {
             final Response response = RequestCycle.get().getResponse();
-            JavascriptUtils.writeJavascript(response, getJavascript());
+            JavaScriptUtils.writeJavaScript(response, getJavascript());
         }
     }
 }

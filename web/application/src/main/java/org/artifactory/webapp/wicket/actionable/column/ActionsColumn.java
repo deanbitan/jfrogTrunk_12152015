@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,9 +18,10 @@
 
 package org.artifactory.webapp.wicket.actionable.column;
 
-import org.apache.wicket.injection.web.InjectorHolder;
+import org.apache.wicket.injection.Injector;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
@@ -41,16 +42,13 @@ public class ActionsColumn<T extends ActionableItem> extends LinksColumn<T> {
     @SpringBean
     private AuthorizationService authorizationService;
 
-    {
-        InjectorHolder.getInjector().inject(this);
-    }
-
     public ActionsColumn(String title) {
-        super(title);
+        this(Model.of(title));
     }
 
     public ActionsColumn(IModel<String> titleModel) {
         super(titleModel);
+        Injector.get().inject(this);
     }
 
     protected Collection<ItemAction> getActions(T actionableItem) {

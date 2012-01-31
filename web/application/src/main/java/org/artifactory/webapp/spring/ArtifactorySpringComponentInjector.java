@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,12 +19,17 @@
 package org.artifactory.webapp.spring;
 
 import org.apache.wicket.Application;
+import org.apache.wicket.Component;
+import org.apache.wicket.IBehaviorInstantiationListener;
 import org.apache.wicket.IClusterable;
 import org.apache.wicket.MetaDataKey;
-import org.apache.wicket.injection.ComponentInjector;
-import org.apache.wicket.injection.web.InjectorHolder;
+import org.apache.wicket.application.IComponentInstantiationListener;
+import org.apache.wicket.behavior.Behavior;
+import org.apache.wicket.injection.IFieldValueFactory;
+import org.apache.wicket.injection.Injector;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.spring.ISpringContextLocator;
+import org.apache.wicket.util.lang.Args;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.springframework.context.ApplicationContext;
 
@@ -33,39 +38,52 @@ import javax.servlet.ServletContext;
 /**
  * @author yoavl
  */
-public class ArtifactorySpringComponentInjector extends ComponentInjector {
+public class ArtifactorySpringComponentInjector extends Injector
+        implements IComponentInstantiationListener, IBehaviorInstantiationListener {
 
     /**
      * Metadata key used to store application context holder in application's metadata
      */
-    private static MetaDataKey CONTEXT_KEY = new MetaDataKey<ApplicationContextHolder>() {
+    private static MetaDataKey<ApplicationContextHolder> CONTEXT_KEY = new MetaDataKey<ApplicationContextHolder>() {
         private static final long serialVersionUID = 1L;
     };
 
+    private final IFieldValueFactory fieldValueFactory;
+
     public ArtifactorySpringComponentInjector(WebApplication webapp) {
-        if (webapp == null) {
-            throw new IllegalArgumentException("Argument [[webapp]] cannot be null");
-        }
+        Args.notNull(webapp, "webapp");
+
         ApplicationContext ctx = get(webapp);
-        if (ctx == null) {
-            throw new IllegalArgumentException("Argument [[ctx]] cannot be null");
-        }
+        Args.notNull(ctx, "ctx");
+
         // store context in application's metadata ...
         webapp.setMetaData(CONTEXT_KEY, new ApplicationContextHolder(ctx));
-        //Replace the annotation aware injector with one using a context sensitive bean cache
-        try {
-            //Don't set the injector more than once, since it's not thread safe
-            InjectorHolder.getInjector();
-        } catch (IllegalStateException e) {
-            //We don't have an injector yet
-            InjectorHolder.setInjector(new ArtifactoryAnnotSpringInjector(new NonCachingContextLocator()));
-        }
+
+        //
+        fieldValueFactory = new ArtifactoryContextAnnotFieldValueFactory(new NonCachingContextLocator());
+        bind(webapp);
     }
 
     private static ApplicationContext get(WebApplication webapp) {
         ServletContext sc = webapp.getServletContext();
         ApplicationContext ac = (ApplicationContext) RequestUtils.getArtifactoryContext(sc);
         return ac;
+    }
+
+
+    @Override
+    public void inject(final Object object) {
+        inject(object, fieldValueFactory);
+    }
+
+    @Override
+    public void onInstantiation(final Component component) {
+        inject(component);
+    }
+
+    @Override
+    public void onInstantiation(Behavior behavior) {
+        inject(behavior);
     }
 
     /**
@@ -102,6 +120,7 @@ public class ArtifactorySpringComponentInjector extends ComponentInjector {
 
         private static final long serialVersionUID = 1L;
 
+        @Override
         public ApplicationContext getSpringContext() {
             return ((ApplicationContextHolder) Application.get().getMetaData(CONTEXT_KEY)).getContext();
         }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +18,8 @@
 
 package org.artifactory.webapp.wicket.panel.tabbed.tab;
 
-import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
-import org.artifactory.addon.wicket.disabledaddon.DisableLinkBehavior;
 
 /**
  * Tab which is disabled.
@@ -41,12 +39,6 @@ public class DisabledTab extends BaseTab {
     @Override
     public boolean isEnabled() {
         return false;
-    }
-
-    @Override
-    public void onNewTabLink(Component link) {
-        super.onNewTabLink(link);
-        link.add(new DisableLinkBehavior());
     }
 
     @Override

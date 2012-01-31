@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -51,6 +51,7 @@ public class StatsInfoPersistenceHandler extends AbstractMetadataPersistenceHand
         return getXmlProvider().toXml(read(metadataAware));
     }
 
+    @Override
     public StatsInfo read(MetadataAware metadataAware) {
         Node metadataNode = getMetadataNode(metadataAware, false);
         if (metadataNode == null) {
@@ -66,6 +67,7 @@ public class StatsInfoPersistenceHandler extends AbstractMetadataPersistenceHand
         return statsInfo;
     }
 
+    @Override
     public void update(MetadataAware metadataAware, MutableStatsInfo statsInfo) {
         Node metadataNode = getMetadataNode(metadataAware, true);
         JcrHelper.setLongProperty(metadataNode, PROP_ARTIFACTORY_STATS_DOWNLOAD_COUNT, statsInfo.getDownloadCount());
@@ -80,6 +82,7 @@ public class StatsInfoPersistenceHandler extends AbstractMetadataPersistenceHand
         JcrHelper.setStringProperty(metadataNode, PROP_ARTIFACTORY_STATS_LAST_DOWNLOADED_BY, lastDownloadedBy);
     }
 
+    @Override
     public MetadataInfo getMetadataInfo(MetadataAware metadataAware) {
         Node metadataNode = getMetadataNode(metadataAware, false);
         if (metadataNode == null) {
@@ -106,6 +109,7 @@ public class StatsInfoPersistenceHandler extends AbstractMetadataPersistenceHand
                 StorageConstants.MIX_ARTIFACTORY_BASE, StorageConstants.MIX_ARTIFACTORY_STATS);
     }
 
+    @Override
     public void remove(MetadataAware metadataAware) {
         try {
             Node metadataNode = getMetadataNode(metadataAware, false);
@@ -118,10 +122,12 @@ public class StatsInfoPersistenceHandler extends AbstractMetadataPersistenceHand
         }
     }
 
+    @Override
     public MutableStatsInfo copy(StatsInfo original) {
         return InfoFactoryHolder.get().copyStats(original);
     }
 
+    @Override
     public Searcher<GenericMetadataSearchControls<StatsInfo>, GenericMetadataSearchResult<StatsInfo>> getSearcher() {
         //return new GenericStatsInfoSearcher(); Commented out in the meanwhile because it's unnecessarily complex
         return (Searcher<GenericMetadataSearchControls<StatsInfo>, GenericMetadataSearchResult<StatsInfo>>)

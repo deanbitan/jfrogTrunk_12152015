@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -81,15 +81,16 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
         this.chain.add(filter);
     }
 
-    public boolean requiresReauthentication(ServletRequest request, Authentication authentication) {
+    public boolean requiresReAuthentication(ServletRequest request, Authentication authentication) {
         for (ArtifactoryAuthenticationFilter filter : chain) {
-            if (filter.requiresReauthentication(request, authentication)) {
+            if (filter.requiresReAuthentication(request, authentication)) {
                 return true;
             }
         }
         return false;
     }
 
+    @Override
     public boolean acceptFilter(ServletRequest request) {
         for (ArtifactoryAuthenticationFilter filter : chain) {
             if (filter.acceptFilter(request)) {
@@ -99,6 +100,7 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
         return false;
     }
 
+    @Override
     public boolean acceptEntry(ServletRequest request) {
         for (ArtifactoryAuthenticationFilter filter : chain) {
             if (filter.acceptEntry(request)) {
@@ -108,6 +110,7 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
         return false;
     }
 
+    @Override
     public String getCacheKey(ServletRequest request) {
         String result;
         for (ArtifactoryAuthenticationFilter filter : chain) {
@@ -119,12 +122,14 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
         return null;
     }
 
+    @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         for (ArtifactoryAuthenticationFilter filter : chain) {
             filter.init(filterConfig);
         }
     }
 
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         // First one that accepts
@@ -140,12 +145,14 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
         }
     }
 
+    @Override
     public void destroy() {
         for (ArtifactoryAuthenticationFilter filter : chain) {
             filter.destroy();
         }
     }
 
+    @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException)
             throws IOException, ServletException {

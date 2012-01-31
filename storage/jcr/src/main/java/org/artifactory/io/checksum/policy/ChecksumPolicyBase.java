@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,6 +37,7 @@ public abstract class ChecksumPolicyBase implements ChecksumPolicy, Serializable
 
     abstract String getChecksum(ChecksumInfo checksumInfo);
 
+    @Override
     public boolean verify(Set<ChecksumInfo> checksumInfos) {
         for (ChecksumInfo checksumInfo : checksumInfos) {
             // call the actual implementation to do its job
@@ -48,6 +49,7 @@ public abstract class ChecksumPolicyBase implements ChecksumPolicy, Serializable
         return false;
     }
 
+    @Override
     public String getChecksum(ChecksumType checksumType, Set<ChecksumInfo> checksumInfos) {
         ChecksumInfo info = getChecksumInfo(checksumType, checksumInfos);
         if (info != null) {
@@ -63,6 +65,7 @@ public abstract class ChecksumPolicyBase implements ChecksumPolicy, Serializable
         return getChecksum(checksumInfos.getChecksumInfo(checksumType));
     }
 
+    @Override
     public String getChecksum(ChecksumType checksumType, Set<ChecksumInfo> checksumInfos, RepoPath repoPath) {
         // remote checksum policies don't care about the repo path
         return getChecksum(checksumType, checksumInfos);

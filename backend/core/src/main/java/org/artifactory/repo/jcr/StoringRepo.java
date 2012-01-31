@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,6 +37,7 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, JcrFsIte
 
     VfsFolder getRootFolder();
 
+    @Override
     boolean itemExists(String relPath);
 
     /**
@@ -56,10 +57,12 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, JcrFsIte
 
     JcrFolder getLockedRootFolder();
 
+    @Override
     ChecksumPolicy getChecksumPolicy();
 
     void onCreate(JcrFsItem fsItem);
 
+    @Override
     void onDelete(JcrFsItem fsItem);
 
     boolean isWriteLocked(RepoPath path);

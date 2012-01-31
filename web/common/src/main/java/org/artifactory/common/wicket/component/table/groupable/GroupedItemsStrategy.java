@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,6 +39,7 @@ public class GroupedItemsStrategy implements IItemReuseStrategy {
         this.table = table;
     }
 
+    @Override
     public <T> Iterator<Item<T>> getItems(final IItemFactory<T> factory, final Iterator<IModel<T>> newModels,
             Iterator<Item<T>> existingItems) {
         return new Iterator<Item<T>>() {
@@ -48,14 +49,17 @@ public class GroupedItemsStrategy implements IItemReuseStrategy {
             private Item<T> lastGroupItem;
             private IModel<T> lastGroupModel;
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException();
             }
 
+            @Override
             public boolean hasNext() {
                 return lastGroupModel != null || newModels.hasNext();
             }
 
+            @Override
             @SuppressWarnings({"unchecked"})
             public Item<T> next() {
                 // returned group item in last iteration, return saved model item

@@ -29,11 +29,11 @@ fi
 # Verify minimal JVM props are set
 hasMinHeapSize=`echo "$JAVA_OPTIONS" | grep "\\-Xms"`
 if [ -z "$hasMinHeapSize" ]; then
-    JAVA_OPTIONS="$JAVA_OPTIONS -Xms512m"
+    JAVA_OPTIONS="$JAVA_OPTIONS -Xms1g"
 fi
 hasMaxHeapSize=`echo "$JAVA_OPTIONS" | grep "\\-Xmx"`
 if [ -z "$hasMaxHeapSize" ]; then
-    JAVA_OPTIONS="$JAVA_OPTIONS -Xmx512m"
+    JAVA_OPTIONS="$JAVA_OPTIONS -Xmx1g"
 fi
 hasMinPermSize=`echo "$JAVA_OPTIONS" | grep "\\-XX:PermSize"`
 if [ -z "$hasMinPermSize" ]; then
@@ -45,11 +45,15 @@ if [ -z "$hasMaxPermSize" ]; then
 fi
 hasMinNewSize=`echo "$JAVA_OPTIONS" | grep "\\-XX:NewSize"`
 if [ -z "$hasMinNewSize" ]; then
-    JAVA_OPTIONS="$JAVA_OPTIONS -XX:NewSize=180m"
+    JAVA_OPTIONS="$JAVA_OPTIONS -XX:NewSize=512m"
 fi
 hasMaxNewSize=`echo "$JAVA_OPTIONS" | grep "\\-XX:MaxNewSize"`
 if [ -z "$hasMaxNewSize" ]; then
-    JAVA_OPTIONS="$JAVA_OPTIONS -XX:MaxNewSize=180m"
+    JAVA_OPTIONS="$JAVA_OPTIONS -XX:MaxNewSize=512m"
+fi
+hasGcFlags=`echo "$JAVA_OPTIONS" | grep "\\-XX:-Use.*GC"`
+if [ -z "$hasGcFlags" ]; then
+    JAVA_OPTIONS="$JAVA_OPTIONS -XX:-UseConcMarkSweepGC -XX:+UseParNewGC"
 fi
 
 JAVA_OPTIONS="$JAVA_OPTIONS -server -Djetty.home=$ARTIFACTORY_HOME -Dartifactory.home=$ARTIFACTORY_HOME -Dfile.encoding=UTF8"

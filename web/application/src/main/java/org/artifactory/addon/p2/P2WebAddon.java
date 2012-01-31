@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.addon.p2;
 
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
+import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.addon.Addon;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
@@ -56,4 +57,10 @@ public interface P2WebAddon extends Addon {
             @Nullable List<P2RemoteRepository> currentList,
             MutableStatusHolder statusHolder);
 
+    /**
+     * Adds the P2 configuration section to the form of the remote repository's packages config tab
+     *
+     * @param form Form from the remote repository's packages config tab
+     */
+    void createAndAddRemoteRepoConfigP2Section(Form form);
 }

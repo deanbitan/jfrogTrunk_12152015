@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,6 +26,7 @@ import org.apache.wicket.model.Model;
 import org.artifactory.addon.p2.P2RemoteRepository;
 import org.artifactory.addon.p2.P2RemoteRepositoryModel;
 import org.artifactory.addon.p2.P2WebAddon;
+import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -72,6 +73,8 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
 
         tabs.add(addons.addonByType(P2WebAddon.class).getVirtualRepoConfigurationTab(
                 "P2", getRepoDescriptor(), getCachingDescriptorHelper()));
+
+        tabs.add(addons.addonByType(NuGetWebAddon.class).getVirtualRepoConfigurationTab("NuGet", getRepoDescriptor()));
         return tabs;
     }
 

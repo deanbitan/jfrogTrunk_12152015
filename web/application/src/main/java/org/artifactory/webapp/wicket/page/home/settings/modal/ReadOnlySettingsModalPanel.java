@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,7 +26,6 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonStyleModel;
-import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
@@ -52,32 +51,33 @@ public class ReadOnlySettingsModalPanel extends CodeModalPanel {
     @SpringBean
     private AddonsManager addonsManager;
 
-    public ReadOnlySettingsModalPanel(final String settings, Syntax syntax, final String mimeType,
-            String saveToFileName) {
-        super(new SyntaxHighlighter("content", settings, syntax));
+    public ReadOnlySettingsModalPanel(final DownloadModalSettings settings) {
+        super(new SyntaxHighlighter("content", settings.getContent(), settings.getSyntax()));
 
         final AjaxSettingsDownloadBehavior ajaxSettingsDownloadBehavior =
-                new AjaxSettingsDownloadBehavior(saveToFileName) {
+                new AjaxSettingsDownloadBehavior(settings.getSaveToFileName()) {
 
                     @Override
                     protected StringResourceStream getResourceStream() {
                         FilteredResourcesWebAddon filteredResourcesWebAddon = addonsManager.addonByType(
                                 FilteredResourcesWebAddon.class);
+                        String settingsMimeType = settings.getSettingsMimeType();
+                        String settingsContent = settings.getContent();
                         try {
                             String filtered = filteredResourcesWebAddon.filterResource(null,
                                     (Properties) InfoFactoryHolder.get().createProperties(),
-                                    new StringReader(settings));
-                            return new StringResourceStream(filtered, mimeType);
+                                    new StringReader(settingsContent));
+                            return new StringResourceStream(filtered, settingsMimeType);
                         } catch (Exception e) {
                             log.error("Unable to filter settings: " + e.getMessage());
-                            return new StringResourceStream(settings, mimeType);
+                            return new StringResourceStream(settingsContent, settingsMimeType);
                         }
                     }
                 };
 
         add(ajaxSettingsDownloadBehavior);
 
-        Component exportLink = new TitledAjaxLink("export", "Download Settings") {
+        Component exportLink = new TitledAjaxLink("export", settings.getDownloadButtonTitle()) {
             public void onClick(AjaxRequestTarget target) {
                 ajaxSettingsDownloadBehavior.initiate(target);
             }

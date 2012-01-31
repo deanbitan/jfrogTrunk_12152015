@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,34 +54,42 @@ public class BasicStatusHolder implements MutableStatusHolder {
         activateLogging = true;
     }
 
+    @Override
     public void setFastFail(boolean fastFail) {
         this.fastFail = fastFail;
     }
 
+    @Override
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
 
+    @Override
     public boolean isFastFail() {
         return fastFail;
     }
 
+    @Override
     public boolean isVerbose() {
         return verbose;
     }
 
+    @Override
     public StatusEntry getStatusEntry() {
         return statusEntry;
     }
 
+    @Override
     public StatusEntry getLastError() {
         return lastError;
     }
 
+    @Override
     public void setLastError(StatusEntry error) {
         this.lastError = error;
     }
 
+    @Override
     public final void setDebug(String statusMsg, Logger logger) {
         addStatus(statusMsg, CODE_OK, logger, true);
     }
@@ -90,10 +98,12 @@ public class BasicStatusHolder implements MutableStatusHolder {
         addStatus(statusMsg, statusCode, logger, true);
     }
 
+    @Override
     public final void setStatus(String statusMsg, Logger logger) {
         setStatus(statusMsg, CODE_OK, logger);
     }
 
+    @Override
     public final void setStatus(String statusMsg, int statusCode, Logger logger) {
         addStatus(statusMsg, statusCode, logger, false);
     }
@@ -112,30 +122,37 @@ public class BasicStatusHolder implements MutableStatusHolder {
         return result;
     }
 
+    @Override
     public void setError(String statusMsg, Logger logger) {
         setError(statusMsg, CODE_INTERNAL_ERROR, null, logger);
     }
 
+    @Override
     public void setError(String statusMsg, int statusCode, Logger logger) {
         setError(statusMsg, statusCode, null, logger);
     }
 
+    @Override
     public void setError(String status, Throwable throwable, Logger logger) {
         setError(status, CODE_INTERNAL_ERROR, throwable, logger);
     }
 
+    @Override
     public void setError(String status, int statusCode, Throwable throwable) {
         setError(status, statusCode, throwable, null);
     }
 
+    @Override
     public void setError(String statusMsg, int statusCode, Throwable throwable, Logger logger) {
         addError(statusMsg, statusCode, throwable, logger, false);
     }
 
+    @Override
     public void setWarning(String statusMsg, Logger logger) {
         addError(statusMsg, CODE_INTERNAL_ERROR, null, logger, true);
     }
 
+    @Override
     public void setWarning(String statusMsg, Throwable throwable, Logger logger) {
         addError(statusMsg, CODE_INTERNAL_ERROR, throwable, logger, true);
     }
@@ -205,6 +222,7 @@ public class BasicStatusHolder implements MutableStatusHolder {
         }
     }
 
+    @Override
     public String getStatusMsg() {
         if (lastError != null) {
             return lastError.getMessage();
@@ -216,18 +234,22 @@ public class BasicStatusHolder implements MutableStatusHolder {
         return outputFile;
     }
 
+    @Override
     public void setOutputFile(File outputFile) {
         this.outputFile = outputFile;
     }
 
+    @Override
     public boolean isError() {
         return lastError != null;
     }
 
+    @Override
     public CancelException getCancelException() {
         return getCancelException(null);
     }
 
+    @Override
     public CancelException getCancelException(StatusEntry previousToLastError) {
         if (lastError != null && !lastError.equals(previousToLastError)) {
             //We have a new error check if it is a cancellation one
@@ -239,6 +261,7 @@ public class BasicStatusHolder implements MutableStatusHolder {
         return null;
     }
 
+    @Override
     public Throwable getException() {
         if (lastError != null) {
             return lastError.getException();
@@ -246,6 +269,7 @@ public class BasicStatusHolder implements MutableStatusHolder {
         return statusEntry.getException();
     }
 
+    @Override
     public int getStatusCode() {
         if (lastError != null) {
             return lastError.getStatusCode();
@@ -256,6 +280,7 @@ public class BasicStatusHolder implements MutableStatusHolder {
     /**
      * @return True if the status holder prints the messages to the logger.
      */
+    @Override
     public boolean isActivateLogging() {
         return activateLogging;
     }
@@ -265,10 +290,12 @@ public class BasicStatusHolder implements MutableStatusHolder {
      *
      * @param activateLogging Set to fasle to disable logging
      */
+    @Override
     public void setActivateLogging(boolean activateLogging) {
         this.activateLogging = activateLogging;
     }
 
+    @Override
     public void reset() {
         lastError = null;
         statusEntry = new StatusEntry(CODE_OK, StatusEntryLevel.DEBUG, MSG_IDLE, null);

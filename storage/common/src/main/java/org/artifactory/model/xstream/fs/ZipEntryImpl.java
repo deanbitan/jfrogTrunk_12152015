@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -68,34 +68,42 @@ public class ZipEntryImpl implements Serializable, ZipEntryInfo {
         this.directory = entry.isDirectory();
     }
 
+    @Override
     public String getPath() {
         return path;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public long getTime() {
         return time;
     }
 
+    @Override
     public long getCrc() {
         return crc;
     }
 
+    @Override
     public long getSize() {
         return size;
     }
 
+    @Override
     public long getCompressedSize() {
         return compressedSize;
     }
 
+    @Override
     public String getComment() {
         return comment;
     }
 
+    @Override
     public boolean isDirectory() {
         return directory;
     }

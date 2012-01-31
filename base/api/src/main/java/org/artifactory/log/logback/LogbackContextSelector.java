@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,14 +47,17 @@ public class LogbackContextSelector implements ContextSelector {
         defaultContext = context;
     }
 
+    @Override
     public LoggerContext getDefaultLoggerContext() {
         return defaultContext;
     }
 
+    @Override
     public LoggerContext detachLoggerContext(String loggerContextName) {
         return loggerContextsByContextId.remove(loggerContextName);
     }
 
+    @Override
     public LoggerContext getLoggerContext() {
         //First check if ThreadLocal has been set already
         LoggerContext loggerContext = tlsLoggingContext.get();
@@ -87,12 +90,14 @@ public class LogbackContextSelector implements ContextSelector {
         }
     }
 
+    @Override
     public List<String> getContextNames() {
         List<String> list = new ArrayList<String>();
         list.addAll(loggerContextsByContextId.keySet());
         return list;
     }
 
+    @Override
     public LoggerContext getLoggerContext(String name) {
         return loggerContextsByContextId.get(name);
     }

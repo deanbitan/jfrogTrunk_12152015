@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -75,7 +75,7 @@ public class LocalRepoBasicPanel extends Panel {
         handleSnapshots.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                target.addComponent(maxUniqueSnapshots);
+                target.add(maxUniqueSnapshots);
             }
         });
         add(handleSnapshots);
@@ -103,7 +103,7 @@ public class LocalRepoBasicPanel extends Panel {
                 if (NONUNIQUE.equals(descriptor.getSnapshotVersionBehavior())) {
                     descriptor.setMaxUniqueSnapshots(0);
                 }
-                target.addComponent(maxUniqueSnapshots);
+                target.add(maxUniqueSnapshots);
             }
         });
         snapshotVersionDropDown.setChoiceRenderer(new SnapshotVersionChoiceRenderer());
@@ -133,8 +133,8 @@ public class LocalRepoBasicPanel extends Panel {
                 suppressPomConsistencyChecks.setEnabled(repoDescriptor.isMavenRepoLayout());
                 suppressPomConsistencyChecks.setDefaultModelObject(!repoDescriptor.isMavenRepoLayout());
                 snapshotVersionDropDown.setEnabled(descriptor.isMavenRepoLayout());
-                target.addComponent(snapshotVersionDropDown);
-                target.addComponent(suppressPomConsistencyChecks);
+                target.add(snapshotVersionDropDown);
+                target.add(suppressPomConsistencyChecks);
             }
         });
         repoLayout.setEnabled(create);

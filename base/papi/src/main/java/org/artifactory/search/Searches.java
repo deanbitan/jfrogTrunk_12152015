@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -49,7 +49,7 @@ public interface Searches {
      * @param properties   A set of key-value properties to search for on artifacts or folders. All specified properties
      *                     need to exist on found items. If multiple values are used a contains() semantic is applied
      * @param repositories A list of repositories to search in. Can be null to search all repositories.
-     * @return
+     * @return Artifacts matching the criteria
      */
     List<RepoPath> itemsByProperties(SetMultimap<String, String> properties, String... repositories);
 
@@ -58,7 +58,7 @@ public interface Searches {
      *
      * @param query        The search term for the archive of the entry
      * @param repositories A list of repositories to search in. Can be null to search all repositories.
-     * @return
+     * @return List of zip resources repo path matching the criteria
      */
     List<RepoPath> archiveEntriesByName(String query, String... repositories);
 

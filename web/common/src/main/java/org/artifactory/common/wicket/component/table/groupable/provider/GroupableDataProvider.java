@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,6 +47,7 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
         this.data = data;
     }
 
+    @Override
     public Iterator<T> iterator(int first, int count) {
         List<T> data = getData();
         sortData(data, getGroupParam(), getSort());
@@ -58,23 +59,28 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
         ListPropertySorter.sort(data, groupParam, sort);
     }
 
+    @Override
     public int size() {
         return data.size();
     }
 
+    @Override
     public IModel<T> model(T object) {
         return new Model<T>(object);
     }
 
+    @Override
     public SortParam getGroupParam() {
         return groupParam;
     }
 
+    @Override
     public void setGroupParam(SortParam groupParam) {
         this.groupParam = groupParam;
         clearGroupCache();
     }
 
+    @Override
     public int getGroupSize(int index) {
         SortParam groupParam = getGroupParam();
         if (groupSizeCache == null) {

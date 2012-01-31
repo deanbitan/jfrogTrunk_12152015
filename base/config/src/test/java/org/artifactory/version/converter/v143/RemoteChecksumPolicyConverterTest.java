@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -42,7 +42,8 @@ public class RemoteChecksumPolicyConverterTest extends XmlConverterTest {
 
     public void convertConfigWithChecksumPolicyTags() throws Exception {
         // just call the convert, nothing is expected to get changed
-        Document doc = convertXml("/config/test/config.1.4.2_with_checksum_policy.xml", new RemoteChecksumPolicyConverter());
+        Document doc = convertXml("/config/test/config.1.4.2_with_checksum_policy.xml",
+                new RemoteChecksumPolicyConverter());
 
         Element root = doc.getRootElement();
         Namespace ns = root.getNamespace();

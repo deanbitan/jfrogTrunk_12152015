@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,15 +19,17 @@
 package org.artifactory.security;
 
 import org.artifactory.api.security.UserInfoBuilder;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.factory.InfoFactory;
 import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.easymock.EasyMock;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -42,7 +44,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static org.easymock.EasyMock.*;
 import static org.testng.Assert.*;
@@ -53,7 +54,7 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class SecurityServiceImplTest {
+public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
     private InfoFactory factory = InfoFactoryHolder.get();
     private SecurityContextImpl securityContext;
     private SecurityServiceImpl service;
@@ -91,7 +92,6 @@ public class SecurityServiceImplTest {
         ReflectionTestUtils.setField(service, "internalAclManager", internalAclManagerMock);
         ReflectionTestUtils.setField(service, "repositoryService", repositoryServiceMock);
         ReflectionTestUtils.setField(service, "centralConfig", centralConfigServiceMock);
-        ReflectionTestUtils.setField(service, "lastLoginBufferTime", TimeUnit.SECONDS.toMillis(2));
 
         // reset mocks
         reset(internalAclManagerMock, repositoryServiceMock, centralConfigServiceMock);
@@ -548,30 +548,37 @@ public class SecurityServiceImplTest {
     }
 
     public void testUserLastLoginTimeUpdateBuffer() throws InterruptedException {
-        long firstLogin = System.currentTimeMillis();
+        getBound().setProperty(ConstantValues.userLastAccessUpdatesResolutionSecs, "0");
+        service.updateUserLastLogin("user", "momo", System.currentTimeMillis());
+        getBound().setProperty(ConstantValues.userLastAccessUpdatesResolutionSecs,
+                ConstantValues.userLastAccessUpdatesResolutionSecs.getDefValue());
+
         MutableUserInfo user = new UserInfoBuilder("user").build();
         user.setLastLoginTimeMillis(0);
         SimpleUser simpleUser = new SimpleUser(user);
 
+        //Simulate No existing last login, expect an update
         expect(userGroupManager.userExists("user")).andReturn(true).once();
         expect(userGroupManager.loadUserByUsername("user")).andReturn(simpleUser).once();
         userGroupManager.updateUser(simpleUser);
         EasyMock.expectLastCall();
         replay(userGroupManager);
+        service.updateUserLastLogin("user", "momo", System.currentTimeMillis());
 
-        service.updateUserLastLogin("user", "momo", firstLogin);
+        //Give a last login from the near past, expect no update
+        long nearPastLogin = System.currentTimeMillis();
 
         verify(userGroupManager);
         reset(userGroupManager);
         user = new UserInfoBuilder("user").build();
-        user.setLastLoginTimeMillis(firstLogin);
+        user.setLastLoginTimeMillis(nearPastLogin);
         simpleUser = new SimpleUser(user);
         expect(userGroupManager.userExists("user")).andReturn(true).once();
         expect(userGroupManager.loadUserByUsername("user")).andReturn(simpleUser).once();
         replay(userGroupManager);
+        service.updateUserLastLogin("user", "momo", nearPastLogin + 100l);
 
-        service.updateUserLastLogin("user", "momo", System.currentTimeMillis());
-
+        //Give a last login from the future, expect an update
         verify(userGroupManager);
         reset(userGroupManager);
         expect(userGroupManager.userExists("user")).andReturn(true).once();
@@ -579,8 +586,7 @@ public class SecurityServiceImplTest {
         userGroupManager.updateUser(simpleUser);
         EasyMock.expectLastCall();
         replay(userGroupManager);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(2));
-        service.updateUserLastLogin("user", "momo", System.currentTimeMillis() + 1l);
+        service.updateUserLastLogin("user", "momo", System.currentTimeMillis() + 6000l);
     }
 
     private void verifyAnyRemoteOrAnyLocal(Authentication authentication, RepoPath securedPath) {

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @XmlType(name = "BackupType", propOrder = {"key", "enabled", "dir", "cronExp", "retentionPeriodHours", "createArchive",
-        "excludedRepositories", "sendMailOnError"},
+        "excludedRepositories", "sendMailOnError", "excludeBuilds"},
         namespace = Descriptor.NS)
 public class BackupDescriptor implements TaskDescriptor {
 
@@ -68,6 +68,9 @@ public class BackupDescriptor implements TaskDescriptor {
 
     @XmlElement(defaultValue = "true")
     private boolean sendMailOnError = true;
+
+    @XmlElement(defaultValue = "false")
+    private boolean excludeBuilds = false;
 
     public String getKey() {
         return key;
@@ -160,6 +163,14 @@ public class BackupDescriptor implements TaskDescriptor {
         this.sendMailOnError = sendMailOnError;
     }
 
+    public boolean isExcludeBuilds() {
+        return excludeBuilds;
+    }
+
+    public void setExcludeBuilds(boolean excludeBuilds) {
+        this.excludeBuilds = excludeBuilds;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -183,6 +194,7 @@ public class BackupDescriptor implements TaskDescriptor {
         return key != null ? key.hashCode() : 0;
     }
 
+    @Override
     public boolean sameTaskDefinition(TaskDescriptor otherDescriptor) {
         if (otherDescriptor == null || !(otherDescriptor instanceof BackupDescriptor)) {
             throw new IllegalArgumentException("Cannot compare backup descriptor " + this + " with " + otherDescriptor);

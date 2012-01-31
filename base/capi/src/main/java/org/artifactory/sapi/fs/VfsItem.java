@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -46,12 +46,14 @@ public interface VfsItem<T extends ItemInfo, MT extends MutableItemInfo>
 
     String getName();
 
+    @Override
     String getAbsolutePath();
 
     String getRelativePath();
 
     long getCreated();
 
+    @Override
     RepoPath getRepoPath();
 
     String getRepoKey();
@@ -76,6 +78,7 @@ public interface VfsItem<T extends ItemInfo, MT extends MutableItemInfo>
 
     boolean exists();
 
+    @Override
     boolean isFile();
 
     boolean isHidden();
@@ -88,6 +91,7 @@ public interface VfsItem<T extends ItemInfo, MT extends MutableItemInfo>
 
     boolean canExecute();
 
+    @Override
     int compareTo(File item);
 
     String getPath();
@@ -114,6 +118,7 @@ public interface VfsItem<T extends ItemInfo, MT extends MutableItemInfo>
 
     boolean setLastModified(long time);
 
+    @Override
     boolean isDirectory();
 
     boolean isFolder();

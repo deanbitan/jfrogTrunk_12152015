@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,9 +20,9 @@ package org.artifactory.common.wicket.behavior.template;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.ComponentTag;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.artifactory.common.wicket.behavior.template.loadingstrategy.BaseTemplateStrategy;
 import org.artifactory.common.wicket.behavior.template.loadingstrategy.CachedInterpolatedTemplateStrategy;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
@@ -30,7 +30,7 @@ import org.artifactory.common.wicket.contributor.ResourcePackage;
 /**
  * @author Yoav Aharoni
  */
-public class TemplateBehavior extends AbstractBehavior {
+public class TemplateBehavior extends Behavior {
     private transient ResourcePackage resourcePackage;
     private BaseTemplateStrategy templateStrategy;
 
@@ -67,8 +67,8 @@ public class TemplateBehavior extends AbstractBehavior {
     }
 
     @Override
-    public void onRendered(Component component) {
-        super.onRendered(component);
+    public void afterRender(Component component) {
+        super.afterRender(component);
         write(templateStrategy.getAfterRenderString());
     }
 

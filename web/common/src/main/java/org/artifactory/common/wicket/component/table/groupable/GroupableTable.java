@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,7 @@
 
 package org.artifactory.common.wicket.component.table.groupable;
 
-import com.google.common.collect.Lists;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.markup.html.basic.Label;
@@ -37,7 +36,6 @@ import org.artifactory.common.wicket.component.table.toolbar.emptyrow.EmptyRowTo
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -47,14 +45,8 @@ public class GroupableTable<T extends Serializable> extends SortableTable<T> {
 
     @SuppressWarnings({"unchecked"})
     public GroupableTable(String id, List<IColumn<T>> columns, GroupableDataProvider<T> dataProvider, int rowsPerPage) {
-        this(id, columns.toArray(new IColumn[columns.size()]), dataProvider, rowsPerPage);
-    }
-
-    public GroupableTable(String id, IColumn<T>[] columns, GroupableDataProvider<T> dataProvider, int rowsPerPage) {
         super(id, addSpaceColumns(columns), dataProvider, rowsPerPage);
-    }
 
-    {
         add(new CssClass(new CssModel()));
         add(ResourcePackage.forJavaScript(GroupableTable.class));
         setItemReuseStrategy(new GroupedItemsStrategy(this));
@@ -86,8 +78,8 @@ public class GroupableTable<T extends Serializable> extends SortableTable<T> {
 
     protected Item newGroupCellItem(String id, int index, IModel<T> model) {
         Item item = new Item<T>(id, index, model);
-        String colspan = String.valueOf(getColumns().length);
-        item.add(new SimpleAttributeModifier("colspan", colspan));
+        String colspan = String.valueOf(getColumns().size());
+        item.add(new AttributeModifier("colspan", colspan));
         item.add(new CssClass("first-cell last-cell"));
         item.add(new JavascriptEvent("onclick", "GroupableTable.collapseExpand(this);"));
         return item;
@@ -98,7 +90,7 @@ public class GroupableTable<T extends Serializable> extends SortableTable<T> {
         Object value = renderer.getDisplayValue(rowModel.getObject());
         Item rowItem = (Item) cellItem.getParent();
         int groupSize = getGroupableDataProvider().getGroupSize(
-                rowItem.getIndex() + getCurrentPage() * getRowsPerPage());
+                rowItem.getIndex() + getCurrentPage() * getItemsPerPage());
         cellItem.add(new GroupRow(componentId, value, groupSize));
     }
 
@@ -115,11 +107,10 @@ public class GroupableTable<T extends Serializable> extends SortableTable<T> {
         }
     }
 
-    private static <T> IColumn<T>[] addSpaceColumns(IColumn<T>[] columns) {
-        List<IColumn<T>> spacedColumns = Lists.newArrayList(Arrays.asList(columns));
-        spacedColumns.add(0, new SpaceColumn<T>());
-        spacedColumns.add(new SpaceColumn<T>());
-        return spacedColumns.toArray(columns);
+    private static <T> List<IColumn<T>> addSpaceColumns(List<IColumn<T>> columns) {
+        columns.add(0, new SpaceColumn<T>());
+        columns.add(new SpaceColumn<T>());
+        return columns;
     }
 
     private static class SpaceColumn<T> extends AbstractColumn<T> {
@@ -127,6 +118,7 @@ public class GroupableTable<T extends Serializable> extends SortableTable<T> {
             super(Model.of(""));
         }
 
+        @Override
         public void populateItem(Item cellItem, String componentId, IModel rowModel) {
             cellItem.add(new Label(componentId, "."));
         }

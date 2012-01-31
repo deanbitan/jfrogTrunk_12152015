@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,36 +38,44 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
         setRepoPath(repoPath);
     }
 
+    @Override
     public long getLastModified() {
         return httpRequest.getDateHeader("Last-Modified");
     }
 
+    @Override
     public boolean isHeadOnly() {
         return "HEAD".equalsIgnoreCase(httpRequest.getMethod());
     }
 
+    @Override
     public String getClientAddress() {
         return HttpUtils.getRemoteClientAddress(httpRequest);
     }
 
+    @Override
     public String getServletContextUrl() {
         return HttpUtils.getServletContextUrl(httpRequest);
     }
 
+    @Override
     public long getIfModifiedSince() {
         return httpRequest.getDateHeader("If-Modified-Since");
     }
 
+    @Override
     public boolean isFromAnotherArtifactory() {
         String origin = getOrigin();
         return origin != null;
     }
 
+    @Override
     public boolean isRecursive() {
         String origin = getOrigin();
         return origin != null && origin.equals(HttpUtils.getHostId());
     }
 
+    @Override
     public InputStream getInputStream() throws IOException {
         return httpRequest.getInputStream();
     }
@@ -75,14 +83,17 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
     /**
      * @see javax.servlet.ServletRequest#getContentLength()
      */
+    @Override
     public int getContentLength() {
         return httpRequest.getContentLength();
     }
 
+    @Override
     public String getHeader(String headerName) {
         return httpRequest.getHeader(headerName);
     }
 
+    @Override
     public String getUri() {
         return httpRequest.getRequestURI();
     }

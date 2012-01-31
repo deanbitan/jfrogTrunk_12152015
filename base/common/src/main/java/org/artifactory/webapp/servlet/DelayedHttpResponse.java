@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,6 +78,7 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
         response.flush();
     }
 
+    @Override
     public OutputStream getOutputStream() throws IOException {
         // return an internal output stream that will cache the response data
         if (out == null) {
@@ -86,6 +87,7 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
         return out;
     }
 
+    @Override
     public PrintWriter getWriter() throws IOException {
         // return an internal writer that will cache the response data
         if (writer == null) {
@@ -110,6 +112,7 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
         setStatus(getStatus());
     }
 
+    @Override
     public void flush() {
         // delay if status is ok
         if (!HttpUtils.isSuccessfulResponseCode(status)) {
@@ -119,18 +122,22 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
 
     // delegate unmodified methods //
 
+    @Override
     public void setLastModified(long lastModified) {
         response.setLastModified(lastModified);
     }
 
+    @Override
     public void setEtag(String etag) {
         response.setEtag(etag);
     }
 
+    @Override
     public void setMd5(String md5) {
         response.setMd5(md5);
     }
 
+    @Override
     public void setSha1(String sha1) {
         response.setSha1(sha1);
     }
@@ -140,6 +147,7 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
         response.sendErrorInternal(statusCode, reason);
     }
 
+    @Override
     public void sendAuthorizationRequired(String message, String realm) throws IOException {
         response.sendAuthorizationRequired(message, realm);
     }
@@ -149,14 +157,17 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
         response.setContentLength(length);
     }
 
+    @Override
     public void setHeader(String header, String value) {
         response.setHeader(header, value);
     }
 
+    @Override
     public void setContentType(String contentType) {
         response.setContentType(contentType);
     }
 
+    @Override
     public boolean isCommitted() {
         return response.isCommitted();
     }

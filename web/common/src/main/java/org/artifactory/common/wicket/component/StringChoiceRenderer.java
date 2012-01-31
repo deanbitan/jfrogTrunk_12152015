@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,6 +26,7 @@ import org.apache.wicket.markup.html.form.IChoiceRenderer;
 public class StringChoiceRenderer<T> implements IChoiceRenderer<T> {
     private static final StringChoiceRenderer INSTANCE = new StringChoiceRenderer();
 
+    @Override
     public Object getDisplayValue(Object object) {
         if (object == null) {
             return "";
@@ -33,6 +34,7 @@ public class StringChoiceRenderer<T> implements IChoiceRenderer<T> {
         return object.toString();
     }
 
+    @Override
     public String getIdValue(Object object, int index) {
         return String.valueOf(index);
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,6 +43,7 @@ public class ArtifactoryRememberMeFilter implements ArtifactoryAuthenticationFil
 
     private RememberMeAuthenticationFilter rememberMeDelegateFilter;
 
+    @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         ServletContext servletContext = filterConfig.getServletContext();
         ArtifactoryContext context = RequestUtils.getArtifactoryContext(servletContext);
@@ -50,10 +51,11 @@ public class ArtifactoryRememberMeFilter implements ArtifactoryAuthenticationFil
         rememberMeDelegateFilter.init(filterConfig);
     }
 
-    public boolean requiresReauthentication(ServletRequest request, Authentication authentication) {
+    public boolean requiresReAuthentication(ServletRequest request, Authentication authentication) {
         return false;
     }
 
+    @Override
     public boolean acceptFilter(ServletRequest request) {
         Cookie[] cookies = ((HttpServletRequest) request).getCookies();
 
@@ -69,23 +71,28 @@ public class ArtifactoryRememberMeFilter implements ArtifactoryAuthenticationFil
         return false;
     }
 
+    @Override
     public boolean acceptEntry(ServletRequest request) {
         return false;
     }
 
+    @Override
     public String getCacheKey(ServletRequest request) {
         return ((HttpServletRequest) request).getHeader("Authorization");
     }
 
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         rememberMeDelegateFilter.doFilter(request, response, chain);
     }
 
+    @Override
     public void destroy() {
         rememberMeDelegateFilter.destroy();
     }
 
+    @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException)
             throws IOException, ServletException {

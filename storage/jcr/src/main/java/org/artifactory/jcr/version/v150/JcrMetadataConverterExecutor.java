@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -86,29 +86,36 @@ public class JcrMetadataConverterExecutor {
     private static final Logger log = LoggerFactory.getLogger(JcrMetadataConverterExecutor.class);
 
     private static final NodeIterator EMPTY_NODE_ITERATOR = new NodeIterator() {
+        @Override
         public Node nextNode() {
             return null;
         }
 
+        @Override
         public void skip(long l) {
         }
 
+        @Override
         public long getSize() {
             return 0;
         }
 
+        @Override
         public long getPosition() {
             return 0;
         }
 
+        @Override
         public boolean hasNext() {
             return false;
         }
 
+        @Override
         public Object next() {
             return null;
         }
 
+        @Override
         public void remove() {
         }
     };

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -67,6 +67,7 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
 
     private Map<String, BindAuthenticator> authenticators;
 
+    @Override
     public void init() {
         try {
             authenticators = createBindAuthenticators();
@@ -81,17 +82,21 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
         }
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         authenticators = null;
         init();
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @Override
     public Map<String, BindAuthenticator> getAuthenticators() {
         return authenticators;
     }
@@ -178,6 +183,7 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
         }
     }
 
+    @Override
     public DirContextOperations authenticate(Authentication authentication) {
         //Spring expects an exception on failed authentication
         if (authenticators != null && centralConfig.getDescriptor().getSecurity().isLdapEnabled()) {

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,9 +19,8 @@
 package org.artifactory.webapp.wicket.page.base;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.RequestCycle;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.IHeaderContributor;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -32,9 +31,8 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.protocol.http.WebResponse;
-import org.apache.wicket.request.target.basic.RedirectRequestTarget;
+import org.apache.wicket.request.flow.RedirectToUrlException;
+import org.apache.wicket.request.http.WebResponse;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WebApplicationAddon;
@@ -50,14 +48,14 @@ import org.artifactory.common.wicket.component.panel.feedback.FeedbackMessagesPa
 import org.artifactory.common.wicket.component.panel.feedback.aggregated.AggregateFeedbackPanel;
 import org.artifactory.common.wicket.component.panel.sidemenu.MenuPanel;
 import org.artifactory.common.wicket.resources.domutils.CommonJsPackage;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.util.HttpUtils;
 import org.artifactory.web.ui.skins.GreenSkin;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
+import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
 import org.slf4j.Logger;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
@@ -79,6 +77,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         init();
     }
 
+    @Override
     public ModalHandler getModalHandler() {
         return modalHandler;
     }
@@ -98,7 +97,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
         WebMarkupContainer revisionHeader = new WebMarkupContainer("revision", new Model());
         String revisionValue = centralConfig.getVersionInfo().getRevision();
-        revisionHeader.add(new SimpleAttributeModifier("content", revisionValue));
+        revisionHeader.add(new AttributeModifier("content", revisionValue));
         add(revisionHeader);
 
         add(new FooterLabel("footer"));
@@ -122,11 +121,8 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
     }
 
     @Override
-    protected final void configureResponse() {
-        super.configureResponse();
-
-        // add no-store for avoiding browser cache
-        final WebResponse response = getWebRequestCycle().getWebResponse();
+    protected void configureResponse(WebResponse response) {
+        super.configureResponse(response);
         response.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
     }
 
@@ -175,12 +171,11 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 String query = searchTextField.getDefaultModelObjectAsString();
-                HttpServletRequest req = ((WebRequest) RequestCycle.get().getRequest()).getHttpServletRequest();
-                //TODO: [by YS] A hack for RTFACT-4233.
-                //StringBuilder urlBuilder =
-                //        new StringBuilder(WicketUtils.absoluteMountPathForPage(ArtifactSearchPage.class));
-                StringBuilder urlBuilder = new StringBuilder(HttpUtils.getServletContextUrl(req));
-                urlBuilder.append("/webapp/search/artifact");
+                //HttpServletRequest req = ((WebRequest) RequestCycle.get().getRequest()).getHttpServletRequest();
+                StringBuilder urlBuilder =
+                        new StringBuilder(WicketUtils.absoluteMountPathForPage(ArtifactSearchPage.class));
+                //StringBuilder urlBuilder = new StringBuilder(HttpUtils.getServletContextUrl(req));
+                //urlBuilder.append("/webapp/search/artifact");
                 if (StringUtils.isNotBlank(query)) {
                     try {
                         urlBuilder.append("?").append(BaseSearchPage.QUERY_PARAM).append("=").
@@ -189,7 +184,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
                         log.error(String.format("Unable to append the Quick-Search query '%s'", query), e);
                     }
                 }
-                getRequestCycle().setRequestTarget(new RedirectRequestTarget(urlBuilder.toString()));
+                throw new RedirectToUrlException(urlBuilder.toString());
             }
         };
         form.setDefaultButton(searchButton);
@@ -284,8 +279,9 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
             setVisible(StringUtils.isNotEmpty(message));
         }
 
+        @Override
         public void renderHead(IHeaderResponse response) {
-            response.renderJavascript("DomUtils.footerHeight = 18;", getMarkupId() + "js");
+            response.renderJavaScript("DomUtils.footerHeight = 18;", getMarkupId() + "js");
         }
 
         private boolean isTrial() {

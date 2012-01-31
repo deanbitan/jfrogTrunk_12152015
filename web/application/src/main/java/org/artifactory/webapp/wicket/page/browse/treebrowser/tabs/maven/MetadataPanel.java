@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,6 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -29,7 +28,6 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
@@ -100,7 +98,7 @@ public class MetadataPanel extends TitledPanel {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 setMetadataContent();
-                target.addComponent(metadataContentBorder);
+                target.add(metadataContentBorder);
             }
         });
         autoSelectMetadataType(metadataTypeList, metadataTypesDropDown);
@@ -115,7 +113,7 @@ public class MetadataPanel extends TitledPanel {
                 repoService.undeploy(metadataRepoPath);
                 MarkupContainer browsePanel = findParent(TreeBrowsePanel.class);
                 ActionableItemsTree tree = (ActionableItemsTree) browsePanel.get("tree");
-                target.addComponent(tree.refreshDisplayPanel());
+                target.add(tree.refreshDisplayPanel());
             }
 
             @Override
@@ -159,8 +157,7 @@ public class MetadataPanel extends TitledPanel {
 
     private void autoSelectMetadataType(List<String> metadataTypeList, DropDownChoice metadataTypesDropDown) {
         if (!metadataTypeList.isEmpty()) {
-            WebRequest request = (WebRequest) RequestCycle.get().getRequest();
-            String selectMetadata = request.getParameter(SELECT_METADATA_PARAM);
+            String selectMetadata = WicketUtils.getParameter(SELECT_METADATA_PARAM);
 
             Object defaultSelection = metadataTypeList.get(0);
             if (StringUtils.isNotBlank(selectMetadata)) {

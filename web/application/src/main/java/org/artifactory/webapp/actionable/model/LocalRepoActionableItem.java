@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,18 +27,11 @@ import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.fs.FileInfo;
-import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.mime.MimeType;
-import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RefreshableActionableItem;
-import org.artifactory.webapp.actionable.RepoAwareActionableItem;
-import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.CopyAction;
 import org.artifactory.webapp.actionable.action.DeleteAction;
 import org.artifactory.webapp.actionable.action.DeleteVersionsAction;
@@ -55,7 +48,7 @@ import java.util.Set;
 /**
  * @author Yoav Landman
  */
-public class LocalRepoActionableItem extends RepoAwareActionableItemBase
+public class LocalRepoActionableItem extends CachedItemActionableItem
         implements HierarchicActionableItem, RefreshableActionableItem {
     private ItemAction deleteAction;
     private ItemAction zapAction;
@@ -108,36 +101,28 @@ public class LocalRepoActionableItem extends RepoAwareActionableItemBase
 
     @Override
     public void refresh() {
-        //children = null;    // set the children to null will force reload
+        children = null;    // set the children to null will force reload
     }
 
     @Override
     public List<ActionableItem> getChildren(AuthorizationService authService) {
-        RepositoryService repoService = getRepoService();
-        List<ItemInfo> items = repoService.getChildren(getRepoPath());
-        List<ActionableItem> result = Lists.newArrayListWithExpectedSize(items.size());
+        boolean childrenCacheUpToDate = childrenCacheUpToDate();
+        if (!childrenCacheUpToDate) {
+            RepositoryService repoService = getRepoService();
+            List<ItemInfo> items = repoService.getChildren(getRepoPath());
+            children = Lists.newArrayListWithExpectedSize(items.size());
 
-        for (ItemInfo pathItems : items) {
-
-            RepoPath repoPath = pathItems.getRepoPath();
-            if (!repoService.isRepoPathVisible(repoPath)) {
-                continue;
-            }
-
-            RepoAwareActionableItem child;
-            if (pathItems.isFolder()) {
-                child = new FolderActionableItem((FolderInfo) pathItems, isCompactAllowed());
-            } else {
-                MimeType mimeType = NamingUtils.getMimeType(pathItems.getRelPath());
-                if (mimeType.isArchive()) {
-                    child = new ZipFileActionableItem((FileInfo) pathItems, compactAllowed);
-                } else {
-                    child = new FileActionableItem((FileInfo) pathItems);
+            for (ItemInfo pathItem : items) {
+                RepoPath repoPath = pathItem.getRepoPath();
+                if (!repoService.isRepoPathVisible(repoPath)) {
+                    continue;
                 }
+                //No need to check for null as children is set before the iteration
+                //noinspection ConstantConditions
+                children.add(getChildItem(pathItem, pathItem.getRelPath(), compactAllowed));
             }
-            result.add(child);
         }
-        return result;
+        return children;
     }
 
     @Override

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,9 +20,9 @@ package org.artifactory.webapp.wicket.page.build.page;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
+import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.build.BuildRun;
@@ -38,8 +38,6 @@ import org.artifactory.webapp.wicket.page.build.panel.BuildsForNamePanel;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
-import org.wicketstuff.annotation.mount.MountPath;
-import org.wicketstuff.annotation.strategy.MountMixedParam;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -48,12 +46,12 @@ import java.util.Set;
 import static org.artifactory.webapp.wicket.page.build.BuildBrowserConstants.*;
 
 /**
- * The root page of the build browser
+ * The root page of the build browser.<p/>
+ * Supports mounted paths. See <a href="https://cwiki.apache.org/WICKET/request-mapping.html">request-mapping</a>
+ * <p/>
  *
  * @author Noam Y. Tenne
  */
-@MountPath(path = BUILDS)
-@MountMixedParam(parameterNames = {BUILD_NAME, BUILD_NUMBER, BUILD_STARTED, MODULE_ID})
 public class BuildBrowserRootPage extends AuthenticatedPage {
 
     private static final Logger log = LoggerFactory.getLogger(BuildBrowserRootPage.class);
@@ -77,15 +75,17 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
 
         Panel panelToAdd = null;
         try {
-            if (pageParameters.containsKey(MODULE_ID)) {
+            if (!pageParameters.get(MODULE_ID).isEmpty()) {
                 panelToAdd = getModuleSpecificTabbedPanel(null);
-            } else if (pageParameters.containsKey(BUILD_STARTED) || pageParameters.containsKey(BUILD_NUMBER)) {
+
+            } else if (!pageParameters.get(BUILD_STARTED).isEmpty() || !pageParameters.get(BUILD_NUMBER).isEmpty()) {
                 /**
                  * If the URL was sent from Artifactory, it will include the build started param; but if it was sent by a
                  * user, it could contain only the build number
                  */
                 panelToAdd = getTabbedPanel();
-            } else if (pageParameters.containsKey(BUILD_NAME)) {
+
+            } else if (!pageParameters.get(BUILD_NAME).isEmpty()) {
                 panelToAdd = getBuildForNamePanel();
             }
         } catch (DoesNotExistException e) {
@@ -93,7 +93,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
             error(e.getMessage());
 
             //Clear all page parameters so that no breadcrumbs are added
-            pageParameters.clear();
+            pageParameters.clearNamed();
         }
 
         if (panelToAdd == null) {
@@ -105,7 +105,6 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
         add(breadCrumbsPanel);
         breadCrumbsPanel.addCrumbs(pageParameters);
     }
-
 
     /**
      * Returns the module-specific tabbed panel to display
@@ -132,8 +131,8 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
         }
         Build build = getBuild(buildName, buildNumber, buildStarted);
         Module module = getModule(build, moduleId);
-        pageParameters.put(BUILD_STARTED, buildStarted);
-        pageParameters.put(MODULE_ID, moduleId);
+        pageParameters.set(BUILD_STARTED, buildStarted);
+        pageParameters.set(MODULE_ID, moduleId);
         return new BuildTabbedPanel(CHILD_PANEL_ID, build, module);
     }
 
@@ -151,9 +150,9 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
          * If the build started wasn't specified, the URL contains only a build number, which means we select to display
          * the latest build of the specified number
          */
-        if (!pageParameters.containsKey(BUILD_STARTED)) {
+        if (pageParameters.get(BUILD_STARTED).isEmpty()) {
             Build build = getBuild(buildName, buildNumber, buildStarted);
-            pageParameters.put(BUILD_STARTED, build.getStarted());
+            pageParameters.set(BUILD_STARTED, build.getStarted());
             return new BuildTabbedPanel(CHILD_PANEL_ID, build, null);
         }
 
@@ -220,7 +219,8 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * @param buildNumber  Number of build to locate
      * @param buildStarted Started time of build to locate
      * @return Build object if found.
-     * @throws AbortWithWebErrorCodeException If the build was not found
+     * @throws AbortWithHttpErrorCodeException
+     *          If the build was not found
      */
     private Build getBuild(String buildName, String buildNumber, String buildStarted) {
         boolean buildStartedSupplied = StringUtils.isNotBlank(buildStarted);
@@ -257,7 +257,8 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * @param build    Build to search within
      * @param moduleId Module ID to locate
      * @return Module object if found.
-     * @throws AbortWithWebErrorCodeException If the module was not found
+     * @throws AbortWithHttpErrorCodeException
+     *          If the module was not found
      */
     private Module getModule(Build build, String moduleId) {
         Module module = build.getModule(moduleId);
@@ -294,11 +295,11 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * Validates that the given key exists as a parameter key
      *
      * @param key Key to validate
-     * @throws org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException
+     * @throws AbortWithHttpErrorCodeException
      *          If the key was not found
      */
     protected void validateKey(String key) {
-        if (!pageParameters.containsKey(key)) {
+        if (pageParameters.get(key).isEmpty()) {
             String errorMessage = new StringBuilder().append("Could not find parameter '").append(key).append("'").
                     toString();
             throwBadRequestError(errorMessage);
@@ -314,7 +315,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
     protected String getStringParameter(String key) {
         validateKey(key);
 
-        String value = pageParameters.getString(key);
+        String value = pageParameters.get(key).toString();
 
         if (StringUtils.isBlank(value)) {
             String errorMessage = new StringBuilder().append("Blank value found for parameter '").append(key).
@@ -326,7 +327,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
     }
 
     /**
-     * Throws a 404 AbortWithWebErrorCodeException with the given message
+     * Throws a 404 AbortWithHttpErrorCodeException with the given message
      *
      * @param errorMessage Message to display in the error
      */
@@ -336,7 +337,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
     }
 
     /**
-     * Throws a 400 AbortWithWebErrorCodeException with the given message
+     * Throws a 400 AbortWithHttpErrorCodeException with the given message
      *
      * @param errorMessage Message to display in the error
      */
@@ -345,7 +346,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
     }
 
     /**
-     * Throws a 500 AbortWithWebErrorCodeException with the given message
+     * Throws a 500 AbortWithHttpErrorCodeException with the given message
      *
      * @param errorMessage Message to display in the error
      */
@@ -354,14 +355,14 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
     }
 
     /**
-     * Throws an AbortWithWebErrorCodeException with the given status and message
+     * Throws an AbortWithHttpErrorCodeException with the given status and message
      *
      * @param status       Status to set for error
      * @param errorMessage Message to display in the error
      */
     private void throwError(int status, String errorMessage) {
         logError(errorMessage);
-        throw new AbortWithWebErrorCodeException(status, errorMessage);
+        throw new AbortWithHttpErrorCodeException(status, errorMessage);
     }
 
     private void logError(String errorMessage) {

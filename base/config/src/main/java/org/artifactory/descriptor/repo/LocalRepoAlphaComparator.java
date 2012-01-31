@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +27,7 @@ import java.util.Comparator;
  * @author Noam Y. Tenne
  */
 public class LocalRepoAlphaComparator implements Comparator<LocalRepoDescriptor>, Serializable {
+    @Override
     public int compare(LocalRepoDescriptor repo1, LocalRepoDescriptor repo2) {
         boolean repo1IsCache = repo1.isCache();
         boolean repo2IsCache = repo2.isCache();

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -51,14 +51,17 @@ public class XStreamAliasProvider extends AbstractMessageReaderWriterProvider<Ob
     private static final XStream xstream = XStreamFactory.create();
     private static final String DEFAULT_ENCODING = "utf-8";
 
+    @Override
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return type.getAnnotation(XStreamAlias.class) != null || isXtreamable(genericType);
     }
 
+    @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return type.getAnnotation(XStreamAlias.class) != null || isXtreamable(genericType);
     }
 
+    @Override
     public Object readFrom(Class<Object> aClass, Type genericType, Annotation[] annotations,
             MediaType mediaType, MultivaluedMap<String, String> map, InputStream stream)
             throws IOException, WebApplicationException {
@@ -72,6 +75,7 @@ public class XStreamAliasProvider extends AbstractMessageReaderWriterProvider<Ob
         }
     }
 
+    @Override
     public void writeTo(Object o, Class<?> aClass, Type type, Annotation[] annotations,
             MediaType mediaType, MultivaluedMap<String, Object> map, OutputStream stream)
             throws IOException, WebApplicationException {

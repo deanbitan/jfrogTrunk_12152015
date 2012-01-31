@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,17 +21,18 @@ package org.artifactory.webapp.wicket.page.config.general;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Page;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInstantiation;
+import org.apache.wicket.ajax.IAjaxCallDecorator;
+import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.common.wicket.panel.upload.HideUploadProgressDecorator;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
@@ -72,8 +73,7 @@ public class GeneralConfigPage extends AuthenticatedPage {
         form.add(new GeneralSettingsPanel("generalConfigPanel"));
 
         // lnf panel
-        WebApplicationAddon applicationAddon = addonsManager.addonByType(WebApplicationAddon.class);
-        lookAndFeelPanel = applicationAddon.getCustomizingPanel("customizingPanel", getDefaultModel());
+        lookAndFeelPanel = new CustomizingPanel("customizingPanel", getDefaultModel());
         form.add(lookAndFeelPanel);
 
         // buttons
@@ -94,6 +94,11 @@ public class GeneralConfigPage extends AuthenticatedPage {
         public SaveLink(String id, Form form) {
             super(id, "Save", form);
             form.add(new DefaultButtonBehavior(this));
+        }
+
+        @Override
+        protected IAjaxCallDecorator getAjaxCallDecorator() {
+            return new HideUploadProgressDecorator();
         }
 
         @Override
@@ -127,8 +132,8 @@ public class GeneralConfigPage extends AuthenticatedPage {
 
             // refresh ui
             final Page page = getPage();
-            target.addComponent(page.get("logo"));
-            target.addComponent(page.get("footer"));
+            target.add(page.get("logo"));
+            target.add(page.get("footer"));
 
             info("Settings successfully updated.");
             AjaxUtils.refreshFeedback(target);
@@ -153,6 +158,7 @@ public class GeneralConfigPage extends AuthenticatedPage {
                 error(errorMessage);
             }
         }
+
     }
 
     private class CancelLink extends TitledAjaxLink {
@@ -160,6 +166,7 @@ public class GeneralConfigPage extends AuthenticatedPage {
             super(id, "Cancel");
         }
 
+        @Override
         public void onClick(AjaxRequestTarget target) {
             lookAndFeelPanel.cleanup();
             setResponsePage(GeneralConfigPage.class);

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@
 
 package org.artifactory.addon.wicket;
 
+import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.artifactory.addon.Addon;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -25,6 +26,7 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.repo.RepoPath;
 
 /**
  * @author Noam Y. Tenne
@@ -36,4 +38,6 @@ public interface ReplicationWebAddon extends Addon {
 
     ITab getLocalRepoReplicationPanel(String tabTitle, LocalReplicationDescriptor replicationDescriptor,
             MutableCentralConfigDescriptor mutableDescriptor, CreateUpdateAction action);
+
+    MarkupContainer getLastReplicationStatusLabel(String id, RepoPath repoPath);
 }

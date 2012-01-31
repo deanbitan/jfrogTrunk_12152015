@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +29,6 @@ import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.persistence.IValuePersister;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.Item;
@@ -54,8 +53,8 @@ import org.artifactory.common.wicket.component.navigation.NavigationToolbarWithD
 import org.artifactory.common.wicket.component.table.groupable.GroupableTable;
 import org.artifactory.common.wicket.component.table.groupable.column.GroupableColumn;
 import org.artifactory.common.wicket.component.table.groupable.provider.GroupableDataProvider;
-import org.artifactory.common.wicket.persister.EscapeCookieValuePersister;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.common.wicket.util.ComponentPersister;
 import org.artifactory.webapp.actionable.event.ItemEventTargetComponents;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableSearchResult;
@@ -149,19 +148,14 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
         searchBorder.add(table);
 
         //Form
-        Form form = new Form("form") {
-            @Override
-            protected IValuePersister getValuePersister() {
-                return new EscapeCookieValuePersister();
-            }
-        };
+        Form form = new Form("form");
         form.setOutputMarkupId(true);
         searchBorder.add(form);
 
         addSearchComponents(form);
 
         //selected repo for search
-        CompoundPropertyModel advancedModel = new CompoundPropertyModel(getSearchControls());
+        CompoundPropertyModel advancedModel = new CompoundPropertyModel<Object>(getSearchControls());
         AdvancedSearchPanel advancedPanel = new AdvancedSearchPanel("advancedPanel", advancedModel);
         form.add(advancedPanel);
 
@@ -175,11 +169,12 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 try {
+                    ComponentPersister.saveChildren(BaseSearchPanel.this);
                     validateSearchControls();
                     onSearch();
                     fetchResults(parent);
                     table.setCurrentPage(0);    // scroll back to the first page
-                    target.addComponent(searchBorder);
+                    target.add(searchBorder);
                 } catch (IllegalArgumentException iae) {
                     error(iae.getMessage());
                 }
@@ -197,6 +192,12 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
     }
 
     protected void validateSearchControls() {
+    }
+
+    @Override
+    protected void onBeforeRender() {
+        ComponentPersister.loadChildren(this);
+        super.onBeforeRender();
     }
 
     protected void onSearch() {
@@ -316,6 +317,7 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
         return dataProvider;
     }
 
+    @Override
     public List<T> searchLimitlessArtifacts() {
         ItemSearchResults<T> results = performLimitlessArtifactSearch();
         return results.getResults();

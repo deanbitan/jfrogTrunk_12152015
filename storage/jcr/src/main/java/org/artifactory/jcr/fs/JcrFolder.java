@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +18,12 @@
 
 package org.artifactory.jcr.fs;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.AbstractFileFilter;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.NotFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
@@ -47,7 +49,6 @@ import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
@@ -68,6 +69,7 @@ import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -107,6 +109,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
         return getJcrRepoService().getChildren(this, false);
     }
 
+    @Override
     @SuppressWarnings({"unchecked", "RedundantCast"})
     public List<VfsItem> getItems(boolean withWriteLock) {
         return (List<VfsItem>) ((List) getJcrRepoService().getChildren(this, withWriteLock));
@@ -121,14 +124,17 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
      * OVERIDDEN FROM FILE BEGIN
      */
 
+    @Override
     public long length() {
         return 0;
     }
 
+    @Override
     public String[] list() {
         return list(null);
     }
 
+    @Override
     public String[] list(@Nullable FilenameFilter filter) {
         File[] files = listFiles(filter);
         String[] paths = new String[files.length];
@@ -139,10 +145,12 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
         return paths;
     }
 
+    @Override
     public File[] listFiles() {
         return listFiles((FilenameFilter) null);
     }
 
+    @Override
     public File[] listFiles(FilenameFilter filter) {
         ArrayList<File> files = new ArrayList<File>();
         List<JcrFsItem> children = getJcrItems();
@@ -154,6 +162,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
         return files.toArray(new File[files.size()]);
     }
 
+    @Override
     public File[] listFiles(FileFilter filter) {
         ArrayList<File> files = new ArrayList<File>();
         List<JcrFsItem> children = getJcrItems();
@@ -165,6 +174,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
         return files.toArray(new File[files.size()]);
     }
 
+    @Override
     public boolean mkdir() {
         String absPath = getAbsolutePath();
         JcrService jcr = StorageContextHelper.get().getJcrService();
@@ -279,6 +289,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
      * OVERRIDDEN FROM FILE END
      */
 
+    @Override
     @SuppressWarnings({"ResultOfMethodCallIgnored"})
     public void exportTo(ExportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
@@ -324,7 +335,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
             }
 
             if (settings.isIncremental()) {
-                cleanupIncrementalBackupDirectory(list, targetDir, status);
+                cleanupIncrementalBackupDirectory(list, targetDir, settings);
             }
         } catch (Exception e) {
             //If a child export fails, we collect the error but not fail the whole export
@@ -389,22 +400,16 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
     // remove files and folders from the incremental backup dir if they were deleted from the repository
 
     private void cleanupIncrementalBackupDirectory(List<JcrFsItem> currentJcrFolderItems, File targetDir,
-            MutableStatusHolder status) {
+            ExportSettings settings) {
+        MutableStatusHolder status = settings.getStatusHolder();
         //Metadata File filter
-        IOFileFilter metadataFilter = new AbstractFileFilter() {
-            @Override
-            public boolean accept(File file) {
-                //Accept only files within the metadata folder which are not part of the file info ystem
-                boolean isArtifactoryFile = file.getName().contains(FileInfo.ROOT);
-                boolean isArtifactoryFolder = file.getName().contains(FolderInfo.ROOT);
-                return isFileInMetadataFolder(file) && !isArtifactoryFile && !isArtifactoryFolder;
-            }
-        };
+        IOFileFilter metadataFilter = new MetadataFileFilter();
 
         //List all artifacts
         @SuppressWarnings({"unchecked"})
-        Collection<File> artifacts = FileUtils.listFiles(targetDir, null, false);
-        cleanArtifacts(currentJcrFolderItems, artifacts);
+        Collection<File> artifacts = Sets.newHashSet(
+                targetDir.listFiles((FileFilter) new NotFileFilter(metadataFilter)));
+        cleanArtifacts(currentJcrFolderItems, artifacts, settings);
 
         //List all sub-target metadata
         @SuppressWarnings({"unchecked"})
@@ -436,13 +441,21 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
      *
      * @param currentJcrFolderItems List of jcr items in the current jcr folder
      * @param artifacts             List of artifact files in the current target folder
+     * @param settings
      */
-    private void cleanArtifacts(List<JcrFsItem> currentJcrFolderItems, Collection<File> artifacts) {
+    private void cleanArtifacts(List<JcrFsItem> currentJcrFolderItems, Collection<File> artifacts,
+            ExportSettings settings) {
         for (File artifact : artifacts) {
-            if ((artifact != null) && artifact.isFile()) {
+            if (artifact != null) {
                 String jcrFileName = artifact.getName();
                 JcrFsItem jcrFsItem = getFsItem(currentJcrFolderItems, jcrFileName);
                 if (jcrFsItem == null) {
+                    if (artifact.isDirectory()) {
+                        // If a directory does not exist in data store - we need to recursively handle all of his children as well
+                        Collection<File> childArtifacts = Sets.newHashSet(
+                                artifact.listFiles((FileFilter) new NotFileFilter(new MetadataFileFilter())));
+                        cleanArtifacts(Collections.<JcrFsItem>emptyList(), childArtifacts, settings);
+                    }
                     log.debug("Deleting {} from the incremental backup dir since it was " +
                             "deleted from the repository", artifact.getAbsolutePath());
                     boolean deleted = FileUtils.deleteQuietly(artifact);
@@ -651,6 +664,7 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
         }
     }
 
+    @Override
     public boolean isDirectory() {
         return true;
     }
@@ -680,4 +694,16 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
         return !name.endsWith(METADATA_FOLDER) && !name.startsWith(".svn") &&
                 !MavenNaming.NEXUS_INDEX_DIR.equals(name);
     }
+
+    private class MetadataFileFilter extends AbstractFileFilter {
+        @Override
+        public boolean accept(File file) {
+            //Accept only files within the metadata folder which are not part of the file info ystem
+            boolean isArtifactoryFile = file.getName().contains(FileInfo.ROOT);
+            boolean isArtifactoryFolder = file.getName().contains(FolderInfo.ROOT);
+            return isFileInMetadataFolder(file) && !isArtifactoryFile && !isArtifactoryFolder;
+        }
+    }
+
+    ;
 }

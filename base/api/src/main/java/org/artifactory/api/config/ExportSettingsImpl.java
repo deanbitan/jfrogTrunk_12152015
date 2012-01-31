@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,12 +18,15 @@
 
 package org.artifactory.api.config;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.FileExportCallback;
+import org.artifactory.sapi.common.FileExportEvent;
+import org.artifactory.sapi.common.FileExportInfo;
 
 import java.io.File;
 import java.util.Date;
@@ -46,21 +49,24 @@ public class ExportSettingsImpl extends ImportExportSettingsImpl implements Expo
 
     private boolean incremental;
 
+    private boolean excludeBuilds;
+
     /**
      * Callbacks - If we need to perform any special actions before exporting a file
      */
-    private Set<FileExportCallback> callbacks;
+    @XStreamOmitField
+    private SetMultimap<FileExportEvent, FileExportCallback> callbacks;
 
     public ExportSettingsImpl(File baseDir) {
         super(baseDir);
         time = new Date();
-        callbacks = Sets.newHashSet();
+        callbacks = HashMultimap.create();
     }
 
     public ExportSettingsImpl(File baseDir, MultiStatusHolder statusHolder) {
         super(baseDir, statusHolder);
         time = new Date();
-        callbacks = Sets.newHashSet();
+        callbacks = HashMultimap.create();
     }
 
     public ExportSettingsImpl(File baseDir, ExportSettings exportSettings) {
@@ -72,28 +78,35 @@ public class ExportSettingsImpl extends ImportExportSettingsImpl implements Expo
         this.m2Compatible = settings.m2Compatible;
         this.incremental = settings.incremental;
         this.callbacks = settings.callbacks;
+        this.excludeBuilds = settings.excludeBuilds;
     }
 
+    @Override
     public boolean isIgnoreRepositoryFilteringRulesOn() {
         return ignoreRepositoryFilteringRulesOn;
     }
 
+    @Override
     public void setIgnoreRepositoryFilteringRulesOn(boolean ignoreRepositoryFilteringRulesOn) {
         this.ignoreRepositoryFilteringRulesOn = ignoreRepositoryFilteringRulesOn;
     }
 
+    @Override
     public boolean isCreateArchive() {
         return createArchive;
     }
 
+    @Override
     public void setCreateArchive(boolean createArchive) {
         this.createArchive = createArchive;
     }
 
+    @Override
     public Date getTime() {
         return time;
     }
 
+    @Override
     public void setTime(Date time) {
         this.time = time;
     }
@@ -101,6 +114,7 @@ public class ExportSettingsImpl extends ImportExportSettingsImpl implements Expo
     /**
      * @return True is the export is incremental. Meaning override target only if exported file or folder is newer.
      */
+    @Override
     public boolean isIncremental() {
         return incremental;
     }
@@ -110,31 +124,57 @@ public class ExportSettingsImpl extends ImportExportSettingsImpl implements Expo
      *
      * @param incremental True to use incremental export.
      */
+    @Override
     public void setIncremental(boolean incremental) {
         this.incremental = incremental;
     }
 
+    @Override
     public boolean isM2Compatible() {
         return m2Compatible;
     }
 
+    @Override
     public void setM2Compatible(boolean m2Compatible) {
         this.m2Compatible = m2Compatible;
     }
 
+    @Override
     public void addCallback(FileExportCallback callback) {
         if (callbacks == null) {
-            callbacks = Sets.newHashSet();
+            callbacks = HashMultimap.create();
         }
-        callbacks.add(callback);
+        for (FileExportEvent event : callback.triggeringEvents()) {
+            callbacks.put(event, callback);
+        }
     }
 
-    public void executeCallbacks(RepoPath currentRepoPath) {
-        if ((callbacks != null) && !callbacks.isEmpty()) {
-            for (FileExportCallback callback : callbacks) {
-                callback.callback(this, currentRepoPath);
+    public void executeCallbacks(FileExportInfo info, FileExportEvent event) {
+        if (callbacks != null && callbacks.containsKey(event)) {
+            final Set<FileExportCallback> triggered = callbacks.get(event);
+            for (FileExportCallback callback : triggered) {
+                callback.callback(this, info);
             }
-
         }
+    }
+
+    @Override
+    public void cleanCallbacks() {
+        if ((callbacks != null) && !callbacks.isEmpty()) {
+            for (FileExportCallback callback : callbacks.values()) {
+                callback.cleanup();
+            }
+        }
+        callbacks.clear();
+    }
+
+    @Override
+    public boolean isExcludeBuilds() {
+        return excludeBuilds;
+    }
+
+    @Override
+    public void setExcludeBuilds(boolean excludeBuilds) {
+        this.excludeBuilds = excludeBuilds;
     }
 }

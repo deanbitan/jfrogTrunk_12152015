@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,6 +28,7 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 /**
@@ -37,7 +38,8 @@ import static org.testng.Assert.assertTrue;
  */
 public class JackrabbitLoggerConverterTest extends XmlConverterTest {
 
-    private static final String BDBPM_NAME = "org.apache.jackrabbit.core.persistence.pool.BundleDbPersistenceManager";
+    private static final String BDBPM_OLD_NAME = "org.apache.jackrabbit.core.persistence.bundle.BundleDbPersistenceManager";
+    private static final String BDBPM_NEW_NAME = "org.apache.jackrabbit.core.persistence.pool.BundleDbPersistenceManager";
     private static final String MULTI_INDEX_NAME = "org.apache.jackrabbit.core.query.lucene.MultiIndex";
     private static final String XML_TEXT_EXTRACTOR_NAME = "org.apache.jackrabbit.extractor.XMLTextExtractor";
 
@@ -62,7 +64,7 @@ public class JackrabbitLoggerConverterTest extends XmlConverterTest {
             Attribute nameAttribute = logger.getAttribute("name", rootNamespace);
             Assert.assertNotNull(nameAttribute, "Found logger null 'name' attribute.");
             String nameValue = nameAttribute.getValue();
-            if (!hasBDBPMLogger && (BDBPM_NAME.equals(nameValue))) {
+            if (!hasBDBPMLogger && (BDBPM_NEW_NAME.equals(nameValue))) {
                 hasBDBPMLogger = true;
                 continue;
             }
@@ -83,5 +85,42 @@ public class JackrabbitLoggerConverterTest extends XmlConverterTest {
 
         Element rootAppenderReference = docRoot.getChild("root", rootNamespace);
         Assert.assertNotNull(rootAppenderReference, "Found null root appender reference.");
+    }
+
+    /**
+     * Tests renaming old BundleDbPersistenceManager package with the new one after conversion
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testConversionRenaming() throws Exception {
+        Document doc = convertXml("/org/artifactory/logging/version/v4/logback.xml", new JackrabbitLoggerConverter());
+
+        Element docRoot = doc.getRootElement();
+        Namespace rootNamespace = docRoot.getNamespace();
+
+        @SuppressWarnings({"unchecked"})
+        List<Element> loggers = docRoot.getChildren("logger", rootNamespace);
+
+        boolean hasNewBDBPMLogger = false;
+        boolean hasOldBDBPMLogger = false;
+
+        for (Element logger : loggers) {
+            Attribute nameAttribute = logger.getAttribute("name", rootNamespace);
+            Assert.assertNotNull(nameAttribute, "Found logger null 'name' attribute.");
+            String nameValue = nameAttribute.getValue();
+            if (!hasNewBDBPMLogger && (BDBPM_NEW_NAME.equals(nameValue))) {
+                hasNewBDBPMLogger = true;
+                continue;
+            }
+            if (!hasOldBDBPMLogger && (BDBPM_OLD_NAME.equals(nameValue))) {
+                hasOldBDBPMLogger = true;
+            }
+        }
+
+        assertTrue(hasNewBDBPMLogger,
+                "new BundleDbPersistenceManager logger should exist in the logback config after conversion.");
+        assertFalse(hasOldBDBPMLogger,
+                "old BundleDbPersistenceManager logger should NOT exist in the logback config after conversion.");
     }
 }

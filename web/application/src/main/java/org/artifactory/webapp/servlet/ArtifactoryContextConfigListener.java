@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,6 +47,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ArtifactoryContextConfigListener implements ServletContextListener {
 
+    @Override
     public void contextInitialized(ServletContextEvent event) {
         final ServletContext servletContext = event.getServletContext();
 
@@ -196,6 +197,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         return version;
     }
 
+    @Override
     public void contextDestroyed(ServletContextEvent event) {
         AbstractApplicationContext context = (AbstractApplicationContext) event.getServletContext().getAttribute(
                 ArtifactoryContext.APPLICATION_CONTEXT_KEY);

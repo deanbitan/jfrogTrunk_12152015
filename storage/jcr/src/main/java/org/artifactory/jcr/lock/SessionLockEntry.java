@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,18 +54,22 @@ class SessionLockEntry implements FsItemLockEntry {
         this.id = lockEntryId;
     }
 
+    @Override
     public MonitoringReadWriteLock getLock() {
         return id.getLock();
     }
 
+    @Override
     public VfsItem getLockedFsItem() {
         return lockedFsItem;
     }
 
+    @Override
     public VfsItem getImmutableFsItem() {
         return immutableFsItem;
     }
 
+    @Override
     public RepoPath getRepoPath() {
         return id.getRepoPath();
     }
@@ -98,6 +102,7 @@ class SessionLockEntry implements FsItemLockEntry {
         acquire(LockMode.WRITE);
     }
 
+    @Override
     public boolean isLockedByMe() {
         return getLock().isWriteLockedByCurrentThread();
     }
@@ -140,6 +145,7 @@ class SessionLockEntry implements FsItemLockEntry {
         }
     }
 
+    @Override
     public void setWriteFsItem(VfsItem fsItem, VfsItem mutableFsItem) {
         // fsItem can be null on create
         if (fsItem != null && !getRepoPath().equals(fsItem.getRepoPath())) {
@@ -169,6 +175,7 @@ class SessionLockEntry implements FsItemLockEntry {
         this.lockedFsItem = mutableFsItem;
     }
 
+    @Override
     public void setReadFsItem(VfsItem fsItem) {
         if (fsItem == null || !getRepoPath().equals(fsItem.getRepoPath())) {
             throw new IllegalStateException(

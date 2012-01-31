@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,8 +34,8 @@ import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.fs.StatsInfo;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.GeneralTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.MetadataTabPanel;
@@ -61,10 +61,12 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         this.repoPath = repoPath;
     }
 
+    @Override
     public RepoPath getRepoPath() {
         return repoPath;
     }
 
+    @Override
     public LocalRepoDescriptor getRepo() {
         String repoKey = repoPath.getRepoKey();
         return getRepoService().localOrCachedRepoDescriptorByKey(repoKey);
@@ -82,6 +84,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         return getXmlMetadata(StatsInfo.class);
     }
 
+    @Override
     public org.artifactory.fs.ItemInfo getItemInfo() {
         return getItemInfo(repoPath);
     }
@@ -90,6 +93,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         return getRepoService().getItemInfo(repoPath);
     }
 
+    @Override
     public <MD> MD getXmlMetadata(Class<MD> metadataClass) {
         return getXmlMetadata(repoPath, metadataClass);
     }
@@ -98,6 +102,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         return getRepoService().getMetadata(repoPath, metadataClass);
     }
 
+    @Override
     public Panel newItemDetailsPanel(final String id) {
         return new TabbedPanel(id) {
             @Override
@@ -108,6 +113,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         };
     }
 
+    @Override
     public void addTabs(List<ITab> tabs) {
         final RepoAwareActionableItem item = this;
 

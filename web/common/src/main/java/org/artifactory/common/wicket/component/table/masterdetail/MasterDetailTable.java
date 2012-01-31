@@ -1,7 +1,7 @@
 package org.artifactory.common.wicket.component.table.masterdetail;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
@@ -31,17 +31,11 @@ import java.util.Set;
 public abstract class MasterDetailTable<M extends Serializable, D extends Serializable> extends SortableTable {
     private Set<M> openedItems = new HashSet<M>();
 
+    @SuppressWarnings({"unchecked"})
     public MasterDetailTable(String id, List<IColumn> columns, List<M> masterList, String defaultSortProp,
             int rowsPerPage) {
-        this(id, columns.toArray(new IColumn[columns.size()]), masterList, defaultSortProp, rowsPerPage);
-    }
-
-    public MasterDetailTable(String id, IColumn[] columns, List<M> masterList, String defaultSortProp,
-            int rowsPerPage) {
         super(id, addSpaceColumns(columns), new MasterDataProvider(masterList, defaultSortProp), rowsPerPage);
-    }
 
-    {
         add(new CssClass("groupable-table grouped"));
         setItemReuseStrategy(new MasterDetailItemsStrategy(this));
         addBottomToolbar(new EmptyRowToolbar(this));
@@ -76,7 +70,7 @@ public abstract class MasterDetailTable<M extends Serializable, D extends Serial
         } else {
             openedItems.add(m);
         }
-        target.addComponent(MasterDetailTable.this);
+        target.add(MasterDetailTable.this);
     }
 
     protected abstract String getMasterLabel(M masterObject);
@@ -92,6 +86,7 @@ public abstract class MasterDetailTable<M extends Serializable, D extends Serial
             this.cssClass = cssClass;
         }
 
+        @Override
         public void populateItem(Item cellItem, String componentId, IModel rowModel) {
             cellItem.add(new Label(componentId, "."));
         }
@@ -108,9 +103,10 @@ public abstract class MasterDetailTable<M extends Serializable, D extends Serial
 
         private MasterDataProvider(List<?> list, String defaultSortProp) {
             this.list = list;
-            setSort(defaultSortProp, false);
+            setSort(defaultSortProp, SortOrder.DESCENDING);
         }
 
+        @Override
         @SuppressWarnings({"unchecked"})
         public Iterator iterator(int first, int count) {
             final SortParam sortParam = getSort();
@@ -125,19 +121,21 @@ public abstract class MasterDetailTable<M extends Serializable, D extends Serial
             return result.iterator();
         }
 
+        @Override
         public int size() {
             return list.size();
         }
 
+        @Override
         @SuppressWarnings({"unchecked"})
         public IModel model(Object object) {
             return new Model(new MasterDetailEntry<M, D>((M) object, null));
         }
     }
 
-    private static IColumn[] addSpaceColumns(IColumn[] columns) {
-        columns = (IColumn[]) ArrayUtils.add(columns, 0, new SpaceColumn("first-cell"));
-        columns = (IColumn[]) ArrayUtils.add(columns, new SpaceColumn("last-cell"));
+    private static List<IColumn> addSpaceColumns(List<IColumn> columns) {
+        columns.add(0, new SpaceColumn("first-cell"));
+        columns.add(new SpaceColumn("last-cell"));
         return columns;
     }
 }

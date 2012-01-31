@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,6 +52,7 @@ public class RestAuthenticationFilter implements ContainerRequestFilter {
     @Autowired
     AuthorizationService authorizationService;
 
+    @Override
     public ContainerRequest filter(ContainerRequest request) {
 
         boolean authenticated = authorizationService.isAuthenticated();
@@ -88,24 +89,29 @@ public class RestAuthenticationFilter implements ContainerRequestFilter {
         RoleAuthenticator(final String name, String role) {
             this.role = role;
             this.principal = new Principal() {
+                @Override
                 public String getName() {
                     return name;
                 }
             };
         }
 
+        @Override
         public Principal getUserPrincipal() {
             return principal;
         }
 
+        @Override
         public boolean isUserInRole(String role) {
             return role.equals(this.role);
         }
 
+        @Override
         public boolean isSecure() {
             return false;
         }
 
+        @Override
         public String getAuthenticationScheme() {
             return SecurityContext.BASIC_AUTH;
         }

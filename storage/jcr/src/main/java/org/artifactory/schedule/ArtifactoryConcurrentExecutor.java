@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -49,6 +49,7 @@ class ArtifactoryConcurrentExecutor implements Executor {
         storageContext = StorageContextHelper.get();
     }
 
+    @Override
     public void execute(Runnable task) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         task = new RunnableWrapper(task, authentication);
@@ -75,6 +76,7 @@ class ArtifactoryConcurrentExecutor implements Executor {
             this.authentication = authentication;
         }
 
+        @Override
         public void run() {
             try {
                 ArtifactoryContextThreadBinder.bind(storageContext);

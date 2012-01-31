@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,6 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
@@ -119,20 +118,22 @@ public class DistributionManagementPanel extends FieldSetPanel {
     }
 
     private String buildRepoUrl(LocalRepoDescriptor repo) {
-        ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-        HttpServletRequest request = servletWebRequest.getHttpServletRequest();
+        HttpServletRequest request = WicketUtils.getHttpServletRequest();
         String servletContextUrl = HttpUtils.getServletContextUrl(request);
+        if (!servletContextUrl.endsWith("/")) {
+            servletContextUrl += "/";
+        }
         StringBuilder sb = new StringBuilder();
         if (repo instanceof LocalCacheRepoDescriptor) {
             RemoteRepoDescriptor remoteRepoDescriptor = ((LocalCacheRepoDescriptor) repo).getRemoteRepo();
             if (remoteRepoDescriptor != null) {
-                sb.append(servletContextUrl).append("/").append(remoteRepoDescriptor.getKey());
+                sb.append(servletContextUrl).append(remoteRepoDescriptor.getKey());
             } else {
                 String fixedKey = StringUtils.remove(repo.getKey(), "-cache");
-                sb.append(servletContextUrl).append("/").append(fixedKey);
+                sb.append(servletContextUrl).append(fixedKey);
             }
         } else {
-            sb.append(servletContextUrl).append("/").append(repo.getKey());
+            sb.append(servletContextUrl).append(repo.getKey());
         }
         return sb.toString();
     }

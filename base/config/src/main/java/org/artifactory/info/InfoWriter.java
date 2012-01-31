@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,13 @@
 
 package org.artifactory.info;
 
+import com.google.common.collect.Sets;
+import org.apache.commons.lang.SystemUtils;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+
+import java.util.Set;
 
 
 /**
@@ -35,6 +40,14 @@ public enum InfoWriter {
     classPath(ClassPathPropInfo.class, "Java Class Path Info");
 
     private static final Logger log = LoggerFactory.getLogger(InfoWriter.class);
+
+    /**
+     * A list of property keys for which the value should be masked
+     */
+    private static final Set<String> maskedKeys = Sets.newHashSet(
+            ConstantValues.s3backupAccountId.getPropertyName(),
+            ConstantValues.s3backupAccountSecretKey.getPropertyName()
+    );
 
     /**
      * Info group class
@@ -75,20 +88,24 @@ public enum InfoWriter {
 
     public static String getInfoString() throws InstantiationException, IllegalAccessException {
         StringBuilder sb = new StringBuilder();
-        //Create main title
         sb.append(String.format("%n%n SYSTEM INFORMATION DUMP%n"));
         sb.append(String.format(" =======================%n"));
         for (InfoWriter writer : InfoWriter.values()) {
             BasePropInfoGroup group = writer.infoGroup.newInstance();
             //Create group title
-            sb.append(String.format("%n ")).
-                    append(writer.groupName).append(String.format("%n"));
+            sb.append(String.format("%n ")).append(writer.groupName).append(String.format("%n"));
             sb.append(String.format(" ========================%n"));
             //Iterate over all info objects
             for (InfoObject infoObject : group.getInfo()) {
                 String propertyName = infoObject.getPropertyName();
                 String value = infoObject.getPropertyValue();
-                String[] separateValues = value.split(":");
+                if (shouldMaskValue(propertyName)) {
+                    value = org.artifactory.util.Strings.mask(value);
+                } else if (writer.equals(javaSys) && shouldMaskValue(value)) {
+                    value = org.artifactory.util.Strings.maskKeyValue(value);
+                }
+                String multiValueSeparator = SystemUtils.IS_OS_WINDOWS ? ";" : ":";
+                String[] separateValues = value.split(multiValueSeparator);
                 for (int i = 0; i < separateValues.length; i++) {
                     String separateValue = separateValues[i];
                     sb.append(String.format(listFormat, (i == 0) ? propertyName : "", separateValue));
@@ -98,5 +115,11 @@ public enum InfoWriter {
 
         //Dump the info to the log
         return sb.toString();
+    }
+
+    public static boolean shouldMaskValue(String propertyKey) {
+        return propertyKey.toLowerCase().contains("password")
+                || propertyKey.toLowerCase().contains("secret")
+                || maskedKeys.contains(propertyKey);
     }
 }

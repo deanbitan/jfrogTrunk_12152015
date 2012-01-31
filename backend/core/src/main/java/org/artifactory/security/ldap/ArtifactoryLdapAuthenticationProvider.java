@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -104,6 +104,7 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
         return ldapAuthenticationProviders;
     }
 
+    @Override
     public void setMessageSource(MessageSource messageSource) {
         this.messageSource = messageSource;
         if (ldapAuthenticationProviders != null) {
@@ -113,6 +114,7 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
         }
     }
 
+    @Override
     public boolean supports(Class<?> authentication) {
         if (centralConfig.getDescriptor().getSecurity().isLdapEnabled()) {
             for (LdapAuthenticationProvider ldapAuthenticationProvider : getLdapAuthenticationProviders().values()) {
@@ -124,6 +126,7 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
         return false;
     }
 
+    @Override
     public Authentication authenticate(Authentication authentication) {
         String userName = authentication.getName();
         // If it's an anonymous user, don't bother searching for the user.
@@ -223,14 +226,17 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
         }
     }
 
+    @Override
     public String getRealm() {
         return LdapService.REALM;
     }
 
+    @Override
     public void addExternalGroups(String username, Set<UserGroupInfo> groups) {
         addonsManager.addonByType(LdapGroupAddon.class).addExternalGroups(username, groups);
     }
 
+    @Override
     public boolean userExists(String username) {
         List<LdapSetting> settings = centralConfig.getMutableDescriptor().getSecurity().getLdapSettings();
         if (settings == null || settings.isEmpty()) {

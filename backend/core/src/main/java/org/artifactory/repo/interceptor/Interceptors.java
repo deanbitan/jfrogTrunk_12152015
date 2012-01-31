@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -56,10 +56,12 @@ public abstract class Interceptors<T extends Interceptor> implements Iterable<T>
                 (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }
 
+    @Override
     public Iterator<T> iterator() {
         return interceptors.iterator();
     }
 
+    @Override
     public void init() {
         Collection<T> allInterceptorsIncludingMe = context.beansForType(interceptorInterface).values();
         Object thisAsBean = context.getBean(beanName);
@@ -71,22 +73,27 @@ public abstract class Interceptors<T extends Interceptor> implements Iterable<T>
         log.debug("Loaded interceptors of type {}: {}", interceptorInterface.getSimpleName(), interceptors);
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext context) {
         this.context = (ArtifactoryApplicationContext) context;
     }
 
+    @Override
     public void setBeanName(String beanName) {
         this.beanName = beanName;
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         // nothing here
     }
 
+    @Override
     public void destroy() {
         // nothing here
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         // nothing here
     }

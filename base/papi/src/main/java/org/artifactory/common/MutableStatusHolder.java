@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,14 +26,19 @@ import java.io.File;
  * @author Yoav Landman
  */
 public interface MutableStatusHolder extends StatusHolder {
+    @Override
     StatusEntry getStatusEntry();
 
+    @Override
     String getStatusMsg();
 
+    @Override
     boolean isError();
 
+    @Override
     Throwable getException();
 
+    @Override
     int getStatusCode();
 
     void setFastFail(boolean failFast);
@@ -67,4 +72,6 @@ public interface MutableStatusHolder extends StatusHolder {
     void reset();
 
     void setOutputFile(File callback);
+
+    boolean isVerbose();
 }

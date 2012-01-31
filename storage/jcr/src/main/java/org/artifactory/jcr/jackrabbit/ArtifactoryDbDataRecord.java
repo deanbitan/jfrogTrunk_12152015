@@ -19,6 +19,7 @@
  */
 package org.artifactory.jcr.jackrabbit;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.core.data.AbstractDataRecord;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
@@ -113,6 +114,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
         this.stateMgr = new ConcurrentStateManager(this);
     }
 
+    @Override
     public State getInitialState() {
         return DbRecordState.NEW;
     }
@@ -120,6 +122,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
     /**
      * {@inheritDoc}
      */
+    @Override
     public long getLength() throws DataStoreException {
         if (!setInUse()) {
             throw new MissingOrInvalidDataStoreRecordException("Record " + this + " is in invalid state");
@@ -127,6 +130,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
         return length;
     }
 
+    @Override
     public long getLastModified() {
         return lastModified.get();
     }
@@ -138,6 +142,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
     /**
      * {@inheritDoc}
      */
+    @Override
     public InputStream getStream() throws DataStoreException {
         if (!setInUse()) {
             throw new MissingOrInvalidDataStoreRecordException("Record " + this + " is in invalid state");
@@ -238,6 +243,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
      */
     public boolean setInDb() {
         return stateMgr.changeStateIn(new Callable<Boolean>() {
+            @Override
             public Boolean call() throws Exception {
                 DbRecordState dbState = getDbState();
                 if (dbState == DbRecordState.IN_ERROR) {
@@ -265,6 +271,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
      */
     public boolean updateGcState() {
         return stateMgr.changeStateIn(new Callable<Boolean>() {
+            @Override
             public Boolean call() throws Exception {
                 DbRecordState dbState = getDbState();
                 switch (dbState) {
@@ -313,6 +320,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
             return true;
         }
         return stateMgr.changeStateIn(new Callable<Boolean>() {
+            @Override
             public Boolean call() throws Exception {
                 DbRecordState dbState = getDbState();
                 switch (dbState) {
@@ -347,6 +355,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
      */
     public boolean markForDeletion(final long now) {
         return stateMgr.changeStateIn(new Callable<Boolean>() {
+            @Override
             public Boolean call() throws Exception {
                 DbRecordState dbState = getDbState();
                 switch (dbState) {
@@ -395,6 +404,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
         //TODO: [by yl] For pure v2, just allow moving directly from NEW to MARK_FOR_DELETION
         //TODO: [by fsi] Reused in v1 fix consistency, because DB bug
         stateMgr.changeStateIn(new Callable<Boolean>() {
+            @Override
             public Boolean call() throws Exception {
                 stateMgr.guardedSetState(DbRecordState.IN_DB_FOUND);
                 stateMgr.guardedSetState(DbRecordState.IN_DB_MARK_FOR_DELETION);
@@ -408,6 +418,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
      */
     public boolean setDeleted() {
         return stateMgr.changeStateIn(new Callable<Boolean>() {
+            @Override
             public Boolean call() throws Exception {
                 stateMgr.guardedSetState(DbRecordState.DELETED);
                 boolean res = getDbState() == DbRecordState.DELETED;
@@ -422,6 +433,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
 
     boolean deleteDbFile() throws DataStoreException {
         return guardedActionOnFile(new Callable<Boolean>() {
+            @Override
             public Boolean call() throws Exception {
                 if (getReadersCount() > 0) {
                     log.warn("Cannot delete file that is currently being read " + getIdentifier());
@@ -441,6 +453,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
      */
     public boolean needsReinsert(final long now, final File tempFile) {
         return stateMgr.changeStateIn(new Callable<Boolean>() {
+            @Override
             public Boolean call() throws Exception {
                 DbRecordState dbState = getDbState();
                 switch (dbState) {
@@ -516,6 +529,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
     public boolean deleteCacheFile(final long scanStartTime) {
         try {
             return guardedActionOnFile(new Callable<Boolean>() {
+                @Override
                 public Boolean call() throws Exception {
                     if (getReadersCount() > 0) {
                         log.debug("Cannot delete file '{}'. Currently opened", getIdentifier());
@@ -559,6 +573,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
     void setFile(final File tempFile) throws DataStoreException {
         markAccessed();
         guardedActionOnFile(new Callable<Boolean>() {
+            @Override
             public Boolean call() throws Exception {
                 File cachedFile = store.getFile(getIdentifier());
                 if (cachedFile.exists()) {
@@ -581,10 +596,12 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
                                 "Could not create folder " + parentFile.getAbsolutePath() + " for file store");
                     }
                     // rename and move it to the cache folder
-                    if (!tempFile.renameTo(cachedFile)) {
+                    try {
+                        FileUtils.moveFile(tempFile, cachedFile);
+                    } catch (IOException e) {
                         throw new DataStoreException("File move for id " + getIdentifier() +
                                 " from " + tempFile.getAbsolutePath() +
-                                " to " + cachedFile.getAbsolutePath() + " failed!");
+                                " to " + cachedFile.getAbsolutePath() + " failed!", e);
                     }
                 }
                 //TODO: [by YS] WHY here?
@@ -596,6 +613,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
 
     public void setInError(final Exception e) {
         stateMgr.changeStateIn(new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 error = e;
                 stateMgr.guardedSetState(DbRecordState.IN_ERROR);

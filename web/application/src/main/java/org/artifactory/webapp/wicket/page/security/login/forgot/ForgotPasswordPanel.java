@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,7 +37,6 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.util.HttpUtils;
-import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.security.login.LoginPage;
 import org.artifactory.webapp.wicket.page.security.login.reset.ResetPasswordPage;
 
@@ -79,7 +78,7 @@ public class ForgotPasswordPanel extends TitledActionPanel {
                 }
                 // if in aol mode then have to go to the dashboard to reset password
                 String remoteAddress = HttpUtils.getRemoteClientAddress(
-                        WicketUtils.getWebRequest().getHttpServletRequest());
+                        WicketUtils.getHttpServletRequest());
                 String resetPasswordPageUrl = getResetPasswordPageUrl();
                 try {
                     WebApplicationAddon applicationAddon = addonsManager.addonByType(WebApplicationAddon.class);
@@ -106,6 +105,7 @@ public class ForgotPasswordPanel extends TitledActionPanel {
         addButton(sendButton);
 
         addButton(new TitledAjaxLink("cancel", "Cancel") {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 setResponsePage(new LoginPage());
             }
@@ -129,7 +129,7 @@ public class ForgotPasswordPanel extends TitledActionPanel {
             if (!resetPageUrl.endsWith("/")) {
                 resetPageUrl += "/";
             }
-            resetPageUrl += RequestUtils.WEBAPP_URL_PATH_PREFIX + "/resetpassword.html";
+            resetPageUrl += HttpUtils.WEBAPP_URL_PATH_PREFIX + "/resetpassword.html";
         } else {
             resetPageUrl = getForgotPasswordPageUrlFromRequest();
         }

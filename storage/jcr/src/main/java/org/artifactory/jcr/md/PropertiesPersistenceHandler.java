@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -63,6 +63,7 @@ public class PropertiesPersistenceHandler
         return propertiesNode;
     }
 
+    @Override
     public PropertiesInfo read(MetadataAware metadataAware) {
         Properties properties = (Properties) InfoFactoryHolder.get().createProperties();
         Node propertiesNode = getPropertiesNode(metadataAware, false);
@@ -100,6 +101,7 @@ public class PropertiesPersistenceHandler
         return key.startsWith("jcr:") || key.startsWith(StorageConstants.ARTIFACTORY_PREFIX);
     }
 
+    @Override
     public void update(MetadataAware metadataAware, MutablePropertiesInfo properties) {
         if (properties == null || properties.isEmpty()) {
             remove(metadataAware);
@@ -133,6 +135,7 @@ public class PropertiesPersistenceHandler
         markModified(getMetadataNode(metadataAware, false));
     }
 
+    @Override
     public void remove(MetadataAware metadataAware) {
         try {
             Node metadataNode = getMetadataNode(metadataAware, false);
@@ -145,10 +148,12 @@ public class PropertiesPersistenceHandler
         }
     }
 
+    @Override
     public MutablePropertiesInfo copy(PropertiesInfo original) {
         return InfoFactoryHolder.get().copyProperties(original);
     }
 
+    @Override
     public MetadataInfo getMetadataInfo(MetadataAware metadataAware) {
         Node metadataNode = getMetadataNode(metadataAware, false);
         if (metadataNode == null) {

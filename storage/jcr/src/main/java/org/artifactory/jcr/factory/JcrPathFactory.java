@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,8 +21,8 @@ package org.artifactory.jcr.factory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.util.Text;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.PathBuilder;
 import org.artifactory.sapi.common.PathFactory;
 import org.artifactory.sapi.common.PathFactoryHolder;
@@ -49,14 +49,17 @@ public class JcrPathFactory implements PathFactory {
     public JcrPathFactory() {
     }
 
+    @Override
     public PathBuilder createBuilder(String root) {
         return new PathBuilderImpl(root);
     }
 
+    @Override
     public String escape(String pathElement) {
         return Text.escapeIllegalJcrChars(pathElement);
     }
 
+    @Override
     public String unEscape(String storagePathElement) {
         return Text.unescapeIllegalJcrChars(storagePathElement);
     }
@@ -68,6 +71,7 @@ public class JcrPathFactory implements PathFactory {
             this.builder = new StringBuilder(start);
         }
 
+        @Override
         public PathBuilder append(String... pathElements) {
             for (String pathElement : pathElements) {
                 if (StringUtils.isNotBlank(pathElement)) {
@@ -84,38 +88,47 @@ public class JcrPathFactory implements PathFactory {
         }
     }
 
+    @Override
     public String getAllRepoRootPath() {
         return "/" + REPOS_FOLDER;
     }
 
+    @Override
     public String getConfigurationRootPath() {
         return "/" + CONFIGURATION_FOLDER;
     }
 
+    @Override
     public String getTrashRootPath() {
         return "/" + TRASH_FOLDER;
     }
 
+    @Override
     public String getLogsRootPath() {
         return "/" + LOGS_FOLDER;
     }
 
+    @Override
     public String getBuildsRootPath() {
         return "/" + BUILDS_FOLDER;
     }
 
+    @Override
     public String getLogPath(String logKey) {
         return createBuilder("").append(LOGS_FOLDER, logKey).toString();
     }
 
+    @Override
     public String getRepoRootPath(String repoKey) {
         return createBuilder("").append(REPOS_FOLDER, repoKey).toString();
     }
 
+    @Override
     public String getConfigPath(String configKey) {
         return createBuilder("").append(CONFIGURATION_FOLDER, configKey).toString();
     }
 
+    @Override
     public String getBuildsPath(String buildsKey) {
         return createBuilder("").append(BUILDS_FOLDER, buildsKey).toString();
     }
@@ -124,14 +137,17 @@ public class JcrPathFactory implements PathFactory {
      * @param exportDir The base export directory
      * @return The base directory under the exportDir to which repositories are exported
      */
+    @Override
     public File getRepositoriesExportDir(File exportDir) {
         return new File(exportDir, REPOS_FOLDER);
     }
 
+    @Override
     public File getRepoExportDir(File exportDir, String repoKey) {
         return new File(getRepositoriesExportDir(exportDir), repoKey);
     }
 
+    @Override
     public String getAbsolutePath(RepoPath repoPath) {
         String key = repoPath.getRepoKey();
         String relPath = repoPath.getPath();
@@ -139,6 +155,7 @@ public class JcrPathFactory implements PathFactory {
         return PathUtils.formatPath(absPath);
     }
 
+    @Override
     public RepoPath getRepoPath(String absPath) {
         if (absPath == null || absPath.length() == 0) {
             throw new IllegalArgumentException("Absolute path cannot be empty");
@@ -159,6 +176,7 @@ public class JcrPathFactory implements PathFactory {
         return repoPath;
     }
 
+    @Override
     public String repoKeyFromPath(String absPath) {
         String repoJcrRootPath = PathFactoryHolder.get().getAllRepoRootPath();
         int idx = absPath.indexOf(repoJcrRootPath);

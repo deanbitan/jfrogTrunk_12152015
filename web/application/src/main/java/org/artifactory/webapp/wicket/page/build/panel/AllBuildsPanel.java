@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,10 +20,10 @@ package org.artifactory.webapp.wicket.page.build.panel;
 
 import com.google.common.collect.Lists;
 import org.apache.wicket.Component;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -31,6 +31,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.search.SearchService;
@@ -119,10 +120,11 @@ public class AllBuildsPanel extends TitledPanel {
          * @param latestBuildsByName Latest build by name to display
          */
         public BuildsDataProvider(Set<BuildRun> latestBuildsByName) {
-            setSort("startedDate", false);
+            setSort("startedDate", SortOrder.DESCENDING);
             this.buildList = Lists.newArrayList(latestBuildsByName);
         }
 
+        @Override
         public Iterator<LatestBuildByNameActionableItem> iterator(int first, int count) {
             ListPropertySorter.sort(buildList, getSort());
             List<LatestBuildByNameActionableItem> listToReturn =
@@ -130,10 +132,12 @@ public class AllBuildsPanel extends TitledPanel {
             return listToReturn.iterator();
         }
 
+        @Override
         public int size() {
             return buildList.size();
         }
 
+        @Override
         public IModel<LatestBuildByNameActionableItem> model(LatestBuildByNameActionableItem object) {
             return new Model<LatestBuildByNameActionableItem>(object);
         }
@@ -156,7 +160,7 @@ public class AllBuildsPanel extends TitledPanel {
 
     private void drillDown(String buildName) {
         PageParameters pageParameters = new PageParameters();
-        pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildName);
+        pageParameters.set(BuildBrowserConstants.BUILD_NAME, buildName);
         setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }
 
@@ -165,6 +169,7 @@ public class AllBuildsPanel extends TitledPanel {
             super(Model.of("Build Name"), "name");
         }
 
+        @Override
         public void populateItem(Item cellItem, String componentId, IModel rowModel) {
             LatestBuildByNameActionableItem info =
                     (LatestBuildByNameActionableItem) cellItem.getParent().getParent().getDefaultModelObject();

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,8 @@
 dojo.provide('artifactory.DragDropSelection');
 
 dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
-    init: function(panelId, sourceListId, targetListId, addLinkId, removeLinkId, addAllLinkId, removeAllLinkId, textFieldId) {
+    init:function (panelId, sourceListId, targetListId, addLinkId, removeLinkId, addAllLinkId, removeAllLinkId,
+            textFieldId) {
         this.domNode = dojo.byId(panelId);
         this.sourceNode = dojo.byId(sourceListId);
         this.targetNode = dojo.byId(targetListId);
@@ -35,27 +36,27 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
         this.updateIndices(true);
     },
 
-    onLoad: function() {
+    onLoad:function () {
         var me = this;
 
         // handle add/remove buttons
-        this.addLink.onclick = function() {
+        this.addLink.onclick = function () {
             me.addSelectedItems();
             return false;
         };
 
-        this.removeLink.onclick = function() {
+        this.removeLink.onclick = function () {
             me.removeSelectedItems();
             return false;
         };
 
-        this.addAllLink.onclick = function() {
+        this.addAllLink.onclick = function () {
             me.sourceNode.sourceWidget.selectAll();
             me.addSelectedItems();
             return false;
         };
 
-        this.removeAllLink.onclick = function() {
+        this.removeAllLink.onclick = function () {
             me.targetNode.sourceWidget.selectAll();
             me.removeSelectedItems();
             return false;
@@ -64,18 +65,18 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
         this.updateMoveButtons();
     },
 
-    updateMoveButtons: function() {
+    updateMoveButtons:function () {
         this.setButtonEnabled(this.addLink, 'add-link', this.sourceNode.sourceWidget.isAnySelected());
         this.setButtonEnabled(this.removeLink, 'remove-link', this.targetNode.sourceWidget.isAnySelected());
         this.setButtonEnabled(this.addAllLink, 'add-all-link', this.sourceNode.sourceWidget.node.firstChild);
         this.setButtonEnabled(this.removeAllLink, 'remove-all-link', this.targetNode.sourceWidget.node.firstChild);
     },
 
-    addSelectedItems: function() {
+    addSelectedItems:function () {
         this.moveSelectedItems(this.sourceNode, this.targetNode);
     },
 
-    removeSelectedItems: function() {
+    removeSelectedItems:function () {
         this.moveSelectedItems(this.targetNode, this.sourceNode);
     },
 
@@ -86,8 +87,8 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
      * @param fromList source list
      * @param toList target list
      */
-    moveSelectedItems: function(fromList, toList) {
-        fromList.sourceWidget.forEachSelected(function(item, index) {
+    moveSelectedItems:function (fromList, toList) {
+        fromList.sourceWidget.forEachSelected(function (item, index) {
             var accepts = toList.sourceWidget.accept[item.getAttribute('dndtype')];
             if (accepts) {
                 var beforeItem = toList.childNodes[index];
@@ -107,7 +108,7 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
         this.updateIndices();
     },
 
-    fixAnchor: function(source) {
+    fixAnchor:function (source) {
         var anchor = source.anchor;
         if (anchor) {
             source._removeAnchor();
@@ -116,12 +117,12 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
         }
     },
 
-    updateIndices: function(silent) {
+    updateIndices:function (silent) {
         // update indices textfield
         var prevValue = this.textField.value;
         var items = this.targetNode.childNodes;
         var value = '';
-        dojo.forEach(items, function(item) {
+        dojo.forEach(items, function (item) {
             value += ',' + item.getAttribute('idx');
         });
         this.textField.value = value.substring(1);
@@ -137,18 +138,18 @@ dojo.declare('artifactory.DragDropSelection', artifactory.Selectable, {
         }
     },
 
-    onSelection:  function() {
+    onSelection:function () {
         this.updateMoveButtons();
     },
 
-    onDrop: function(source, target) {
+    onDrop:function (source, target) {
         if (source.parent == this.targetNode || target.parent == this.targetNode) {
             this.updateIndices();
             this.updateMoveButtons();
         }
     },
 
-    destroy: function() {
+    destroy:function () {
         this.inherited(arguments);
 
         this.upLink.onclick = null;

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,6 +33,7 @@ import org.springframework.security.core.Authentication;
 public abstract class QuartzCommand extends TaskCallback<JobExecutionContext> implements StatefulJob {
     private static final Logger log = LoggerFactory.getLogger(QuartzCommand.class);
 
+    @Override
     public final void execute(final JobExecutionContext jobContext) throws JobExecutionException {
         try {
             boolean shouldExecute = beforeExecute(jobContext);

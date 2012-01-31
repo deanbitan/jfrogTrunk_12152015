@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,8 +24,7 @@ import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.behavior.AttributeAppender;
-import org.apache.wicket.behavior.IBehavior;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.HiddenField;
@@ -79,7 +78,7 @@ public abstract class OrderedListPanel<T extends Serializable> extends TitledPan
 
         add(new CssClass("list-panel ordered-list-panel"));
 
-        // add moveup/down links
+        // add moveUp/Down links
         SimpleTitledLink upLink = new SimpleTitledLink("moveUpLink", "Up");
         add(upLink);
 
@@ -107,8 +106,8 @@ public abstract class OrderedListPanel<T extends Serializable> extends TitledPan
         // add items container
         WebMarkupContainer container = new WebMarkupContainer("items");
         container.setOutputMarkupId(true);
-        container.add(new SimpleAttributeModifier("dojoType", "artifactory.dnd.Source"));
-        container.add(new AttributeAppender("accept", true, new DndTypeModel(), ","));
+        container.add(new AttributeModifier("dojoType", "artifactory.dnd.Source"));
+        container.add(new AttributeAppender("accept", new DndTypeModel(), ","));
         add(container);
 
         // add ListView
@@ -185,7 +184,7 @@ public abstract class OrderedListPanel<T extends Serializable> extends TitledPan
     protected abstract List<? extends AbstractLink> getItemActions(T itemObject, String linkId);
 
     protected void populateItem(ListItem<T> item) {
-        item.add(new AttributeModifier("dndType", true, new DndTypeModel()));
+        item.add(new AttributeModifier("dndType", new DndTypeModel()));
         item.add(new CssClass("dojoDndItem"));
 
         T itemObject = item.getModelObject();
@@ -205,20 +204,20 @@ public abstract class OrderedListPanel<T extends Serializable> extends TitledPan
     }
 
     protected void onOrderChanged(AjaxRequestTarget target) {
-        target.appendJavascript(format("dojo.byId('%s')._panel.resetIndices();", get("items").getMarkupId()));
+        target.appendJavaScript(format("dojo.byId('%s')._panel.resetIndices();", get("items").getMarkupId()));
     }
 
     public void refresh(AjaxRequestTarget target) {
-        target.addComponent(get("items"));
-        target.addComponent(get("title"));
-        target.addComponent(get("listIndices"));
-        target.addComponent(get("moveDownLink"));
-        target.addComponent(get("moveUpLink"));
-        target.addComponent(get("initScript"));
-        target.prependJavascript("LinksColumn.hideCurrent();");
+        target.add(get("items"));
+        target.add(get("title"));
+        target.add(get("listIndices"));
+        target.add(get("moveDownLink"));
+        target.add(get("moveUpLink"));
+        target.add(get("initScript"));
+        target.prependJavaScript("LinksColumn.hideCurrent();");
     }
 
-    protected IBehavior newOnOrderChangeEventBehavior(String event) {
+    protected Behavior newOnOrderChangeEventBehavior(String event) {
         return new OnOrderChangedEventBehavior(event);
     }
 
@@ -252,7 +251,7 @@ public abstract class OrderedListPanel<T extends Serializable> extends TitledPan
 
         /**
          * @param value hidden indices field value
-         * @return indides reorder list or null if indices order hasn't changed.
+         * @return indices reorder list or null if indices order hasn't changed.
          */
         private int[] createIndicesList(Object value) {
             if (value == null) {

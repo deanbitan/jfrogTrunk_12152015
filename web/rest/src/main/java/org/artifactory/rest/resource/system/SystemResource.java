@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@ import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.storage.StorageService;
+import org.artifactory.backup.InternalBackupService;
 import org.artifactory.info.InfoWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -67,6 +68,9 @@ public class SystemResource {
     @Autowired
     StorageService storageService;
 
+    @Autowired
+    InternalBackupService backupService;
+
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String getSystemInfo() throws Exception {
@@ -75,7 +79,7 @@ public class SystemResource {
 
     @Path(SystemRestConstants.PATH_CONFIGURATION)
     public ConfigResource getConfigResource() {
-        return new ConfigResource(centralConfigService);
+        return new ConfigResource(centralConfigService, httpServletRequest);
     }
 
     @Path(SystemRestConstants.PATH_SECURITY)
@@ -85,7 +89,7 @@ public class SystemResource {
 
     @Path(SystemRestConstants.PATH_STORAGE)
     public StorageResource getStorageResource() {
-        return new StorageResource(storageService, httpResponse);
+        return new StorageResource(storageService, backupService, httpResponse);
     }
 
 }

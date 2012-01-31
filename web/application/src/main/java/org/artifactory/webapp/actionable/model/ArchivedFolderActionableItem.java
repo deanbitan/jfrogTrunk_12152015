@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,7 +33,6 @@ import org.artifactory.webapp.wicket.util.ItemCssClass;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Represents a file or directory inside a zip.
@@ -54,6 +53,7 @@ public class ArchivedFolderActionableItem extends ArchivedItemActionableItem imp
         }
     }
 
+    @Override
     public String getDisplayName() {
         return displayName;
     }
@@ -72,10 +72,12 @@ public class ArchivedFolderActionableItem extends ArchivedItemActionableItem imp
         });
     }
 
+    @Override
     public void filterActions(AuthorizationService authService) {
 
     }
 
+    @Override
     public List<ActionableItem> getChildren(AuthorizationService authService) {
         List<ActionableItem> items = Lists.newArrayList();
         Collection<? extends TreeNode<ZipEntryInfo>> children = node.getChildren();
@@ -89,14 +91,17 @@ public class ArchivedFolderActionableItem extends ArchivedItemActionableItem imp
         return items;
     }
 
+    @Override
     public boolean hasChildren(AuthorizationService authService) {
         return node.hasChildren();
     }
 
+    @Override
     public boolean isCompactAllowed() {
         return compactAllowed;
     }
 
+    @Override
     public void setCompactAllowed(boolean compactAllowed) {
         this.compactAllowed = compactAllowed;
     }
@@ -130,6 +135,7 @@ public class ArchivedFolderActionableItem extends ArchivedItemActionableItem imp
         return firstChild;
     }
 
+    @Override
     public String getCssClass() {
         return compacted ? ItemCssClass.folderCompact.getCssClass() : ItemCssClass.folder.getCssClass();
     }

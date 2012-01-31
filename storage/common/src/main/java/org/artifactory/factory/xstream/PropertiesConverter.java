@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,8 +23,8 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import org.artifactory.model.xstream.fs.PropertiesImpl;
 import org.artifactory.md.Properties;
+import org.artifactory.model.xstream.fs.PropertiesImpl;
 
 import java.util.Map;
 
@@ -40,10 +40,12 @@ import java.util.Map;
  * @author Yoav Landman
  */
 public class PropertiesConverter implements Converter {
+    @Override
     public boolean canConvert(Class type) {
         return type.equals(PropertiesImpl.class);
     }
 
+    @Override
     public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
         Properties map = (Properties) source;
         for (Map.Entry<String, String> entry : map.entries()) {
@@ -61,6 +63,7 @@ public class PropertiesConverter implements Converter {
         }
     }
 
+    @Override
     public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
         Properties map = new PropertiesImpl();
         while (reader.hasMoreChildren()) {

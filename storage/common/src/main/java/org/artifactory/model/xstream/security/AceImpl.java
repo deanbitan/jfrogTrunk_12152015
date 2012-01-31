@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,34 +45,42 @@ public class AceImpl implements MutableAceInfo {
         this(copy.getPrincipal(), copy.isGroup(), copy.getMask());
     }
 
+    @Override
     public String getPrincipal() {
         return principal;
     }
 
+    @Override
     public void setPrincipal(String principal) {
         this.principal = principal;
     }
 
+    @Override
     public boolean isGroup() {
         return group;
     }
 
+    @Override
     public void setGroup(boolean group) {
         this.group = group;
     }
 
+    @Override
     public int getMask() {
         return mask;
     }
 
+    @Override
     public void setMask(int mask) {
         this.mask = mask;
     }
 
+    @Override
     public boolean canAdmin() {
         return (getMask() & ArtifactoryPermission.ADMIN.getMask()) > 0;
     }
 
+    @Override
     public void setAdmin(boolean admin) {
         if (admin) {
             setMask(getMask() | ArtifactoryPermission.ADMIN.getMask());
@@ -81,10 +89,12 @@ public class AceImpl implements MutableAceInfo {
         }
     }
 
+    @Override
     public boolean canDelete() {
         return (getMask() & ArtifactoryPermission.DELETE.getMask()) > 0;
     }
 
+    @Override
     public void setDelete(boolean delete) {
         if (delete) {
             setMask(getMask() | ArtifactoryPermission.DELETE.getMask());
@@ -93,10 +103,12 @@ public class AceImpl implements MutableAceInfo {
         }
     }
 
+    @Override
     public boolean canDeploy() {
         return (getMask() & ArtifactoryPermission.DEPLOY.getMask()) > 0;
     }
 
+    @Override
     public void setDeploy(boolean deploy) {
         if (deploy) {
             setMask(getMask() | ArtifactoryPermission.DEPLOY.getMask());
@@ -105,10 +117,12 @@ public class AceImpl implements MutableAceInfo {
         }
     }
 
+    @Override
     public boolean canAnnotate() {
         return (getMask() & ArtifactoryPermission.ANNOTATE.getMask()) > 0;
     }
 
+    @Override
     public void setAnnotate(boolean annotate) {
         if (annotate) {
             setMask(getMask() | ArtifactoryPermission.ANNOTATE.getMask());
@@ -117,10 +131,12 @@ public class AceImpl implements MutableAceInfo {
         }
     }
 
+    @Override
     public boolean canRead() {
         return (getMask() & ArtifactoryPermission.READ.getMask()) > 0;
     }
 
+    @Override
     public void setRead(boolean read) {
         if (read) {
             setMask(getMask() | ArtifactoryPermission.READ.getMask());

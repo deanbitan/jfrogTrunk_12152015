@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -69,6 +69,7 @@ public class JcrConfResourceLoader implements ResourceStreamHandle {
         this.defaultResName = defaultResourceName;
     }
 
+    @Override
     public InputStream getInputStream() {
         String transientRepoXml = getTransientRepoXml();
         if (transientRepoXml != null) {
@@ -165,6 +166,7 @@ public class JcrConfResourceLoader implements ResourceStreamHandle {
         return jcrConfigDir;
     }
 
+    @Override
     public long getSize() {
         return -1;
     }
@@ -199,6 +201,7 @@ public class JcrConfResourceLoader implements ResourceStreamHandle {
         }
     }
 
+    @Override
     public void close() {
         try {
             if (is != null) {

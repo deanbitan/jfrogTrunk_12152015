@@ -1,16 +1,17 @@
 /*
- * Copyright 2010 JFrog Ltd. All rights reserved.
+ * Copyright 2012 JFrog Ltd. All rights reserved.
  * JFROG PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 
 package org.artifactory.api.properties;
 
-import org.artifactory.sapi.common.Lock;
 import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.sapi.common.Lock;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +27,7 @@ public interface PropertiesService {
      * @param repoPath The item (repository/folder/file) repository path
      * @return The properties attached to this repo path. Empty properties if none exist.
      */
+    @Nonnull
     Properties getProperties(RepoPath repoPath);
 
     /**
@@ -58,7 +60,8 @@ public interface PropertiesService {
      * @param values      Property values (if null, will not add the property)
      */
     @Lock(transactional = true)
-    void addPropertyRecursively(RepoPath repoPath, PropertySet propertySet, Property property, String... values);
+    void addPropertyRecursively(RepoPath repoPath, @Nullable PropertySet propertySet, Property property,
+            String... values);
 
     /**
      * Deletes the property from the item.

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.repo.index;
 
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.common.ConstantValues;
@@ -29,15 +30,19 @@ import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.request.RemoteRequestException;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.schedule.TaskInterruptedException;
 import org.artifactory.schedule.TaskUtils;
+import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -83,7 +88,7 @@ public class MavenIndexManager {
         indexStatus = IndexStatus.NEEDS_SAVING;
     }
 
-    boolean fetchRemoteIndex() {
+    boolean fetchRemoteIndex(boolean forceRemoteDownload) {
         if (indexedRepo.isLocal()) {
             indexStorageRepo = (LocalRepo) indexedRepo;
             return false;
@@ -111,8 +116,8 @@ public class MavenIndexManager {
             ResourceStreamHandle remoteIndexHandle = null;
             ResourceStreamHandle remotePropertiesHandle = null;
             try {
-                //Never auto-fetch the index from central if it cannot be stored locally
-                if (!shouldFetchRemoteIndex(remoteRepo)) {
+                //Never auto-fetch the index from central if it cannot be stored locally unless force flag is enabled
+                if (!forceRemoteDownload && !shouldFetchRemoteIndex(remoteRepo)) {
                     //Return true so that we don't attempt to index locally as a fallback
                     return true;
                 }
@@ -121,7 +126,8 @@ public class MavenIndexManager {
                 log.debug("Fetching remote index files for {}", indexedRepo);
                 FileOutputStream fos = null;
                 try {
-                    remoteIndexHandle = remoteRepo.conditionalRetrieveResource(MavenNaming.NEXUS_INDEX_GZ_PATH);
+                    remoteIndexHandle = remoteRepo.conditionalRetrieveResource(MavenNaming.NEXUS_INDEX_GZ_PATH,
+                            forceRemoteDownload);
                     if (remoteIndexHandle instanceof NullResourceStreamHandle) {
                         log.debug("No need to fetch unmodified index for remote repository '{}'.",
                                 indexedRepo.getKey());
@@ -169,9 +175,38 @@ public class MavenIndexManager {
                 log.warn("Could not retrieve remote maven index '" + MavenNaming.NEXUS_INDEX_GZ +
                         "' for repo '" + indexedRepo + "': " + e.getMessage());
                 abort();
+                if (isNotFoundInRemoteRepo(e) || isIndexFilesDontExistInCache(remoteRepo)) {
+                    indexStatus = IndexStatus.NOT_CREATED;
+                }
+                unExpireIndexIfExists(remoteRepo);
                 return false;
             }
         }
+    }
+
+    private void unExpireIndexIfExists(RemoteRepo remoteRepo) {
+        if (!isIndexFilesDontExistInCache(remoteRepo)) {
+            InternalRepositoryService repoService = InternalContextHelper.get().beanForType(
+                    InternalRepositoryService.class);
+            repoService.unexpireIfExists(remoteRepo.getLocalCacheRepo(), MavenNaming.NEXUS_INDEX_GZ_PATH);
+            repoService.unexpireIfExists(remoteRepo.getLocalCacheRepo(), MavenNaming.NEXUS_INDEX_PROPERTIES_PATH);
+        }
+    }
+
+    private boolean isNotFoundInRemoteRepo(IOException e) {
+        Throwable remoteRequestException = ExceptionUtils.getCauseOfTypes(e, RemoteRequestException.class);
+        return remoteRequestException != null
+                && HttpStatus.SC_NOT_FOUND == ((RemoteRequestException) e).getRemoteReturnCode();
+    }
+
+    private boolean isIndexFilesDontExistInCache(RemoteRepo remoteRepo) {
+        LocalCacheRepo localCacheRepo = remoteRepo.getLocalCacheRepo();
+        if (localCacheRepo == null) {
+            return true;
+        }
+        boolean indexGzDoesntExist = !localCacheRepo.itemExists(MavenNaming.NEXUS_INDEX_GZ_PATH);
+        boolean indexPropertiesDontExist = !localCacheRepo.itemExists(MavenNaming.NEXUS_INDEX_PROPERTIES_PATH);
+        return indexGzDoesntExist || indexPropertiesDontExist;
     }
 
     private void abort() {

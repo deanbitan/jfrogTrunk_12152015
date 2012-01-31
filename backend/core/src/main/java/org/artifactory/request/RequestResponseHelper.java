@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,15 +19,15 @@
 package org.artifactory.request;
 
 import org.apache.commons.httpclient.HttpStatus;
-import org.artifactory.fs.RepoResource;
-import org.artifactory.mime.NamingUtils;
 import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.fs.RepoResource;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.security.AccessLogger;
-import org.artifactory.traffic.InternalTrafficService;
+import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.DownloadEntry;
 import org.slf4j.Logger;
 
@@ -41,9 +41,9 @@ import java.io.InputStream;
 public final class RequestResponseHelper {
     private static final Logger log = LoggerFactory.getLogger(RequestResponseHelper.class);
 
-    private InternalTrafficService trafficService;
+    private TrafficService trafficService;
 
-    public RequestResponseHelper(InternalTrafficService service) {
+    public RequestResponseHelper(TrafficService service) {
         trafficService = service;
     }
 
@@ -61,9 +61,8 @@ public final class RequestResponseHelper {
                     new Object[]{repoPath, res.getSize(), handle.getSize()});
         }
         response.sendStream(inputStream);
-        final DownloadEntry downloadEntry =
-                new DownloadEntry(repoPath.getId(), res.getSize(), System.currentTimeMillis() - start);
-        trafficService.handleTrafficEntry(downloadEntry);
+
+        fireDownloadTrafficEvent(response, repoPath, res.getSize(), start);
     }
 
     public void sendBodyResponse(ArtifactoryResponse response, RepoPath repoPath, String content)
@@ -85,11 +84,18 @@ public final class RequestResponseHelper {
             AccessLogger.downloaded(repoPath);
             final long start = System.currentTimeMillis();
             response.sendStream(is);
-            final DownloadEntry downloadEntry =
-                    new DownloadEntry(repoPath.getId(), bodySize, System.currentTimeMillis() - start);
-            trafficService.handleTrafficEntry(downloadEntry);
+            fireDownloadTrafficEvent(response, repoPath, bodySize, start);
         } finally {
             is.close();
+        }
+    }
+
+    private void fireDownloadTrafficEvent(ArtifactoryResponse response, RepoPath repoPath, long size,
+            long start) {
+        if (!(response instanceof InternalArtifactoryResponse)) {
+            DownloadEntry downloadEntry = new DownloadEntry(
+                    repoPath.getId(), size, System.currentTimeMillis() - start);
+            trafficService.handleTrafficEntry(downloadEntry);
         }
     }
 

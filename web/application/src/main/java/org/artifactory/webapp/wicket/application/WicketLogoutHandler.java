@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.wicket.application;
 
-import org.apache.wicket.RequestCycle;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Component;
@@ -35,6 +35,7 @@ import javax.servlet.http.HttpSession;
 @Component
 public class WicketLogoutHandler implements LogoutHandler {
 
+    @Override
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
         if (RequestCycle.get() != null) {
             // we are in a wicket request cycle

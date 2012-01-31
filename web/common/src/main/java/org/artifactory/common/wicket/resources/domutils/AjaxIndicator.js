@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,21 +27,21 @@ function AjaxIndicator(divId) {
 
 AjaxIndicator.waiting = false;
 
-AjaxIndicator.prototype.getDiv = function() {
+AjaxIndicator.prototype.getDiv = function () {
     return document.getElementById(this._divId);
 };
 
 
-AjaxIndicator.prototype.disableDelay = function() {
+AjaxIndicator.prototype.disableDelay = function () {
     this.delayed = false;
 };
 
 
-AjaxIndicator.prototype.disableOnce = function() {
+AjaxIndicator.prototype.disableOnce = function () {
     this.enabled = false;
 };
 
-AjaxIndicator.prototype.show = function() {
+AjaxIndicator.prototype.show = function () {
     if (!this.enabled) {
         this.enabled = true;
         return;
@@ -71,7 +71,7 @@ AjaxIndicator.prototype.show = function() {
     this.delayed = true;
 };
 
-AjaxIndicator.prototype.showIndicator = function() {
+AjaxIndicator.prototype.showIndicator = function () {
     if (ajaxIndicator._counter) {
         var doc = document.documentElement;
         var msgDiv = document.getElementById('ajaxIndicatorMessage');
@@ -82,14 +82,14 @@ AjaxIndicator.prototype.showIndicator = function() {
     }
 };
 
-AjaxIndicator.positionMessage = function() {
+AjaxIndicator.positionMessage = function () {
     var doc = document.documentElement;
     var myDiv = ajaxIndicator.getDiv();
     myDiv.style.top = doc.scrollTop + 'px';
     myDiv.style.left = doc.scrollLeft + 'px';
 };
 
-AjaxIndicator.prototype.hide = function() {
+AjaxIndicator.prototype.hide = function () {
     this._counter = this._counter ? this._counter - 1 : 0;
     if (this._counter > 0) {
         return;
@@ -112,14 +112,14 @@ var ajaxIndicator = new AjaxIndicator('ajaxIndicatorContainer');
 /**
  * Global Ajax CallHandler
  */
-window.wicketGlobalPreCallHandler = function() {
+window.wicketGlobalPreCallHandler = function () {
     ajaxIndicator.show();
 };
 
 /**
  * Global Ajax CallHandler
  */
-window.wicketGlobalPostCallHandler = function() {
+window.wicketGlobalPostCallHandler = function () {
     ajaxIndicator.hide();
     DojoUtils.dijitCleanup();
 };

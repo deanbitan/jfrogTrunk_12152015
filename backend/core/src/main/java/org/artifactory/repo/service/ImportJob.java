@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,7 +25,6 @@ import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
 import org.artifactory.repo.index.IndexerJob;
 import org.artifactory.repo.index.IndexerServiceImpl;
@@ -50,7 +49,7 @@ import org.slf4j.Logger;
  * @date Nov 6, 2008
  */
 @JobCommand(manualUser = TaskUser.CURRENT,
-        keyAttributes = { Task.REPO_KEY },
+        keyAttributes = {Task.REPO_KEY},
         commandsToStop = {
                 @StopCommand(command = JcrGarbageCollectorJob.class, strategy = StopStrategy.IMPOSSIBLE),
                 @StopCommand(command = ExportJob.class, strategy = StopStrategy.IMPOSSIBLE),
@@ -74,7 +73,7 @@ public class ImportJob extends QuartzCommand {
             JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
             String repoKey = (String) jobDataMap.get(Task.REPO_KEY);
             if (repoKey == null) {
-                throw new IllegalStateException("Cannot Import unknown target for job "+this);
+                throw new IllegalStateException("Cannot Import unknown target for job " + this);
             }
             boolean deleteRepo = (Boolean) jobDataMap.get(DELETE_REPO);
             ImportSettingsImpl settings = (ImportSettingsImpl) jobDataMap.get(ImportSettingsImpl.class.getName());

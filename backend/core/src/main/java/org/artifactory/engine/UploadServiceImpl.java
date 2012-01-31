@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +21,7 @@ package org.artifactory.engine;
 import com.google.common.collect.Sets;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.module.ModuleInfo;
@@ -63,6 +64,8 @@ import org.artifactory.resource.MutableRepoResourceInfo;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.traffic.TrafficService;
+import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.servlet.DelayedHttpResponse;
@@ -107,9 +110,13 @@ public class UploadServiceImpl implements InternalUploadService {
     @Autowired
     private AddonsManager addonsManager;
 
+    @Autowired
+    private TrafficService trafficService;
+
     private SuccessfulDeploymentResponseHelper successfulDeploymentResponseHelper =
             new SuccessfulDeploymentResponseHelper();
 
+    @Override
     public void process(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException,
             RepoRejectException {
         log.debug("Request: {}", request);
@@ -173,8 +180,14 @@ public class UploadServiceImpl implements InternalUploadService {
         }
     }
 
+    @Override
     public void doProcess(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException, RepoRejectException {
+        if (request.isDirectoryRequest()) {
+            processDirectoryCreation(request, response, repo);
+            return;
+        }
+
         log.info("Deploy to '{}' Content-Length: {}", request.getRepoPath(), request.getContentLength());
         String path = request.getPath();
         ModuleInfo moduleInfo = repo.getItemModuleInfo(path);
@@ -191,6 +204,7 @@ public class UploadServiceImpl implements InternalUploadService {
                     MavenNaming.isMavenMetadata(path)) {
                 // Skip the maven metadata deployment - use the metadata calculated after the pom is deployed
                 log.trace("Skipping deployment of maven metadata file {}", path);
+                IOUtils.copy(request.getInputStream(), new NullOutputStream());
                 response.setStatus(HttpStatus.SC_ACCEPTED);
                 return;
             }
@@ -225,12 +239,18 @@ public class UploadServiceImpl implements InternalUploadService {
         try {
             if (ConstantValues.httpUseExpectContinue.getBoolean() && HttpUtils.isExpectedContinue(request)) {
                 log.debug("Client '{}' supports Expect 100/continue", request.getHeader("User-Agent"));
-                stream = getStreamFromJcrIfExists(request, repoPath);
+                try {
+                    stream = getStreamFromJcrIfExists(request, repoPath);
+                } catch (Exception e) {
+                    log.warn("Could not get original stream from " + repoPath + " due to: " + e.getMessage());
+                }
             }
             // if not supporting a 100/continue request, or no stream was found from JCR, take the stream from request
             // and continue as usual
+            long remoteUploadStartTime = 0;
             if (stream == null) {
                 log.debug("No matching artifact found, using stream from request");
+                remoteUploadStartTime = System.currentTimeMillis();
                 stream = request.getInputStream();
             } else {
                 log.debug("Matching artifact found, using stream from storage");
@@ -243,6 +263,8 @@ public class UploadServiceImpl implements InternalUploadService {
                 response.sendError(SC_NOT_FOUND, ((UnfoundRepoResource) resource).getReason(), log);
                 return;
             }
+
+            fireUploadTrafficEvent(resource, remoteUploadStartTime);
             indexJarIfNeeded(request, repoPath);
         } catch (BadPomException bpe) {
             response.sendError(HttpStatus.SC_CONFLICT, bpe.getMessage(), log);
@@ -252,8 +274,32 @@ public class UploadServiceImpl implements InternalUploadService {
         }
         //Send ok. Also for those artifacts that the wagon sent and we ignore (checksums etc.)
         String url = buildArtifactUrl(request, repoPath);
-        successfulDeploymentResponseHelper.writeSuccessfulDeploymentResponse(
-                repoService, request, response, repoPath, url);
+        successfulDeploymentResponseHelper.writeSuccessfulDeploymentResponse(repoService, response, repoPath, url,
+                false);
+    }
+
+    private void fireUploadTrafficEvent(RepoResource resource, long remoteUploadStartTime) {
+        if (remoteUploadStartTime > 0) {
+            // fire upload event only if the resource is really uploaded from the remote client
+            UploadEntry uploadEntry = new UploadEntry(resource.getRepoPath().getId(),
+                    resource.getSize(), System.currentTimeMillis() - remoteUploadStartTime);
+            trafficService.handleTrafficEntry(uploadEntry);
+        }
+    }
+
+    private void processDirectoryCreation(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
+            throws IOException {
+        log.info("MKDir request to '{}'", request.getRepoPath());
+        RepoPath repoPath = InternalRepoPathFactory.create(repo.getKey(), request.getPath());
+        // No need to check for deploy permissions, it has been checked before
+        repoService.mkdirs(repoPath);
+        if (authService.canAnnotate(repoPath)) {
+            Properties properties = request.getProperties();
+            repoService.setMetadata(repoPath, Properties.class, properties);
+        }
+        successfulDeploymentResponseHelper.writeSuccessfulDeploymentResponse(repoService, response, repoPath,
+                buildArtifactUrl(request, repoPath), true);
+        log.info("Directory '{}' was created successfully.", request.getRepoPath());
     }
 
     private String buildArtifactUrl(ArtifactoryRequest request, RepoPath repoPath) {
@@ -382,6 +428,7 @@ public class UploadServiceImpl implements InternalUploadService {
         String checksumTargetFile = MavenNaming.getChecksumTargetFile(checksumPath);
         if (NamingUtils.isMetadata(checksumTargetFile)) {
             // (for now) we always return calculated checksums of metadata
+            IOUtils.copy(request.getInputStream(), new NullOutputStream());
             response.sendSuccess();
             return;
         }

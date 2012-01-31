@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -84,18 +84,22 @@ public class GroupImpl implements MutableGroupInfo {
                 groupInfo.getRealmAttributes());
     }
 
+    @Override
     public String getGroupName() {
         return groupName;
     }
 
+    @Override
     public void setGroupName(String groupName) {
         this.groupName = groupName;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public void setDescription(String description) {
         this.description = description;
     }
@@ -103,30 +107,37 @@ public class GroupImpl implements MutableGroupInfo {
     /**
      * @return True if this group should automatically be added to newly created users.
      */
+    @Override
     public boolean isNewUserDefault() {
         return newUserDefault;
     }
 
+    @Override
     public void setNewUserDefault(boolean newUserDefault) {
         this.newUserDefault = newUserDefault;
     }
 
+    @Override
     public boolean isExternal() {
         return realm != null && !SecurityConstants.DEFAULT_REALM.equals(realm);
     }
 
+    @Override
     public String getRealm() {
         return realm;
     }
 
+    @Override
     public void setRealm(String realm) {
         this.realm = realm;
     }
 
+    @Override
     public String getRealmAttributes() {
         return realmAttributes;
     }
 
+    @Override
     public void setRealmAttributes(String realmAttributes) {
         this.realmAttributes = realmAttributes;
     }

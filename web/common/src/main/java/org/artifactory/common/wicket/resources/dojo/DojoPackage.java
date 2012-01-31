@@ -11,13 +11,13 @@ public class DojoPackage extends ResourcePackage {
         addJavaScriptTemplate();
 
         // add dojo js
-        if (isDebug()) {
-            addJavaScript("dojo/dojo.js.uncompressed.js");
-            addJavaScript("dojo/artifactory-dojo.js.uncompressed.js");
-        } else {
-            addJavaScript("dojo/dojo.js");
-            addJavaScript("dojo/artifactory-dojo.js");
-        }
+        //if (isDebug()) {
+        addJavaScript("dojo/dojo.js.uncompressed.js");
+        addJavaScript("dojo/artifactory-dojo.js.uncompressed.js");
+        //} else {
+        //    addJavaScript("dojo/dojo.js");
+        //    addJavaScript("dojo/artifactory-dojo.js");
+        //}
 
         // add themes
         addCss("dojo/resources/dojo.css");

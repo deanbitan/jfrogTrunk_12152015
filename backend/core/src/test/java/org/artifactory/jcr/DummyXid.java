@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,14 +30,17 @@ public class DummyXid implements Xid {
         this.gtxid = gtxid;
     }
 
+    @Override
     public byte[] getGlobalTransactionId() {
         return new byte[]{gtxid};
     }
 
+    @Override
     public int getFormatId() {
         return 0;
     }
 
+    @Override
     public byte[] getBranchQualifier() {
         return new byte[0];
     }

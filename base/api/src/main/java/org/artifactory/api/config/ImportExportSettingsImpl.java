@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -73,14 +73,17 @@ public class ImportExportSettingsImpl implements BaseSettings {
     /**
      * @return Base directory of the operation (target directory of the export or source directory of an import)
      */
+    @Override
     public File getBaseDir() {
         return baseDir;
     }
 
+    @Override
     public boolean isIncludeMetadata() {
         return includeMetadata;
     }
 
+    @Override
     public void setIncludeMetadata(boolean includeMetadata) {
         this.includeMetadata = includeMetadata;
     }
@@ -88,52 +91,64 @@ public class ImportExportSettingsImpl implements BaseSettings {
     /**
      * @return List of repositories to do export or import on. Empty if needs to export or import all.
      */
+    @Override
     public List<String> getRepositories() {
         return repositories;
     }
 
+    @Override
     public void setRepositories(List<String> repositories) {
         this.repositories = repositories;
     }
 
+    @Override
     public boolean isVerbose() {
         return verbose;
     }
 
+    @Override
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
         statusHolder.setVerbose(verbose);
     }
 
+    @Override
     public boolean isFailFast() {
         return failFast;
     }
 
+    @Override
     public void setFailFast(boolean failFast) {
         this.failFast = failFast;
         statusHolder.setFastFail(failFast);
     }
 
+    @Override
     public boolean isFailIfEmpty() {
         return failIfEmpty;
     }
 
+    @Override
     public void setFailIfEmpty(boolean failIfEmpty) {
         this.failIfEmpty = failIfEmpty;
     }
 
+    @Override
     public MutableStatusHolder getStatusHolder() {
         return statusHolder;
     }
 
+    @Override
     public boolean isExcludeContent() {
         return excludeContent;
     }
 
+    @Override
     public void setExcludeContent(boolean excludeContent) {
         this.excludeContent = excludeContent;
     }
 
+    @Override
     public void alertFailIfEmpty(String message, Logger log) {
         if (isFailIfEmpty()) {
             statusHolder.setError(message, log);

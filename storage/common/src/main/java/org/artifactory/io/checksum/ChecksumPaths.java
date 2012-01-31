@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,9 +38,17 @@ public interface ChecksumPaths extends ReloadableBean {
     /**
      * Clears the checksum paths (marks it deleted)
      *
-     * @param id An arbitrary string idntifier used to locate the checksum path to clear
+     * @param binaryNodeId An arbitrary string identifier used to locate the checksum path to clear
      */
-    void deleteChecksumPath(String id);
+    void deleteChecksumPath(String binaryNodeId);
+
+    /**
+     * Update the checksum path. This method is called when node with binary data is moved leaving the old path
+     * obsolete.
+     *
+     * @param newChecksumInfo Checksum info of the moved binary node, with the new path.
+     */
+    void updateChecksumPath(ChecksumPathInfo newChecksumInfo);
 
     /**
      * Clean up internal deleted entries at the current point in time and return a holder of all binaries checksums that
@@ -65,25 +73,20 @@ public interface ChecksumPaths extends ReloadableBean {
      * Get all files containing the like query expressions. Note that the implementation may return files that no longer
      * exist or that are in the trash, so it is up to the application to verify the file validity.
      *
-     * @param fileExpressions
-     * @param pathExpressions
+     * @param fileExpressions SQL expression for the file names
+     * @param pathExpressions SQL expression for the file paths
      * @return A list of paths for found files
      */
     ImmutableCollection<String> getFileOrPathsLike(@Nullable List<String> fileExpressions,
             @Nullable List<String> pathExpressions);
 
     /**
-     * Gets the active checksum paths for the given checksum
-     *
-     * @param checksum
-     * @return
+     * @return Gets the active checksum paths for the given checksum
      */
     ImmutableCollection<ChecksumPathInfo> getActiveChecksumPaths(@Nonnull String checksum);
 
     /**
-     * Get all non-deleted (but maybe in trash) paths in the system
-     *
-     * @return
+     * @return Get all non-deleted (but maybe in trash) paths in the system
      */
     ImmutableCollection<ChecksumPathInfo> getAllActiveChecksumPaths();
 

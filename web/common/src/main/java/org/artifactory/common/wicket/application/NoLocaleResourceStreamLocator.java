@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,13 +40,14 @@ public class NoLocaleResourceStreamLocator extends ResourceStreamLocator {
     }
 
     @Override
-    public IResourceStream locate(Class clazz, String path, String style, Locale locale, String extension) {
+    public IResourceStream locate(Class<?> clazz, String path, String style, String variation, Locale locale,
+            String extension, boolean strict) {
+
         for (Class<?> noLocaleClass : noLocaleClasses) {
             if (noLocaleClass.isAssignableFrom(clazz)) {
                 return locate(clazz, path);
             }
         }
-
-        return super.locate(clazz, path, style, locale, extension);
+        return super.locate(clazz, path, style, variation, locale, extension, strict);
     }
 }

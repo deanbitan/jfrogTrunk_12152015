@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,12 +20,12 @@ package org.artifactory.addon.wicket.disabledaddon;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
-import org.apache.wicket.Request;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.request.Request;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.http.WebRequest;
 import org.artifactory.addon.AddonType;
 import org.artifactory.common.wicket.behavior.template.TemplateBehavior;
 import org.artifactory.common.wicket.behavior.tooltip.TooltipBehavior;
@@ -47,10 +47,14 @@ public class AddonNeededBehavior extends TemplateBehavior {
     private AddonType addon;
     private boolean enabled;
     private String position;
+    private String targetId; // target container for the icon and bubble
+    private String iconClassName = "addon-icon";
 
     public AddonNeededBehavior(AddonType addon) {
         super(AddonNeededBehavior.class);
         this.addon = addon;
+        this.enabled = getAddonSettings().isShowAddonsInfo()
+                && !getCookie("addon-" + addon.getAddonName()).equals(getServerToken());
 
         ResourcePackage resourcePackage = getResourcePackage();
         resourcePackage.dependsOn(new ResourcePackage(TooltipBehavior.class).addJavaScript());
@@ -60,18 +64,15 @@ public class AddonNeededBehavior extends TemplateBehavior {
 
     @Override
     public void beforeRender(Component component) {
-        enabled = getAddonSettings().isShowAddonsInfo()
-                && !getCookie("addon-" + addon.getAddonName()).equals(getServerToken());
-
         if (enabled) {
             super.beforeRender(component);
         }
     }
 
     @Override
-    public void onRendered(Component component) {
+    public void afterRender(Component component) {
         if (enabled) {
-            super.onRendered(component);
+            super.afterRender(component);
         }
     }
 
@@ -99,13 +100,16 @@ public class AddonNeededBehavior extends TemplateBehavior {
     public void bind(Component component) {
         super.bind(component);
         component.setOutputMarkupId(true);
+        if (targetId == null) {
+            targetId = component.getMarkupId();
+        }
     }
 
     @Override
-    public void renderHead(IHeaderResponse response) {
-        super.renderHead(response);
-        final String contextPrefix = RequestUtils.getContextPrefix(WicketUtils.getWebRequest().getHttpServletRequest());
-        response.renderJavascript(String.format("var artApp = '/%s'", contextPrefix), null);
+    public void renderHead(Component component, IHeaderResponse response) {
+        super.renderHead(component, response);
+        final String contextPrefix = RequestUtils.getContextPrefix(WicketUtils.getHttpServletRequest());
+        response.renderJavaScript(String.format("var artApp = '/%s'", contextPrefix), null);
     }
 
     public AddonType getAddon() {
@@ -134,5 +138,27 @@ public class AddonNeededBehavior extends TemplateBehavior {
 
     public String getMessage() {
         return getComponent().getString(MESSAGE_KEY, Model.of(addon));
+    }
+
+    public String getTargetId() {
+        return targetId;
+    }
+
+    public AddonNeededBehavior setTargetId(String targetId) {
+        this.targetId = targetId;
+        return this;
+    }
+
+    public String getIconClassName() {
+        return iconClassName;
+    }
+
+    public AddonNeededBehavior setIconClassName(String iconClassName) {
+        this.iconClassName = iconClassName;
+        return this;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 }

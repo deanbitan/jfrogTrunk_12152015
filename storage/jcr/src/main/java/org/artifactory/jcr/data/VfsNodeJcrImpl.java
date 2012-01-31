@@ -28,6 +28,7 @@ import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Value;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
@@ -58,6 +59,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         this.jcrNode = jcrNode;
     }
 
+    @Override
     public String getName() {
         try {
             return jcrNode.getName();
@@ -66,18 +68,22 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public String absolutePath() {
         return JcrHelper.getAbsolutePath(jcrNode);
     }
 
+    @Override
     public String storageId() {
         return JcrHelper.getUuid(jcrNode);
     }
 
+    @Override
     public VfsNodeType nodeType() {
         return nodeType;
     }
 
+    @Override
     public VfsNode findSubNode(String relPath) {
         try {
             Node subNode = jcrNode.getNode(relPath);
@@ -93,6 +99,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public boolean hasChild(String relPath) {
         try {
             return jcrNode.hasNode(relPath);
@@ -101,6 +108,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public boolean hasChildren() {
         try {
             return jcrNode.hasNodes();
@@ -109,10 +117,12 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public Iterable<VfsNode> children() {
         return children(JcrVfsHelper.ALWAYS_TRUE);
     }
 
+    @Override
     public Iterable<VfsNode> children(VfsNodeFilter filter) {
         try {
             List<VfsNode> result = Lists.newArrayList();
@@ -136,6 +146,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public boolean hasProperty(String key) {
         try {
             return jcrNode.hasProperty(key);
@@ -145,6 +156,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public Iterable<String> propertyKeys() {
         Set<String> result = Sets.newHashSet();
         try {
@@ -159,10 +171,12 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         return result;
     }
 
+    @Override
     public Iterable<VfsProperty> properties() {
         return null;
     }
 
+    @Override
     public VfsProperty getProperty(String key) {
         try {
             return new VfsPropertyJcrImpl(jcrNode.getProperty(key));
@@ -171,6 +185,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public boolean hasContent() {
         try {
             return jcrNode.hasNode(JcrConstants.JCR_CONTENT);
@@ -179,6 +194,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public BinaryContent content() {
         if (!hasContent()) {
             return null;
@@ -201,10 +217,19 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public String getStringProperty(String key) {
         try {
             if (jcrNode.hasProperty(key)) {
-                return jcrNode.getProperty(key).getString();
+                Property property = jcrNode.getProperty(key);
+                if (property.isMultiple()) {
+                    Value[] values = property.getValues();
+                    if (values.length > 0) {
+                        return values[0].getString();
+                    }
+                } else {
+                    return property.getString();
+                }
             }
         } catch (RepositoryException e) {
             log.error(e.getMessage(), e);
@@ -212,10 +237,19 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         return null;
     }
 
+    @Override
     public Long getLongProperty(String key) {
         try {
             if (jcrNode.hasProperty(key)) {
-                return jcrNode.getProperty(key).getLong();
+                Property property = jcrNode.getProperty(key);
+                if (property.isMultiple()) {
+                    Value[] values = property.getValues();
+                    if (values.length > 0) {
+                        return values[0].getLong();
+                    }
+                } else {
+                    return property.getLong();
+                }
             }
         } catch (RepositoryException e) {
             log.error(e.getMessage(), e);
@@ -223,10 +257,19 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         return null;
     }
 
+    @Override
     public Calendar getDateProperty(String key) {
         try {
             if (jcrNode.hasProperty(key)) {
-                return jcrNode.getProperty(key).getDate();
+                Property property = jcrNode.getProperty(key);
+                if (property.isMultiple()) {
+                    Value[] values = property.getValues();
+                    if (values.length > 0) {
+                        return values[0].getDate();
+                    }
+                } else {
+                    return property.getDate();
+                }
             }
         } catch (RepositoryException e) {
             log.error(e.getMessage(), e);
@@ -234,6 +277,27 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         return null;
     }
 
+    @Override
+    public Boolean getBooleanProperty(String key) {
+        try {
+            if (jcrNode.hasProperty(key)) {
+                Property property = jcrNode.getProperty(key);
+                if (property.isMultiple()) {
+                    Value[] values = property.getValues();
+                    if (values.length > 0) {
+                        return values[0].getBoolean();
+                    }
+                } else {
+                    return property.getBoolean();
+                }
+            }
+        } catch (RepositoryException e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
+    }
+
+    @Override
     public void moveTo(VfsNode newParentNode) {
         try {
             Session session = ((VfsNodeJcrImpl) newParentNode).getJcrNode().getSession();
@@ -245,6 +309,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
 
     // Mutable part
 
+    @Override
     public void delete() {
         try {
             jcrNode.remove();
@@ -256,16 +321,19 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     @SuppressWarnings({"unchecked", "RedundantCast"})
     public Iterable<MutableVfsNode> mutableChildren() {
         return (Iterable<MutableVfsNode>) ((List) children());
     }
 
+    @Override
     @Nonnull
     public MutableVfsNode getOrCreateSubNode(String relPath, VfsNodeType subNodeType) {
         return JcrVfsHelper.getOrCreateVfsNode(jcrNode, relPath, subNodeType);
     }
 
+    @Override
     @Nonnull
     public MutableVfsProperty setProperty(String key, String... values) {
         if (values.length == 0) {
@@ -285,6 +353,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     @Nonnull
     public MutableVfsProperty setProperty(String key, Long value) {
         try {
@@ -295,6 +364,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     @Nonnull
     public MutableVfsProperty setProperty(String key, Calendar value) {
         try {
@@ -305,6 +375,7 @@ public class VfsNodeJcrImpl implements MutableVfsNode {
         }
     }
 
+    @Override
     public void setContent(BinaryContent content) {
         try {
             Node resourceNode;

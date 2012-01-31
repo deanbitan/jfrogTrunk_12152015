@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -129,6 +129,7 @@ public interface BuildService extends ImportableExportable {
      */
     Set<BuildRun> searchBuildsByNameAndNumber(String buildName, String buildNumber);
 
+    @Override
     @Lock(transactional = true)
     void exportTo(ExportSettings settings);
 
@@ -139,6 +140,7 @@ public interface BuildService extends ImportableExportable {
      */
     boolean isGenericBuild(Build build);
 
+    @Override
     void importFrom(ImportSettings settings);
 
     /**

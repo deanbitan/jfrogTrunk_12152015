@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,18 +43,22 @@ public abstract class ActionableItemBase extends AbstractReadOnlyModel implement
         this.listeners = Collections.synchronizedList(new ArrayList<ItemActionListener>());
     }
 
+    @Override
     public Set<ItemAction> getActions() {
         return actions;
     }
 
+    @Override
     public Set<ItemAction> getContextMenuActions() {
         return actions;
     }
 
+    @Override
     public List<ItemActionListener> getListeners() {
         return listeners;
     }
 
+    @Override
     public void addActionListener(ItemActionListener listener) {
         if (listener == null) {
             return;
@@ -71,6 +75,7 @@ public abstract class ActionableItemBase extends AbstractReadOnlyModel implement
         }
     }
 
+    @Override
     public void removeActionListener(ItemActionListener listener) {
         if (listener == null) {
             return;
@@ -78,6 +83,7 @@ public abstract class ActionableItemBase extends AbstractReadOnlyModel implement
         listeners.remove(listener);
     }
 
+    @Override
     public void fireActionEvent(ItemEvent e) {
         //Fire the event to listeners
         synchronized (listeners) {
@@ -87,10 +93,12 @@ public abstract class ActionableItemBase extends AbstractReadOnlyModel implement
         }
     }
 
+    @Override
     public ItemEventTargetComponents getEventTargetComponents() {
         return eventTargetComponents;
     }
 
+    @Override
     public void setEventTargetComponents(ItemEventTargetComponents eventTargetComponents) {
         this.eventTargetComponents = eventTargetComponents;
     }

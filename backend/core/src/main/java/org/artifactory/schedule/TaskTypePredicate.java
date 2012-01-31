@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,11 +27,11 @@ import java.util.Collections;
 import java.util.HashSet;
 
 /**
-* Date: 9/5/11
-* Time: 5:03 PM
-*
-* @author Fred Simon
-*/
+ * Date: 9/5/11
+ * Time: 5:03 PM
+ *
+ * @author Fred Simon
+ */
 public class TaskTypePredicate implements Predicate<Task> {
     private final Class<? extends TaskCallback>[] types;
     private Predicate<Task> subPredicate;
@@ -56,6 +56,7 @@ public class TaskTypePredicate implements Predicate<Task> {
         }
     }
 
+    @Override
     public boolean apply(@Nullable Task input) {
         if (subPredicate != null && subPredicate.apply(input)) {
             return true;

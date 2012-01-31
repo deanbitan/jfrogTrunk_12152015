@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,9 @@ package org.artifactory.webapp.wicket.page.home.settings.modal.download;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
-import org.apache.wicket.request.target.resource.ResourceStreamRequestTarget;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.handler.resource.ResourceStreamRequestHandler;
+import org.apache.wicket.request.resource.ContentDisposition;
 import org.apache.wicket.util.resource.StringResourceStream;
 
 /**
@@ -29,7 +31,6 @@ import org.apache.wicket.util.resource.StringResourceStream;
  * @author Noam Y. Tenne
  */
 public abstract class AjaxSettingsDownloadBehavior extends AbstractAjaxBehavior {
-
     private final String fileName;
 
     public AjaxSettingsDownloadBehavior(String fileName) {
@@ -39,12 +40,15 @@ public abstract class AjaxSettingsDownloadBehavior extends AbstractAjaxBehavior 
     public void initiate(AjaxRequestTarget target) {
         CharSequence url = getCallbackUrl();
 
-        target.appendJavascript("window.location.href='" + url + "'");
+        target.appendJavaScript("window.location.href='" + url + "'");
     }
 
+    @Override
     public void onRequest() {
-        getComponent().getRequestCycle().setRequestTarget(new ResourceStreamRequestTarget(getResourceStream(),
-                fileName));
+        RequestCycle.get().scheduleRequestHandlerAfterCurrent(
+                new ResourceStreamRequestHandler(getResourceStream())
+                        .setFileName(fileName)
+                        .setContentDisposition(ContentDisposition.ATTACHMENT));
     }
 
     protected abstract StringResourceStream getResourceStream();

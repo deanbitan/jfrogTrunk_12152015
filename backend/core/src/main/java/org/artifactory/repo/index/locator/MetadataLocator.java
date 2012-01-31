@@ -20,6 +20,7 @@ import java.io.File;
  */
 public class MetadataLocator implements Locator {
 
+    @Override
     public File locate(File source) {
         //We never locate metadata
         //return new File(source.getParentFile().getParentFile() - may throw NPE, "maven-metadata.xml") {

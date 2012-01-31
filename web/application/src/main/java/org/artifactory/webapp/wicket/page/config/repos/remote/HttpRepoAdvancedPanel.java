@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,7 @@ package org.artifactory.webapp.wicket.page.config.repos.remote;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.behavior.IBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
@@ -98,10 +98,10 @@ public class HttpRepoAdvancedPanel extends Panel {
                 suppressPomConsistencyChecks.setEnabled(repoDescriptor.isMavenRepoLayout());
                 suppressPomConsistencyChecks.setDefaultModelObject(!repoDescriptor.isMavenRepoLayout());
                 checkLayoutCompatibility();
-                target.addComponent(suppressPomConsistencyChecks);
+                target.add(suppressPomConsistencyChecks);
 
                 removeLayoutBorderBehaviors(layoutBorder);
-                target.addComponent(layoutBorder);
+                target.add(layoutBorder);
             }
         });
         if (repoDescriptor.getRepoLayout() == null) {
@@ -121,7 +121,7 @@ public class HttpRepoAdvancedPanel extends Panel {
             protected void onUpdate(AjaxRequestTarget target) {
                 checkLayoutCompatibility();
                 removeLayoutBorderBehaviors(layoutBorder);
-                target.addComponent(layoutBorder);
+                target.add(layoutBorder);
             }
         });
         remoteRepoLayout.setNullValid(true);
@@ -148,8 +148,7 @@ public class HttpRepoAdvancedPanel extends Panel {
     }
 
     private void removeLayoutBorderBehaviors(WebMarkupContainer layoutBorder) {
-        List<IBehavior> behaviors = layoutBorder.getBehaviors();
-        for (IBehavior behavior : behaviors) {
+        for (Behavior behavior : layoutBorder.getBehaviors()) {
             if (behavior instanceof TitledBorderBehavior) {
                 layoutBorder.remove(behavior);
             }

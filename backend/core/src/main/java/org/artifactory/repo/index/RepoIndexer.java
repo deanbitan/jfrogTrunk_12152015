@@ -108,15 +108,19 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
                 new ConsoleLogger(org.codehaus.plexus.logging.Logger.LEVEL_WARN, "console"));
     }
 
+    @Override
     public void scanningStarted(IndexingContext ctx) {
     }
 
+    @Override
     public void scanningFinished(IndexingContext ctx, ScanningResult result) {
     }
 
+    @Override
     public void artifactError(ArtifactContext ac, Exception e) {
     }
 
+    @Override
     public void artifactDiscovered(ArtifactContext ac) {
         if (log.isTraceEnabled()) {
             log.trace("Artifact discovered: '{}'", ac.getArtifactInfo().getUinfo());
@@ -279,7 +283,8 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
                 handle.close();
             }
             //We can release the lock on the zip file (or expanding the repo root will block)
-            LockingHelper.removeLockEntry(InternalRepoPathFactory.create(repo.getKey(), MavenNaming.NEXUS_INDEX_GZ_PATH));
+            LockingHelper.removeLockEntry(
+                    InternalRepoPathFactory.create(repo.getKey(), MavenNaming.NEXUS_INDEX_GZ_PATH));
             //Remember the extracted index
             extractedRepoIndexes.put(repo, indexDir);
         }

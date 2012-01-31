@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,10 +19,9 @@
 dojo.require("dijit.Menu");
 
 dojo.declare('artifactory.Menu', dijit.Menu, {
-    selfCleanup: true,
+    selfCleanup:true,
 
-    templateString:
-            '<div class="tree-actions">' +
+    templateString:'<div class="tree-actions">' +
             '<div class="links-border">' +
             '<div class="links-top"></div>' +
             '<div class="links-bottom"></div>' +
@@ -40,13 +39,13 @@ dojo.declare('artifactory.Menu', dijit.Menu, {
             '<div class="links-pointer"></div>' +
             '</div>',
 
-    bindDomNode: function() {
+    bindDomNode:function () {
     },
 
-    unBindDomNode: function() {
+    unBindDomNode:function () {
     },
 
-    onOpen:function() {
+    onOpen:function () {
         this.inherited('onOpen', arguments);
 
         // position menu
@@ -54,16 +53,16 @@ dojo.declare('artifactory.Menu', dijit.Menu, {
         this.domNode.style.top = '-' + this.domNode.clientHeight / 2 + 'px';
     },
 
-    onClose: function() {
+    onClose:function () {
         this.inherited('onClose', arguments);
         DomUtils.removeStyle(dojo.byId(this.sourceId), 'context-menu');
     },
 
-    showWithLastEvent: function() {
+    showWithLastEvent:function () {
         // restore last context menu event
         var e;
         if (dojo.isIE) {
-            e = {target: window.lastTarget};
+            e = {target:window.lastTarget};
         } else {
             e = window.lastEvent;
             this._contextMenuWithMouse = true;
@@ -74,7 +73,7 @@ dojo.declare('artifactory.Menu', dijit.Menu, {
         DomUtils.addStyle(dojo.byId(this.sourceId), 'context-menu');
     },
 
-    destroy: function() {
+    destroy:function () {
         // cleanup
         dijit.popup.close(this);
 
@@ -91,20 +90,20 @@ dojo.declare('artifactory.Menu', dijit.Menu, {
 });
 
 dojo.declare("artifactory.MenuItem", dijit.MenuItem, {
-    selfCleanup: true
+    selfCleanup:true
 });
 
 var ActionsMenuPanel = {
-    show: function(id) {
+    show:function (id) {
         var menu = dijit.byId('contextMenu');
         menu.sourceId = id;
         menu.showWithLastEvent();
     },
 
-    init: function() {
+    init:function () {
         // cleanup last menu
         if (ActionsMenuPanel.widgets) {
-            dojo.forEach(ActionsMenuPanel.widgets, function(widget) {
+            dojo.forEach(ActionsMenuPanel.widgets, function (widget) {
                 widget.destroy();
             });
         }

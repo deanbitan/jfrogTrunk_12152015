@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,7 @@ package org.artifactory.webapp.wicket.application;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.authorization.IUnauthorizedComponentInstantiationListener;
-import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.request.http.WebRequest;
 import org.artifactory.webapp.servlet.RequestUtils;
 
 /**
@@ -35,6 +35,7 @@ public class RepoBrowsingAwareUnauthorizedComponentInstantiationListener
         this.delegate = delegate;
     }
 
+    @Override
     public void onUnauthorizedInstantiation(Component component) {
         WebRequest webRequest = (WebRequest) component.getRequest();
         RequestUtils.removeRepoPath(webRequest, true);

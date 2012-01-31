@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -44,6 +44,7 @@ public class LogbackConfigListener implements ServletContextListener {
     private ArtifactoryHome home;
     LogbackConfigWatchDog configWatchDog;
 
+    @Override
     public void contextInitialized(ServletContextEvent event) {
         ServletContext servletContext = event.getServletContext();
         home = (ArtifactoryHome) servletContext.getAttribute(ArtifactoryHome.SERVLET_CTX_ATTR);
@@ -77,6 +78,7 @@ public class LogbackConfigListener implements ServletContextListener {
         configWatchDog.start();
     }
 
+    @Override
     public void contextDestroyed(ServletContextEvent sce) {
         configWatchDog.interrupt();
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -74,6 +74,7 @@ import org.artifactory.jcr.version.JcrVersion;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.interceptor.ImportInterceptors;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
@@ -175,10 +176,12 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
 
     private Semaphore emptyTrashSemaphore = new Semaphore(1);
 
+    @Override
     public javax.jcr.Repository getRepository() {
         return getManagedSession().getRepository();
     }
 
+    @Override
     public JcrSession getManagedSession() {
         if (sessionFactory == null) {
             throw new IllegalStateException("JCR Service not initialized yet");
@@ -198,6 +201,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return session;
     }
 
+    @Override
     public JcrSession getUnmanagedSession() {
         if (sessionFactory == null) {
             throw new IllegalStateException("JCR Service not initialized yet");
@@ -219,6 +223,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         UNMANAGED_SESSION_HOLDER.remove();
     }
 
+    @Override
     public <T extends SessionResource> T getSessionResource(Class<T> resourceClass) {
         return getManagedSession().getOrCreateResource(resourceClass);
     }
@@ -257,6 +262,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         txMgr.setSessionFactory(sessionFactory);
     }
 
+    @Override
     public void init() {
         //Initialize the created jcr repository
         JcrRepoInitHelper.init(this);
@@ -288,15 +294,18 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         // Nothing
     }
 
+    @Override
     public void reCreateJcrRepository() throws Exception {
         initJcrRepository(false);
         // Don't call init it is going to be called by normal bean refresh
     }
 
+    @Override
     public void destroy() {
         try {
             sessionFactory.destroy();
@@ -307,6 +316,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         //ATTENTION: Pre JCR init done in org.artifactory.jcr.JcrRepoInitHelper.preInitConvert() since this method is called too late
         JcrVersion.values();
@@ -325,6 +335,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public ObjectContentManager getOcm() {
         if (ocmMapper == null) {
             return null;
@@ -333,10 +344,12 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return new ObjectContentManagerImpl(session, ocmMapper);
     }
 
+    @Override
     public boolean itemNodeExists(String absPath) {
         return JcrHelper.itemNodeExists(absPath, getManagedSession());
     }
 
+    @Override
     public boolean isFile(RepoPath repoPath) {
         String absPath = PathFactoryHolder.get().getAbsolutePath(repoPath);
         JcrSession jcrSession = getManagedSession();
@@ -347,6 +360,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return false;
     }
 
+    @Override
     public boolean isFolder(RepoPath repoPath) {
         String absPath = PathFactoryHolder.get().getAbsolutePath(repoPath);
         JcrSession jcrSession = getManagedSession();
@@ -357,10 +371,12 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return false;
     }
 
+    @Override
     public int delete(String absPath) {
         return JcrHelper.delete(absPath, getManagedSession());
     }
 
+    @Override
     public void emptyTrash() {
         // allow only one thread to empty the trash
         if (emptyTrashSemaphore.tryAcquire()) {
@@ -395,6 +411,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public void emptyTrashAfterCommit() {
         emptyTrash();   // called after TX commit; just delegate to empty trash
     }
@@ -420,12 +437,14 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     /**
      * "Shallow" folder import in a new tx
      */
+    @Override
     public RepoPath importFolder(JcrFsItemFactory repo, RepoPath jcrFolder, ImportSettings settings) {
         JcrFolder folder = repo.getLockedJcrFolder(jcrFolder, true);
         folder.importFrom(settings);
         return folder.getRepoPath();
     }
 
+    @Override
     public JcrFile importFile(JcrFolder parentFolder, File file, ImportSettings settings)
             throws RepoRejectException {
         RepoPath targetRepoPath = InternalRepoPathFactory.create(parentFolder.getRepoPath(), file.getName());
@@ -438,7 +457,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
             jcrFile = parentFolder.getRepo().getLockedJcrFile(targetRepoPath, true);
             jcrFile.importFrom(file, settings);
             //Mark for indexing (if needed)
-            context.beanForType(JcrSearchService.class).markArchiveForIndexing(jcrFile, false);
+            context.beanForType(ImportInterceptors.class).afterImport(jcrFile, settings.getStatusHolder());
             targetRepoPath = jcrFile.getRepoPath();
             log.debug("Imported '{}'.", targetRepoPath);
             AccessLogger.deployed(targetRepoPath);
@@ -455,6 +474,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return jcrFile;
     }
 
+    @Override
     public boolean delete(JcrFsItem fsItem) {
         JcrSession session = getManagedSession();
         String absPath = fsItem.getAbsolutePath();
@@ -467,16 +487,19 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return true;
     }
 
+    @Override
     public void move(String fromAbsPath, String toAbsPath) {
         JcrSession session = getManagedSession();
         session.move(fromAbsPath, toAbsPath);
     }
 
+    @Override
     public void copy(String fromAbsPath, String toAbsPath) {
         JcrSession session = getManagedSession();
         session.copy(fromAbsPath, toAbsPath);
     }
 
+    @Override
     public List<String> getChildrenNames(String absPath) {
         JcrSession session = getManagedSession();
         if (!session.itemExists(absPath)) {
@@ -499,6 +522,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return names;
     }
 
+    @Override
     public void trash(List<VfsItem> items) {
         try {
             Trashman trashman = getManagedSession().getOrCreateResource(Trashman.class);
@@ -511,6 +535,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     /**
      * {@inheritDoc}
      */
+    @Override
     public JcrFsItem getFsItem(RepoPath repoPath, JcrFsItemFactory repo) {
         JcrSession session = getManagedSession();
         String absPath = PathFactoryHolder.get().getAbsolutePath(repoPath);
@@ -526,6 +551,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getNodeTypeName(RepoPath repoPath) {
         JcrSession session = getManagedSession();
         String absPath = PathFactoryHolder.get().getAbsolutePath(repoPath);
@@ -538,6 +564,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public void writeMetadataEntries(JcrFsItem fsItem, MutableStatusHolder status, File folder, boolean incremental) {
         fsItem.writeMetadataEntries(status, folder, incremental);
     }
@@ -545,6 +572,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     /**
      * {@inheritDoc}
      */
+    @Override
     public List<JcrFsItem> getChildren(JcrFolder folder, boolean writeLock) {
         String absPath = folder.getAbsolutePath();
         List<JcrFsItem> items = new ArrayList<JcrFsItem>();
@@ -580,34 +608,41 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return items;
     }
 
+    @Override
     public Node getNode(String absPath) {
         JcrSession session = getManagedSession();
         Node root = session.getRootNode();
         return JcrHelper.getNode(root, absPath);
     }
 
+    @Override
     public Node getOrCreateUnstructuredNode(String absPath) {
         JcrSession session = getManagedSession();
         Node root = session.getRootNode();
         return getOrCreateUnstructuredNode(root, absPath);
     }
 
+    @Override
     public Node getNode(Node parent, String relPath) {
         return JcrHelper.getNode(parent, relPath);
     }
 
+    @Override
     public Node getOrCreateUnstructuredNode(Node parent, String relPath) {
         return JcrHelper.getOrCreateNode(parent, relPath, StorageConstants.NT_UNSTRUCTURED, "mix:referenceable");
     }
 
+    @Override
     public Node getOrCreateNode(Node parent, String relPath, String type, String... mixins) {
         return JcrHelper.getOrCreateNode(parent, relPath, type, mixins);
     }
 
+    @Override
     public void exportFile(JcrFile jcrFile, ExportSettings settings) {
         jcrFile.exportTo(settings);
     }
 
+    @Override
     public String getString(String nodePath) {
         InputStream is = null;
         try {
@@ -620,6 +655,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public InputStream getStream(String nodePath) {
         JcrSession session = getManagedSession();
         Node node = (Node) session.getItem(nodePath);
@@ -630,12 +666,14 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public void setString(String parentPath, String nodeName, String value, String mimeType, String userId) {
         JcrSession session = getManagedSession();
         Node parentNode = (Node) session.getItem(parentPath);
         setString(parentNode, nodeName, value, mimeType, userId, false);
     }
 
+    @Override
     public void setString(Node parent, String nodeName, String value, String mimeType, String userId,
             boolean saveXmlHierarchy
     ) {
@@ -656,6 +694,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
      * <p/>
      * NOTE: Caller is expected to close the provided stream.
      */
+    @Override
     public void setStream(Node parent, String nodeName, InputStream value, String mimeType, String userId,
             boolean saveXmlHierarchy) {
         try {
@@ -730,6 +769,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     /**
      * {@inheritDoc}
      */
+    @Override
     public void saveChecksums(JcrFsItem fsItem, String metadataName, Checksum[] checksums) {
         // TODO: Maybe write lock the fsItem?
         Node metadataNode = JcrHelper.safeGetNode(fsItem.getNode(), NODE_ARTIFACTORY_METADATA, metadataName);
@@ -738,6 +778,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public JcrTreeNode getTreeNode(RepoPath itemPath, MultiStatusHolder multiStatusHolder,
             @Nullable JcrTreeNodeFileFilter fileFilter) {
         Node itemNode = getNode(PathFactoryHolder.get().getAbsolutePath(itemPath));
@@ -748,6 +789,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return processTreeNodeRecursively(itemNode, multiStatusHolder, fileFilter);
     }
 
+    @Override
     public InputStream getDataStreamBySha1Checksum(String sha1) throws DataStoreException {
         JcrSession managedSession = getManagedSession();
         RepositoryImpl rep = (RepositoryImpl) managedSession.getRepository();
@@ -864,6 +906,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     /**
      * Import xml with characters entity resolving
      */
+    @Override
     public void saveXmlHierarchy(Node xmlNode, InputStream in) throws RepositoryException, IOException {
         if (!xmlNode.isNew()) {
             NodeIterator children = xmlNode.getNodes();
@@ -942,6 +985,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public JcrFsItem getFsItem(Node node, JcrFsItemFactory repo) {
         String typeName = JcrHelper.getPrimaryTypeName(node);
         if (typeName.equals(NT_ARTIFACTORY_FOLDER)) {
@@ -954,11 +998,13 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         }
     }
 
+    @Override
     public QueryResult executeQuery(JcrQuerySpec spec) {
         JcrSession session = getManagedSession();
         return executeQuery(spec, session);
     }
 
+    @Override
     public QueryResult executeQuery(JcrQuerySpec spec, JcrSession session) {
         long start = System.currentTimeMillis();
         Workspace workspace = session.getWorkspace();
@@ -1037,6 +1083,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         return pluginPomFiles;
     }
 
+    @Override
     public GarbageCollectorInfo garbageCollect(boolean fixConsistency) {
         JcrSession session = getUnmanagedSession();
         try {

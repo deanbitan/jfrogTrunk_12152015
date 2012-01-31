@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +20,7 @@ package org.artifactory.md;
 
 import org.artifactory.common.Info;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
@@ -37,7 +38,7 @@ public interface PropertiesInfo extends Info {
     int size();
 
     @Nullable
-    Set<String> get(@Nullable String key);
+    Set<String> get(@Nonnull String key);
 
     Collection<String> values();
 

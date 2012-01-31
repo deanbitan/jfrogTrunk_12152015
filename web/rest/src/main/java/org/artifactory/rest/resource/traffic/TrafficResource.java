@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,7 +39,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -63,20 +62,18 @@ public class TrafficResource {
     public String getTrafficLogFilesStream(
             @QueryParam(TrafficRestConstants.PARAM_START_DATE) long startLong,
             @QueryParam(TrafficRestConstants.PARAM_END_DATE) long endLong) throws IOException {
-        Date startDate = new Date(startLong);
-        Date endDate = new Date(endLong);
-        validateDateRange(startDate, endDate);
         Calendar from = Calendar.getInstance();
         from.setTimeInMillis(startLong);
         Calendar to = Calendar.getInstance();
         to.setTimeInMillis(endLong);
+        validateDateRange(from, to);
         List<TrafficEntry> trafficEntryList = trafficService.getEntryList(from, to);
         writeEntriesToStream(trafficEntryList);
 
         return "";
     }
 
-    private void validateDateRange(Date startDate, Date endDate) {
+    private void validateDateRange(Calendar startDate, Calendar endDate) {
         if (startDate.after(endDate)) {
             throw new IllegalArgumentException("The start date cannot be later than the end date");
         }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +18,10 @@
 
 package org.artifactory.common.wicket.component.dnd.select;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.behavior.IBehavior;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.FormComponentPanel;
@@ -163,7 +163,7 @@ public class DragDropSelection<T extends Serializable> extends FormComponentPane
     protected void onOrderChanged(AjaxRequestTarget target) {
     }
 
-    protected IBehavior newOnOrderChangeEventBehavior(String event) {
+    protected Behavior newOnOrderChangeEventBehavior(String event) {
         return new OnOrderChangedEventBehavior(event);
     }
 
@@ -172,7 +172,7 @@ public class DragDropSelection<T extends Serializable> extends FormComponentPane
         T itemObject = (T) item.getDefaultModelObject();
         List<T> choices = (List<T>) choicesModel.getObject();
         int index = choices.indexOf(itemObject);
-        item.add(new SimpleAttributeModifier("idx", String.valueOf(index)));
+        item.add(new AttributeModifier("idx", index));
     }
 
     protected Collection<T> createNewSelectionCollection(int length) {

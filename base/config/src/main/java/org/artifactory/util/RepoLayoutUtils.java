@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -128,6 +128,14 @@ public abstract class RepoLayoutUtils {
 
     public static boolean isDefaultM2(RepoLayout repoLayout) {
         return MAVEN_2_DEFAULT.equals(repoLayout);
+    }
+
+    public static boolean isDefaultIvy(RepoLayout repoLayout) {
+        return IVY_DEFAULT.equals(repoLayout);
+    }
+
+    public static boolean isDefaultGradle(RepoLayout repoLayout) {
+        return GRADLE_DEFAULT.equals(repoLayout);
     }
 
     /**

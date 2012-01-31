@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,10 +30,10 @@ public class DisabledAddonMessageModel extends StringResourceModel {
     private static final String MESSAGE_KEY = "addon.disabled";
 
     public DisabledAddonMessageModel(AddonType addon) {
-        super(MESSAGE_KEY, null, Model.of(addon));
+        super(MESSAGE_KEY, Model.of(addon));
     }
 
     public DisabledAddonMessageModel(AddonInfo addon) {
-        super(MESSAGE_KEY, null, Model.of(addon));
+        super(MESSAGE_KEY, Model.of(addon));
     }
 }

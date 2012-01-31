@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,6 @@ package org.artifactory.security.crowd;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.sso.CrowdAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.security.AnonymousAuthenticationToken;
 import org.artifactory.security.RealmAwareAuthenticationProvider;
 import org.artifactory.security.UserGroupInfo;
 import org.artifactory.security.UserInfo;
@@ -44,6 +43,7 @@ public class CrowdAuthenticationProviderAdapter implements RealmAwareAuthenticat
         addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
     }
 
+    @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userName = authentication.getName();
         // If it's an anonymous user, don't bother searching for the user.
@@ -53,18 +53,22 @@ public class CrowdAuthenticationProviderAdapter implements RealmAwareAuthenticat
         return addonsManager.addonByType(CrowdAddon.class).authenticateCrowd(authentication);
     }
 
+    @Override
     public boolean supports(Class<?> authentication) {
         return addonsManager.addonByType(CrowdAddon.class).isCrowdAuthenticationSupported(authentication);
     }
 
+    @Override
     public String getRealm() {
         return CrowdAddon.REALM;
     }
 
+    @Override
     public void addExternalGroups(String username, Set<UserGroupInfo> groups) {
         addonsManager.addonByType(CrowdAddon.class).addExternalGroups(username, groups);
     }
 
+    @Override
     public boolean userExists(String username) {
         return addonsManager.addonByType(CrowdAddon.class).findUser(username);
     }

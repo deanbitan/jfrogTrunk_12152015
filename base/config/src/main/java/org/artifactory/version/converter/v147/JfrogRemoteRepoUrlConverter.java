@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,6 +38,7 @@ public class JfrogRemoteRepoUrlConverter implements XmlConverter {
     private static final String OLD_JFROG_PLUGINS = "http://repo.jfrog.org/artifactory/plugins-release-local";
     private static final String NEW_JFROG_PLUGINS = "http://repo.jfrog.org/artifactory/plugins-releases-local";
 
+    @Override
     public void convert(Document doc) {
         Element rootElement = doc.getRootElement();
         Namespace namespace = rootElement.getNamespace();

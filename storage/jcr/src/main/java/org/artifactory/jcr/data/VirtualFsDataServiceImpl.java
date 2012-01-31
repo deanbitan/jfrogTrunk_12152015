@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -50,18 +50,23 @@ public class VirtualFsDataServiceImpl implements InternalVirtualFsDataService {
     @Autowired
     private JcrService jcrService;
 
+    @Override
     public void init() {
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @Override
     public VfsNode findByPath(String absolutePath) {
         JcrSession session = jcrService.getManagedSession();
         if (pathExists(absolutePath, session)) {
@@ -76,24 +81,29 @@ public class VirtualFsDataServiceImpl implements InternalVirtualFsDataService {
         return pathExists(absolutePath, session);
     }
 
+    @Override
     public VfsNode findByStorageId(String storageId) {
         return new VfsNodeJcrImpl(jcrService.getManagedSession().getNodeByUUID(storageId));
     }
 
+    @Override
     public boolean delete(VfsNode node) {
         return jcrService.delete(node.absolutePath()) > 0;
     }
 
+    @Override
     @Nonnull
     public MutableVfsNode getOrCreate(String absolutePath) {
         return getOrCreate(absolutePath, VfsNodeType.UNSTRUCTURED);
     }
 
+    @Override
     @Nonnull
     public MutableVfsNode getOrCreate(String absolutePath, VfsNodeType type) {
         return JcrVfsHelper.getOrCreateVfsNode(jcrService.getManagedSession().getRootNode(), absolutePath, type);
     }
 
+    @Override
     @Nonnull
     public MutableVfsNode getOrCreate(VfsNode parent, String relPath, VfsNodeType type) {
         JcrSession session = jcrService.getManagedSession();
@@ -106,11 +116,13 @@ public class VirtualFsDataServiceImpl implements InternalVirtualFsDataService {
         return JcrVfsHelper.getOrCreateVfsNode(parentNode, relPath, type);
     }
 
+    @Override
     @Nonnull
     public BinaryContent createBinary(String mimeType, String content) {
         return createBinary(mimeType, content, "utf-8");
     }
 
+    @Override
     @Nonnull
     public MutableBinaryContent createBinary(String mimeType, String content, String encoding) {
         try {
@@ -122,6 +134,7 @@ public class VirtualFsDataServiceImpl implements InternalVirtualFsDataService {
         }
     }
 
+    @Override
     @Nonnull
     public MutableBinaryContent createBinary(String mimeType, InputStream stream) {
         try {
@@ -133,6 +146,7 @@ public class VirtualFsDataServiceImpl implements InternalVirtualFsDataService {
         }
     }
 
+    @Override
     public MutableVfsNode makeMutable(VfsNode vfsNode) {
         return (MutableVfsNode) vfsNode;
     }

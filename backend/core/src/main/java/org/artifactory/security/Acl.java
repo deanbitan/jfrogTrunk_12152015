@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -95,6 +95,7 @@ public class Acl implements MutableAcl, OcmStorable {
 
     //Cannot be used as an ocm field since returns Serializable not String
 
+    @Override
     public String getId() {
         return permissionTarget.getName();
     }
@@ -115,6 +116,7 @@ public class Acl implements MutableAcl, OcmStorable {
         this.updatedBy = updatedBy;
     }
 
+    @Override
     @SuppressWarnings({"SynchronizeOnNonFinalField"})
     public void insertAce(int atIndexLocation, Permission permission, Sid sid, boolean granting)
             throws NotFoundException {
@@ -140,10 +142,12 @@ public class Acl implements MutableAcl, OcmStorable {
         return null;
     }
 
+    @Override
     public void deleteAce(int aceIndex) throws NotFoundException {
         throw new UnsupportedOperationException("Delete ACE from index");
     }
 
+    @Override
     @SuppressWarnings({"SynchronizeOnNonFinalField"})
     public void updateAce(int aceIndex, Permission permission) throws NotFoundException {
         synchronized (aces) {
@@ -169,6 +173,7 @@ public class Acl implements MutableAcl, OcmStorable {
         aces.add(ace);
     }
 
+    @Override
     public org.springframework.security.acls.model.Acl getParentAcl() {
         return null;
     }
@@ -178,30 +183,37 @@ public class Acl implements MutableAcl, OcmStorable {
         return null;
     }
 
+    @Override
     public void setParent(org.springframework.security.acls.model.Acl newParent) {
         throw new UnsupportedClassVersionError("RepoPath acls cannot have a parent.");
     }
 
+    @Override
     public PermissionTarget getObjectIdentity() {
         return getPermissionTarget();
     }
 
+    @Override
     public Sid getOwner() {
         return new PrincipalSid(updatedBy);
     }
 
+    @Override
     public void setOwner(Sid owner) {
         this.updatedBy = ((PrincipalSid) owner).getPrincipal();
     }
 
+    @Override
     public boolean isEntriesInheriting() {
         return false;
     }
 
+    @Override
     public void setEntriesInheriting(boolean entriesInheriting) {
         throw new UnsupportedClassVersionError("RepoPath acl entries are not inheriting.");
     }
 
+    @Override
     public boolean isGranted(List<Permission> permission, List<Sid> sids, boolean administrativeMode)
             throws NotFoundException, UnloadedSidException {
         return isGranted(permission.toArray(new Permission[permission.size()]),
@@ -227,10 +239,12 @@ public class Acl implements MutableAcl, OcmStorable {
         return false;
     }
 
+    @Override
     public List<AccessControlEntry> getEntries() {
         throw new UnsupportedOperationException("This method is not supported");
     }
 
+    @Override
     public boolean isSidLoaded(List<Sid> sids) {
         return isSidLoaded(sids.toArray(new Sid[sids.size()]));
     }
@@ -246,10 +260,12 @@ public class Acl implements MutableAcl, OcmStorable {
         return false;
     }
 
+    @Override
     public String getJcrPath() {
         return JcrAclManager.getAclsJcrPath() + "/" + permissionTarget.getJcrName();
     }
 
+    @Override
     public void setJcrPath(String path) {
         //noop
     }

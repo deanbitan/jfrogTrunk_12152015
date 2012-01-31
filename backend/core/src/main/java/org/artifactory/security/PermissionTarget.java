@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -159,10 +159,12 @@ public class PermissionTarget implements ObjectIdentity {
         info.setName(Text.unescapeIllegalJcrChars(jcrName));
     }
 
+    @Override
     public String getIdentifier() {
         return info.getName();
     }
 
+    @Override
     public String getType() {
         return getClass().getName();
     }

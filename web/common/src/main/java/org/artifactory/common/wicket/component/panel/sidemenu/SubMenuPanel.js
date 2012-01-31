@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,10 +17,10 @@
  */
 
 var SubMenuPanel = {
-    OPENED_CSS: 'sub-menu-opened',
-    CLOSED_CSS: 'sub-menu-closed',
+    OPENED_CSS:'sub-menu-opened',
+    CLOSED_CSS:'sub-menu-closed',
 
-    toogleMenu: function(cookieName, link) {
+    toogleMenu:function (cookieName, link) {
         var menuItem = DomUtils.findParent(link, 'li')
         var menuGroup = DomUtils.nextSibling(menuItem);
         var isOpened = menuGroup.className == SubMenuPanel.OPENED_CSS;
@@ -40,12 +40,12 @@ var SubMenuPanel = {
         return false;
     },
 
-    onToggle: DomUtils.cancel
+    onToggle:DomUtils.cancel
 };
 
 
 var CookieUtils = {
-    setCookie: function (name, value, days) {
+    setCookie:function (name, value, days) {
         var expires;
         if (days) {
             var date = new Date();
@@ -57,7 +57,7 @@ var CookieUtils = {
         document.cookie = name + '=' + escape(value) + expires + '; path=/';
     },
 
-    clearCookie: function (name) {
+    clearCookie:function (name) {
         CookieUtils.setCookie(name, '', -1);
     }
 };

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.build.tabs.list;
 
 import com.google.common.collect.Lists;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -94,10 +95,11 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
          * Default constructor
          */
         public ModuleArtifactsDataProvider() {
-            setSort("artifactName", true);
+            setSort("artifactName", SortOrder.ASCENDING);
             this.artifactsList = getArtifacts();
         }
 
+        @Override
         public Iterator<ModuleArtifactActionableItem> iterator(int first, int count) {
             ListPropertySorter.sort(artifactsList, getSort());
             List<ModuleArtifactActionableItem> listToReturn =
@@ -105,10 +107,12 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
             return listToReturn.iterator();
         }
 
+        @Override
         public int size() {
             return artifactsList.size();
         }
 
+        @Override
         public IModel<ModuleArtifactActionableItem> model(ModuleArtifactActionableItem object) {
             return new Model<ModuleArtifactActionableItem>(object);
         }

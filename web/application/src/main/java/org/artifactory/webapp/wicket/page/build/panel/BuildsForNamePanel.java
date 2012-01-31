@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,10 +20,10 @@ package org.artifactory.webapp.wicket.page.build.panel;
 
 import com.google.common.collect.Lists;
 import org.apache.wicket.Component;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -31,6 +31,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.search.SearchService;
@@ -125,20 +126,23 @@ public class BuildsForNamePanel extends TitledPanel {
          * @param buildsByName Builds to display
          */
         public BuildsDataProvider(Set<BuildRun> buildsByName) {
-            setSort("number", false);
+            setSort("number", SortOrder.DESCENDING);
             this.buildList = Lists.newArrayList(buildsByName);
         }
 
+        @Override
         public Iterator<BuildActionableItem> iterator(int first, int count) {
             BuildForNameListSorter.sort(buildList, getSort());
             List<BuildActionableItem> listToReturn = getActionableItems(buildList.subList(first, first + count));
             return listToReturn.iterator();
         }
 
+        @Override
         public int size() {
             return buildList.size();
         }
 
+        @Override
         public IModel<BuildActionableItem> model(BuildActionableItem object) {
             return new Model<BuildActionableItem>(object);
         }
@@ -162,9 +166,9 @@ public class BuildsForNamePanel extends TitledPanel {
 
     private void drillDown(BuildActionableItem build) {
         PageParameters pageParameters = new PageParameters();
-        pageParameters.put(BUILD_NAME, buildName);
-        pageParameters.put(BUILD_NUMBER, build.getBuildNumber());
-        pageParameters.put(BUILD_STARTED, build.getStarted());
+        pageParameters.set(BUILD_NAME, buildName);
+        pageParameters.set(BUILD_NUMBER, build.getBuildNumber());
+        pageParameters.set(BUILD_STARTED, build.getStarted());
         setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }
 
@@ -224,6 +228,7 @@ public class BuildsForNamePanel extends TitledPanel {
             super(displayModel, sortProperty);
         }
 
+        @Override
         public void populateItem(final Item cellItem, String componentId, IModel rowModel) {
             final BuildActionableItem build =
                     (BuildActionableItem) cellItem.getParent().getParent().getDefaultModelObject();

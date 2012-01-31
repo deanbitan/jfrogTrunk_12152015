@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -189,14 +189,17 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
             this.password = password;
         }
 
+        @Override
         public DirContext getReadOnlyContext() throws DataAccessException {
             return ctxFactory.getContext(userDn.toString(), password);
         }
 
+        @Override
         public DirContext getReadWriteContext() throws DataAccessException {
             return getReadOnlyContext();
         }
 
+        @Override
         public DirContext getContext(String s, String s1) throws NamingException {
             return ctxFactory.getContext(s, s1);
         }

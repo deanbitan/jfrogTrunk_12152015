@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -73,7 +73,7 @@ public class DeletableLabelGroup<T extends Serializable> extends Panel {
 
     public void onDelete(T value, AjaxRequestTarget target) {
         getData().remove(value);
-        target.addComponent(this);
+        target.add(this);
     }
 
     public IChoiceRenderer<T> getRenderer() {
@@ -136,20 +136,24 @@ public class DeletableLabelGroup<T extends Serializable> extends Panel {
     }
 
     private class LabelsDataProvider implements IDataProvider<T> {
+        @Override
         public Iterator<T> iterator(int first, int count) {
             // no paging anyway...
             return getData().iterator();
         }
 
+        @Override
         public int size() {
             return getData().size();
         }
 
+        @Override
         public IModel<T> model(T object) {
             return new Model<T>(object);
         }
 
 
+        @Override
         public void detach() {
         }
     }

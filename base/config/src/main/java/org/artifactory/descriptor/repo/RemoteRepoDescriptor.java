@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +29,7 @@ import javax.xml.bind.annotation.XmlType;
         "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "failedRetrievalCachePeriodSecs",
         "missedRetrievalCachePeriodSecs", "checksumPolicyType",
         "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties", "listRemoteFolderItems",
-        "remoteRepoLayout", "rejectInvalidJars", "p2Support"}, namespace = Descriptor.NS)
+        "remoteRepoLayout", "rejectInvalidJars", "p2Support", "nuget"}, namespace = Descriptor.NS)
 public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(required = true)
@@ -83,6 +83,8 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(defaultValue = "false", required = false)
     private boolean p2Support;
+
+    private NuGetConfiguration nuget;
 
     public String getUrl() {
         return url;
@@ -218,6 +220,14 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     public void setP2Support(boolean p2Support) {
         this.p2Support = p2Support;
+    }
+
+    public NuGetConfiguration getNuget() {
+        return nuget;
+    }
+
+    public void setNuget(NuGetConfiguration nuget) {
+        this.nuget = nuget;
     }
 
     @Override

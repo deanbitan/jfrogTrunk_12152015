@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -50,6 +50,7 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         setDescriptor(descriptor);
     }
 
+    @Override
     public void setDescriptor(T descriptor) {
         this.descriptor = descriptor;
         this.includes = PathUtils.delimitedListToStringList(descriptor.getIncludesPattern(), ",", "\r\n\f ");
@@ -57,18 +58,22 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         excludes.addAll(PathMatcher.getGlobalExcludes());
     }
 
+    @Override
     public T getDescriptor() {
         return descriptor;
     }
 
+    @Override
     public RepoPath getRepoPath(String path) {
         return InternalRepoPathFactory.create(getKey(), path);
     }
 
+    @Override
     public InternalRepositoryService getRepositoryService() {
         return repositoryService;
     }
 
+    @Override
     public ModuleInfo getItemModuleInfo(String itemPath) {
         ModuleInfo moduleInfo = getDescriptorModuleInfo(itemPath);
 
@@ -79,6 +84,7 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         return moduleInfo;
     }
 
+    @Override
     public ModuleInfo getArtifactModuleInfo(String artifactPath) {
         RepoLayout repoLayout = getDescriptor().getRepoLayout();
         if (org.apache.commons.lang.StringUtils.isBlank(artifactPath) || (repoLayout == null)) {
@@ -87,6 +93,7 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         return ModuleInfoUtils.moduleInfoFromArtifactPath(artifactPath, getDescriptor().getRepoLayout());
     }
 
+    @Override
     public ModuleInfo getDescriptorModuleInfo(String descriptorPath) {
         RepoLayout repoLayout = getDescriptor().getRepoLayout();
         if (org.apache.commons.lang.StringUtils.isBlank(descriptorPath) || (repoLayout == null)) {
@@ -95,14 +102,17 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         return ModuleInfoUtils.moduleInfoFromDescriptorPath(descriptorPath, repoLayout);
     }
 
+    @Override
     public String getKey() {
         return descriptor.getKey();
     }
 
+    @Override
     public String getDescription() {
         return descriptor.getDescription();
     }
 
+    @Override
     public boolean isReal() {
         return getDescriptor().isReal();
     }
@@ -145,6 +155,7 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         return descriptor.hashCode();
     }
 
+    @Override
     public void destroy() {
     }
 

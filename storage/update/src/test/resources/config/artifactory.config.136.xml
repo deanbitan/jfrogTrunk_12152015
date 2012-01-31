@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2011 JFrog Ltd.
+  ~ Copyright (C) 2012 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -140,8 +140,7 @@
             <handleReleases>true</handleReleases>
             <handleSnapshots>true</handleSnapshots>
             <maxUniqueSnapshots>0</maxUniqueSnapshots>
-            <includesPattern>org/terracotta/**,org/apache/tomcat/**,org/dijon/**,berkeleydb/**,knopflerfish-tc/**,javax/management/**,net/sf/ehcache/**</includesPattern>
-            <type>maven2</type>
+            <includesPattern>org/terracotta/**,org/apache/tomcat/**,org/dijon/**,berkeleydb/**,knopflerfish-tc/**,javax/management/**,net/sf/ehcache/**</includesPattern>            <type>maven2</type>
             <url>http://terracotta.artifactoryonline.com/terracotta/original/</url>
             <offline>false</offline>
             <hardFail>false</hardFail>

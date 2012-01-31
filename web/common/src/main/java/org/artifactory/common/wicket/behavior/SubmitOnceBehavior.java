@@ -8,6 +8,6 @@ import org.apache.wicket.model.Model;
  */
 public class SubmitOnceBehavior extends AttributeAppender {
     public SubmitOnceBehavior() {
-        super("onsubmit", true, Model.of("DomUtils.submitOnce(this);"), ";");
+        super("onsubmit", Model.of("DomUtils.submitOnce(this);"), ";");
     }
 }

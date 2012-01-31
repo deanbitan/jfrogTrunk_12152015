@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -42,15 +42,18 @@ public class TransferProgressReportingInputStream extends FileInputStream {
         this.event = event;
     }
 
+    @Override
     public int read(byte b[]) throws IOException {
         return read(b, 0, b.length);
     }
 
+    @Override
     public int read() throws IOException {
         byte b[] = new byte[1];
         return read(b);
     }
 
+    @Override
     public int read(byte b[], int off, int len) throws IOException {
         int retValue = super.read(b, off, len);
         if (retValue > 0) {

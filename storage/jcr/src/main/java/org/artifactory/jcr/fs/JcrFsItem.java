@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -283,22 +283,27 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         }
         final boolean folder = isDirectory();
         MetadataAware dummyNodeWrapper = new MetadataAware() {
+            @Override
             public String getAbsolutePath() {
                 return absPath;
             }
 
+            @Override
             public RepoPath getRepoPath() {
                 return repoPath;
             }
 
+            @Override
             public Node getNode() {
                 return node;
             }
 
+            @Override
             public boolean isFile() {
                 return !folder;
             }
 
+            @Override
             public boolean isDirectory() {
                 return folder;
             }
@@ -311,14 +316,17 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
 
     protected abstract MetadataPersistenceHandler<T, MT> getInfoPersistenceHandler();
 
+    @Override
     public boolean isMutable() {
         return mutable;
     }
 
+    @Override
     public boolean isDeleted() {
         return deleted;
     }
 
+    @Override
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
     }
@@ -337,6 +345,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      * @param modified The new last modified timestamp
      * @param updated  The new last updated timestamp (internal value for up-to-date in cache)
      */
+    @Override
     public final void setModifiedInfoFields(long modified, long updated) {
         checkMutable("setModifiedInfoFields");
         MutableItemInfo mInfo = getMutableInfo();
@@ -357,6 +366,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
     /**
      * Get the absolute path of the item
      */
+    @Override
     public String getAbsolutePath() {
         return absPath;
     }
@@ -364,18 +374,22 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
     /**
      * Get the relative path of the item
      */
+    @Override
     public String getRelativePath() {
         return getRepoPath().getPath();
     }
 
+    @Override
     public long getCreated() {
         return getInfo().getCreated();
     }
 
+    @Override
     public RepoPath getRepoPath() {
         return getInfo().getRepoPath();
     }
 
+    @Override
     public String getRepoKey() {
         return getRepoPath().getRepoKey();
     }
@@ -391,6 +405,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         return getJcrRepoService().delete(this);
     }
 
+    @Override
     public void bruteForceDelete() {
         bruteForceDelete(false);
     }
@@ -426,6 +441,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
     /**
      * @return Parent folder of this folder or null if parent doesn't exist
      */
+    @Override
     public VfsFolder getParentFolder() {
         RepoPath parentRepoPath = getRepoPath().getParent();
         if (parentRepoPath == null) {
@@ -438,6 +454,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
     /**
      * @return Parent folder of this folder with write lock or null if parent doesn't exist
      */
+    @Override
     public VfsFolder getLockedParentFolder() {
         RepoPath parentRepoPath = getRepoPath().getParent();
         if (parentRepoPath == null) {
@@ -451,6 +468,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      * @param degree The degree of the ancestor (1 - parent, 2 - grandparent, etc)
      * @return Returns the n-th ancestor of this item. Null if doesn't exist.
      */
+    @Override
     public VfsFolder getAncestor(int degree) {
         if (degree < 1) {
             throw new IllegalArgumentException("Ancestor degree must be greater than 1");
@@ -518,6 +536,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         return session.itemExists(absPath);
     }
 
+    @Override
     public boolean isFile() {
         return !isDirectory();
     }
@@ -547,42 +566,52 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         return false;
     }
 
+    @Override
     public boolean setWritable(boolean writable, boolean ownerOnly) {
         return false;
     }
 
+    @Override
     public boolean setWritable(boolean writable) {
         return false;
     }
 
+    @Override
     public boolean setReadable(boolean readable, boolean ownerOnly) {
         return false;
     }
 
+    @Override
     public boolean setReadable(boolean readable) {
         return false;
     }
 
+    @Override
     public boolean setExecutable(boolean executable, boolean ownerOnly) {
         return false;
     }
 
+    @Override
     public boolean setExecutable(boolean executable) {
         return false;
     }
 
+    @Override
     public boolean canExecute() {
         return false;
     }
 
+    @Override
     public long getTotalSpace() {
         throw new UnsupportedOperationException("getTotalSpace() is not supported for jcr.");
     }
 
+    @Override
     public long getFreeSpace() {
         throw new UnsupportedOperationException("getFreeSpace() is not supported for jcr.");
     }
 
+    @Override
     public long getUsableSpace() {
         throw new UnsupportedOperationException("getUsableSpace() is not supported for jcr.");
     }
@@ -675,21 +704,26 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      * OVERIDDEN FROM FILE END
      */
 
+    @Override
     public abstract boolean isDirectory();
 
+    @Override
     public boolean isFolder() {
         return isDirectory();
     }
 
+    @Override
     public final T getInfo() {
         return info;
     }
 
+    @Override
     public final MT getMutableInfo() {
         checkMutable("generic-get-mutable");
         return (MT) info;
     }
 
+    @Override
     public final Node getNode() {
         JcrSession session = getSession();
         return getNode(session);
@@ -712,6 +746,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         return (Node) session.getItem(absPath);
     }
 
+    @Override
     public void accept(Visitor<VfsItem> visitor) {
         visitor.visit(this);
     }
@@ -773,6 +808,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         }
     }
 
+    @Override
     public void writeMetadataEntries(MutableStatusHolder status, File metadataFolder, boolean incremental) {
         File metadataFile;
         Set<MetadataDefinition<?, ?>> metadataDefinitions;
@@ -890,6 +926,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         return new File(targetFile.getParentFile(), targetFile.getName() + METADATA_FOLDER);
     }
 
+    @Override
     public void updateCache() {
         // Nullify the only transient field the repo which contains the cache itself :)
         repo = null;
@@ -908,6 +945,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         }
     }
 
+    @Override
     public abstract VfsItem save(VfsItem originalFsItem);
 
     private void updateTimestampsFromImport(MutableItemInfo importedInfo, MutableItemInfo info) {
@@ -929,6 +967,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         info.setLastUpdated(lu);
     }
 
+    @Override
     public void setLastUpdated(long lastUpdated) {
         checkMutable("setLastUpdated");
         ((MutableItemInfo) info).setLastUpdated(lastUpdated);
@@ -937,12 +976,14 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
     /**
      * Reset the resource age so it is kept being cached (only relevant to cached snapshots and maven-metadata)
      */
+    @Override
     public void unexpire() {
         //TODO: Change this mechanism since the last updated is used for artifact popularity measurement
         setLastUpdated(System.currentTimeMillis());
         log.debug("Unexpired '{}' from local cache '{}'.", getRelativePath(), repo.getKey());
     }
 
+    @Override
     public boolean isIdentical(VfsItem item) {
         return absPath.equals(item.getAbsolutePath()) && info.isIdentical(item.getInfo());
     }
@@ -1001,6 +1042,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      * @return Requested metadata if found. Null if not
      * @throws IllegalArgumentException If given a null metadata class
      */
+    @Override
     public <MDT> MDT getMetadata(Class<MDT> mdClass) {
         if (mdClass == null) {
             throw new IllegalArgumentException("Metadata type class to locate cannot be null.");
@@ -1018,6 +1060,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      * @return Requested metadata if found. Null if not
      * @throws IllegalArgumentException If given a blank metadata name
      */
+    @Override
     public Object getMetadata(String metadataName) {
         MetadataDefinition metadataDefinition = getMetadataDefinition(metadataName);
         if (metadataDefinition == null) {
@@ -1033,6 +1076,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      * @return Requested metadata if found. Null if not
      * @throws IllegalArgumentException If given a blank metadata name
      */
+    @Override
     public String getXmlMetadata(String metadataName) {
         if (metadataToSave != null && !metadataToSave.isEmpty()) {
             SetMetadataMessage toFind = new SetMetadataMessage(metadataName, null);
@@ -1067,6 +1111,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      * @return True if annotated by the given metadata. False if not
      * @throws IllegalArgumentException If given a blank metadata name
      */
+    @Override
     public boolean hasMetadata(String metadataName) {
         if (metadataToSave != null && !metadataToSave.isEmpty()) {
             for (SetMetadataMessage message : metadataToSave) {
@@ -1088,6 +1133,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      * @param <T>      Metadata type
      * @throws IllegalArgumentException When given a null metadata value
      */
+    @Override
     public <T> void setMetadata(Class<T> mdClass, T metadata) {
         if (metadata == null) {
             throw new IllegalArgumentException("Cannot set a null value for metadata " + mdClass.getSimpleName() +
@@ -1111,6 +1157,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      * @param xmlData      Metadata value to set. Cannot be null
      * @throws IllegalArgumentException When given a null metadata value
      */
+    @Override
     public void setXmlMetadata(String metadataName, String xmlData) {
         if (xmlData == null) {
             throw new IllegalArgumentException("Cannot set a null value for metadata " + metadataName + " on item " +
@@ -1131,6 +1178,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
      *
      * @param metadataName Name of metadata to remove
      */
+    @Override
     public void removeMetadata(String metadataName) {
         MetadataDefinition definition = getMdService().getMetadataDefinition(metadataName, true);
         MetadataPersistenceHandler metadataPersistenceHandler = definition.getPersistenceHandler();
@@ -1140,6 +1188,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         }
     }
 
+    @Override
     public void setXmlMetadataLater(String name, String content) {
         getOrCreateMetadataToSave().add(new SetMetadataMessage(name, content));
     }
@@ -1185,6 +1234,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         return null;
     }
 
+    @Override
     public boolean isDirty() {
         return metadataToSave != null && !metadataToSave.isEmpty();
     }

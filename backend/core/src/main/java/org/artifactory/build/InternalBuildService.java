@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,6 +39,11 @@ import java.util.Set;
  * @author Noam Y. Tenne
  */
 public interface InternalBuildService extends ReloadableBean, BuildService {
+
+    /**
+     * Name of folder to temporarily store previous build backups during an incremental
+     */
+    String BACKUP_BUILDS_FOLDER = "builds.previous";
 
     /**
      * Returns a file info object for a build file bean

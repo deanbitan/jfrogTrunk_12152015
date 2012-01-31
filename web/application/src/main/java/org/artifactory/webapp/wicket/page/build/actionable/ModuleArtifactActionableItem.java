@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.build.actionable;
 
-import org.artifactory.mime.NamingUtils;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.DownloadAction;
@@ -48,14 +48,17 @@ public class ModuleArtifactActionableItem extends RepoAwareActionableItemBase {
         this.artifact = artifact;
     }
 
+    @Override
     public String getDisplayName() {
         return artifact.getName();
     }
 
+    @Override
     public String getCssClass() {
         return ItemCssClass.doc.getCssClass();
     }
 
+    @Override
     public void filterActions(AuthorizationService authService) {
         RepoPath repoPath = getRepoPath();
         if ((repoPath != null) && (authService.canRead(repoPath))) {

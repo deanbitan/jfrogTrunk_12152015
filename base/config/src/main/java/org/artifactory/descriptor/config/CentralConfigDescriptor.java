@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -100,4 +100,12 @@ public interface CentralConfigDescriptor extends Descriptor {
     LocalReplicationDescriptor getLocalReplication(String replicatedRepoKey);
 
     GcConfigDescriptor getGcConfig();
+
+    /**
+     * Normalizes the Artifactory's server URL set in the mail server config; falls back to the server URL set in the
+     * general config if none is defined under the mail settings. For use within the contents of e-mails
+     *
+     * @return Artifactory server URL
+     */
+    String getServerUrlForEmail();
 }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -123,7 +123,7 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                 boolean enable = entity.isDistinctiveDescriptorPathPattern();
                 descriptorPathPatternTextField.setEnabled(enable);
                 descriptorPathPatternTextField.setRequired(enable);
-                target.addComponent(descriptorPathPatternTextField);
+                target.add(descriptorPathPatternTextField);
             }
 
             @Override
@@ -187,7 +187,7 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                     getPage().info(message);
                 }
                 AjaxUtils.refreshFeedback(target);
-                target.addComponent(layoutListPanel);
+                target.add(layoutListPanel);
                 close(target);
             }
         };
@@ -231,8 +231,8 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                                 entity.getDescriptorPathPattern());
                         descriptorRegExLabel.setDefaultModelObject(descriptorRegEx);
                     }
-                    target.addComponent(artifactRegExLabel);
-                    target.addComponent(descriptorRegExLabel);
+                    target.add(artifactRegExLabel);
+                    target.add(descriptorRegExLabel);
                 } catch (Exception e) {
                     error("Failed to resolve regular expression: " + ExceptionUtils.getRootCause(e).getMessage());
                 }
@@ -286,7 +286,7 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                     testBorder.setDefaultModelObject(moduleInfo);
                     organization.setVisible(true);
                     updateCustomFields(customFieldsView, moduleInfo.getCustomFields());
-                    target.addComponent(testBorder);
+                    target.add(testBorder);
                 } catch (Exception e) {
                     error("Failed to test path: " + ExceptionUtils.getRootCause(e).getMessage());
                 }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -65,18 +65,22 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
 
     private AtomicBoolean openForScheduling = new AtomicBoolean();
 
+    @Override
     public void init() {
     }
 
+    @Override
     public void destroy() {
         cancelAllTasks(true);
         //Shut down the executor service to terminate any async operations not managed by the task service
         executor.destroy();
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
     }
 
@@ -104,6 +108,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         openForScheduling.set(false);
     }
 
+    @Override
     public String startTask(TaskBase task, boolean waitForRunning) {
         String token = task.getToken();
         ConcurrentMap<String, TaskBase> taskMap = openForScheduling.get() ? activeTasksByToken : inactiveTasksByToken;
@@ -123,6 +128,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         return task.getToken();
     }
 
+    @Override
     public void cancelTask(String token, boolean wait) {
         TaskBase task = activeTasksByToken.get(token);
         if (task != null) {
@@ -133,6 +139,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         activeTasksByToken.remove(token);
     }
 
+    @Override
     public List<TaskBase> getActiveTasks(@Nonnull Predicate<Task> predicate) {
         List<TaskBase> results = Lists.newArrayList();
         for (TaskBase task : activeTasksByToken.values()) {
@@ -143,6 +150,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         return results;
     }
 
+    @Override
     public void cancelTasks(@Nonnull Predicate<Task> predicate, boolean wait) {
         List<TaskBase> toCancel = getActiveTasks(predicate);
         for (Task task : toCancel) {
@@ -151,18 +159,22 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         }
     }
 
+    @Override
     public void cancelTasks(@Nonnull final Class<? extends TaskCallback> callbackType, boolean wait) {
         cancelTasks(TaskUtils.createPredicateForType(callbackType), wait);
     }
 
+    @Override
     public void cancelAllTasks(boolean wait) {
         cancelTasks(new Predicate<Task>() {
+            @Override
             public boolean apply(@Nullable Task input) {
                 return true;
             }
         }, wait);
     }
 
+    @Override
     public void stopTask(String token, boolean wait) {
         TaskBase task = activeTasksByToken.get(token);
         if (task != null) {
@@ -224,6 +236,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         }
     }
 
+    @Override
     public void checkCanStartManualTask(Class<? extends TaskCallback> typeToRun, MutableStatusHolder statusHolder,
             Object... keyValues) {
         JobCommand jobCommand = typeToRun.getAnnotation(JobCommand.class);
@@ -295,6 +308,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         }
     }
 
+    @Override
     public void stopRelatedTasks(Class<? extends TaskCallback> typeToRun, List<String> tokenStopped,
             Object... keyValues) {
         // Extract task filters for each stop strategy
@@ -349,6 +363,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     private Predicate<Task> getNotMySelfPredicate() {
         final String currentToken = TaskCallback.currentTaskToken();
         return new Predicate<Task>() {
+            @Override
             public boolean apply(@Nullable Task input) {
                 // null task always false
                 if (input == null) {
@@ -421,6 +436,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
             taskPredicate = new TaskTypePredicate();
         }
         taskPredicate.addSubPredicate(new Predicate<Task>() {
+            @Override
             public boolean apply(@Nullable Task input) {
                 return (input != null) && ClassUtils.isAssignable(callbackType, input.getType()) &&
                         input.keyEquals(keyValues);
@@ -429,6 +445,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         return taskPredicate;
     }
 
+    @Override
     public List<String> stopTasks(Class<? extends TaskCallback> callbackType) {
         String currentToken = TaskCallback.currentTaskToken();
         List<String> results = Lists.newArrayList();
@@ -444,6 +461,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         return results;
     }
 
+    @Override
     public void pauseTask(String token, boolean wait) {
         TaskBase task = getInternalActiveTask(token, true);
         if (task != null) {
@@ -453,6 +471,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         }
     }
 
+    @Override
     public boolean resumeTask(String token) {
         TaskBase task = getInternalActiveTask(token, false);
         if (task != null) {
@@ -463,6 +482,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         }
     }
 
+    @Override
     public boolean waitForTaskCompletion(String token) {
         TaskBase task = getInternalActiveTask(token, false);
         //Check for null since task may have already been canceled
@@ -476,6 +496,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         return task == null || task.waitForCompletion(timeout);
     }
 
+    @Override
     public boolean pauseOrBreak() {
         String token = TaskCallback.currentTaskToken();
         // If not in a task the token is null
@@ -492,6 +513,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         return task.blockIfPausedAndShouldBreak();
     }
 
+    @Override
     public TaskBase getInternalActiveTask(String token, boolean warnIfMissing) {
         if (token == null) {
             throw new IllegalArgumentException("Could not find task with null token");
@@ -504,6 +526,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         return task;
     }
 
+    @Override
     public boolean hasTaskOfType(Class<? extends TaskCallback> callbackType) {
         return hasTaskOfType(callbackType, activeTasksByToken, true);
     }

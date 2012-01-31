@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,7 +37,6 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.combobox.HistoryComboBox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
-import org.artifactory.common.wicket.util.ComponentUtils;
 import org.artifactory.common.wicket.util.CookieUtils;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
@@ -49,6 +48,8 @@ import org.artifactory.webapp.wicket.page.search.actionable.ActionableSearchResu
 import javax.servlet.http.Cookie;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.artifactory.common.wicket.util.ComponentPersister.setPersistent;
 
 /**
  * Displays the metadata searcher
@@ -81,13 +82,13 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
         typesChoices = new HistoryComboBox("metadataName", new
                 PropertyModel<String>(searchControls, "metadataName"),
                 new PropertyModel<List<String>>(this, "metaDataNames"));
-        typesChoices.setPersistent(true);
+        setPersistent(typesChoices);
         typesChoices.setRequired(true);
         typesChoices.setOutputMarkupId(true);
         form.add(typesChoices);
         metaDataSearchCheckBox = new StyledCheckbox("metaDataSearch", new Model<Boolean>());
         metaDataSearchCheckBox.setLabel(Model.of("Metadata Search"));
-        metaDataSearchCheckBox.setPersistent(true);
+        setPersistent(metaDataSearchCheckBox);
         form.add(metaDataSearchCheckBox);
         metaDataSearchCheckBox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
@@ -97,7 +98,7 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
                 } else {
                     metaDataNames = xmlTypes;
                 }
-                target.addComponent(metaDataSearchCheckBox.getParent());
+                target.add(metaDataSearchCheckBox.getParent());
             }
         });
 
@@ -110,14 +111,14 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
         form.add(xPathTextArea);
         xPathTextArea.setRequired(true);
         xPathTextArea.setOutputMarkupId(true);
-        xPathTextArea.setPersistent(true);
+        setPersistent(xPathTextArea);
         form.add(new HelpBubble("xpath.help", new ResourceModel("xpath.help")));
 
         TextField metadataValueField = new TextField<String>("metadataValueField",
                 new PropertyModel<String>(searchControls, "value"));
         form.add(metadataValueField);
         metadataValueField.setOutputMarkupId(true);
-        metadataValueField.setPersistent(true);
+        setPersistent(metadataValueField);
         form.add(new HelpBubble("metadataValue.help", new ResourceModel("metadataValue.help")));
     }
 
@@ -129,12 +130,6 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
     @Override
     protected Class<? extends BaseSearchPage> getMenuPageClass() {
         return MetadataSearchPage.class;
-    }
-
-    @Override
-    protected void onBeforeRender() {
-        super.onBeforeRender();
-        ComponentUtils.updatePersistentFormComponents(this);
     }
 
     @Override
@@ -192,7 +187,7 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
     private void adjustForMetadataLastSearch() {
         metaDataNames = xmlTypes;
         String id = metaDataSearchCheckBox.getId();
-        Cookie cookie = CookieUtils.getCookieBycomponentId(id);
+        Cookie cookie = CookieUtils.getCookieByComponentId(id);
         if (cookie != null) {
             String value = cookie.getValue();
             if ("true".equals(value)) {

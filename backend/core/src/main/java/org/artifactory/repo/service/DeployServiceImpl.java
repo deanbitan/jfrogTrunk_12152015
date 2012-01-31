@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -50,7 +50,6 @@ import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.request.InternalArtifactoryResponse;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.search.InternalSearchService;
@@ -92,11 +91,13 @@ public class DeployServiceImpl implements DeployService {
     @Autowired
     private UploadService uploadService;
 
+    @Override
     public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File file) throws RepoRejectException {
         String pomString = getPomModelString(file);
         deploy(targetRepo, artifactInfo, file, pomString, false, false);
     }
 
+    @Override
     public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy, String pomString,
             boolean forceDeployPom, boolean partOfBundleDeploy) throws RepoRejectException {
         String path = artifactInfo.getPath();
@@ -143,7 +144,7 @@ public class DeployServiceImpl implements DeployService {
             RepoPath uploadPomPath = InternalRepoPathFactory.create(targetRepo.getKey(), pomPath.getPath());
             try {
                 ArtifactoryDeployRequest pomRequest = new ArtifactoryDeployRequest(
-                        uploadPomPath, IOUtils.toInputStream(pomString), fileToDeploy.length(),
+                        uploadPomPath, IOUtils.toInputStream(pomString), pomString.getBytes().length,
                         fileToDeploy.lastModified());
                 InternalArtifactoryResponse pomResponse = new InternalArtifactoryResponse();
                 // upload the POM if needed
@@ -177,6 +178,7 @@ public class DeployServiceImpl implements DeployService {
         }
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public void deployBundle(File bundle, RealRepoDescriptor targetRepo, final BasicStatusHolder status) {
         long start = System.currentTimeMillis();
@@ -274,10 +276,12 @@ public class DeployServiceImpl implements DeployService {
         }
     }
 
+    @Override
     public MavenArtifactInfo getArtifactInfo(File uploadedFile) {
         return MavenModelUtils.artifactInfoFromFile(uploadedFile);
     }
 
+    @Override
     public String getPomModelString(File file) {
         if (MavenNaming.isPom(file.getAbsolutePath())) {
             try {
@@ -304,9 +308,12 @@ public class DeployServiceImpl implements DeployService {
         String archiveName = archive.getName();
         String fixedArchiveName = new String(archiveName.getBytes("utf-8"));
         File fixedArchive = new File(archive.getParentFile(), fixedArchiveName);
-        boolean isRenamed = archive.renameTo(fixedArchive);
-        if (!isRenamed) {
-            throw new Exception("Could not encode archive name to UTF-8.");
+        try {
+            if (!fixedArchive.exists()) {
+                FileUtils.moveFile(archive, fixedArchive);
+            }
+        } catch (IOException e) {
+            throw new Exception("Could not encode archive name to UTF-8.", e);
         }
         File extractFolder = new File(ContextHelper.get().getArtifactoryHome().getTmpUploadsDir(),
                 fixedArchive.getName() + "_extracted_" + System.currentTimeMillis());
@@ -347,6 +354,7 @@ public class DeployServiceImpl implements DeployService {
         return extractFolder;
     }
 
+    @Override
     public void validatePom(String pomContent, String relPath, ModuleInfo moduleInfo,
             boolean suppressPomConsistencyChecks) throws IOException {
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();

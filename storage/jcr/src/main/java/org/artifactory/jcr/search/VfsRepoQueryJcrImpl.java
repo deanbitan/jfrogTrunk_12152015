@@ -24,11 +24,13 @@ public class VfsRepoQueryJcrImpl extends VfsQueryJcrImpl implements VfsRepoQuery
         setRootPath(PathFactoryHolder.get().getAllRepoRootPath());
     }
 
+    @Override
     public void setSingleRepoKey(String repoKey) {
         this.repoKeys.clear();
         this.repoKeys.add(repoKey);
     }
 
+    @Override
     public void setRepoKeys(Collection<String> repoKeys) {
         this.repoKeys.clear();
         this.repoKeys.addAll(repoKeys);

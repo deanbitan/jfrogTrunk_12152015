@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -154,6 +154,10 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
     v1410("http://artifactory.jfrog.org/xsd/1.4.10",
             "http://www.jfrog.org/xsd/artifactory-v1_4_10.xsd",
             ArtifactoryVersion.v240,
+            ArtifactoryVersion.v242),
+    v1411("http://artifactory.jfrog.org/xsd/1.4.11",
+            "http://www.jfrog.org/xsd/artifactory-v1_4_11.xsd",
+            ArtifactoryVersion.v250,
             ArtifactoryVersion.getCurrent());
 
     private final String xsdUri;
@@ -214,6 +218,7 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
         return converters;
     }
 
+    @Override
     public VersionComparator getComparator() {
         return comparator;
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -166,7 +166,7 @@ public class SaveSearchResultsPanel extends FieldSetPanel {
 
     public void setAllEnable(final boolean enabled) {
         setEnabled(enabled);
-        visitChildren(new SetEnableVisitor<Component>(enabled));
+        visitChildren(new SetEnableVisitor(enabled));
     }
 
     public class UpdateStateBehavior extends AjaxFormComponentUpdatingBehavior {
@@ -183,10 +183,10 @@ public class SaveSearchResultsPanel extends FieldSetPanel {
             Component addResultsLink = form.get("addResultsLink");
             Component subtractResultsLink = form.get("subtractResultsLink");
             Component intersectResultsLink = form.get("intersectResultsLink");
-            target.addComponent(addResultsLink);
-            target.addComponent(subtractResultsLink);
-            target.addComponent(saveResultsLink);
-            target.addComponent(intersectResultsLink);
+            target.add(addResultsLink);
+            target.add(subtractResultsLink);
+            target.add(saveResultsLink);
+            target.add(intersectResultsLink);
         }
 
         @Override

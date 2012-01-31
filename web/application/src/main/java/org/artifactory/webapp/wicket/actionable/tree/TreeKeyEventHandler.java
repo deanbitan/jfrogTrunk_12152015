@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,6 +39,7 @@ public class TreeKeyEventHandler extends KeyEventHandler {
         super(id);
 
         addKeyListener(new KeyListener() {
+            @Override
             public void keyReleased(KeyReleasedEvent e) {
                 TreeNode selectedNode = tree.getSelectedNode();
                 if (selectedNode == null) {
@@ -51,8 +52,8 @@ public class TreeKeyEventHandler extends KeyEventHandler {
                 if (!expanded && !selectedNode.isLeaf() && selectedNode.getAllowsChildren()) {
                     state.expandNode(selectedNode);
                     tree.onJunctionLinkClicked(target, selectedNode);
-                    target.addComponent(tree);
-                    target.appendJavascript("Browser.scrollToSelectedNode();");
+                    target.add(tree);
+                    target.appendJavaScript("Browser.scrollToSelectedNode();");
                 } else {
                     tree.selectNode(selectedNode, tree.getNextTreeNode(selectedNode), target);
                 }
@@ -60,6 +61,7 @@ public class TreeKeyEventHandler extends KeyEventHandler {
         }, VK_RIGHT, VK_ADD);
 
         addKeyListener(new KeyListener() {
+            @Override
             public void keyReleased(KeyReleasedEvent e) {
                 TreeNode selectedNode = tree.getSelectedNode();
                 if (selectedNode == null) {
@@ -72,8 +74,8 @@ public class TreeKeyEventHandler extends KeyEventHandler {
                 if (expanded) {
                     state.collapseNode(selectedNode);
                     tree.onJunctionLinkClicked(target, selectedNode);
-                    target.addComponent(tree);
-                    target.appendJavascript("Browser.scrollToSelectedNode();");
+                    target.add(tree);
+                    target.appendJavaScript("Browser.scrollToSelectedNode();");
                 } else {
                     tree.selectNode(selectedNode, tree.getPrevTreeNode(selectedNode), target);
                 }
@@ -81,6 +83,7 @@ public class TreeKeyEventHandler extends KeyEventHandler {
         }, VK_LEFT, VK_SUBTRACT);
 
         addKeyListener(new KeyListener() {
+            @Override
             public void keyReleased(KeyReleasedEvent e) {
                 TreeNode selectedNode = tree.getSelectedNode();
                 if (selectedNode != null) {
@@ -91,6 +94,7 @@ public class TreeKeyEventHandler extends KeyEventHandler {
         }, VK_UP);
 
         addKeyListener(new KeyListener() {
+            @Override
             public void keyReleased(KeyReleasedEvent e) {
                 TreeNode selectedNode = tree.getSelectedNode();
                 if (selectedNode != null) {

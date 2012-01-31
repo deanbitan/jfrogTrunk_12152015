@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,18 +40,22 @@ public class ZipTreeNode implements TreeNode<ZipEntryInfo>, Serializable, Compar
         zipEntry = new ZipEntryImpl(entryPath, directory);
     }
 
+    @Override
     public Set<ZipTreeNode> getChildren() {
         return children;
     }
 
+    @Override
     public ZipEntryInfo getData() {
         return zipEntry;
     }
 
+    @Override
     public boolean hasChildren() {
         return children != null && !children.isEmpty();
     }
 
+    @Override
     public boolean isLeaf() {
         return !hasChildren();
     }
@@ -60,6 +64,7 @@ public class ZipTreeNode implements TreeNode<ZipEntryInfo>, Serializable, Compar
         return zipEntry.isDirectory();
     }
 
+    @Override
     public ZipTreeNode getChild(ZipEntryInfo data) {
         if (!data.getPath().startsWith(zipEntry.getPath())) {
             return null;
@@ -124,6 +129,7 @@ public class ZipTreeNode implements TreeNode<ZipEntryInfo>, Serializable, Compar
         return zipEntry.hashCode();
     }
 
+    @Override
     public int compareTo(ZipTreeNode o) {
         if (o.isDirectory() && !isDirectory()) {
             return 1;

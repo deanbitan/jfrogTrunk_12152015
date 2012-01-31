@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -77,26 +77,32 @@ public class JcrSession implements XASession, ArtifactorySession {
         return session;
     }
 
+    @Override
     public Repository getRepository() {
         return session.getRepository();
     }
 
+    @Override
     public String getUserID() {
         return session.getUserID();
     }
 
+    @Override
     public Object getAttribute(String name) {
         return session.getAttribute(name);
     }
 
+    @Override
     public String[] getAttributeNames() {
         return session.getAttributeNames();
     }
 
+    @Override
     public Workspace getWorkspace() {
         return session.getWorkspace();
     }
 
+    @Override
     public Session impersonate(Credentials credentials) {
         try {
             return session.impersonate(credentials);
@@ -105,10 +111,12 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public VfsNode getVfsRootNode() {
         return new VfsNodeJcrImpl(getRootNode());
     }
 
+    @Override
     public Node getRootNode() {
         try {
             return session.getRootNode();
@@ -117,6 +125,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     @Deprecated
     public Node getNodeByUUID(String uuid) {
         try {
@@ -126,6 +135,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public boolean nodeExists(String absPath) {
         try {
             return session.nodeExists(absPath);
@@ -134,6 +144,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public Item getItem(String absPath) {
         try {
             return session.getItem(absPath);
@@ -142,6 +153,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public boolean itemExists(String absPath) {
         try {
             return session.itemExists(absPath);
@@ -150,6 +162,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void move(String srcAbsPath, String tgtAbsPath) {
         log.trace("Moving {} to {}", srcAbsPath, tgtAbsPath);
         try {
@@ -196,6 +209,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void save() {
         try {
             getSessionResourceManager().onSessionSave();
@@ -206,6 +220,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void refresh(boolean keepChanges) {
         try {
             //Don't release any locks - they will be released at the end of lock advice
@@ -215,6 +230,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public boolean hasPendingChanges() {
         try {
             InternalLockManager lockManager = LockingAdvice.getLockManager();
@@ -224,6 +240,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public ValueFactory getValueFactory() {
         try {
             return session.getValueFactory();
@@ -232,6 +249,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void checkPermission(String absPath, String actions) throws AccessControlException {
         try {
             session.checkPermission(absPath, actions);
@@ -240,6 +258,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) {
         try {
             return session.getImportContentHandler(parentAbsPath, uuidBehavior);
@@ -248,6 +267,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException {
         try {
             session.importXML(parentAbsPath, in, uuidBehavior);
@@ -256,6 +276,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void exportSystemView(String absPath, ContentHandler contentHandler,
             boolean skipBinary, boolean noRecurse) throws SAXException {
         try {
@@ -265,6 +286,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse)
             throws IOException {
         try {
@@ -274,6 +296,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void exportDocumentView(String absPath, ContentHandler contentHandler,
             boolean skipBinary, boolean noRecurse) throws SAXException {
         try {
@@ -283,6 +306,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void exportDocumentView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse)
             throws IOException {
         try {
@@ -292,6 +316,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void setNamespacePrefix(String prefix, String uri) {
         try {
             session.setNamespacePrefix(prefix, uri);
@@ -300,6 +325,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public String[] getNamespacePrefixes() {
         try {
             return session.getNamespacePrefixes();
@@ -308,6 +334,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public String getNamespaceURI(String prefix) {
         try {
             return session.getNamespaceURI(prefix);
@@ -316,6 +343,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public String getNamespacePrefix(String uri) {
         try {
             return session.getNamespacePrefix(uri);
@@ -324,10 +352,12 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void addLogoutListener(Callable callable) {
         logoutCallbacks.add(callable);
     }
 
+    @Override
     public void logout() {
         try {
             for (Callable logoutCallback : logoutCallbacks) {
@@ -363,32 +393,38 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public boolean isLive() {
         return session != null && session.isLive();
     }
 
+    @Override
     @SuppressWarnings({"deprecation"})
     @Deprecated
     public void addLockToken(String lt) {
         session.addLockToken(lt);
     }
 
+    @Override
     @SuppressWarnings({"deprecation"})
     @Deprecated
     public String[] getLockTokens() {
         return session.getLockTokens();
     }
 
+    @Override
     @SuppressWarnings({"deprecation"})
     @Deprecated
     public void removeLockToken(String lt) {
         session.removeLockToken(lt);
     }
 
+    @Override
     public XAResource getXAResource() {
         return session.getXAResource();
     }
 
+    @Override
     public Node getNodeByIdentifier(String id) {
         try {
             return session.getNodeByIdentifier(id);
@@ -397,6 +433,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public Node getNode(String absPath) {
         try {
             return session.getNode(absPath);
@@ -405,6 +442,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public Property getProperty(String absPath) {
         try {
             return session.getProperty(absPath);
@@ -413,6 +451,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public boolean propertyExists(String absPath) {
         try {
             return session.propertyExists(absPath);
@@ -421,6 +460,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public void removeItem(String absPath) {
         try {
             session.removeItem(absPath);
@@ -429,6 +469,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public boolean hasPermission(String absPath, String actions) {
         try {
             return session.hasPermission(absPath, actions);
@@ -437,6 +478,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public boolean hasCapability(String methodName, Object target, Object[] arguments) {
         try {
             return session.hasCapability(methodName, target, arguments);
@@ -445,6 +487,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public AccessControlManager getAccessControlManager() {
         try {
             return session.getAccessControlManager();
@@ -453,6 +496,7 @@ public class JcrSession implements XASession, ArtifactorySession {
         }
     }
 
+    @Override
     public RetentionManager getRetentionManager() {
         try {
             return session.getRetentionManager();

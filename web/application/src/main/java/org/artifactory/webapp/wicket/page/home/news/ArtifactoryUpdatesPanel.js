@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,41 +17,41 @@
  */
 
 ArtifactoryUpdates = {
-    HIDE_COOKIE: 'new-h',
-    READ_COOKIE: 'new-r',
+    HIDE_COOKIE:'new-h',
+    READ_COOKIE:'new-r',
 
-    read: function(me, cookie) {
+    read:function (me, cookie) {
         var container = me.parentNode.parentNode;
         if (container.className != 'news-open') {
             container.className = 'news-open';
-            dojo.cookie(ArtifactoryUpdates.READ_COOKIE, cookie, {expires: 3650});
+            dojo.cookie(ArtifactoryUpdates.READ_COOKIE, cookie, {expires:3650});
         } else {
             container.className = 'news-close';
         }
         return false;
     },
 
-    toogle: function(me, cookie) {
+    toogle:function (me, cookie) {
         // toggle show/hide
         if (!me.className.match(/checked/)) {
-            dojo.cookie(ArtifactoryUpdates.HIDE_COOKIE, cookie, {expires: 3650});
+            dojo.cookie(ArtifactoryUpdates.HIDE_COOKIE, cookie, {expires:3650});
             me.className = 'hide-link hide-link-checked';
         } else {
-            dojo.cookie(ArtifactoryUpdates.HIDE_COOKIE, null, {expires: -1});
+            dojo.cookie(ArtifactoryUpdates.HIDE_COOKIE, null, {expires:-1});
             me.className = 'hide-link';
         }
 
         return false;
     },
 
-    fadeIn: function(id) {
+    fadeIn:function (id) {
         var node = dojo.byId(id);
         dojo._setOpacity(node, 0);
         dojo.animateProperty({
-            node: node,
-            duration: 1000,
-            properties: {
-                opacity: { start: 0.3, end: 1 }
+            node:node,
+            duration:1000,
+            properties:{
+                opacity:{ start:0.3, end:1 }
             }
         }).play();
     }

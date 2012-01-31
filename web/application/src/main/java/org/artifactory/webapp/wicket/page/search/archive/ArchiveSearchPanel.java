@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,6 @@
 package org.artifactory.webapp.wicket.page.search.archive;
 
 import org.apache.wicket.Page;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.markup.ComponentTag;
@@ -32,6 +31,7 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
@@ -190,7 +190,7 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
             final String relDirPath = result.getSearchResult().getRelDirPath();
             Link linkToTreeView = new Link<String>(componentId, Model.of(relDirPath)) {
                 @Override
-                protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+                public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
                     replaceComponentTagBody(markupStream, openTag, relDirPath);
                 }
 

@@ -19,6 +19,7 @@ public class LockingMethodMatcher extends StaticMethodMatcher {
     }
 
 
+    @Override
     public boolean matches(Method method, Class targetClass) {
         if (method.isAnnotationPresent(Lock.class) ||
                 method.isAnnotationPresent(RequiresTransaction.class) ||

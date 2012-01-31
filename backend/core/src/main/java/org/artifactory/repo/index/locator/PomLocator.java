@@ -25,6 +25,7 @@ import java.util.List;
  */
 public class PomLocator implements GavHelpedLocator {
 
+    @Override
     public File locate(File source, GavCalculator gavCalculator, Gav gav) {
         //Get the pom name
         String artifactName = gav.getArtifactId() + "-" + gav.getVersion() + ".pom";

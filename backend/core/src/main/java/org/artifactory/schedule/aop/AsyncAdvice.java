@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -62,6 +62,7 @@ public class AsyncAdvice implements MethodInterceptor {
         log.debug("Creating async advice interceptor");
     }
 
+    @Override
     public Future<?> invoke(final MethodInvocation invocation) throws Throwable {
         MethodAnnotation<Lock> lockMethodAnnotation = getMethodAnnotation(invocation, Lock.class);
         if (lockMethodAnnotation.annotation != null) {
@@ -132,6 +133,7 @@ public class AsyncAdvice implements MethodInterceptor {
         InternalArtifactoryContext context = InternalContextHelper.get();
         CachedThreadPoolTaskExecutor executor = context.beanForType(CachedThreadPoolTaskExecutor.class);
         Future<?> future = executor.submit(new Callable<Object>() {
+            @Override
             public Object call() {
                 try {
                     if (TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -256,6 +258,7 @@ public class AsyncAdvice implements MethodInterceptor {
             }
         }
 
+        @Override
         public void afterCompletion(boolean commit) {
             if (commit) {
                 //Submit the shared ones first
@@ -277,10 +280,12 @@ public class AsyncAdvice implements MethodInterceptor {
             }
         }
 
+        @Override
         public boolean hasPendingResources() {
             return !invocations.isEmpty();
         }
 
+        @Override
         public void onSessionSave() {
         }
     }
@@ -300,22 +305,27 @@ public class AsyncAdvice implements MethodInterceptor {
             return throwable;
         }
 
+        @Override
         public Method getMethod() {
             return wrapped.getMethod();
         }
 
+        @Override
         public Object[] getArguments() {
             return wrapped.getArguments();
         }
 
+        @Override
         public Object proceed() throws Throwable {
             return wrapped.proceed();
         }
 
+        @Override
         public Object getThis() {
             return wrapped.getThis();
         }
 
+        @Override
         public AccessibleObject getStaticPart() {
             return wrapped.getStaticPart();
         }

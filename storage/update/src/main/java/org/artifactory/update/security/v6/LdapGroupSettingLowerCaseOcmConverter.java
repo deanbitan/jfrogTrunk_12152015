@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -46,6 +46,7 @@ public class LdapGroupSettingLowerCaseOcmConverter implements ConfigurationConve
 
     private static final Logger log = LoggerFactory.getLogger(LdapGroupSettingLowerCaseOcmConverter.class);
 
+    @Override
     public void convert(Session session) {
         try {
             log.info("Stating LdapGroupSettingLowerCaseOcmConverter");
@@ -133,8 +134,7 @@ public class LdapGroupSettingLowerCaseOcmConverter implements ConfigurationConve
             aclManager.reloadAcls();
 
             log.info("Finished LdapGroupSettingLowerCaseOcmConverter");
-        }
-        catch (RepositoryException e) {
+        } catch (RepositoryException e) {
             log.error("Error while converting OCM Group settings", e);
         }
     }
@@ -173,7 +173,7 @@ public class LdapGroupSettingLowerCaseOcmConverter implements ConfigurationConve
     }
 
     private void userNodeAlreadyFound(Map<String, Node> foundUsers, Node userNode, String email,
-                                      String lowerCaseUserName, boolean admin)
+            String lowerCaseUserName, boolean admin)
             throws RepositoryException {
         Node otherUserNode = foundUsers.get(lowerCaseUserName);
         if (otherUserNode == null) {
@@ -197,7 +197,7 @@ public class LdapGroupSettingLowerCaseOcmConverter implements ConfigurationConve
     }
 
     private void groupNodeAlreadyFound(Map<String, Node> foundGroups, Node groupNode, String desc,
-                                       String lowercaseGroupName) throws RepositoryException {
+            String lowercaseGroupName) throws RepositoryException {
         if (StringUtils.isNotBlank(desc)) {
             Node otherGroupNode = foundGroups.get(lowercaseGroupName);
             if (otherGroupNode.hasProperty("description")) {

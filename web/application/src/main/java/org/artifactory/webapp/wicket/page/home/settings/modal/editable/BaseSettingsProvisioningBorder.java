@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -64,10 +64,12 @@ public abstract class BaseSettingsProvisioningBorder extends TitledBorder {
 
     private static class RepoKeyChoiceRenderer implements IChoiceRenderer<LocalRepoDescriptor> {
 
+        @Override
         public Object getDisplayValue(LocalRepoDescriptor object) {
             return object.getKey();
         }
 
+        @Override
         public String getIdValue(LocalRepoDescriptor object, int index) {
             return object.getKey();
         }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,19 +23,17 @@ import org.apache.commons.lang.time.DurationFormatUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
-import org.apache.wicket.injection.web.InjectorHolder;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.ExternalLink;
-import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.addon.wicket.LicensesWebAddon;
+import org.artifactory.addon.wicket.ReplicationWebAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.license.LicenseInfo;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepositoryService;
@@ -53,7 +51,6 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
@@ -108,7 +105,7 @@ public class GeneralInfoPanel extends Panel {
 
         String itemDisplayName = repoItem.getDisplayName();
 
-        String pathUrl = BrowseRepoPage.getRepoPathUrl(repoItem);
+        String pathUrl = BrowseRepoPage.getWicketDependableRepoPathUrl(repoItem);
         if (StringUtils.isBlank(pathUrl)) {
             pathUrl = "";
         }
@@ -204,6 +201,7 @@ public class GeneralInfoPanel extends Panel {
 
         addLocalLayoutInfo(infoBorder, repoDescriptor, itemIsRepo);
         addRemoteLayoutInfo(infoBorder, remoteRepo, itemIsRepo);
+        addLastReplicationInfo(infoBorder, path);
 
         addFilteredResourceCheckbox(infoBorder, itemInfo);
 
@@ -227,7 +225,7 @@ public class GeneralInfoPanel extends Panel {
                 public void onClick(AjaxRequestTarget target) {
                     setVisible(false);
                     container.replaceWith((new ArtifactCountLazySpanPanel("artifactCountValue", itemDisplayName)));
-                    target.addComponent(infoBorder);
+                    target.add(infoBorder);
                 }
             };
             infoBorder.add(link);
@@ -243,7 +241,6 @@ public class GeneralInfoPanel extends Panel {
         public ArtifactCountLazySpanPanel(final String id, String itemDisplayName) {
             super(id);
             this.itemDisplayName = itemDisplayName;
-            InjectorHolder.getInjector().inject(this);
         }
 
         @Override
@@ -269,38 +266,11 @@ public class GeneralInfoPanel extends Panel {
     }
 
     private void addLicenseInfo(FieldSetBorder infoBorder, RepoAwareActionableItem actionableItem) {
-        WebMarkupContainer licensesLabel = new WebMarkupContainer("licensesLabel");
-        infoBorder.add(licensesLabel);
-
-        WebMarkupContainer licensesListView = new WebMarkupContainer("licensesListView");
-        licensesListView.add(new WebMarkupContainer("licensesLink"));
-        licensesListView.add(new WebMarkupContainer("commaLabel"));
-        infoBorder.add(licensesListView);
-
-        WebMarkupContainer addButton = new WebMarkupContainer("add");
-        infoBorder.add(addButton);
-        WebMarkupContainer editButton = new WebMarkupContainer("edit");
-        infoBorder.add(editButton);
-        WebMarkupContainer deleteButton = new WebMarkupContainer("delete");
-        infoBorder.add(deleteButton);
-        WebMarkupContainer viewButton = new WebMarkupContainer("view");
-        infoBorder.add(viewButton);
-
         if (!actionableItem.getItemInfo().isFolder()) {
-            RepoPath repoPath = actionableItem.getRepoPath();
             LicensesWebAddon licensesWebAddon = addonsManager.addonByType(LicensesWebAddon.class);
-            licensesLabel.replaceWith(licensesWebAddon.getLicenseLabel(licensesLabel.getId()));
-            ListView<LicenseInfo> listView = licensesWebAddon.getLicensesListView(licensesListView.getId(), repoPath);
-            licensesListView.replaceWith(listView);
-            addButton.replaceWith(licensesWebAddon.getAddLicenseLink(addButton.getId(), repoPath, listView));
-            editButton.replaceWith(licensesWebAddon.getEditLicenseLink(editButton.getId(), repoPath, listView));
-            deleteButton.replaceWith(licensesWebAddon.getDeleteLink(deleteButton.getId(), repoPath, infoBorder,
-                    listView));
-            String path = repoPath.getPath();
-            MimeType mimeType = NamingUtils.getMimeType(path);
-            if (NamingUtils.isJarVariant(path) || mimeType.isArchive()) {
-                viewButton.replaceWith(licensesWebAddon.getViewLink(viewButton.getId(), actionableItem, infoBorder));
-            }
+            infoBorder.add(licensesWebAddon.getLicenseGeneralInfoPanel(actionableItem));
+        } else {
+            infoBorder.add(new WebMarkupContainer("licensesPanel"));
         }
     }
 
@@ -352,6 +322,11 @@ public class GeneralInfoPanel extends Panel {
             infoBorder.add(new LabeledValue(componentId, "Remote Repository Layout: ",
                     remoteRepo.getRemoteRepoLayout().getName()));
         }
+    }
+
+    private void addLastReplicationInfo(FieldSetBorder infoBorder, RepoPath repoPath) {
+        ReplicationWebAddon replicationWebAddon = addonsManager.addonByType(ReplicationWebAddon.class);
+        infoBorder.add(replicationWebAddon.getLastReplicationStatusLabel("lastReplication", repoPath));
     }
 
     private String getRepoPathUrl(RepoAwareActionableItem repoItem) {

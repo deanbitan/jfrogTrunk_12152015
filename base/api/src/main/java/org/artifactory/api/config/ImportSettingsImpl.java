@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -80,10 +80,12 @@ public class ImportSettingsImpl extends ImportExportSettingsImpl implements Impo
         this.info.exportVersion = exportVersion;
     }
 
+    @Override
     public MetadataReader getMetadataReader() {
         return info.metadataReader;
     }
 
+    @Override
     public void setMetadataReader(MetadataReader metadataReader) {
         this.info.metadataReader = metadataReader;
     }
@@ -95,14 +97,17 @@ public class ImportSettingsImpl extends ImportExportSettingsImpl implements Impo
      *
      * @return Whether immediate indexing for marked artifacts is active or not.
      */
+    @Override
     public boolean isIndexMarkedArchives() {
         return info.indexMarkedArchives;
     }
 
+    @Override
     public void setIndexMarkedArchives(boolean indexMarkedArchives) {
         info.indexMarkedArchives = indexMarkedArchives;
     }
 
+    @Override
     public boolean isTrustServerChecksums() {
         return info.trustServerChecksums;
     }
@@ -110,6 +115,7 @@ public class ImportSettingsImpl extends ImportExportSettingsImpl implements Impo
     /**
      * set this flag to true if Artifactory should mark uploaded artifacts with trusted checksums mark
      */
+    @Override
     public void setTrustServerChecksums(boolean trustServerChecksums) {
         info.trustServerChecksums = trustServerChecksums;
     }

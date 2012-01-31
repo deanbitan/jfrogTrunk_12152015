@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@ import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.StatusLine;
@@ -109,8 +110,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         HttpExecutor clientExec = new HttpExecutor() {
             @Override
             public int executeMethod(HttpMethod method) throws IOException {
-                updateMethod(method);
-                return client.executeMethod(method);
+                return HttpRepo.this.executeMethod(method);
             }
 
             @Override
@@ -163,7 +163,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         return getDescriptor().getProxy();
     }
 
-    public ResourceStreamHandle conditionalRetrieveResource(String relPath) throws IOException {
+    public ResourceStreamHandle conditionalRetrieveResource(String relPath, boolean forceRemoteDownload)
+            throws IOException {
         //repo1 does not respect conditional get so the following is irrelevant for now.
         /*
         Date modifiedSince;
@@ -177,7 +178,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
         */
         //Need to do a conditional get by hand - testing a head result last modified date against the current file
-        if (isStoreArtifactsLocally()) {
+        if (!forceRemoteDownload && isStoreArtifactsLocally()) {
             RepoResource cachedResource = getCachedResource(relPath);
             if (cachedResource.isFound()) {
                 if (cachedResource.isExpired()) {
@@ -197,22 +198,35 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         return downloadResource(relPath);
     }
 
+    @Override
     public ResourceStreamHandle downloadResource(String relPath) throws IOException {
         return downloadResource(relPath, new NullRequestContext(getRepoPath(relPath)));
     }
 
+    @Override
     public ResourceStreamHandle downloadResource(final String relPath, final RequestContext requestContext)
             throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
-        String fullPath = convertRequestPathIfNeeded(relPath);
-        if (getDescriptor().isSynchronizeProperties()) {
-            fullPath += encodeForRequest(requestContext.getProperties());
+        String pathForUrl = convertRequestPathIfNeeded(relPath);
+        Request request = requestContext.getRequest();
+        if (request != null) {
+            String alternativeRemoteDownloadUrl =
+                    request.getParameter(ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL);
+            if (StringUtils.isNotBlank(alternativeRemoteDownloadUrl)) {
+                log.trace("Modifying request URL. Received an alternative remote download URL parameter: {}",
+                        alternativeRemoteDownloadUrl);
+                pathForUrl = alternativeRemoteDownloadUrl;
+            }
         }
-        final String fullUrl = appendAndGetUrl(convertRequestPathIfNeeded(fullPath));
+
+        if (getDescriptor().isSynchronizeProperties()) {
+            pathForUrl += encodeForRequest(requestContext.getProperties());
+        }
+        final String fullUrl = appendAndGetUrl(convertRequestPathIfNeeded(pathForUrl));
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         final PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
 
-        final RepoPath repoPath = InternalRepoPathFactory.create(getKey(), fullPath);
+        final RepoPath repoPath = InternalRepoPathFactory.create(getKey(), pathForUrl);
         final Request requestForPlugins = requestContext.getRequest();
         pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, null, requestForPlugins, repoPath);
         if (log.isDebugEnabled()) {
@@ -220,8 +234,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
 
         final GetMethod method = new GetMethod(fullUrl);
-        updateMethod(method);
-        client.executeMethod(method);
+        executeMethod(method);
 
         int statusCode = method.getStatusCode();
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
@@ -243,14 +256,17 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         final InputStream is = getResponseStream(method);
 
         return new RemoteResourceStreamHandle() {
+            @Override
             public InputStream getInputStream() {
                 return is;
             }
 
+            @Override
             public long getSize() {
                 return -1;
             }
 
+            @Override
             public void close() {
                 IOUtils.closeQuietly(is);
                 method.releaseConnection();
@@ -306,61 +322,40 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     /**
-     * Executes an HTTP method using the repositories client
+     * Executes an HTTP method using the repositories client while auto-following redirects
      *
      * @param method Method to execute
      * @return Response code
      * @throws IOException If the repository is offline or if any error occurs during the execution
      */
     public int executeMethod(HttpMethod method) throws IOException {
+        return executeMethod(method, true);
+    }
+
+    /**
+     * Executes an HTTP method using the repositories client
+     *
+     * @param method          Method to execute
+     * @param followRedirects True if redirections should be auto-followed
+     * @return Response code
+     * @throws IOException If the repository is offline or if any error occurs during the execution
+     */
+    public int executeMethod(HttpMethod method, boolean followRedirects) throws IOException {
+        updateMethod(method, followRedirects);
         return client.executeMethod(method);
     }
 
     @Override
-    protected RepoResource retrieveInfo(String path, @Nullable Properties requestProperties) {
+    protected RepoResource retrieveInfo(String path, @Nullable RequestContext context) {
         assert !isOffline() : "Should never be called in offline mode";
         RepoPath repoPath = InternalRepoPathFactory.create(this.getKey(), path);
 
-        String fullUrl = appendAndGetUrl(convertRequestPathIfNeeded(path));
-
-        HeadMethod method = null;
+        String fullUrl = assembleRetrieveInfoUrl(path, context);
+        HeadMethod method = new HeadMethod(fullUrl);
+        log.debug("{}: Checking last modified time for {}", this, fullUrl);
         try {
-            if (getDescriptor().isSynchronizeProperties()) {
-                fullUrl += encodeForRequest(requestProperties);
-            }
-            log.debug("{}: Checking last modified time for {}", this, fullUrl);
-            method = new HeadMethod(fullUrl);
-            updateMethod(method);
-            client.executeMethod(method);
-            if (method.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-                return new UnfoundRepoResource(repoPath, method.getStatusText());
-            }
-            //If redirected to a directory - return 404
-            if (method.getPath().endsWith("/")) {
-                return new UnfoundRepoResource(repoPath, "Expected file response but received a directory response.");
-            }
-            if (method.getStatusCode() != HttpStatus.SC_OK) {
-                if (log.isDebugEnabled()) {
-                    log.debug(this + ": Unable to find " + fullUrl + " because of [" +
-                            method.getStatusCode() + "] = " + method.getStatusText());
-                }
-                // send back unfound resource with 404 status
-                return new UnfoundRepoResource(repoPath, method.getStatusText());
-            }
-
-            long lastModified = getLastModified(method);
-            log.debug("{}: Found last modified time '{}' for {}",
-                    new Object[]{this, new Date(lastModified).toString(), fullUrl});
-
-            long size = getContentLength(method);
-
-            Set<ChecksumInfo> checksums = getChecksums(method);
-
-            RepoResource res = new RemoteRepoResource(repoPath, lastModified, size, checksums);
-            if (log.isDebugEnabled()) {
-                log.debug("{}: Retrieved {} info at '{}'.", new Object[]{this, res, fullUrl});
-            }
-            return res;
+            executeMethod(method);
+            return handleGetInfoResponse(repoPath, fullUrl, method);
         } catch (IOException e) {
             StringBuilder messageBuilder = new StringBuilder("Failed retrieving resource from ").append(fullUrl).
                     append(": ");
@@ -371,10 +366,70 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             throw new RuntimeException(messageBuilder.toString(), e);
         } finally {
             //Released the connection back to the connection manager
-            if (method != null) {
-                method.releaseConnection();
+            method.releaseConnection();
+        }
+    }
+
+    protected String assembleRetrieveInfoUrl(String path, RequestContext context) {
+        String pathForUrl = convertRequestPathIfNeeded(path);
+        boolean validContext = context != null;
+        if (validContext) {
+            Request request = context.getRequest();
+            if (request != null) {
+                String alternativeRemoteDownloadUrl =
+                        request.getParameter(ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL);
+                if (StringUtils.isNotBlank(alternativeRemoteDownloadUrl)) {
+                    log.trace("Modifying request URL. Received an alternative remote download URL parameter: {}",
+                            alternativeRemoteDownloadUrl);
+                    pathForUrl = alternativeRemoteDownloadUrl;
+                }
             }
         }
+
+        String fullUrl = appendAndGetUrl(pathForUrl);
+        if (validContext && getDescriptor().isSynchronizeProperties()) {
+            Properties properties = context.getProperties();
+            try {
+                fullUrl += encodeForRequest(properties);
+            } catch (UnsupportedEncodingException e) {
+                StringBuilder builder = new StringBuilder("Failed to encode request properties '").append(
+                        properties).append("' for request '").append(fullUrl).append("'.");
+                throw new RuntimeException(builder.toString(), e);
+            }
+        }
+        return fullUrl;
+    }
+
+    protected RepoResource handleGetInfoResponse(RepoPath repoPath, String fullUrl, HttpMethodBase method) {
+        if (method.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+            return new UnfoundRepoResource(repoPath, method.getStatusText());
+        }
+        //If redirected to a directory - return 404
+        if (method.getPath().endsWith("/")) {
+            return new UnfoundRepoResource(repoPath, "Expected file response but received a directory response.");
+        }
+        if (method.getStatusCode() != HttpStatus.SC_OK) {
+            if (log.isDebugEnabled()) {
+                log.debug(this + ": Unable to find " + fullUrl + " because of [" +
+                        method.getStatusCode() + "] = " + method.getStatusText());
+            }
+            // send back unfound resource with 404 status
+            return new UnfoundRepoResource(repoPath, method.getStatusText());
+        }
+
+        long lastModified = getLastModified(method);
+        log.debug("{}: Found last modified time '{}' for {}",
+                new Object[]{this, new Date(lastModified).toString(), fullUrl});
+
+        long size = getContentLength(method);
+
+        Set<ChecksumInfo> checksums = getChecksums(method);
+
+        RepoResource res = new RemoteRepoResource(repoPath, lastModified, size, checksums);
+        if (log.isDebugEnabled()) {
+            log.debug("{}: Retrieved {} info at '{}'.", new Object[]{this, res, fullUrl});
+        }
+        return res;
     }
 
     HttpClient createHttpClient() {
@@ -400,15 +455,15 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     @SuppressWarnings({"deprecation"})
-    private void updateMethod(HttpMethod method) {
+    private void updateMethod(HttpMethod method, boolean followRedirects) {
         //Explicitly force keep alive
         method.setRequestHeader("Connection", "Keep-Alive");
-        //Set the current requestor
+        //Set the current requester
         method.setRequestHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, HttpUtils.getHostId());
         //For backwards compatibility
         method.setRequestHeader(ArtifactoryRequest.ORIGIN_ARTIFACTORY, HttpUtils.getHostId());
         //Follow redirects
-        method.setFollowRedirects(true);
+        method.setFollowRedirects(followRedirects);
         //Set gzip encoding
         if (handleGzipResponse) {
             method.addRequestHeader("Accept-Encoding", "gzip");
@@ -438,7 +493,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         return Long.parseLong(contentLengthString);
     }
 
-    private static Set<ChecksumInfo> getChecksums(HeadMethod method) {
+    private static Set<ChecksumInfo> getChecksums(HttpMethodBase method) {
         Set<ChecksumInfo> actualChecksums = Sets.newHashSet();
 
         ChecksumInfo md5ChecksumInfo = getChecksumInfoObject(ChecksumType.md5,
@@ -464,7 +519,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         return new ChecksumInfo(type, checksumHeader.getValue(), null);
     }
 
-    private InputStream getResponseStream(GetMethod method) throws IOException {
+    public InputStream getResponseStream(GetMethod method) throws IOException {
         InputStream is = method.getResponseBodyAsStream();
         if (handleGzipResponse) {
             Header[] contentEncodings = method.getResponseHeaders("Content-Encoding");

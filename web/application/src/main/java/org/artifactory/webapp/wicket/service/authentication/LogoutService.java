@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,16 +19,14 @@
 package org.artifactory.webapp.wicket.service.authentication;
 
 import org.apache.wicket.Page;
-import org.apache.wicket.markup.MarkupStream;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 
 /**
  * @author Yoav Aharoni
  */
 public class LogoutService extends Page {
-
     @Override
-    protected void onRender(MarkupStream markupStream) {
-        ArtifactoryWebSession.get().signOut();
+    protected void onRender() {
+        ArtifactoryWebSession.get().invalidate();
     }
 }

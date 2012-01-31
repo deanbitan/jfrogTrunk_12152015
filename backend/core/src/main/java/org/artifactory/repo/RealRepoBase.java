@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,13 +20,13 @@ package org.artifactory.repo;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.common.BasicStatusHolder;
-import org.artifactory.mime.NamingUtils;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.IncludeExcludeException;
 import org.artifactory.api.repo.exception.SnapshotPolicyException;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.slf4j.Logger;
 
@@ -48,22 +48,27 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
         return super.getDescriptor();
     }
 
+    @Override
     public boolean isHandleReleases() {
         return getDescriptor().isHandleReleases();
     }
 
+    @Override
     public boolean isHandleSnapshots() {
         return getDescriptor().isHandleSnapshots();
     }
 
+    @Override
     public boolean isBlackedOut() {
         return getDescriptor().isBlackedOut();
     }
 
+    @Override
     public int getMaxUniqueSnapshots() {
         return getDescriptor().getMaxUniqueSnapshots();
     }
 
+    @Override
     public boolean handlesReleaseSnapshot(String path) {
         if (NamingUtils.isMetadata(path) || NamingUtils.isChecksum(path) || NamingUtils.isSystem(path)) {
             return true;
@@ -84,10 +89,12 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
         return true;
     }
 
+    @Override
     public boolean isLocal() {
         return getDescriptor().isLocal();
     }
 
+    @Override
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     public BasicStatusHolder assertValidPath(String path, boolean downloadRequest) {
         BasicStatusHolder statusHolder = new BasicStatusHolder();

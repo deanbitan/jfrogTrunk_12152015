@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -56,7 +56,7 @@ public class BaseTitledLink extends AbstractLink implements Titled {
     }
 
     protected void addOnClickOpenScript(ComponentTag tag) {
-        if (isEnabled() && !tag.getName().equalsIgnoreCase("a")) {
+        if (isEnabled() && !"a".equalsIgnoreCase(tag.getName())) {
             tag.put("onclick", getOpenScript());
         }
     }
@@ -80,7 +80,7 @@ public class BaseTitledLink extends AbstractLink implements Titled {
     protected void onComponentTag(ComponentTag tag) {
         if (tag.isOpenClose()) {
             wasOpenCloseTag = true;
-            tag.setType(XmlTag.OPEN);
+            tag.setType(XmlTag.TagType.OPEN);
         }
 
         super.onComponentTag(tag);
@@ -106,13 +106,14 @@ public class BaseTitledLink extends AbstractLink implements Titled {
 
     @SuppressWarnings({"RefusedBequest"})
     @Override
-    protected void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag) {
+    public void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag) {
         if (!"input".equalsIgnoreCase(openTag.getName())) {
             String html = getInnerHtml(openTag);
             replaceBody(markupStream, openTag, html);
         }
     }
 
+    @Override
     public String getTitle() {
         try {
             if (getDefaultModelObjectAsString() == null) {

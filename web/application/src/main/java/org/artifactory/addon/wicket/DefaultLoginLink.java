@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,7 @@
 
 package org.artifactory.addon.wicket;
 
-import org.apache.wicket.authentication.AuthenticatedWebSession;
+import org.apache.wicket.authroles.authentication.AuthenticatedWebSession;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.SecurityService;
@@ -46,13 +46,14 @@ public class DefaultLoginLink extends TitledSubmitLink {
         super(id, title, form);
     }
 
+    @Override
     public void onSubmit() {
         LoginInfo loginInfo = (LoginInfo) form.getDefaultModelObject();
         String username = loginInfo.getUsername();
         String password = loginInfo.getPassword();
         boolean signedIn = AuthenticatedWebSession.get().signIn(username, password);
 
-        HttpServletRequest httpServletRequest = WicketUtils.getWebRequest().getHttpServletRequest();
+        HttpServletRequest httpServletRequest = WicketUtils.getHttpServletRequest();
         if (signedIn) {
             /**
              * If login has been called because the user was not yet logged in, than continue to the original
@@ -62,7 +63,7 @@ public class DefaultLoginLink extends TitledSubmitLink {
                 setResponsePage(ArtifactoryApplication.get().getHomePage());
             }
             //set a remember me cookie for the first success login
-            rememberMeServices.loginSuccess(httpServletRequest, getHttpServletResponse(),
+            rememberMeServices.loginSuccess(httpServletRequest, WicketUtils.getHttpServletResponse(),
                     AuthenticationHelper.getAuthentication());
         } else {
             //Try the component based localizer first. If not found try the application localizer. Else use the default
@@ -72,6 +73,6 @@ public class DefaultLoginLink extends TitledSubmitLink {
     }
 
     private HttpServletResponse getHttpServletResponse() {
-        return WicketUtils.getWebResponse().getHttpServletResponse();
+        return WicketUtils.getHttpServletResponse();
     }
 }

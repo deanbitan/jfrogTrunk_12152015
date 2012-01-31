@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,8 +25,8 @@ import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.jcr.fs.JcrFsItem;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.util.RepoLayoutUtils;
@@ -92,17 +92,21 @@ public class JcrRepoBaseTest {
     private JcrRepoBase<LocalRepoDescriptor> createJcrRepoBase() {
         LocalRepoDescriptor descriptor = new LocalRepoDescriptor();
         JcrRepoBase<LocalRepoDescriptor> repo = new JcrRepoBase<LocalRepoDescriptor>(null, null) {
+            @Override
             public ChecksumPolicy getChecksumPolicy() {
                 return null;
             }
 
+            @Override
             public void onCreate(JcrFsItem fsItem) {
             }
 
+            @Override
             public MavenSnapshotVersionAdapter getMavenSnapshotVersionAdapter() {
                 return null;
             }
 
+            @Override
             public boolean isSuppressPomConsistencyChecks() {
                 return false;
             }

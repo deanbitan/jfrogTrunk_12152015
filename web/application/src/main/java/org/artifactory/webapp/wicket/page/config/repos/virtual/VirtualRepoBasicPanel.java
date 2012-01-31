@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -93,7 +93,7 @@ public class VirtualRepoBasicPanel extends Panel {
                     @Override
                     protected void onOrderChanged(AjaxRequestTarget target) {
                         super.onOrderChanged(target);
-                        target.addComponent(resolvedRepo);
+                        target.add(resolvedRepo);
                         ModalHandler.resizeCurrent();
                     }
                 };
@@ -130,19 +130,23 @@ public class VirtualRepoBasicPanel extends Panel {
     private class ResolvedReposDataProvider implements IDataProvider<RealRepoDescriptor> {
         private final VirtualRepoResolver resolver = new VirtualRepoResolver(repoDescriptor);
 
+        @Override
         public Iterator<RealRepoDescriptor> iterator(int first, int count) {
             return resolver.getOrderedRepos().iterator();
         }
 
+        @Override
         public int size() {
             resolver.update(repoDescriptor);
             return resolver.getOrderedRepos().size();
         }
 
+        @Override
         public IModel<RealRepoDescriptor> model(RealRepoDescriptor object) {
             return new Model<RealRepoDescriptor>(object);
         }
 
+        @Override
         public void detach() {
 
         }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -42,6 +42,13 @@ public class Property implements Descriptor {
     @XmlElementWrapper(name = "predefinedValues")
     @XmlElement(name = "predefinedValue", required = false)
     private List<PredefinedValue> predefinedValues = new ArrayList<PredefinedValue>();
+
+    public Property() {
+    }
+
+    public Property(String name) {
+        this.name = name;
+    }
 
     public String getName() {
         return name;

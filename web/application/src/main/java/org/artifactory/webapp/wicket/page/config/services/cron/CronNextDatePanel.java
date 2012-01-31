@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,6 +48,7 @@ public class CronNextDatePanel extends Panel {
         // send ajax request with only cronExpField
         BaseTitledLink calculateButton = new BaseTitledLink("calculate", "Refresh");
         calculateButton.add(new JavascriptEvent("onclick", new AbstractReadOnlyModel() {
+            @Override
             public Object getObject() {
                 return "dojo.byId('" + cronExpField.getMarkupId() + "').onchange();";
             }
@@ -57,16 +58,17 @@ public class CronNextDatePanel extends Panel {
         // update nextRunLabel on cronExpField change
         cronExpField.setOutputMarkupId(true);
         cronExpField.add(new AjaxFormComponentUpdatingBehavior("onchange") {
+            @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 nextRunLabel.setDefaultModelObject(getNextRunTime(cronExpField.getValue()));
-                target.addComponent(nextRunLabel);
+                target.add(nextRunLabel);
             }
 
             @Override
             protected void onError(AjaxRequestTarget target, RuntimeException e) {
                 super.onError(target, e);
                 nextRunLabel.setDefaultModelObject(getNextRunTime(cronExpField.getValue()));
-                target.addComponent(nextRunLabel);
+                target.add(nextRunLabel);
             }
 
             @Override
@@ -82,7 +84,11 @@ public class CronNextDatePanel extends Panel {
         }
         if (CronUtils.isValid(cronExpression)) {
             Date nextExecution = CronUtils.getNextExecution(cronExpression);
-            return formatDate(nextExecution);
+            if (nextExecution != null) {
+                return formatDate(nextExecution);
+            } else {
+                return "Next run time is in the past.";
+            }
         }
         return "The cron expression is invalid.";
     }

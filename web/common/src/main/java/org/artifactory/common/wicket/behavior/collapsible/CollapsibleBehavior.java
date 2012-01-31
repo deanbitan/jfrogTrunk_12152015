@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,10 +20,10 @@ package org.artifactory.common.wicket.behavior.collapsible;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.template.TemplateBehavior;
@@ -121,7 +121,8 @@ public class CollapsibleBehavior extends TemplateBehavior {
 
         @Override
         protected void onEvent(AjaxRequestTarget target) {
-            String expandedString = RequestCycle.get().getRequest().getParameter("expanded");
+            String expandedString = RequestCycle.get().getRequest().getRequestParameters().getParameterValue(
+                    "expanded").toString();
             boolean expanded = StringUtils.isEmpty(expandedString) || Boolean.valueOf(expandedString);
             setExpanded(expanded);
             onChange(target);

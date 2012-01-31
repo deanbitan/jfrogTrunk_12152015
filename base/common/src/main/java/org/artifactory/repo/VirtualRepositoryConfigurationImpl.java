@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -68,12 +68,14 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
         }
         List<RepoDescriptor> repositories = repoDescriptor.getRepositories();
         setRepositories(Lists.transform(repositories, new Function<RepoDescriptor, String>() {
+            @Override
             public String apply(@Nonnull RepoDescriptor input) {
                 return input.getKey();
             }
         }));
     }
 
+    @Override
     public boolean isArtifactoryRequestsCanRetrieveRemoteArtifacts() {
         return artifactoryRequestsCanRetrieveRemoteArtifacts;
     }
@@ -83,6 +85,7 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
         this.artifactoryRequestsCanRetrieveRemoteArtifacts = artifactoryRequestsCanRetrieveRemoteArtifacts;
     }
 
+    @Override
     public String getKeyPair() {
         return keyPair;
     }
@@ -91,6 +94,7 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
         this.keyPair = keyPair;
     }
 
+    @Override
     public String getPomRepositoryReferencesCleanupPolicy() {
         return pomRepositoryReferencesCleanupPolicy;
     }
@@ -99,6 +103,7 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
         this.pomRepositoryReferencesCleanupPolicy = pomRepositoryReferencesCleanupPolicy;
     }
 
+    @Override
     public List<String> getRepositories() {
         return repositories;
     }

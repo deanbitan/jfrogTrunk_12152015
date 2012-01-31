@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,7 @@ package org.artifactory.webapp.wicket.page.config.advanced;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.authorization.strategies.role.annotations.AuthorizeInstantiation;
+import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
@@ -87,6 +87,7 @@ public class AdvancedCentralConfigPage extends AuthenticatedPage {
         centralPanel.setEditorValue(configXml);
         centralForm.add(saveCentralButton);
         TitledAjaxLink cancelCentralButton = new TitledAjaxLink("centralCancel", "Cancel") {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 setResponsePage(AdvancedCentralConfigPage.class);
             }

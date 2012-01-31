@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,7 +27,7 @@ import org.apache.wicket.model.Model;
  */
 public class CssClass extends AttributeAppender {
     public CssClass(IModel cssModel) {
-        super("class", true, cssModel, " ");
+        super("class", cssModel, " ");
     }
 
     public CssClass(String cssClass) {

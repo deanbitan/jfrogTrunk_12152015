@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,19 +23,19 @@
  */
 if (!window.FeedbackDistributer) {
     FeedbackDistributer = {
-        defaultPanel: null,
-        panels: new Array(),
+        defaultPanel:null,
+        panels:new Array(),
 
-        init: function (defaultPanel) {
+        init:function (defaultPanel) {
             FeedbackDistributer.defaultPanel = dojo.byId(defaultPanel);
             FeedbackDistributer.clearMessages();
         },
 
-        clearMessages: function () {
+        clearMessages:function () {
             if (FeedbackDistributer.panels.length == 0) {
                 return;
             }
-            dojo.forEach(FeedbackDistributer.panels, function(panel) {
+            dojo.forEach(FeedbackDistributer.panels, function (panel) {
                 try {
                     while (panel.firstChild) {
                         var ondestroy = panel.getAttribute('ondestroy');
@@ -51,8 +51,8 @@ if (!window.FeedbackDistributer) {
             FeedbackDistributer.panels = new Array();
         },
 
-        showMessages: function() {
-            dojo.forEach(FeedbackDistributer.panels, function(panel) {
+        showMessages:function () {
+            dojo.forEach(FeedbackDistributer.panels, function (panel) {
                 if (panel.getElementsByTagName('li').length) {
                     // trigger panel.onShow() event handler
                     var onshow = panel.getAttribute('onshow');
@@ -63,7 +63,7 @@ if (!window.FeedbackDistributer) {
             });
         },
 
-        addMessage: function(reporterId, level, message) {
+        addMessage:function (reporterId, level, message) {
             // get reporter and feedback panel
             var reporter = dojo.byId(reporterId);
             var panel = FeedbackDistributer.getFeedbackPanelFor(reporter);
@@ -91,7 +91,7 @@ if (!window.FeedbackDistributer) {
             panel.firstChild.appendChild(li);
         },
 
-        getFeedbackPanelFor: function(reporter) {
+        getFeedbackPanelFor:function (reporter) {
             var node = reporter;
 
             // find closest FeedbackPanel

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -90,6 +90,7 @@ import org.artifactory.request.RequestContext;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.MetadataResource;
 import org.artifactory.resource.MutableRepoResourceInfo;
+import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResolvedResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
@@ -100,8 +101,7 @@ import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.StorageConstants;
-import org.artifactory.traffic.InternalTrafficService;
-import org.artifactory.traffic.entry.UploadEntry;
+import org.artifactory.traffic.TrafficService;
 import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
 
@@ -130,7 +130,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     private StorageInterceptors interceptors;
     private JcrRepoService jcrRepoService;
     private JcrService jcrService;
-    private InternalTrafficService trafficService;
+    private TrafficService trafficService;
     private AddonsManager addonsManager;
 
     private RepoPath rootRepoPath;
@@ -155,7 +155,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         this.interceptors = context.beanForType(StorageInterceptors.class);
         this.jcrRepoService = context.getJcrRepoService();
         this.jcrService = context.getJcrService();
-        this.trafficService = context.beanForType(InternalTrafficService.class);
+        this.trafficService = context.beanForType(TrafficService.class);
         addonsManager = context.beanForType(AddonsManager.class);
 
         //init caches
@@ -451,9 +451,6 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         } else if (item.isFile()) {
             JcrFile jcrFile = (JcrFile) item;
             final InputStream is = jcrFile.getStream();
-            if (is == null) {
-                throw new IOException("Could not get resource stream. Stream not found: " + item + ".");
-            }
             //Update the stats queue counter
             jcrFile.updateDownloadStats();
             //Send the async event to save the stats
@@ -465,8 +462,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
             Request request = requestContext.getRequest();
             if (request != null && request.isZipResourceRequest()) {
-                handle = addonsManager.addonByType(FilteredResourcesAddon.class)
-                        .getZipResourceHandle(res, jcrFile.getStream());
+                handle = addonsManager.addonByType(FilteredResourcesAddon.class).getZipResourceHandle(res, is);
             } else {
                 handle = new SimpleResourceStreamHandle(is, jcrFile.getSize());
                 log.trace("Created stream handle for '{}' with length {}.", res, jcrFile.getSize());
@@ -588,7 +584,9 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                     }
                 }
                 String metadataName = res.getInfo().getName();
-                jcrFsItem.setXmlMetadata(metadataName, IOUtils.toString(in, "utf-8"));
+                String metadataContent = IOUtils.toString(in, "utf-8");
+                jcrFsItem.setXmlMetadata(metadataName, metadataContent);
+                updateResourceSize(res, metadataContent.length());
             } else {
                 //Create the parent folder if it does not exist
                 RepoPath parentPath = repoPath.getParent();
@@ -612,7 +610,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                 ChecksumsInfo existingChecksumsToCompare = setResourceChecksums(res, jcrFile,
                         artifactNonUniqueSnapshot);
 
-                long dataFillStartTime = fillJcrFileData(res, bufferedIs, jcrFile);
+                fillJcrFileData(res, bufferedIs, jcrFile);
 
                 /**
                  * Populating info details from request should come after fillJcrFileData() since the method sets it's
@@ -630,8 +628,8 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
 
                 //Add default stats
                 jcrFile.setMetadata(StatsInfo.class, InfoFactoryHolder.get().createStats());
-
-                createJcrFile(res, jcrFile, dataFillStartTime);
+                updateResourceSize(res, jcrFile.getSize());
+                createJcrFile(res, jcrFile);
             }
             return res;
         } catch (Exception e) {
@@ -651,6 +649,14 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             }
             context.setException(e);
             throw new RuntimeException("Failed to save resource '" + res.getRepoPath() + "'.", e);
+        }
+    }
+
+    private void updateResourceSize(RepoResource res, long size) {
+        // if the resource info is mutable, update/set the real resource size
+        RepoResourceInfo info = res.getInfo();
+        if (res.getInfo() instanceof MutableRepoResourceInfo) {
+            ((MutableRepoResourceInfo) info).setSize(size);
         }
     }
 
@@ -792,15 +798,12 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         }
     }
 
-    private void createJcrFile(RepoResource res, JcrFile jcrFile, long dataFillStartTime) {
+    private void createJcrFile(RepoResource res, JcrFile jcrFile) {
         if (log.isDebugEnabled()) {
             log.debug("Saved resource '{}' with length {} into repository '{}'.",
                     new Object[]{res, jcrFile.getSize(), this});
         }
         onCreate(jcrFile);
-        final UploadEntry uploadEntry = new UploadEntry(jcrFile.getRepoPath().getId(), jcrFile.length(),
-                System.currentTimeMillis() - dataFillStartTime);
-        trafficService.handleTrafficEntry(uploadEntry);
     }
 
     /**

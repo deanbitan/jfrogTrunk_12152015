@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,9 +20,9 @@ package org.artifactory.api.maven;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.artifact.UnitInfo;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
@@ -121,6 +121,7 @@ public class MavenArtifactInfo implements UnitInfo {
         return StringUtils.isNotBlank(version) && !NA.equals(version);
     }
 
+    @Override
     public boolean isMavenArtifact() {
         return true;
     }
@@ -148,10 +149,12 @@ public class MavenArtifactInfo implements UnitInfo {
         this.type = type;
     }
 
+    @Override
     public boolean isValid() {
         return hasGroupId() && hasArtifactId() && hasVersion();
     }
 
+    @Override
     public String getPath() {
         return buildMavenPath();
     }

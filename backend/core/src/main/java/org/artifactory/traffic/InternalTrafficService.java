@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,48 +18,11 @@
 
 package org.artifactory.traffic;
 
-import org.artifactory.api.repo.Async;
-import org.artifactory.sapi.common.ArtifactorySession;
 import org.artifactory.spring.ReloadableBean;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Calendar;
 
 /**
  * @author yoavl
  */
 public interface InternalTrafficService extends ReloadableBean, TrafficService {
 
-    /**
-     * Collect new traffic entries since the last time collected.
-     */
-    void collect();
-
-    /**
-     * Remove old collected entries that have expired, according to the retention period.
-     */
-    void cleanup();
-
-    /**
-     * Get an iterator for traffic entries for the specified time window (edges inclusive)
-     */
-    TrafficEntriesIterator getDatabaseEntries(@Nullable Calendar from, @Nullable Calendar to,
-            @Nonnull ArtifactorySession session);
-
-    Calendar getLastCollected(@Nullable TrafficCollectorResolution resolution, ArtifactorySession session);
-
-    void updateLastCollected(@Nullable TrafficCollectorResolution resolution, Calendar lastCollected,
-            ArtifactorySession session);
-
-    void addTrafficCollectorListener(TrafficCollectorResolution resolution, TrafficCollectorListener listener);
-
-    void removeTrafficCollectorListener(TrafficCollectorResolution resolution,
-            TrafficCollectorListener listener);
-
-    /**
-     * Notify listeners about collection event asynchronously
-     */
-    @Async
-    void notifyCollectionListener(TrafficCollectorListener listener, TrafficCollectionEvent event);
 }

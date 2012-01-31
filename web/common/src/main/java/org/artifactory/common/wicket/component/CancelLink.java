@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,10 +43,11 @@ public class CancelLink extends TitledAjaxLink {
         this.form = form;
     }
 
+    @Override
     public void onClick(AjaxRequestTarget target) {
         form.clearInput();
         if (form.getOutputMarkupId()) {
-            target.addComponent(form);
+            target.add(form);
         }
     }
 }

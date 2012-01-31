@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,8 @@
 
 package org.artifactory.traffic.mbean;
 
-import org.artifactory.traffic.InternalTrafficService;
 import org.artifactory.traffic.TrafficAction;
+import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.TrafficEntry;
 import org.artifactory.traffic.entry.TransferEntry;
 
@@ -31,17 +31,19 @@ import java.util.List;
  */
 public class Traffic implements TrafficMBean {
 
-    private final InternalTrafficService trafficService;
+    private final TrafficService trafficService;
 
-    public Traffic(InternalTrafficService service) {
+    public Traffic(TrafficService service) {
         trafficService = service;
     }
 
+    @Override
     public long getAccumulatedDownloadSize(long from, long to) {
         List<TrafficEntry> entries = getEntries(from, to);
         return sumTransfer(entries, TrafficAction.DOWNLOAD);
     }
 
+    @Override
     public long getAccumulatedUploadSize(long from, long to) {
         List<TrafficEntry> entries = getEntries(from, to);
         return sumTransfer(entries, TrafficAction.UPLOAD);

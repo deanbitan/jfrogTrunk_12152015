@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
 package org.artifactory.common.wicket.component.combobox;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.behavior.IBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.model.IModel;
 import org.artifactory.common.wicket.behavior.combobox.history.HistoryComboBoxBehavior;
 
@@ -44,17 +44,17 @@ public class HistoryComboBox extends ComboBox {
     }
 
     public void addHistory(String value) {
-        AjaxRequestTarget.get().prependJavascript(
+        AjaxRequestTarget.get().prependJavaScript(
                 String.format("dijit.byId(%s).addHistory(%s)", jsParam(getMarkupId()), jsParam(value)));
     }
 
     public void clearHistory() {
         AjaxRequestTarget.get()
-                .prependJavascript(String.format("dijit.byId(%s).clearHistory()", jsParam(getMarkupId())));
+                .prependJavaScript(String.format("dijit.byId(%s).clearHistory()", jsParam(getMarkupId())));
     }
 
     @Override
-    protected IBehavior newComboBehavior() {
+    protected Behavior newComboBehavior() {
         return new HistoryComboBoxBehavior();
     }
 }

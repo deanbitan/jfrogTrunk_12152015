@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,6 +30,7 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.webapp.wicket.page.home.settings.modal.DownloadModalSettings;
 import org.artifactory.webapp.wicket.page.home.settings.modal.ReadOnlySettingsModalPanel;
 import org.artifactory.webapp.wicket.page.home.settings.modal.editable.EditableSettingsModalPanel;
 
@@ -75,12 +76,12 @@ public abstract class BaseSettingsGeneratorPanel extends TitledPanel implements 
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 ModalWindow modelWindow = ModalHandler.getInstanceFor(this);
                 BaseModalPanel modalPanelReadOnly;
+                DownloadModalSettings settings = new DownloadModalSettings(generateSettings(),
+                        getSettingsMimeType(), getSaveToFileName(), getSettingsSyntax(), getDownloadButtonTitle());
                 if (authorizationService.isAdmin()) {
-                    modalPanelReadOnly = new EditableSettingsModalPanel(generateSettings(), getSettingsMimeType(),
-                            getSaveToFileName());
+                    modalPanelReadOnly = new EditableSettingsModalPanel(settings);
                 } else {
-                    modalPanelReadOnly = new ReadOnlySettingsModalPanel(generateSettings(),
-                            getSettingsSyntax(), getSettingsMimeType(), getSaveToFileName());
+                    modalPanelReadOnly = new ReadOnlySettingsModalPanel(settings);
                 }
                 modalPanelReadOnly.setTitle(getSettingsWindowTitle());
                 modelWindow.setContent(modalPanelReadOnly);
@@ -123,4 +124,11 @@ public abstract class BaseSettingsGeneratorPanel extends TitledPanel implements 
      * @return Downloadable settings file name
      */
     protected abstract String getSaveToFileName();
+
+    /**
+     * Returns the title of the settings generation download button
+     *
+     * @return Download settings button title
+     */
+    protected abstract String getDownloadButtonTitle();
 }

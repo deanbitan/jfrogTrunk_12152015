@@ -36,6 +36,7 @@ class BaseGroupCriterion extends BaseVfsQueryCriterion {
         return null;
     }
 
+    @Override
     public VfsQueryCriterion addPropertySubPath(String... pathElements) {
         throw new InvalidQueryRuntimeException("Cannot have properties sub path on group");
     }

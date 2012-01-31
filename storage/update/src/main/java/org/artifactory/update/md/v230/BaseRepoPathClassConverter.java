@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,6 +32,7 @@ import org.jdom.Element;
  */
 public abstract class BaseRepoPathClassConverter implements MetadataConverter {
 
+    @Override
     public void convert(Document doc) {
         Element rootElement = doc.getRootElement();
         Element repoPath = rootElement.getChild("repoPath");
@@ -44,10 +45,12 @@ public abstract class BaseRepoPathClassConverter implements MetadataConverter {
 
     public static class FileRepoPathClassConverter extends BaseRepoPathClassConverter {
 
+        @Override
         public String getNewMetadataName() {
             return "artifactory-file";
         }
 
+        @Override
         public MetadataType getSupportedMetadataType() {
             return MetadataType.file;
         }
@@ -55,10 +58,12 @@ public abstract class BaseRepoPathClassConverter implements MetadataConverter {
 
     public static class FolderRepoPathClassConverter extends BaseRepoPathClassConverter {
 
+        @Override
         public String getNewMetadataName() {
             return "artifactory-folder";
         }
 
+        @Override
         public MetadataType getSupportedMetadataType() {
             return MetadataType.folder;
         }
@@ -66,10 +71,12 @@ public abstract class BaseRepoPathClassConverter implements MetadataConverter {
 
     public static class WatchersRepoPathClassConverter extends BaseRepoPathClassConverter {
 
+        @Override
         public String getNewMetadataName() {
             return "watchers";
         }
 
+        @Override
         public MetadataType getSupportedMetadataType() {
             return MetadataType.watch;
         }

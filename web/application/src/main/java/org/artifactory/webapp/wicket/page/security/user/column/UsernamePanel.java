@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,13 +19,13 @@
 package org.artifactory.webapp.wicket.page.security.user.column;
 
 import com.google.common.collect.Lists;
-import org.apache.wicket.PageParameters;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.extensions.markup.html.basic.SmartLinkLabel;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserAwareAuthenticationProvider;
@@ -54,12 +54,12 @@ public class UsernamePanel extends Panel {
 
     public UsernamePanel(String id, IModel<UserModel> model) {
         super(id);
-        add(new SimpleAttributeModifier("class", "UserColumn"));
+        add(new AttributeModifier("class", "UserColumn"));
         final UserModel userModel = model.getObject();
         final String username = userModel.getUsername();
 
         if (UserInfo.ANONYMOUS.equals(username) && !authorizationService.isAnonAccessEnabled()) {
-            CharSequence pageUrl = getRequestCycle().urlFor(SecurityGeneralConfigPage.class, PageParameters.NULL);
+            CharSequence pageUrl = getRequestCycle().urlFor(SecurityGeneralConfigPage.class, new PageParameters());
             add(new SmartLinkLabel("username", username + " (<a href=\"" + pageUrl + "\">disabled</a>)").
                     setEscapeModelStrings(false));
         } else {

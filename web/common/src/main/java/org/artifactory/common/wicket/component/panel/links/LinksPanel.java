@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -61,6 +61,7 @@ public class LinksPanel extends Panel {
         String className = pageClass.getSimpleName();
         ResourceModel linkTitleModel = new ResourceModel(className, className);
         AbstractLink link = new TitledAjaxLink(LINK_ID, linkTitleModel) {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 setResponsePage(pageClass);
             }

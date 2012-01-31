@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,16 +18,18 @@
 
 package org.artifactory.common.wicket.component.label.highlighter;
 
-import org.apache.wicket.ResourceReference;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.IHeaderContributor;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebComponent;
-import org.apache.wicket.markup.html.resources.CompressedResourceReference;
-import org.apache.wicket.markup.html.resources.JavascriptResourceReference;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.apache.wicket.request.resource.CssResourceReference;
+import org.apache.wicket.request.resource.JavaScriptResourceReference;
+import org.apache.wicket.request.resource.PackageResourceReference;
+import org.apache.wicket.request.resource.ResourceReference;
 
 import static java.lang.String.format;
 import static org.artifactory.common.wicket.util.JavaScriptUtils.jsFunctionCall;
@@ -36,13 +38,15 @@ import static org.artifactory.common.wicket.util.JavaScriptUtils.jsFunctionCall;
  * @author Yoav Aharoni
  */
 public class SyntaxHighlighter extends WebComponent implements IHeaderContributor {
-    private static final ResourceReference CORE_JS_REFERENCE = new JavascriptResourceReference(SyntaxHighlighter.class,
+    private static final ResourceReference CORE_JS_REFERENCE = new JavaScriptResourceReference(SyntaxHighlighter.class,
             "resources/scripts/shCore.js");
-    private static final ResourceReference CORE_CSS_REFERENCE = new CompressedResourceReference(SyntaxHighlighter.class,
+    private static final ResourceReference CORE_CSS_REFERENCE = new CssResourceReference(SyntaxHighlighter.class,
             "resources/styles/shCore.css");
-    private static final ResourceReference JAVASCRIPT_REFERENCE = new ResourceReference(SyntaxHighlighter.class,
+    private static final ResourceReference JAVASCRIPT_REFERENCE = new JavaScriptResourceReference(
+            SyntaxHighlighter.class,
             "SyntaxHighlighter.js");
-    private static final ResourceReference CLIPBOARD_SWF_REFERENCE = new ResourceReference(SyntaxHighlighter.class,
+    private static final ResourceReference CLIPBOARD_SWF_REFERENCE = new PackageResourceReference(
+            SyntaxHighlighter.class,
             "resources/scripts/clipboard.swf");
 
     private Theme theme = Theme.Default;
@@ -71,19 +75,20 @@ public class SyntaxHighlighter extends WebComponent implements IHeaderContributo
         }
     }
 
+    @Override
     public void renderHead(IHeaderResponse response) {
         // add css
         response.renderCSSReference(CORE_CSS_REFERENCE);
         response.renderCSSReference(theme.getCssReference());
 
         // add javascript
-        response.renderJavascriptReference(CORE_JS_REFERENCE);
-        response.renderJavascriptReference(syntax.getJsReference());
-        response.renderJavascriptReference(JAVASCRIPT_REFERENCE);
+        response.renderJavaScriptReference(CORE_JS_REFERENCE);
+        response.renderJavaScriptReference(syntax.getJsReference());
+        response.renderJavaScriptReference(JAVASCRIPT_REFERENCE);
 
-        response.renderOnDomReadyJavascript(jsFunctionCall("SyntaxHighlighter.byId",
+        response.renderOnDomReadyJavaScript(jsFunctionCall("SyntaxHighlighter.byId",
                 getMarkupId(),
-                urlFor(CLIPBOARD_SWF_REFERENCE),
+                urlFor(CLIPBOARD_SWF_REFERENCE, new PageParameters()),
                 syntax.getBrush(),
                 gutter, toolbar, autoLinks, wrapLines));
     }
@@ -142,7 +147,7 @@ public class SyntaxHighlighter extends WebComponent implements IHeaderContributo
         return this;
     }
 
-    private CharSequence getMarkup() {
+    private CharSequence getHtmlMarkup() {
         final String code = getDefaultModelObjectAsString();
 
         final StringBuilder markup = new StringBuilder();
@@ -155,8 +160,8 @@ public class SyntaxHighlighter extends WebComponent implements IHeaderContributo
     }
 
     @Override
-    protected void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag) {
-        final CharSequence markup = getMarkup();
+    public void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag) {
+        final CharSequence markup = getHtmlMarkup();
         replaceComponentTagBody(markupStream, openTag, markup);
     }
 
@@ -172,7 +177,7 @@ public class SyntaxHighlighter extends WebComponent implements IHeaderContributo
 
         Theme(String cssFile) {
             final String cssPath = format("resources/styles/%s", cssFile);
-            cssReference = new CompressedResourceReference(SyntaxHighlighter.class, cssPath);
+            cssReference = new CssResourceReference(SyntaxHighlighter.class, cssPath);
         }
 
         ResourceReference getCssReference() {

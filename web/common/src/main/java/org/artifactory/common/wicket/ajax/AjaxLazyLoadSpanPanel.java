@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,6 @@
 package org.artifactory.common.wicket.ajax;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
@@ -27,7 +26,10 @@ import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.version.undo.Change;
+import org.apache.wicket.request.IRequestHandler;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.handler.resource.ResourceReferenceRequestHandler;
+
 
 /**
  * An almost complete copy of Wickets org.apache.wicket.extensions.ajax.markup.html.AjaxLazyLoadPanel.
@@ -64,32 +66,22 @@ public abstract class AjaxLazyLoadSpanPanel extends Panel {
             }
 
             @Override
-            protected void respond(AjaxRequestTarget target) {
-                Component component = getLazyLoadComponent(LAZY_LOAD_COMPONENT_ID);
-                AjaxLazyLoadSpanPanel.this.replace(component);
-                target.addComponent(AjaxLazyLoadSpanPanel.this);
-                setState((byte) 2);
+            protected void respond(final AjaxRequestTarget target) {
+                if (state < 2) {
+                    Component component = getLazyLoadComponent(LAZY_LOAD_COMPONENT_ID);
+                    AjaxLazyLoadSpanPanel.this.replace(component);
+                    setState((byte) 2);
+                }
+                target.add(AjaxLazyLoadSpanPanel.this);
+
             }
 
             @Override
-            public void renderHead(IHeaderResponse response) {
-                super.renderHead(response);
-                handleCallbackScript(response, getCallbackScript().toString());
-            }
-
-            @Override
-            public boolean isEnabled(Component component) {
-                return state < 2;
-            }
-
-            /**
-             * An ajax channel name used only by this ajax component which allow to display the default ajax
-             * indicator when the user clicks on another ajax action while this one is still executing (otherwise
-             * wicket will aggregate the other ajax events without the user knowing)
-             */
-            @Override
-            protected String getChannelName() {
-                return "LazyLoadChannel";
+            public void renderHead(final Component component, final IHeaderResponse response) {
+                super.renderHead(component, response);
+                if (state < 2) {
+                    handleCallbackScript(response, getCallbackScript().toString());
+                }
             }
         });
     }
@@ -101,7 +93,7 @@ public abstract class AjaxLazyLoadSpanPanel extends Panel {
      * @param callbackScript
      */
     protected void handleCallbackScript(final IHeaderResponse response, final String callbackScript) {
-        response.renderOnDomReadyJavascript(callbackScript);
+        response.renderOnDomReadyJavaScript(callbackScript);
     }
 
     /**
@@ -116,11 +108,9 @@ public abstract class AjaxLazyLoadSpanPanel extends Panel {
         super.onBeforeRender();
     }
 
-    private void setState(byte state) {
-        if (this.state != state) {
-            addStateChange(new StateChange(this.state));
-        }
+    private void setState(final byte state) {
         this.state = state;
+        getPage().dirty();
     }
 
     /**
@@ -135,24 +125,10 @@ public abstract class AjaxLazyLoadSpanPanel extends Panel {
      * @return The component to show while the real component is being created.
      */
     public Component getLoadingComponent(final String markupId) {
+        IRequestHandler handler = new ResourceReferenceRequestHandler(
+                AbstractDefaultAjaxBehavior.INDICATOR);
         return new Label(markupId, "<img alt=\"Loading...\" src=\"" +
-                RequestCycle.get().urlFor(AbstractDefaultAjaxBehavior.INDICATOR) + "\"/>").setEscapeModelStrings(false);
+                RequestCycle.get().urlFor(handler) + "\"/>").setEscapeModelStrings(false);
     }
 
-    private final class StateChange extends Change {
-
-        private final byte state;
-
-        public StateChange(byte state) {
-            this.state = state;
-        }
-
-        /**
-         * @see org.apache.wicket.version.undo.Change#undo()
-         */
-        @Override
-        public void undo() {
-            AjaxLazyLoadSpanPanel.this.state = state;
-        }
-    }
 }

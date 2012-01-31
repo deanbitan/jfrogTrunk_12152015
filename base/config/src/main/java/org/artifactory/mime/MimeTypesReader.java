@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -85,6 +85,7 @@ public class MimeTypesReader {
          *
          * @param str A comma separated list of strings
          */
+        @Override
         public ImmutableSet<String> fromString(String str) {
             if (StringUtils.isBlank(str)) {
                 return ImmutableSet.of();
@@ -101,10 +102,12 @@ public class MimeTypesReader {
             return builder.build();
         }
 
+        @Override
         public String toString(Object obj) {
             throw new UnsupportedOperationException("Marshaling is not supported");
         }
 
+        @Override
         public boolean canConvert(Class type) {
             throw new UnsupportedOperationException("This method should not be called on a local converter");
         }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -50,10 +50,12 @@ public class JcrAuthenticationProvider extends DaoAuthenticationProvider impleme
                 authenticate.getAuthorities());
     }
 
+    @Override
     public String getRealm() {
         return INTERNAL_REALM;
     }
 
+    @Override
     public void addExternalGroups(String username, Set<UserGroupInfo> groups) {
         log.debug("User '{}' is an internal user that belongs to the following groups '{}'", username, groups);
         // nop
@@ -63,6 +65,7 @@ public class JcrAuthenticationProvider extends DaoAuthenticationProvider impleme
         setPasswordEncoder(new Md5PasswordEncoder());
     }
 
+    @Override
     public boolean userExists(String username) {
         return userGroupManager.userExists(username);
     }

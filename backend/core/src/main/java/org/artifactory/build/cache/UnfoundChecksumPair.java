@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,14 +34,17 @@ public class UnfoundChecksumPair extends SerializablePair<String, String> implem
         super(null, null);
     }
 
+    @Override
     public String getSha1() {
         return null;
     }
 
+    @Override
     public String getMd5() {
         return null;
     }
 
+    @Override
     public boolean checksumsFound() {
         return false;
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,6 +26,7 @@ import org.artifactory.common.wicket.behavior.template.TemplateBehavior;
 public class TitledBorderBehavior extends TemplateBehavior {
     private String cssPrefix;
     private String title;
+    private String cssClass;
 
     public TitledBorderBehavior() {
         this("");
@@ -55,5 +56,18 @@ public class TitledBorderBehavior extends TemplateBehavior {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getCssClass() {
+        return cssClass;
+    }
+
+    /**
+     * Additional CSS class for the border top level DIV element
+     *
+     * @param cssClass
+     */
+    public void setCssClass(String cssClass) {
+        this.cssClass = cssClass;
     }
 }

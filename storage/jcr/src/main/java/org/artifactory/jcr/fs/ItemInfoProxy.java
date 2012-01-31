@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -50,70 +50,86 @@ public abstract class ItemInfoProxy<T extends MutableItemInfo> implements Mutabl
         this.repoPath = repoPath;
     }
 
+    @Override
     public RepoPath getRepoPath() {
         // Repo path key needed to materialized => do not materialized
         return this.repoPath;
     }
 
+    @Override
     public String getName() {
         // Do not materialized
         return this.repoPath.getName();
     }
 
+    @Override
     public String getRepoKey() {
         // Do not materialized
         return this.repoPath.getRepoKey();
     }
 
+    @Override
     public String getRelPath() {
         // Do not materialized
         return this.repoPath.getPath();
     }
 
+    @Override
     public long getCreated() {
         return getMaterialized().getCreated();
     }
 
+    @Override
     public long getLastModified() {
         return getMaterialized().getLastModified();
     }
 
+    @Override
     public String getModifiedBy() {
         return getMaterialized().getModifiedBy();
     }
 
+    @Override
     public String getCreatedBy() {
         return getMaterialized().getCreatedBy();
     }
 
+    @Override
     public long getLastUpdated() {
         return getMaterialized().getLastUpdated();
     }
 
+    @Override
     public void setCreated(long created) {
         getMaterialized().setCreated(created);
     }
 
+    @Override
     public void setLastModified(long lastModified) {
         getMaterialized().setLastModified(lastModified);
     }
 
+    @Override
     public void setModifiedBy(String name) {
         getMaterialized().setModifiedBy(name);
     }
 
+    @Override
     public void setCreatedBy(String name) {
         getMaterialized().setCreatedBy(name);
     }
 
+    @Override
     public void setLastUpdated(long lastUpdated) {
         getMaterialized().setLastUpdated(lastUpdated);
     }
 
+    @Override
     public boolean isIdentical(ItemInfo info) {
         return getMaterialized().isIdentical(info);
     }
 
+    @Override
     public boolean merge(MutableItemInfo itemInfo) {
         return getMaterialized().merge(itemInfo);
     }

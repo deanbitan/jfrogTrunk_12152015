@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +21,7 @@ package org.artifactory.mime.version;
 import com.google.common.collect.Lists;
 import org.artifactory.mime.version.converter.LatestVersionConverter;
 import org.artifactory.mime.version.converter.v1.XmlIndexedConverter;
+import org.artifactory.mime.version.converter.v2.AscMimetypeConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
@@ -37,7 +38,8 @@ import java.util.List;
  */
 public enum MimeTypesVersion implements SubConfigElementVersion {
     v1(ArtifactoryVersion.v223, ArtifactoryVersion.v225, new XmlIndexedConverter()),
-    v2(ArtifactoryVersion.v230, ArtifactoryVersion.getCurrent(), null);
+    v2(ArtifactoryVersion.v230, ArtifactoryVersion.v242, new AscMimetypeConverter()),
+    v3(ArtifactoryVersion.v250, ArtifactoryVersion.getCurrent(), null);
 
     private final XmlConverter[] converters;
 
@@ -73,6 +75,7 @@ public enum MimeTypesVersion implements SubConfigElementVersion {
         return XmlConverterUtils.convert(converters, mimeTypesXmlAsString);
     }
 
+    @Override
     public VersionComparator getComparator() {
         throw new UnsupportedOperationException("stop being lazy and implement me");
     }

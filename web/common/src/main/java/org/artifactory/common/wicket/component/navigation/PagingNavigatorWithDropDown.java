@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -69,6 +69,7 @@ public class PagingNavigatorWithDropDown extends Panel {
 
         // prev link
         link = new TitledAjaxLink(PREV_PAGE) {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 // no more prev pages ?
                 if (shouldDisablePrevButton()) {
@@ -83,7 +84,7 @@ public class PagingNavigatorWithDropDown extends Panel {
                 pageable.setCurrentPage(pageable.getCurrentPage() - 1);
 
                 // render it
-                target.addComponent((Component) pageable);
+                target.add((Component) pageable);
 
                 // update the buttons state
                 updateButtons(target);
@@ -133,7 +134,7 @@ public class PagingNavigatorWithDropDown extends Panel {
                 pageable.setCurrentPage(currentPageIndex);
 
                 // render it
-                target.addComponent((Component) pageable);
+                target.add((Component) pageable);
 
                 updateButtons(target);
 
@@ -143,6 +144,7 @@ public class PagingNavigatorWithDropDown extends Panel {
 
         // next link
         link = new TitledAjaxLink(NEXT_PAGE) {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 // no more next pages ?
                 if (shouldDisableNextButton()) {
@@ -158,7 +160,7 @@ public class PagingNavigatorWithDropDown extends Panel {
                 pageable.setCurrentPage(pageable.getCurrentPage() + 1);
 
                 // render it !!!
-                target.addComponent((Component) pageable);
+                target.add((Component) pageable);
 
                 // update the buttons state
                 updateButtons(target);
@@ -197,7 +199,7 @@ public class PagingNavigatorWithDropDown extends Panel {
         if (c.isEnabled() != state) {
             c.setEnabled(state);
             if (target != null) {
-                target.addComponent(c);
+                target.add(c);
             }
         }
     }

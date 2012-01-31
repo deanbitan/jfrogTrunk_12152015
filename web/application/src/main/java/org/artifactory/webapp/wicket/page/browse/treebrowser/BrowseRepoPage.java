@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,7 +26,7 @@ import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
@@ -39,6 +39,7 @@ import java.net.URLEncoder;
 
 public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
     private static final Logger log = LoggerFactory.getLogger(BrowseRepoPage.class);
+    private static final String WEBAPP_URL_BROWSE_REPO = "/browserepo.html";
 
     private String lastTabName;
     public static final String PATH_ID_PARAM = "pathId";
@@ -48,7 +49,7 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
 
         //Using request parameters instead of wicket's page parameters. See RTFACT-2843
         RepoPath repoPath = null;
-        String pathId = getRequest().getParameter(PATH_ID_PARAM);
+        String pathId = WicketUtils.getParameter(PATH_ID_PARAM);
         if (StringUtils.isNotBlank(pathId)) {
             try {
                 repoPath = InternalRepoPathFactory.fromId(pathId);
@@ -87,11 +88,12 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
     /**
      * Builds an external url that points to resource inside the tree. Once used, the tree browser will open and select
      * the node represented by the repository item.
+     * Utilizes the Wicket utils and request cycle.
      *
      * @param repoItem The repository item
      * @return External URL linking directly to the item in the tree browser
      */
-    public static String getRepoPathUrl(RepoAwareActionableItem repoItem) {
+    public static String getWicketDependableRepoPathUrl(RepoAwareActionableItem repoItem) {
         String artifactPath;
         if (repoItem instanceof CannonicalEnabledActionableFolder) {
             artifactPath = ((CannonicalEnabledActionableFolder) repoItem).getCanonicalPath().getPath();
@@ -118,5 +120,41 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
         urlBuilder.append(WicketUtils.absoluteMountPathForPage(BrowseRepoPage.class)).append("?").
                 append(PATH_ID_PARAM).append("=").append(encodedPathId);
         return urlBuilder.toString();
+    }
+
+    /**
+     * Creates an HTML link to the given repo path ID in the tree browser
+     *
+     * @param artifactoryUrl URL to Artifactory (excluding context)
+     * @param repoPathId     Repo path ID to link to
+     * @return HTML link
+     */
+    public static String createLinkToBrowsableArtifact(String artifactoryUrl, String repoPathId) {
+        return createLinkToBrowsableArtifact(artifactoryUrl, repoPathId, repoPathId);
+    }
+
+    /**
+     * Creates an HTML link to the given repo path ID in the tree browser
+     *
+     * @param artifactoryUrl URL to Artifactory (excluding context)
+     * @param repoPathId     Repo path ID to link to
+     * @param linkLabel      Link label
+     * @return HTML link
+     */
+    public static String createLinkToBrowsableArtifact(String artifactoryUrl, String repoPathId, String linkLabel) {
+        StringBuilder builder = new StringBuilder();
+        String encodedPathId;
+        try {
+            encodedPathId = URLEncoder.encode(repoPathId, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return null;
+        }
+
+        String url = new StringBuilder().append(artifactoryUrl).append(HttpUtils.WEBAPP_URL_PATH_PREFIX)
+                .append(WEBAPP_URL_BROWSE_REPO).append("?").append(PATH_ID_PARAM).append("=").append(encodedPathId)
+                .toString();
+        builder.append("<a href=").append(url).append(" target=\"blank\"").append(">")
+                .append(linkLabel).append("</a>");
+        return builder.toString();
     }
 }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -71,8 +71,11 @@ public abstract class TrafficStreamParser {
             while ((entryRow = source.readLine()) != null) {
                 if (StringUtils.isNotBlank(entryRow)) {
                     TrafficEntry trafficEntry = TokenizedTrafficEntryFactory.newTrafficEntry(entryRow);
-                    if ((trafficEntry != null) && isWithinDateRange(trafficEntry, startDate, endDate)) {
+                    if (isWithinDateRange(trafficEntry, startDate, endDate)) {
                         entryList.add(trafficEntry);
+                    } else if (trafficEntry.getDate().after(endDate)) {
+                        // file entries are sorted, once we reach an entry after the endDate we can stop parsing
+                        break;
                     }
                 }
             }

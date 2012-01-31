@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,10 +43,11 @@ import org.artifactory.webapp.wicket.page.deploy.DeployArtifactPage;
 import org.artifactory.webapp.wicket.page.deploy.fromzip.DeployFromZipPage;
 import org.artifactory.webapp.wicket.page.home.HomePage;
 import org.artifactory.webapp.wicket.page.home.settings.ivy.IvySettingsPage;
-import org.artifactory.webapp.wicket.page.home.settings.ivy.gradle.GradleInitScriptPage;
+import org.artifactory.webapp.wicket.page.home.settings.ivy.gradle.GradleBuildScriptPage;
 import org.artifactory.webapp.wicket.page.home.settings.maven.MavenSettingsPage;
 import org.artifactory.webapp.wicket.page.search.archive.ArchiveSearchPage;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
+import org.artifactory.webapp.wicket.page.search.checksum.ChecksumSearchPage;
 import org.artifactory.webapp.wicket.page.search.gavc.GavcSearchPage;
 import org.artifactory.webapp.wicket.page.search.metadata.MetadataSearchPage;
 
@@ -80,7 +81,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         MenuNode settingsGroup = new OpenedMenuNode("Client Settings");
         homeGroup.addChild(settingsGroup);
         settingsGroup.addChild(new MenuNode("Maven Settings", MavenSettingsPage.class));
-        settingsGroup.addChild(new MenuNode("Gradle Init Script", GradleInitScriptPage.class));
+        settingsGroup.addChild(new MenuNode("Gradle Build Script", GradleBuildScriptPage.class));
         settingsGroup.addChild(new MenuNode("Ivy Settings", IvySettingsPage.class));
 
         MenuNode browseRepoPage = new ArtifactsPageNode("Artifacts", ArtifactsHomePage.class);
@@ -102,6 +103,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         searchGroup.addChild(new ArtifactsPageNode("GAVC Search", GavcSearchPage.class));
         PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
         searchGroup.addChild(propertiesWebAddon.getPropertySearchMenuNode("Property Search"));
+        searchGroup.addChild(new ArtifactsPageNode("Checksum Search", ChecksumSearchPage.class));
         if (ConstantValues.searchXmlIndexing.getBoolean()) {
             searchGroup.addChild(new ArtifactsPageNode("POM/XML Search", MetadataSearchPage.class));
         }
@@ -199,6 +201,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
     }
 
     private class RemoveUnauthorizedNodesVisitor implements MenuNodeVisitor {
+        @Override
         public void visit(MenuNode node, Iterator<MenuNode> iterator) {
             // check if page instantiation is allowed
             Class<? extends Page> pageClass = node.getPageClass();

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,19 +22,21 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.jackson.JacksonFactory;
 import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
 import org.artifactory.api.rest.artifact.RestFileInfo;
+import org.artifactory.api.rest.artifact.RestFolderInfo;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.FolderInfo;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.request.ArtifactoryRequest;
 import org.codehaus.jackson.JsonGenerator;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -56,25 +58,39 @@ public class SuccessfulDeploymentResponseHelper {
      * @param repoPath    Repo path of deployed artifact
      * @param url         Final reachable URI of deployed file
      */
-    public void writeSuccessfulDeploymentResponse(InternalRepositoryService repoService,
-            ArtifactoryRequest request, ArtifactoryResponse response,
-            RepoPath repoPath, String url) throws IOException {
+    public void writeSuccessfulDeploymentResponse(InternalRepositoryService repoService, ArtifactoryResponse response,
+            RepoPath repoPath, String url, boolean isDirectory) throws IOException {
 
         Writer writer = response.getWriter();
         response.setHeader("Location", url);
         response.setStatus(HttpStatus.SC_CREATED);
         response.setContentType(ArtifactRestConstants.MT_ITEM_CREATED);
-        RestFileInfo fileInfo;
-        if (NamingUtils.isMetadata(repoPath.getPath())) {
-            fileInfo = getMetadataFileInfo(repoService, repoPath, url);
+        RestBaseStorageInfo storageInfo;
+        if (isDirectory) {
+            storageInfo = getFolderInfo(repoService, repoPath, url);
         } else {
-            fileInfo = getFileInfo(repoService, repoPath, url);
+            if (NamingUtils.isMetadata(repoPath.getPath())) {
+                storageInfo = getMetadataFileInfo(repoService, repoPath, url);
+            } else {
+                storageInfo = getFileInfo(repoService, repoPath, url);
+            }
         }
 
         JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(writer);
-        jsonGenerator.writeObject(fileInfo);
+        jsonGenerator.writeObject(storageInfo);
         jsonGenerator.close();
         writer.flush();
+    }
+
+    private RestFolderInfo getFolderInfo(InternalRepositoryService repoService, RepoPath repoPath, String url) {
+        RestFolderInfo folderInfo = new RestFolderInfo();
+        FolderInfo createdFolder = repoService.getFolderInfo(repoPath);
+        folderInfo.created = ISODateTimeFormat.dateTime().print(createdFolder.getCreated());
+        folderInfo.createdBy = createdFolder.getCreatedBy();
+        folderInfo.path = "/" + repoPath.getPath();
+        folderInfo.repo = repoPath.getRepoKey();
+        folderInfo.slf = url;
+        return folderInfo;
     }
 
     private RestFileInfo getFileInfo(InternalRepositoryService repoService, RepoPath repoPath, String url) {
@@ -98,7 +114,8 @@ public class SuccessfulDeploymentResponseHelper {
         RestFileInfo fileInfo = new RestFileInfo();
 
         MetadataInfo deployedInfo = repoService.getMetadataInfo(
-                InternalRepoPathFactory.create(repoPath.getRepoKey(), NamingUtils.getMetadataParentPath(repoPath.getPath())),
+                InternalRepoPathFactory.create(repoPath.getRepoKey(),
+                        NamingUtils.getMetadataParentPath(repoPath.getPath())),
                 NamingUtils.getMetadataName(repoPath.getPath()));
 
         ChecksumsInfo checksumsInfo = deployedInfo.getChecksumsInfo();

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,14 +43,17 @@ public class TempFileStreamHandle implements ResourceStreamHandle {
         this.is = new BufferedInputStream(new FileInputStream(tmpFile));
     }
 
+    @Override
     public InputStream getInputStream() {
         return is;
     }
 
+    @Override
     public long getSize() {
         return -1;
     }
 
+    @Override
     public void close() {
         IOUtils.closeQuietly(is);
         boolean deleted = tmpFile.delete();

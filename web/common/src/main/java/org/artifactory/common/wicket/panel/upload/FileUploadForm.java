@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,12 +21,12 @@ package org.artifactory.common.wicket.panel.upload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.wicket.Page;
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.extensions.ajax.markup.html.form.upload.UploadProgressBar;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
-import org.apache.wicket.model.Model;
+import org.apache.wicket.model.util.ListModel;
+import org.artifactory.common.wicket.util.WicketUtils;
 
 import java.io.File;
 
@@ -49,12 +49,16 @@ public class FileUploadForm extends Form {
         this.listener = listener;
         tempUploadsDir = new File(tempUploadDir);
 
-        //Set this form to multipart mode (always needed for uploads!)
+        //Set this form to multi-part mode (always needed for uploads!)
         setMultiPart(true);
         //Add one file input field
-        add(fileUploadField = new FileUploadField("fileInput", new Model<FileUpload>()));
+        add(fileUploadField = new FileUploadField("fileInput", new ListModel<FileUpload>()));
         // Add the progress bar
-        add(new UploadProgressBar("progress", this));
+        UploadProgressBar progress = new UploadProgressBar("progress", this);
+        progress.setOutputMarkupId(true);
+        progress.setRenderBodyOnly(false);
+        progress.setMarkupId("uploadProgress");
+        add(progress);
     }
 
     @Override
@@ -110,7 +114,7 @@ public class FileUploadForm extends Form {
 
     protected void cleanupOnDetach() {
         //Cleanup resources if we are not staying on the same page
-        Page targetPage = RequestCycle.get().getResponsePage();
+        Page targetPage = WicketUtils.getPage();
         Page page = getPage();
         //Target page can be null on ajax requests - in this case we do not wish to clean up
         if (targetPage != null && !page.equals(targetPage)) {

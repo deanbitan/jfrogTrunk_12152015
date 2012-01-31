@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,12 +18,11 @@
 
 package org.artifactory.webapp.wicket.page.browse.simplebrowser;
 
-import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.protocol.http.WebRequestCycle;
-import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
+import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
@@ -49,13 +48,11 @@ public class SimpleRepoBrowserPage extends AuthenticatedPage {
         setVersioned(false);
 
         //Retrieve the repository path from the request
-        WebRequestCycle webRequestCycle = (WebRequestCycle) getRequestCycle();
-        WebRequest request = webRequestCycle.getWebRequest();
-        HttpServletRequest httpRequest = request.getHttpServletRequest();
+        HttpServletRequest httpRequest = WicketUtils.getHttpServletRequest();
         RepoPath repoPath = (RepoPath) httpRequest.getAttribute(RepoFilter.ATTR_ARTIFACTORY_REPOSITORY_PATH);
         if (repoPath == null) {
             //Happens on refresh after login redirection - return a 404
-            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
+            throw new AbortWithHttpErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }
 
         String repoKey = repoPath.getRepoKey();
@@ -74,7 +71,7 @@ public class SimpleRepoBrowserPage extends AuthenticatedPage {
         } else if (repoService.localOrCachedRepoDescriptorByKey(repoKey) != null) {
             add(new LocalRepoBrowserPanel("browseRepoPanel", repoPath, requestProps));
         } else {
-            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
+            throw new AbortWithHttpErrorCodeException(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -31,11 +31,13 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.panel.sidemenu.SubMenuPanel;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.browse.home.RememberPageBehavior;
 import org.artifactory.webapp.wicket.page.search.archive.ArchiveSearchPanel;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPanel;
+import org.artifactory.webapp.wicket.page.search.checksum.ChecksumSearchPanel;
 import org.artifactory.webapp.wicket.page.search.gavc.GavcSearchPanel;
 import org.artifactory.webapp.wicket.page.search.metadata.MetadataSearchPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
@@ -61,14 +63,15 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
     public static final int ARCHIVE_SEARCH_INDEX = 1;
     public static final int GAVC_SEARCH_INDEX = 2;
     public static final int PROPERTY_SEARCH_INDEX = 3;
-    public static final int METADATA_SEARCH_INDEX = 4;
+    public static final int CHECKSUM_SEARCH_INDEX = 4;
+    public static final int METADATA_SEARCH_INDEX = 5;
 
     private String searchQuery;
 
     public BaseSearchPage() {
         add(new RememberPageBehavior());
 
-        String requestQuery = getRequest().getParameter(QUERY_PARAM);
+        String requestQuery = WicketUtils.getParameter(QUERY_PARAM);
         if (StringUtils.isNotBlank(requestQuery)) {
             try {
                 searchQuery = URLDecoder.decode(requestQuery, "UTF-8");
@@ -95,6 +98,7 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
             }
         });
 
+
         tabs.add(new AbstractTab(Model.of("Class Search")) {
             @Override
             public Panel getPanel(String panelId) {
@@ -113,6 +117,13 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
         ITab searchPanel = propertiesWebAddon.getPropertySearchTabPanel(this, "Property Search");
         tabs.add(searchPanel);
 
+        tabs.add(new AbstractTab(Model.of("Checksum Search")) {
+            @Override
+            public Panel getPanel(String panelId) {
+                return new ChecksumSearchPanel(BaseSearchPage.this, panelId);
+            }
+        });
+
         if (ConstantValues.searchXmlIndexing.getBoolean()) {
             tabs.add(new AbstractTab(Model.of("POM/XML Search")) {
                 @Override
@@ -121,6 +132,7 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
                 }
             });
         }
+
         TabbedPanel tabbedPanel = new StyledTabbedPanel("searchTabs", tabs) {
             /*
             Renders the side menu panel, because after we "redirect" between the different search pages, it disappears
@@ -137,7 +149,7 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
 
                 BaseSearchPage.this.replace(sideMenuPanel);
                 if (target != null) {
-                    target.addComponent(sideMenuPanel);
+                    target.add(sideMenuPanel);
                 }
             }
         };

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -98,6 +98,7 @@ import javax.jcr.RepositoryException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -129,6 +130,7 @@ public class BuildServiceImpl implements InternalBuildService {
     private static final Logger log = LoggerFactory.getLogger(BuildServiceImpl.class);
 
     private static final String EXPORTABLE_BUILD_VERSION = "v1";
+    public static final String BUILDS_EXPORT_DIR = "builds";
 
     @Autowired
     private AddonsManager addonsManager;
@@ -158,6 +160,7 @@ public class BuildServiceImpl implements InternalBuildService {
     private ConcurrentMap<String, FutureTask<ChecksumPair>> md5Cache;
     private ConcurrentMap<String, FutureTask<ChecksumPair>> sha1Cache;
 
+    @Override
     public void init() {
         md5Cache = new MapMaker().softValues()
                 .expireAfterWrite(ConstantValues.missingBuildChecksumCacheIdeTimeSecs.getLong(), TimeUnit.SECONDS)
@@ -169,17 +172,21 @@ public class BuildServiceImpl implements InternalBuildService {
         vfsService.createIfNeeded(getPathFactory().getBuildsRootPath());
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         //Nothing to reload
     }
 
+    @Override
     public void destroy() {
         //Nothing to destroy
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
+    @Override
     public void addBuild(final Build build) {
         String buildName = build.getName();
         String escapedBuildName = getPathFactory().escape(buildName);
@@ -243,6 +250,7 @@ public class BuildServiceImpl implements InternalBuildService {
         licensesAddon.performOnBuildArtifacts(build);
     }
 
+    @Override
     public Build getBuild(String buildName, String buildNumber, String buildStarted) {
         String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
         return getBuild(buildPath);
@@ -285,11 +293,13 @@ public class BuildServiceImpl implements InternalBuildService {
         return null;
     }
 
+    @Override
     public String getBuildAsJson(String buildName, String buildNumber, String buildStarted) {
         String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
         return vfsService.getContentAsString(buildPath);
     }
 
+    @Override
     public void deleteBuild(String buildName, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder) {
         if (deleteArtifacts) {
             Set<BuildRun> existingBuilds = searchBuildsByName(buildName);
@@ -301,6 +311,7 @@ public class BuildServiceImpl implements InternalBuildService {
         vfsService.delete(buildPath);
     }
 
+    @Override
     public void deleteBuild(BuildRun buildRun, boolean deleteArtifacts,
             MultiStatusHolder multiStatusHolder) {
         String buildName = buildRun.getName();
@@ -332,6 +343,7 @@ public class BuildServiceImpl implements InternalBuildService {
         status.setDebug("Finished removing the artifacts of build '" + buildName + "' #" + buildNumber, log);
     }
 
+    @Override
     public Build getLatestBuildByNameAndNumber(String buildName, String buildNumber) {
         if (StringUtils.isBlank(buildName)) {
             return null;
@@ -358,10 +370,12 @@ public class BuildServiceImpl implements InternalBuildService {
         return buildToReturn;
     }
 
+    @Override
     public Set<BuildRun> searchBuildsByName(String buildName) {
         return getTransactionalMe().transactionalSearchBuildsByName(buildName);
     }
 
+    @Override
     public Set<BuildRun> transactionalSearchBuildsByName(String buildName) {
         Set<BuildRun> results = Sets.newHashSet();
 
@@ -396,10 +410,12 @@ public class BuildServiceImpl implements InternalBuildService {
         return results;
     }
 
+    @Override
     public Set<BuildRun> searchBuildsByNameAndNumber(String buildName, String buildNumber) {
         return getTransactionalMe().transactionalSearchBuildsByNameAndNumber(buildName, buildNumber);
     }
 
+    @Override
     public Set<BuildRun> transactionalSearchBuildsByNameAndNumber(String buildName, String buildNumber) {
         Set<BuildRun> results = Sets.newHashSet();
 
@@ -420,6 +436,7 @@ public class BuildServiceImpl implements InternalBuildService {
         return results;
     }
 
+    @Override
     public Set<FileInfo> getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean,
             boolean strictMatching) {
         PropertiesAddon propertiesAddon = addonsManager.addonByType(PropertiesAddon.class);
@@ -437,6 +454,7 @@ public class BuildServiceImpl implements InternalBuildService {
         return Sets.newHashSet();
     }
 
+    @Override
     public Set<FileInfo> getBestMatchingResult(Set<RepoPath> searchResults, Map<RepoPath, Properties> resultProperties,
             String buildName, String buildNumber, boolean strictMatching) {
 
@@ -455,18 +473,15 @@ public class BuildServiceImpl implements InternalBuildService {
         }
     }
 
+    @Override
     public void exportTo(ExportSettings settings) {
         MutableStatusHolder multiStatusHolder = settings.getStatusHolder();
         multiStatusHolder.setDebug("Starting build info export", log);
 
-        File buildsFolder = new File(settings.getBaseDir(), "builds");
-        if (!buildsFolder.exists()) {
-            try {
-                FileUtils.forceMkdir(buildsFolder);
-            } catch (IOException e) {
-                multiStatusHolder.setError("Failed to create builds backup dir: " + buildsFolder, e, log);
-                return;
-            }
+        File buildsFolder = new File(settings.getBaseDir(), BUILDS_EXPORT_DIR);
+        prepareBuildsFolder(settings, multiStatusHolder, buildsFolder);
+        if (multiStatusHolder.isError()) {
+            return;
         }
 
         try {
@@ -502,9 +517,64 @@ public class BuildServiceImpl implements InternalBuildService {
         } catch (Exception e) {
             multiStatusHolder.setError("Error occurred during build info export.", e, log);
         }
+
+        if (settings.isIncremental() && !multiStatusHolder.isError()) {
+            try {
+                log.debug("Cleaning previous builds backup folder.");
+
+                File[] backupDirsToRemove = settings.getBaseDir().listFiles(new FilenameFilter() {
+
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        return name.startsWith(BACKUP_BUILDS_FOLDER);
+                    }
+                });
+                if (backupDirsToRemove != null) {
+                    for (File backupDirToRemove : backupDirsToRemove) {
+                        log.debug("Cleaning previous build backup folder: {}", backupDirToRemove.getAbsolutePath());
+                        FileUtils.forceDelete(backupDirToRemove);
+                    }
+                }
+            } catch (IOException e) {
+                multiStatusHolder.setError("Failed to clean previous builds backup folder.", e, log);
+            }
+        }
+
         multiStatusHolder.setDebug("Finished build info export", log);
     }
 
+    /**
+     * Makes sure that all the correct build/backup dirs are prepared for backup
+     *
+     * @param settings          Export settings
+     * @param multiStatusHolder Process status holder
+     * @param buildsFolder      Builds folder within the backup
+     */
+    private void prepareBuildsFolder(ExportSettings settings, MutableStatusHolder multiStatusHolder,
+            File buildsFolder) {
+        if (buildsFolder.exists()) {
+            // Backup previous builds folder if incremental
+            if (settings.isIncremental()) {
+                File tempBuildBackupDir = new File(settings.getBaseDir(),
+                        BACKUP_BUILDS_FOLDER + "." + System.currentTimeMillis());
+                try {
+                    FileUtils.moveDirectory(buildsFolder, tempBuildBackupDir);
+                    FileUtils.forceMkdir(buildsFolder);
+                } catch (IOException e) {
+                    multiStatusHolder.setError(
+                            "Failed to create incremental builds temp backup dir: " + tempBuildBackupDir, e, log);
+                }
+            }
+        } else {
+            try {
+                FileUtils.forceMkdir(buildsFolder);
+            } catch (IOException e) {
+                multiStatusHolder.setError("Failed to create builds backup dir: " + buildsFolder, e, log);
+            }
+        }
+    }
+
+    @Override
     public void importFrom(ImportSettings settings) {
         MutableStatusHolder multiStatusHolder = settings.getStatusHolder();
         multiStatusHolder.setStatus("Starting build info import", log);
@@ -519,7 +589,7 @@ public class BuildServiceImpl implements InternalBuildService {
             return;
         }
 
-        File buildsFolder = new File(settings.getBaseDir(), "builds");
+        File buildsFolder = new File(settings.getBaseDir(), BUILDS_EXPORT_DIR);
         String buildsFolderPath = buildsFolder.getPath();
         if (!buildsFolder.exists()) {
             multiStatusHolder.setStatus("'" + buildsFolderPath + "' folder is either non-existent or not a " +
@@ -549,6 +619,7 @@ public class BuildServiceImpl implements InternalBuildService {
         multiStatusHolder.setStatus("Finished build info import", log);
     }
 
+    @Override
     public void importBuild(ImportSettings settings, ImportableExportableBuild build) throws Exception {
         MutableStatusHolder multiStatusHolder = settings.getStatusHolder();
 
@@ -585,6 +656,7 @@ public class BuildServiceImpl implements InternalBuildService {
                 String.format("Finished import of build: %s:%s:%s", buildName, buildNumber, buildStarted), log);
     }
 
+    @Override
     public Set<String> findScopes(Build build) {
         final Set<String> scopes = Sets.newHashSet();
         if (build.getModules() != null) {
@@ -608,6 +680,7 @@ public class BuildServiceImpl implements InternalBuildService {
         return scopes;
     }
 
+    @Override
     public boolean isGenericBuild(Build build) {
         BuildAgent buildAgent = build.getBuildAgent();
         if (buildAgent != null) {
@@ -620,6 +693,7 @@ public class BuildServiceImpl implements InternalBuildService {
         return BuildType.ANT.equals(type) || BuildType.GENERIC.equals(type);
     }
 
+    @Override
     public String getBuildCiServerUrl(BuildRun buildRun) throws IOException {
         String buildPath = getBuildPathFromParams(buildRun.getName(), buildRun.getNumber(),
                 buildRun.getStarted());
@@ -662,6 +736,7 @@ public class BuildServiceImpl implements InternalBuildService {
         return null;
     }
 
+    @Override
     public MoveCopyResult moveOrCopyBuildItems(boolean move, BuildRun buildRun, String targetRepoKey,
             boolean artifacts, boolean dependencies, List<String> scopes, Properties properties, boolean dryRun) {
         BuildItemMoveCopyHelper itemMoveCopyHelper = new BuildItemMoveCopyHelper();
@@ -669,11 +744,13 @@ public class BuildServiceImpl implements InternalBuildService {
                 properties, dryRun);
     }
 
+    @Override
     public PromotionResult promoteBuild(BuildRun buildRun, Promotion promotion) {
         BuildPromotionHelper buildPromotionHelper = new BuildPromotionHelper();
         return buildPromotionHelper.promoteBuild(buildRun, promotion);
     }
 
+    @Override
     public void renameBuilds(String from, String to) {
         Set<BuildRun> buildsToRename = searchBuildsByName(from);
         if (buildsToRename.isEmpty()) {
@@ -700,6 +777,7 @@ public class BuildServiceImpl implements InternalBuildService {
         }
     }
 
+    @Override
     public void renameBuildNode(String from, String to) throws RepositoryException {
         String oldNamePath = getBuildPathFromParams(from, null, null);
 
@@ -726,6 +804,7 @@ public class BuildServiceImpl implements InternalBuildService {
         }
     }
 
+    @Override
     public void renameBuildContent(BuildRun buildRun, String to) throws RepositoryException, IOException {
         String buildName = buildRun.getName();
         String buildNumber = buildRun.getNumber();
@@ -779,6 +858,7 @@ public class BuildServiceImpl implements InternalBuildService {
         }
     }
 
+    @Override
     public void updateBuild(final Build build) {
         String buildName = build.getName();
         String buildNumber = build.getNumber();
@@ -817,6 +897,7 @@ public class BuildServiceImpl implements InternalBuildService {
         }
     }
 
+    @Override
     public String getBuildLatestReleaseStatus(String buildName, String buildNumber, String buildStarted) {
         String buildPathFromParams = getBuildPathFromParams(buildName, buildNumber, buildStarted);
         VfsNode buildNode = vfsDataService.findByPath(buildPathFromParams);
@@ -1315,6 +1396,7 @@ public class BuildServiceImpl implements InternalBuildService {
         }
 
         Collections.sort(statuses, new Comparator<PromotionStatus>() {
+            @Override
             public int compare(PromotionStatus first, PromotionStatus second) {
                 SimpleDateFormat dateFormat = new SimpleDateFormat(Build.STARTED_FORMAT);
                 try {

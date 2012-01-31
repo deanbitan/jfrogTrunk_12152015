@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.config.repos;
 
 import com.google.common.collect.Lists;
-import org.apache.wicket.injection.web.InjectorHolder;
+import org.apache.wicket.injection.Injector;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.p2.P2RemoteRepositoryModel;
 import org.artifactory.api.config.CentralConfigService;
@@ -53,7 +53,7 @@ public class CachingDescriptorHelper implements Serializable {
     private List<P2RemoteRepositoryModel> p2RemoteRepositoryModels = Lists.newArrayList();
 
     {
-        InjectorHolder.getInjector().inject(this);
+        Injector.get().inject(this);
     }
 
     CachingDescriptorHelper(MutableCentralConfigDescriptor mutableDescriptor) {

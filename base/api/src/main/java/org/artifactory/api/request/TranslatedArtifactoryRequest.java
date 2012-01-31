@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,102 +40,132 @@ public class TranslatedArtifactoryRequest implements ArtifactoryRequest {
         this.originalRequest = originalRequest;
     }
 
+    @Override
     public String getRepoKey() {
         return translatedRepoPath.getRepoKey();
     }
 
+    @Override
     public String getPath() {
         return translatedRepoPath.getPath();
     }
 
+    @Override
     public String getClientAddress() {
         return originalRequest.getClientAddress();
     }
 
+    @Override
     public boolean isMetadata() {
         return NamingUtils.isMetadata(getPath());
     }
 
+    @Override
     public boolean isRecursive() {
         return originalRequest.isRecursive();
     }
 
+    @Override
     public long getModificationTime() {
         return originalRequest.getModificationTime();
     }
 
+    @Override
     public String getName() {
         return PathUtils.getFileName(getPath());
     }
 
+    @Override
+    public boolean isDirectoryRequest() {
+        return originalRequest.isDirectoryRequest();
+    }
+
+    @Override
     public RepoPath getRepoPath() {
         return translatedRepoPath;
     }
 
+    @Override
     public boolean isChecksum() {
         return NamingUtils.isChecksum(getPath()) || NamingUtils.isChecksum(originalRequest.getZipResourcePath());
     }
 
+    @Override
     public boolean isFromAnotherArtifactory() {
         return originalRequest.isFromAnotherArtifactory();
     }
 
+    @Override
     public boolean isHeadOnly() {
         return originalRequest.isHeadOnly();
     }
 
+    @Override
     public long getLastModified() {
         return originalRequest.getLastModified();
     }
 
+    @Override
     public long getIfModifiedSince() {
         return originalRequest.getIfModifiedSince();
     }
 
+    @Override
     public boolean isNewerThan(long time) {
         return originalRequest.isNewerThan(time);
     }
 
+    @Override
     public String getHeader(String headerName) {
         return originalRequest.getHeader(headerName);
     }
 
+    @Override
     public String getServletContextUrl() {
         return originalRequest.getServletContextUrl();
     }
 
+    @Override
     public String getUri() {
         return originalRequest.getUri();
     }
 
+    @Override
     public Properties getProperties() {
         return originalRequest.getProperties();
     }
 
+    @Override
     public boolean hasProperties() {
         return originalRequest.hasProperties();
     }
 
+    @Override
     public String getZipResourcePath() {
         return originalRequest.getZipResourcePath();
     }
 
+    @Override
     public boolean isZipResourceRequest() {
         return originalRequest.isZipResourceRequest();
     }
 
+    @Override
     public String getParameter(String name) {
         return originalRequest.getParameter(name);
     }
 
+    @Override
     public String[] getParameterValues(String name) {
         return originalRequest.getParameterValues(name);
     }
 
+    @Override
     public InputStream getInputStream() throws IOException {
         return originalRequest.getInputStream();
     }
 
+    @Override
     public int getContentLength() {
         return originalRequest.getContentLength();
     }

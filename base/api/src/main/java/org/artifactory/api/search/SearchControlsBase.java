@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,6 +32,7 @@ public abstract class SearchControlsBase implements SearchControls {
     private boolean limitSearchResults = true;
     protected List<String> selectedRepoForSearch;
 
+    @Override
     public List<String> getSelectedRepoForSearch() {
         return selectedRepoForSearch;
     }
@@ -40,6 +41,7 @@ public abstract class SearchControlsBase implements SearchControls {
         this.selectedRepoForSearch = selectedRepoForSearch;
     }
 
+    @Override
     public boolean isLimitSearchResults() {
         return limitSearchResults;
     }
@@ -53,10 +55,12 @@ public abstract class SearchControlsBase implements SearchControls {
         this.limitSearchResults = limitSearchResults;
     }
 
+    @Override
     public void resetResultLimit() {
         limitSearchResults = true;
     }
 
+    @Override
     public boolean isSpecificRepoSearch() {
         return selectedRepoForSearch != null && !selectedRepoForSearch.isEmpty();
     }

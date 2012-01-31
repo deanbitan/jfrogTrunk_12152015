@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,6 +40,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     private Exception exception;
     private long contentLength = -1;
 
+    @Override
     public void sendStream(InputStream is) throws IOException {
         OutputStream os = getOutputStream();
         if (state == State.UNSET) {
@@ -68,6 +69,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         }
     }
 
+    @Override
     public void setStatus(int status) {
         this.status = status;
         if (HttpUtils.isSuccessfulResponseCode(status) && state == State.UNSET) {
@@ -75,10 +77,12 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         }
     }
 
+    @Override
     public int getStatus() {
         return status;
     }
 
+    @Override
     public void sendSuccess() {
         //Update the current status
         setStatus(status);
@@ -92,6 +96,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         }
     }
 
+    @Override
     public void sendError(int statusCode, String reason, Logger logger) throws IOException {
         String msg = makeDebugMessage(statusCode, reason);
         if (statusCode == HttpStatus.SC_NOT_FOUND || statusCode == HttpStatus.SC_NOT_MODIFIED) {
@@ -104,10 +109,12 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         sendErrorInternal(statusCode, reason);
     }
 
+    @Override
     public void sendError(StatusHolder statusHolder) throws IOException {
         sendError(statusHolder.getStatusCode(), statusHolder.getStatusMsg(), log);
     }
 
+    @Override
     public void sendInternalError(Exception exception, Logger logger) throws IOException {
         Throwable ioException = ExceptionUtils.getCauseOfTypes(exception, IOException.class);
         String reason;
@@ -126,31 +133,38 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         sendErrorInternal(status, reason);
     }
 
+    @Override
     public boolean isSuccessful() {
         return state == State.SUCCESS;
     }
 
+    @Override
     public boolean isError() {
         return state == State.ERROR;
     }
 
+    @Override
     public Exception getException() {
         return exception;
     }
 
+    @Override
     public void setException(Exception exception) {
         this.state = State.ERROR;
         this.exception = exception;
     }
 
+    @Override
     public long getContentLength() {
         return contentLength;
     }
 
+    @Override
     public boolean isContentLengthSet() {
         return contentLength != -1;
     }
 
+    @Override
     public void setContentLength(long length) {
         //Cache the content length locally
         this.contentLength = length;

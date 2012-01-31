@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,13 +18,13 @@
 
 package org.artifactory.webapp.wicket.page.config.general;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.IResourceListener;
 import org.apache.wicket.Page;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
@@ -39,6 +39,7 @@ import org.artifactory.common.wicket.panel.upload.UploadListener;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.panel.upload.DefaultFileUploadForm;
@@ -77,7 +78,7 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
 
         fileUploadLogo.add(new ResetLink("reset", fileUploadLogo));
         footer.add(StringValidator.maximumLength(MAX_FOOTER_LENGTH));
-        footer.add(new SimpleAttributeModifier("maxlength", String.valueOf(MAX_FOOTER_LENGTH)));
+        footer.add(new AttributeModifier("maxlength", MAX_FOOTER_LENGTH));
         footer.setOutputMarkupId(true);
         add(footer);
 
@@ -93,10 +94,17 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         fileUploadLogo.removeUploadedFile();
     }
 
+    @Override
     public void onException() {
         error("Failed to upload logo");
     }
 
+    @Override
+    public void info(String message) {
+        super.info(message);
+    }
+
+    @Override
     public void onResourceRequested() {
         final File uploadedFile = getUploadedFile();
         if (uploadedFile != null) {
@@ -104,6 +112,7 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         }
     }
 
+    @Override
     public void onFileSaved(File file) {
         deleteLogo = false;
         getDescriptor().setLogo(null);
@@ -137,17 +146,16 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
             this.form = form;
         }
 
+        @Override
         public void onClick(AjaxRequestTarget target) {
             deleteLogo = true;
             cleanup();
             getDescriptor().setLogo(null);
-            target.addComponent(form);
+            target.add(form);
 
             info("Custom logo has been reset. Please remember to save your changes.");
             AjaxUtils.refreshFeedback(target);
         }
-
-
     }
 
     private static class PreviewLogoPanel extends BaseLogoPanel {
@@ -177,12 +185,13 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
             }
 
             if (parent.getUploadedFile() != null) {
-                return parent.urlFor(IResourceListener.INTERFACE) + "?" + System.currentTimeMillis();
+                return parent.urlFor(IResourceListener.INTERFACE) + "&" + System.currentTimeMillis();
             }
 
             final ArtifactoryApplication application = ArtifactoryApplication.get();
             if (application.isLogoExists()) {
-                return WicketUtils.getWicketAppPath() + "logo?" + application.getLogoModifyTime();
+                return HttpUtils.getWebappContextUrl(
+                        WicketUtils.getHttpServletRequest()) + "logo?" + application.getLogoModifyTime();
             }
 
             return null;
@@ -202,7 +211,7 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         @Override
         protected void onUpdate(AjaxRequestTarget target) {
             final Component logoPreview = getComponent().getParent().get("logoPreview");
-            target.addComponent(logoPreview);
+            target.add(logoPreview);
         }
     }
 }

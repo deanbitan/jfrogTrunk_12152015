@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,7 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var FileBrowser = function(panelId, inputId) {
+var FileBrowser = function (panelId, inputId) {
     FileBrowser.INSTANCE = this;
     this.input = document.getElementById(inputId);
     this.lastSelection = null;
@@ -25,11 +25,11 @@ var FileBrowser = function(panelId, inputId) {
 
 FileBrowser.INSTANCE = null;
 
-FileBrowser.get = function() {
+FileBrowser.get = function () {
     return FileBrowser.INSTANCE;
 };
 
-FileBrowser.prototype.ok = function() {
+FileBrowser.prototype.ok = function () {
     if (!this.input.value && this.lastSelection) {
         this.input.value = this.lastSelection.innerHTML;
     }
@@ -38,7 +38,7 @@ FileBrowser.prototype.ok = function() {
     eval(eventScript);
 };
 
-FileBrowser.prototype.onFileClick = function(element, e) {
+FileBrowser.prototype.onFileClick = function (element, e) {
     // set file name
     var fileName = element.innerHTML;
     this.input.value = fileName;
@@ -53,7 +53,7 @@ FileBrowser.prototype.onFileClick = function(element, e) {
     this.lastSelection = element;
 };
 
-FileBrowser.prototype.cancelTextSelection = function() {
+FileBrowser.prototype.cancelTextSelection = function () {
     if (window.getSelection) {
         var selection = window.getSelection();
         if (selection) {

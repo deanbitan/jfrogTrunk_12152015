@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,7 +30,7 @@ public abstract class ProgressComponent extends WebMarkupContainer {
     protected ProgressComponent(String id, final IModel modelObject) {
         super(id);
 
-        add(new AttributeModifier("style", true, new AbstractReadOnlyModel() {
+        add(new AttributeModifier("style", new AbstractReadOnlyModel() {
             @Override
             public Object getObject() {
                 Object obj = modelObject.getObject();

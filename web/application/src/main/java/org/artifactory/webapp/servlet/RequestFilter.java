@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -44,6 +44,7 @@ public class RequestFilter extends DelayedFilterBase {
     public void initLater(FilterConfig filterConfig) throws ServletException {
     }
 
+    @Override
     public void doFilter(final ServletRequest req, final ServletResponse resp, final FilterChain chain)
             throws IOException, ServletException {
         long start = System.currentTimeMillis();
@@ -76,6 +77,7 @@ public class RequestFilter extends DelayedFilterBase {
                 responseWrapper.getStatus(), contentLength, System.currentTimeMillis() - start);
     }
 
+    @Override
     public void destroy() {
     }
 

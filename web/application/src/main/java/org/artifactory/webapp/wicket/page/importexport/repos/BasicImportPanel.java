@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -192,7 +192,7 @@ public abstract class BasicImportPanel extends TitledPanel {
     }
 
     protected void refreshImportPanel(Form form, AjaxRequestTarget target) {
-        target.addComponent(form);
+        target.add(form);
         AjaxUtils.refreshFeedback(target);
     }
 

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,7 +39,7 @@ import org.quartz.JobExecutionException;
  * @author Noam Tenne
  */
 @JobCommand(schedulerUser = TaskUser.SYSTEM,
-        keyAttributes = { Task.REPO_KEY },
+        keyAttributes = {Task.REPO_KEY},
         commandsToStop = {
                 @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE),
                 @StopCommand(command = ExportJob.class, strategy = StopStrategy.IMPOSSIBLE, useKey = true),

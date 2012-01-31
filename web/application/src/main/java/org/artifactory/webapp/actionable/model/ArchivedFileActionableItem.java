@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,9 +22,9 @@ import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.ZipEntryInfo;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.TreeNode;
@@ -50,6 +50,7 @@ public class ArchivedFileActionableItem extends ArchivedItemActionableItem {
         actions.add(new DownloadAction());
     }
 
+    @Override
     public String getDisplayName() {
         return node.getData().getName();
     }
@@ -81,10 +82,12 @@ public class ArchivedFileActionableItem extends ArchivedItemActionableItem {
         }
     }
 
+    @Override
     public void filterActions(AuthorizationService authService) {
 
     }
 
+    @Override
     public String getCssClass() {
         return ItemCssClass.getFileCssClass(getPath()).getCssClass();
     }

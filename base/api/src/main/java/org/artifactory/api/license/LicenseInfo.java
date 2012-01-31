@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 JFrog Ltd. All rights reserved.
+ * Copyright 2012 JFrog Ltd. All rights reserved.
  * JFROG PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 
@@ -29,6 +29,7 @@ public class LicenseInfo implements Serializable {
     public static final LicenseInfo UNKNOWN = createEmpty("Unknown");
     public static final String ROOT = "license";
     public static final Predicate<LicenseInfo> NOT_VALID_LICENSE_PREDICATE = new Predicate<LicenseInfo>() {
+        @Override
         public boolean apply(@Nonnull LicenseInfo input) {
             return !input.isValidLicense();
         }

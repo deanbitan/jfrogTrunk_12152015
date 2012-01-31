@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,12 +20,15 @@ package org.artifactory.addon.plugin;
 
 import org.artifactory.addon.plugin.download.ResourceStreamCtx;
 
+import java.net.URI;
+
 public class ResponseCtx extends ResourceStreamCtx {
 
     public final static int UNSET_STATUS = -1;
 
     private int status = UNSET_STATUS;
     private String message;
+    private URI location;
 
     public int getStatus() {
         return status;
@@ -41,5 +44,13 @@ public class ResponseCtx extends ResourceStreamCtx {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public URI getLocation() {
+        return location;
+    }
+
+    public void setLocation(URI location) {
+        this.location = location;
     }
 }

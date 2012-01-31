@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,6 +78,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     /**
      * {@inheritDoc}
      */
+    @Override
     public VersionHolder getLatestVersion(Map<String, String> headersMap, boolean release) {
         ArtifactoryVersioning versioning = getVersioning(headersMap);
         if (release) {
@@ -89,6 +90,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     /**
      * {@inheritDoc}
      */
+    @Override
     public VersionHolder getLatestVersionFromCache(boolean release) {
         ArtifactoryVersioning cachedVersioning = getVersioningFromCache();
         if (cachedVersioning != null) {
@@ -125,6 +127,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
      * @param headersMap A map of the needed headers
      * @return ArtifactoryVersioning - Versioning info from the server
      */
+    @Override
     public synchronized Future<ArtifactoryVersioning> getRemoteVersioningAsync(Map<String, String> headersMap) {
         GetMethod getMethod = new GetMethod(URL);
         NameValuePair[] httpMethodParams = new NameValuePair[]{

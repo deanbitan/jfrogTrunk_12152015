@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,7 +54,7 @@ import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.resource.UnfoundRepoResourceReason;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.traffic.InternalTrafficService;
+import org.artifactory.traffic.TrafficService;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
@@ -92,23 +92,27 @@ public class DownloadServiceImpl implements InternalDownloadService {
     private CentralConfigService centralConfig;
 
     @Autowired
-    private InternalTrafficService trafficService;
+    private TrafficService trafficService;
 
     @Autowired
     private AddonsManager addonsManager;
 
     private RequestResponseHelper requestResponseHelper;
 
+    @Override
     public void init() {
         requestResponseHelper = new RequestResponseHelper(trafficService);
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
     }
 
+    @Override
     public void destroy() {
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
@@ -119,6 +123,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
      * or with a target local repo:
      * <pre>http://localhost:8080/artifactory/local-repo/ant/ant-antlr/1.6.5/ant-antlr-1.6.5.jar</pre>
      */
+    @Override
     public void process(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("Request: source=" + request.getClientAddress() + ", path=" + request.getPath() +
@@ -181,10 +186,12 @@ public class DownloadServiceImpl implements InternalDownloadService {
         }
     }
 
+    @Override
     public RepoResource getInfo(Repo repo, InternalRequestContext context) {
         return repo.getInfo(context);
     }
 
+    @Override
     public void releaseDownloadWaiters(CountDownLatch latch) {
         latch.countDown();
     }

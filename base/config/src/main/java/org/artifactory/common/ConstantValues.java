@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,7 +38,6 @@ public enum ConstantValues {
     springConfigDir("spring.configDir"),
     jcrConfigDir("jcr.configDir"),
     jcrFixConsistency("jcr.fixConsistency", FALSE),
-    jcrAutoRemoveMissingBinaries("jcr.autoRemoveMissingBinaries", FALSE),
     jcrCorePoolSize("jcr.corePoolSize", 6),
     versioningQueryIntervalSecs("versioningQueryIntervalSecs", Seconds.MINUTE * 12),
     logsViewRefreshRateSecs("logs.viewRefreshRateSecs", 10),
@@ -69,10 +68,8 @@ public enum ConstantValues {
     gcUseV1("gc.useV1", false),
     gcMaxCacheEntries("gc.maxCacheEntries", 10000),
     trafficCollectionActive("traffic.collectionActive", FALSE),
-    trafficCollectionIntervalSecs("traffic.collectionIntervalSecs", Seconds.MINUTE),
-    trafficEntriesRetentionSecs("traffic.trafficEntriesRetentionSecs", Seconds.HOUR * 2),
     securityAuthenticationCacheIdleTimeSecs("security.authentication.cache.idleTimeSecs", Seconds.MINUTE * 5),
-    userLastAccessUpdatesResolutionSecs("security.userLastAccessUpdatesResolutionSecs", Seconds.MINUTE),
+    userLastAccessUpdatesResolutionSecs("security.userLastAccessUpdatesResolutionSecs", 5),
     securityAuthenticationEncryptedPasswordSurroundChars(
             "security.authentication.encryptedPassword.surroundChars", "{}"),
     mvnCentralHostPattern("mvn.central.hostPattern", ".maven.org"),
@@ -93,6 +90,10 @@ public enum ConstantValues {
     fileRollerMaxFilesToRetain("file.roller.maxFileToRetain", 10),
     backupFileExportSleepIterationMillis("backup.fileExportSleepIterationMillis", 2000),
     backupFileExportSleepMillis("backup.fileExportSleepMillis", 250),
+    s3backupBucket("backup.s3.bucket"),
+    s3backupFolder("backup.s3.folder"),
+    s3backupAccountId("backup.s3.accountId"),
+    s3backupAccountSecretKey("backup.s3.accountSecretKey"),
     httpAcceptEncodingGzip("http.acceptEncoding.gzip", true),
     httpUseExpectContinue("http.useExpectContinue", false),
     filteringResourceSizeKb("filtering.resourceSizeKb", 64),
@@ -103,7 +104,10 @@ public enum ConstantValues {
     yumCalculationRequestAggregationCycleSecs("yum.calculationRequest.aggregationCycleSecs", 60),
     globalExcludes("repo.includeExclude.globalExcludes"),
     archiveLicenseFileNames("archive.licenseFile.names", "license,LICENSE,license.txt,LICENSE.txt,LICENSE.TXT"),
-    uiSearchMaxRowsPerPage("ui.search.maxRowsPerPage", 20);
+    uiSearchMaxRowsPerPage("ui.search.maxRowsPerPage", 20),
+    nugetUpdateRequestAggregationTimeWindowSecs("nuget.updateRequest.aggregationTimeWindowSecs", 20),
+    nugetUpdateRequestAggregationCycleSecs("nuget.updateRequest.aggregationCycleSecs", 20),
+    nugetSearchMaxResult("nuget.search.maxResults", 100);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

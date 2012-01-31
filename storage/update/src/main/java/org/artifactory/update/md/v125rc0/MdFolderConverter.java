@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,6 @@ package org.artifactory.update.md.v125rc0;
 
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataConverterUtils;
 import org.artifactory.update.md.MetadataType;
@@ -36,14 +35,17 @@ import java.util.List;
 public class MdFolderConverter implements MetadataConverter {
     static final String ARTIFACTORY_NAME = "artifactoryName";
 
+    @Override
     public String getNewMetadataName() {
         return "artifactory-folder";
     }
 
+    @Override
     public MetadataType getSupportedMetadataType() {
         return MetadataType.folder;
     }
 
+    @Override
     public void convert(Document doc) {
         Element rootElement = doc.getRootElement();
         rootElement.setName(getNewMetadataName());

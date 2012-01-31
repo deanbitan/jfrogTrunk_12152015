@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -72,6 +72,9 @@ public class ExportSystemPanel extends TitledPanel {
     private boolean excludeMetadata;
 
     @WicketProperty
+    private boolean excludeBuilds;
+
+    @WicketProperty
     private boolean excludeContent;
 
     @WicketProperty
@@ -95,7 +98,7 @@ public class ExportSystemPanel extends TitledPanel {
             @Override
             protected void onOkClicked(AjaxRequestTarget target) {
                 super.onOkClicked(target);
-                target.addComponent(exportToPathTf);
+                target.add(exportToPathTf);
             }
         };
         browserButton.setMask(PathMask.FOLDERS);
@@ -116,6 +119,12 @@ public class ExportSystemPanel extends TitledPanel {
                 "Exclude Artifactory-specific metadata from the export.\n" +
                         "(Maven 2 metadata is unaffected by this setting)"));
 
+        final StyledCheckbox excludeBuildsCheckbox =
+                new StyledCheckbox("excludeBuilds", new PropertyModel(this, "excludeBuilds"));
+        excludeBuildsCheckbox.setOutputMarkupId(true);
+        exportForm.add(excludeBuildsCheckbox);
+        exportForm.add(new HelpBubble("excludeBuildsHelp", "Exclude all builds from the export."));
+
         final StyledCheckbox excludeContentCheckbox =
                 new StyledCheckbox("excludeContent", new PropertyModel(this, "excludeContent"));
         excludeContentCheckbox.setOutputMarkupId(true);
@@ -123,16 +132,21 @@ public class ExportSystemPanel extends TitledPanel {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 boolean excludeMDSelected = excludeMetadataCheckbox.isChecked();
+                boolean excludeBuildsSelected = excludeBuildsCheckbox.isChecked();
                 boolean excludeContentSelected = excludeContentCheckbox.isChecked();
                 if (excludeMDSelected != excludeContentSelected) {
                     excludeMetadataCheckbox.setDefaultModelObject(excludeContentSelected);
+                }
+                if(excludeBuildsSelected != excludeContentSelected) {
+                    excludeBuildsCheckbox.setDefaultModelObject(excludeContentSelected);
                 }
 
                 excludeMetadataCheckbox.setEnabled(!excludeContentSelected);
                 m2CompatibleCheckbox.setEnabled(!excludeContentSelected);
 
-                target.addComponent(excludeMetadataCheckbox);
-                target.addComponent(m2CompatibleCheckbox);
+                target.add(excludeMetadataCheckbox);
+                target.add(m2CompatibleCheckbox);
+                target.add(excludeBuildsCheckbox);
             }
         });
         exportForm.add(excludeContentCheckbox);
@@ -165,6 +179,7 @@ public class ExportSystemPanel extends TitledPanel {
                     settings.setVerbose(verbose);
                     settings.setFailIfEmpty(true);
                     settings.setIncludeMetadata(!excludeMetadata);
+                    settings.setExcludeBuilds(excludeBuilds);
                     settings.setM2Compatible(m2Compatible);
                     settings.setExcludeContent(excludeContent);
                     if (!excludeContent) {

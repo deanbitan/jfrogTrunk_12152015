@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
 package org.artifactory.common.wicket.behavior.defaultbutton;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.IFormSubmittingComponent;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -27,7 +27,7 @@ import org.artifactory.common.wicket.behavior.CssClass;
 /**
  * @author Yoav Aharoni
  */
-public class DefaultButtonBehavior extends AbstractBehavior {
+public class DefaultButtonBehavior extends Behavior {
     private IFormSubmittingComponent defaultButton;
 
     public DefaultButtonBehavior(IFormSubmittingComponent defaultButton) {

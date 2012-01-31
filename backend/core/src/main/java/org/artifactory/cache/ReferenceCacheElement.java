@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,11 +32,13 @@ abstract class ReferenceCacheElement<V> extends BaseCacheElement<V> {
         this.value = createReference(value);
     }
 
+    @Override
     public void set(V value) {
         this.value = createReference(value);
         modified();
     }
 
+    @Override
     public V get() {
         V result = value.get();
         if (result != null) {

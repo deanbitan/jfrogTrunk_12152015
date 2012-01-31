@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -56,7 +56,7 @@ public class ExportJob extends QuartzCommand {
             JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
             String repoKey = (String) jobDataMap.get(Task.REPO_KEY);
             if (repoKey == null) {
-                throw new IllegalStateException("Cannot export unknown source for "+this);
+                throw new IllegalStateException("Cannot export unknown source for " + this);
             }
             ExportSettingsImpl settings = (ExportSettingsImpl) jobDataMap.get(ExportSettingsImpl.class.getName());
             status = settings.getStatusHolder();

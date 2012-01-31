@@ -45,10 +45,12 @@ public class VfsPropertyJcrImpl implements MutableVfsProperty {
         this.propertyType = propertyType;
     }
 
+    @Override
     public VfsValueType getValueType() {
         return valueType;
     }
 
+    @Override
     public VfsPropertyType getPropertyType() {
         try {
             if (propertyType == VfsPropertyType.AUTO) {
@@ -64,6 +66,7 @@ public class VfsPropertyJcrImpl implements MutableVfsProperty {
         return propertyType;
     }
 
+    @Override
     public String getString() {
         try {
             return property.getString();
@@ -72,6 +75,7 @@ public class VfsPropertyJcrImpl implements MutableVfsProperty {
         }
     }
 
+    @Override
     public Collection<String> getStrings() {
         List<String> result = Lists.newArrayList();
         try {
@@ -89,6 +93,7 @@ public class VfsPropertyJcrImpl implements MutableVfsProperty {
         return result;
     }
 
+    @Override
     public Long getLong() {
         try {
             return property.getLong();
@@ -97,6 +102,7 @@ public class VfsPropertyJcrImpl implements MutableVfsProperty {
         }
     }
 
+    @Override
     public Calendar getDate() {
         try {
             return property.getDate();
@@ -107,6 +113,7 @@ public class VfsPropertyJcrImpl implements MutableVfsProperty {
 
     // Mutable part
 
+    @Override
     public void setString(String value) {
         try {
             property.setValue(value);
@@ -115,12 +122,14 @@ public class VfsPropertyJcrImpl implements MutableVfsProperty {
         }
     }
 
+    @Override
     public void addString(String value) {
         Collection<String> strings = getStrings();
         strings.add(value);
         setStrings(strings);
     }
 
+    @Override
     public void setStrings(Collection<String> value) {
         try {
             property.setValue(value.toArray(new String[value.size()]));
@@ -129,6 +138,7 @@ public class VfsPropertyJcrImpl implements MutableVfsProperty {
         }
     }
 
+    @Override
     public void setLong(Long value) {
         try {
             property.setValue(value);
@@ -137,6 +147,7 @@ public class VfsPropertyJcrImpl implements MutableVfsProperty {
         }
     }
 
+    @Override
     public void setDate(Calendar value) {
         try {
             property.setValue(value);

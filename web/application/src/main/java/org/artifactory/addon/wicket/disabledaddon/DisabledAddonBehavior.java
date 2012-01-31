@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,9 +19,11 @@
 package org.artifactory.addon.wicket.disabledaddon;
 
 import org.apache.wicket.Component;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.util.value.IValueMap;
 import org.artifactory.addon.AddonType;
+import org.artifactory.common.wicket.behavior.border.TitledBorderBehavior;
 
 /**
  * @author Yoav Aharoni
@@ -29,6 +31,23 @@ import org.artifactory.addon.AddonType;
 public class DisabledAddonBehavior extends AddonNeededBehavior {
     public DisabledAddonBehavior(AddonType addon) {
         super(addon);
+    }
+
+    @Override
+    public void bind(Component component) {
+        if (getTargetId() == null) {
+            // If we have a titled border behavior, than place the disabled-addon icon within the border title
+            for (Behavior b : component.getBehaviors()) {
+                if (b instanceof TitledBorderBehavior) {
+                    if (!isEnabled()) {
+                        component.remove(b);
+                    }
+                    setTargetId(component.getMarkupId() + "-border-icon");
+                    ((TitledBorderBehavior) b).setCssClass("disabled-addon");
+                }
+            }
+        }
+        super.bind(component);
     }
 
     @Override

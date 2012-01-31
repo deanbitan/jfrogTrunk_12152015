@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action;
 
-import org.apache.wicket.PageParameters;
-import org.apache.wicket.RequestCycle;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.artifactory.build.BuildRun;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;
@@ -52,10 +52,10 @@ public class GoToBuildAction extends ItemAction {
     @Override
     public void onAction(ItemEvent e) {
         PageParameters pageParameters = new PageParameters();
-        pageParameters.put(BuildBrowserConstants.BUILD_NAME, buildRun.getName());
-        pageParameters.put(BuildBrowserConstants.BUILD_NUMBER, buildRun.getNumber());
-        pageParameters.put(BuildBrowserConstants.BUILD_STARTED, buildRun.getStarted());
-        pageParameters.put(BuildBrowserConstants.MODULE_ID, moduleId);
+        pageParameters.set(BuildBrowserConstants.BUILD_NAME, buildRun.getName());
+        pageParameters.set(BuildBrowserConstants.BUILD_NUMBER, buildRun.getNumber());
+        pageParameters.set(BuildBrowserConstants.BUILD_STARTED, buildRun.getStarted());
+        pageParameters.set(BuildBrowserConstants.MODULE_ID, moduleId);
         RequestCycle.get().setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }
 }

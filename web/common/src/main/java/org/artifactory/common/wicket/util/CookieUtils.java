@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,11 +18,12 @@
 
 package org.artifactory.common.wicket.util;
 
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.protocol.http.WebResponse;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.http.WebRequest;
+import org.apache.wicket.request.http.WebResponse;
 
 import javax.servlet.http.Cookie;
+import java.util.List;
 
 /**
  * @author Yoav Aharoni
@@ -57,15 +58,15 @@ public abstract class CookieUtils {
     }
 
     /**
-     * Search for a perssistent component coockie. for every web page there should be only one cookie for every
+     * Search for a persistent component cookie. for every web page there should be only one cookie for every
      * component
      *
      * @param componentId
      * @return The first cookie if exist, that his name ends with the component id
      */
-    public static Cookie getCookieBycomponentId(String componentId) {
+    public static Cookie getCookieByComponentId(String componentId) {
         WebRequest request = (WebRequest) RequestCycle.get().getRequest();
-        Cookie[] cookies = request.getCookies();
+        List<Cookie> cookies = request.getCookies();
         if (cookies == null) {
             return null;
         }

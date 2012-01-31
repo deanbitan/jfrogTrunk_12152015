@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,7 +25,7 @@ import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
-import org.apache.wicket.protocol.http.servlet.AbortWithWebErrorCodeException;
+import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
@@ -68,7 +68,7 @@ public class LocalRepoBrowserPanel extends BaseRepoBrowserPanel {
             dirItems = repoBrowseService.getLocalRepoBrowsableChildren(criteria);
         } catch (Exception e) {
             log.debug("Exception occurred while trying to get browsable children for repo path " + repoPath, e);
-            throw new AbortWithWebErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+            throw new AbortWithHttpErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
         }
         dirItems.add(0, getPseudoUpLink(repoPath));
 
@@ -103,7 +103,7 @@ public class LocalRepoBrowserPanel extends BaseRepoBrowserPanel {
             private BookmarkablePageLink getRootLink() {
                 return new BookmarkablePageLink<SimpleBrowserRootPage>("link", SimpleBrowserRootPage.class) {
                     @Override
-                    protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+                    public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
                         replaceComponentTagBody(markupStream, openTag, getDefaultModelObjectAsString(BrowsableItem.UP));
                     }
                 };

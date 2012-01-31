@@ -41,26 +41,32 @@ public abstract class BinaryContentBase implements MutableBinaryContent {
         this.checksumsInfo = checksums;
     }
 
+    @Override
     public long getLastModified() {
         return lastModified;
     }
 
+    @Override
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
 
+    @Override
     public final String getMimeType() {
         return mimeType;
     }
 
+    @Override
     public final String getEncoding() {
         return encoding;
     }
 
+    @Override
     public ChecksumsInfo getChecksums() {
         return checksumsInfo;
     }
 
+    @Override
     public String getContentAsString() {
         if (stringContent == null) {
             try {
@@ -72,6 +78,7 @@ public abstract class BinaryContentBase implements MutableBinaryContent {
         return stringContent;
     }
 
+    @Override
     public String binaryId() {
         return getChecksums().getSha1();
     }

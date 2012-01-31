@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,7 @@ package org.artifactory.common.wicket.component.checkbox.styled;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxEventBehavior;
-import org.apache.wicket.behavior.IBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -81,14 +81,14 @@ public class StyledCheckbox extends FormComponentPanel<Boolean> implements Title
     }
 
     @Override
-    public Component add(final IBehavior... behaviors) {
-        for (IBehavior behavior : behaviors) {
+    public Component add(final Behavior... behaviors) {
+        for (Behavior behavior : behaviors) {
             internalAdd(behavior);
         }
         return this;
     }
 
-    private Component internalAdd(IBehavior behavior) {
+    private Component internalAdd(Behavior behavior) {
         if (AjaxEventBehavior.class.isAssignableFrom(behavior.getClass())) {
             AjaxEventBehavior ajaxEventBehavior = (AjaxEventBehavior) behavior;
             button.add(new DelegateEventBehavior(ajaxEventBehavior.getEvent(), checkbox));
@@ -97,11 +97,6 @@ public class StyledCheckbox extends FormComponentPanel<Boolean> implements Title
         }
 
         return super.add(behavior);
-    }
-
-    @Override
-    protected boolean supportsPersistence() {
-        return true;
     }
 
     public boolean isChecked() {
@@ -122,14 +117,15 @@ public class StyledCheckbox extends FormComponentPanel<Boolean> implements Title
     }
 
     @Override
-    protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+    public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
         super.onComponentTagBody(markupStream, openTag);
 
         // close span  tag
         getResponse().write(openTag.syntheticCloseTagString());
-        openTag.setType(XmlTag.CLOSE);
+        openTag.setType(XmlTag.TagType.CLOSE);
     }
 
+    @Override
     public String getTitle() {
         if (title == null) {
             Object label = null;
@@ -183,8 +179,7 @@ public class StyledCheckbox extends FormComponentPanel<Boolean> implements Title
         String tmp = value != null && value.length > 0 ? value[0] : null;
         try {
             return Strings.toBoolean(tmp);
-        }
-        catch (StringValueConversionException e) {
+        } catch (StringValueConversionException e) {
             final ConversionException conversionException = new ConversionException(
                     String.format("Invalid boolean input value posted \"%s\"", tmp), e);
             conversionException.setTargetType(Boolean.class);
@@ -234,7 +229,7 @@ public class StyledCheckbox extends FormComponentPanel<Boolean> implements Title
 
         @SuppressWarnings({"RefusedBequest"})
         @Override
-        protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+        public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
             replaceComponentTagBody(markupStream, openTag, getHtml());
         }
 

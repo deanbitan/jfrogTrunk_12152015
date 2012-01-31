@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,9 +20,10 @@ package org.artifactory.webapp.wicket.panel.tabbed;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.ajax.markup.html.tabs.AjaxTabbedPanel;
+import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.list.Loop;
+import org.apache.wicket.markup.html.list.LoopItem;
 import org.apache.wicket.model.PropertyModel;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.template.HtmlTemplate;
@@ -35,7 +36,7 @@ import java.util.List;
  * @author Yoav Aharoni
  */
 public class StyledTabbedPanel extends AjaxTabbedPanel {
-    public StyledTabbedPanel(String id, List tabs) {
+    public StyledTabbedPanel(String id, List<ITab> tabs) {
         super(id, tabs);
 
         add(ResourcePackage.forJavaScript(StyledTabbedPanel.class));
@@ -75,8 +76,8 @@ public class StyledTabbedPanel extends AjaxTabbedPanel {
     }
 
     @Override
-    protected Loop.LoopItem newTabContainer(int tabIndex) {
-        Loop.LoopItem item = super.newTabContainer(tabIndex);
+    protected LoopItem newTabContainer(int tabIndex) {
+        LoopItem item = super.newTabContainer(tabIndex);
         Object tab = getTabs().get(tabIndex);
         if (tab instanceof BaseTab) {
             BaseTab baseTab = (BaseTab) tab;

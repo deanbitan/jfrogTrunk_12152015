@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,6 +48,7 @@ public class RepoConfigConverterV210 extends RepoConfigConverterBase {
 
     //Pure derby repo.xml which is backward compatible with the default installation in prev versions
 
+    @Override
     public void convert(ArtifactoryHome artifactoryHome) {
         //We may get a transient xml so turn it off do the conversion on the real file then turn on the transient
         //and convert it

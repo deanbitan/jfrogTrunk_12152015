@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,11 +18,16 @@
 
 package org.artifactory.webapp.wicket.page.base;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Page;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WebApplicationAddon;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.common.wicket.panel.logo.BaseLogoPanel;
+import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.util.HttpUtils;
+import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 
 /**
  * @author Tomer Cohen
@@ -30,6 +35,9 @@ import org.artifactory.common.wicket.panel.logo.BaseLogoPanel;
 public class HeaderLogoPanel extends BaseLogoPanel {
     @SpringBean
     private AddonsManager addons;
+
+    @SpringBean
+    private CentralConfigService centralConfig;
 
     public HeaderLogoPanel(String id) {
         super(id);
@@ -43,8 +51,19 @@ public class HeaderLogoPanel extends BaseLogoPanel {
 
     @Override
     protected String getLogoUrl() {
-        WebApplicationAddon applicationAddon = addons.addonByType(WebApplicationAddon.class);
-        return applicationAddon.getCompanyLogoUrl();
+        String descriptorLogo = centralConfig.getDescriptor().getLogo();
+        if (StringUtils.isNotBlank(descriptorLogo)) {
+            return descriptorLogo;
+        }
+
+        final ArtifactoryApplication application = ArtifactoryApplication.get();
+        if (application.isLogoExists()) {
+            return HttpUtils.getWebappContextUrl(
+                    WicketUtils.getHttpServletRequest()) + "logo?" + application.getLogoModifyTime();
+        }
+
+        return null;
     }
+
 }
 

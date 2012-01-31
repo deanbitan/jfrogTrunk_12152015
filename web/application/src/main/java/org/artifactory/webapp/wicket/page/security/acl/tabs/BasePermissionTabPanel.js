@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,7 +17,7 @@
  */
 
 PermissionTabPanel = {
-    resize: function() {
+    resize:function () {
         var modal = Wicket.Window.current;
         if (modal) {
             // resize tab to fit modal
@@ -28,13 +28,13 @@ PermissionTabPanel = {
         }
     },
 
-    onShow: function() {
+    onShow:function () {
         PermissionTabPanel.resize();
 
         // set resize event handler
         var modal = Wicket.Window.current;
         if (modal) {
-            modal.resizing = function() {
+            modal.resizing = function () {
                 Wicket.Window.prototype.resizing.apply(this, arguments);
                 PermissionTabPanel.resize();
             };

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,18 +27,22 @@ import org.artifactory.mime.NamingUtils;
  */
 public class MetadataTranslatorFilter implements TranslatorFilter {
 
+    @Override
     public boolean filterRequired(String path) {
         return NamingUtils.isMetadata(path);
     }
 
+    @Override
     public String getFilteredContent(String path) {
         return NamingUtils.getMetadataName(path);
     }
 
+    @Override
     public String stripPath(String path) {
         return NamingUtils.stripMetadataFromPath(path);
     }
 
+    @Override
     public String applyFilteredContent(String strippedPath, String filteredContent) {
         return NamingUtils.getMetadataPath(strippedPath, filteredContent);
     }

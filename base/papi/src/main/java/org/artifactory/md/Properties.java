@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +20,9 @@ package org.artifactory.md;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A map of stringified keys and values, used for storing arbitrary key-value metadata on repository items.
@@ -44,6 +47,15 @@ public interface Properties extends MutablePropertiesInfo {
     boolean hasMandatoryProperty();
 
     MatchResult matchQuery(Properties queryProperties);
+
+    /**
+     * Returns the first value of the given key
+     *
+     * @param key Key of value
+     * @return First found value of key; null if has no values at all
+     */
+    @Nullable
+    String getFirst(@Nonnull String key);
 
     public enum MatchResult {
         MATCH,

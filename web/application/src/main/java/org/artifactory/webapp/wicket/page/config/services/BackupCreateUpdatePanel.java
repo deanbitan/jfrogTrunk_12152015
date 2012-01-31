@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -122,7 +122,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 runNowButton.setEnabled(enabledCheckBox.isChecked());
-                target.addComponent(runNowButton);
+                target.add(runNowButton);
             }
         });
         simpleFields.add(enabledCheckBox);
@@ -145,7 +145,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
             @Override
             protected void onOkClicked(AjaxRequestTarget target) {
                 super.onOkClicked(target);
-                target.addComponent(backupDir);
+                target.add(backupDir);
             }
         };
         browserButton.setOutputMarkupId(true);
@@ -171,7 +171,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                 if (isCreateArchiveChecked) {
                     createIncremental.setDefaultModelObject(Boolean.FALSE);
                 }
-                target.addComponent(createIncremental);
+                target.add(createIncremental);
             }
         });
         advancedFields.add(createArchiveCheckbox);
@@ -179,6 +179,9 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
 
         advancedFields.add(new StyledCheckbox("sendMailOnError"));
         advancedFields.add(new SchemaHelpBubble("sendMailOnError.help"));
+        
+        advancedFields.add(new StyledCheckbox("excludeBuilds"));
+        advancedFields.add(new SchemaHelpBubble("excludeBuilds.help"));
 
         createIncremental = new StyledCheckbox("createIncrementalBackup",
                 new PropertyModel<Boolean>(this, "createIncrementalBackup"));
@@ -195,8 +198,8 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                     createArchiveCheckbox.setDefaultModelObject(Boolean.FALSE);
                     retentionHoursField.setDefaultModelObject("0");
                 }
-                target.addComponent(retentionHoursField);
-                target.addComponent(createArchiveCheckbox);
+                target.add(retentionHoursField);
+                target.add(createArchiveCheckbox);
             }
         });
         advancedFields.add(createIncremental);
@@ -232,6 +235,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 if (StringUtils.isBlank(entity.getCronExp())) {
                     error("A Cron Expression is required.");
+                    AjaxUtils.refreshFeedback(target);
                     return;
                 }
                 MutableCentralConfigDescriptor configDescriptor = backupsListPanel.getMutableDescriptor();
@@ -248,7 +252,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                     getPage().info(message);
                 }
                 AjaxUtils.refreshFeedback(target);
-                target.addComponent(backupsListPanel);
+                target.add(backupsListPanel);
                 close(target);
             }
 

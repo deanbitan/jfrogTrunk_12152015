@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -84,7 +84,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         form.setOutputMarkupId(true);
         add(form);
 
-        List<LocalRepoDescriptor> localRepos = getDeployableLocalReposKeys();
+        List<LocalRepoDescriptor> localRepos = getDeployableLocalRepoKeys();
         Collections.sort(localRepos, new LocalRepoAlphaComparator());
         ChoiceRenderer<LocalRepoDescriptor> choiceRenderer = new ChoiceRenderer<LocalRepoDescriptor>() {
             @Override
@@ -140,7 +140,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
 
     protected abstract TitledAjaxSubmitLink createSubmitButton(Form form, String wicketId);
 
-    protected abstract List<LocalRepoDescriptor> getDeployableLocalReposKeys();
+    protected abstract List<LocalRepoDescriptor> getDeployableLocalRepoKeys();
 
     protected abstract MoveMultiStatusHolder executeDryRun(String targetRepoKey);
 
@@ -178,8 +178,8 @@ public abstract class MoveAndCopyBasePanel extends Panel {
                 Component dryRunResult = form.get("dryRunResult");
                 dryRunResult.setDefaultModelObject(result.toString());
                 dryRunResult.setVisible(true);
-                target.addComponent(MoveAndCopyBasePanel.this);
-                target.addComponent(form);
+                target.add(MoveAndCopyBasePanel.this);
+                target.add(form);
                 AjaxUtils.refreshFeedback(target);
                 ModalHandler.bindHeightTo("dryRunResult");
             }
@@ -192,7 +192,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
      * @param sourceRepoKey Move/copy source repository key to exclude
      * @return List of the deployable local repositories, excluding the given source
      */
-    protected List<LocalRepoDescriptor> getDeployableLocalReposKeysExcludingSource(String sourceRepoKey) {
+    protected List<LocalRepoDescriptor> getDeployableLocalRepoKeysExcludingSource(String sourceRepoKey) {
         // only display repositories the user has deploy permission on
         List<LocalRepoDescriptor> localRepos = repoService.getDeployableRepoDescriptors();
         // remove source repository from the targets list

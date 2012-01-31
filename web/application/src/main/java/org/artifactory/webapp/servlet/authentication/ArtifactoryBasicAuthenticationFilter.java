@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,6 +47,7 @@ public class ArtifactoryBasicAuthenticationFilter implements ArtifactoryAuthenti
     private BasicAuthenticationFilter springBasicAuthenticationFilter;
     private BasicAuthenticationEntryPoint authenticationEntryPoint;
 
+    @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         ServletContext servletContext = filterConfig.getServletContext();
         ArtifactoryContext context = RequestUtils.getArtifactoryContext(servletContext);
@@ -55,7 +56,7 @@ public class ArtifactoryBasicAuthenticationFilter implements ArtifactoryAuthenti
         springBasicAuthenticationFilter.init(filterConfig);
     }
 
-    public boolean requiresReauthentication(ServletRequest request, Authentication authentication) {
+    public boolean requiresReAuthentication(ServletRequest request, Authentication authentication) {
         if (acceptFilter(request)) {
             String authUsername = authentication.getPrincipal().toString();
             try {
@@ -69,27 +70,33 @@ public class ArtifactoryBasicAuthenticationFilter implements ArtifactoryAuthenti
         return false;
     }
 
+    @Override
     public boolean acceptFilter(ServletRequest request) {
         return RequestUtils.isAuthHeaderPresent((HttpServletRequest) request);
     }
 
+    @Override
     public boolean acceptEntry(ServletRequest request) {
         return !RequestUtils.isUiRequest((HttpServletRequest) request);
     }
 
+    @Override
     public String getCacheKey(ServletRequest request) {
         return ((HttpServletRequest) request).getHeader("Authorization");
     }
 
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         springBasicAuthenticationFilter.doFilter(request, response, chain);
     }
 
+    @Override
     public void destroy() {
         springBasicAuthenticationFilter.destroy();
     }
 
+    @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException)
             throws IOException, ServletException {

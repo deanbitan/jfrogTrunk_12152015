@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,20 +20,18 @@ package org.artifactory.webapp.wicket.page.browse.home;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.artifactory.common.wicket.util.WicketUtils;
 
 import javax.servlet.http.Cookie;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static org.apache.wicket.protocol.http.RequestUtils.toAbsolutePath;
-
 /**
  * @author Yoav Aharoni
  */
-public class RememberPageBehavior extends AbstractBehavior {
+public class RememberPageBehavior extends Behavior {
     static final String COOKIE_NAME = "art-page";
 
     @Override
@@ -41,7 +39,7 @@ public class RememberPageBehavior extends AbstractBehavior {
         Page page = component.getPage();
         String pageUrl = getPageUrl(page);
         Cookie cookie = new Cookie(COOKIE_NAME, pageUrl);
-        String contextPath = WicketUtils.getWebRequest().getHttpServletRequest().getContextPath();
+        String contextPath = WicketUtils.getHttpServletRequest().getContextPath();
         cookie.setPath(contextPath);
         WicketUtils.getWebResponse().addCookie(cookie);
     }
@@ -50,7 +48,7 @@ public class RememberPageBehavior extends AbstractBehavior {
         Class<? extends Page> pageClass = page.getClass();
         String pageUrl = RequestCycle.get().urlFor(pageClass, null).toString();
         try {
-            return new URL(toAbsolutePath(pageUrl)).getFile();
+            return new URL(WicketUtils.toAbsolutePath(pageUrl)).getFile();
         } catch (MalformedURLException e) {
             return null;
         }

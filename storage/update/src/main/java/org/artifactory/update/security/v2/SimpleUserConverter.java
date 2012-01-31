@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,6 +34,7 @@ import java.util.List;
 public class SimpleUserConverter implements XmlConverter {
     private static final Logger log = LoggerFactory.getLogger(SimpleUserConverter.class);
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public void convert(Document doc) {
         Element usersTag = doc.getRootElement().getChild("users");

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,37 +18,48 @@
 
 package org.artifactory.webapp.wicket.resource;
 
-import org.apache.wicket.markup.html.WebResource;
-import org.apache.wicket.util.resource.FileResourceStream;
-import org.apache.wicket.util.resource.IResourceStream;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.resource.DynamicImageResource;
+import org.apache.wicket.request.resource.IResource;
+import org.apache.wicket.util.file.File;
+import org.apache.wicket.util.io.IOUtils;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Resource to get the uploaded user logo
  *
  * @author Tomer Cohen
  */
-public class ImageFileResource extends WebResource {
+public class ImageFileResource extends DynamicImageResource {
     private File file;
 
-    public ImageFileResource(File file) {
-        this.file = file;
+    public ImageFileResource(java.io.File file) {
+        this.file = new File(file);
     }
 
     @Override
-    public IResourceStream getResourceStream() {
-        return new MyFileResourceStream(ImageFileResource.this.file);
+    protected void configureResponse(ResourceResponse response, Attributes attributes) {
+        response.setContentType("image/" + file.getExtension());
     }
 
-    private static class MyFileResourceStream extends FileResourceStream {
-        public MyFileResourceStream(File file) {
-            super(file);
+    @Override
+    protected byte[] getImageData(Attributes attributes) {
+        InputStream inputStream = null;
+        try {
+            inputStream = file.inputStream();
+            return IOUtils.toByteArray(inputStream);
+        } catch (IOException e) {
+            throw new RuntimeException("Can't read image file", e);
+        } finally {
+            IOUtils.closeQuietly(inputStream);
         }
+    }
 
-        @Override
-        public String getContentType() {
-            return "image/" + getFile().getExtension();
-        }
+    public void onResourceRequested() {
+        IResource.Attributes attributes = new IResource.Attributes(RequestCycle.get().getRequest(),
+                RequestCycle.get().getResponse());
+        respond(attributes);
     }
 }

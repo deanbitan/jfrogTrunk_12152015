@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,6 +37,7 @@ public class SessionResourceManagerImpl implements SessionResourceManager {
 
     private final Map<Class, SessionResource> resources = new HashMap<Class, SessionResource>();
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public <T extends SessionResource> T getOrCreateResource(Class<T> resourceClass) {
         T result = (T) resources.get(resourceClass);
@@ -53,12 +54,14 @@ public class SessionResourceManagerImpl implements SessionResourceManager {
         return result;
     }
 
+    @Override
     public void onSessionSave() {
         for (SessionResource resource : resources.values()) {
             resource.onSessionSave();
         }
     }
 
+    @Override
     public void afterCompletion(boolean commit) {
         RuntimeException ex = null;
         for (SessionResource resource : resources.values()) {
@@ -77,6 +80,7 @@ public class SessionResourceManagerImpl implements SessionResourceManager {
         }
     }
 
+    @Override
     public boolean hasPendingResources() {
         for (SessionResource resource : resources.values()) {
             if (resource.hasPendingResources()) {
@@ -86,6 +90,7 @@ public class SessionResourceManagerImpl implements SessionResourceManager {
         return false;
     }
 
+    @Override
     public List<SessionResource> pendingResources() {
         List<SessionResource> pending = Lists.newArrayList();
         for (SessionResource resource : resources.values()) {

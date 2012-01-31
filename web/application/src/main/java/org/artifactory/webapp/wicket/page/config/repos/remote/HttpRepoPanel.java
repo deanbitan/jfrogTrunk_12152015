@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,8 +20,8 @@ package org.artifactory.webapp.wicket.page.config.repos.remote;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -30,10 +30,9 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
-import org.artifactory.addon.AddonType;
+import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -110,16 +109,12 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         tabs.add(replicationWebAddon.getHttpRepoReplicationPanel("Replication", entity, replicationDescriptor, action));
 
         // packages tab contains add-ons configuration
-        if (!addons.isLicenseInstalled()) {
-            tabs.add(new DisabledAddonTab(Model.of("Packages"), AddonType.P2));
-        } else {
-            tabs.add(new AbstractTab(Model.of("Packages")) {
-                @Override
-                public Panel getPanel(String panelId) {
-                    return new HttpRepoPackagesPanel(panelId);
-                }
-            });
-        }
+        tabs.add(new AbstractTab(Model.of("Packages")) {
+            @Override
+            public Panel getPanel(String panelId) {
+                return new HttpRepoPackagesPanel<HttpRepoDescriptor>(panelId, entity);
+            }
+        });
         return tabs;
     }
 
@@ -172,6 +167,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                 }
                 // always test with url trailing slash
                 String url = PathUtils.addTrailingSlash(repo.getUrl());
+                NuGetWebAddon nuGetWebAddon = addons.addonByType(NuGetWebAddon.class);
+                HttpMethodBase testMethod = nuGetWebAddon.getRemoteRepoTestMethod(url, repo);
                 HttpClient client = new HttpClientConfigurator()
                         .hostFromUrl(url)
                         .defaultMaxConnectionsPerHost(5)
@@ -184,11 +181,10 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                         .proxy(repo.getProxy())
                         .authentication(repo.getUsername(), repo.getPassword())
                         .getClient();
-                HeadMethod head = new HeadMethod(url);
                 try {
-                    int status = client.executeMethod(head);
+                    int status = client.executeMethod(testMethod);
                     if (status != HttpStatus.SC_OK) {
-                        String reason = head.getStatusText();
+                        String reason = testMethod.getStatusText();
                         error("Connection failed: Error " + status + ": " + reason);
                     } else {
                         info("Successfully connected to server");
@@ -206,7 +202,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     error("Connection failed with general exception: " + e.getMessage());
                     log.debug("Test connection to '" + url + "' failed with exception", e);
                 } finally {
-                    head.releaseConnection();
+                    testMethod.releaseConnection();
                 }
                 AjaxUtils.refreshFeedback(target);
             }

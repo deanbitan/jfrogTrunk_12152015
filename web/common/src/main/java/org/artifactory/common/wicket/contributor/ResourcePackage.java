@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,35 +18,33 @@
 
 package org.artifactory.common.wicket.contributor;
 
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.ResourceReference;
-import org.apache.wicket.behavior.AbstractHeaderContributor;
+import org.apache.wicket.Application;
+import org.apache.wicket.Component;
+import org.apache.wicket.behavior.Behavior;
+import org.apache.wicket.css.ICssCompressor;
 import org.apache.wicket.markup.html.IHeaderContributor;
 import org.apache.wicket.markup.html.IHeaderResponse;
-import org.apache.wicket.markup.html.PackageResource;
-import org.apache.wicket.markup.html.resources.CompressedResourceReference;
-import org.apache.wicket.markup.html.resources.JavascriptResourceReference;
-import org.apache.wicket.util.io.Streams;
-import org.apache.wicket.util.string.CssUtils;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.resource.CssResourceReference;
+import org.apache.wicket.request.resource.JavaScriptResourceReference;
+import org.apache.wicket.request.resource.PackageResourceReference;
+import org.apache.wicket.request.resource.ResourceReference;
 import org.apache.wicket.util.string.interpolator.PropertyVariableInterpolator;
+import org.apache.wicket.util.template.PackageTextTemplate;
+import org.artifactory.common.wicket.util.JavaScriptUtils;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Arrays.asList;
-import static org.apache.wicket.util.string.JavascriptStripper.stripCommentsAndWhitespace;
-
 /**
- * Imporved version of HeaderContributor: <ul> <li>Naming conventions for default file name.</li> <li>Supports
- * intepolated templates.</li> <li>May hold more than one resource.</li> </ul>
+ * Improved version of HeaderContributor: <ul> <li>Naming conventions for default file name.</li> <li>Supports
+ * interpolated templates.</li> <li>May hold more than one resource.</li> </ul>
  *
  * @author Yoav Aharoni
  */
-public class ResourcePackage extends AbstractHeaderContributor {
-    private List<IHeaderContributor> tempList = new ArrayList<IHeaderContributor>();
+public class ResourcePackage extends Behavior {
+    private List<IHeaderContributor> contributors = new ArrayList<IHeaderContributor>();
     private Class<?> scope;
-    private IHeaderContributor[] headerContributors;
 
     protected ResourcePackage() {
         scope = getClass();
@@ -57,12 +55,12 @@ public class ResourcePackage extends AbstractHeaderContributor {
     }
 
     public ResourcePackage dependsOn(ResourcePackage resourcePackage) {
-        tempList.addAll(0, asList(resourcePackage.getHeaderContributors()));
+        contributors.addAll(0, resourcePackage.contributors);
         return this;
     }
 
     public ResourcePackage addCss() {
-        return addCss(getDefalutCssPath());
+        return addCss(getDefaultCssPath());
     }
 
     public ResourcePackage addJavaScript() {
@@ -70,7 +68,7 @@ public class ResourcePackage extends AbstractHeaderContributor {
     }
 
     public ResourcePackage addCssTemplate() {
-        return addCssTemplate(getDefalutCssPath());
+        return addCssTemplate(getDefaultCssPath());
     }
 
     public ResourcePackage addJavaScriptTemplate() {
@@ -82,53 +80,55 @@ public class ResourcePackage extends AbstractHeaderContributor {
     }
 
     public ResourcePackage addCss(final String path, final String media) {
-        addContributor(new IHeaderContributor() {
+        add(new IHeaderContributor() {
+            @Override
             public void renderHead(IHeaderResponse response) {
-                response.renderCSSReference(new CompressedResourceReference(scope, path), media);
+                response.renderCSSReference(new CssResourceReference(scope, path), media);
             }
         });
         return this;
     }
 
     public ResourcePackage addJavaScript(final String path) {
-        addContributor(new IHeaderContributor() {
+        add(new IHeaderContributor() {
+            @Override
             public void renderHead(IHeaderResponse response) {
-                response.renderJavascriptReference(new JavascriptResourceReference(scope, path));
+                response.renderJavaScriptReference(new JavaScriptResourceReference(scope, path));
             }
         });
         return this;
     }
 
     public ResourcePackage addCssTemplate(final String path) {
-        addContributor(new IHeaderContributor() {
+        add(new IHeaderContributor() {
+            @Override
             public void renderHead(IHeaderResponse response) {
-                response.renderString(
-                        CssUtils.INLINE_OPEN_TAG + readInterpolatedString(path) + CssUtils.INLINE_CLOSE_TAG);
+                String script = readInterpolatedString(path);
+                ICssCompressor compressor = Application.get().getResourceSettings().getCssCompressor();
+                if (compressor != null) {
+                    script = compressor.compress(script);
+                }
+                response.renderCSS(script, null);
             }
         });
         return this;
     }
 
     public ResourcePackage addJavaScriptTemplate(final String path) {
-        addContributor(new IHeaderContributor() {
+        add(new IHeaderContributor() {
+            @Override
             public void renderHead(IHeaderResponse response) {
-                response.renderJavascript(stripCommentsAndWhitespace(readInterpolatedString(path)), null);
+                String script = readInterpolatedString(path);
+                script = JavaScriptUtils.compress(script);
+                response.renderJavaScript(script, null);
             }
         });
         return this;
     }
 
     public String getResourceURL(String path) {
-        ResourceReference reference = new ResourceReference(scope, path);
-        return RequestCycle.get().urlFor(reference).toString();
-    }
-
-    /**
-     * @see AbstractHeaderContributor#getHeaderContributors()
-     */
-    @Override
-    public final IHeaderContributor[] getHeaderContributors() {
-        return createHeaderContributors();
+        ResourceReference reference = new PackageResourceReference(scope, path);
+        return RequestCycle.get().urlFor(reference, null).toString();
     }
 
     public static ResourcePackage forCss(Class scope) {
@@ -143,34 +143,27 @@ public class ResourcePackage extends AbstractHeaderContributor {
         return scope.getSimpleName() + ".js";
     }
 
-    private String getDefalutCssPath() {
+    private String getDefaultCssPath() {
         return scope.getSimpleName() + ".css";
     }
 
     private String readInterpolatedString(String path) {
         try {
-            PackageResource resource = PackageResource.get(scope, path);
-            InputStream inputStream = resource.getResourceStream().getInputStream();
-            String script = Streams.readString(inputStream);
-            return PropertyVariableInterpolator.interpolate(script, this);
+            PackageTextTemplate resource = new PackageTextTemplate(scope, path);
+            return PropertyVariableInterpolator.interpolate(resource.getString(), this);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private IHeaderContributor[] createHeaderContributors() {
-        if (headerContributors == null) {
-            headerContributors = new IHeaderContributor[tempList.size()];
-            tempList.toArray(headerContributors);
-            tempList = null;
-        }
-        return headerContributors;
+    private void add(IHeaderContributor contributor) {
+        contributors.add(contributor);
     }
 
-    private void addContributor(IHeaderContributor contributor) {
-        if (tempList == null) {
-            throw new RuntimeException("Can't add contributors after render phase!");
+    @Override
+    public void renderHead(Component component, IHeaderResponse response) {
+        for (IHeaderContributor contributor : contributors) {
+            contributor.renderHead(response);
         }
-        tempList.add(contributor);
     }
 }

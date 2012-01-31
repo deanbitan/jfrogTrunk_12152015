@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -181,6 +181,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public DataRecord addRecord(InputStream stream) throws DataStoreException {
         ArtifactoryDbDataRecord dataRecord = null;
         File tempFile = null;
@@ -304,6 +305,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int deleteAllOlderThan(long min) throws DataStoreException {
         throw new UnsupportedOperationException("Delete by timestamp not supported");
     }
@@ -467,6 +469,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getMinRecordLength() {
         return minRecordLength;
     }
@@ -485,6 +488,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ArtifactoryDbDataRecord getRecord(DataIdentifier identifier) throws DataStoreException {
         ArtifactoryDbDataRecord record = getRecordIfStored(identifier);
         if (record == null) {
@@ -496,6 +500,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ArtifactoryDbDataRecord getRecordIfStored(DataIdentifier identifier) throws DataStoreException {
         String id = identifier.toString();
         ArtifactoryDbDataRecord record = getCachedRecord(id);
@@ -537,6 +542,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized void init(String homeDir) throws DataStoreException {
         try {
             initTmpDir(homeDir);
@@ -628,6 +634,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void updateModifiedDateOnAccess(long before) {
         throw new UnsupportedOperationException("Modified on access forbidden");
     }
@@ -760,6 +767,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized void close() throws DataStoreException {
         //If derby, prepare connection url for issuing shutdown command
         String derbyShutdownUrl = getDerbyShutdownUrl();
@@ -777,6 +785,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void clearInUse() {
     }
 
@@ -789,6 +798,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
         }
     }
 
+    @Override
     public ArtifactoryConnectionHelper getConnectionHelper() {
         return conHelper;
     }
@@ -985,7 +995,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     @Override
     public void ping() {
         if (!getBinariesFolder().canWrite()) {
-            throw new RuntimeException("Cannot write to binaries folder "+getBinariesFolder().getAbsolutePath());
+            throw new RuntimeException("Cannot write to binaries folder " + getBinariesFolder().getAbsolutePath());
         }
     }
 

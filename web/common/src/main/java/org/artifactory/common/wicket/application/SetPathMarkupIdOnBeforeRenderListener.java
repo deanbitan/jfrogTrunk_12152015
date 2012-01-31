@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +27,7 @@ import org.apache.wicket.util.string.Strings;
  * @author Yoav Aharoni
  */
 public class SetPathMarkupIdOnBeforeRenderListener implements IComponentOnBeforeRenderListener {
+    @Override
     public void onBeforeRender(Component component) {
         String markupId = component.getMarkupId(false);
         if (markupId == null) {

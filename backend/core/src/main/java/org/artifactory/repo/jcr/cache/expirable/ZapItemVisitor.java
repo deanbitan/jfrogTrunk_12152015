@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,6 +52,7 @@ public class ZapItemVisitor implements VfsItemVisitor {
     /**
      * @param file File to visit. Must reside inside the cache repo.
      */
+    @Override
     public void visit(VfsFile file) {
         CacheExpiry cacheExpiry = ContextHelper.get().beanForType(CacheExpiry.class);
         if (cacheExpiry.isExpirable(cacheRepo, file.getPath())) {
@@ -64,6 +65,7 @@ public class ZapItemVisitor implements VfsItemVisitor {
     /**
      * @param folder Folder to visit. Must reside inside the cache repo.
      */
+    @Override
     public void visit(VfsFolder folder) {
         // folders are always expirable
         folder.setLastUpdated(expiredLastUpdated);
@@ -88,6 +90,7 @@ public class ZapItemVisitor implements VfsItemVisitor {
         return updatedItemsCount;
     }
 
+    @Override
     public void visit(VfsItem visitable) {
         if (visitable.isFile()) {
             visit((VfsFile) visitable);

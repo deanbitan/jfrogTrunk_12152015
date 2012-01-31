@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -72,51 +72,63 @@ public class PermissionTargetImpl implements MutablePermissionTargetInfo {
         setExcludesPattern(excludes);
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public List<String> getRepoKeys() {
         return repoKeys;
     }
 
+    @Override
     public void setRepoKeys(List<String> repoKeys) {
         this.repoKeys = repoKeys;
     }
 
+    @Override
     public List<String> getIncludes() {
         return includes;
     }
 
+    @Override
     public void setIncludes(List<String> includes) {
         this.includes = includes;
     }
 
+    @Override
     public List<String> getExcludes() {
         return excludes;
     }
 
+    @Override
     public void setExcludes(List<String> excludes) {
         this.excludes = excludes;
     }
 
+    @Override
     public String getIncludesPattern() {
         return PathUtils.collectionToDelimitedString(includes, DELIMITER);
     }
 
+    @Override
     public void setIncludesPattern(String includesPattern) {
         //Must be wrapped for ocm, otherwise uses an internal Arrays.List class
         this.includes = PathUtils.delimitedListToStringList(includesPattern, DELIMITER, "\r\n\f ");
     }
 
+    @Override
     public String getExcludesPattern() {
         return PathUtils.collectionToDelimitedString(excludes, DELIMITER);
     }
 
+    @Override
     public void setExcludesPattern(String excludesPattern) {
         //Must be wrapped for ocm, otherwise uses an internal Arrays.List class
         this.excludes = PathUtils.delimitedListToStringList(excludesPattern, DELIMITER, "\r\n\f ");

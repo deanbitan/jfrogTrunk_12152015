@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -59,6 +59,7 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
                     expireAfterWrite(ConstantValues.artifactoryUpdatesRefreshIntervalSecs.getLong(),
                             TimeUnit.SECONDS).makeMap();
 
+    @Override
     public void fetchMessage() {
         if (!ConstantValues.versionQueryEnabled.getBoolean() && centralConfigService.getDescriptor().isOfflineMode()) {
             return;
@@ -67,10 +68,12 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
         cache.put(MESSAGE_CACHE_KEY, message);
     }
 
+    @Override
     public Message getCachedMessage() {
         return cache.get(MESSAGE_CACHE_KEY);
     }
 
+    @Override
     public Message getMessage() {
         Message message = getCachedMessage();
         if (ConstantValues.versionQueryEnabled.getBoolean() && !cache.containsKey(MESSAGE_CACHE_KEY)) {

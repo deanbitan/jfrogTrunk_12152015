@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -62,7 +62,7 @@ public class WatchersImpl implements MutableWatchersInfo {
      * @param watchersObject Object to copy
      */
     public WatchersImpl(WatchersInfo copy) {
-        watchers = new LinkedHashSet<WatcherImpl>((Set)copy.getWatchers());
+        watchers = new LinkedHashSet<WatcherImpl>((Set) copy.getWatchers());
     }
 
     /**
@@ -70,6 +70,7 @@ public class WatchersImpl implements MutableWatchersInfo {
      *
      * @return A set object of watchers
      */
+    @Override
     public Set<WatcherInfo> getWatchers() {
         return ImmutableSet.<WatcherInfo>copyOf(watchers);
     }
@@ -80,6 +81,7 @@ public class WatchersImpl implements MutableWatchersInfo {
      * @param username Username of watcher to search
      * @return Watcher object if give user is a watcher. Null if not
      */
+    @Override
     public WatcherInfo getWatcher(String username) {
         for (WatcherImpl watcher : watchers) {
             if (watcher.getUsername().equals(username)) {
@@ -95,6 +97,7 @@ public class WatchersImpl implements MutableWatchersInfo {
      * @param username Name of user to check
      * @return True if the given user is watching. False if not
      */
+    @Override
     public boolean isUserWatching(String username) {
         for (WatcherImpl watcher : watchers) {
             if (watcher.getUsername().equals(username)) {
@@ -109,6 +112,7 @@ public class WatchersImpl implements MutableWatchersInfo {
      *
      * @param watcher Watcher object to add
      */
+    @Override
     public void addWatcher(WatcherInfo watcher) {
         if (!isUserWatching(watcher.getUsername())) {
             watchers.add(new WatcherImpl(watcher));
@@ -121,6 +125,7 @@ public class WatchersImpl implements MutableWatchersInfo {
      * @param username Name of user to remove
      * @return True if the user has been moved. False if not
      */
+    @Override
     public void removeWatcher(String username) {
         Set<WatcherInfo> watchersCopy = new TreeSet<WatcherInfo>(watchers);
         for (WatcherInfo watcher : watchersCopy) {
@@ -135,6 +140,7 @@ public class WatchersImpl implements MutableWatchersInfo {
      *
      * @return True if the set is empty, False if not
      */
+    @Override
     public boolean isEmpty() {
         return watchers.isEmpty();
     }

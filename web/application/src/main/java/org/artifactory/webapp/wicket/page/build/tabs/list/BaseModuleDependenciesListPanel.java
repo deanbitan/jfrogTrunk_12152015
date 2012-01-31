@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.build.tabs.list;
 
 import com.google.common.collect.Lists;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
@@ -101,7 +102,7 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
 
         public ModuleDependenciesDataProvider() {
             super(getDependencies());
-            setSort("dependencyScope", true);
+            setSort("dependencyScope", SortOrder.ASCENDING);
             setGroupParam(new SortParam("dependencyScope", true));
             setGroupRenderer("dependencyScope", new ChoiceRenderer<ModuleDependencyActionableItem>(
                     "dependencyScope", "dependencyScope"));

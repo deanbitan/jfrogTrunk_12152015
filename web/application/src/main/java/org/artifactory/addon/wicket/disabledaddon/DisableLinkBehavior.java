@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,19 +19,30 @@
 package org.artifactory.addon.wicket.disabledaddon;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.ComponentTag;
-import org.apache.wicket.util.value.IValueMap;
+import org.apache.wicket.markup.html.link.AbstractLink;
+import org.artifactory.common.wicket.behavior.CssClass;
 
 /**
  * @author Yoav Aharoni
  */
-public class DisableLinkBehavior extends AbstractBehavior {
+public class DisableLinkBehavior extends Behavior {
+    @Override
+    public void bind(Component component) {
+        component.add(new CssClass("disabled"));
+    }
+
+    @Override
+    public void onConfigure(Component component) {
+        AbstractLink link = (AbstractLink) component;
+        link.setEnabled(false);
+        link.setBeforeDisabledLink("");
+        link.setAfterDisabledLink("");
+    }
+
     @Override
     public void onComponentTag(Component component, ComponentTag tag) {
-        super.onComponentTag(component, tag);
-        IValueMap attributes = tag.getAttributes();
-        attributes.remove("href");
-        attributes.remove("onclick");
+        tag.setName("a");
     }
 }

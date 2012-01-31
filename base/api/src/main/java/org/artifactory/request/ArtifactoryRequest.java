@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,11 +32,14 @@ public interface ArtifactoryRequest extends Request {
 
     String CHECKSUM_MD5 = "X-Checksum-Md5";
 
-    String SKIP_JAR_INDEXING = "skipJarIndexing";
+    String PARAM_SKIP_JAR_INDEXING = "artifactory.skipJarIndexing";
 
-    String FORCE_DOWNLOAD_IF_NEWER = "forceDownloadIfNewer";
+    String PARAM_FORCE_DOWNLOAD_IF_NEWER = "artifactory.forceDownloadIfNewer";
 
-    String SEARCH_FOR_EXISTING_RESOURCE_ON_REMOTE_REQUEST = "searchForExistingResourceOnRemoteRequest";
+    String PARAM_SEARCH_FOR_EXISTING_RESOURCE_ON_REMOTE_REQUEST =
+            "artifactory.searchForExistingResourceOnRemoteRequest";
+
+    String PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL = "artifactory.alternativeRemoteDownloadUrl";
 
     /**
      * The path prefix name for list browsing.
@@ -70,4 +73,11 @@ public interface ArtifactoryRequest extends Request {
     long getModificationTime();
 
     String getName();
+
+    /**
+     * Indicates whether the request if for a directory instead of a file
+     *
+     * @return True if the request uri if for a directory
+     */
+    boolean isDirectoryRequest();
 }

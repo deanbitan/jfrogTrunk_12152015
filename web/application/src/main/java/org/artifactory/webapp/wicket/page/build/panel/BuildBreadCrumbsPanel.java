@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.page.build.panel;
 
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.markup.ComponentTag;
@@ -26,6 +25,7 @@ import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.RepeatingView;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 
@@ -56,9 +56,9 @@ public class BuildBreadCrumbsPanel extends Panel {
 
         PageParameters responseParams = new PageParameters();
         for (String constant : PATH_CONSTANTS) {
-            if (pageParameters.containsKey(constant)) {
-                String constantValue = pageParameters.getString(constant);
-                responseParams.put(constant, constantValue);
+            String constantValue = pageParameters.get(constant).toString();
+            if (constantValue != null) {
+                responseParams.set(constant, constantValue);
 
                 final String format = getString(constant + ".format");
                 final String value = String.format(format, constantValue);
@@ -78,7 +78,7 @@ public class BuildBreadCrumbsPanel extends Panel {
             add(new AjaxLink("link") {
 
                 @Override
-                protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+                public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
                     replaceComponentTagBody(markupStream, openTag, crumbTitle);
                 }
 

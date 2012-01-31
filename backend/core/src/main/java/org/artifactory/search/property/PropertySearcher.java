@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,17 +52,8 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
 
     // /repositories/libs-releases-local/artifactory:metadata/properties/artifactory:properties[set1.prop1 = 'val1']
 
-    private final static String[] PROPERTY_NODE_PATH = {
-            NODE_ARTIFACTORY_METADATA, Properties.ROOT, NODE_ARTIFACTORY_PROPERTIES};
-    private final static String FULL_PROPERTY_PATH;
-
-    static {
-        StringBuilder builder = new StringBuilder();
-        for (String s : PROPERTY_NODE_PATH) {
-            builder.append("/").append(s);
-        }
-        FULL_PROPERTY_PATH = builder.toString();
-    }
+    private final static String FULL_PROPERTY_PATH = "/" + NODE_ARTIFACTORY_METADATA + "/" + Properties.ROOT + "/" +
+            NODE_ARTIFACTORY_PROPERTIES;
 
     @Override
     public ItemSearchResults<PropertySearchResult> doSearch(PropertySearchControls controls) {

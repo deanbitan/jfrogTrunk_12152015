@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,9 @@
 package org.artifactory.repo.index;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.lucene.store.FSDirectory;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
@@ -60,15 +62,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.net.SocketTimeoutException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * @author Yoav Landman
@@ -87,10 +81,12 @@ public class IndexerServiceImpl implements InternalIndexerService {
     @Autowired
     private InternalRepositoryService repositoryService;
 
+    @Override
     public void init() {
         new IndexerSchedulerHandler(getAndCheckDescriptor(), null).reschedule();
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         new IndexerSchedulerHandler(getAndCheckDescriptor(), oldDescriptor.getIndexer()).reschedule();
     }
@@ -128,36 +124,46 @@ public class IndexerServiceImpl implements InternalIndexerService {
             }
         }
 
+        @Override
         public String jobName() {
             return "Indexer";
         }
 
+        @Override
         public List<IndexerDescriptor> getNewDescriptors() {
             return newDescriptorHolder;
         }
 
+        @Override
         public List<IndexerDescriptor> getOldDescriptors() {
             return oldDescriptorHolder;
         }
 
+        @Override
         public Predicate<Task> getAllPredicate() {
             return new Predicate<Task>() {
+                @Override
                 public boolean apply(@Nullable Task input) {
                     return AbstractIndexerJobs.class.isAssignableFrom(input.getType());
                 }
             };
         }
 
+        @Override
         public Predicate<Task> getPredicate(@Nonnull IndexerDescriptor descriptor) {
             return getAllPredicate();
         }
 
+        @Override
         public void activate(@Nonnull IndexerDescriptor descriptor, boolean manual) {
             if (descriptor.isEnabled()) {
                 long interval = descriptor.getIndexingIntervalHours() * 60L * 60L * 1000L;
                 TaskBase task = TaskUtils.createRepeatingTask(IndexerJob.class,
                         interval,
                         FileUtils.nextLong(interval));
+                // Passing null for repo keys because they are taken from the indexer descriptor
+                IndexerRunSettings settings = new IndexerRunSettings(false, false, null);
+                task.addAttribute(IndexerJob.SETTINGS, settings);
                 InternalContextHelper.get().getBean(TaskService.class).startTask(task, false);
                 if (log.isInfoEnabled()) {
                     log.info("Indexer activated every " + descriptor.getIndexingIntervalHours() + " hours.");
@@ -167,18 +173,36 @@ public class IndexerServiceImpl implements InternalIndexerService {
             }
         }
 
+        @Override
         public IndexerDescriptor findOldFromNew(@Nonnull IndexerDescriptor newDescriptor) {
             return oldDescriptorHolder.isEmpty() ? null : oldDescriptorHolder.get(0);
         }
     }
 
+    @Override
     public void scheduleImmediateIndexing(MutableStatusHolder statusHolder) {
+        scheduleIndexer(statusHolder, new IndexerRunSettings(true, false, null));
+    }
+
+    @Override
+    public void runSpecificIndexer(MutableStatusHolder statusHolder, List<String> repoKeys,
+            boolean forceRemoteDownload) {
+        scheduleIndexer(statusHolder, new IndexerRunSettings(true, forceRemoteDownload, repoKeys));
+    }
+
+    private void scheduleIndexer(MutableStatusHolder statusHolder, IndexerRunSettings settings) {
         taskService.checkCanStartManualTask(IndexerJob.class, statusHolder);
         if (!statusHolder.isError()) {
             try {
-                log.info("Activating indexer manually");
+                StringBuilder logMessageBuilder = new StringBuilder("Activating indexer ");
+                List<String> repoKeys = settings.getRepoKeys();
+                if ((repoKeys != null) && !repoKeys.isEmpty()) {
+                    logMessageBuilder.append("for repo '").append(Arrays.toString(repoKeys.toArray())).append("' ");
+                }
+                logMessageBuilder.append("manually");
+                log.info(logMessageBuilder.toString());
                 TaskBase task = TaskUtils.createManualTask(IndexerJob.class, 0L);
-                task.addAttribute(IndexerJob.MANUAL_RUN, true);
+                task.addAttribute(IndexerJob.SETTINGS, settings);
                 taskService.startTask(task, true);
             } catch (Exception e) {
                 log.error("Error scheduling the indexer.", e);
@@ -186,21 +210,33 @@ public class IndexerServiceImpl implements InternalIndexerService {
         }
     }
 
+    @Override
     public void destroy() {
         new IndexerSchedulerHandler(null, null).unschedule();
     }
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
-    public void index(Date fireTime, boolean manualRun) {
+    @Override
+    public void index(IndexerRunSettings settings) {
         IndexerDescriptor descriptor = getAndCheckDescriptor();
-        if (!descriptor.isEnabled() && !manualRun) {
+        if (!settings.isForceRemoteDownload() && !descriptor.isEnabled() && !settings.isManualRun()) {
             log.debug("Indexer is disabled - doing nothing.");
             return;
         }
+
+        Set<? extends RepoDescriptor> excludedRepositories;
+        List<String> repoKeys = settings.getRepoKeys();
+        if ((repoKeys == null) || repoKeys.isEmpty()) {
+            excludedRepositories = descriptor.getExcludedRepositories();
+        } else {
+            // everything is excluded besides this one repo
+            excludedRepositories = calcSpecificRepoForIndexing(settings.getRepoKeys());
+        }
+
         log.info("Starting repositories indexing...");
-        Set<? extends RepoDescriptor> excludedRepositories = descriptor.getExcludedRepositories();
         List<RealRepo> indexedRepos = getNonVirtualRepositoriesToIndex(excludedRepositories);
 
         //Do the indexing work
@@ -213,7 +249,8 @@ public class IndexerServiceImpl implements InternalIndexerService {
             MavenIndexManager mavenIndexManager = new MavenIndexManager(indexedRepo);
             try {
                 //Execute separate tasks in order to have shorter transactions - can be done in a more elegant way...
-                findOrCreateRepositoryIndex(fireTime, mavenIndexManager);
+                findOrCreateRepositoryIndex(settings.getFireTime(), settings.isForceRemoteDownload(),
+                        mavenIndexManager);
                 //Check again if we need to stop/suspend
                 if (taskService.pauseOrBreak()) {
                     log.info("Stopped indexing on demand");
@@ -236,10 +273,32 @@ public class IndexerServiceImpl implements InternalIndexerService {
         log.info("Finished repositories indexing...");
     }
 
-    private void findOrCreateRepositoryIndex(Date fireTime, MavenIndexManager mavenIndexManager) {
+    private Set<? extends RepoDescriptor> calcSpecificRepoForIndexing(@Nullable final List<String> repoKeys) {
+        Set<RepoBaseDescriptor> excludedRepos = Sets.newHashSet();
+        excludedRepos.addAll(repositoryService.getLocalRepoDescriptors());
+        excludedRepos.addAll(repositoryService.getRemoteRepoDescriptors());
+        excludedRepos.addAll(getAllVirtualReposExceptGlobal());
+        if ((repoKeys != null) && !repoKeys.isEmpty()) {
+            Iterables.removeIf(excludedRepos, new Predicate<RepoBaseDescriptor>() {
+                @Override
+                public boolean apply(@Nullable RepoBaseDescriptor repoBaseDescriptor) {
+                    if (repoBaseDescriptor == null) {
+                        return false;
+                    }
+                    return repoKeys.contains(repoBaseDescriptor.getKey());
+                }
+            });
+        }
+
+        return excludedRepos;
+    }
+
+    private void findOrCreateRepositoryIndex(Date fireTime, boolean forceRemoteDownload,
+            MavenIndexManager mavenIndexManager) {
         TaskBase taskFindOrCreateIndex = TaskUtils.createManualTask(FindOrCreateIndexJob.class, 0L);
         taskFindOrCreateIndex.addAttribute(MavenIndexManager.class.getName(), mavenIndexManager);
         taskFindOrCreateIndex.addAttribute(Date.class.getName(), fireTime);
+        taskFindOrCreateIndex.addAttribute(AbstractIndexerJobs.FORCE_REMOTE, forceRemoteDownload);
         taskService.startTask(taskFindOrCreateIndex, true);
         taskService.waitForTaskCompletion(taskFindOrCreateIndex.getToken());
     }
@@ -252,16 +311,19 @@ public class IndexerServiceImpl implements InternalIndexerService {
         taskService.waitForTaskCompletion(saveIndexFileTask.getToken());
     }
 
-    private List<RealRepo> getNonVirtualRepositoriesToIndex(Set<? extends RepoDescriptor> excludedRepositories) {
+    private List<RealRepo> getNonVirtualRepositoriesToIndex(
+            @Nullable Set<? extends RepoDescriptor> excludedRepositories) {
         List<RealRepo> realRepositories = repositoryService.getLocalAndRemoteRepositories();
         List<RealRepo> indexedRepos = new ArrayList<RealRepo>();
         //Skip excluded repositories and remote repositories that are currently offline
         for (RealRepo repo : realRepositories) {
             boolean excluded = false;
-            for (RepoDescriptor excludedRepo : excludedRepositories) {
-                if (excludedRepo.getKey().equals(repo.getKey())) {
-                    excluded = true;
-                    break;
+            if (excludedRepositories != null) {
+                for (RepoDescriptor excludedRepo : excludedRepositories) {
+                    if (excludedRepo.getKey().equals(repo.getKey())) {
+                        excluded = true;
+                        break;
+                    }
                 }
             }
             boolean offlineRemote = false;
@@ -275,6 +337,7 @@ public class IndexerServiceImpl implements InternalIndexerService {
         return indexedRepos;
     }
 
+    @Override
     public void mergeVirtualRepoIndexes(Set<? extends RepoDescriptor> excludedRepositories,
             List<RealRepo> indexedRepos) {
         List<VirtualRepo> virtualRepos = filterExcludedVirtualRepos(excludedRepositories);
@@ -382,8 +445,10 @@ public class IndexerServiceImpl implements InternalIndexerService {
                         (MavenIndexManager) callbackContext.getMergedJobDataMap().get(
                                 MavenIndexManager.class.getName());
                 Date fireTime = (Date) callbackContext.getMergedJobDataMap().get(Date.class.getName());
+                boolean forceRemoteDownload = (Boolean) callbackContext.getMergedJobDataMap().get(
+                        AbstractIndexerJobs.FORCE_REMOTE);
                 InternalIndexerService indexer = InternalContextHelper.get().beanForType(InternalIndexerService.class);
-                indexer.fetchOrCreateIndex(mavenIndexManager, fireTime);
+                indexer.fetchOrCreateIndex(mavenIndexManager, fireTime, forceRemoteDownload);
             } catch (Exception e) {
                 log.error("Indexing failed: {}", e.getMessage());
                 log.debug("Indexing failed.", e);
@@ -409,11 +474,13 @@ public class IndexerServiceImpl implements InternalIndexerService {
         }
     }
 
-    public void fetchOrCreateIndex(MavenIndexManager mavenIndexManager, Date fireTime) {
-        boolean remoteIndexExists = mavenIndexManager.fetchRemoteIndex();
+    @Override
+    public void fetchOrCreateIndex(MavenIndexManager mavenIndexManager, Date fireTime, boolean forceRemoteDownload) {
+        boolean remoteIndexExists = mavenIndexManager.fetchRemoteIndex(forceRemoteDownload);
         mavenIndexManager.createLocalIndex(fireTime, remoteIndexExists);
     }
 
+    @Override
     public void saveIndexFiles(MavenIndexManager mavenIndexManager) {
         mavenIndexManager.saveIndexFiles();
     }

@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,14 +41,13 @@ public class SubmittingTabbedPanel extends StyledTabbedPanel {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 setSelectedTab(index);
-                target.addComponent(SubmittingTabbedPanel.this);
+                target.add(SubmittingTabbedPanel.this);
                 onAjaxUpdate(target);
                 AjaxUtils.refreshFeedback(target);
             }
 
             @Override
             protected void onError(AjaxRequestTarget target, Form form) {
-                super.onError(target, form);
                 AjaxUtils.refreshFeedback(target);
             }
         };

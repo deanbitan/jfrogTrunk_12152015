@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,8 +24,8 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.MutableMetadataInfo;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.slf4j.Logger;
 
 import java.util.Set;
@@ -66,66 +66,82 @@ public class MetadataInfoImpl implements MutableMetadataInfo {
         this.checksumsInfo = new ChecksumsInfo(copy.getChecksumsInfo());
     }
 
+    @Override
     public RepoPath getRepoPath() {
         return repoPath;
     }
 
+    @Override
     public ChecksumsInfo getChecksumsInfo() {
         return checksumsInfo;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public long getCreated() {
         return created;
     }
 
+    @Override
     public void setCreated(long created) {
         this.created = created;
     }
 
+    @Override
     public long getLastModified() {
         return lastModified;
     }
 
+    @Override
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
 
+    @Override
     public String getLastModifiedBy() {
         return lastModifiedBy;
     }
 
+    @Override
     public void setLastModifiedBy(String lastModifiedBy) {
         this.lastModifiedBy = lastModifiedBy;
     }
 
+    @Override
     public String getSha1() {
         return checksumsInfo.getSha1();
     }
 
+    @Override
     public String getMd5() {
         return checksumsInfo.getMd5();
     }
 
+    @Override
     public Set<ChecksumInfo> getChecksums() {
         return checksumsInfo.getChecksums();
     }
 
+    @Override
     public void setChecksums(Set<ChecksumInfo> checksums) {
         checksumsInfo.setChecksums(checksums);
     }
 
+    @Override
     public long getSize() {
         return size;
     }
 
+    @Override
     public void setSize(long size) {
         this.size = size;
     }

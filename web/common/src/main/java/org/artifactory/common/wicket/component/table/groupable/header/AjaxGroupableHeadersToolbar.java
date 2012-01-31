@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@ import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.extensions.ajax.markup.html.repeater.data.sort.AjaxFallbackOrderByBorder;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortStateLocator;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractToolbar;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.DataTable;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
@@ -40,7 +41,7 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.table.groupable.column.IGroupableColumn;
 import org.artifactory.common.wicket.component.table.groupable.provider.IGroupStateLocator;
 
-import static org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState.NONE;
+import java.util.List;
 
 /**
  * @author Yoav Aharoni
@@ -53,10 +54,9 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
         RepeatingView headers = new RepeatingView("headers");
         add(headers);
 
-        final IColumn[] columns = table.getColumns();
-        for (int i = 0; i < columns.length; i++) {
-            final IColumn column = columns[i];
-
+        final List<IColumn> columns = table.getColumns();
+        int i = 0;
+        for (final IColumn column : columns) {
             WebMarkupContainer item = new WebMarkupContainer(headers.newChildId());
             item.setRenderBodyOnly(true);
             headers.add(item);
@@ -65,9 +65,11 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
             if (column.isSortable()) {
                 if (column instanceof IGroupableColumn) {
                     final IGroupableColumn groupableColumn = (IGroupableColumn) column;
-                    header = newSortableHeader("header", groupableColumn.getSortProperty(), groupableColumn.getGroupProperty(), stateLocator);
+                    header = newSortableHeader("header", groupableColumn.getSortProperty(),
+                            groupableColumn.getGroupProperty(), stateLocator);
                 } else {
-                    header = newSortableHeader("header", column.getSortProperty(), column.getSortProperty(), stateLocator);
+                    header = newSortableHeader("header", column.getSortProperty(), column.getSortProperty(),
+                            stateLocator);
                 }
             } else {
                 header = new UnsortableBorder("header");
@@ -76,6 +78,7 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
             // add IStyledColumn style
             if (column instanceof IStyledColumn) {
                 header.add(new CssClass(new AbstractReadOnlyModel() {
+                    @Override
                     public Object getObject() {
                         return ((IStyledColumn) column).getCssClass();
                     }
@@ -85,7 +88,7 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
             // add first/last style
             if (i == 0) {
                 header.add(new CssClass("first-cell"));
-            } else if (i == columns.length - 1) {
+            } else if (i == columns.size() - 1) {
                 header.add(new CssClass("last-cell"));
             }
             item.add(header);
@@ -109,6 +112,7 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
 
             header.add(groupByLink);
             header.add(groupByText);
+            i++;
         }
     }
 
@@ -116,10 +120,12 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
             final String groupBy,
             final ISortStateLocator stateLocator) {
         return new AjaxFallbackOrderByBorder(borderId, sortBy, stateLocator, getAjaxCallDecorator()) {
+            @Override
             protected void onAjaxClick(AjaxRequestTarget target) {
-                target.addComponent(getTable());
+                target.add(getTable());
             }
 
+            @Override
             protected void onSortChanged() {
                 super.onSortChanged();
                 getTable().setCurrentPage(0);
@@ -130,7 +136,7 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
                     if (isGroupedBy(locator.getGroupParam(), groupBy)) {
                         boolean ascending = locator.getGroupParam().isAscending();
                         locator.setGroupParam(new SortParam(groupBy, !ascending));
-                        locator.setSortState(new SingleSortState());
+                        locator.getSortState().setPropertySortOrder("", SortOrder.NONE);
                     }
                 }
             }
@@ -144,11 +150,12 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
 
     private Component newGroupByLink(String id, final ISortStateLocator stateLocator, final String groupProperty) {
         return new AjaxLink(id) {
+            @Override
             public void onClick(AjaxRequestTarget target) {
                 if (stateLocator instanceof IGroupStateLocator) {
                     IGroupStateLocator groupStateLocator = (IGroupStateLocator) stateLocator;
                     switchGroupState(groupStateLocator, groupProperty);
-                    target.addComponent(getTable());
+                    target.add(getTable());
                 }
             }
 
@@ -183,7 +190,7 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
 
         // reset sort state
         ISortState sortState = groupStateLocator.getSortState();
-        if (NONE != sortState.getPropertySortOrder(groupProperty)) {
+        if (!SortOrder.NONE.equals(sortState.getPropertySortOrder(groupProperty))) {
             if (sortState instanceof SingleSortState) {
                 ((SingleSortState) sortState).setSort(null);
             }
@@ -199,6 +206,7 @@ public class AjaxGroupableHeadersToolbar extends AbstractToolbar {
             this.property = property;
         }
 
+        @Override
         public Object getObject() {
             if (stateLocator instanceof IGroupStateLocator) {
                 SortParam groupParam = ((IGroupStateLocator) stateLocator).getGroupParam();

@@ -16,6 +16,7 @@ public abstract class BaseVfsQueryCriterion implements VfsQueryCriterion {
         this.nextBool = VfsBoolType.AND;
     }
 
+    @Override
     public VfsQueryCriterion nextBool(VfsBoolType boolType) {
         nextBool = boolType;
         return this;

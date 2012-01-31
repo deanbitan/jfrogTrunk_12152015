@@ -566,7 +566,7 @@ case "$ACTION" in
         PID=`cat $ARTIFACTORY_PID 2>/dev/null`
         echo "Shutting down Jetty: $PID"
         kill $PID 2>/dev/null
-        sleep 2
+        sleep 20
         kill -9 $PID 2>/dev/null
         rm -f $ARTIFACTORY_PID
         echo "STOPPED `date`" >>$ARTIFACTORY_CONSOLE

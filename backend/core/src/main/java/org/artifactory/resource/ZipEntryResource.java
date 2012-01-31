@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,46 +36,57 @@ public class ZipEntryResource implements ZipEntryRepoResource {
         this.info = zipInfo;
     }
 
+    @Override
     public String getEntryPath() {
         return info.getEntryPath();
     }
 
+    @Override
     public RepoPath getRepoPath() {
         return info.getRepoPath();
     }
 
+    @Override
     public RepoPath getResponseRepoPath() {
         return responsePath != null ? responsePath : getRepoPath();
     }
 
+    @Override
     public void setResponseRepoPath(RepoPath responsePath) {
         this.responsePath = responsePath;
     }
 
+    @Override
     public RepoResourceInfo getInfo() {
         return info;
     }
 
+    @Override
     public boolean isFound() {
         return true;
     }
 
+    @Override
     public boolean isExactQueryMatch() {
         return true;
     }
 
+    @Override
     public boolean isExpired() {
         return false;
     }
 
+    @Override
     public boolean isMetadata() {
         return false;
     }
 
+    @Override
     public long getSize() {
         return info.getSize();
     }
 
+    @Override
     public long getCacheAge() {
         // The age is always the age of the zip file itself
         long lastUpdated = info.getZipFileInfo().getLastUpdated();
@@ -85,10 +96,12 @@ public class ZipEntryResource implements ZipEntryRepoResource {
         return System.currentTimeMillis() - lastUpdated;
     }
 
+    @Override
     public long getLastModified() {
         return info.getLastModified();
     }
 
+    @Override
     public String getMimeType() {
         return info.getMimeType();
     }

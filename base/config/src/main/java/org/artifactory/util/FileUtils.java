@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2011 JFrog Ltd.
+ * Copyright (C) 2012 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -61,7 +61,11 @@ public abstract class FileUtils {
         }
         if (!newdFile.exists()) {
             // Just rename the new file to the old name
-            oldFile.renameTo(newdFile);
+            try {
+                org.apache.commons.io.FileUtils.moveFile(oldFile, newdFile);
+            } catch (IOException e) {
+                log.warn("Cannot rename {} to {}: {}", new Object[]{oldFile, newdFile, e.getMessage()});
+            }
             return;
         }
         if (!newdFile.isFile()) {
@@ -87,6 +91,7 @@ public abstract class FileUtils {
         if (backupOrigFileName.exists()) {
             // Rolling files
             String[] allOrigFiles = dir.list(new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     return name.startsWith(fileNameNoExt) && name.endsWith(extension) &&
                             name.length() > fileNameNoNumber.length() + extension.length();
@@ -107,8 +112,14 @@ public abstract class FileUtils {
             }
             backupOrigFileName = new File(dir, fileNameNoNumber + maxNb + ".xml");
         }
-        newdFile.renameTo(backupOrigFileName);
-        oldFile.renameTo(new File(dir, fileName));
+        File destFile = new File(dir, fileName);
+        try {
+            org.apache.commons.io.FileUtils.moveFile(newdFile, backupOrigFileName);
+            org.apache.commons.io.FileUtils.moveFile(oldFile, destFile);
+        } catch (IOException e) {
+            log.warn("Cannot rename {} to {} or {} to {}: {}",
+                    new Object[]{newdFile, backupOrigFileName, oldFile, destFile, e.getMessage()});
+        }
     }
 
     public static File createRandomDir(File parentDir, String prefix) {
@@ -230,6 +241,7 @@ public abstract class FileUtils {
             org.apache.commons.io.FileUtils.copyFile(targetFile, new File(parentDir, newTargetFileName));
 
             List<File> existingFileList = Lists.newArrayList(parentDir.listFiles(new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     return name.startsWith(fileNameWithNoExtension) && name.endsWith(fileExtension);
                 }
