@@ -18,6 +18,7 @@
 
 package org.artifactory.descriptor.index;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.TaskDescriptor;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
@@ -28,7 +29,7 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 import java.util.SortedSet;
 
-@XmlType(name = "IndexerType", propOrder = {"enabled", "indexingIntervalHours", "excludedRepositories"},
+@XmlType(name = "IndexerType", propOrder = {"enabled", "cronExp", "excludedRepositories"},
         namespace = Descriptor.NS)
 public class IndexerDescriptor implements TaskDescriptor {
 
@@ -36,7 +37,7 @@ public class IndexerDescriptor implements TaskDescriptor {
 
     private boolean enabled;
 
-    private int indexingIntervalHours;
+    private String cronExp;
 
     @XmlIDREF
     @XmlElementWrapper(name = "excludedRepositories")
@@ -44,8 +45,8 @@ public class IndexerDescriptor implements TaskDescriptor {
     private SortedSet<? extends RepoBaseDescriptor> excludedRepositories;
 
     public IndexerDescriptor() {
-        //By Default index once a day
-        this.indexingIntervalHours = 24;
+        // By Default index once a day at 05:23AM
+        this.cronExp = "0 23 5 * * ?";
     }
 
     public boolean isEnabled() {
@@ -56,12 +57,12 @@ public class IndexerDescriptor implements TaskDescriptor {
         this.enabled = enabled;
     }
 
-    public int getIndexingIntervalHours() {
-        return indexingIntervalHours;
+    public String getCronExp() {
+        return cronExp;
     }
 
-    public void setIndexingIntervalHours(int indexingIntervalHours) {
-        this.indexingIntervalHours = indexingIntervalHours;
+    public void setCronExp(String cronExp) {
+        this.cronExp = cronExp;
     }
 
     public SortedSet<? extends RepoBaseDescriptor> getExcludedRepositories() {
@@ -85,7 +86,7 @@ public class IndexerDescriptor implements TaskDescriptor {
         }
         IndexerDescriptor indexerDesc = (IndexerDescriptor) otherDescriptor;
         return indexerDesc.enabled == this.enabled &&
-                indexerDesc.indexingIntervalHours == this.indexingIntervalHours;
+                StringUtils.equals(indexerDesc.cronExp, this.cronExp);
     }
 
     @Override
@@ -102,7 +103,7 @@ public class IndexerDescriptor implements TaskDescriptor {
         if (enabled != that.enabled) {
             return false;
         }
-        if (indexingIntervalHours != that.indexingIntervalHours) {
+        if(cronExp != null ? !cronExp.equals(that.cronExp) : that.cronExp != null) {
             return false;
         }
         if (excludedRepositories != null ? !excludedRepositories.equals(that.excludedRepositories) :
@@ -116,7 +117,7 @@ public class IndexerDescriptor implements TaskDescriptor {
     @Override
     public int hashCode() {
         int result = (enabled ? 1 : 0);
-        result = 31 * result + indexingIntervalHours;
+        result = 31 * result + (cronExp != null ? cronExp.hashCode() : 0);
         result = 31 * result + (excludedRepositories != null ? excludedRepositories.hashCode() : 0);
         return result;
     }

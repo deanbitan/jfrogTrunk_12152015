@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.artifactory</groupId>
         <artifactId>artifactory-parent</artifactId>
-        <version>2.5.0</version>
+        <version>2.5.1</version>
     </parent>
 
     <artifactId>artifactory-distribution-parent</artifactId>

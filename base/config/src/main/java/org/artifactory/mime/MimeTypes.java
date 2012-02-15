@@ -23,6 +23,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,6 +55,7 @@ public class MimeTypes implements Serializable {
         return mimeTypes;
     }
 
+    @Nullable
     public MimeType getByMime(String type) {
         for (MimeType mimeType : mimeTypes) {
             if (mimeType.getType().equals(type)) {
@@ -63,6 +65,7 @@ public class MimeTypes implements Serializable {
         return null;
     }
 
+    @Nullable
     public MimeType getByExtension(String extension) {
         if (extension == null) {
             return null;

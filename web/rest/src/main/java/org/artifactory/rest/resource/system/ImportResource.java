@@ -137,7 +137,7 @@ public class ImportResource {
         if (!authorizationService.isAdmin()) {
             statusHolder.setError(
                     "User " + authorizationService.currentUsername() + " is not permitted to import repositories",
-                    HttpStatus.SC_UNAUTHORIZED, log);
+                    HttpStatus.SC_FORBIDDEN, log);
             return;
         }
         if (StringUtils.isEmpty(path)) {

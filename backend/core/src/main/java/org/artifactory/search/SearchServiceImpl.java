@@ -58,6 +58,7 @@ import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.md.MetadataDefinition;
 import org.artifactory.jcr.md.MetadataDefinitionService;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
@@ -519,9 +520,9 @@ public class SearchServiceImpl implements InternalSearchService {
 
     @Override
     public void index(RepoPath archiveRepoPath) {
-        if (!NamingUtils.isJarVariant(archiveRepoPath.getPath())) {
-            log.trace("Not indexing non jar variant path '{}' - with mime type '{}'.", archiveRepoPath,
-                    NamingUtils.getMimeType(archiveRepoPath.getPath()));
+        MimeType mimeType = NamingUtils.getMimeType(archiveRepoPath.getPath());
+        if (!mimeType.isArchive() || !mimeType.isIndex()) {
+            log.trace("Not indexing '{}' - with mime type '{}'.", archiveRepoPath, mimeType);
             return;
         }
 

@@ -181,7 +181,7 @@ public class RepoFilter extends DelayedFilterBase {
             log.debug("Serving an upload request.");
             getUploadEngine().process(artifactoryRequest, artifactoryResponse);
         } catch (Exception e) {
-            log.debug("Upload request of {} failed due to {}", artifactoryRequest.getRepoPath(), e.getMessage());
+            log.debug("Upload request of {} failed due to {}", artifactoryRequest.getRepoPath(), e);
             artifactoryResponse.sendInternalError(e, log);
         }
     }

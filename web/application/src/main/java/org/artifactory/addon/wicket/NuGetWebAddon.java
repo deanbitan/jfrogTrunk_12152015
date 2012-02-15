@@ -25,6 +25,7 @@ import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.repo.RepoPath;
 
 /**
  * Webapp NuGet functionality interface
@@ -59,4 +60,13 @@ public interface NuGetWebAddon extends Addon {
      * @return HTTP method to execute
      */
     HttpMethodBase getRemoteRepoTestMethod(String repoUrl, HttpRepoDescriptor repo);
+
+    /**
+     * Returns the NuPkg information tab
+     *
+     * @param tabTitle      The title of the tab
+     * @param nuPkgRepoPath Repo path of the nupkg to display
+     * @return Tab if successfully assembled, none if not
+     */
+    ITab getNuPkgInfoTab(String tabTitle, RepoPath nuPkgRepoPath);
 }

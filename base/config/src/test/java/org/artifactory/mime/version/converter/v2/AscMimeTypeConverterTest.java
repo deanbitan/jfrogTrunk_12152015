@@ -18,7 +18,7 @@
 
 package org.artifactory.mime.version.converter.v2;
 
-import org.artifactory.convert.XmlConverterTest;
+import org.artifactory.mime.version.converter.MimeTypeConverterTest;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
@@ -27,35 +27,22 @@ import org.testng.annotations.Test;
 import java.util.List;
 
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 /**
- * Tests {@link AscMimetypeConverter}.
+ * Tests {@link AscMimeTypeConverter}.
  *
  * @author Shay Yaakov
  */
 @Test
-public class AscMimetypeConverterTest extends XmlConverterTest {
+public class AscMimeTypeConverterTest extends MimeTypeConverterTest {
 
     public void convert() throws Exception {
-        Document document = convertXml("/org/artifactory/mime/version/mimetypes-v2.xml", new AscMimetypeConverter());
+        Document document = convertXml("/org/artifactory/mime/version/mimetypes-v2.xml", new AscMimeTypeConverter());
         Element rootElement = document.getRootElement();
         Namespace namespace = rootElement.getNamespace();
 
         List mimetypes = rootElement.getChildren("mimetype", namespace);
         Element textPlain = getType(mimetypes, namespace, "text/plain");
         assertTrue(textPlain.getAttributeValue("extensions").contains("asc"), "Should find .asc extension");
-    }
-
-    private Element getType(List mimetypes, Namespace namespace, String name) {
-        for (Object mimetype : mimetypes) {
-            Element mimeTypeElement = (Element) mimetype;
-            String type = mimeTypeElement.getAttributeValue("type", namespace);
-            if (name.equals(type)) {
-                return mimeTypeElement;
-            }
-        }
-        fail("Mime type '" + name + "' not found");
-        return null;
     }
 }

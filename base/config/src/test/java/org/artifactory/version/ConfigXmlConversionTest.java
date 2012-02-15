@@ -346,6 +346,11 @@ public class ConfigXmlConversionTest /** Don't extend ArtHomeBoundTest */
         }
     }
 
+    public void convert150custom() throws Exception {
+        CentralConfigDescriptor cc = transform("/config/test/config.1.5.0_indexing.xml", v1411);
+        assertEquals(cc.getIndexer().getCronExp(), "0 23 5 * * ?");
+    }
+    
     public void configVersionSanityCheck() {
         ArtifactoryConfigVersion[] versions = values();
         Set<XmlConverter> allConversions = new HashSet<XmlConverter>();

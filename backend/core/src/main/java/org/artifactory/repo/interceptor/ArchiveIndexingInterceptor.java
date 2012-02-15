@@ -20,6 +20,7 @@ package org.artifactory.repo.interceptor;
 
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.jcr.fs.JcrFile;
+import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.interceptor.storage.StorageInterceptorAdapter;
 import org.artifactory.sapi.fs.VfsItem;
@@ -52,10 +53,18 @@ public class ArchiveIndexingInterceptor extends StorageInterceptorAdapter implem
     }
 
     private void markArchiveForIndexing(VfsItem fsItem) {
-        if (fsItem.isFile() && NamingUtils.isJarVariant(fsItem.getName())) {
+        if (shouldIndexItem(fsItem)) {
             InternalArtifactoryContext context = InternalContextHelper.get();
             InternalSearchService searchService = context.beanForType(InternalSearchService.class);
             searchService.markArchiveForIndexing((JcrFile) fsItem, true);
         }
+    }
+
+    private boolean shouldIndexItem(VfsItem fsItem) {
+        if (!fsItem.isFile()) {
+            return false;
+        }
+        MimeType mimeType = NamingUtils.getMimeType(fsItem.getName());
+        return mimeType.isArchive() && mimeType.isIndex();
     }
 }

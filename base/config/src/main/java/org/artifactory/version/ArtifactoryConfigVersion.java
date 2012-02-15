@@ -45,6 +45,7 @@ import org.artifactory.version.converter.v147.JfrogRemoteRepoUrlConverter;
 import org.artifactory.version.converter.v147.UnusedArtifactCleanupSwitchConverter;
 import org.artifactory.version.converter.v149.ReplicationElementNameConverter;
 import org.artifactory.version.converter.v150.GcSystemPropertyConverter;
+import org.artifactory.version.converter.v151.IndexerCronExpPropertyConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -158,6 +159,10 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
     v1411("http://artifactory.jfrog.org/xsd/1.4.11",
             "http://www.jfrog.org/xsd/artifactory-v1_4_11.xsd",
             ArtifactoryVersion.v250,
+            ArtifactoryVersion.v250, new IndexerCronExpPropertyConverter()),
+    v1412("http://artifactory.jfrog.org/xsd/1.4.12",
+            "http://www.jfrog.org/xsd/artifactory-v1_4_12.xsd",
+            ArtifactoryVersion.v251,
             ArtifactoryVersion.getCurrent());
 
     private final String xsdUri;

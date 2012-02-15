@@ -18,6 +18,7 @@
 
 package org.artifactory.mime.version;
 
+import org.artifactory.mime.MimeType;
 import org.artifactory.mime.MimeTypes;
 import org.artifactory.mime.MimeTypesReader;
 import org.artifactory.util.ResourceUtils;
@@ -56,7 +57,7 @@ public class MimeTypesVersionTest {
     public void convertVersion1() {
         String version1 = ResourceUtils.getResourceAsString("/org/artifactory/mime/version/mimetypes-v1.xml");
 
-        String latest = MimeTypesVersion.getCurrent().convert(version1);
+        String latest = MimeTypesVersion.v1.convert(version1);
 
         assertEquals(MimeTypesVersion.findVersion(latest), MimeTypesVersion.getCurrent(), "Not current version");
         assertTrue(latest.contains("<mimetypes version=\"" + MimeTypesVersion.getCurrent().versionString()
@@ -65,5 +66,31 @@ public class MimeTypesVersionTest {
         // make sure the result is readable
         MimeTypes mimeTypes = new MimeTypesReader().read(latest);
         assertNotNull(mimeTypes);
+    }
+
+    public void convertVersion2() {
+        String xml = ResourceUtils.getResourceAsString("/org/artifactory/mime/version/mimetypes-v2.xml");
+        MimeTypesVersion version2 = MimeTypesVersion.findVersion(xml);
+        String latest = version2.convert(xml);
+
+        assertEquals(MimeTypesVersion.findVersion(latest), MimeTypesVersion.getCurrent(), "Not current version");
+        assertTrue(latest.contains("<mimetypes version=\"" + MimeTypesVersion.getCurrent().versionString() + "\">"),
+                "Unexpected converted string: " + latest);
+
+        MimeTypes mimeTypes = new MimeTypesReader().read(latest);
+        assertNotNull(mimeTypes);
+
+        MimeType zip = mimeTypes.getByMime("application/zip");
+        assertNotNull(zip, "Zip entry not found");
+        assertTrue(zip.isIndex(), "Zip should have been converted to indexed");
+
+        MimeType nupkg = mimeTypes.getByMime("application/x-nupkg");
+        assertNotNull(nupkg, "NuPkg entry not found");
+        assertTrue(nupkg.isArchive(), "NuPkg not created as archive");
+        assertTrue(nupkg.isIndex(), "NuPkg not created as indexed");
+
+        MimeType nuspec = mimeTypes.getByMime("application/x-nuspec+xml");
+        assertNotNull(nuspec, "Nuspec entry not found");
+        assertTrue(nuspec.isViewable(), "Nuspec not created as viewable");
     }
 }

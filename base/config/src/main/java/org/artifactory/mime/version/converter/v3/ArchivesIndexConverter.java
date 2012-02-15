@@ -16,9 +16,8 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.mime.version.converter.v2;
+package org.artifactory.mime.version.converter.v3;
 
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -27,35 +26,23 @@ import org.jdom.Namespace;
 import java.util.List;
 
 /**
- * This converter adds the .asc extension to the "text/plain" mimetype
+ * Adds 'index="true"' attribute to all the mime types that marked as archive.
  *
- * @author Shay Yaakov
+ * @author Yossi Shaul
  */
-public class AscMimetypeConverter implements XmlConverter {
-
+public class ArchivesIndexConverter implements XmlConverter {
     @Override
     public void convert(Document doc) {
         Element rootElement = doc.getRootElement();
         Namespace namespace = rootElement.getNamespace();
 
         List mimetypes = rootElement.getChildren("mimetype", namespace);
-        // find "text/plain" mimetype
-        if (mimetypes != null) {
-            for (Object mimetype : mimetypes) {
-                Element mimeTypeElement = (Element) mimetype;
-                String type = mimeTypeElement.getAttributeValue("type");
-                if ("text/plain".equals(type)) {
-                    String extensions = mimeTypeElement.getAttributeValue("extensions", namespace);
-                    if (StringUtils.isBlank(extensions)) {
-                        extensions = "";
-                    } else {
-                        if (!extensions.endsWith(",") && !extensions.endsWith(", ")) {
-                            extensions += ", ";
-                        }
-                    }
-                    mimeTypeElement.setAttribute("extensions", extensions + "asc");
-                    break;
-                }
+        for (Object mimetype : mimetypes) {
+            Element mimeTypeElement = (Element) mimetype;
+            String archiveValue = mimeTypeElement.getAttributeValue("archive", namespace);
+            if ("true".equals(archiveValue)) {
+                // add index attribute
+                mimeTypeElement.setAttribute("index", "true", namespace);
             }
         }
     }

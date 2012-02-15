@@ -358,10 +358,10 @@ public abstract class JcrHelper {
         return calendar;
     }
 
-    public static InputStream getRawStringStream(Node metadataNode) throws RepositoryException {
-        Node stringNode = metadataNode.getNode(JCR_CONTENT);
-        Property property = stringNode.getProperty(JCR_DATA);
-        log.trace("Read string data '{}' with length: {}.", stringNode.getPath(), property.getLength());
+    public static InputStream getStream(Node node) throws RepositoryException {
+        Node contentNode = node.getNode(JCR_CONTENT);
+        Property property = contentNode.getProperty(JCR_DATA);
+        log.trace("Read stream data from '{}' with length: {}.", contentNode.getPath(), property.getLength());
         Value attachedDataValue = property.getValue();
         InputStream is = attachedDataValue.getBinary().getStream();
         return is;

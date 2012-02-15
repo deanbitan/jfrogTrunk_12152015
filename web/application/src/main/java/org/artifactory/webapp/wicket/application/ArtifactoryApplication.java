@@ -80,6 +80,7 @@ import org.artifactory.webapp.wicket.resource.LogoResource;
 import org.artifactory.webapp.wicket.service.authentication.LogoutService;
 import org.slf4j.Logger;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
@@ -223,6 +224,11 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
     }
 
     @Override
+    protected WebRequest newWebRequest(HttpServletRequest servletRequest, final String filterPath) {
+        return new ArtifactoryWebRequest(servletRequest, filterPath);
+    }
+
+    @Override
     protected void init() {
         setupSpring();
 
@@ -337,7 +343,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
     private void mountPages() {
         Set<Class<? extends Page>> hardMountPages = Sets.newHashSet();
-        
+
         hardMountPage(hardMountPages, SimpleRepoBrowserPage.PATH, SimpleRepoBrowserPage.class);
         hardMountPage(hardMountPages, ArtifactListPage.PATH, ArtifactListPage.class);
 
@@ -362,11 +368,12 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         safeMountPage(BuildBrowserConstants.MOUNT_PATH + "/", BuildBrowserRootPage.class);
 
         for (MenuNode pageNode : siteMap.getPages()) {
-            if (!hardMountPages.contains(pageNode.getPageClass()))
+            if (!hardMountPages.contains(pageNode.getPageClass())) {
                 mountPage(pageNode.getPageClass());
+            }
         }
     }
-    
+
     private void hardMountPage(Set<Class<? extends Page>> hardMountPages, String url, Class<? extends Page> pageClass) {
         safeMountPage(url, pageClass);
         hardMountPages.add(pageClass);

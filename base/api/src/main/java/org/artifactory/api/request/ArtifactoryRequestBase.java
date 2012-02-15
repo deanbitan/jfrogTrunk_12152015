@@ -177,10 +177,16 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
             pathStartIndex = repoKey.length() + NamingUtils.METADATA_PREFIX.length();
         } else if (LIST_BROWSING_PATH.equals(repoKey)) {
             int repoKeyStartIndex = requestPath.indexOf(LIST_BROWSING_PATH) + LIST_BROWSING_PATH.length() + 1;
+            if (repoKeyStartIndex > requestPath.length()) {
+                repoKeyStartIndex--;    // request doesn't end with '/', no repo key
+            }
             repoKey = PathUtils.getFirstPathElement(requestPath.substring(repoKeyStartIndex));
             pathStartIndex = repoKeyStartIndex + repoKey.length() + 1;
         } else if (ArtifactoryRequest.SIMPLE_BROWSING_PATH.equals(repoKey)) {
             int repoKeyStartIndex = requestPath.indexOf(SIMPLE_BROWSING_PATH) + SIMPLE_BROWSING_PATH.length() + 1;
+            if (repoKeyStartIndex > requestPath.length()) {
+                repoKeyStartIndex--;    // request doesn't end with '/', no repo key
+            }
             repoKey = PathUtils.getFirstPathElement(requestPath.substring(repoKeyStartIndex));
             pathStartIndex = repoKeyStartIndex + repoKey.length() + 1;
         } else {

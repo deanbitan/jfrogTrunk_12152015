@@ -187,7 +187,7 @@ public class BuildResource {
     public void addBuild(Build build) throws Exception {
         log.info("Adding build '{} #{}'", build.getName(), build.getNumber());
         if (!authorizationService.canDeployToLocalRepository()) {
-            response.sendError(HttpStatus.SC_UNAUTHORIZED);
+            response.sendError(HttpStatus.SC_FORBIDDEN);
             return;
         }
 
@@ -287,7 +287,7 @@ public class BuildResource {
 
             return String.format("Build renaming of '%s' to '%s' was successfully started.\n", from, to);
         } catch (AuthorizationException ae) {
-            response.sendError(HttpStatus.SC_UNAUTHORIZED, ae.getMessage());
+            response.sendError(HttpStatus.SC_FORBIDDEN, ae.getMessage());
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnne) {
@@ -312,7 +312,7 @@ public class BuildResource {
             String buildName = URLDecoder.decode(pathElements[0], "UTF-8");
             restAddon.deleteBuilds(response, buildName, buildNumbers, artifacts);
         } catch (AuthorizationException ae) {
-            response.sendError(HttpStatus.SC_UNAUTHORIZED, ae.getMessage());
+            response.sendError(HttpStatus.SC_FORBIDDEN, ae.getMessage());
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnne) {

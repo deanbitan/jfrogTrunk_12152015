@@ -11,14 +11,22 @@
             <span wicket:id="enabled.help"/>
         </div>
 
-        <div class="field field-sep">
+        <div class="field required field-sep">
             <label>
-                Indexing Interval Hours
-                <span wicket:id="indexingIntervalHours.help"/>
+                <wicket:message key="cronExp"/>
+                <span wicket:id="cronExp.help"/>
             </label>
 
             <div class="value">
-                <input wicket:id="indexingIntervalHours" type="text" class="text indexing-interval-hours"/>
+                <input wicket:id="cronExp" type="text" class="text"/>
+            </div>
+        </div>
+
+        <div class="field field-sep">
+            <label>Next Indexing Time</label>
+
+            <div class="value">
+                <span wicket:id="cronNextDatePanel"/>
             </div>
         </div>
 

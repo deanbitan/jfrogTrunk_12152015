@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.11"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.11"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.12"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.12"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -954,12 +954,12 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="indexingIntervalHours" type="xs:int" default="24" minOccurs="0">
+            <xs:element name="cronExp" type="xs:string" default="0 23 5 * * ?" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        The indexing frequency, in hours, at which to recalculate new Maven indexes on selected
-                        repositories.
+                        The cron expression by which indexer frequency is determined to recalculate
+                        new Maven indexes on selected repositories.  <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">More Info...</a>
                         ]]>
                     </xs:documentation>
                 </xs:annotation>

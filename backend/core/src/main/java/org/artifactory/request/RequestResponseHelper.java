@@ -62,7 +62,7 @@ public final class RequestResponseHelper {
         }
         response.sendStream(inputStream);
 
-        fireDownloadTrafficEvent(response, repoPath, res.getSize(), start);
+        fireDownloadTrafficEvent(response, repoPath, handle.getSize(), start);
     }
 
     public void sendBodyResponse(ArtifactoryResponse response, RepoPath repoPath, String content)

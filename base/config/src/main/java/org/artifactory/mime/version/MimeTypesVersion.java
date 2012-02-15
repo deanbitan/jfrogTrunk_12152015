@@ -21,7 +21,9 @@ package org.artifactory.mime.version;
 import com.google.common.collect.Lists;
 import org.artifactory.mime.version.converter.LatestVersionConverter;
 import org.artifactory.mime.version.converter.v1.XmlIndexedConverter;
-import org.artifactory.mime.version.converter.v2.AscMimetypeConverter;
+import org.artifactory.mime.version.converter.v2.AscMimeTypeConverter;
+import org.artifactory.mime.version.converter.v3.ArchivesIndexConverter;
+import org.artifactory.mime.version.converter.v3.NuPkgMimeTypeConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
@@ -38,8 +40,9 @@ import java.util.List;
  */
 public enum MimeTypesVersion implements SubConfigElementVersion {
     v1(ArtifactoryVersion.v223, ArtifactoryVersion.v225, new XmlIndexedConverter()),
-    v2(ArtifactoryVersion.v230, ArtifactoryVersion.v242, new AscMimetypeConverter()),
-    v3(ArtifactoryVersion.v250, ArtifactoryVersion.getCurrent(), null);
+    v2(ArtifactoryVersion.v230, ArtifactoryVersion.v242, new AscMimeTypeConverter()),
+    v3(ArtifactoryVersion.v250, ArtifactoryVersion.v250, new ArchivesIndexConverter(), new NuPkgMimeTypeConverter()),
+    v4(ArtifactoryVersion.v251, ArtifactoryVersion.getCurrent(), null);
 
     private final XmlConverter[] converters;
 

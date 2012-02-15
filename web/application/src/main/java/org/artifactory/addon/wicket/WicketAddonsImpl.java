@@ -895,6 +895,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return new HeadMethod(repoUrl);
     }
 
+    @Override
+    public ITab getNuPkgInfoTab(String tabTitle, RepoPath nuPkgRepoPath) {
+        return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.NUGET);
+    }
+
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {
 
         @SpringBean

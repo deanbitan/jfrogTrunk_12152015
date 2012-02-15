@@ -24,14 +24,14 @@
         type - The mime entry unique name (mandatory)
         extensions - Comma separated list of file extensions mapped to this mime type (mandatory)
         viewable - True if this mime type can be viewed as text file
-        index - True if this mime type should be indexed for searching (valid only for xml files)
+        index - True if this mime type should be indexed for searching (valid only for xml and archive files)
         archive - True if this mime type is a browsable archive
         syntax - The UI highlighter syntax to for this mime type (only relevant if this is a viewable type)
         css - The css class of a display icon for this mime type
 -->
-<mimetypes version="2">
+<mimetypes version="4">
 
-    <mimetype type="text/plain" extensions="txt, properties, mf" viewable="true" syntax="plain"/>
+    <mimetype type="text/plain" extensions="txt, properties, mf, asc" viewable="true" syntax="plain"/>
     <mimetype type="text/html" extensions="htm, html" viewable="true" syntax="xml"/>
     <mimetype type="text/css" extensions="css" viewable="true" syntax="css"/>
     <mimetype type="text/xsl" extensions="xsl" viewable="true" syntax="xml"/>
@@ -46,12 +46,12 @@
     <mimetype type="application/xml-external-parsed-entity" extensions="ent" viewable="true"/>
     <mimetype type="application/xhtml+xml" extensions="xhtml" viewable="true" syntax="xml"/>
 
-    <mimetype type="application/x-java-pack200" extensions="jar.pack.gz" archive="true" css="jar"/>
+    <mimetype type="application/x-java-pack200" extensions="jar.pack.gz" archive="true" index="true" css="jar"/>
     <mimetype type="application/x-java-archive-diff" extensions="jardiff" archive="false"/>
-    <mimetype type="application/zip" extensions="zip" archive="true" css="jar"/>
-    <mimetype type="application/x-nupkg" extensions="nupkg" archive="true" css="nupkg"/>
+    <mimetype type="application/zip" extensions="zip" archive="true" index="true" css="jar"/>
+    <mimetype type="application/x-nupkg" extensions="nupkg" archive="true" index="true" css="nupkg"/>
     <mimetype type="application/x-rar-compressed" extensions="rar" archive="false" css="jar"/>
-    <mimetype type="application/vnd.android.package-archive" extensions="apk" archive="true" css="apk"/>
+    <mimetype type="application/vnd.android.package-archive" extensions="apk" archive="true" index="true" css="apk"/>
 
     <!-- not registered -->
     <mimetype type="text/x-scala-source" extensions="scala" viewable="true" syntax="scala"/>
@@ -66,9 +66,10 @@
     <mimetype type="application/xml" extensions="xml, xsl, xsi" viewable="true" syntax="xml" css="xml"/>
     <mimetype type="application/x-maven-pom+xml" extensions="pom" viewable="true" syntax="xml" index="true" css="pom"/>
     <mimetype type="application/x-ivy+xml" extensions="ivy" viewable="true" syntax="xml" index="true" css="xml"/>
-    <mimetype type="application/x-nuspec+xml" extensions="nuspec" viewable="true" syntax="xml" css="xml" />
+    <mimetype type="application/x-nuspec+xml" extensions="nuspec" viewable="true" syntax="xml" css="xml"/>
     <mimetype type="application/x-java-jnlp-file" extensions="jnlp" viewable="true" syntax="xml" css="jnlp"/>
     <mimetype type="application/x-checksum" extensions="sha1, md5" viewable="true" syntax="plain"/>
-    <mimetype type="application/java-archive" extensions="jar, war, ear, sar, har" archive="true" css="jar"/>
+    <mimetype type="application/java-archive" extensions="jar, war, ear, sar, har" archive="true" index="true"
+              css="jar"/>
 
 </mimetypes>

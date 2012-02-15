@@ -18,9 +18,9 @@
   -->
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.4.11"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.11
-        http://www.jfrog.org/xsd/artifactory-v1_4_11.xsd">
+        xmlns="http://artifactory.jfrog.org/xsd/1.4.12"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.12
+        http://www.jfrog.org/xsd/artifactory-v1_4_12.xsd">
     <!--
     enable/disable anonymous downloads
     -->
@@ -74,8 +74,8 @@
 
     <!-- The interval at which to activate the maven indexer. -->
     <indexer>
-        <!-- By Default index every 24 hours -->
-        <indexingIntervalHours>24</indexingIntervalHours>
+        <!-- By Default index once a day at 05:23AM -->
+        <cronExp>0 23 5 * * ?</cronExp>
     </indexer>
 
     <localRepositories>

@@ -23,6 +23,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.apache.jackrabbit.core.data.DataStoreException;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.RepoRejectException;
@@ -43,12 +44,14 @@ import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.LocalRepoChecksumPolicy;
 import org.artifactory.jcr.JcrRepoService;
+import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
+import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
@@ -100,6 +103,9 @@ public class UploadServiceImpl implements InternalUploadService {
 
     @Autowired
     private JcrRepoService jcrRepoService;
+
+    @Autowired
+    private JcrService jcrService;
 
     @Autowired
     private BasicAuthenticationEntryPoint authenticationEntryPoint;
@@ -211,6 +217,8 @@ public class UploadServiceImpl implements InternalUploadService {
             path = adjustMavenSnapshotPath(repo, path, moduleInfo, request.getProperties());
         }
 
+        boolean isChecksumDeploy = Boolean.parseBoolean(request.getHeader(ArtifactoryRequest.CHECKSUM_DEPLOY));
+
         RepoResource res;
         RepoPath repoPath = InternalRepoPathFactory.create(repo.getKey(), path);
         Properties properties = null;
@@ -219,7 +227,7 @@ public class UploadServiceImpl implements InternalUploadService {
             res = new MetadataResource(metadataInfo);
         } else {
             MutableFileInfo fileInfo = InfoFactoryHolder.get().createFileInfo(repoPath);
-            setFileInfoChecksums(request, fileInfo);
+            setFileInfoChecksums(request, fileInfo, isChecksumDeploy);
             res = new FileResource(fileInfo);
             if (authService.canAnnotate(repoPath)) {
                 properties = request.getProperties();
@@ -230,13 +238,41 @@ public class UploadServiceImpl implements InternalUploadService {
         long lastModified = request.getLastModified() > 0 ? request.getLastModified() : System.currentTimeMillis();
         ((MutableRepoResourceInfo) res.getInfo()).setLastModified(lastModified);
 
-        /**
-         * Try to find the input stream directly from the JCR node. this  should only be called if we have a 100
-         * expect continue, and only if that status is sent, the client should send the content, otherwise the inputstream
-         * from(JCR) will be used (if available).
-         */
         InputStream stream = null;
         try {
+            if (isChecksumDeploy) {
+                // no input is expected in this case so if not found we return and error
+                String sha1 = request.getHeader(ArtifactoryRequest.CHECKSUM_SHA1);
+                if (StringUtils.isBlank(sha1)) {
+                    response.sendError(SC_NOT_FOUND, "Checksum deploy failed. SHA1 header '" +
+                            ArtifactoryRequest.CHECKSUM_SHA1 + "' doesn't exist", log);
+                    return;
+                }
+                log.debug("Checksum deploy to '{}' with SHA1: {}", repoPath, sha1);
+                if (!ChecksumType.sha1.isValid(sha1)) {
+                    response.sendError(SC_NOT_FOUND, "Checksum deploy failed. Invalid SHA1: " + sha1, log);
+                    return;
+                }
+                try {
+                    stream = jcrService.getDataStreamBySha1Checksum(sha1);
+                    if (stream == null) {
+                        // return error. checksum deploy requests are not supposed to have input stream
+                        response.sendError(SC_NOT_FOUND, "Checksum deploy failed. No existing file with SHA1: " +
+                                sha1, log);
+                        return;
+                    }
+                } catch (DataStoreException e) {
+                    log.error("Failed to read stream for SHA1: " + sha1, e);
+                    response.sendError(SC_NOT_FOUND, "Checksum deploy failed. View log for more details.", log);
+                    return;
+                }
+            }
+
+            /**
+             * Try to find the input stream directly from the JCR node. this  should only be called if we have a 100
+             * expect continue, and only if that status is sent, the client should send the content, otherwise the inputstream
+             * from(JCR) will be used (if available).
+             */
             if (ConstantValues.httpUseExpectContinue.getBoolean() && HttpUtils.isExpectedContinue(request)) {
                 log.debug("Client '{}' supports Expect 100/continue", request.getHeader("User-Agent"));
                 try {
@@ -245,6 +281,7 @@ public class UploadServiceImpl implements InternalUploadService {
                     log.warn("Could not get original stream from " + repoPath + " due to: " + e.getMessage());
                 }
             }
+
             // if not supporting a 100/continue request, or no stream was found from JCR, take the stream from request
             // and continue as usual
             long remoteUploadStartTime = 0;
@@ -274,8 +311,8 @@ public class UploadServiceImpl implements InternalUploadService {
         }
         //Send ok. Also for those artifacts that the wagon sent and we ignore (checksums etc.)
         String url = buildArtifactUrl(request, repoPath);
-        successfulDeploymentResponseHelper.writeSuccessfulDeploymentResponse(repoService, response, repoPath, url,
-                false);
+        successfulDeploymentResponseHelper.writeSuccessfulDeploymentResponse(
+                repoService, response, repoPath, url, false);
     }
 
     private void fireUploadTrafficEvent(RepoResource resource, long remoteUploadStartTime) {
@@ -339,12 +376,13 @@ public class UploadServiceImpl implements InternalUploadService {
         }
     }
 
-    private void setFileInfoChecksums(ArtifactoryRequest request, MutableFileInfo fileInfo) {
-        if (request instanceof InternalArtifactoryRequest) {
-            if (((InternalArtifactoryRequest) request).isTrustServerChecksums()) {
-                fileInfo.createTrustedChecksums();
-            }
+    private void setFileInfoChecksums(ArtifactoryRequest request, MutableFileInfo fileInfo, boolean checksumDeploy) {
+        if (checksumDeploy || (request instanceof InternalArtifactoryRequest &&
+                ((InternalArtifactoryRequest) request).isTrustServerChecksums())) {
+            fileInfo.createTrustedChecksums();
+            return;
         }
+
         // set checksums if attached to the request headers
         String sha1 = HttpUtils.getSha1Checksum(request);
         String md5 = HttpUtils.getMd5Checksum(request);
@@ -384,14 +422,15 @@ public class UploadServiceImpl implements InternalUploadService {
 
     private void indexJarIfNeeded(ArtifactoryRequest request, RepoPath repoPath) {
         //Async index the uploaded file if needed
-        if (NamingUtils.isJarVariant(repoPath.getPath())) {
-            boolean indexJar = true;
-            if (request instanceof InternalArtifactoryRequest) {
-                indexJar = !((InternalArtifactoryRequest) request).isSkipJarIndexing();
-            }
-            if (indexJar) {
-                searchService.asyncIndex(repoPath);
-            }
+        MimeType ct = NamingUtils.getMimeType(repoPath.getPath());
+        boolean indexJar = ct.isArchive() && ct.isIndex();
+        // internal request can flag not to index (to allow manual control)
+        if (indexJar && request instanceof InternalArtifactoryRequest) {
+            indexJar = !((InternalArtifactoryRequest) request).isSkipJarIndexing();
+        }
+
+        if (indexJar) {
+            searchService.asyncIndex(repoPath);
         }
     }
 

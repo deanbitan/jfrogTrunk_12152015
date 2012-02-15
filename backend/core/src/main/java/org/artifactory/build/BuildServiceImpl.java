@@ -32,6 +32,9 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.addon.license.LicensesAddon;
+import org.artifactory.addon.plugin.PluginsAddon;
+import org.artifactory.addon.plugin.build.AfterBuildSaveAction;
+import org.artifactory.addon.plugin.build.BeforeBuildSaveAction;
 import org.artifactory.api.build.ImportableExportableBuild;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
@@ -153,6 +156,9 @@ public class BuildServiceImpl implements InternalBuildService {
     @Autowired
     private SearchService searchService;
 
+    @Autowired(required = false)
+    private Builds builds;
+
     /**
      * Keep a cache for each type of checksums because we can get requests for different types of checksum for the same
      * item
@@ -219,7 +225,12 @@ public class BuildServiceImpl implements InternalBuildService {
                     return null;
                 }
             };
+            PluginsAddon pluginsAddon = addonsManager.addonByType(PluginsAddon.class);
+            pluginsAddon.execPluginActions(BeforeBuildSaveAction.class, builds, new BuildContext() {
+            });
             buildStartedNode.setContent(vfsDataService.createBinary(BuildRestConstants.MT_BUILD_INFO, stream));
+            pluginsAddon.execPluginActions(AfterBuildSaveAction.class, builds, new BuildContext() {
+            });
         } catch (Exception e) {
             String errorMessage = String.format("An error occurred while writing JSON data to the node of build name " +
                     "'%s', number '%s', started at '%s'.", buildName, buildNumber, started);

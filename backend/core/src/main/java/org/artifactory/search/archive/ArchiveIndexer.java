@@ -24,6 +24,7 @@ import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrZipFile;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.PathFactoryHolder;
@@ -65,7 +66,9 @@ public abstract class ArchiveIndexer {
         }
 
         //Index classes if necessary
-        if (!NamingUtils.isJarVariant(file.getPath())) {
+        MimeType mimeType = NamingUtils.getMimeType(file);
+        if (!mimeType.isArchive() || !mimeType.isIndex()) {
+            log.debug("Skipping indexing of '{}' with mimetype: '{}'", file.getRepoPath(), mimeType);
             return;
         }
 
@@ -149,7 +152,8 @@ public abstract class ArchiveIndexer {
         if (archiveNode != null) {
             String nodeType = archiveNode.getPrimaryNodeType().getName();
             if (nodeType.equals(StorageConstants.NT_ARTIFACTORY_FILE)) {
-                if (NamingUtils.isJarVariant(archiveNode.getName())) {
+                MimeType mimeType = NamingUtils.getMimeType(archiveNode.getName());
+                if (mimeType.isArchive() && mimeType.isIndex()) {
                     if (force || !archiveNode.hasProperty(StorageConstants.PROP_ARTIFACTORY_ARCHIVE_INDEXED)) {
                         archiveNode.setProperty(StorageConstants.PROP_ARTIFACTORY_ARCHIVE_INDEXED, false);
                         log.debug("The archive: '{}' was successfully marked for indexing", archiveNode.getName());

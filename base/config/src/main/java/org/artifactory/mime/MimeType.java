@@ -56,7 +56,7 @@ public class MimeType implements Serializable {
     @XStreamAsAttribute
     private final boolean viewable;
     /**
-     * True if this mime type should be indexed (set to true only for xml files)
+     * True if this mime type should be indexed (applies to xml and archive files)
      */
     @XStreamAsAttribute
     private final boolean index;

@@ -20,6 +20,7 @@ package org.artifactory.jcr.md;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.jcr.utils.JcrHelper;
 import org.artifactory.log.LoggerFactory;
@@ -35,7 +36,9 @@ import javax.jcr.RepositoryException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
+import java.util.Set;
 
 /**
  * @author freds
@@ -59,15 +62,14 @@ public abstract class AbstractXmlContentPersistenceHandler<T, MT> extends Abstra
         try {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             //Read the raw xml
-            is = JcrHelper.getRawStringStream(metadataNode);
+            is = JcrHelper.getStream(metadataNode);
             BufferedInputStream bis = new BufferedInputStream(is);
             //Write it to the out stream
             IOUtils.copy(bis, os);
             return os.toString("utf-8");
         } catch (IOException e) {
             throw new RepositoryRuntimeException(
-                    "Failed to read xml data '" + getMetadataName() + "' of " + metadataAware,
-                    e);
+                    "Failed to read xml data '" + getMetadataName() + "' of " + metadataAware, e);
         } catch (RepositoryException e) {
             throw new RepositoryRuntimeException(
                     "Failed to read JCR DB for data '" + getMetadataName() + "' of " + metadataAware, e);
@@ -121,6 +123,26 @@ public abstract class AbstractXmlContentPersistenceHandler<T, MT> extends Abstra
                     "Cannot get metadata info " + metadataName + " for " + metadataAware + ".", e);
         }
         return mdi;
+    }
+
+    protected void fillContentInfo(MetadataAware metadataAware, MutableMetadataInfo mdi)
+            throws RepositoryException, UnsupportedEncodingException {
+        Set<ChecksumInfo> checksums = getChecksums(metadataAware);
+        if (checksums.isEmpty()) {
+            //No checksums found - need to create them
+            String xmlData = getXml(metadataAware);
+            byte[] xmlDataBytes = xmlData.getBytes("utf-8");
+            checksums = createChecksums(metadataAware, xmlDataBytes);
+            mdi.setSize(xmlDataBytes.length);
+        } else {
+            mdi.setSize(getMetadataLength(metadataAware));
+        }
+        mdi.setChecksums(checksums);
+    }
+
+    protected long getMetadataLength(MetadataAware metadataAware) {
+        Node metadataNode = getMetadataNode(metadataAware, false);
+        return JcrHelper.getLength(JcrHelper.getResourceNode(metadataNode));
     }
 
     protected void removeXml(MetadataAware metadataAware) {

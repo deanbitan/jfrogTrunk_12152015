@@ -504,6 +504,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     public ArtifactoryDbDataRecord getRecordIfStored(DataIdentifier identifier) throws DataStoreException {
         String id = identifier.toString();
         ArtifactoryDbDataRecord record = getCachedRecord(id);
+        log.trace("Found cached record for {}: {}", identifier, record);
         if (record != null && record.setInUse()) {
             // The record is OK return it
             return record;
@@ -512,9 +513,9 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
         try {
             //Long result = allEntries.get(id);
             // SELECT LENGTH, LAST_MODIFIED FROM DATASTORE WHERE ID = ?
-
             rs = conHelper.select(selectMetaSQL, new Object[]{id});
             if (!rs.next()) {
+                log.trace("No record found for: {}.", identifier);
                 return null;
             }
             long length = rs.getLong(1);

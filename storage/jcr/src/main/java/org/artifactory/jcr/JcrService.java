@@ -237,7 +237,16 @@ public interface JcrService extends ReloadableBean {
     JcrTreeNode getTreeNode(RepoPath itemPath, MultiStatusHolder multiStatusHolder,
             @Nullable JcrTreeNodeFileFilter fileFilter);
 
+    /**
+     * Retrieves the input stream for the given SHA1 checksum directly from the storage. Returns null if not found.
+     * It's the responsibility of the caller to close the stream.
+     *
+     * @param sha1 The SHA1 checksum of the file
+     * @return Input stream or null if not found
+     * @throws DataStoreException On any error accessing the datastore of an invalid checksum
+     */
     @Transactional
+    @Nullable
     InputStream getDataStreamBySha1Checksum(String sha1) throws DataStoreException;
 
     @Async

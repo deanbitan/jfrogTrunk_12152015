@@ -61,7 +61,7 @@
         <!-- Whether to use a cache blobs temporarily on the file system for faster reads -->
         <param name="cacheBlobs" value="true"/>
         <!-- The maximum size of the blobs cache in gigabytes (g), megabytes (m) or kilobytes (k) -->
-        <param name="blobsCacheMaxSize" value="1g"/>
+        <param name="blobsCacheMaxSize" value="5g"/>
         <!-- The blobs cache directory location -->
         <param name="blobsCacheDir" value="${rep.home}/cache"/>
     </DataStore>

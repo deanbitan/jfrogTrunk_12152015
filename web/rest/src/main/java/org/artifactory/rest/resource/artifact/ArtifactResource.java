@@ -258,7 +258,7 @@ public class ArtifactResource {
         } catch (ItemNotFoundRuntimeException infre) {
             response.sendError(HttpStatus.SC_NOT_FOUND, infre.getMessage());
         } catch (AuthorizationException ae) {
-            response.sendError(HttpStatus.SC_UNAUTHORIZED, ae.getMessage());
+            response.sendError(HttpStatus.SC_FORBIDDEN, ae.getMessage());
         }
 
         return null;
@@ -333,7 +333,7 @@ public class ArtifactResource {
         } catch (ItemNotFoundRuntimeException infre) {
             response.sendError(HttpStatus.SC_NOT_FOUND, infre.getMessage());
         } catch (AuthorizationException ae) {
-            response.sendError(HttpStatus.SC_UNAUTHORIZED, ae.getMessage());
+            response.sendError(HttpStatus.SC_FORBIDDEN, ae.getMessage());
         }
         return null;
     }

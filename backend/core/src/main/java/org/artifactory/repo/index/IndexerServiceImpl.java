@@ -156,20 +156,18 @@ public class IndexerServiceImpl implements InternalIndexerService {
 
         @Override
         public void activate(@Nonnull IndexerDescriptor descriptor, boolean manual) {
-            if (descriptor.isEnabled()) {
-                long interval = descriptor.getIndexingIntervalHours() * 60L * 60L * 1000L;
-                TaskBase task = TaskUtils.createRepeatingTask(IndexerJob.class,
-                        interval,
-                        FileUtils.nextLong(interval));
+            String cronExp = descriptor.getCronExp();
+            if (descriptor.isEnabled() && cronExp != null) {
+                TaskBase task = TaskUtils.createCronTask(IndexerJob.class, cronExp);
                 // Passing null for repo keys because they are taken from the indexer descriptor
                 IndexerRunSettings settings = new IndexerRunSettings(false, false, null);
                 task.addAttribute(IndexerJob.SETTINGS, settings);
                 InternalContextHelper.get().getBean(TaskService.class).startTask(task, false);
                 if (log.isInfoEnabled()) {
-                    log.info("Indexer activated every " + descriptor.getIndexingIntervalHours() + " hours.");
+                    log.info("Indexer activated with cron expression '" + cronExp + "'.");
                 }
             } else {
-                log.info("Indexer disabled.");
+                log.info("No indexer cron expression is configured. Indexer will be disabled.");
             }
         }
 

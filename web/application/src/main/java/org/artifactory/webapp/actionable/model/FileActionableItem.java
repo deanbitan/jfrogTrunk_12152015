@@ -23,6 +23,7 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.addon.wicket.YumWebAddon;
 import org.artifactory.api.security.AuthorizationService;
@@ -171,8 +172,23 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
                 }
             }
         }
-    }
 
+        if (getRepo().isEnableNuGetSupport() && isNuPkgFile()) {
+            AddonsManager addonsProvider = getAddonsProvider();
+            NuGetWebAddon nuGetWebAddon = addonsProvider.addonByType(NuGetWebAddon.class);
+            try {
+                ITab nuPkgInfoTab = nuGetWebAddon.getNuPkgInfoTab("NuPkg Info", getRepoPath());
+                if (nuPkgInfoTab != null) {
+                    tabs.add(nuPkgInfoTab);
+                }
+            } catch (Exception e) {
+                log.error("Error occurred while processing NuPkg display info: " + e.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Error occurred while processing NuPkg display info.", e);
+                }
+            }
+        }
+    }
 
     @Override
     public void filterActions(AuthorizationService authService) {
@@ -229,6 +245,11 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
 
     private boolean isRpmFile() {
         return getFileInfo().getName().endsWith(".rpm");
+    }
+
+    private boolean isNuPkgFile() {
+        MimeType mimeType = NamingUtils.getMimeType((getFileInfo().getName()));
+        return "application/x-nupkg".equalsIgnoreCase(mimeType.getType());
     }
 
     private boolean shouldShowTabs() {

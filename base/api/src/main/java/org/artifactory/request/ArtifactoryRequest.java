@@ -32,6 +32,12 @@ public interface ArtifactoryRequest extends Request {
 
     String CHECKSUM_MD5 = "X-Checksum-Md5";
 
+    /**
+     * An header to trigger checksum deploy (when the value is true). Request must also include
+     * {@link org.artifactory.request.ArtifactoryRequest#CHECKSUM_SHA1}.
+     */
+    String CHECKSUM_DEPLOY = "X-Checksum-Deploy";
+
     String PARAM_SKIP_JAR_INDEXING = "artifactory.skipJarIndexing";
 
     String PARAM_FORCE_DOWNLOAD_IF_NEWER = "artifactory.forceDownloadIfNewer";

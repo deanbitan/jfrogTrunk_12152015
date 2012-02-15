@@ -34,6 +34,7 @@ import static org.testng.Assert.*;
  *
  * @author Yossi Shaul
  */
+@SuppressWarnings("ConstantConditions")
 @Test
 public class MimeTypesReaderTest {
     private MimeTypes mimeTypes;

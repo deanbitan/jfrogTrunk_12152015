@@ -64,7 +64,7 @@ public class StartWebContainer {
         // set the logback.xml
         System.setProperty("logback.configurationFile", new File(artHome + "/etc/logback.xml").getAbsolutePath());
 
-        //updateDefaultResources(new File(standalone, "etc"));
+        updateDefaultResources(new File(standalone, "etc"));
 
         //Manually set the selector (needed explicitly here before any logger kicks in)
         // create the logger only after artifactory.home is set
@@ -118,7 +118,6 @@ public class StartWebContainer {
                 System.err.println("Failed to copy default mime types file: " + e.getMessage());
             }
         }
-
     }
 
     private static class NewerFileFilter extends AbstractFileFilter {

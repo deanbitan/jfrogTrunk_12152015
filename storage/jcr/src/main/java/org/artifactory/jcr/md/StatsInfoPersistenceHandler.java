@@ -21,6 +21,7 @@ package org.artifactory.jcr.md;
 import org.artifactory.api.search.Searcher;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
+import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.factory.BasicFactory;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.MutableStatsInfo;
@@ -33,7 +34,9 @@ import org.artifactory.storage.StorageConstants;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
+import java.util.Set;
 
 import static org.artifactory.storage.StorageConstants.*;
 

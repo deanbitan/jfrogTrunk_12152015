@@ -324,7 +324,7 @@ public class WebdavServiceImpl implements WebdavService {
         }
         if (!authService.canDelete(repoPath) || !authService.canDeploy(
                 InternalRepoPathFactory.create(targetRepoKey, ""))) {
-            response.sendError(HttpStatus.SC_UNAUTHORIZED, "Insufficient permissions.", log);
+            response.sendError(HttpStatus.SC_FORBIDDEN, "Insufficient permissions.", log);
             return;
         }
 

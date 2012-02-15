@@ -18,7 +18,7 @@
 
 package org.artifactory.mime.version.converter.v1;
 
-import org.artifactory.convert.XmlConverterTest;
+import org.artifactory.mime.version.converter.MimeTypeConverterTest;
 import org.jdom.Attribute;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -27,7 +27,8 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * Tests {@link XmlIndexedConverter}.
@@ -35,7 +36,7 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class XmlIndexedConverterTest extends XmlConverterTest {
+public class XmlIndexedConverterTest extends MimeTypeConverterTest {
 
     public void convert() throws Exception {
         Document document = convertXml("/org/artifactory/mime/version/mimetypes-v1.xml", new XmlIndexedConverter());
@@ -59,17 +60,5 @@ public class XmlIndexedConverterTest extends XmlConverterTest {
 
         Element ivy = getType(mimetypes, namespace, "application/x-ivy+xml");
         assertEquals("true", ivy.getAttributeValue("index"));
-    }
-
-    private Element getType(List mimetypes, Namespace namespace, String name) {
-        for (Object mimetype : mimetypes) {
-            Element mimeTypeElement = (Element) mimetype;
-            String type = mimeTypeElement.getAttributeValue("type", namespace);
-            if (name.equals(type)) {
-                return mimeTypeElement;
-            }
-        }
-        fail("Mime type '" + name + "' not found");
-        return null;
     }
 }

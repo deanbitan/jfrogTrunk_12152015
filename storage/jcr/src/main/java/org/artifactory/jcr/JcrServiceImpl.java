@@ -660,7 +660,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         JcrSession session = getManagedSession();
         Node node = (Node) session.getItem(nodePath);
         try {
-            return JcrHelper.getRawStringStream(node);
+            return JcrHelper.getStream(node);
         } catch (Exception e) {
             throw new RepositoryRuntimeException(e);
         }
@@ -790,11 +790,12 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     }
 
     @Override
+    @Nullable
     public InputStream getDataStreamBySha1Checksum(String sha1) throws DataStoreException {
         JcrSession managedSession = getManagedSession();
         RepositoryImpl rep = (RepositoryImpl) managedSession.getRepository();
         DataStore dataStore = rep.getDataStore();
-        DataRecord record = dataStore.getRecord(new DataIdentifier(sha1));
+        DataRecord record = dataStore.getRecordIfStored(new DataIdentifier(sha1));
         if (record != null) {
             return record.getStream();
         }

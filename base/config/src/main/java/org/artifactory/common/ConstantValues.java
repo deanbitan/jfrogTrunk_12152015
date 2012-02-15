@@ -39,7 +39,7 @@ public enum ConstantValues {
     jcrConfigDir("jcr.configDir"),
     jcrFixConsistency("jcr.fixConsistency", FALSE),
     jcrCorePoolSize("jcr.corePoolSize", 6),
-    versioningQueryIntervalSecs("versioningQueryIntervalSecs", Seconds.MINUTE * 12),
+    versioningQueryIntervalSecs("versioningQueryIntervalSecs", Seconds.HOUR * 2),
     logsViewRefreshRateSecs("logs.viewRefreshRateSecs", 10),
     locksTimeoutSecs("locks.timeoutSecs", 120),
     locksDebugTimeouts("locks.debugTimeouts", FALSE),

@@ -25,7 +25,6 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.validation.validator.MinimumValidator;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
@@ -46,6 +45,8 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.components.SortedRepoDragDropSelection;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
+import org.artifactory.webapp.wicket.page.config.services.cron.CronNextDatePanel;
+import org.artifactory.webapp.wicket.util.validation.CronExpValidator;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -85,10 +86,13 @@ public class IndexerConfigPanel extends TitledActionPanel {
         add(new StyledCheckbox("enabled"));
         add(new SchemaHelpBubble("enabled.help"));
 
-        final TextField<Integer> indexingIntervalHours = new TextField<Integer>("indexingIntervalHours", Integer.class);
-        indexingIntervalHours.add(new MinimumValidator<Integer>(1));
-        add(indexingIntervalHours);
-        add(new SchemaHelpBubble("indexingIntervalHours.help"));
+
+        final TextField<String> cronExpField = new TextField<String>("cronExp");
+        cronExpField.add(CronExpValidator.getInstance());
+        add(cronExpField);
+        add(new SchemaHelpBubble("cronExp.help"));
+
+        add(new CronNextDatePanel("cronNextDatePanel", cronExpField));
 
         // add the run link
         TitledAjaxLink runLink = new TitledAjaxLink("run", "Run Indexing Now") {

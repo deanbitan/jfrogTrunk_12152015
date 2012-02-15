@@ -19,6 +19,7 @@
 package org.artifactory.jcr.md;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.jackrabbit.JcrConstants;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumStorageHelper;
 import org.artifactory.checksum.ChecksumType;
@@ -105,19 +106,6 @@ public abstract class AbstractMetadataPersistenceHandler<T, MT> extends Abstract
     @Override
     public boolean hasMetadata(MetadataAware metadataAware) {
         return getMetadataNode(metadataAware, false) != null;
-    }
-
-    protected void fillContentInfo(MetadataAware metadataAware, MutableMetadataInfo mdi)
-            throws RepositoryException, UnsupportedEncodingException {
-        String xmlData = getXml(metadataAware);
-        byte[] xmlDataBytes = xmlData.getBytes("utf-8");
-        Set<ChecksumInfo> checksums = getChecksums(metadataAware);
-        if (checksums.isEmpty()) {
-            //No checksums found - need to create them
-            checksums = createChecksums(metadataAware, xmlDataBytes);
-        }
-        mdi.setChecksums(checksums);
-        mdi.setSize(xmlDataBytes.length);
     }
 
     public Set<ChecksumInfo> getChecksums(MetadataAware metadataAware)
