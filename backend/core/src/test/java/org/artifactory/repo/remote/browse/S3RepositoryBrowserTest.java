@@ -175,11 +175,6 @@ public class S3RepositoryBrowserTest {
             public int executeMethod(HttpMethod method) throws IOException {
                 return client.executeMethod(method);
             }
-
-            @Override
-            public InputStream getResponseStream(GetMethod method) throws IOException {
-                return method.getResponseBodyAsStream();
-            }
         };
         s3Browser = new S3RepositoryBrowser(httpExecutor);
     }

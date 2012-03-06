@@ -32,12 +32,4 @@ import java.io.InputStream;
  */
 public interface HttpExecutor {
     int executeMethod(HttpMethod method) throws IOException;
-
-    /**
-     * Returns the response input stream. Also handles GZip streams.
-     *
-     * @param method The executed method
-     * @return The response input stream
-     */
-    InputStream getResponseStream(GetMethod method) throws IOException;
 }

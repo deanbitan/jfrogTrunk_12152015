@@ -25,6 +25,7 @@ import org.apache.commons.io.IOUtils;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.repo.HttpRepo;
 import org.artifactory.request.RemoteRequestException;
+import org.artifactory.util.HttpUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +57,7 @@ public abstract class RemoteRepositoryBrowser {
         try {
             assertSizeLimit(url, method);
 
-            InputStream responseBodyAsStream = client.getResponseStream(method);
+            InputStream responseBodyAsStream = HttpUtils.getGzipAwareResponseStream(method);
             String responseString = IOUtils.toString(responseBodyAsStream, Charsets.UTF_8.name());
             if (statusCode != HttpStatus.SC_OK) {
                 String message = "Unable to retrieve " + url + ": "

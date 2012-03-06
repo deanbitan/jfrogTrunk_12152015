@@ -28,6 +28,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -102,7 +103,8 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
             // most likely to get 404 if the repository exists
             int statusCode = client.executeMethod(method);
             assertSizeLimit(url, method);
-            String responseString = IOUtils.toString(method.getResponseBodyAsStream(), Charsets.UTF_8.name());
+            String responseString = IOUtils.toString(
+                    HttpUtils.getGzipAwareResponseStream(method), Charsets.UTF_8.name());
             log.debug("Detect S3 root url got response code {} with content: {}", statusCode, responseString);
             Document doc = XmlUtils.parse(responseString);
             Element root = doc.getRootElement();

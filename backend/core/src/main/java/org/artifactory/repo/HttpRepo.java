@@ -112,11 +112,6 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             public int executeMethod(HttpMethod method) throws IOException {
                 return HttpRepo.this.executeMethod(method);
             }
-
-            @Override
-            public InputStream getResponseStream(GetMethod method) throws IOException {
-                return HttpRepo.this.getResponseStream(method);
-            }
         };
         boolean s3Repository = S3RepositoryBrowser.isS3Repository(getUrl(), client);
         if (s3Repository) {
@@ -253,7 +248,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         //Found
         log.info("{}: Downloading content from '{}'...", this, fullUrl);
 
-        final InputStream is = getResponseStream(method);
+        final InputStream is = HttpUtils.getGzipAwareResponseStream(method);
 
         return new RemoteResourceStreamHandle() {
             @Override
@@ -517,19 +512,6 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
 
         return new ChecksumInfo(type, checksumHeader.getValue(), null);
-    }
-
-    public InputStream getResponseStream(GetMethod method) throws IOException {
-        InputStream is = method.getResponseBodyAsStream();
-        if (handleGzipResponse) {
-            Header[] contentEncodings = method.getResponseHeaders("Content-Encoding");
-            for (int i = 0, n = contentEncodings.length; i < n; i++) {
-                if ("gzip".equalsIgnoreCase(contentEncodings[i].getValue())) {
-                    return new GZIPInputStream(is);
-                }
-            }
-        }
-        return is;
     }
 
     @Override

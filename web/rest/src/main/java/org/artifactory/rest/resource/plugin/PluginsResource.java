@@ -52,7 +52,7 @@ import static org.artifactory.api.rest.constant.PluginRestConstants.*;
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 @Path(PATH_ROOT)
-@RolesAllowed({AuthorizationService.ROLE_ADMIN})
+@RolesAllowed({AuthorizationService.ROLE_USER, AuthorizationService.ROLE_ADMIN})
 public class PluginsResource {
 
     @Autowired

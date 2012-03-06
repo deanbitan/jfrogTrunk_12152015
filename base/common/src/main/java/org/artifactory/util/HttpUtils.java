@@ -18,7 +18,10 @@
 
 package org.artifactory.util;
 
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
@@ -27,9 +30,12 @@ import org.artifactory.request.ArtifactoryRequest;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.rmi.dgc.VMID;
 import java.util.StringTokenizer;
+import java.util.zip.GZIPInputStream;
 
 /**
  * @author yoavl
@@ -189,5 +195,23 @@ public abstract class HttpUtils {
             VM_HOST_ID = vmid.toString();
         }
         return VM_HOST_ID;
+    }
+
+    /**
+     * Returns a gzip aware input stream
+     *
+     * @param method The method to read the response from
+     * @return Returns a gzip aware input stream
+     * @throws IOException
+     */
+    public static InputStream getGzipAwareResponseStream(HttpMethodBase method) throws IOException {
+        InputStream is = method.getResponseBodyAsStream();
+        Header[] contentEncodings = method.getResponseHeaders("Content-Encoding");
+        for (int i = 0, n = contentEncodings.length; i < n; i++) {
+            if ("gzip".equalsIgnoreCase(contentEncodings[i].getValue())) {
+                return new GZIPInputStream(is);
+            }
+        }
+        return is;
     }
 }

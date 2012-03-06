@@ -55,11 +55,6 @@ public class HtmlRepositoryBrowserTest {
             public int executeMethod(HttpMethod method) throws IOException {
                 return hc.executeMethod(method);
             }
-
-            @Override
-            public InputStream getResponseStream(GetMethod method) throws IOException {
-                return method.getResponseBodyAsStream();
-            }
         };
         urlLister = new HtmlRepositoryBrowser(httpExecutor);
         baseUrl = "http://blabla";
