@@ -93,6 +93,17 @@ public class ArtifactSearchResource {
         controls.setQuery(appendAndReturnWildcards(name));
         controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
+
+        if (controls.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "The search term cannot be empty");
+            return null;
+        }
+        if (controls.isWildcardsOnly()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    "Search term containing only wildcards is not permitted");
+            return null;
+        }
+
         ItemSearchResults<ArtifactSearchResult> searchResults;
         try {
             searchResults = searchService.searchArtifacts(controls);
@@ -108,7 +119,7 @@ public class ArtifactSearchResource {
             }
             return result;
         } else {
-            RestUtils.sendNotFoundResponse(response, String.format("Could not find %s in requested repos", name));
+            RestUtils.sendNotFoundResponse(response, String.format("Could not find '%s' in requested repos", name));
             return null;
         }
     }

@@ -196,6 +196,12 @@ public abstract class BaseRepoPathMover {
     protected void moveFile(VfsFile sourceFile, RepoRepoPath<LocalRepo> targetRrp) {
         assertNotDryRun();
         LocalRepo targetRepo = targetRrp.getRepo();
+        String sourceAbsPath = PathFactoryHolder.get().getAbsolutePath(sourceFile.getRepoPath());
+        if (!jcrService.itemNodeExists(sourceAbsPath)) {
+            //RTFACT-4878
+            status.setWarning("Cannot move file '" + sourceAbsPath + "' since it no longer exists.", log);
+            return;
+        }
         if (contains(targetRrp)) {
             // target repository already contains file with the same name, delete it
             log.debug("File {} already exists in target repository. Overriding.", targetRrp.getRepoPath().getPath());
@@ -210,7 +216,6 @@ public abstract class BaseRepoPathMover {
 
         RepoPath targetRepoPath = targetRrp.getRepoPath();
         VfsFile targetJcrFile = VfsItemFactory.createVfsFile(targetRepoPath, targetRepo);
-        String sourceAbsPath = PathFactoryHolder.get().getAbsolutePath(sourceFile.getRepoPath());
         String targetAbsPath = PathFactoryHolder.get().getAbsolutePath(targetRepoPath);
         if (copy) {
             //Important - do, otherwise target folders aren't found by the workspace yet

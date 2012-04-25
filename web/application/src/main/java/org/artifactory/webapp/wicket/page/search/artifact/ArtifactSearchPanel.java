@@ -60,7 +60,10 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
     @Override
     protected void validateSearchControls() {
         if (searchControls.isEmpty()) {
-            throw new IllegalArgumentException("The search term cannot be empty.");
+            throw new IllegalArgumentException("The search term cannot be empty");
+        }
+        if (searchControls.isWildcardsOnly()) {
+            throw new IllegalArgumentException("Search term containing only wildcards is not permitted");
         }
     }
 

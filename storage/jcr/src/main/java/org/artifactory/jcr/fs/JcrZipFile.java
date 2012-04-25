@@ -55,7 +55,7 @@ public class JcrZipFile implements Closeable {
         ZipInputStream zis = getZipInputStream();
         ZipEntry currentEntry;
         while ((currentEntry = zis.getNextEntry()) != null) {
-            if (currentEntry.equals(entry)) {
+            if (currentEntry.getName().equals(entry.getName())) {
                 return zis;
             }
         }

@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.12"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.12"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.13"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.13"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -1143,6 +1143,18 @@
                     <xs:documentation source="description">
                         <![CDATA[
                         Security settings specific to Atlassian Crowd.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="archiveBrowsingEnabled" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Allow Unsafe Archive Content Browsing -
+                        Determines whether viewing archive content (e.g., Javadoc browsing) directly from Artifactory is allowed.
+                        Allowing content browsing requires strict content moderation in order to make sure malicious users do not
+                        upload content that is used to compromise security. For example, to conduct cross-site scripting attacks.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>

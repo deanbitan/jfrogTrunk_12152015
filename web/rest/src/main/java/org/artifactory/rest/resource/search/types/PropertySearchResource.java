@@ -93,6 +93,16 @@ public class PropertySearchResource {
             }
         }
 
+        if (searchControls.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "The search term cannot be empty");
+            return null;
+        }
+        if (searchControls.isWildcardsOnly()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    "Search term containing only wildcards is not permitted");
+            return null;
+        }
+
         ItemSearchResults<PropertySearchResult> searchResults;
         try {
             searchResults = searchService.searchProperty(searchControls);

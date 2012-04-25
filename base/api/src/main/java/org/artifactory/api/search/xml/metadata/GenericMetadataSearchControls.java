@@ -47,6 +47,11 @@ public class GenericMetadataSearchControls<T> extends SearchControlsBase {
         return false;
     }
 
+    @Override
+    public boolean isWildcardsOnly() {
+        return false;
+    }
+
     public String getPropertyName() {
         return propertyName;
     }

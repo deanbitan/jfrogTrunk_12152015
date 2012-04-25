@@ -84,4 +84,10 @@ public class MetadataSearchControls<T> extends SearchControlsBase {
     public boolean isEmpty() {
         return StringUtils.isEmpty(metadataName);
     }
+
+    @Override
+    public boolean isWildcardsOnly() {
+        return isWildcardsOnly(metadataName);
+    }
+
 }

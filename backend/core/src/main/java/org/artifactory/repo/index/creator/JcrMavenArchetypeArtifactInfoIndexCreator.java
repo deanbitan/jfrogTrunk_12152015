@@ -15,6 +15,8 @@ import org.apache.maven.index.ArtifactInfo;
 import org.apache.maven.index.creator.MavenArchetypeArtifactInfoIndexCreator;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrZipFile;
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.zip.ZipEntry;
 
@@ -22,6 +24,7 @@ import java.util.zip.ZipEntry;
  * @author yoavl
  */
 public class JcrMavenArchetypeArtifactInfoIndexCreator extends MavenArchetypeArtifactInfoIndexCreator {
+    private static final Logger log = LoggerFactory.getLogger(JcrMavenArchetypeArtifactInfoIndexCreator.class);
 
     private static final String MAVEN_ARCHETYPE_PACKAGING = "maven-archetype";
 
@@ -62,17 +65,15 @@ public class JcrMavenArchetypeArtifactInfoIndexCreator extends MavenArchetypeArt
                     return;
                 }
             }
-        }
-        catch (Exception e) {
-            getLogger().info("Failed to parse Maven artifact " + artifact.getAbsolutePath(), e);
-        }
-        finally {
+        } catch (Exception e) {
+            log.info("Failed to parse Maven artifact " + artifact.getAbsolutePath(), e.getMessage());
+            log.debug("Failed to parse Maven artifact " + artifact.getAbsolutePath(), e);
+        } finally {
             if (jf != null) {
                 try {
                     jf.close();
-                }
-                catch (Exception e) {
-                    getLogger().error("Could not close jar file properly.", e);
+                } catch (Exception e) {
+                    log.debug("Could not close jar file properly.", e.getMessage());
                 }
             }
         }

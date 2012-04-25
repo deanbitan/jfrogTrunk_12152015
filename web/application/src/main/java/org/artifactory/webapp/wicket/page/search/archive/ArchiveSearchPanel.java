@@ -74,6 +74,9 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
         if (searchControls.isEmpty()) {
             throw new IllegalArgumentException("The search term cannot be empty.");
         }
+        if (searchControls.isWildcardsOnly()) {
+            throw new IllegalArgumentException("Search term containing only wildcards is not permitted");
+        }
     }
 
     @Override

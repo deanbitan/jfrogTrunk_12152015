@@ -65,6 +65,11 @@ public class ArchiveSearchControls extends SearchControlsBase {
         return StringUtils.isEmpty(query);
     }
 
+    @Override
+    public boolean isWildcardsOnly() {
+        return isWildcardsOnly(query);
+    }
+
     public boolean isExcludeInnerClasses() {
         return excludeInnerClasses;
     }

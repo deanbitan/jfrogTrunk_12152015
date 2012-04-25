@@ -70,6 +70,16 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         }
     }
 
+    /**
+     * Set the content disposition type to attachment. This will instruct the browser downloading the file to save it
+     * instead of displaying it inline (for example html files). <p/>
+     * We don't set the name here and let the browser decide based on download URL.
+     * For more info read <a href="https://www.ietf.org/rfc/rfc2183.txt">RFC2183</a>
+     */
+    public void setContentDispositionAttachment() {
+        response.setHeader("Content-Disposition", "attachment");
+    }
+
     @Override
     protected void sendErrorInternal(int statusCode, String reason) throws IOException {
         if (response.isCommitted()) {

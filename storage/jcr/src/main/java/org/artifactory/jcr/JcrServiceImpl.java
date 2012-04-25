@@ -804,7 +804,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     }
 
     @Override
-    public void ping() {
+    public synchronized void ping() {
         JcrSession session = null;
         try {
             session = getUnmanagedSession();

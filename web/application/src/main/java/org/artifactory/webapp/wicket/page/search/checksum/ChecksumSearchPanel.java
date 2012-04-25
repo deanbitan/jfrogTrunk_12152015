@@ -79,13 +79,16 @@ public class ChecksumSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
         if (StringUtils.isNotBlank(query)) {
             if (StringUtils.length(query) == ChecksumType.md5.length()) {
                 searchControls.addChecksum(ChecksumType.md5, query);
-                return;
             } else if (StringUtils.length(query) == ChecksumType.sha1.length()) {
                 searchControls.addChecksum(ChecksumType.sha1, query);
-                return;
             }
         }
-        throw new IllegalArgumentException("Please enter a valid checksum to search for.");
+        if (searchControls.isEmpty()) {
+            throw new IllegalArgumentException("Please enter a valid checksum to search for");
+        }
+        if (searchControls.isWildcardsOnly()) {
+            throw new IllegalArgumentException("Search term containing only wildcards is not permitted");
+        }
     }
 
     @Override

@@ -212,7 +212,7 @@ public class VfsQueryJcrImpl implements VfsQuery {
     private VfsQueryPathCriterionJcrImpl createSmartPathCriterion(String pathFilter, @Nullable VfsNodeType nodeType) {
         if (pathFilter == null || pathFilter.contains(JcrQueryHelper.FORWARD_SLASH)) {
             throw new InvalidQueryRuntimeException(
-                    "Path filter element cannot be null or contains slash: " + pathFilter);
+                    "Path filter element cannot be null or contain slash: " + pathFilter);
         }
 
         if (pathFilter.length() == 0 || ALL_PATH_VALUE.equals(pathFilter)) {

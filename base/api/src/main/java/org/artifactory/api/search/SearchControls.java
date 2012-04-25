@@ -18,16 +18,20 @@
 
 package org.artifactory.api.search;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
 
 public interface SearchControls extends Serializable {
     /**
-     * Determines if the search controls are considered "empty" so that a search should not even be attempted.
-     *
-     * @return
+     * @return true if the search controls are considered "empty" so that a search should not even be attempted.
      */
     boolean isEmpty();
+
+    /**
+     * @return true if the search controls contains wildcards only. User search should be attempted.
+     */
+    boolean isWildcardsOnly();
 
     /**
      * Indicates if the search results should be limited as in the system spec
@@ -41,7 +45,14 @@ public interface SearchControls extends Serializable {
      */
     void resetResultLimit();
 
+    /**
+     * Returns list of repository keys to search in. Search in any repo if null or empty.
+     */
+    @Nullable
     List<String> getSelectedRepoForSearch();
 
+    /**
+     * @return True if the search is limited to specific repositories.
+     */
     boolean isSpecificRepoSearch();
 }

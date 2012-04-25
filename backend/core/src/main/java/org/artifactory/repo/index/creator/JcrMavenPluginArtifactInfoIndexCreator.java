@@ -15,10 +15,12 @@ import org.apache.maven.index.ArtifactInfo;
 import org.apache.maven.index.creator.MavenPluginArtifactInfoIndexCreator;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrZipFile;
+import org.artifactory.log.LoggerFactory;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.configuration.xml.XmlPlexusConfiguration;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
+import org.slf4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
@@ -30,6 +32,7 @@ import java.util.zip.ZipEntry;
  * @author yoavl
  */
 public class JcrMavenPluginArtifactInfoIndexCreator extends MavenPluginArtifactInfoIndexCreator {
+    private static final Logger log = LoggerFactory.getLogger(JcrMavenPluginArtifactInfoIndexCreator.class);
 
     private static final String MAVEN_PLUGIN_PACKAGING = "maven-plugin";
 
@@ -76,17 +79,15 @@ public class JcrMavenPluginArtifactInfoIndexCreator extends MavenPluginArtifactI
             for (PlexusConfiguration mojoConfig : mojoConfigs) {
                 ai.goals.add(mojoConfig.getChild("goal").getValue());
             }
-        }
-        catch (Exception e) {
-            getLogger().info("Failed to parsing Maven plugin " + artifact.getAbsolutePath(), e);
-        }
-        finally {
+        } catch (Exception e) {
+            log.info("Failed to parsing Maven plugin " + artifact.getAbsolutePath(), e.getMessage());
+            log.debug("Failed to parsing Maven plugin " + artifact.getAbsolutePath(), e);
+        } finally {
             if (jf != null) {
                 try {
                     jf.close();
-                }
-                catch (Exception e) {
-                    getLogger().error("Could not close jar file properly.", e);
+                } catch (Exception e) {
+                    log.debug("Could not close jar file properly.", e.getMessage());
                 }
             }
 

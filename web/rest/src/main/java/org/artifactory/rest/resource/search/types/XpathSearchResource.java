@@ -116,6 +116,16 @@ public class XpathSearchResource {
         controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
 
+        if (controls.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "The search term cannot be empty");
+            return null;
+        }
+        /*if (controls.isWildcardsOnly()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    "Search term containing only wildcards is not permitted");
+            return null;
+        }*/
+
         ItemSearchResults searchResults;
         //any value of typeSearch except 1 is xmlSearch
         boolean isXmlSearch = searchType == null || !searchType.equals(String.valueOf(1));

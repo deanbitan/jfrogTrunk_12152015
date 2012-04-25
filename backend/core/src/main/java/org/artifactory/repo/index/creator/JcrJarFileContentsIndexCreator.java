@@ -15,7 +15,9 @@ import org.apache.maven.index.ArtifactInfo;
 import org.apache.maven.index.creator.JarFileContentsIndexCreator;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.jcr.fs.JcrZipFile;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ExceptionUtils;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.zip.ZipEntry;
  * @author yoavl
  */
 public class JcrJarFileContentsIndexCreator extends JarFileContentsIndexCreator {
+    private static final Logger log = LoggerFactory.getLogger(JcrJarFileContentsIndexCreator.class);
 
     @Override
     public void populateArtifactInfo(ArtifactContext artifactContext)
@@ -77,7 +80,7 @@ public class JcrJarFileContentsIndexCreator extends JarFileContentsIndexCreator 
         } catch (RuntimeException e) {
             IOException ioe = (IOException) ExceptionUtils.getCauseOfTypes(e, IOException.class);
             if (ioe != null) {
-                getLogger().debug("Rethrowing RuntimeException as IOException in order not to abort indexing.", e);
+                log.debug("Rethrowing RuntimeException as IOException in order not to abort indexing.", e);
                 throw ioe;
             } else {
                 throw e;
@@ -87,7 +90,7 @@ public class JcrJarFileContentsIndexCreator extends JarFileContentsIndexCreator 
                 try {
                     jar.close();
                 } catch (Exception e) {
-                    getLogger().error("Could not close jar file properly.", e);
+                    log.debug("Could not close jar file properly.", e);
                 }
             }
         }

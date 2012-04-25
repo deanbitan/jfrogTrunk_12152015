@@ -87,7 +87,13 @@ public class GavcSearchControls extends SearchControlsBase {
 
     @Override
     public boolean isEmpty() {
-        return (isEmpty(groupId) && isEmpty(artifactId) && isEmpty(version)) && isEmpty(classifier);
+        return isEmpty(groupId) && isEmpty(artifactId) && isEmpty(version) && isEmpty(classifier);
+    }
+
+    @Override
+    public boolean isWildcardsOnly() {
+        String expression = StringUtils.remove(getSearchExpression(), '-');
+        return StringUtils.isBlank(expression) || isWildcardsOnly(expression);
     }
 
     public String getSearchExpression() {

@@ -107,6 +107,16 @@ public class GavcSearchResource {
             searchControls.setLimitSearchResults(authorizationService.isAnonymous());
             searchControls.setSelectedRepoForSearch(reposToSearch);
 
+            if (searchControls.isEmpty()) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "The search term cannot be empty");
+                return null;
+            }
+            if (searchControls.isWildcardsOnly()) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                        "Search term containing only wildcards is not permitted");
+                return null;
+            }
+
             ItemSearchResults<GavcSearchResult> searchResults;
             try {
                 searchResults = searchService.searchGavc(searchControls);

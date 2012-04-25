@@ -116,7 +116,6 @@ import java.util.concurrent.TimeoutException;
 @Service
 @Reloadable(beanClass = InternalSearchService.class, initAfter = {InternalRepositoryService.class})
 public class SearchServiceImpl implements InternalSearchService {
-
     private static final Logger log = LoggerFactory.getLogger(SearchServiceImpl.class);
 
     @Autowired

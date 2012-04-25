@@ -59,6 +59,9 @@ public class GavcSearchPanel extends BaseSearchPanel<GavcSearchResult> {
         if (searchControls.isEmpty()) {
             throw new IllegalArgumentException("Please specify at least one search term.");
         }
+        if (searchControls.isWildcardsOnly()) {
+            throw new IllegalArgumentException("Search term containing only wildcards is not permitted");
+        }
     }
 
     @Override

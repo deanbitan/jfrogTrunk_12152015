@@ -140,7 +140,7 @@ EXISTING_USER=`id -nu %{username} 2>/dev/null`
 if [ "$EXISTING_USER" != "%{username}" ]; then
   echo "User %{username} doesn't exist. Creating ..."
   %__mkdir_p %{user_home}
-  %{_sbindir}/useradd %{username} -r -g %{username} -m -d %{user_home} || exit $?
+  %{_sbindir}/useradd %{username} -g %{username} -d %{user_home} || exit $?
 else
   echo "User %{username} exists."
 fi

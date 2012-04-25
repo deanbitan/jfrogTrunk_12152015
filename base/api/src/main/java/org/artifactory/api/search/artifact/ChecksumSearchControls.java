@@ -40,6 +40,21 @@ public class ChecksumSearchControls extends SearchControlsBase {
         return checksums == null || checksums.isEmpty();
     }
 
+    @Override
+    public boolean isWildcardsOnly() {
+        if (isEmpty()) {
+            return true;
+        }
+        if (checksums != null) {
+            for (String checksum : checksums.values()) {
+                if (isWildcardsOnly(checksum)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public EnumMap<ChecksumType, String> getChecksums() {
         return checksums;
     }

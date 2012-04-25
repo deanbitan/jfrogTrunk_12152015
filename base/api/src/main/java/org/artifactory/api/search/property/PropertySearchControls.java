@@ -109,6 +109,21 @@ public class PropertySearchControls extends SearchControlsBase {
         return properties.isEmpty();
     }
 
+    @Override
+    public boolean isWildcardsOnly() {
+        if (isEmpty()) {
+            return true;
+        }
+        for (String key : properties.keys()) {
+            if (isWildcardsOnly(key)) {
+                // one key that contains wildcards is enough
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     public boolean containsEntry(String key, String value) {
         return properties.containsEntry(key, value);
     }

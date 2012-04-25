@@ -21,14 +21,14 @@ package org.artifactory.api.search.artifact;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.search.SearchControlsBase;
 
+/**
+ * Search controls to search for files by name pattern.
+ */
 public class ArtifactSearchControls extends SearchControlsBase {
 
     private String query;
     private String relativePath;
 
-    /**
-     * Default constructor
-     */
     public ArtifactSearchControls() {
     }
 
@@ -56,6 +56,12 @@ public class ArtifactSearchControls extends SearchControlsBase {
         return relativePath;
     }
 
+    /**
+     * Relative path to search the artifact under
+     *
+     * @param relativePath Relative path to search the artifact under
+     * @see org.artifactory.jcr.search.VfsQueryJcrImpl#addRelativePathFilter(java.lang.String)
+     */
     public void setRelativePath(String relativePath) {
         this.relativePath = relativePath;
     }
@@ -63,5 +69,10 @@ public class ArtifactSearchControls extends SearchControlsBase {
     @Override
     public boolean isEmpty() {
         return StringUtils.isEmpty(query);
+    }
+
+    @Override
+    public boolean isWildcardsOnly() {
+        return isWildcardsOnly(query);
     }
 }

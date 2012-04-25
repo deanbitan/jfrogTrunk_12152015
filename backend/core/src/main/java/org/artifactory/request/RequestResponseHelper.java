@@ -19,6 +19,7 @@
 package org.artifactory.request;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.log.LoggerFactory;
@@ -26,9 +27,11 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
+import org.artifactory.resource.ZipEntryResource;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.DownloadEntry;
+import org.artifactory.webapp.servlet.HttpArtifactoryResponse;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
@@ -145,5 +148,20 @@ public final class RequestResponseHelper {
         // set the md5 header
         String md5 = info.getMd5();
         response.setMd5(md5);
+
+        if (response instanceof HttpArtifactoryResponse) {
+            // content disposition is not set only for archive resources when archived browsing is enabled
+            if (isNotZipResource(res) || archiveBrowsingDisabled()) {
+                ((HttpArtifactoryResponse) response).setContentDispositionAttachment();
+            }
+        }
+    }
+
+    private boolean isNotZipResource(RepoResource res) {
+        return !(res instanceof ZipEntryResource);
+    }
+
+    private boolean archiveBrowsingDisabled() {
+        return !ContextHelper.get().getCentralConfig().getDescriptor().getSecurity().isArchiveBrowsingEnabled();
     }
 }

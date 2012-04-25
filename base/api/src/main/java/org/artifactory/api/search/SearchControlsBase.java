@@ -19,8 +19,11 @@
 package org.artifactory.api.search;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * A base implementation for all search control classes
@@ -29,14 +32,25 @@ import java.util.List;
  */
 public abstract class SearchControlsBase implements SearchControls {
 
+    /**
+     * Regexp to test if string contains only wildcards ('*' or '?' only).
+     */
+    private static Pattern wildcardsOnlyPattern = Pattern.compile("(\\*|\\?)+");
+
     private boolean limitSearchResults = true;
     protected List<String> selectedRepoForSearch;
 
     @Override
+    @Nullable
     public List<String> getSelectedRepoForSearch() {
         return selectedRepoForSearch;
     }
 
+    /**
+     * Limit the search to the specified repository keys. Search in any repo if empty.
+     *
+     * @param selectedRepoForSearch List of repository keys to search in.
+     */
     public void setSelectedRepoForSearch(List<String> selectedRepoForSearch) {
         this.selectedRepoForSearch = selectedRepoForSearch;
     }
@@ -70,5 +84,13 @@ public abstract class SearchControlsBase implements SearchControls {
             selectedRepoForSearch = Lists.newArrayList();
         }
         selectedRepoForSearch.add(repoKey);
+    }
+
+    /**
+     * @param str String to check
+     * @return True is the input is empty or it contains wildcards only
+     */
+    public boolean isWildcardsOnly(String str) {
+        return StringUtils.isBlank(str) || wildcardsOnlyPattern.matcher(str).matches();
     }
 }

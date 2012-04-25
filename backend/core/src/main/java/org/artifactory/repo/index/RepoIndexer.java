@@ -16,7 +16,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.maven.index.ArtifactContext;
 import org.apache.maven.index.ArtifactScanningListener;
-import org.apache.maven.index.DefaultArtifactContextProducer;
 import org.apache.maven.index.DefaultIndexerEngine;
 import org.apache.maven.index.DefaultNexusIndexer;
 import org.apache.maven.index.DefaultQueryCreator;
@@ -88,7 +87,7 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
         //Unplexus
         FieldUtils.setProtectedFieldValue("indexerEngine", this, new DefaultIndexerEngine());
         DefaultScanner scanner = new DefaultScanner();
-        DefaultArtifactContextProducer artifactContextProducer = new DefaultArtifactContextProducer();
+        ArtifactoryArtifactContextProducer artifactContextProducer = new ArtifactoryArtifactContextProducer(repo);
         FieldUtils.setProtectedFieldValue("pl", artifactContextProducer, new PomLocator());
         FieldUtils.setProtectedFieldValue("ml", artifactContextProducer, new MetadataLocator());
         FieldUtils.setProtectedFieldValue("artifactContextProducer", scanner, artifactContextProducer);

@@ -128,6 +128,16 @@ public class MetadataSearchPanel<T extends MetadataSearchResult> extends BaseSea
     }
 
     @Override
+    protected void validateSearchControls() {
+        if (searchControls.isEmpty()) {
+            throw new IllegalArgumentException("The search term cannot be empty");
+        }
+        if (searchControls.isWildcardsOnly()) {
+            throw new IllegalArgumentException("Search term containing only wildcards is not permitted");
+        }
+    }
+
+    @Override
     protected Class<? extends BaseSearchPage> getMenuPageClass() {
         return MetadataSearchPage.class;
     }

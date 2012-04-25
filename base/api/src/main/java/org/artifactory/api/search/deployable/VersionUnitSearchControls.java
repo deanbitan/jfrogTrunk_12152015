@@ -53,4 +53,11 @@ public class VersionUnitSearchControls extends SearchControlsBase {
     public boolean isEmpty() {
         return pathToSearchWithin == null;
     }
+
+    @Override
+    public boolean isWildcardsOnly() {
+        // cannot really be a wildcards only search
+        return isEmpty();
+    }
+
 }
