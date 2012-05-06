@@ -20,6 +20,7 @@ package org.artifactory.rest.common;
 
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.rest.constant.BuildRestConstants;
+import org.artifactory.api.rest.constant.PluginRestConstants;
 import org.artifactory.api.rest.constant.ReplicationRestConstants;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
@@ -85,7 +86,8 @@ import javax.ws.rs.ext.Provider;
         SecurityRestConstants.MT_GROUPS,
         SecurityRestConstants.MT_USERS,
         SecurityRestConstants.MT_PERMISSION_TARGETS,
-        ReplicationRestConstants.MT_REPLICATION_REQUEST
+        ReplicationRestConstants.MT_REPLICATION_REQUEST,
+        BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_REQUEST
 })
 @Produces({
         MediaType.APPLICATION_JSON,
@@ -131,7 +133,10 @@ import javax.ws.rs.ext.Provider;
         SecurityRestConstants.MT_USERS,
         SecurityRestConstants.MT_PERMISSION_TARGETS,
         ReplicationRestConstants.MT_REPLICATION_REQUEST,
-        ReplicationRestConstants.MT_REPLICATION_STATUS
+        ReplicationRestConstants.MT_REPLICATION_STATUS,
+        PluginRestConstants.MT_BUILD_STAGING_STRATEGY,
+        BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_RESULT,
+        SearchRestConstants.MT_ARTIFACT_VERSIONS_SEARCH_RESULT
 })
 public class JsonProvider extends JacksonJsonProvider implements ContextResolver<ObjectMapper> {
 

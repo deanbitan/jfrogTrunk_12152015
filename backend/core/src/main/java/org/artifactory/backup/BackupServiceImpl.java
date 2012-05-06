@@ -275,7 +275,7 @@ public class BackupServiceImpl implements InternalBackupService {
         File[] children = backupDir.listFiles();
         //Delete anything not newer than the last valid time
         if (children.length > 0) {
-            log.debug("Removing old backups...");
+            log.debug("Removing backups older than {}.", validFrom);
         } else {
             log.debug("No old backup files to remove.");
         }
@@ -287,6 +287,8 @@ public class BackupServiceImpl implements InternalBackupService {
                 } catch (IOException e) {
                     log.warn("Failed to remove old backup file or folder '" + child.getPath() + "'.", e);
                 }
+            } else {
+                log.debug("Skipping new backup file '{}'.", child.getPath());
             }
         }
     }
@@ -329,7 +331,15 @@ public class BackupServiceImpl implements InternalBackupService {
             for (String adminEmail : adminEmails) {
                 if (StringUtils.isNotBlank(adminEmail)) {
                     log.debug("Sending backup error notification to '{}'.", adminEmail);
-                    String message = MessageFormat.format(body, backupName, errorListBlock);
+                    StringBuilder artifactoryUrlMessage = new StringBuilder();
+                    String artifactoryUrl = centralConfig.getDescriptor().getServerUrlForEmail();
+                    if (StringUtils.isNotBlank(artifactoryUrl)) {
+                        String artifactoryLink = createArtifactoryLinkFromUrl(artifactoryUrl);
+                        artifactoryUrlMessage.append("Your Artifactory base URL is: ").append(artifactoryLink);
+                    } else {
+                        artifactoryUrlMessage.append("No Artifactory base URL is configured");
+                    }
+                    String message = MessageFormat.format(body, backupName, artifactoryUrlMessage, errorListBlock);
                     mailService.sendMail(new String[]{adminEmail}, "Backup Error Notification", message);
                 }
             }
@@ -340,6 +350,13 @@ public class BackupServiceImpl implements InternalBackupService {
             IOUtils.closeQuietly(stream);
         }
         log.info("Error notification for backup '{}' was sent by mail.", backupName);
+    }
+
+    private String createArtifactoryLinkFromUrl(String artifactoryUrl) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<a href=").append(artifactoryUrl).append(" target=\"blank\"").append(">")
+                .append(artifactoryUrl).append("<a/>");
+        return builder.toString();
     }
 
     private List<String> getBackedupRepos(List<RealRepoDescriptor> excludeRepositories) {

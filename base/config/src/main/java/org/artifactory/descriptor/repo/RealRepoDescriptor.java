@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @XmlType(name = "RealRepoType", propOrder = {"blackedOut", "handleReleases", "handleSnapshots",
-        "maxUniqueSnapshots", "suppressPomConsistencyChecks", "propertySets"},
+        "maxUniqueSnapshots", "suppressPomConsistencyChecks", "propertySets", "archiveBrowsingEnabled"},
         namespace = Descriptor.NS)
 public abstract class RealRepoDescriptor extends RepoBaseDescriptor {
 
@@ -49,6 +49,9 @@ public abstract class RealRepoDescriptor extends RepoBaseDescriptor {
 
     @XmlElement(defaultValue = "false", required = false)
     private boolean suppressPomConsistencyChecks = false;
+
+    @XmlElement(defaultValue = "false", required = false)
+    private boolean archiveBrowsingEnabled;
 
     @XmlIDREF
     @XmlElementWrapper(name = "propertySets")
@@ -148,6 +151,14 @@ public abstract class RealRepoDescriptor extends RepoBaseDescriptor {
             }
         }
         return null;
+    }
+
+    public boolean isArchiveBrowsingEnabled() {
+        return archiveBrowsingEnabled;
+    }
+
+    public void setArchiveBrowsingEnabled(boolean archiveBrowsingEnabled) {
+        this.archiveBrowsingEnabled = archiveBrowsingEnabled;
     }
 
     @Override

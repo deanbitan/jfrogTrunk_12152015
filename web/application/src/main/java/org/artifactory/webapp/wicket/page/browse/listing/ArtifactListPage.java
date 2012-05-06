@@ -27,7 +27,8 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.request.Response;
 import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepositoryBrowsingService;
@@ -62,7 +63,7 @@ public class ArtifactListPage extends WebPage {
     private RepositoryBrowsingService repoBrowsingService;
 
     @SpringBean
-    private CentralConfigService centralConfig;
+    private AddonsManager addonsManager;
 
     public ArtifactListPage() {
         setStatelessHint(false);
@@ -113,10 +114,9 @@ public class ArtifactListPage extends WebPage {
     }
 
     private void addAddress(HttpServletRequest request) {
-        final String version = centralConfig.getVersionInfo().getVersion();
+        final String version = addonsManager.addonByType(WebApplicationAddon.class).getListBrowsingVersion();
         final String serverName = request.getServerName();
-        String address =
-                String.format("Artifactory/%s Server at %s Port %s", version, serverName, request.getServerPort());
+        String address = String.format("%s Server at %s Port %s", version, serverName, request.getServerPort());
         add(new Label("address", address));
     }
 

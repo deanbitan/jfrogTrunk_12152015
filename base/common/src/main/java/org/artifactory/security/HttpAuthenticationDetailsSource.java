@@ -18,16 +18,24 @@
 
 package org.artifactory.security;
 
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.security.authentication.AuthenticationDetailsSource;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Support using the HttpAuthenticationDetails class
  *
  * @author yoavl
  */
-public class HttpAuthenticationDetailsSource extends WebAuthenticationDetailsSource {
+public class HttpAuthenticationDetailsSource implements
+        AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> {
     public HttpAuthenticationDetailsSource() {
         super();
-        setClazz(HttpAuthenticationDetails.class);
+    }
+
+    @Override
+    public WebAuthenticationDetails buildDetails(HttpServletRequest context) {
+        return new HttpAuthenticationDetails(context);
     }
 }

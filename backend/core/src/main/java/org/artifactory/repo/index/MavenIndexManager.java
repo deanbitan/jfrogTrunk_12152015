@@ -95,12 +95,18 @@ public class MavenIndexManager {
         } else {
             //For remote repositories, try to download the remote cache. If fails - index locally
             RemoteRepo remoteRepo = (RemoteRepo) indexedRepo;
-            if (remoteRepo.isOffline()) {
-                log.debug("Not retrieving index for remote repository '{}'.", indexedRepo.getKey());
-                return false;
-            }
             if (remoteRepo.isStoreArtifactsLocally()) {
                 indexStorageRepo = remoteRepo.getLocalCacheRepo();
+            }
+            if (remoteRepo.isOffline()) {
+                log.debug("Not retrieving index for remote repository '{}'.", indexedRepo.getKey());
+                if (!isIndexFilesDontExistInCache(remoteRepo)) {
+                    log.debug("Skipping indexing for remote offline repository '{}', Index exists in cache.",
+                            indexedRepo.getKey());
+                    indexStatus = IndexStatus.SKIP;
+                }
+                unExpireIndexIfExists(remoteRepo);
+                return false;
             }
 
             /*DefaultIndexUpdater indexUpdater = new DefaultIndexUpdater();

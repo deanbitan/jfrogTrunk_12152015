@@ -18,14 +18,16 @@
 
 package org.artifactory.descriptor.repo;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
 
+import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlID;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "ProxyType",
-        propOrder = {"key", "host", "port", "username", "password", "ntHost", "domain", "defaultProxy"})
+        propOrder = {"key", "host", "port", "username", "password", "ntHost", "domain", "defaultProxy", "redirectedToHosts"})
 public class ProxyDescriptor implements Descriptor {
 
     @XmlID
@@ -43,6 +45,10 @@ public class ProxyDescriptor implements Descriptor {
     private String ntHost;
     private String domain;
     private boolean defaultProxy;
+    /**
+     * New line or comma separated host names that the proxy might redirect requests to.
+     */
+    private String redirectedToHosts;
 
     public String getKey() {
         return key;
@@ -106,6 +112,25 @@ public class ProxyDescriptor implements Descriptor {
 
     public void setDefaultProxy(boolean defaultProxy) {
         this.defaultProxy = defaultProxy;
+    }
+
+    /**
+     * Returns new line or comma separated host names that the proxy might redirect requests to.
+     * Use {@link ProxyDescriptor#getRedirectedToHostsList()} to get a list of host names.
+     */
+    @Nullable
+    public String getRedirectedToHosts() {
+        return redirectedToHosts;
+    }
+
+    @Nullable
+    public String[] getRedirectedToHostsList() {
+        // split by newline, space, comma or semi-colon
+        return StringUtils.split(redirectedToHosts, "\n,; ");
+    }
+
+    public void setRedirectedToHosts(@Nullable String redirectedToHosts) {
+        this.redirectedToHosts = StringUtils.trim(redirectedToHosts);
     }
 
     @Override

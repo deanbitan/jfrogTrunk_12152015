@@ -25,6 +25,7 @@ import org.artifactory.logging.version.v1.LogbackConfigSwapper;
 import org.artifactory.logging.version.v2.JackrabbitLoggerConverter;
 import org.artifactory.logging.version.v3.LineNumberLayoutLoggerConverter;
 import org.artifactory.logging.version.v4.PublicApiPackageChangeLoggerConverter;
+import org.artifactory.logging.version.v6.RequestTraceLoggerConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
@@ -48,7 +49,8 @@ public enum LoggingVersion implements SubConfigElementVersion {
     v3(ArtifactoryVersion.v220, ArtifactoryVersion.v221, new LineNumberLayoutLoggerConverter()),
     v4(ArtifactoryVersion.v222, ArtifactoryVersion.v225, new PublicApiPackageChangeLoggerConverter()),
     v5(ArtifactoryVersion.v230, ArtifactoryVersion.v242, new JackrabbitLoggerConverter()),
-    v6(ArtifactoryVersion.v250, ArtifactoryVersion.getCurrent(), null);
+    v6(ArtifactoryVersion.v250, ArtifactoryVersion.v252, new RequestTraceLoggerConverter()),
+    v7(ArtifactoryVersion.v260, ArtifactoryVersion.getCurrent(), null);
 
     public static final String LOGGING_CONVERSION_PERFORMED = "loggingConversionPerformed";
 

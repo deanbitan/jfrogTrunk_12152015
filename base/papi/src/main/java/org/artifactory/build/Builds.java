@@ -18,8 +18,59 @@
 
 package org.artifactory.build;
 
+import org.artifactory.common.StatusHolder;
+import org.artifactory.fs.FileInfo;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Set;
+
 /**
  * @author Noam Y. Tenne
  */
 public interface Builds {
+
+    /**
+     * Retrieve builds
+     *
+     * @param name    Builds name
+     * @param number  An optional build number - can be null to retrieve all builds
+     * @param started An optional start time
+     * @return
+     */
+    @Nonnull
+    List<BuildRun> getBuilds(@Nonnull String name, @Nullable String number, @Nullable String started);
+
+    /**
+     * @param buildRun A lightweight build run
+     * @return Detailed build run details
+     */
+    @Nullable
+    DetailedBuildRun getDetailedBuild(@Nonnull BuildRun buildRun);
+
+    /**
+     * Removes the build of the given details. Build artifacts or dependencies are not removed.
+     *
+     * @param buildRun Build info details
+     * @return Operation status holder
+     */
+    @Nonnull
+    StatusHolder deleteBuild(@Nonnull BuildRun buildRun);
+
+    /**
+     * Locates the file info objects of all the given build's produced artifacts
+     *
+     * @param buildRun Build run to locate artifacts of
+     * @return All found artifact file infos
+     */
+    @Nonnull
+    Set<FileInfo> getArtifactFiles(@Nonnull BuildRun buildRun);
+
+    /**
+     * Saves or updates the given build configuration
+     *
+     * @param detailedBuildRun Build configuration to save
+     */
+    void saveBuild(@Nonnull DetailedBuildRun detailedBuildRun);
 }

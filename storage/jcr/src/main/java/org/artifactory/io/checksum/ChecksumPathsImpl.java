@@ -41,7 +41,6 @@ import org.apache.jackrabbit.core.value.InternalValue;
 import org.apache.jackrabbit.spi.Name;
 import org.artifactory.api.storage.GarbageCollectorInfo;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
@@ -129,14 +128,7 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
             initQueries(dataStore);
             connHelper = dataStore.getConnectionHelper();
             createTable = !connHelper.tableExists(tableName);
-            //For v1 - drop the table is exist and leave
-            if (ConstantValues.gcUseV1.getBoolean()) {
-                if (!createTable) {
-                    log.info("Using legacy garbage collector");
-                    dropTable();
-                }
-                return;
-            }
+
             //If started from a v1 version drop and recreate the table to cover for a failed conversion
             CompoundVersionDetails originalVersionDetails = ArtifactoryHome.get().getOriginalVersionDetails();
             if (!createTable && originalVersionDetails != null &&

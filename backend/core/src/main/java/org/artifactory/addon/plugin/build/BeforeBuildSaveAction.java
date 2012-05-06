@@ -19,11 +19,11 @@
 package org.artifactory.addon.plugin.build;
 
 import org.artifactory.addon.plugin.PluginAction;
-import org.artifactory.build.BuildContext;
+import org.artifactory.build.DetailedBuildRun;
 
 /**
  * @author Noam Y. Tenne
  */
 public interface BeforeBuildSaveAction extends PluginAction {
-    void beforeSave(BuildContext buildContext);
+    void beforeSave(DetailedBuildRun buildRun);
 }

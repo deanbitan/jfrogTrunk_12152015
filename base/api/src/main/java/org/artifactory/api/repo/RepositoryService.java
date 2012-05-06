@@ -76,6 +76,11 @@ public interface RepositoryService extends ImportableExportable {
 
     List<RemoteRepoDescriptor> getRemoteRepoDescriptors();
 
+    /**
+     * Doesn't work for virtual repositories (RTFACT-4891)
+     * @param key
+     * @return
+     */
     RepoDescriptor repoDescriptorByKey(String key);
 
     /**
@@ -600,4 +605,25 @@ public interface RepositoryService extends ImportableExportable {
     MetadataInfo getVirtualMetadataInfo(RepoPath repoPath, String metadataName);
 
     void assertValidDeployPath(RepoPath repoPath) throws RepoRejectException;
+
+    /**
+     * @param remoteRepoKey The remote repository key
+     * @return True if the remote repository is assumed to be offline due to download requests exceptions
+     * @see org.artifactory.repo.RemoteRepo#isAssumedOffline()
+     */
+    boolean isRemoteAssumedOffline(@Nonnull String remoteRepoKey);
+
+    /**
+     * @param remoteRepoKey The remote repository key
+     * @return The next date (in milliseconds) the online monitor will check for online status of the assumed offline
+     *         repository. 0 if the remote repository is not found or not assumed offline.
+     * @see org.artifactory.repo.RemoteRepo#isAssumedOffline()
+     * @see org.artifactory.repo.RemoteRepo#getNextOnlineCheckMillis()
+     */
+    long getRemoteNextOnlineCheck(@Nonnull String remoteRepoKey);
+
+    /**
+     * Manually reset the assumed offline flag to false (i.e., the repository is considered back online)
+     */
+    void resetAssumedOffline(@Nonnull String remoteRepoKey);
 }

@@ -98,8 +98,9 @@ public abstract class PathMatcher {
         }
         if (!CollectionUtils.isNullOrEmpty(includes)) {
             for (String include : includes) {
-                // If path is smaller than include verify if it's a sub path then return true
-                if (path.length() <= include.length() && antPathMatcher.matchStart(include, path)) {
+                // If path is smaller than include or end with / verify if it's a sub path then return true
+                if ((path.endsWith("/") || path.length() <= include.length())
+                        && antPathMatcher.matchStart(include, path)) {
                     return true;
                 }
                 boolean match = antPathMatcher.match(include, path);

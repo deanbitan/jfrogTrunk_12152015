@@ -11,7 +11,7 @@ FULL_VERSION="$2"
 RELEASE_NUMBER="$3"
 OUT_BUILD_DIR="$4"
 
-TOMCAT_NAME=apache-tomcat-7.0.14
+TOMCAT_NAME=apache-tomcat-7.0.27
 TOMCAT_FILE_NAME=$TOMCAT_NAME.tar.gz
 TOMCAT_DISTRO_URL=http://repo.jfrog.org/artifactory/distributions/org/apache/tomcat/$TOMCAT_FILE_NAME
 TOMCAT_DOWNLOAD_DIR=/tmp

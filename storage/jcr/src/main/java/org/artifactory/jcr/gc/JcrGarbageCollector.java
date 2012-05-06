@@ -28,7 +28,10 @@ import java.io.IOException;
 /**
  * @author freds
  * @date Jun 23, 2009
+ * @deprecated Was used when v1 GC existed. Remove after other refactoring completed
  */
+//TODO: [by YS] Remove this class
+@Deprecated
 public interface JcrGarbageCollector {
     /**
      * Scan the repository for binary object to garbage collect

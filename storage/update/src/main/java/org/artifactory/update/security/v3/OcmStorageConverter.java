@@ -174,6 +174,8 @@ public class OcmStorageConverter implements ConfigurationConverter<Session> {
                         .enabled(node.getProperty("enabled").getBoolean())
                         .updatableProfile(node.getProperty("updatableProfile").getBoolean());
                 MutableUserInfo user = builder.build();
+                user.setPrivateKey(node.hasProperty("privateKey") ? node.getProperty("privateKey").getString() : null);
+                user.setPublicKey(node.hasProperty("publicKey") ? node.getProperty("publicKey").getString() : null);
                 result.add(user);
                 if (node.hasProperty("groups")) {
                     Value[] groups = node.getProperty("groups").getValues();

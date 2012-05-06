@@ -18,7 +18,10 @@
 
 package org.artifactory.security;
 
+import com.google.common.collect.Sets;
 import org.testng.annotations.Test;
+
+import java.util.Set;
 
 import static org.testng.Assert.*;
 
@@ -37,6 +40,7 @@ public class UserConfigurationImplTest {
         assertTrue(userConfiguration.isProfileUpdatable(), "Unexpected default updatable profile state.");
         assertFalse(userConfiguration.isInternalPasswordDisabled(),
                 "Unexpected default internal password disabled state.");
+        assertNull(userConfiguration.getGroups(), "Unexpected default groups.");
         assertNull(userConfiguration.getLastLoggedIn(), "Unexpected default last logged in.");
         assertNull(userConfiguration.getRealm(), "Unexpected default realm.");
     }
@@ -50,6 +54,9 @@ public class UserConfigurationImplTest {
         userConfiguration.setAdmin(true);
         userConfiguration.setProfileUpdatable(true);
         userConfiguration.setInternalPasswordDisabled(true);
+
+        Set<String> groups = Sets.newHashSet("group1", "group2");
+        userConfiguration.setGroups(groups);
         userConfiguration.setLastLoggedIn("asfafdasfd");
         userConfiguration.setRealm("realm");
 
@@ -59,6 +66,7 @@ public class UserConfigurationImplTest {
         assertTrue(userConfiguration.isAdmin(), "Unexpected admin state.");
         assertTrue(userConfiguration.isProfileUpdatable(), "Unexpected updatable profile state.");
         assertTrue(userConfiguration.isInternalPasswordDisabled(), "Unexpected internal password disabled state.");
+        assertEquals(userConfiguration.getGroups(), groups, "Unexpected groups.");
         assertEquals(userConfiguration.getLastLoggedIn(), "asfafdasfd", "Unexpected last logged in.");
         assertEquals(userConfiguration.getRealm(), "realm", "Unexpected realm.");
     }

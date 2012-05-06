@@ -18,9 +18,9 @@
   -->
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.4.12"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.12
-        http://www.jfrog.org/xsd/artifactory-v1_4_12.xsd">
+        xmlns="http://artifactory.jfrog.org/xsd/1.4.14"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.14
+        http://www.jfrog.org/xsd/artifactory-v1_4_14.xsd">
     <!--
     enable/disable anonymous downloads
     -->
@@ -174,6 +174,7 @@
             <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>true</handleSnapshots>
+            <suppressPomConsistencyChecks>true</suppressPomConsistencyChecks>
             <url>http://download.java.net/maven/1</url>
             <remoteRepoLayoutRef>maven-1-default</remoteRepoLayoutRef>
         </remoteRepository>
@@ -293,7 +294,7 @@
         <!--
         number of seconds to cache artifact retrieval failures (normally communication errors)
         -->
-        <!--<failedRetrievalCachePeriodSecs>30</failedRetrievalCachePeriodSecs>-->
+        <!--<assumedOfflinePeriodSecs>300</assumedOfflinePeriodSecs>-->
         <!--
         number of seconds to remember artifact retrieval misses (artifact not found)
         -->
@@ -425,4 +426,8 @@
     <gcConfig>
         <cronExp>0 0 /4 * * ?</cronExp>
     </gcConfig>
+    <cleanupConfig>
+        <!-- By Default index once a day at 05:12AM -->
+        <cronExp>0 12 5 * * ?</cronExp>
+    </cleanupConfig>
 </config>

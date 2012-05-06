@@ -40,9 +40,6 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 
-import java.io.IOException;
-import java.io.Writer;
-
 /**
  * @author Noam Y. Tenne
  */
@@ -50,7 +47,7 @@ import java.io.Writer;
         keyAttributes = {Task.REPO_KEY},
         commandsToStop = {
                 @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE),
-                @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP, useKey = true)
+                @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP)
         }
 )
 public class RemoteReplicationJob extends QuartzCommand {
@@ -65,13 +62,26 @@ public class RemoteReplicationJob extends QuartzCommand {
             return;
         }
 
-        JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
-        RemoteReplicationDescriptor replication = ((RemoteReplicationDescriptor) jobDataMap.get(
-                ReplicationAddon.DESCRIPTOR));
+        RemoteReplicationDescriptor replication;
 
-        RemoteReplicationSettings settings = new RemoteReplicationSettingsBuilder(replication.getRepoPath(),
-                new LoggingWriter()).deleteExisting(replication.isSyncDeletes()).
-                includeProperties(replication.isSyncProperties()).timeout(replication.getSocketTimeoutMillis())
+        JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
+
+        Object manualInvocationDescriptor = jobDataMap.get(ReplicationAddon.TASK_MANUAL_DESCRIPTOR);
+        if (manualInvocationDescriptor != null) {
+            replication = ((RemoteReplicationDescriptor) manualInvocationDescriptor);
+        } else {
+            replication = context.getCentralConfig().getDescriptor().getRemoteReplication(
+                    jobDataMap.getString(Task.REPO_KEY));
+        }
+
+        if (replication == null) {
+            log.warn("Unable to execute replication for repo: cannot find replication descriptor.");
+            return;
+        }
+
+        RemoteReplicationSettings settings = new RemoteReplicationSettingsBuilder(replication.getRepoPath())
+                .deleteExisting(replication.isSyncDeletes())
+                .includeProperties(replication.isSyncProperties()).timeout(replication.getSocketTimeoutMillis())
                 .build();
 
         SecurityService securityService = context.beanForType(SecurityService.class);
@@ -86,25 +96,6 @@ public class RemoteReplicationJob extends QuartzCommand {
             log.debug("An error occurred while performing replication for repository '{}'.", e);
         } finally {
             securityService.nullifyContext();
-        }
-    }
-
-    /**
-     * Appends the received text to the logger
-     */
-    private static class LoggingWriter extends Writer {
-
-        @Override
-        public void write(char[] cbuf, int off, int len) throws IOException {
-            log.info(new String(cbuf, off, len));
-        }
-
-        @Override
-        public void flush() throws IOException {
-        }
-
-        @Override
-        public void close() throws IOException {
         }
     }
 }

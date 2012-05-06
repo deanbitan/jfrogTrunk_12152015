@@ -30,6 +30,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -61,7 +62,14 @@ public class PluginsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPluginInfo() {
-        return addonsManager.addonByType(RestAddon.class).getUserPluginInfo();
+        return getPluginInfo(null);
+    }
+
+    @GET
+    @Path("{pluginType: .+}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPluginInfo(@Nullable @PathParam("pluginType") String pluginType) {
+        return addonsManager.addonByType(RestAddon.class).getUserPluginInfo(pluginType);
     }
 
     @POST
@@ -79,18 +87,49 @@ public class PluginsResource {
             //Just return accepted (202)
             return Response.status(HttpStatus.SC_ACCEPTED).build();
         } else {
-            Response.ResponseBuilder builder;
-            int status = responseCtx.getStatus();
-            if (status != ResponseCtx.UNSET_STATUS) {
-                builder = Response.status(status);
-            } else {
-                builder = Response.ok();
-            }
-            String message = responseCtx.getMessage();
-            if (message != null) {
-                builder.entity(message);
-            }
-            return builder.build();
+            return responseFromResponseCtx(responseCtx);
         }
+    }
+
+    @GET
+    @Path(PATH_STAGING + "/{strategyName: .+}")
+    @Produces({MT_BUILD_STAGING_STRATEGY, MediaType.APPLICATION_JSON})
+    public Response getBuildStagingStrategy(
+            @PathParam("strategyName") String strategyName,
+            @QueryParam("buildName") String buildName,
+            @QueryParam(PARAM_PARAMS) KeyValueList paramsList) {
+        Map<String, List<String>> params =
+                paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
+        return addonsManager.addonByType(RestAddon.class).getStagingStrategy(strategyName, buildName, params);
+    }
+
+    @POST
+    @Path(PATH_PROMOTE + "/{promotionName: .+}/{buildName: .+}/{buildNumber: .+}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response promote(
+            @PathParam("promotionName") String promotionName,
+            @PathParam("buildName") String buildName,
+            @PathParam("buildNumber") String buildNumber,
+            @QueryParam(PARAM_PARAMS) KeyValueList paramsList) {
+        Map<String, List<String>> params =
+                paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
+        ResponseCtx responseCtx = addonsManager.addonByType(RestAddon.class).promote(promotionName, buildName,
+                buildNumber, params);
+        return responseFromResponseCtx(responseCtx);
+    }
+
+    private Response responseFromResponseCtx(ResponseCtx responseCtx) {
+        Response.ResponseBuilder builder;
+        int status = responseCtx.getStatus();
+        if (status != ResponseCtx.UNSET_STATUS) {
+            builder = Response.status(status);
+        } else {
+            builder = Response.ok();
+        }
+        String message = responseCtx.getMessage();
+        if (message != null) {
+            builder.entity(message);
+        }
+        return builder.build();
     }
 }

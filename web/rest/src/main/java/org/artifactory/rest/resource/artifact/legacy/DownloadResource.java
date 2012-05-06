@@ -16,7 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.rest.resource.artifact;
+package org.artifactory.rest.resource.artifact.legacy;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.RestAddon;

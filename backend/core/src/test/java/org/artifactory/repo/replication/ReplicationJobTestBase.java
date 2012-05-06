@@ -20,6 +20,7 @@ package org.artifactory.repo.replication;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.ReplicationAddon;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.easymock.EasyMock;
@@ -38,23 +39,24 @@ public abstract class ReplicationJobTestBase {
     protected static final JobExecutionContext executionContext = EasyMock.createMock(JobExecutionContext.class);
     protected static final JobDetail jobDetail = EasyMock.createMock(JobDetail.class);
     protected static final JobDataMap jobDataMap = EasyMock.createMock(JobDataMap.class);
+    protected static final CentralConfigService configService = EasyMock.createMock(CentralConfigService.class);
     protected static final SecurityService securityService = EasyMock.createMock(SecurityService.class);
     protected static final AddonsManager addonsManager = EasyMock.createMock(AddonsManager.class);
     protected static final ReplicationAddon replicationAddon = EasyMock.createMock(ReplicationAddon.class);
 
     @BeforeMethod
     public void reset() throws Exception {
-        EasyMock.reset(artifactoryContext, executionContext, jobDetail, jobDataMap, securityService, addonsManager,
-                replicationAddon);
+        EasyMock.reset(artifactoryContext, executionContext, jobDetail, jobDataMap, configService, securityService,
+                addonsManager, replicationAddon);
     }
 
     protected void replayMocks() {
-        EasyMock.replay(artifactoryContext, executionContext, jobDetail, jobDataMap, securityService, addonsManager,
-                replicationAddon);
+        EasyMock.replay(artifactoryContext, executionContext, jobDetail, jobDataMap, configService, securityService,
+                addonsManager, replicationAddon);
     }
 
     protected void verifyMocks() {
-        EasyMock.verify(artifactoryContext, executionContext, jobDetail, jobDataMap, securityService, addonsManager,
-                replicationAddon);
+        EasyMock.verify(artifactoryContext, executionContext, jobDetail, jobDataMap, configService, securityService,
+                addonsManager, replicationAddon);
     }
 }

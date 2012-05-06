@@ -118,6 +118,16 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     }
 
     @Override
+    public boolean isArchiveBrowsingEnabled() {
+        return remoteRepo.isArchiveBrowsingEnabled();
+    }
+
+    @Override
+    public void setArchiveBrowsingEnabled(boolean archiveBrowsingEnabled) {
+        remoteRepo.setArchiveBrowsingEnabled(archiveBrowsingEnabled);
+    }
+
+    @Override
     public boolean identicalCache(RepoDescriptor oldDescriptor) {
         if (!(oldDescriptor instanceof LocalCacheRepoDescriptor)) {
             return false;

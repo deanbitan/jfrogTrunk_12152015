@@ -26,6 +26,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
@@ -68,7 +69,7 @@ import java.util.Map;
         propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
                 "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
                 "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
-                "remoteReplications", "localReplications", "gcConfig"}, namespace = Descriptor.NS)
+                "remoteReplications", "localReplications", "gcConfig", "cleanupConfig"}, namespace = Descriptor.NS)
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CentralConfigDescriptorImpl implements MutableCentralConfigDescriptor {
 
@@ -151,6 +152,9 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElement
     private GcConfigDescriptor gcConfig;
+
+    @XmlElement
+    private CleanupConfigDescriptor cleanupConfig;
 
     @Override
     public Map<String, LocalRepoDescriptor> getLocalRepositoriesMap() {
@@ -791,11 +795,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
-    public GcConfigDescriptor getGcConfig() {
-        return gcConfig;
-    }
-
-    @Override
     public String getServerUrlForEmail() {
         String serverUrl = "";
         if (mailServer != null) {
@@ -817,8 +816,23 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public GcConfigDescriptor getGcConfig() {
+        return gcConfig;
+    }
+
+    @Override
     public void setGcConfig(GcConfigDescriptor gcConfig) {
         this.gcConfig = gcConfig;
+    }
+
+    @Override
+    public CleanupConfigDescriptor getCleanupConfig() {
+        return cleanupConfig;
+    }
+
+    @Override
+    public void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor) {
+        this.cleanupConfig = cleanupConfigDescriptor;
     }
 
     private <T extends ReplicationBaseDescriptor> void addReplication(T replicationDescriptor,

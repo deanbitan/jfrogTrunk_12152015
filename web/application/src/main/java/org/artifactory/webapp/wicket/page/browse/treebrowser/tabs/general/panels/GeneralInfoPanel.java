@@ -54,10 +54,13 @@ import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
+import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.slf4j.Logger;
 
@@ -112,7 +115,7 @@ public class GeneralInfoPanel extends Panel {
         ExternalLink treeUrl = new ExternalLink("nameLink", pathUrl, itemDisplayName);
         infoBorder.add(treeUrl);
         infoBorder.add(new HelpBubble("nameLink.help",
-                "Copy this link to navigate directly to the artifact in tree view."));
+                "Copy this link to navigate directly to this item in the tree browser."));
 
         LabeledValue descriptionLabel = new LabeledValue("description", "Description: ");
         descriptionLabel.setEscapeValue(false);
@@ -161,17 +164,7 @@ public class GeneralInfoPanel extends Panel {
             urlContainer.replaceWith(externalLink);
         }
 
-        final boolean isOffline = remoteRepo == null || remoteRepo.isOffline();
-        final boolean globalOffline = centralConfigService.getDescriptor().isOfflineMode();
-        final boolean isCacheRepo = itemIsRepo && isCache;
-        String status = (isOffline || globalOffline) ? "Offline" : "Online";
-        LabeledValue offlineLabel = new LabeledValue("status", "Online Status: ", status) {
-            @Override
-            public boolean isVisible() {
-                return isCacheRepo;
-            }
-        };
-        infoBorder.add(offlineLabel);
+        addOnlineStatusPanel(itemIsRepo, isCache, remoteRepo, infoBorder);
 
         final boolean repoIsBlackedOut = repoDescriptor.isBlackedOut();
         LabeledValue blackListedLabel = new LabeledValue("blackListed", "This repository is black-listed!") {
@@ -192,8 +185,23 @@ public class GeneralInfoPanel extends Panel {
         } else {
             path = repoItem.getRepoPath();
         }
-        LabeledValue repoPath = new LabeledValue("repoPath", "Repository Path: ", path + "");
+        LabeledValue repoPath = new LabeledValue("repoPath", "Repository Path: ");
         infoBorder.add(repoPath);
+
+        String pathLink = RequestUtils.getWicketServletContextUrl();
+        if (!pathLink.endsWith("/")) {
+            pathLink += "/";
+        }
+        pathLink += ArtifactoryRequest.SIMPLE_BROWSING_PATH + "/" + repoItem.getRepoPath().getRepoKey() + "/";
+        if (repoItem instanceof CannonicalEnabledActionableFolder) {
+            pathLink += ((CannonicalEnabledActionableFolder) repoItem).getCanonicalPath().getPath();
+        } else {
+            pathLink += PathUtils.getParent(repoItem.getRepoPath().getPath());
+        }
+        ExternalLink repoPathUrl = new ExternalLink("repoPathLink", pathLink, path + "");
+        infoBorder.add(repoPathUrl);
+        infoBorder.add(new HelpBubble("repoPathLink.help",
+                "Copy this link to navigate directly to this item in the simple browser."));
 
         addItemInfoLabels(infoBorder, itemInfo);
 
@@ -206,6 +214,16 @@ public class GeneralInfoPanel extends Panel {
         addFilteredResourceCheckbox(infoBorder, itemInfo);
 
         return this;
+    }
+
+    private void addOnlineStatusPanel(boolean itemIsRepo, boolean cache, final RemoteRepoDescriptor remoteRepo,
+            FieldSetBorder infoBorder) {
+        final boolean isCacheRepo = itemIsRepo && cache;
+        if (isCacheRepo) {
+            infoBorder.add(new OnlineStatusPanel("onlineStatusPanel", remoteRepo));
+        } else {
+            infoBorder.add(new WebMarkupContainer("onlineStatusPanel"));
+        }
     }
 
     private void addArtifactCount(final boolean itemIsRepo, final FieldSetBorder infoBorder,

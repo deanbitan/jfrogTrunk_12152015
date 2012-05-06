@@ -62,8 +62,6 @@ class SecurityGeneralConfigPanel extends TitledActionPanel {
 
         addAnonymousAccessField(form);
 
-        addArchiveBrowsingField(form);
-
         addHideUnauthorizedResourcesField(form);
 
         addEncryptionPolicyDropDown(form);
@@ -77,13 +75,6 @@ class SecurityGeneralConfigPanel extends TitledActionPanel {
         anonAccess.setLabel(Model.of("Allow Anonymous Access"));
         form.add(anonAccess);
         form.add(new SchemaHelpBubble("anonAccessEnabled.help"));
-    }
-
-    private void addArchiveBrowsingField(Form<SecurityDescriptor> form) {
-        StyledCheckbox archiveBrowsing = new StyledCheckbox("archiveBrowsingEnabled");
-        archiveBrowsing.setLabel(Model.of("Allow Archive Browsing"));
-        form.add(archiveBrowsing);
-        form.add(new SchemaHelpBubble("archiveBrowsingEnabled.help"));
     }
 
     private void addHideUnauthorizedResourcesField(Form form) {

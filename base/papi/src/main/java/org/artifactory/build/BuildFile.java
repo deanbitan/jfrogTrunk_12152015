@@ -18,8 +18,32 @@
 
 package org.artifactory.build;
 
+import org.jfrog.build.api.BaseBuildFileBean;
+
+import java.io.Serializable;
+
 /**
+ * A basic build run info holder
+ *
  * @author Noam Y. Tenne
  */
-public interface BuildContext {
+abstract class BuildFile implements Serializable {
+
+    private BaseBuildFileBean buildFile;
+
+    protected BuildFile(BaseBuildFileBean buildFile) {
+        this.buildFile = buildFile;
+    }
+
+    public String getType() {
+        return buildFile.getType();
+    }
+
+    public String getSha1() {
+        return buildFile.getSha1();
+    }
+
+    public String getMd5() {
+        return buildFile.getMd5();
+    }
 }

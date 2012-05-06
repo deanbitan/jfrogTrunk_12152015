@@ -36,8 +36,6 @@ public interface StorageService {
      */
     long getStorageSize();
 
-    void exportDbDataStore(String destDir);
-
     /**
      * Check that manual garbage collection can be run, and then activate the double GC asynchronously.
      *

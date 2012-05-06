@@ -57,9 +57,22 @@ public class LocalReplicationJob extends QuartzCommand {
             return;
         }
 
+        LocalReplicationDescriptor replication;
+
         JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
-        LocalReplicationDescriptor replication = ((LocalReplicationDescriptor) jobDataMap.get(
-                ReplicationAddon.DESCRIPTOR));
+
+        Object manualInvocationDescriptor = jobDataMap.get(ReplicationAddon.TASK_MANUAL_DESCRIPTOR);
+        if (manualInvocationDescriptor != null) {
+            replication = ((LocalReplicationDescriptor) manualInvocationDescriptor);
+        } else {
+            replication = context.getCentralConfig().getDescriptor().getLocalReplication(
+                    jobDataMap.getString(Task.REPO_KEY));
+        }
+
+        if (replication == null) {
+            log.warn("Unable to execute replication for repo: cannot find replication descriptor.");
+            return;
+        }
 
         LocalReplicationSettings settings = new LocalReplicationSettingsBuilder(replication.getRepoPath(),
                 replication.getUrl()).proxyDescriptor(replication.getProxy()).

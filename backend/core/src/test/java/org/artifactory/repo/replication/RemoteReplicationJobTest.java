@@ -18,7 +18,6 @@
 
 package org.artifactory.repo.replication;
 
-import org.apache.commons.io.output.NullWriter;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.ReplicationAddon;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
@@ -26,12 +25,17 @@ import org.artifactory.addon.replication.RemoteReplicationSettingsBuilder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.security.SecurityService;
+import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
-import org.easymock.EasyMock;
+import org.artifactory.schedule.Task;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+
 
 /**
  * @author Noam Y. Tenne
@@ -54,8 +58,7 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
         replicationDescriptor.setSyncProperties(true);
         replicationDescriptor.setSocketTimeoutMillis(111111);
 
-        replicationSettings = new RemoteReplicationSettingsBuilder(replicationDescriptor.getRepoPath(),
-                new NullWriter())
+        replicationSettings = new RemoteReplicationSettingsBuilder(replicationDescriptor.getRepoPath())
                 .deleteExisting(replicationDescriptor.isSyncDeletes())
                 .includeProperties(replicationDescriptor.isSyncProperties())
                 .timeout(replicationDescriptor.getSocketTimeoutMillis())
@@ -64,18 +67,17 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
 
     @Test
     public void testContextNotReady() throws Exception {
-        EasyMock.expect(artifactoryContext.isReady()).andReturn(false);
+        expect(artifactoryContext.isReady()).andReturn(false);
         replayMocks();
         job.onExecute(null);
         verifyMocks();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void testNullDescriptor() throws Exception {
-        EasyMock.expect(artifactoryContext.isReady()).andReturn(true);
-        EasyMock.expect(executionContext.getJobDetail()).andReturn(jobDetail);
-        EasyMock.expect(jobDetail.getJobDataMap()).andReturn(jobDataMap);
-        EasyMock.expect(jobDataMap.get(ReplicationAddon.DESCRIPTOR)).andReturn(null);
+    public void testNullRepoKey() throws Exception {
+        expect(artifactoryContext.isReady()).andReturn(true);
+        expect(executionContext.getJobDetail()).andReturn(jobDetail);
+        expect(jobDetail.getJobDataMap()).andReturn(jobDataMap);
         replayMocks();
         job.onExecute(null);
         verifyMocks();
@@ -83,19 +85,25 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
 
     @Test
     public void testExecutionException() throws Exception {
-        EasyMock.expect(artifactoryContext.isReady()).andReturn(true);
-        EasyMock.expect(executionContext.getJobDetail()).andReturn(jobDetail);
-        EasyMock.expect(jobDetail.getJobDataMap()).andReturn(jobDataMap);
-        EasyMock.expect(jobDataMap.get(ReplicationAddon.DESCRIPTOR)).andReturn(replicationDescriptor);
-        EasyMock.expect(artifactoryContext.beanForType(SecurityService.class)).andReturn(securityService);
+        expect(artifactoryContext.isReady()).andReturn(true);
+        expect(executionContext.getJobDetail()).andReturn(jobDetail);
+        expect(jobDetail.getJobDataMap()).andReturn(jobDataMap);
+        expect(jobDataMap.getString(Task.REPO_KEY)).andReturn("key");
+        expect(jobDataMap.get(ReplicationAddon.TASK_MANUAL_DESCRIPTOR)).andReturn(null);
+
+        CentralConfigDescriptorImpl centralConfig = new CentralConfigDescriptorImpl();
+        centralConfig.addRemoteReplication(replicationDescriptor);
+        expect(configService.getDescriptor()).andReturn(centralConfig);
+        expect(artifactoryContext.getCentralConfig()).andReturn(configService);
+        expect(artifactoryContext.beanForType(SecurityService.class)).andReturn(securityService);
         securityService.authenticateAsSystem();
-        EasyMock.expectLastCall();
-        EasyMock.expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
-        EasyMock.expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
-        EasyMock.expect(replicationAddon.performRemoteReplication(replicationSettings))
+        expectLastCall();
+        expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
+        expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
+        expect(replicationAddon.performRemoteReplication(replicationSettings))
                 .andThrow(new IOException());
         securityService.nullifyContext();
-        EasyMock.expectLastCall();
+        expectLastCall();
         replayMocks();
         job.onExecute(executionContext);
         verifyMocks();
@@ -103,22 +111,48 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
 
     @Test
     public void testExecution() throws Exception {
-        EasyMock.expect(artifactoryContext.isReady()).andReturn(true);
-        EasyMock.expect(executionContext.getJobDetail()).andReturn(jobDetail);
-        EasyMock.expect(jobDetail.getJobDataMap()).andReturn(jobDataMap);
-        EasyMock.expect(jobDataMap.get(ReplicationAddon.DESCRIPTOR)).andReturn(replicationDescriptor);
-        EasyMock.expect(artifactoryContext.beanForType(SecurityService.class)).andReturn(securityService);
+        expect(artifactoryContext.isReady()).andReturn(true);
+        expect(executionContext.getJobDetail()).andReturn(jobDetail);
+        expect(jobDetail.getJobDataMap()).andReturn(jobDataMap);
+        expect(jobDataMap.getString(Task.REPO_KEY)).andReturn("key");
+        expect(jobDataMap.get(ReplicationAddon.TASK_MANUAL_DESCRIPTOR)).andReturn(null);
+
+        CentralConfigDescriptorImpl centralConfig = new CentralConfigDescriptorImpl();
+        centralConfig.addRemoteReplication(replicationDescriptor);
+        expect(configService.getDescriptor()).andReturn(centralConfig);
+        expect(artifactoryContext.getCentralConfig()).andReturn(configService);
+        expect(artifactoryContext.beanForType(SecurityService.class)).andReturn(securityService);
         securityService.authenticateAsSystem();
-        EasyMock.expectLastCall();
-        EasyMock.expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
-        EasyMock.expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
-        EasyMock.expect(replicationAddon.performRemoteReplication(replicationSettings))
+        expectLastCall();
+        expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
+        expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
+        expect(replicationAddon.performRemoteReplication(replicationSettings))
                 .andReturn(new MultiStatusHolder());
         securityService.nullifyContext();
-        EasyMock.expectLastCall();
+        expectLastCall();
         replayMocks();
         job.onExecute(executionContext);
         verifyMocks();
     }
 
+    @Test
+    public void testManualExecution() throws Exception {
+        expect(artifactoryContext.isReady()).andReturn(true);
+        expect(executionContext.getJobDetail()).andReturn(jobDetail);
+        expect(jobDetail.getJobDataMap()).andReturn(jobDataMap);
+        expect(jobDataMap.get(ReplicationAddon.TASK_MANUAL_DESCRIPTOR)).andReturn(replicationDescriptor);
+
+        expect(artifactoryContext.beanForType(SecurityService.class)).andReturn(securityService);
+        securityService.authenticateAsSystem();
+        expectLastCall();
+        expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
+        expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
+        expect(replicationAddon.performRemoteReplication(replicationSettings))
+                .andReturn(new MultiStatusHolder());
+        securityService.nullifyContext();
+        expectLastCall();
+        replayMocks();
+        job.onExecute(executionContext);
+        verifyMocks();
+    }
 }

@@ -51,7 +51,7 @@ public interface InternalSearchService extends JcrSearchService, SearchService, 
     @Lock(transactional = true)
     void index(RepoPath archiveRepoPath);
 
-    @Async(transactional = true, delayUntilAfterCommit = true)
+    @Async(delayUntilAfterCommit = true)
     void asyncIndex(RepoPath archiveRepoPath);
 
     /**

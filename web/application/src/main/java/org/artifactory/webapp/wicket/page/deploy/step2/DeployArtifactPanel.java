@@ -457,7 +457,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
 
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                ComponentPersister.saveChildren(this);
+                ComponentPersister.saveChildren(DeployArtifactForm.this);
 
                 try {
                     //Make sure not to override a good pom.

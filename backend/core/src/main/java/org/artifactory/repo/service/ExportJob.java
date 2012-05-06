@@ -42,7 +42,7 @@ import org.slf4j.Logger;
 @JobCommand(manualUser = TaskUser.CURRENT,
         keyAttributes = {Task.REPO_KEY},
         commandsToStop = {
-                @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP, useKey = true),
+                @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE)
         }
 )

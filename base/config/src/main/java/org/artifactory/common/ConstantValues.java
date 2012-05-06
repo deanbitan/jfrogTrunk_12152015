@@ -45,7 +45,6 @@ public enum ConstantValues {
     locksDebugTimeouts("locks.debugTimeouts", FALSE),
     taskCompletionLockTimeoutRetries("task.completionLockTimeoutRetries", 100),
     substituteRepoKeys("repo.key.subst."),
-    repoCleanupIntervalHours("repo.cleanup.intervalHours", 21),
     repoConcurrentDownloadSyncTimeoutSecs("repo.concurrentDownloadSyncTimeoutSecs", Seconds.MINUTE * 15),
     fsItemCacheIdleTimeSecs("fsitem.cache.idleTimeSecs", Seconds.MINUTE * 20),
     searchMaxResults("search.maxResults", 500),
@@ -65,7 +64,6 @@ public enum ConstantValues {
     gcScanSleepBetweenIterationsMillis("gc.scanSleepBetweenIterationsMillis", 200),
     gcFileScanSleepIterationMillis("gc.fileScanSleepIterationMillis", 1000),
     gcFileScanSleepMillis("gc.fileScanSleepMillis", 250),
-    gcUseV1("gc.useV1", false),
     gcMaxCacheEntries("gc.maxCacheEntries", 10000),
     trafficCollectionActive("traffic.collectionActive", FALSE),
     securityAuthenticationCacheIdleTimeSecs("security.authentication.cache.idleTimeSecs", Seconds.MINUTE * 5),
@@ -77,6 +75,7 @@ public enum ConstantValues {
     mvnMetadataVersionsComparator("mvn.metadataVersionsComparatorFqn"),
     mvnDynamicMetadataCacheRetentionSecs("mvn.dynamicMetadata.cacheRetentionSecs", 10),
     mvnMetadataVersion3Enabled("mvn.metadata.version3.enabled", TRUE),
+    mvnLatestSnapshotResolutionEnabled("mvn.mvnLatestSnapshotResolutionEnabled", TRUE),
     buildMaxFoldersToScanForDeletionWarnings("build.maxFoldersToScanForDeletionWarnings", 2),
     missingBuildChecksumCacheIdeTimeSecs("build.checksum.cache.idleTimeSecs", Seconds.MINUTE * 5),
     artifactoryUpdatesRefreshIntervalSecs("updates.refreshIntervalSecs", Seconds.HOUR * 4),
@@ -107,7 +106,11 @@ public enum ConstantValues {
     uiSearchMaxRowsPerPage("ui.search.maxRowsPerPage", 20),
     nugetUpdateRequestAggregationTimeWindowSecs("nuget.updateRequest.aggregationTimeWindowSecs", 20),
     nugetUpdateRequestAggregationCycleSecs("nuget.updateRequest.aggregationCycleSecs", 20),
-    nugetSearchMaxResult("nuget.search.maxResults", 100);
+    nugetSearchMaxResult("nuget.search.maxResults", 100),
+    replicationChecksumDeployMinSizeKb("replication.checksumDeploy.minSizeKb", 10),
+    replicationConsumerQueueSize("replication.consumer.queueSize", 1),
+    replicationLocalIterationSleepThresholdMillis("replication.local.iteration.sleepThresholdMillis", 1000),
+    replicationLocalIterationSleepMillis("replication.local.iteration.sleepMillis", 100);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

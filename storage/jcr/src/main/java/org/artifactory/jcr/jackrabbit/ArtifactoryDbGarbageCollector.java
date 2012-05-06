@@ -67,7 +67,11 @@ import java.util.Set;
  * gc.stopScan();
  * gc.deleteUnused();
  * </pre>
+ *
+ * @deprecated Was used when v1 GC existed. Remove after other refactoring completed
  */
+//TODO: [by YS] Remove this class
+@Deprecated
 public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryDbGarbageCollector.class);
 
@@ -160,8 +164,8 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
             throw new IllegalStateException("Cannot execute multiple time the same Artifactory Garbage Collector!");
         }
         info.startScanTimestamp = System.currentTimeMillis();
-        info.dataStoreQueryTime = store.scanDataStore(System.nanoTime());
-        info.initialSize = store.getDataStoreSize();
+        //info.dataStoreQueryTime = store.scanDataStore(System.nanoTime());
+        //info.initialSize = store.getDataStoreSize();
         info.initialCount = store.getDataStoreNbElements();
         if (ConstantValues.gcUseIndex.getBoolean() || pmList == null || !persistenceManagerScan) {
             scanningSessionList();
@@ -396,7 +400,7 @@ public class ArtifactoryDbGarbageCollector implements JcrGarbageCollector {
         long[] result = store.cleanUnreferencedItems();
         info.cleanedElementsCount = (int) result[0];
         info.totalSizeCleaned = result[1];
-        info.printV1CollectionInfo(start, store.getDataStoreSize());
+        //info.printV1CollectionInfo(start, store.getDataStoreSize());
         return info.cleanedElementsCount;
     }
 

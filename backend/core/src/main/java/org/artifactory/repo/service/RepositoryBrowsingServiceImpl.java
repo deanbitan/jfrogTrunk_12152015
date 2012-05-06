@@ -45,6 +45,7 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
+import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
@@ -90,6 +91,19 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         if (fsItem != null) {
             ItemInfo itemInfo = fsItem.getInfo();
             return BrowsableItem.getItem(itemInfo);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public VirtualBrowsableItem getVirtualRepoBrowsableItem(RepoPath repoPath) {
+        VirtualRepoItem virtualRepoItem = getVirtualRepoItem(repoPath);
+        if (virtualRepoItem != null) {
+            ItemInfo itemInfo = virtualRepoItem.getItemInfo();
+            return new VirtualBrowsableItem(itemInfo.getName(), itemInfo.isFolder(), itemInfo.getCreated(),
+                    itemInfo.getLastModified(), itemInfo.isFolder() ? -1 : ((FileInfo) itemInfo).getSize(),
+                    repoPath, virtualRepoItem.getRepoKeys());
         } else {
             return null;
         }
@@ -149,11 +163,13 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                             ((FileInfo) itemInfo).getChecksumsInfo(), browsableItem));
                 }
             }
+            LockingHelper.releaseReadLock(childRepoPath);
         }
 
         if (criteria.isIncludeMavenMetadata()) {
             addBrowsableMetadataAndChecksums(repo, repoPathFolder, repoPathChildren, criteria);
         }
+        LockingHelper.releaseReadLock(repoPathFolder.getRepoPath());
         //TODO: [by ys] the sort can make the up path not be the first
         Collections.sort(repoPathChildren);
         return repoPathChildren;
@@ -230,7 +246,11 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             // remove the remote repository base url
             String path = StringUtils.removeStart(remoteItem.getUrl(), repo.getUrl());
             RepoPath remoteRepoPath = InternalRepoPathFactory.create(repoPath.getRepoKey(), path);
-            if (authService.canImplicitlyReadParentPath(repoPath) && repo.accepts(remoteRepoPath.getPath())) {
+            String pathToTest = remoteRepoPath.getPath();
+            if (remoteItem.isDirectory()) {
+                pathToTest += "/";
+            }
+            if (authService.canImplicitlyReadParentPath(repoPath) && repo.accepts(pathToTest)) {
                 BrowsableItem browsableItem = new RemoteBrowsableItem(remoteItem, remoteRepoPath);
                 children.add(browsableItem);
             }

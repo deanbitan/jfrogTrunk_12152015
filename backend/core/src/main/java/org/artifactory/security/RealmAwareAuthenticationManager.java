@@ -68,8 +68,8 @@ public class RealmAwareAuthenticationManager extends ProviderManager implements 
      * After the user has been authenticated, it will be updated with the appropriate <i>realm</i> that it came from.
      */
     @Override
-    public Authentication doAuthentication(Authentication authentication) throws AuthenticationException {
-        Authentication result = super.doAuthentication(authentication);
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        Authentication result = super.authenticate(authentication);
         if (result instanceof RealmAwareAuthentication) {
             RealmAwareAuthentication realmAwareAuthentication = (RealmAwareAuthentication) result;
             String realm = realmAwareAuthentication.getRealm();

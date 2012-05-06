@@ -656,7 +656,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
             //Build key by UUID + current time millis + client ip -> encoded in B64
             UUID uuid = UUID.randomUUID();
             String passwordKey = uuid.toString() + ":" + System.currentTimeMillis() + ":" + remoteAddress;
-            byte[] encodedKey = Base64.encodeBase64(passwordKey.getBytes());
+            byte[] encodedKey = Base64.encodeBase64URLSafe(passwordKey.getBytes());
             String encodedKeyString = new String(encodedKey);
 
             MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);

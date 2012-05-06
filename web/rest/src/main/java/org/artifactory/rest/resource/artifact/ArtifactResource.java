@@ -24,13 +24,13 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
-import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.ItemLastModified;
 import org.artifactory.api.rest.artifact.ItemMetadata;
 import org.artifactory.api.rest.artifact.ItemMetadataNames;
@@ -122,6 +122,9 @@ public class ArtifactResource {
     @Autowired
     private RepositoryBrowsingService repoBrowsingService;
 
+    @Autowired
+    private CentralConfigService centralConfig;
+
     @GET
     @Path("{path: .+}")
     @Produces({MediaType.APPLICATION_JSON, MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_METADATA_NAMES, MT_ITEM_PROPERTIES,
@@ -136,7 +139,21 @@ public class ArtifactResource {
             @QueryParam("mdTimestamps") int mdTimestamps,
             @QueryParam("properties") StringList properties,
             @QueryParam("lastModified") String lastModified,
-            @QueryParam("permissions") String permissions) throws IOException {
+            @QueryParam("permissions") String permissions,
+            @QueryParam("includeRootPath") int includeRootPath) throws IOException {
+
+        RepoPath repoPath = RestUtils.calcRepoPathFromRequestPath(path);
+        if (!authorizationService.canRead(repoPath)) {
+            boolean hideUnauthorizedResources =
+                    centralConfig.getDescriptor().getSecurity().isHideUnauthorizedResources();
+            if (hideUnauthorizedResources) {
+                return Response.status(Response.Status.NOT_FOUND).entity("Resource not found").build();
+            } else {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity("Request for '" + repoPath + "' is forbidden for user '" +
+                                authorizationService.currentUsername() + "'.").build();
+            }
+        }
 
         //Divert to file list request if the list param is mentioned
         if (list != null) {
@@ -144,7 +161,8 @@ public class ArtifactResource {
                 return Response.status(HttpStatus.SC_FORBIDDEN).
                         entity("This resource is available to authenticated users only.").build();
             }
-            return Response.ok(getFileList(path, deep, depth, listFolders, mdTimestamps), MT_FILE_LIST).build();
+            log.debug("Received file list request for: {}. ", path);
+            return writeStreamingFileList(path, deep, depth, listFolders, mdTimestamps, includeRootPath);
         }
 
         if (lastModified != null) {
@@ -200,41 +218,36 @@ public class ArtifactResource {
         return false;
     }
 
-    /**
-     * Returns a list of files under the given folder path
-     *
-     * @param path         Path to scan files for
-     * @param deep         Zero if the scanning should be shallow. One for deep
-     * @param listFolders  Zero if folders should not be included in the list. One if they should
-     * @param mdTimestamps Zero if metadata last modified timestamps should not be included in the list. One if they
-     *                     should
-     */
-    private FileList getFileList(String path, int deep, int depth, int listFolders, int mdTimestamps)
-            throws IOException {
+    private Response writeStreamingFileList(String path, int deep, int depth, int listFolders, int mdTimestamps,
+            int includeRootPath) throws IOException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
-            return restAddon.getFileList(request.getRequestURL().toString(), path, deep, depth, listFolders,
-                    mdTimestamps);
+            restAddon.writeStreamingFileList(response, request.getRequestURL().toString(), path, deep,
+                    depth, listFolders, mdTimestamps, includeRootPath);
+            return Response.ok().build();
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(iae.getMessage()).build();
         } catch (DoesNotExistException dnee) {
-            log.debug("Not exists", dnee);
+            log.debug("Does not exist", dnee);
             response.sendError(HttpStatus.SC_NOT_FOUND, dnee.getMessage());
+            return Response.status(HttpStatus.SC_NOT_FOUND).entity(dnee.getMessage()).build();
         } catch (FolderExpectedException fee) {
             log.debug("Folder expected", fee);
             response.sendError(HttpStatus.SC_BAD_REQUEST, fee.getMessage());
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(fee.getMessage()).build();
         } catch (BlackedOutException boe) {
             log.debug("Repository is blacked out", boe);
             response.sendError(HttpStatus.SC_NOT_FOUND, boe.getMessage());
+            return Response.status(HttpStatus.SC_NOT_FOUND).entity(boe.getMessage()).build();
         } catch (MissingRestAddonException mrae) {
             throw mrae;
         } catch (Exception e) {
-            log.error("Could not get retrieve list", e);
-            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "An error occurred while retrieving file list: " +
-                    e.getMessage());
+            log.error("Could not retrieve list", e);
+            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+                    .entity("An error occurred while retrieving file list: " + e.getMessage()).build();
         }
-
-        return null;
     }
 
     /**

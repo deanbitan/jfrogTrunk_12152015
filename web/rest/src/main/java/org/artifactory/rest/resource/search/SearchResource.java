@@ -166,6 +166,18 @@ public class SearchResource {
         return new DependencySearchResource(restAddon, request, response);
     }
 
+    @Path(SearchRestConstants.PATH_VERSIONS)
+    public ArtifactVersionsSearchResource versionsSearch() {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return new ArtifactVersionsSearchResource(restAddon, response);
+    }
+
+    @Path(SearchRestConstants.PATH_LATEST_VERSION)
+    public ArtifactLatestVersionSearchResource latestVersionSearch() {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return new ArtifactLatestVersionSearchResource(restAddon, response);
+    }
+
     /**
      * Searches the repository and returns a plain text result
      *

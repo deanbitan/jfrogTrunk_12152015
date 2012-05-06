@@ -61,7 +61,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -153,15 +152,6 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     private File tmpDir;
 
     /**
-     * A flag indicating whether to use the legacy impl of the gc, that uses a record cache. Currently, even with the
-     * new cspatsh impl, metadata management is dual - in cspaths and in the datastore table (e.g. length, lastModified,
-     * etc.). Next is to create a new datastore that only relies on cspaths and uses the datastore table just for blob
-     * management (checksum + binary). In this case, there will not be an option to go back to v1, since the old style
-     * datastore table will not be updated with metadata required by v1.
-     */
-    protected final boolean v1 = ConstantValues.gcUseV1.getBoolean();
-
-    /**
      * The {@link ConnectionHelper} set in the {@link #init(String)} method.
      */
     protected ArtifactoryConnectionHelper conHelper;
@@ -171,11 +161,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     private long lastSlowdownScanning = 0;
 
     protected ArtifactoryDataStore() {
-        if (v1) {
-            allEntries = new ConcurrentHashMap<String, ArtifactoryDbDataRecord>();
-        } else {
-            allEntries = new MapMaker().maximumSize(ConstantValues.gcMaxCacheEntries.getInt()).makeMap();
-        }
+        allEntries = new MapMaker().maximumSize(ConstantValues.gcMaxCacheEntries.getInt()).makeMap();
     }
 
     /**
@@ -201,16 +187,13 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
             log.trace("Datastore checksum: 'MD5:{}", id);
             dataRecord = new ArtifactoryDbDataRecord(this, identifier, tempFile.length(), now);
 
-            boolean isNew;
+            DbRecordState currentState;
             // Find if an entry already exists with this checksum
             // Important: Only use putIfAbsent and never re-put the entry in it for concurrency control
             ArtifactoryDbDataRecord oldRecord = allEntries.putIfAbsent(id, dataRecord);
             if (oldRecord != null) {
-                // Data record cannot be the new one created
-                long length = dataRecord.length;
-                dataRecord = null;
-
                 // First check for improbable checksum collision
+                long length = dataRecord.length;
                 long oldLength = oldRecord.length;
                 if (oldLength != length) {
                     String msg = DIGEST + " collision: id=" + id + " length=" + length +
@@ -218,13 +201,21 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
                     log.error(msg);
                     throw new DataStoreException(msg);
                 }
-                isNew = oldRecord.needsReinsert(now, tempFile);
-                if (!isNew) {
-                    oldRecord.markAccessed();
-                    updateLastModifiedDate(oldRecord.getIdentifier().toString(), now);
-                    return oldRecord;
-                } else {
-                    dataRecord = oldRecord;
+                currentState = oldRecord.needsReinsert(now, tempFile);
+                switch (currentState) {
+                    case NEW:
+                        // The record in cache is usable as new
+                        dataRecord = oldRecord;
+                        break;
+                    case IN_DB_FOUND:
+                        // Reusing and returning the old entry
+                        oldRecord.markAccessed();
+                        updateLastModifiedDate(oldRecord.getIdentifier().toString(), now);
+                        return oldRecord;
+                    default:
+                        // IN error or any wrong state, override old entry with new one
+                        allEntries.put(id, dataRecord);
+                        break;
                 }
             }
 
@@ -269,17 +260,16 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
             if (!lineExists) {
                 // Need to insert a new row
                 conHelper.exec(insertTempSQL, id, dataRecord.length, dataRecord.getLastModified());
+                // Add the BLOB only if not full File System store and new entry
+                if (isStoreBinariesAsBlobs()) {
+                    fileStream = new FileInputStream(tempFile);
+                    StreamWrapper wrapper = new StreamWrapper(fileStream, dataRecord.length);
+                    // UPDATE DATASTORE SET DATA=? WHERE ID=?
+                    conHelper.exec(updateDataSQL, wrapper, id);
+                }
             } else {
-                // TODO: Check the length should be the same, and stop updating the BLOB
                 // Update the time stamp of last modified
                 conHelper.exec(updateLastModifiedSQL, now, id, now);
-            }
-            // Add the BLOB only if not full File System store
-            if (isStoreBinariesAsBlobs()) {
-                fileStream = new FileInputStream(tempFile);
-                StreamWrapper wrapper = new StreamWrapper(fileStream, dataRecord.length);
-                // UPDATE DATASTORE SET DATA=? WHERE ID=?
-                conHelper.exec(updateDataSQL, wrapper, id);
             }
         } catch (Exception e) {
             throw convert("Cannot insert new record", e);
@@ -358,15 +348,16 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
      * @throws DataStoreException
      */
     public long deleteRecord(ArtifactoryDbDataRecord record) throws DataStoreException {
+        long length = record.length;
+        DataIdentifier identifier = record.getIdentifier();
+        boolean deleted = record.setDeleted();
+        if (!deleted) {
+            log.error("Deleting record " + record + " failed to delete file " + identifier + "!");
+            return -1;
+        }
+
         try {
-            long length = record.length;
-            DataIdentifier identifier = record.getIdentifier();
-            boolean deleted = record.setDeleted();
-            if (!deleted) {
-                return -1;
-            }
             int res = deleteEntry(identifier);
-            allEntries.remove(identifier.toString());
             if (res != 1) {
                 log.error("Deleting record " + record + " returned " + res + " updated.");
                 // Mark as deleted anyway since no SQL exception means no entry
@@ -378,6 +369,9 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
         } catch (Exception e) {
             record.setInError(e);
             throw convert("Can not delete records", e);
+        } finally {
+            // Force deletion from map
+            allEntries.remove(identifier.toString());
         }
     }
 
@@ -419,46 +413,6 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
             throw convert("Can not read records", e);
         } finally {
             DbUtility.close(rs);
-        }
-    }
-
-    private void loadAllDbRecords() throws DataStoreException {
-        long start = System.nanoTime();
-        long totalSize = 0L;
-        ResultSet rs = null;
-        try {
-            // SELECT ID, LENGTH, LAST_MODIFIED FROM DATASTORE
-            rs = conHelper.select(selectAllSQL);
-            if (log.isTraceEnabled()) {
-                log.trace("Executing " + selectAllSQL + " took " + (System.nanoTime() - start) / 1000000L + "ms");
-            }
-            while (rs.next()) {
-                String id = rs.getString(1);
-                long length = rs.getLong(2);
-                long lastModified = rs.getLong(3);
-
-                ArtifactoryDbDataRecord record = getCachedRecord(id);
-                if (record == null) {
-                    ArtifactoryDbDataRecord dbRecord =
-                            new ArtifactoryDbDataRecord(this, new DataIdentifier(id), length, lastModified);
-                    record = allEntries.putIfAbsent(id, dbRecord);
-                    if (record == null) {
-                        record = dbRecord;
-                    }
-                }
-                record.setLastModified(lastModified);
-                record.setInDb();
-                totalSize += length;
-            }
-            dataStoreSize.set(totalSize);
-        } catch (Exception e) {
-            throw convert("Can not read records", e);
-        } finally {
-            DbUtility.close(rs);
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("loadAllDbRecords took " + (System.nanoTime() - start) / 1000000L + "ms for " +
-                    allEntries.size() + " rows");
         }
     }
 
@@ -516,6 +470,8 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
             rs = conHelper.select(selectMetaSQL, new Object[]{id});
             if (!rs.next()) {
                 log.trace("No record found for: {}.", identifier);
+                // Make sure no left over in cache map
+                allEntries.remove(identifier.toString());
                 return null;
             }
             long length = rs.getLong(1);
@@ -534,6 +490,8 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
             if (record != null) {
                 record.setInError(e);
             }
+            // Make sure no left over in cache map
+            allEntries.remove(identifier.toString());
             throw convert("Can not read identifier " + identifier, e);
         } finally {
             DbUtility.close(rs);
@@ -640,42 +598,8 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
         throw new UnsupportedOperationException("Modified on access forbidden");
     }
 
-    public long scanDataStore(long startScanNanos) {
-        if (!v1) {
-            throw new UnsupportedOperationException("Data scanning is only implemented for v1 datastores.");
-        }
-        log.debug("Starting scanning of all datastore entries");
-        try {
-            // Add all identifiers
-            loadAllDbRecords();
-            // Remove all entries in delete or error state
-            Iterator<ArtifactoryDbDataRecord> recordIterator = getAllEntries().iterator();
-
-            long datastoreScanStartMillis = System.currentTimeMillis();
-            while (recordIterator.hasNext()) {
-                slowDownIfLongScan(datastoreScanStartMillis);
-                ArtifactoryDbDataRecord record = recordIterator.next();
-                if (!validState(record) || !record.updateGcState()) {
-                    recordIterator.remove();
-                }
-            }
-        } catch (DataStoreException e) {
-            throw new RuntimeException("Could not load all data store identifier: " + e.getMessage(), e);
-        }
-        long dataStoreQueryTime = (System.nanoTime() - startScanNanos) / 1000000;
-        log.debug("Scanning data store of {} elements and {} bytes in {}ms", new Object[]{
-                allEntries.size(), dataStoreSize, dataStoreQueryTime});
-        return dataStoreQueryTime;
-    }
-
+    @Deprecated
     protected abstract boolean validState(ArtifactoryDbDataRecord record);
-
-    public long getDataStoreSize() {
-        if (!v1) {
-            throw new UnsupportedOperationException("Datastore size can only be called by v1 datastores.");
-        }
-        return dataStoreSize.get();
-    }
 
     public int getDataStoreNbElements() {
         return allEntries.size();
@@ -921,41 +845,6 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
             }
         }
         return true;
-    }
-
-    /**
-     * Determines if the the gc datastore scanning is taking too long, and sleeps accordingly
-     *
-     * @param start Scan start
-     */
-    protected void slowDownIfLongScan(long start) {
-
-        //Start slowing down if the threshold has been reached
-        if (!slowdownScanning &&
-                ((System.currentTimeMillis() - start) > ConstantValues.gcScanStartSleepingThresholdMillis.getLong())) {
-            slowdownScanning = true;
-            log.debug("Slowing down datastore scanning.");
-        }
-
-        if (shouldGcDatastoreScanSleep()) {
-            try {
-                lastSlowdownScanning = System.currentTimeMillis();
-                Thread.sleep(slowdownScanningMillis);
-            } catch (InterruptedException e) {
-                log.debug("Interrupted while scanning datastore.");
-            }
-        }
-    }
-
-    /**
-     * Indicates whether the gc datastore scanner thread should sleep
-     *
-     * @return True if the thresholds have been reached
-     */
-    private boolean shouldGcDatastoreScanSleep() {
-        return slowdownScanning &&
-                ((lastSlowdownScanning == 0) || ((System.currentTimeMillis() - lastSlowdownScanning) >
-                        ConstantValues.gcFileScanSleepIterationMillis.getLong()));
     }
 
     static class MovedCounter {

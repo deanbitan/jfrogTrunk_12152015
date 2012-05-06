@@ -23,6 +23,7 @@ import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
+import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
@@ -81,25 +82,38 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
             proxyKeyField.add(new UniqueXmlIdValidator(proxiesListPanel.getEditingDescriptor()));
         }
         border.add(proxyKeyField);
+        border.add(new SchemaHelpBubble("key.help"));
 
         border.add(new RequiredTextField("host"));
+        border.add(new SchemaHelpBubble("host.help"));
 
         RequiredTextField<Integer> portField = new RequiredTextField<Integer>("port");
         portField.add(new PortNumberValidator());
         border.add(portField);
+        border.add(new SchemaHelpBubble("port.help"));
 
         border.add(new TextField("username"));
+        border.add(new SchemaHelpBubble("username.help"));
+
         PasswordTextField passwordField = new PasswordTextField("password");
         passwordField.setRequired(false);
         passwordField.setResetPassword(false);
         border.add(passwordField);
+        border.add(new SchemaHelpBubble("password.help"));
 
         border.add(new TextField("ntHost"));
+        border.add(new SchemaHelpBubble("ntHost.help"));
         border.add(new TextField("domain"));
+        border.add(new SchemaHelpBubble("domain.help"));
 
         //Global Proxy check box
         SystemDefaultCheckbox sysCheckbox = new SystemDefaultCheckbox(entity.isDefaultProxy());
         border.add(sysCheckbox);
+        border.add(new SchemaHelpBubble("defaultProxy.help"));
+
+        // Redirected hosts
+        border.add(new TextArea("redirectedToHosts"));
+        border.add(new SchemaHelpBubble("redirectedToHosts.help"));
 
         // Cancel button
         form.add(new ModalCloseLink("cancel"));
@@ -107,15 +121,6 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
         TitledAjaxSubmitLink submit = createSubmitButton(proxiesListPanel);
         form.add(submit);
         form.add(new DefaultButtonBehavior(submit));
-
-        border.add(new SchemaHelpBubble("key.help"));
-        border.add(new SchemaHelpBubble("host.help"));
-        border.add(new SchemaHelpBubble("port.help"));
-        border.add(new SchemaHelpBubble("username.help"));
-        border.add(new SchemaHelpBubble("password.help"));
-        border.add(new SchemaHelpBubble("ntHost.help"));
-        border.add(new SchemaHelpBubble("domain.help"));
-        border.add(new SchemaHelpBubble("defaultProxy.help"));
     }
 
     @Override

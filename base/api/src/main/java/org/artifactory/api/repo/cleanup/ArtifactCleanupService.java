@@ -18,7 +18,7 @@
 
 package org.artifactory.api.repo.cleanup;
 
-import org.artifactory.sapi.common.Lock;
+import org.artifactory.api.common.MultiStatusHolder;
 
 /**
  * The main interface of the clean-up service
@@ -28,11 +28,9 @@ import org.artifactory.sapi.common.Lock;
 public interface ArtifactCleanupService {
 
     /**
-     * Cleans the remote repository's cache from artifacts that havn't been used in the given time period
+     * Induce the artifact cleanup manually, and wait for full execution
      *
-     * @param repoKey     Key of remote repository cache
-     * @param periodHours The period to keep unused artifacts for. Any artifacts which havn't been used for more than
+     * @param statusHolder
      */
-    @Lock(transactional = true)
-    void clean(String repoKey, long periodHours);
+    void callManualArtifactCleanup(MultiStatusHolder statusHolder);
 }

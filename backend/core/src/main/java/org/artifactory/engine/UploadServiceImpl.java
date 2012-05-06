@@ -143,11 +143,14 @@ public class UploadServiceImpl implements InternalUploadService {
         //Get the proper file repository for deployment from the path
         LocalRepo localRepo = repoService.localRepositoryByKey(repoKey);
         if (localRepo == null) {
+            String msg;
             if (repoService.virtualRepoDescriptorByKey(repoKey) != null) {
                 response.setHeader("Allow", "GET");
-                response.setStatus(HttpStatus.SC_METHOD_NOT_ALLOWED);
+                msg = "A virtual repository cannot be used for deployment (" + repoKey +
+                        "). Use a local repository as deployment target.";
+                response.sendError(HttpStatus.SC_METHOD_NOT_ALLOWED, msg, log);
             } else {
-                String msg = "Could not find a local repository named " + repoKey + " to deploy to.";
+                msg = "Could not find a local repository named " + repoKey + " to deploy to.";
                 response.sendError(HttpStatus.SC_NOT_FOUND, msg, log);
             }
             return;
@@ -194,7 +197,8 @@ public class UploadServiceImpl implements InternalUploadService {
             return;
         }
 
-        log.info("Deploy to '{}' Content-Length: {}", request.getRepoPath(), request.getContentLength());
+        int length = request.getContentLength();
+        log.info("Deploy to '{}' Content-Length: {}", request.getRepoPath(), length < 0 ? "unspecified" : length);
         String path = request.getPath();
         ModuleInfo moduleInfo = repo.getItemModuleInfo(path);
 

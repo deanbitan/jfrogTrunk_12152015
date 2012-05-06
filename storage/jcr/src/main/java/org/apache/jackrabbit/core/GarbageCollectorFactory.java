@@ -42,7 +42,10 @@ import java.util.List;
  * @author freds
  * @author yoavl
  * @date Mar 12, 2009
+ * @deprecated Was used when v1 GC existed. Remove after other refactoring completed
  */
+//TODO: [by YS] Remove this class
+@Deprecated
 public abstract class GarbageCollectorFactory {
     private static final Logger log = LoggerFactory.getLogger(GarbageCollectorFactory.class);
 
@@ -59,6 +62,7 @@ public abstract class GarbageCollectorFactory {
      *
      * @throws javax.jcr.RepositoryException
      */
+    @Deprecated
     public static JcrGarbageCollector createDataStoreGarbageCollector(JcrSession session, boolean fixConsistency)
             throws RepositoryException, ItemStateException {
         RepositoryImpl rep = (RepositoryImpl) session.getRepository();

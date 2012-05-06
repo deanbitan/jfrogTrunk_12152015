@@ -19,10 +19,12 @@
 package org.artifactory.addon.plugin;
 
 import com.google.common.collect.Maps;
+import org.artifactory.build.staging.BuildStagingStrategy;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -40,8 +42,18 @@ public class PluginsAddonDefaultImpl implements PluginsAddon {
     }
 
     @Override
-    public Map<String, List<PluginInfo>> getPluginInfo() {
+    public BuildStagingStrategy getStagingStrategy(String strategyName, String buildName, Map params) {
+        throw new UnsupportedOperationException("Build staging strategy actions require Artifactory Pro.");
+    }
+
+    @Override
+    public Map<String, List<PluginInfo>> getPluginInfo(@Nullable String pluginType) {
         return Maps.newHashMap();
+    }
+
+    @Override
+    public ResponseCtx promote(String promotionName, String buildName, String buildNumber, Map params) {
+        throw new UnsupportedOperationException("Build promotion actions require Artifactory Pro.");
     }
 
     @Override

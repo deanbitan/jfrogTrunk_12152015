@@ -18,6 +18,7 @@
 
 package org.artifactory.addon.plugin;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.io.Serializable;
@@ -37,6 +38,7 @@ public class PluginInfo implements Serializable {
     private String description;
     private Set<String> permittedUsers = Sets.newHashSet();
     private Set<String> permittedGroups = Sets.newHashSet();
+    private Map params = Maps.newHashMap();
 
     /**
      * @param name                Name of plugin (applicable to executions and jobs)
@@ -67,7 +69,10 @@ public class PluginInfo implements Serializable {
                     permittedGroups.add(groups.toString());
                 }
             }
-
+            if (pluginClosureParams.containsKey("params")) {
+                Object paramsFromClosureConfig = pluginClosureParams.get("params");
+                params.putAll((Map) paramsFromClosureConfig);
+            }
         }
     }
 
@@ -91,6 +96,10 @@ public class PluginInfo implements Serializable {
         return permittedGroups.contains(group);
     }
 
+    public Map getParams() {
+        return params;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -106,6 +115,9 @@ public class PluginInfo implements Serializable {
             return false;
         }
         if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (params != null ? !params.equals(that.params) : that.params != null) {
             return false;
         }
         if (permittedGroups != null ? !permittedGroups.equals(that.permittedGroups) : that.permittedGroups != null) {
@@ -128,6 +140,7 @@ public class PluginInfo implements Serializable {
         result = 31 * result + (description != null ? description.hashCode() : 0);
         result = 31 * result + (permittedUsers != null ? permittedUsers.hashCode() : 0);
         result = 31 * result + (permittedGroups != null ? permittedGroups.hashCode() : 0);
+        result = 31 * result + (params != null ? params.hashCode() : 0);
         return result;
     }
 }

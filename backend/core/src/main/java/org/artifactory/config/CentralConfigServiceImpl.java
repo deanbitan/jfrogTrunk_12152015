@@ -236,8 +236,11 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         this.descriptor = descriptor;
         checkUniqueProxies();
         //Create the date formatter
-        dateFormatter = new SimpleDateFormat(descriptor.getDateFormat());
-        dateFormatter.setTimeZone(CentralConfigDescriptor.UTC_TIME_ZONE);
+        String dateFormat = descriptor.getDateFormat();
+        dateFormatter = new SimpleDateFormat(dateFormat);
+        if (StringUtils.containsNone(dateFormat, new char[]{'z', 'Z'})) {
+            dateFormatter.setTimeZone(CentralConfigDescriptor.UTC_TIME_ZONE);
+        }
         //Get the server name
         serverName = descriptor.getServerName();
         if (serverName == null) {

@@ -50,6 +50,7 @@ import org.artifactory.request.DownloadRequestContext;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.NullRequestContext;
 import org.artifactory.request.RequestContext;
+import org.artifactory.request.RequestTraceLogger;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.slf4j.Logger;
@@ -84,19 +85,21 @@ public class VirtualRepoDownloadStrategy {
     }
 
     public RepoResource getInfo(InternalRequestContext context) {
-        log.debug("Request processing done on virtual repo '{}'.", virtualRepo);
+        RequestTraceLogger.log("Consulting the virtual repo download strategy");
         // first look in local storage
         RepoResource cachedResource = getInfoFromLocalStorage(context);
         String path = context.getResourcePath();
         if (MavenNaming.isIndex(path)) {
             // for index files just return the result from the cache (we don't want to process it or to return index
             // from other repositories)
+            RequestTraceLogger.log("Requested resource is a Maven index - returning the cached resource");
             return cachedResource;
         }
 
         // release the read lock on the virtual repo local cache to prevent deadlock in any of the interceptors
         // (in case one of them needs to write back to the virtual repo cache)
         RepoPath localCacheRepoPath = InternalRepoPathFactory.create(virtualRepo.getKey(), context.getResourcePath());
+        RequestTraceLogger.log("Releasing the cached resource read lock");
         LockingHelper.releaseReadLock(localCacheRepoPath);
 
         // not found in local virtual repository storage, look in configured repositories
@@ -106,6 +109,7 @@ public class VirtualRepoDownloadStrategy {
             return searchableResource;
         } else if (cachedResource.isFound() && !searchableResource.isFound()) {
             // delete the local cached artifact and return the not found resource
+            RequestTraceLogger.log("Resource was not found but is still cached - removing from the cache");
             virtualRepo.undeploy(localCacheRepoPath, false);
             return searchableResource;
         } else if (cachedResource.isFound() && searchableResource.isFound()) {
@@ -114,6 +118,8 @@ public class VirtualRepoDownloadStrategy {
             // return the cached artifact
             if (repositoryService.remoteRepositoryByKey(sourceRepoKey) == null &&
                     cachedResource.getLastModified() >= searchableResource.getLastModified()) {
+                RequestTraceLogger.log("Resource was found locally and the cached instance is the latest - " +
+                        "updating the stats and returning the cached instance");
                 // locally stored resource is latest, update the stats of the original resource and return our cached file
                 ResourceStreamHandle searchableHandle = null;
                 try {
@@ -122,10 +128,13 @@ public class VirtualRepoDownloadStrategy {
                     LocalRepo repo = repositoryService.localOrCachedRepositoryByKey(sourceRepoKey);
                     searchableHandle = repositoryService.getResourceStreamHandle(context, repo, searchableResource);
                 } catch (IOException ioe) {
+                    RequestTraceLogger.log("Error while updating download stats: %s", ioe.getMessage());
                     log.error("Could not update download stats", ioe);
                 } catch (RepoRejectException rre) {
+                    RequestTraceLogger.log("Error while updating download stats: %s", rre.getMessage());
                     log.error("Could not update download stats", rre);
                 } catch (RepositoryException re) {
+                    RequestTraceLogger.log("Error while updating download stats: %s", re.getMessage());
                     log.error("Could not update download stats", re);
                 } finally {
                     if (searchableHandle != null) {
@@ -137,13 +146,17 @@ public class VirtualRepoDownloadStrategy {
         }
 
         // found newer resource in the searchable repositories
+        RequestTraceLogger.log("Returning resource as found in the aggregated repositories");
         return virtualRepo.interceptBeforeReturn(context, searchableResource);
     }
 
-    public RepoResource getInfoFromLocalStorage(InternalRequestContext context) {
+    private RepoResource getInfoFromLocalStorage(InternalRequestContext context) {
         try {
+            RequestTraceLogger.log("Trying to retrieve resource info from the local storage");
             return virtualRepo.storageMixin.getInfo(context);
         } catch (FileExpectedException e) {
+            RequestTraceLogger.log("Unable to find resource info in the local storage - " +
+                    "already exists as a directory: %s", e.getMessage());
             // see RTFACT-3721
             return new UnfoundRepoResource(
                     InternalRepoPathFactory.create(virtualRepo.getKey(), context.getResourcePath()),
@@ -151,34 +164,44 @@ public class VirtualRepoDownloadStrategy {
         }
     }
 
-    public RepoResource getInfoFromSearchableRepositories(InternalRequestContext context) {
+    private RepoResource getInfoFromSearchableRepositories(InternalRequestContext context) {
+        RequestTraceLogger.log("Searching for info in aggregated repositories");
         String path = context.getResourcePath();
         RepoPath repoPath = InternalRepoPathFactory.create(virtualRepo.getKey(), path);
         RepoResource result;
         try {
             List<RealRepo> repositories = assembleSearchRepositoriesList(repoPath, context);
             if (repositories.isEmpty()) {
+                RequestTraceLogger.log("Unable to find aggregated repositories to search within - returning " +
+                        "unfound resource");
                 return new UnfoundRepoResource(repoPath, "No repository found to serve the request for " + repoPath);
             }
 
             ModuleInfo artifactModuleInfo = virtualRepo.getItemModuleInfo(path);
 
             result = virtualRepo.interceptGetInfo(context, repoPath, repositories);
+            if (result != null) {
+                RequestTraceLogger.log("Received resource from an interceptor - returning");
+                return result;
+            }
 
             /**
              * The repo might not define a layout, so also check specifically for a Maven snapshot if the resulting
              * module info is invalid
              */
-            if (result == null) {
-                if (artifactModuleInfo.isIntegration() ||
-                        (!artifactModuleInfo.isValid() && MavenNaming.isSnapshot(path))) {
-                    result = processSnapshot(context, repoPath, repositories);
-                } else {
-                    result = processStandard(context, repoPath, repositories);
-                }
+            boolean mavenSnapshotPath = MavenNaming.isSnapshot(path);
+            if (artifactModuleInfo.isIntegration() || (!artifactModuleInfo.isValid() && mavenSnapshotPath)) {
+                RequestTraceLogger.log("Processing request as a snapshot resource (Module info validity = %s, " +
+                        "Module info identified as integration = %s, Path identified as Maven snapshot = %s)",
+                        artifactModuleInfo.isValid(), artifactModuleInfo.isIntegration(), mavenSnapshotPath);
+                result = processSnapshot(context, repoPath, repositories);
+            } else {
+                RequestTraceLogger.log("Processing request as a release resource");
+                result = processStandard(context, repoPath, repositories);
             }
         } catch (IOException e) {
-            log.error("Failed processing get resource info", e);
+            RequestTraceLogger.log("Processing to get resource info: %s", e.getMessage());
+            log.error("Failed to get resource info", e);
             result = new UnfoundRepoResource(repoPath, "IOException: " + e.getMessage());
         }
         return result;
@@ -190,7 +213,8 @@ public class VirtualRepoDownloadStrategy {
      *         repos are resolved transitively and we might have to remove them in case the path is excluded in the
      *         virtual repo they belong to.
      */
-    List<RealRepo> assembleSearchRepositoriesList(RepoPath repoPath, RequestContext context) {
+    private List<RealRepo> assembleSearchRepositoriesList(RepoPath repoPath, RequestContext context) {
+        RequestTraceLogger.log("Preparing list of aggregated repositories to search in");
         Map<String, LocalRepo> searchableLocalRepositories = Maps.newLinkedHashMap();
         Map<String, LocalCacheRepo> searchableLocalCacheRepositories = Maps.newLinkedHashMap();
         Map<String, RemoteRepo> searchableRemoteRepositories = Maps.newLinkedHashMap();
@@ -199,8 +223,10 @@ public class VirtualRepoDownloadStrategy {
 
         //Add all local repositories
         List<RealRepo> repositories = Lists.newArrayList();
+        RequestTraceLogger.log("Appending collective local repositories");
         repositories.addAll(searchableLocalRepositories.values());
         //Add all caches
+        RequestTraceLogger.log("Appending collective local cache repositories");
         repositories.addAll(searchableLocalCacheRepositories.values());
 
         //Add all remote repositories conditionally
@@ -209,8 +235,10 @@ public class VirtualRepoDownloadStrategy {
                 virtualRepo.isArtifactoryRequestsCanRetrieveRemoteArtifacts();
         if (fromAnotherArtifactory && !artifactoryRequestsCanRetrieveRemoteArtifacts) {
             //If the request comes from another artifactory don't bother checking any remote repos
-            log.debug("Skipping remote repository checks for path '{}'", repoPath);
+            RequestTraceLogger.log("Collective remote repositories aren't appended - Download request was " +
+                    "received from another Artifactory instance but is forbidden to search in remote repositories.");
         } else {
+            RequestTraceLogger.log("Appending collective remote repositories");
             repositories.addAll(searchableRemoteRepositories.values());
         }
         return repositories;
@@ -233,12 +261,13 @@ public class VirtualRepoDownloadStrategy {
         RepoResource closestMatch = null;
 
         for (RealRepo repo : repositories) {
+            RequestTraceLogger.log("Searching for the resource within %s", repo.getKey());
             // Since we are in process standard, repositories that does not process releases should be skipped.
             // Now, checksums are always considered standard, even if executed against a snapshot repository.
             // So, we should not skip snapshots repositories for checksums.
             String path = repoPath.getPath();
             if (!repo.isHandleReleases() && !NamingUtils.isChecksum(path)) {
-                log.debug("Repo '{}' not handling releases - skipping '{}'.", repo.getKey(), path);
+                RequestTraceLogger.log("Skipping %s - doesn't handle releases", repo.getKey());
                 continue;
             }
 
@@ -247,41 +276,51 @@ public class VirtualRepoDownloadStrategy {
             }
 
             InternalRequestContext translatedContext = translateRepoRequestContext(virtualRepo, repo, context);
-
+            if (translatedContext instanceof TranslatedArtifactoryRequest) {
+                RequestTraceLogger.log("Request path was translated to %s due to repository layout differences",
+                        translatedContext.getResourcePath());
+            }
             RepoResource res = repo.getInfo(translatedContext);
 
             //Retry the original path if the path was translated and failed (RTFACT-4329)
             if (!res.isFound() && !translatedContext.getResourcePath().equals(context.getResourcePath())) {
+                RequestTraceLogger.log("Unable to find the resource in the translated path - " +
+                        "retrying with the original");
                 res = repo.getInfo(context);
             }
             // release all read locks acquired by the repo during the getInfo
             LockingHelper.getSessionLockManager().unlockAllReadLocks(repo.getKey());
             if (res.isFound()) {
-                log.debug("Found resource '{}' found in repo '{}'.", path, repo.getKey());
+                RequestTraceLogger.log("Resource was found in %s", repo.getKey());
                 updateResponseRepoPath(repo, res);
                 if (res.isExactQueryMatch()) {
                     //return the exact match
+                    RequestTraceLogger.log("Resource is an exact match - returning");
                     return res;
                 } else {
+                    RequestTraceLogger.log("Resource is not an exact match - keeping as closest match");
                     closestMatch = res;
                 }
             } else if (forbidden == null) {
                 forbidden = checkIfForbidden(res);
-                if (log.isDebugEnabled() && forbidden != null) {
-                    log.debug("Resource '{}' forbidden by repo '{}'.", repoPath, repo.getKey());
+                if (forbidden != null) {
+                    RequestTraceLogger.log("Request is forbidden by %s", repo.getKey());
                 }
             }
         }
 
         //If we didn't find an exact match return the first found resource (closest match)
         if (closestMatch != null) {
+            RequestTraceLogger.log("Unable to find an exact matching resource - returning closest match");
             return closestMatch;
         }
 
         // not found in any repo
         if (forbidden != null) {
+            RequestTraceLogger.log("Returning a forbidden-unfound resource");
             return new UnfoundRepoResource(repoPath, forbidden.getReason(), forbidden.getStatusCode());
         } else {
+            RequestTraceLogger.log("Returning an unfound resource");
             return new UnfoundRepoResource(repoPath, "Could not find resource");
         }
     }
@@ -301,32 +340,51 @@ public class VirtualRepoDownloadStrategy {
         boolean foundInLocalRepo = false;
 
         for (RealRepo repo : repositories) {
+            RequestTraceLogger.log("Searching for the resource within %s", repo.getKey());
             if (shouldSkipSnapshotRepo(foundInLocalRepo, repo)) {
+                RequestTraceLogger.log("Skipping %s", repo.getKey());
                 continue;
             }
             InternalRequestContext translatedContext = translateRepoRequestContext(virtualRepo, repo, context);
             String translatedPath = translatedContext.getResourcePath();
+            if (translatedContext instanceof TranslatedArtifactoryRequest) {
+                RequestTraceLogger.log("Request path was translated to %s due to repository layout differences",
+                        translatedPath);
+            }
 
             final RepoResource res = repo.getInfo(translatedContext);
             if (res.isFound()) {
                 foundInLocalRepo = isSnapshotFoundInLocalRepo(foundInLocalRepo, repo, translatedPath);
-                if (log.isDebugEnabled()) {
-                    log.debug("{} last modified {}", res.getRepoPath(), centralConfig.format(res.getLastModified()));
-                }
+                RequestTraceLogger.log("Resource last modified time - %s",
+                        centralConfig.format(res.getLastModified()));
+
+                boolean firstFoundResource = latestRes == null;
+                boolean currentResourceIsAnExactMatchAndLatterFoundIsNot = !firstFoundResource &&
+                        !latestRes.isExactQueryMatch() && res.isExactQueryMatch();
+                boolean currentResourceWasModifiedLater = !firstFoundResource &&
+                        (res.getLastModified() > latestRes.getLastModified());
+
+                RequestTraceLogger.log("Current found resource is the first candidate = %s, is an exact match " +
+                        "query while the former candidate isn't = %s, has later modified time than former = %s",
+                        firstFoundResource, currentResourceIsAnExactMatchAndLatterFoundIsNot,
+                        currentResourceWasModifiedLater);
 
                 //If we haven't found one yet
-                if (latestRes == null ||
+                if (firstFoundResource ||
                         //or this one is a better match
-                        (!latestRes.isExactQueryMatch() && res.isExactQueryMatch())
+                        currentResourceIsAnExactMatchAndLatterFoundIsNot
                         //or newer than the one found
-                        || res.getLastModified() > latestRes.getLastModified()) {
-                    log.debug("{}: found newer res: {}", repo, translatedPath);
+                        || currentResourceWasModifiedLater) {
+                    RequestTraceLogger.log("Selecting current found resource as best candidate");
                     //take it
                     updateResponseRepoPath(repo, res);
                     latestRes = res;
                 }
             } else if (forbidden == null) {
                 forbidden = checkIfForbidden(res);
+                if (forbidden != null) {
+                    RequestTraceLogger.log("Request is forbidden by %s", repo.getKey());
+                }
             }
         }
 
@@ -334,36 +392,43 @@ public class VirtualRepoDownloadStrategy {
         boolean nonFoundRetrievalCacheHit = latestRes != null && !latestRes.isFound();
         if (latestRes == null || nonFoundRetrievalCacheHit) {
             if (forbidden != null) {
+                RequestTraceLogger.log("Returning a forbidden-unfound resource");
                 return new UnfoundRepoResource(repoPath, forbidden.getReason(), forbidden.getStatusCode());
             } else {
+                RequestTraceLogger.log("Returning an unfound resource");
                 String msg = "Artifact not found: " + resourcePath +
                         (nonFoundRetrievalCacheHit ? " (cached on " +
                                 centralConfig.format(latestRes.getLastModified()) + ")" : "");
                 return new UnfoundRepoResource(repoPath, msg);
             }
         }
-        //Found a newer version
-        log.debug("{}: Found the latest version of {}", latestRes.getResponseRepoPath().getRepoKey(), resourcePath);
+
+        RequestTraceLogger.log("Returning found resource from %s", latestRes.getResponseRepoPath().getId());
         return latestRes;
     }
 
     private boolean shouldSkipSnapshotRepo(boolean foundInLocalRepo, RealRepo repo) {
         //Skip if not handling
         if (!repo.isHandleSnapshots()) {
+            RequestTraceLogger.log("%s doesn't handle snapshot resources", repo.getKey());
             return true;
         }
         //Skip remote repos if found in local repo (including caches)
-        return foundInLocalRepo && !repo.isLocal() && isExactMatchRequired(repo);
+        boolean exactMatchRequired = isExactMatchRequired(repo);
+        RequestTraceLogger.log("Resource was found in the local repo '%s' = %s, Repo is remote and doesn't " +
+                "sync properties = %s", repo.getKey(), foundInLocalRepo, exactMatchRequired);
+        return foundInLocalRepo && exactMatchRequired;
     }
 
     private boolean isSnapshotFoundInLocalRepo(boolean foundInLocalRepo, RealRepo repo, String requestPath) {
         if (repo.isLocal()) {
             if (foundInLocalRepo) {
                 //Issue a warning for a resource found multiple times in local repos
+                RequestTraceLogger.log("Found multiple instances of the resource in local repositories.");
                 log.warn("{}: found multiple resource instances of '{}' in local repositories.",
                         repo, requestPath);
             } else {
-                log.debug("{}: found local res: {}", repo, requestPath);
+                RequestTraceLogger.log("Resource was found in %s", repo.getKey());
                 foundInLocalRepo = true;
             }
         }
@@ -398,17 +463,21 @@ public class VirtualRepoDownloadStrategy {
 
         if (!virtualRepo.accepts(path)) {
             // includes/excludes should not affect system paths
-            log.debug("The repository '{}' rejected the artifact '{}' due to its include/exclude pattern settings.",
-                    virtualRepo, path);
+            RequestTraceLogger.log("Adding no aggregated repositories - requested artifact is rejected by the " +
+                    "include exclude patterns of '%s'", virtualRepo.getKey());
             return;
         }
+        RequestTraceLogger.log("Appending '%s'", virtualRepo.getKey());
         visitedVirtualRepositories.put(virtualRepo.getKey(), virtualRepo);
 
         //Add its local repositories
+        RequestTraceLogger.log("Appending the local repositories of '%s'", virtualRepo.getKey());
         searchableLocalRepositories.putAll(virtualRepo.getLocalRepositoriesMap());
         //Add the caches
+        RequestTraceLogger.log("Appending the local cache repositories of '%s'", virtualRepo.getKey());
         searchableLocalCacheRepositories.putAll(virtualRepo.getLocalCacheRepositoriesMap());
         //Add the remote repositories
+        RequestTraceLogger.log("Appending the remote repositories repositories of '%s'", virtualRepo.getKey());
         searchableRemoteRepositories.putAll(virtualRepo.getRemoteRepositoriesMap());
         //Add any contained virtual repo
         List<VirtualRepo> childrenVirtualRepos = virtualRepo.getVirtualRepositories();
@@ -417,12 +486,14 @@ public class VirtualRepoDownloadStrategy {
             String key = childVirtualRepo.getKey();
             if (visitedVirtualRepositories.containsKey(key)) {
                 //Avoid infinite loop - stop if already processed virtual repo is encountered
-                log.debug("Repositories list assembly has been truncated to avoid recursive loop " +
-                        "on the virtual repo '{}'. Already processed virtual repositories: {}.",
-                        key, visitedVirtualRepositories.keySet());
+                RequestTraceLogger.log("Skipping '%s' to avoid infinite loop - already processed", key);
                 return;
             } else {
                 String translatedPath = translateRepoPath(virtualRepo, childVirtualRepo, path);
+                if (!translatedPath.equals(path)) {
+                    RequestTraceLogger.log("Resource was translated to '%s' in order to search within '%s'",
+                            translatedPath, key);
+                }
                 childVirtualRepo.downloadStrategy.deeplyAssembleSearchRepositoryLists(
                         translatedPath, visitedVirtualRepositories,
                         searchableLocalRepositories,
@@ -467,7 +538,7 @@ public class VirtualRepoDownloadStrategy {
      * @param path   Path to translate
      * @return Translated path if needed, original if not needed of if there is insufficient info
      */
-    public <S extends Repo, T extends Repo> String translateRepoPath(S source, T target, String path) {
+    private <S extends Repo, T extends Repo> String translateRepoPath(S source, T target, String path) {
         RepoLayout sourceRepoLayout = source.getDescriptor().getRepoLayout();
         RepoLayout targetRepoLayout = target.getDescriptor().getRepoLayout();
 

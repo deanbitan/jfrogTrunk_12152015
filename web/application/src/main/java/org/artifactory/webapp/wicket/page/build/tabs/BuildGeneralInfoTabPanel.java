@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.build.tabs;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -34,6 +35,8 @@ import org.jfrog.build.api.Agent;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildAgent;
 import org.jfrog.build.api.BuildType;
+import org.jfrog.build.api.IssueTracker;
+import org.jfrog.build.api.Issues;
 
 /**
  * Displays the build's general information
@@ -109,6 +112,29 @@ public class BuildGeneralInfoTabPanel extends Panel {
                 StringUtils.isNotBlank(build.getParentName()));
         addLabeledValue(infoBorder, "parentBuildNumber", "Parent Build Number", build.getParentNumber(),
                 StringUtils.isNotBlank(build.getParentNumber()));
+
+        addIssueTrackerInformation(infoBorder, build.getIssues());
+    }
+
+    private void addIssueTrackerInformation(FieldSetBorder infoBorder, Issues issues) {
+        WebMarkupContainer issueTrackerContainer = new WebMarkupContainer("issueTracker");
+        infoBorder.add(issueTrackerContainer);
+
+        if (issues != null) {
+            IssueTracker tracker = issues.getTracker();
+            if (tracker != null) {
+                String trackerName = tracker.getName();
+                if (StringUtils.isNotBlank(trackerName)) {
+                    StringBuilder trackerInfoBuilder = new StringBuilder(trackerName);
+                    String version = tracker.getVersion();
+                    if (StringUtils.isNotBlank(version)) {
+                        trackerInfoBuilder.append("/").append(version);
+                    }
+                    issueTrackerContainer.replaceWith(new LabeledValue("issueTracker", "Issue Tracker: ",
+                            trackerInfoBuilder.toString()));
+                }
+            }
+        }
     }
 
     /**

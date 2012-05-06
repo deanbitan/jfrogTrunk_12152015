@@ -59,15 +59,18 @@ import org.artifactory.request.NullRequestContext;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.request.Request;
 import org.artifactory.request.RequestContext;
+import org.artifactory.request.RequestTraceLogger;
 import org.artifactory.resource.RemoteRepoResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
+import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -77,7 +80,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
+import java.util.concurrent.TimeUnit;
 
 public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(HttpRepo.class);
@@ -86,6 +89,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private boolean handleGzipResponse;
     protected RemoteRepositoryBrowser remoteBrowser;
     private LayoutsCoreAddon layoutsCoreAddon;
+
+    @GuardedBy("offlineCheckerSync")
+    private Thread onlineMonitorThread;
+    private Object onlineMonitorSync = new Object();
 
     public HttpRepo(InternalRepositoryService repositoryService, HttpRepoDescriptor descriptor,
             boolean globalOfflineMode, RemoteRepo oldRemoteRepo) {
@@ -136,6 +143,12 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 mtcm.shutdown();
             }
         }
+        cleanupResources();
+    }
+
+    @Override
+    public void cleanupResources() {
+        stopOfflineCheckThread();
     }
 
     public String getUsername() {
@@ -158,6 +171,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         return getDescriptor().getProxy();
     }
 
+    @Override
     public ResourceStreamHandle conditionalRetrieveResource(String relPath, boolean forceRemoteDownload)
             throws IOException {
         //repo1 does not respect conditional get so the following is irrelevant for now.
@@ -203,50 +217,55 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
         String pathForUrl = convertRequestPathIfNeeded(relPath);
+        if (!relPath.equals(pathForUrl)) {
+            RequestTraceLogger.log("Remote resource path was translated (%s) due to repository " +
+                    "layout differences", pathForUrl);
+        }
         Request request = requestContext.getRequest();
         if (request != null) {
             String alternativeRemoteDownloadUrl =
                     request.getParameter(ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL);
             if (StringUtils.isNotBlank(alternativeRemoteDownloadUrl)) {
-                log.trace("Modifying request URL. Received an alternative remote download URL parameter: {}",
-                        alternativeRemoteDownloadUrl);
+                RequestTraceLogger.log("Request contains alternative remote resource path ({}=%s)",
+                        ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL, alternativeRemoteDownloadUrl);
                 pathForUrl = alternativeRemoteDownloadUrl;
             }
         }
 
         if (getDescriptor().isSynchronizeProperties()) {
+            RequestTraceLogger.log("Appending properties to remote request URL if needed");
             pathForUrl += encodeForRequest(requestContext.getProperties());
         }
         final String fullUrl = appendAndGetUrl(convertRequestPathIfNeeded(pathForUrl));
+        RequestTraceLogger.log("Using remote request URL - %s", fullUrl);
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         final PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
 
         final RepoPath repoPath = InternalRepoPathFactory.create(getKey(), pathForUrl);
         final Request requestForPlugins = requestContext.getRequest();
         pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, null, requestForPlugins, repoPath);
-        if (log.isDebugEnabled()) {
-            log.debug("Retrieving " + relPath + " from remote repository '" + getKey() + "' URL '" + fullUrl + "'.");
-        }
+        RequestTraceLogger.log("Executing any BeforeRemoteDownload user plugins the may exist");
 
         final GetMethod method = new GetMethod(fullUrl);
+        RequestTraceLogger.log("Executing GET request to %s", fullUrl);
         executeMethod(method);
 
         int statusCode = method.getStatusCode();
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
             //Not found
             method.releaseConnection();
+            RequestTraceLogger.log("Received response status %s - throwing exception", statusCode);
             throw new RemoteRequestException("Unable to find " + fullUrl, statusCode);
         }
         if (statusCode != HttpStatus.SC_OK) {
             String msg = "Error fetching " + fullUrl;
-            if (log.isDebugEnabled()) {
-                log.debug(this + ": " + msg + " status " + statusCode);
-            }
             method.releaseConnection();
+            RequestTraceLogger.log("Received response status %s - throwing exception", statusCode);
             throw new RemoteRequestException(msg, statusCode);
         }
         //Found
         log.info("{}: Downloading content from '{}'...", this, fullUrl);
+        RequestTraceLogger.log("Downloading content");
 
         final InputStream is = HttpUtils.getGzipAwareResponseStream(method);
 
@@ -273,14 +292,14 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                             new Object[]{HttpRepo.this, fullUrl,
                                     statusLine != null ? statusLine.getStatusCode() : "unknown",
                                     throwable.getMessage()});
-                    if (log.isDebugEnabled()) {
-                        log.debug(HttpRepo.this + ": Failed to download '" + fullUrl + "'.", throwable);
-                    }
+                    RequestTraceLogger.log("Failed to download: %s", throwable.getMessage());
                 } else {
                     log.info("{}: Downloaded '{}' with return code: {}.", new Object[]{HttpRepo.this, fullUrl,
                             statusLine != null ? statusLine.getStatusCode() : "unknown"});
+                    RequestTraceLogger.log("Downloaded content");
                 }
                 pluginAddon.execPluginActions(AfterRemoteDownloadAction.class, null, requestForPlugins, repoPath);
+                RequestTraceLogger.log("Executing any AfterRemoteDownload user plugins the may exist");
             }
         };
     }
@@ -347,18 +366,23 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
         String fullUrl = assembleRetrieveInfoUrl(path, context);
         HeadMethod method = new HeadMethod(fullUrl);
-        log.debug("{}: Checking last modified time for {}", this, fullUrl);
+        RequestTraceLogger.log("Executing HEAD request to %s", fullUrl);
         try {
-            executeMethod(method);
-            return handleGetInfoResponse(repoPath, fullUrl, method);
-        } catch (IOException e) {
-            StringBuilder messageBuilder = new StringBuilder("Failed retrieving resource from ").append(fullUrl).
-                    append(": ");
-            if (e instanceof UnknownHostException) {
-                messageBuilder.append("Unknown host - ");
+
+            try {
+                executeMethod(method);
+            } catch (IOException e) {
+                RequestTraceLogger.log("Failed to execute HEAD request: %s", e.getMessage());
+                StringBuilder messageBuilder = new StringBuilder("Failed retrieving resource from ").append(fullUrl).
+                        append(": ");
+                if (e instanceof UnknownHostException) {
+                    messageBuilder.append("Unknown host - ");
+                }
+                messageBuilder.append(e.getMessage());
+                throw new RuntimeException(messageBuilder.toString(), e);
             }
-            messageBuilder.append(e.getMessage());
-            throw new RuntimeException(messageBuilder.toString(), e);
+
+            return handleGetInfoResponse(repoPath, fullUrl, method);
         } finally {
             //Released the connection back to the connection manager
             method.releaseConnection();
@@ -367,6 +391,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
     protected String assembleRetrieveInfoUrl(String path, RequestContext context) {
         String pathForUrl = convertRequestPathIfNeeded(path);
+        if (!path.equals(pathForUrl)) {
+            RequestTraceLogger.log("Remote resource path was translated (%s) due to repository " +
+                    "layout differences", pathForUrl);
+        }
         boolean validContext = context != null;
         if (validContext) {
             Request request = context.getRequest();
@@ -374,8 +402,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 String alternativeRemoteDownloadUrl =
                         request.getParameter(ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL);
                 if (StringUtils.isNotBlank(alternativeRemoteDownloadUrl)) {
-                    log.trace("Modifying request URL. Received an alternative remote download URL parameter: {}",
-                            alternativeRemoteDownloadUrl);
+                    RequestTraceLogger.log("Request contains alternative remote resource path ({}=%s)",
+                            ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL, alternativeRemoteDownloadUrl);
                     pathForUrl = alternativeRemoteDownloadUrl;
                 }
             }
@@ -383,47 +411,54 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
         String fullUrl = appendAndGetUrl(pathForUrl);
         if (validContext && getDescriptor().isSynchronizeProperties()) {
+            RequestTraceLogger.log("Appending properties to remote request URL if needed");
             Properties properties = context.getProperties();
             try {
                 fullUrl += encodeForRequest(properties);
             } catch (UnsupportedEncodingException e) {
-                StringBuilder builder = new StringBuilder("Failed to encode request properties '").append(
-                        properties).append("' for request '").append(fullUrl).append("'.");
-                throw new RuntimeException(builder.toString(), e);
+                RequestTraceLogger.log("Failed to encode remote request properties: %s", e.getMessage());
+                throw new RuntimeException("Failed to encode request properties '" + properties + "' for request '" +
+                        fullUrl + "'.", e);
             }
         }
+        RequestTraceLogger.log("Using remote request URL - %s", fullUrl);
         return fullUrl;
     }
 
     protected RepoResource handleGetInfoResponse(RepoPath repoPath, String fullUrl, HttpMethodBase method) {
         if (method.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+            RequestTraceLogger.log("Received status 404 (message: %s) on remote info request - returning unfound " +
+                    "resource", method.getStatusText());
             return new UnfoundRepoResource(repoPath, method.getStatusText());
         }
         //If redirected to a directory - return 404
         if (method.getPath().endsWith("/")) {
+            RequestTraceLogger.log("Remote info request was redirected to a directory - returning unfound resource");
             return new UnfoundRepoResource(repoPath, "Expected file response but received a directory response.");
         }
         if (method.getStatusCode() != HttpStatus.SC_OK) {
-            if (log.isDebugEnabled()) {
-                log.debug(this + ": Unable to find " + fullUrl + " because of [" +
-                        method.getStatusCode() + "] = " + method.getStatusText());
-            }
+            RequestTraceLogger.log("Received status {} (message: %s) on remote info request - returning unfound " +
+                    "resource", method.getStatusCode(), method.getStatusText());
             // send back unfound resource with 404 status
             return new UnfoundRepoResource(repoPath, method.getStatusText());
         }
 
         long lastModified = getLastModified(method);
-        log.debug("{}: Found last modified time '{}' for {}",
-                new Object[]{this, new Date(lastModified).toString(), fullUrl});
+        RequestTraceLogger.log("Found remote resource with last modified time - %s",
+                new Date(lastModified).toString());
 
         long size = getContentLength(method);
+        if (size != -1) {
+            RequestTraceLogger.log("Found remote resource with content length - %s", size);
+        }
 
         Set<ChecksumInfo> checksums = getChecksums(method);
-
-        RepoResource res = new RemoteRepoResource(repoPath, lastModified, size, checksums);
-        if (log.isDebugEnabled()) {
-            log.debug("{}: Retrieved {} info at '{}'.", new Object[]{this, res, fullUrl});
+        if (!checksums.isEmpty()) {
+            RequestTraceLogger.log("Found remote resource with checksums - %s", checksums);
         }
+
+        RequestTraceLogger.log("Returning found remote resource info");
+        RepoResource res = new RemoteRepoResource(repoPath, lastModified, size, checksums);
         return res;
     }
 
@@ -532,5 +567,126 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         HttpRepoDescriptor descriptor = getDescriptor();
         return layoutsCoreAddon.translateArtifactPath(descriptor.getRepoLayout(), descriptor.getRemoteRepoLayout(),
                 path);
+    }
+
+    @Override
+    protected void putOffline() {
+        long assumedOfflinePeriodSecs = getDescriptor().getAssumedOfflinePeriodSecs();
+        if (assumedOfflinePeriodSecs <= 0) {
+            return;
+        }
+        // schedule the offline thread to run immediately
+        //scheduler.schedule(new OfflineCheckCallable(), 0, TimeUnit.MILLISECONDS);
+        synchronized (onlineMonitorSync) {
+            if (onlineMonitorThread != null) {
+                return;
+            }
+            onlineMonitorThread = new Thread(new OnlineMonitorRunnable(), "online-monitor-" + getKey());
+            onlineMonitorThread.setDaemon(true);
+            onlineMonitorThread.start();
+        }
+    }
+
+    @Override
+    public void resetAssumedOffline() {
+        synchronized (onlineMonitorSync) {
+            stopOfflineCheckThread();
+            assumedOffline = false;
+        }
+    }
+
+    private void stopOfflineCheckThread() {
+        log.trace("Online monitor stop on {}", getKey());
+        synchronized (onlineMonitorSync) {
+            if (onlineMonitorThread != null) {
+                log.trace("Online monitor stopping {}", onlineMonitorThread.getName());
+                onlineMonitorThread.interrupt();
+                onlineMonitorThread = null;
+            }
+        }
+    }
+
+    private class OnlineMonitorRunnable implements Runnable {
+        /**
+         * max attempts until reaching the maximum wait time
+         */
+        private static final int MAX_FAILED_ATTEMPTS = 10;
+
+        /**
+         * Failed requests counter
+         */
+        private int failedAttempts = 0;
+
+        @Override
+        public void run() {
+            log.debug("Online monitor started for {}", getKey());
+            while (true) {
+                try {
+                    if (Thread.currentThread().isInterrupted()) {
+                        throw new InterruptedException();
+                    }
+                    if (checkOnline()) {
+                        assumedOffline = false;
+                        return;
+                    }
+
+                    long nextOnlineCheckDelay = calculateNextOnlineCheckDelay();
+                    assumedOffline = true;
+                    nextOnlineCheckMillis = System.currentTimeMillis() + nextOnlineCheckDelay;
+                    log.debug("Online monitor sleeping for {} millis", nextOnlineCheckDelay);
+                    Thread.sleep(nextOnlineCheckDelay);
+                } catch (InterruptedException e) {
+                    log.debug("Online monitor interrupted");
+                    Thread.interrupted();
+                    return;
+                }
+            }
+        }
+
+        private long calculateNextOnlineCheckDelay() {
+            long maxFailureCacheSecs = getDescriptor().getAssumedOfflinePeriodSecs();
+            long maxFailureCacheMillis = TimeUnit.SECONDS.toMillis(maxFailureCacheSecs);    // always >= 1000
+
+            long nextOnlineCheckDelayMillis;
+            failedAttempts++;
+            if (failedAttempts < MAX_FAILED_ATTEMPTS) {
+                if (maxFailureCacheSecs / MAX_FAILED_ATTEMPTS < 2) {
+                    long failurePenaltyMillis = maxFailureCacheMillis / MAX_FAILED_ATTEMPTS;
+                    nextOnlineCheckDelayMillis = failedAttempts * failurePenaltyMillis;
+                } else {
+                    // exponential delay
+                    // calculate the base of the exponential equation based on the MAX_FAILED_ATTEMPTS and max offline period
+                    // BASE pow MAX_FAILED_ATTEMPTS = MAX_DELAY ==> BASE = MAX_DELAY pow 1/MAX_FAILED_ATTEMPTS
+                    double base = Math.pow(maxFailureCacheMillis, 1.0 / (double) MAX_FAILED_ATTEMPTS);
+                    nextOnlineCheckDelayMillis = (long) Math.pow(base, failedAttempts);
+                    // in any case don't attempt too rapidly
+                    nextOnlineCheckDelayMillis = Math.max(100, nextOnlineCheckDelayMillis);
+                }
+            } else {
+                nextOnlineCheckDelayMillis = maxFailureCacheMillis;
+            }
+            return nextOnlineCheckDelayMillis;
+        }
+
+        private boolean checkOnline() {
+            // always test with url trailing slash
+            String url = PathUtils.addTrailingSlash(getDescriptor().getUrl());
+            GetMethod getMethod = new GetMethod(url);
+            try {
+                log.debug("Online monitor checking URL: {}", url);
+                int status = client.executeMethod(getMethod);
+                String statusText = getMethod.getStatusText();
+                log.debug("Online monitor http method completed with no exception: {}: {}", status, statusText);
+                // consider putting offline if status > 500 && status < 600
+                // no exception - consider back online
+                return true;
+            } catch (IOException e) {
+                log.debug("Online monitor http method failed with exception: {}", e.getMessage());
+            } finally {
+                getMethod.releaseConnection();
+            }
+            return false;
+        }
+
     }
 }

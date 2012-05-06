@@ -136,7 +136,7 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
         }
 
         build.addStatus(statusBuilder.build());
-        buildService.updateBuild(build);
+        buildService.updateBuild(build, false);
     }
 
     private void promoteBuildItems(Promotion promotion, MultiStatusHolder status, Set<RepoPath> itemsToMove) {

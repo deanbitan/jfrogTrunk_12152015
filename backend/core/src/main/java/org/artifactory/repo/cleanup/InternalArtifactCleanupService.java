@@ -19,6 +19,7 @@
 package org.artifactory.repo.cleanup;
 
 import org.artifactory.api.repo.cleanup.ArtifactCleanupService;
+import org.artifactory.sapi.common.Lock;
 import org.artifactory.spring.ReloadableBean;
 
 /**
@@ -27,4 +28,10 @@ import org.artifactory.spring.ReloadableBean;
  * @author Noam Tenne
  */
 public interface InternalArtifactCleanupService extends ArtifactCleanupService, ReloadableBean {
+
+    /**
+     * Cleans the remote repository's cache from artifacts that hasn't been used in the given time period
+     */
+    @Lock(transactional = true)
+    void clean();
 }

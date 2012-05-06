@@ -20,6 +20,7 @@ package org.artifactory.repo;
 
 import org.artifactory.common.StatusHolder;
 import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.FileLayoutInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
@@ -232,4 +233,22 @@ public interface Repositories {
      * @return The result status for the copy operation
      */
     StatusHolder copy(RepoPath source, RepoPath target);
+
+    /**
+     * Returns module related information (group, artifact, version, etc.) for given file, as it was extracted according
+     * to the layout of the repository the file is part of.
+     * * @param repoPath the file path
+     *
+     * @return the module information
+     */
+    public FileLayoutInfo getLayoutInfo(RepoPath repoPath);
+
+    /**
+     * Translates the path of a file from source repository layout to target's one.
+     * @param source the source repository path
+     * @param targetRepoKey the target repository key
+     * @return the file path according to target repository layout
+     */
+    String translateFilePath(RepoPath source, String targetRepoKey);
+
 }

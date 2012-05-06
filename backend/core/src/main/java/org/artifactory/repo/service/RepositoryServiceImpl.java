@@ -108,6 +108,7 @@ import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.request.InternalArtifactoryResponse;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.NullRequestContext;
+import org.artifactory.request.RequestTraceLogger;
 import org.artifactory.resource.ResolvedResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
@@ -230,6 +231,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
+        HttpUtils.resetArtifactoryUserAgent();
         deleteOrphanRepos(oldDescriptor);
         rebuildRepositories(oldDescriptor);
         checkAndCleanChangedVirtualPomCleanupPolicy(oldDescriptor);
@@ -339,6 +341,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     private void rebuildRepositories(CentralConfigDescriptor oldDescriptor) {
+        if (globalVirtualRepo != null) {
+            // stop remote repo online monitors
+            for (RemoteRepo remoteRepo : globalVirtualRepo.getRemoteRepositories()) {
+                remoteRepo.cleanupResources();
+            }
+        }
+
         //Create the repository objects from the descriptor
         CentralConfigDescriptor centralConfig = centralConfigService.getDescriptor();
         InternalRepositoryService transactionalMe = getTransactionalMe();
@@ -1607,6 +1616,32 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
+    public boolean isRemoteAssumedOffline(@Nonnull String remoteRepoKey) {
+        RemoteRepo remoteRepo = remoteRepositoryByKey(remoteRepoKey);
+        if (remoteRepo == null) {
+            return false;
+        }
+        return remoteRepo.isAssumedOffline();
+    }
+
+    @Override
+    public long getRemoteNextOnlineCheck(String remoteRepoKey) {
+        RemoteRepo remoteRepo = remoteRepositoryByKey(remoteRepoKey);
+        if (remoteRepo == null) {
+            return 0;
+        }
+        return remoteRepo.getNextOnlineCheckMillis();
+    }
+
+    @Override
+    public void resetAssumedOffline(String remoteRepoKey) {
+        RemoteRepo remoteRepo = remoteRepositoryByKey(remoteRepoKey);
+        if (remoteRepo != null) {
+            remoteRepo.resetAssumedOffline();
+        }
+    }
+
+    @Override
     public void assertValidDeployPath(LocalRepo repo, String path) throws RepoRejectException {
         BasicStatusHolder status = repo.assertValidPath(path, false);
 
@@ -1679,15 +1714,20 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     public ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, Repo repo,
             RepoResource res) throws IOException, RepoRejectException, RepositoryException {
         if (res instanceof ResolvedResource) {
+            RequestTraceLogger.log("The requested resource is already resolved - using a string resource handle");
             // resource already contains the content - just extract it and return a string resource handle
             String content = ((ResolvedResource) res).getContent();
             return new StringResourceStreamHandle(content);
         } else {
+            RequestTraceLogger.log("The requested resource isn't pre-resolved");
             RepoPath repoPath = res.getRepoPath();
             if (repo.isReal()) {
+                RequestTraceLogger.log("Target repository isn't virtual - verifying that downloading is allowed");
                 //Permissions apply only to real repos
                 StatusHolder holder = ((RealRepo) repo).checkDownloadIsAllowed(repoPath);
                 if (holder.isError()) {
+                    RequestTraceLogger.log("Download isn't allowed - received status {} and message '%s'",
+                            holder.getStatusCode(), holder.getStatusMsg());
                     throw new RepoRejectException(holder.getStatusMsg(), holder.getStatusCode());
                 }
             }
@@ -2357,7 +2397,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
         HttpClient client = new HttpClientConfigurator()
                 .soTimeout(15000)
-                .connectionTimeout(1500)
+                .connectionTimeout(15000)
                 .retry(0, false)
                 .proxy(proxy).getClient();
 

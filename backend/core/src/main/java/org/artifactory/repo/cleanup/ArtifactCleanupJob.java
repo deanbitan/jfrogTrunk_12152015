@@ -26,10 +26,8 @@ import org.artifactory.repo.service.ImportJob;
 import org.artifactory.schedule.JobCommand;
 import org.artifactory.schedule.StopCommand;
 import org.artifactory.schedule.StopStrategy;
-import org.artifactory.schedule.Task;
 import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
-import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
@@ -38,24 +36,20 @@ import org.quartz.JobExecutionException;
  *
  * @author Noam Tenne
  */
-@JobCommand(schedulerUser = TaskUser.SYSTEM,
-        keyAttributes = {Task.REPO_KEY},
+@JobCommand(singleton = true,
+        schedulerUser = TaskUser.SYSTEM,
+        manualUser = TaskUser.SYSTEM,
         commandsToStop = {
                 @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE),
-                @StopCommand(command = ExportJob.class, strategy = StopStrategy.IMPOSSIBLE, useKey = true),
-                @StopCommand(command = RemoteReplicationJob.class, strategy = StopStrategy.IMPOSSIBLE, useKey = true)}
+                @StopCommand(command = ExportJob.class, strategy = StopStrategy.IMPOSSIBLE),
+                @StopCommand(command = RemoteReplicationJob.class, strategy = StopStrategy.IMPOSSIBLE)}
 )
 public class ArtifactCleanupJob extends QuartzCommand {
-
-    public static final String PERIOD_MILLIS = "periodMillis";
 
     @Override
     protected void onExecute(JobExecutionContext callbackContext) throws JobExecutionException {
         ArtifactoryContext artifactoryContext = ContextHelper.get();
         InternalArtifactCleanupService cleaner = artifactoryContext.beanForType(InternalArtifactCleanupService.class);
-        JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
-        String repoKey = jobDataMap.get(Task.REPO_KEY).toString();
-        long periodMillis = Long.parseLong(jobDataMap.get(PERIOD_MILLIS).toString());
-        cleaner.clean(repoKey, periodMillis);
+        cleaner.clean();
     }
 }

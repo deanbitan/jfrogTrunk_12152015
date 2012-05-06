@@ -37,7 +37,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 @XmlType(name = "SecurityType", propOrder = {"anonAccessEnabled", "hideUnauthorizedResources", "passwordSettings",
-        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "archiveBrowsingEnabled"},
+        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings"},
         namespace = Descriptor.NS)
 public class SecurityDescriptor implements Descriptor {
 
@@ -66,9 +66,6 @@ public class SecurityDescriptor implements Descriptor {
 
     @XmlElement(name = "crowdSettings", required = false)
     private CrowdSettings crowdSettings;
-
-    @XmlElement(defaultValue = "false", required = false)
-    private boolean archiveBrowsingEnabled;
 
     public boolean isAnonAccessEnabled() {
         return anonAccessEnabled;
@@ -273,13 +270,5 @@ public class SecurityDescriptor implements Descriptor {
 
     public void setCrowdSettings(CrowdSettings crowdSettings) {
         this.crowdSettings = crowdSettings;
-    }
-
-    public boolean isArchiveBrowsingEnabled() {
-        return archiveBrowsingEnabled;
-    }
-
-    public void setArchiveBrowsingEnabled(boolean archiveBrowsingEnabled) {
-        this.archiveBrowsingEnabled = archiveBrowsingEnabled;
     }
 }

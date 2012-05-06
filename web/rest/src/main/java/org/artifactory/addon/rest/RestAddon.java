@@ -18,6 +18,7 @@
 
 package org.artifactory.addon.rest;
 
+import com.sun.istack.internal.NotNull;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.license.LicenseStatus;
@@ -26,18 +27,20 @@ import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.exception.BlackedOutException;
-import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.replication.ReplicationRequest;
+import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
-import org.artifactory.rest.resource.artifact.DownloadResource;
+import org.artifactory.rest.resource.artifact.legacy.DownloadResource;
 import org.artifactory.sapi.common.Lock;
 import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.dependency.BuildPatternArtifacts;
+import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
 import org.jfrog.build.api.release.Promotion;
 
 import javax.annotation.Nonnull;
@@ -134,21 +137,6 @@ public interface RestAddon extends Addon {
      * @return Promotion result
      */
     PromotionResult promoteBuild(String buildName, String buildNumber, Promotion promotion) throws ParseException;
-
-    /**
-     * Returns a list of files under the given folder path
-     *
-     * @param uri          Request URI as sent by the user
-     * @param path         Path to search under
-     * @param deep         Zero if the scanning should be shallow. One for deep
-     * @param depth        Number of hierarchy levels to iterate down
-     * @param listFolders  Zero if folders should be excluded. One if they should be included
-     * @param mdTimestamps Zero if metadata last modified timestamps should not be included in the list. One if they
-     *                     should
-     */
-    @Lock(transactional = true)
-    FileList getFileList(@Nullable String uri, String path, int deep, int depth, int listFolders, int mdTimestamps)
-            throws BlackedOutException;
 
     /**
      * Locally replicates the given remote path
@@ -292,6 +280,8 @@ public interface RestAddon extends Addon {
 
     ResponseCtx runPluginExecution(String executionName, Map params, boolean async);
 
+    Response getStagingStrategy(String strategyName, String buildName, Map params);
+
     ItemPermissions getItemPermissions(HttpServletRequest request, String path);
 
     Response searchDependencyBuilds(HttpServletRequest request, String sha1) throws UnsupportedEncodingException;
@@ -397,7 +387,49 @@ public interface RestAddon extends Addon {
     /**
      * Handles requests for active user plugin info
      *
+     * @param pluginType Specific plugin type to return the info for; All types if none is specified
      * @return Response
      */
-    Response getUserPluginInfo();
+    Response getUserPluginInfo(@Nullable String pluginType);
+
+    /**
+     * Returns the outputs of build matching the request
+     *
+     * @param buildPatternArtifactsRequest contains build name and build number or keyword
+     * @param servletContextUrl            for building urls of current Artifactory
+     * @return build outputs (build dependencies and generated artifacts)
+     */
+    @Nullable
+    BuildPatternArtifacts getBuildPatternArtifacts(@Nonnull BuildPatternArtifactsRequest buildPatternArtifactsRequest,
+            @NotNull String servletContextUrl);
+
+    /**
+     * Invokes a user plugin based build promotion action
+     *
+     * @param promotionName Name of closure
+     * @param buildName     Name of build to promote
+     * @param buildNumber   Number of build to promote
+     * @param params        Promotion params
+     * @return Response context
+     */
+    ResponseCtx promote(String promotionName, String buildName, String buildNumber, Map params);
+
+    /**
+     * Searches for artifact versions by it's groupId and artifactId (version is optional and relates to
+     * integration versions only). The results are sorted from latest to oldest (latest is first).
+     *
+     * @param groupId       the groupId of the artifact
+     * @param artifactId    the artifactId of the artifact
+     * @param version       the artifact version, if null then perform the search on all available versions
+     * @param reposToSearch limit the search to specific repos, if null then performs the search on all real repos
+     * @param remote        whether to fetch maven-metadata from remote repository or not
+     * @return A wrapper class of the search results
+     */
+    @Lock(transactional = true)
+    ArtifactVersionsResult getArtifactVersions(String groupId, String artifactId, @Nullable String version,
+            @Nullable StringList reposToSearch, boolean remote);
+
+    @Lock(transactional = true)
+    void writeStreamingFileList(HttpServletResponse response, String requestUrl, String path, int deep, int depth,
+            int listFolders, int mdTimestamps, int includeRootPath) throws IOException, BlackedOutException;
 }

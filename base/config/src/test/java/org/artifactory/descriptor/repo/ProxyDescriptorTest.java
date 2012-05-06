@@ -18,8 +18,10 @@
 
 package org.artifactory.descriptor.repo;
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
+import org.testng.internal.Utils;
+
+import static org.testng.Assert.*;
 
 /**
  * Tests the ProxyDescriptor.
@@ -31,12 +33,24 @@ public class ProxyDescriptorTest {
 
     public void defaultConstructor() {
         ProxyDescriptor proxy = new ProxyDescriptor();
-        Assert.assertNull(proxy.getKey());
-        Assert.assertNull(proxy.getHost());
-        Assert.assertEquals(proxy.getPort(), 0);
-        Assert.assertNull(proxy.getUsername());
-        Assert.assertNull(proxy.getPassword());
-        Assert.assertNull(proxy.getDomain());
+        assertNull(proxy.getKey());
+        assertNull(proxy.getHost());
+        assertEquals(proxy.getPort(), 0);
+        assertNull(proxy.getUsername());
+        assertNull(proxy.getPassword());
+        assertNull(proxy.getDomain());
+    }
+
+    public void redirectedToHosts() {
+        ProxyDescriptor proxy = new ProxyDescriptor();
+        String redirectedToHosts = "a,b;c\nd e";
+        proxy.setRedirectedToHosts(redirectedToHosts);
+        assertNotNull(proxy.getRedirectedToHosts());
+        assertEquals(proxy.getRedirectedToHosts(), redirectedToHosts);
+        String[] hostsList = proxy.getRedirectedToHostsList();
+        assertNotNull(hostsList);
+        assertEquals(hostsList.length, 5, "Unexpected redirect host list: " + Utils.arrayToString(hostsList));
+        assertEquals(hostsList[2], "c");
     }
 
 }

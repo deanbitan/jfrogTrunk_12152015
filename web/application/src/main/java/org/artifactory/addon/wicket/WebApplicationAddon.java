@@ -86,6 +86,11 @@ public interface WebApplicationAddon extends Addon {
      */
     String getVersionInfo();
 
+    /**
+     * @return Artifactory version string for list browsing
+     */
+    String getListBrowsingVersion();
+
     String getPageTitle(BasePage page);
 
     /**

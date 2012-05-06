@@ -87,6 +87,19 @@
             <MaxFileSize>10MB</MaxFileSize>
         </triggeringPolicy>
     </appender>
+    <appender name="REQUEST_TRACE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/request_trace.log</File>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%date %message%n</pattern>
+        </layout>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/request_trace.%i.log</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>10MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
     <root>
         <level value="WARN"/>
         <appender-ref ref="CONSOLE"/>
@@ -110,6 +123,10 @@
     <logger name="org.artifactory.traffic.RequestLogger" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="REQUEST"/>
+    </logger>
+    <logger name="org.artifactory.request.RequestTraceLogger" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="REQUEST_TRACE"/>
     </logger>
 
     <!-- third party loggers -->

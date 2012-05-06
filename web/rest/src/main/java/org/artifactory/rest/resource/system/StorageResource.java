@@ -66,9 +66,9 @@ public class StorageResource {
 
     @POST
     @Path("exportds")
+    @Deprecated
     public Response activateExport(@QueryParam("to") String destDir) {
-        storageService.exportDbDataStore(destDir);
-        return Response.noContent().build();
+        throw new IllegalStateException("Export data is no longer supported");
     }
 
     @POST

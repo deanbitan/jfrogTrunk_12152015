@@ -18,12 +18,11 @@
 
 package org.artifactory.webapp.wicket.page.build.panel.compare;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+import org.artifactory.api.build.BuildNumberComparator;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -58,7 +57,7 @@ public class BuildForNameListSorter {
      * @param ascending True if the order should be ascending
      */
     @SuppressWarnings({"unchecked"})
-    private static void sortManual(List toSort, boolean ascending) {
+    public static void sortManual(List toSort, boolean ascending) {
         Comparator comparator = new BuildNumberComparator();
         if (!ascending) {
             comparator = Collections.reverseOrder(comparator);
@@ -66,26 +65,4 @@ public class BuildForNameListSorter {
         Collections.sort(toSort, comparator);
     }
 
-    /**
-     * A custom build number comparator. If both build number are exclusively numeric, they will be compared as Longs;
-     * otherwise they will be compared as strings.
-     */
-    private static class BuildNumberComparator implements Comparator<BuildRun>, Serializable {
-
-        @Override
-        public int compare(BuildRun build1, BuildRun build2) {
-            if ((build1 == null) || (build2 == null)) {
-                return 0;
-            }
-
-            String build1Number = build1.getNumber();
-            String build2Number = build2.getNumber();
-
-            if (StringUtils.isNumeric(build1Number) && StringUtils.isNumeric(build2Number)) {
-                return Long.valueOf(build1Number).compareTo(Long.valueOf(build2Number));
-            }
-
-            return build1Number.compareTo(build2Number);
-        }
-    }
 }

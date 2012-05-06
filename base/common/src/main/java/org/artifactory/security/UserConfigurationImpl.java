@@ -18,6 +18,8 @@
 
 package org.artifactory.security;
 
+import java.util.Set;
+
 /**
  * @author Noam Y. Tenne
  */
@@ -29,6 +31,7 @@ public class UserConfigurationImpl {
     private boolean admin;
     private boolean profileUpdatable = true;
     private boolean internalPasswordDisabled;
+    private Set<String> groups;
     private String lastLoggedIn;
     private String realm;
 
@@ -83,6 +86,14 @@ public class UserConfigurationImpl {
         this.internalPasswordDisabled = internalPasswordDisabled;
     }
 
+    public Set<String> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(Set<String> groups) {
+        this.groups = groups;
+    }
+
     public String getLastLoggedIn() {
         return lastLoggedIn;
     }
@@ -122,6 +133,9 @@ public class UserConfigurationImpl {
         if (email != null ? !email.equals(that.email) : that.email != null) {
             return false;
         }
+        if (groups != null ? !groups.equals(that.groups) : that.groups != null) {
+            return false;
+        }
         if (!name.equals(that.name)) {
             return false;
         }
@@ -139,6 +153,7 @@ public class UserConfigurationImpl {
         result = 31 * result + (admin ? 1 : 0);
         result = 31 * result + (profileUpdatable ? 1 : 0);
         result = 31 * result + (internalPasswordDisabled ? 1 : 0);
+        result = 31 * result + (groups != null ? groups.hashCode() : 0);
         result = 31 * result + (realm != null ? realm.hashCode() : 0);
         return result;
     }

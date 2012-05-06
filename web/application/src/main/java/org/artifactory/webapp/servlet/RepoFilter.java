@@ -33,6 +33,7 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.request.RequestTraceLogger;
 import org.artifactory.security.HttpAuthenticationDetails;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
@@ -186,33 +187,44 @@ public class RepoFilter extends DelayedFilterBase {
         }
     }
 
-    @SuppressWarnings({"StringEquality"})
     private void doDownload(HttpServletRequest request, HttpServletResponse response, String method,
             ArtifactoryRequest artifactoryRequest, ArtifactoryResponse artifactoryResponse) throws IOException {
         //We expect either a url with the repo prefix and an optional repo-key@repo
         try {
-            log.debug("Serving a download or info request.");
+            String trace = artifactoryRequest.getParameter("trace");
+            if (trace != null) {
+                artifactoryResponse = new TraceLoggingResponse(artifactoryResponse);
+            }
+            RequestTraceLogger.startNewContext(method, getContext().getAuthorizationService().currentUsername(),
+                    artifactoryRequest.getRepoPath().getId(), artifactoryResponse);
+
+            RequestTraceLogger.log("Received request");
             getDownloadService().process(artifactoryRequest, artifactoryResponse);
         } catch (FileExpectedException e) {
-            //If we try to get a file but encountered a folder and the request does not end with a '/'
-            // send a redirect that adds the slash with the request with a 302 status code. In the next request
-            // if it is a head request, then it is ok since the resource was found and avoid
-            // an infinite redirect situation, however if it is a GET, then
-            // return a 404 since it is the incorrect resource to get (we mimic was apache servers are doing).
+            // If we try to get a file but encounter a folder and the request does not end with a '/' send a redirect
+            // that adds the slash with the request with a 302 status code. In the next request if it is a head request,
+            // then it is ok since the resource was found and avoid an infinite redirect situation, however if it is a
+            // GET, then return a 404 since it is the incorrect resource to get (we mimic was apache servers are doing).
             // see RTFACT-2738 and RTFACT-3510
             if (!request.getServletPath().endsWith("/")) {
-                log.debug("Redirecting a directory browsing or head request.");
-                response.sendRedirect(request.getRequestURL().append("/").toString());
+                String dirPath = request.getRequestURL().append("/").toString();
+                RequestTraceLogger.log("Redirecting to the directory path '%s'", dirPath);
+                response.sendRedirect(dirPath);
             } else if ("head".equals(method)) {
-                log.debug("Serving a directory head request.");
+                RequestTraceLogger.log("Handling directory HEAD request ");
             } else {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND,
-                        "Expected file response but received a directory response: " + e.getRepoPath());
+                RequestTraceLogger.log("Expected file but received a directory - returning a %s response",
+                        HttpServletResponse.SC_NOT_FOUND);
+                artifactoryResponse.sendError(HttpServletResponse.SC_NOT_FOUND,
+                        "Expected file response but received a directory response: " + e.getRepoPath(), log);
             }
         } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Could not process download request: " + e.getMessage());
-            log.debug("Error processing download request.", e);
+            RequestTraceLogger.log("Error handling request: %s - returning a %s response", e.getMessage(),
+                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            artifactoryResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Could not process download request: " + e.getMessage(), log);
+        } finally {
+            RequestTraceLogger.destroyContext();
         }
     }
 

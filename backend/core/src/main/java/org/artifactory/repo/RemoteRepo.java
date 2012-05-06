@@ -58,7 +58,7 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
      */
     ResourceStreamHandle conditionalRetrieveResource(String relPath, boolean forceRemoteDownload) throws IOException;
 
-    long getFailedRetrievalCachePeriodSecs();
+    long getAssumedOfflinePeriodSecs();
 
     long getMissedRetrievalCachePeriodSecs();
 
@@ -103,4 +103,26 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
      * @return True if this repo supports listing remote directories AND it's not offline AND it's not blacklisted.
      */
     boolean isListRemoteFolderItems();
+
+    /**
+     * @return True if this repository is assumed to be offline due to download requests exceptions
+     */
+    boolean isAssumedOffline();
+
+    /**
+     * @return The next date (in milliseconds) the online monitor will check for online status of an assumed offline
+     *         repository. 0 if the repository is not assumed offline.
+     * @see RemoteRepo#isAssumedOffline()
+     */
+    long getNextOnlineCheckMillis();
+
+    /**
+     * Manually reset the assumed offline flag to false (i.e., the repository is considered back online)
+     */
+    void resetAssumedOffline();
+
+    /**
+     * Cleanup any resources/threads this repository holds in order to be eligible for garbage collection
+     */
+    void cleanupResources();
 }

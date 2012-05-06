@@ -29,9 +29,9 @@ import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.repo.cleanup.ArtifactCleanupService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageService;
-import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.component.CancelLink;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
@@ -39,6 +39,7 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.log.LoggerFactory;
@@ -64,10 +65,46 @@ public class MaintenancePage extends AuthenticatedPage {
     @SpringBean
     private StorageService storageService;
 
+    @SpringBean
+    private ArtifactCleanupService artifactCleanupService;
+
+    private GcConfigDescriptor gcConfigDescriptor;
+    private CleanupConfigDescriptor cleanupConfigDescriptor;
+
     public MaintenancePage() {
+        Form form = new Form("form");
+        form.setOutputMarkupId(true);
+        add(form);
+
+        MutableCentralConfigDescriptor mutableDescriptor = centralConfigService.getMutableDescriptor();
+        gcConfigDescriptor = mutableDescriptor.getGcConfig();
+        cleanupConfigDescriptor = mutableDescriptor.getCleanupConfig();
+
         setOutputMarkupId(true);
         addStorageMaintenance();
-        addGarbageCollectorMaintenance();
+        addGarbageCollectorMaintenance(form);
+        addArtifactsCleanupMaintenance(form);
+        addButtons(form);
+    }
+
+    private void addButtons(Form form) {
+        add(new TitledAjaxSubmitLink("saveButton", "Save", form) {
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+                MutableCentralConfigDescriptor mutableDescriptor = centralConfigService.getMutableDescriptor();
+                mutableDescriptor.setGcConfig(gcConfigDescriptor);
+                mutableDescriptor.setCleanupConfig(cleanupConfigDescriptor);
+                centralConfigService.saveEditedDescriptorAndReload(mutableDescriptor);
+                info("Garbage collection settings were successfully saved.");
+                AjaxUtils.refreshFeedback();
+            }
+        });
+        add(new CancelLink("cancel", form) {
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                setResponsePage(MaintenancePage.class);
+            }
+        });
     }
 
     /**
@@ -130,40 +167,17 @@ public class MaintenancePage extends AuthenticatedPage {
         compressHelpBubble.setVisible(isDerbyUsed);
     }
 
-    private void addGarbageCollectorMaintenance() {
-        final Border gcBorder = new TitledBorder("gcBorder");
-        add(gcBorder);
-        Form<GcConfigDescriptor> gcForm =
-                new Form<GcConfigDescriptor>("gcForm", new CompoundPropertyModel<GcConfigDescriptor>(
-                        centralConfigService.getMutableDescriptor().getGcConfig()));
-        gcBorder.add(gcForm);
+    private void addGarbageCollectorMaintenance(Form form) {
+        final Border gcBorder = new TitledBorder("gcBorder", new CompoundPropertyModel(gcConfigDescriptor));
+        form.add(gcBorder);
         TextField<String> cronExpTextField = new TextField<String>("cronExp");
         cronExpTextField.setRequired(true);
         cronExpTextField.add(CronExpValidator.getInstance());
-        gcForm.add(cronExpTextField);
-        gcForm.add(new SchemaHelpBubble("cronExp.help"));
-        gcForm.add(new CronNextDatePanel("cronNextDatePanel", cronExpTextField));
-        add(new TitledAjaxSubmitLink("saveGcButton", "Save", gcForm) {
-            @Override
-            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
-                MutableCentralConfigDescriptor mutableDescriptor = centralConfigService.getMutableDescriptor();
-                mutableDescriptor.setGcConfig(((GcConfigDescriptor) form.getModelObject()));
-                centralConfigService.saveEditedDescriptorAndReload(mutableDescriptor);
-                info("Garbage collection settings were successfully saved.");
-                AjaxUtils.refreshFeedback();
-            }
-        });
-        add(new CancelLink("cancel", gcForm) {
-            @Override
-            public void onClick(AjaxRequestTarget target) {
-                setResponsePage(MaintenancePage.class);
-            }
-        });
+        gcBorder.add(cronExpTextField);
+        gcBorder.add(new SchemaHelpBubble("cronExp.help"));
+        gcBorder.add(new CronNextDatePanel("cronNextDatePanel", cronExpTextField));
 
-        String buttonText =
-                ConstantValues.gcUseV1.getBoolean() ? "Run Storage GC and Fix Consistency" :
-                        "Run Storage Garbage Collection";
-        TitledAjaxLink collectLink = new TitledAjaxLink("collect", buttonText) {
+        TitledAjaxLink collectLink = new TitledAjaxLink("collect", "Run Storage Garbage Collection") {
             @Override
             public void onClick(AjaxRequestTarget target) {
                 MultiStatusHolder statusHolder = new MultiStatusHolder();
@@ -175,9 +189,37 @@ public class MaintenancePage extends AuthenticatedPage {
                 }
             }
         };
-        gcForm.add(collectLink);
+        gcBorder.add(collectLink);
         HelpBubble gcHelpBubble = new HelpBubble("gcHelp", new ResourceModel("garbageHelp"));
-        gcForm.add(gcHelpBubble);
+        gcBorder.add(gcHelpBubble);
+    }
+
+    private void addArtifactsCleanupMaintenance(Form form) {
+        final Border cleanupBorder = new TitledBorder("cleanupBorder",
+                new CompoundPropertyModel(cleanupConfigDescriptor));
+        form.add(cleanupBorder);
+        TextField<String> cronExpTextField = new TextField<String>("cronExp");
+        cronExpTextField.setRequired(true);
+        cronExpTextField.add(CronExpValidator.getInstance());
+        cleanupBorder.add(cronExpTextField);
+        cleanupBorder.add(new SchemaHelpBubble("cronExp.help"));
+        cleanupBorder.add(new CronNextDatePanel("cronNextDatePanel", cronExpTextField));
+
+        TitledAjaxLink collectLink = new TitledAjaxLink("cleanup", "Run Unused Cached Artifacts Cleanup") {
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                artifactCleanupService.callManualArtifactCleanup(statusHolder);
+                if (statusHolder.isError()) {
+                    error("Could not run the artifact cleanup: " + statusHolder.getLastError().getMessage() + ".");
+                } else {
+                    info("Artifact cleanup was successfully scheduled to run in the background.");
+                }
+            }
+        };
+        cleanupBorder.add(collectLink);
+        HelpBubble cleanupHelpBubble = new HelpBubble("cleanupHelp", new ResourceModel("cleanupHelp"));
+        cleanupBorder.add(cleanupHelpBubble);
     }
 
     @Override

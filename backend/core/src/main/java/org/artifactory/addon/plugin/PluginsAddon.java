@@ -20,7 +20,9 @@ package org.artifactory.addon.plugin;
 
 import org.artifactory.addon.Addon;
 import org.artifactory.api.config.ImportableExportable;
+import org.artifactory.build.staging.BuildStagingStrategy;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -33,5 +35,9 @@ public interface PluginsAddon extends Addon, ImportableExportable {
 
     ResponseCtx execute(String executionName, Map params, boolean async);
 
-    Map<String, List<PluginInfo>> getPluginInfo();
+    BuildStagingStrategy getStagingStrategy(String strategyName, String buildName, Map params);
+
+    Map<String, List<PluginInfo>> getPluginInfo(@Nullable String pluginType);
+
+    ResponseCtx promote(String promotionName, String buildName, String buildNumber, Map params);
 }

@@ -16,7 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.rest.resource.artifact;
+package org.artifactory.rest.resource.artifact.legacy;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.ReplicationAddon;
@@ -86,9 +86,9 @@ public class SyncResource {
             @QueryParam(PARAM_OVERWRITE) ReplicationAddon.Overwrite overwrite) throws Exception {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         RepoPath repoPath = InternalRepoPathFactory.create(path);
-        RemoteReplicationSettings settings = new RemoteReplicationSettingsBuilder(repoPath, httpResponse.getWriter()).
-                deleteExisting(delete == 1).includeProperties(true).mark(mark).overwrite(overwrite).
-                progress(progress == 1).timeout(timeout).build();
+        RemoteReplicationSettings settings = new RemoteReplicationSettingsBuilder(repoPath)
+                .responseWriter(httpResponse.getWriter()).deleteExisting(delete == 1).includeProperties(true)
+                .mark(mark).overwrite(overwrite).progress(progress == 1).timeout(timeout).build();
         return addonsManager.addonByType(RestAddon.class).replicate(settings);
     }
 }

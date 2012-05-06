@@ -447,11 +447,14 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             }
             //if remote repo has no cache
             long totalCount = count != null ? count.getCount() : 0;
-            StringBuilder builder = new StringBuilder("Are you sure you wish to delete the repository '");
-            builder.append(key).append("'?\n").append("The repository ").append(key)
-                    .append(" contains ").append(totalCount).append(" artifacts");
-            builder.append(hasCacheItems ? " in cache repo" : "");
-            builder.append(" which will be permanently deleted!");
+            StringBuilder builder = new StringBuilder("Are you sure you wish to delete the repository '").append(
+                    key).append("'?\n");
+            if (!(repoDescriptor instanceof VirtualRepoDescriptor)) {
+                builder.append("The repository ").append(key).append(" contains ").append(totalCount).append(
+                        " artifacts");
+                builder.append(hasCacheItems ? " in cache repo" : "");
+                builder.append(" which will be permanently deleted!");
+            }
             return builder.toString();
         }
 

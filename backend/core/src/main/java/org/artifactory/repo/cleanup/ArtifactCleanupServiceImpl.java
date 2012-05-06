@@ -20,19 +20,18 @@ package org.artifactory.repo.cleanup;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
+import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
 import org.artifactory.api.search.xml.metadata.stats.StatsSearchControls;
-import org.artifactory.common.ConstantValues;
+import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.jcr.utils.JcrHelper;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -44,7 +43,6 @@ import org.artifactory.schedule.TaskService;
 import org.artifactory.schedule.TaskUtils;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.util.FileUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +51,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The main implementation of the clean-up service
@@ -68,6 +66,9 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
     private static final Logger log = LoggerFactory.getLogger(ArtifactCleanupServiceImpl.class);
 
     @Autowired
+    private CentralConfigService centralConfigService;
+
+    @Autowired
     private InternalRepositoryService repositoryService;
 
     @Autowired
@@ -80,63 +81,65 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
 
     @Override
     public void reload(@Nullable CentralConfigDescriptor oldDescriptor) {
-        List<LocalCacheRepoDescriptor> oldCacheRepoDescriptors = Lists.newArrayList();
+        CentralConfigDescriptor descriptor = centralConfigService.getDescriptor();
+        CleanupConfigDescriptor oldCleanupConfig = null;
         if (oldDescriptor != null) {
-            Map<String, RemoteRepoDescriptor> remoteRepositoriesMap = oldDescriptor.getRemoteRepositoriesMap();
-            for (RemoteRepoDescriptor remoteRepoDescriptor : remoteRepositoriesMap.values()) {
-                LocalCacheRepoDescriptor descriptor = new LocalCacheRepoDescriptor();
-                descriptor.setDescription(remoteRepoDescriptor.getDescription() + " (local file cache)");
-                descriptor.setKey(remoteRepoDescriptor.getKey() + LocalCacheRepo.PATH_SUFFIX);
-                descriptor.setRemoteRepo(remoteRepoDescriptor);
-                oldCacheRepoDescriptors.add(descriptor);
-            }
+            oldCleanupConfig = oldDescriptor.getCleanupConfig();
         }
-        new LocalCacheDescriptorHandler(repositoryService.getCachedRepoDescriptors(),
-                oldCacheRepoDescriptors).reschedule();
+        new CleanupConfigDescriptorHandler(descriptor.getCleanupConfig(), oldCleanupConfig).reschedule();
     }
 
     @Override
     public void destroy() {
-        new LocalCacheDescriptorHandler(null, null).unschedule();
+        new CleanupConfigDescriptorHandler(null, null).unschedule();
     }
 
     @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
+        //nop
     }
 
-    static class LocalCacheDescriptorHandler extends BaseTaskServiceDescriptorHandler<LocalCacheRepoDescriptor> {
-        final List<LocalCacheRepoDescriptor> newCacheRepoDescriptors = Lists.newArrayList();
-        final List<LocalCacheRepoDescriptor> oldCacheRepoDescriptors = Lists.newArrayList();
-        final int cleanupIntervalHours;
+    @Override
+    public void callManualArtifactCleanup(MultiStatusHolder statusHolder) {
+        TaskService taskService = InternalContextHelper.get().getTaskService();
+        taskService.checkCanStartManualTask(ArtifactCleanupJob.class, statusHolder);
+        if (!statusHolder.isError()) {
+            try {
+                TaskBase task = TaskUtils.createManualTask(ArtifactCleanupJob.class, 0L);
+                taskService.startTask(task, true);
+            } catch (Exception e) {
+                statusHolder.setError("Error scheduling manual artifact cleanup", e, log);
+            }
+        }
+    }
+
+    static class CleanupConfigDescriptorHandler extends BaseTaskServiceDescriptorHandler<CleanupConfigDescriptor> {
+
+        final List<CleanupConfigDescriptor> oldDescriptorHolder = Lists.newArrayList();
+        final List<CleanupConfigDescriptor> newDescriptorHolder = Lists.newArrayList();
+
+        CleanupConfigDescriptorHandler(CleanupConfigDescriptor newDesc, CleanupConfigDescriptor oldDesc) {
+            if (newDesc != null) {
+                newDescriptorHolder.add(newDesc);
+            }
+            if (oldDesc != null) {
+                oldDescriptorHolder.add(oldDesc);
+            }
+        }
 
         @Override
         public String jobName() {
             return "Artifact Cleanup";
         }
 
-        LocalCacheDescriptorHandler(List<LocalCacheRepoDescriptor> newCacheRepoDescriptors,
-                List<LocalCacheRepoDescriptor> oldCacheRepoDescriptors) {
-            cleanupIntervalHours = ConstantValues.repoCleanupIntervalHours.getInt();
-            if (cleanupIntervalHours < 1) {
-                throw new IllegalArgumentException(
-                        "Remote repository cache cleanup interval hours cannot be less than 1.");
-            }
-            if (newCacheRepoDescriptors != null) {
-                this.newCacheRepoDescriptors.addAll(newCacheRepoDescriptors);
-            }
-            if (oldCacheRepoDescriptors != null) {
-                this.oldCacheRepoDescriptors.addAll(oldCacheRepoDescriptors);
-            }
+        @Override
+        public List<CleanupConfigDescriptor> getNewDescriptors() {
+            return newDescriptorHolder;
         }
 
         @Override
-        public List<LocalCacheRepoDescriptor> getNewDescriptors() {
-            return this.newCacheRepoDescriptors;
-        }
-
-        @Override
-        public List<LocalCacheRepoDescriptor> getOldDescriptors() {
-            return this.oldCacheRepoDescriptors;
+        public List<CleanupConfigDescriptor> getOldDescriptors() {
+            return oldDescriptorHolder;
         }
 
         @Override
@@ -150,79 +153,54 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
         }
 
         @Override
-        public Predicate<Task> getPredicate(@Nonnull final LocalCacheRepoDescriptor descriptor) {
-            return new Predicate<Task>() {
-                @Override
-                public boolean apply(@Nullable Task input) {
-                    return input == null || (
-                            ArtifactCleanupJob.class.isAssignableFrom(input.getType()) &&
-                                    descriptor.getKey().equals(input.getAttribute(Task.REPO_KEY))
-                    );
-                }
-            };
+        public Predicate<Task> getPredicate(@Nonnull CleanupConfigDescriptor descriptor) {
+            return getAllPredicate();
         }
 
         @Override
-        public LocalCacheRepoDescriptor findOldFromNew(@Nonnull LocalCacheRepoDescriptor newDescriptor) {
-            for (LocalCacheRepoDescriptor oldLocalCacheDescriptor : oldCacheRepoDescriptors) {
-                if (oldLocalCacheDescriptor.getKey().equals(newDescriptor.getKey())) {
-                    return oldLocalCacheDescriptor;
-                }
-            }
-            return null;
+        public void activate(@Nonnull CleanupConfigDescriptor descriptor, boolean manual) {
+            TaskBase cleanupTask = TaskUtils.createCronTask(ArtifactCleanupJob.class, descriptor.getCronExp());
+            InternalContextHelper.get().getTaskService().startTask(cleanupTask, manual);
         }
 
         @Override
-        public void activate(@Nonnull LocalCacheRepoDescriptor descriptor, boolean manual) {
-            int periodHours = descriptor.getRemoteRepo().getUnusedArtifactsCleanupPeriodHours();
-            if (periodHours > 0) {
-                long interval = getHoursInMillies(cleanupIntervalHours);
-                TaskBase task = TaskUtils.createRepeatingTask(ArtifactCleanupJob.class,
-                        interval,
-                        FileUtils.nextLong(interval));
-                String cachedRepoKey = descriptor.getKey();
-                task.addAttribute(Task.REPO_KEY, cachedRepoKey);
-                task.addAttribute(ArtifactCleanupJob.PERIOD_MILLIS, getHoursInMillies(periodHours));
-                InternalContextHelper.get().getBean(TaskService.class).startTask(task, false);
-                log.info("Scheduled auto-cleanup to run every {} hours on {}.", cleanupIntervalHours,
-                        cachedRepoKey);
-            }
-        }
-
-        /**
-         * Returns the given number of hours, in milliseconds
-         *
-         * @param hours Number of hours to convert
-         * @return Number of hours - In milliseconds
-         */
-        private long getHoursInMillies(int hours) {
-            return (hours * 60L * 60L * 1000L);
+        public CleanupConfigDescriptor findOldFromNew(@Nonnull CleanupConfigDescriptor newDescriptor) {
+            return oldDescriptorHolder.isEmpty() ? null : oldDescriptorHolder.get(0);
         }
     }
 
     @Override
-    public void clean(String repoKey, long periodMillis) {
-        LocalRepoDescriptor descriptor = repositoryService.localOrCachedRepoDescriptorByKey(repoKey);
-        LocalRepo storingRepo = (LocalRepo) repositoryService.repositoryByKey(repoKey);
+    public void clean() {
+        List<LocalCacheRepoDescriptor> cachedRepoDescriptors = repositoryService.getCachedRepoDescriptors();
+        for (LocalCacheRepoDescriptor cachedRepoDescriptor : cachedRepoDescriptors) {
+            performCleanOnRepo(cachedRepoDescriptor);
+        }
+    }
 
-        //Perform sanity checks
-        if (descriptor == null) {
-            log.warn("Could not find the repository '{}' - auto-clean was not performed.", repoKey);
+    private void performCleanOnRepo(LocalCacheRepoDescriptor cachedRepoDescriptor) {
+        String repoKey = cachedRepoDescriptor.getKey();
+        long periodMillis = getHoursInMillis(
+                cachedRepoDescriptor.getRemoteRepo().getUnusedArtifactsCleanupPeriodHours());
+        if (periodMillis <= 0) {
+            log.debug("Skipping auto-clean on repository '{}': period value is {}.", repoKey, periodMillis);
             return;
         }
+
+        LocalRepo storingRepo = repositoryService.localOrCachedRepositoryByKey(repoKey);
+        //Perform sanity checks
         if (storingRepo == null) {
             log.warn("Could not find the storing repository '{}' - auto-clean was not performed.", repoKey);
             return;
         }
-        if (!descriptor.isCache() || !storingRepo.isCache()) {
-            throw new IllegalArgumentException(String.format("Cannot cleanup non-cache repository '%s'.", repoKey));
+        if (!storingRepo.isCache()) {
+            log.warn("Cannot cleanup non-cache repository '{}'.", repoKey);
+            return;
         }
 
-        if (periodMillis <= 0) {
-            throw new IllegalArgumentException(String.format(
-                    "Cannot cleanup repository  '%s' based on wrong period %s.", repoKey, periodMillis));
-        }
+        doClean(repoKey, periodMillis, storingRepo);
+    }
 
+    private void doClean(String repoKey, long periodMillis, LocalRepo storingRepo) {
         log.info("Auto-clean has begun on the repository '{}' with period of {} millis.", repoKey, periodMillis);
 
         //Calculate unused artifact expiry
@@ -230,6 +208,7 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
 
         //Perform a metadata search on the given repo. Look for artifacts that have lastDownloaded stats
         StatsSearchControls searchControls = new StatsSearchControls();
+        searchControls.setLimitSearchResults(false);
         searchControls.addRepoToSearch(repoKey);
         searchControls.setValue(JcrHelper.getCalendar(expiryMillis));
         ItemSearchResults<GenericMetadataSearchResult<StatsInfo>> metadataSearchResults =
@@ -260,5 +239,15 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
 
         log.info("Auto-clean on the repository '{}' has ended. {} artifact(s) were cleaned",
                 repoKey, cleanedArtifactsCount);
+    }
+
+    /**
+     * Returns the given number of hours, in milliseconds
+     *
+     * @param hours Number of hours to convert
+     * @return Number of hours - In milliseconds
+     */
+    private long getHoursInMillis(int hours) {
+        return TimeUnit.HOURS.toMillis(hours);
     }
 }

@@ -19,7 +19,6 @@
 package org.artifactory.jcr.jackrabbit;
 
 import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentSkipListMap;
-import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.core.util.db.DatabaseAware;
@@ -36,7 +35,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.InputStream;
 import java.sql.ResultSet;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -85,15 +83,10 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryDataStore implements 
      */
     @Override
     public File getOrCreateFile(final DataIdentifier identifier, final long expectedLength) throws DataStoreException {
-
         final String id = identifier.toString();
         final ArtifactoryDbDataRecord record = getCachedRecord(id);
         if (record == null) {
-            if (v1) {
-                throw new DataStoreException("Cannot load file from Blobs if DB Record does not exists in Map!");
-            } else {
-                return getFile(identifier, expectedLength);
-            }
+            return getFile(identifier, expectedLength);
         } else {
             return record.guardedActionOnFile(new Callable<File>() {
                 @Override
@@ -102,7 +95,6 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryDataStore implements 
                 }
             });
         }
-
     }
 
     private File getFile(DataIdentifier identifier, long expectedLength) throws DataStoreException {
@@ -182,40 +174,6 @@ public class ArtifactoryDbDataStoreImpl extends ArtifactoryDataStore implements 
 
     public void setBlobsCacheDir(String blobsCacheDir) {
         this.blobsCacheDir = blobsCacheDir;
-    }
-
-    public void exportData(String destDir) throws Exception {
-        if (!v1) {
-            throw new IllegalStateException("Export data is only implemented for v1 datastores.");
-        }
-        super.scanDataStore(System.currentTimeMillis());
-        Collection<ArtifactoryDbDataRecord> entries = getAllEntries();
-        File binariesFolder = getBinariesFolder();
-        String binariesFolderAbsolutePath = binariesFolder.getAbsolutePath();
-        for (ArtifactoryDbDataRecord entry : entries) {
-            File src;
-            try {
-                src = getOrCreateFile(entry.getIdentifier(), entry.getLength());
-            } catch (DataStoreException e) {
-                String msg = "Bad identifier: " + entry.getIdentifier();
-                log.error(msg);
-                if (log.isDebugEnabled()) {
-                    log.debug(msg, e);
-                }
-                continue;
-            }
-            String absPath = src.getAbsolutePath();
-            File dest;
-            if (absPath.startsWith(binariesFolderAbsolutePath)) {
-                String suffix = absPath.substring(binariesFolderAbsolutePath.length());
-                dest = new File(destDir, suffix);
-            } else {
-                dest = new File(destDir, src.getName());
-            }
-            if (!src.getAbsolutePath().equals(dest.getAbsolutePath())) {
-                FileUtils.copyFile(src, dest);
-            }
-        }
     }
 
     public class FilesLruCache {

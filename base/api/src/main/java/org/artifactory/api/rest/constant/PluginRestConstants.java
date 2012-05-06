@@ -24,7 +24,12 @@ package org.artifactory.api.rest.constant;
 public interface PluginRestConstants {
     String PATH_ROOT = "plugins";
     String PATH_EXECUTE = "execute";
+    String PATH_BUILD = "build/";
+    String PATH_STAGING = PATH_BUILD + "staging";
+    String PATH_PROMOTE = PATH_BUILD + "promote";
 
     String PARAM_PARAMS = "params";
     String PARAM_ASYNC = "async";
+
+    String MT_BUILD_STAGING_STRATEGY = RestConstants.MT_JFROG_APP + PATH_ROOT + ".BuildStagingStrategy+json";
 }

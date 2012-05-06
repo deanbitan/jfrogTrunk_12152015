@@ -151,7 +151,6 @@ public class TrafficReader {
      * @return Collection<File> - Collection of file objects that represent the traffic entry log files which are
      *         relevant to the given time window
      */
-    @SuppressWarnings({"unchecked"})
     public Collection<File> readFiles(Date startDate, Date endDate) {
         IOFileFilter trafficLogFileFilter = new AbstractFileFilter() {
             @Override

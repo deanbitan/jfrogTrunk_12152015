@@ -84,6 +84,7 @@ public class UsageSinceResource {
 
         StatsSearchControls searchControls = new StatsSearchControls();
         searchControls.setSelectedRepoForSearch(reposToSearch);
+        searchControls.setLimitSearchResults(authorizationService.isAnonymous());
         Calendar cal = Calendar.getInstance();
         if (lastDownloaded != null) {
             cal.setTimeInMillis(lastDownloaded);

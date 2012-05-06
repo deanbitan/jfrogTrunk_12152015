@@ -18,6 +18,9 @@
 
 package org.artifactory.webapp.wicket.util;
 
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.Minutes;
 import org.quartz.CronExpression;
 
 import java.text.ParseException;
@@ -29,6 +32,9 @@ import java.util.Date;
  * @author Noam Tenne
  */
 public abstract class CronUtils {
+
+    private static final Minutes MINIMUM_ALLOWED_MINUTES = Minutes.minutes(5);
+
     private CronUtils() {
         // utility class
     }
@@ -53,6 +59,30 @@ public abstract class CronUtils {
         try {
             CronExpression cron = new CronExpression(cronExpression);
             return cron.getNextValidTimeAfter(new Date(System.currentTimeMillis()));
+        } catch (ParseException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    /**
+     * Checks if the given cron expression interval is less or equals to a certain minimum.
+     *
+     * @param cronExpression the cron expression to check
+     */
+    public static boolean isCronIntervalLessThanMinimum(String cronExpression) {
+        try {
+            // If input is empty or invalid simply return false as default
+            if (StringUtils.isBlank(cronExpression) || !isValid(cronExpression)) {
+                return false;
+            }
+
+            CronExpression cron = new CronExpression(cronExpression);
+            final Date firstExecution = cron.getNextValidTimeAfter(new Date(System.currentTimeMillis()));
+            final Date secondExecution = cron.getNextValidTimeAfter(firstExecution);
+
+            Minutes intervalMinutes = Minutes.minutesBetween(new DateTime(firstExecution),
+                    new DateTime(secondExecution));
+            return !intervalMinutes.isGreaterThan(MINIMUM_ALLOWED_MINUTES);
         } catch (ParseException e) {
             throw new IllegalArgumentException(e.getMessage());
         }

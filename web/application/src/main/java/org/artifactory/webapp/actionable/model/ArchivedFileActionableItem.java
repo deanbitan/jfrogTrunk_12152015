@@ -22,13 +22,13 @@ import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.ZipEntryInfo;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.TreeNode;
-import org.artifactory.webapp.actionable.action.DownloadAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.viewable.ViewableTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.zipentry.ZipEntryGeneralTabPanel;
@@ -47,7 +47,8 @@ public class ArchivedFileActionableItem extends ArchivedItemActionableItem {
     public ArchivedFileActionableItem(RepoPath archivePath, TreeNode<ZipEntryInfo> node) {
         super(archivePath, node);
         Set<ItemAction> actions = getActions();
-        actions.add(new DownloadAction());
+        FilteredResourcesWebAddon filteredAddon = getAddonsProvider().addonByType(FilteredResourcesWebAddon.class);
+        actions.add(filteredAddon.getZipEntryDownloadAction());
     }
 
     @Override

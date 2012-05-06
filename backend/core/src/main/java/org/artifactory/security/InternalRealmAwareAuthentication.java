@@ -18,9 +18,7 @@
 
 package org.artifactory.security;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.jcr.JcrAuthenticationProvider;
-import org.slf4j.Logger;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
@@ -29,8 +27,6 @@ import java.util.Collection;
  * @author Tomer Cohen
  */
 public class InternalRealmAwareAuthentication extends RealmAwareUserPassAuthenticationToken {
-    @SuppressWarnings({"UnusedDeclaration"})
-    private static final Logger log = LoggerFactory.getLogger(InternalRealmAwareAuthentication.class);
 
     public InternalRealmAwareAuthentication(Object principal, Object credentials) {
         super(principal, credentials);

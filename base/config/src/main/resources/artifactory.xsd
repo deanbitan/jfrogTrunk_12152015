@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.13"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.13"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.14"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.14"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -197,6 +197,7 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="gcConfig" type="GcConfigType" minOccurs="1"/>
+            <xs:element name="cleanupConfig" type="CleanupConfigType" minOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -338,6 +339,18 @@
                                 </xs:element>
                             </xs:sequence>
                         </xs:complexType>
+                    </xs:element>
+                    <xs:element name="archiveBrowsingEnabled" type="xs:boolean" minOccurs="0" default="false">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                <![CDATA[
+                        Allow Unsafe Archive Content Browsing -
+                        Determines whether viewing archive content (e.g., Javadoc browsing) directly from Artifactory is allowed.
+                        Allowing content browsing requires strict content moderation in order to make sure malicious users do not
+                        upload content that is used to compromise security. For example, to conduct cross-site scripting attacks.
+                        ]]>
+                            </xs:documentation>
+                        </xs:annotation>
                     </xs:element>
                 </xs:sequence>
             </xs:extension>
@@ -523,20 +536,20 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
-                    <xs:element name="failedRetrievalCachePeriodSecs" type="xs:long" default="30" minOccurs="0">
+                    <xs:element name="assumedOfflinePeriodSecs" type="xs:long" default="30" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                The number of seconds to cache artifact retrieval failures
-                                (resulting in comm. errors).
-                                A value of 0 means no caching.
+                                The number of seconds the repository stays in assumed offline state after a connection
+                                error. At the end of this time an online check is attempted in order to reset the
+                                offline status.
+                                A value of 0 means the repository is never assumed offline.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
                     <xs:element name="missedRetrievalCachePeriodSecs" type="xs:long" default="7200" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                The number of seconds to cache artifact retrieval misses (artifact
-                                not found).
+                                The number of seconds to cache artifact retrieval misses (artifact not found).
                                 A value of 0 means no caching.
                             </xs:documentation>
                         </xs:annotation>
@@ -683,11 +696,9 @@
                         <xs:annotation>
                             <xs:documentation source="description">
                                 (1) Discard Active References - Will removes repository elements that are declared
-                                directly
-                                under project or under a profile in the same pom that is activeByDefault.
+                                directly under project or under a profile in the same pom that is activeByDefault.
                                 (2)Discard Any References - Will removes all repository elements regardless of whether
-                                they are
-                                included in an active profile or not.
+                                they are included in an active profile or not.
                                 (3)Nothing - Don't removes any repository elements declared in the POM.
                             </xs:documentation>
                         </xs:annotation>
@@ -838,6 +849,15 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         Make this proxy the default for new remote repositories and for internal HTTP requests.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="redirectedToHosts" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        An optional list of newline or comma separated host names to which the proxy may redirect
+                        requests.
+                        The credentials of the proxy will be reused by requests redirected to any of these hosts.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1143,18 +1163,6 @@
                     <xs:documentation source="description">
                         <![CDATA[
                         Security settings specific to Atlassian Crowd.
-                        ]]>
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="archiveBrowsingEnabled" type="xs:boolean" minOccurs="0" default="false">
-                <xs:annotation>
-                    <xs:documentation source="description">
-                        <![CDATA[
-                        Allow Unsafe Archive Content Browsing -
-                        Determines whether viewing archive content (e.g., Javadoc browsing) directly from Artifactory is allowed.
-                        Allowing content browsing requires strict content moderation in order to make sure malicious users do not
-                        upload content that is used to compromise security. For example, to conduct cross-site scripting attacks.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -2028,6 +2036,22 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         GC cron exp
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="CleanupConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Cleanup config
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="cronExp" type="xs:string" default="0 12 5 * * ?" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Artifacts cleanup cron exp
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

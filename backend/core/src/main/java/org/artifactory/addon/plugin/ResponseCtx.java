@@ -28,7 +28,6 @@ public class ResponseCtx extends ResourceStreamCtx {
 
     private int status = UNSET_STATUS;
     private String message;
-    private URI location;
 
     public int getStatus() {
         return status;
@@ -44,13 +43,5 @@ public class ResponseCtx extends ResourceStreamCtx {
 
     public void setMessage(String message) {
         this.message = message;
-    }
-
-    public URI getLocation() {
-        return location;
-    }
-
-    public void setLocation(URI location) {
-        this.location = location;
     }
 }

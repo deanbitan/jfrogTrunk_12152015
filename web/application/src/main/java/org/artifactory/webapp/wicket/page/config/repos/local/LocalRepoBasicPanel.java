@@ -117,6 +117,9 @@ public class LocalRepoBasicPanel extends Panel {
         add(suppressPomConsistencyChecks);
         add(new SchemaHelpBubble("suppressPomConsistencyChecks.help"));
 
+        add(new StyledCheckbox("archiveBrowsingEnabled"));
+        add(new SchemaHelpBubble("archiveBrowsingEnabled.help"));
+
         List<RepoLayout> layouts = centralConfigService.getDescriptor().getRepoLayouts();
 
         DropDownChoice<RepoLayout> repoLayout = new DropDownChoice<RepoLayout>("repoLayout", layouts,

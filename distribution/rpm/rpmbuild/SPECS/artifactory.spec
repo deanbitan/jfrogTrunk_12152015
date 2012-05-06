@@ -45,16 +45,11 @@ rsync -r --exclude=jetty.xml --exclude=artifactory.config.xml %{extracted_standa
 %__install -D %{extracted_standalone}/bin/%{name}.default "%{buildroot}%{etc_dir}/default"
 %__install -D %{extracted_standalone}/misc/tomcat/%{name} "%{buildroot}%{_sysconfdir}/init.d/%{name}"
 
-# Replace the vars in the default script
+# Replace the vars in the init and default scripts
 
 %__sed -r --in-place "s%#export ARTIFACTORY_HOME=.*%export ARTIFACTORY_HOME=%{user_home}%" "%{buildroot}%{etc_dir}/default"
-
-%__sed -r --in-place "s%#export ARTIFACTORY_BIN_HOME=.*%export ARTIFACTORY_BIN_HOME=%{artifactory_bin_home}%" "%{buildroot}%{etc_dir}/default"
-
 %__sed -r --in-place "s%#export TOMCAT_HOME=.*%export TOMCAT_HOME=%{tomcat_home}%" "%{buildroot}%{etc_dir}/default"
-
 %__sed -r --in-place "s/#export ARTIFACTORY_USER=.*/export ARTIFACTORY_USER=%{username}/" "%{buildroot}%{etc_dir}/default"
-
 %__sed -r --in-place "s%#export CATALINA_PID=.*%export CATALINA_PID=%{pid_dir}/%{name}.pid%" "%{buildroot}%{etc_dir}/default"
 
 # Create log dir
@@ -88,7 +83,10 @@ rsync -r --exclude=jetty.xml --exclude=artifactory.config.xml %{extracted_standa
 %__cp -r %{extracted_standalone}/clilib "%{buildroot}%{artifactory_bin_home}/"
 %__cp -r %{extracted_standalone}/misc "%{buildroot}%{artifactory_bin_home}/"
 
-%__cp %{extracted_standalone}/{Artifactory-Third-Parties-Usage.html,COPYING,COPYING.LESSER,README.txt} "%{buildroot}%{artifactory_bin_home}/"
+%__cp %{extracted_standalone}/Artifactory-Third-Parties-Usage.html "%{buildroot}%{artifactory_bin_home}/"
+%__cp %{extracted_standalone}/COPYING "%{buildroot}%{artifactory_bin_home}/"
+%__cp %{extracted_standalone}/COPYING.LESSER "%{buildroot}%{artifactory_bin_home}/"
+%__cp %{extracted_standalone}/README.txt "%{buildroot}%{artifactory_bin_home}/"
 
 %__install -d "%{buildroot}%{tomcat_home}"
 %__cp -r %{extracted_tomcat}/* "%{buildroot}%{tomcat_home}/"
@@ -125,6 +123,23 @@ if [ "$CURRENT_USER" != "root" ]; then
     exit 1
 fi
 
+SERVICE_FILE="%{_sysconfdir}/init.d/%{name}"
+if [ -e "$SERVICE_FILE" ]; then
+    # Checking same layout. If not fails upgrade
+    if [ -n "`grep "/etc/opt/jfrog/artifactory/default" "$SERVICE_FILE"`" ]; then
+        echo "ERROR: Currently installed Artifactory version does not have the same layout than this RPM!"
+        echo "ERROR: Upgrade impossible!"
+        exit 1
+    fi
+
+    # Shutting down the artifactory service if running
+    SERVICE_STATUS="`$SERVICE_FILE status`"
+    if [[ ! "$SERVICE_STATUS" =~ .*[sS]topped.* ]]; then
+        echo "Stopping the artifactory service..."
+        $SERVICE_FILE stop || exit $?
+    fi
+fi
+
 echo "Checking if group %{group_name} exists..."
 EXISTING_GROUP="`grep %{group_name} /etc/group | awk -F ':' '{ print $1 }' 2>/dev/null`"
 
@@ -145,17 +160,6 @@ else
   echo "User %{username} exists."
 fi
 
-# Shutting down the artifactory service
-
-SERVICE_FILE=%{_sysconfdir}/init.d/%{name}
-if [ -f $SERVICE_FILE ]; then
-  SERVICE_STATUS="`$SERVICE_FILE status`"
-  if [[ ! "$SERVICE_STATUS" =~ .*[sS]topped.* ]]; then
-    echo "Stopping the artifactory service..."
-    $SERVICE_FILE stop || exit $?
-  fi
-fi
-
 # Cleaning the artifactory webapp and work folder
 
 echo "Removing tomcat work directory"
@@ -170,17 +174,18 @@ fi
 exit 0
 
 %post
+
 if [ "$1" = "1" ]; then
   echo "Adding the artifactory service to auto-start"
   /sbin/chkconfig --add %{name} || $?
-  
+
   echo
   echo "The installation of Artifactory has completed successfully."
   echo
+  echo "PLEASE NOTE: You can recover a backup done with Artifactory RPM 2.6.0 and above using '/opt/artifactory/bin/recover.backup.sh'."
   echo "PLEASE NOTE: It is highly recommended to use Artifactory in conjunction with MySQL. You can easily configure this setup using '/opt/artifactory/bin/configure.mysql.sh'."
-elif [ "$1" = "2" ]; then
-  
   echo
+elif [ "$1" = "2" ]; then
   echo "The upgrade of Artifactory has completed successfully."
 fi
 
@@ -209,14 +214,23 @@ if [ "$1" = "0" ]; then
   echo "Removing the artifactory service from auto-start"
   /sbin/chkconfig --del %{name} || exit $?
 
-  # if some files in user home move them to a backup folder
-  if [ "`ls -A %{user_home}`" ]; then
+  # if some files in data move them to a backup folder
+  if [ -d "%{user_home}/data" ]; then
     TIMESTAMP=`echo "$(date '+%T')" | tr -d ":"`
     CURRENT_TIME="$(date '+%Y%m%d').$TIMESTAMP"
     BACKUP_DIR="%{user_home}.backup.${CURRENT_TIME}"
 
     echo "Creating a backup of the artifactory home folder in ${BACKUP_DIR}"
-    %__mkdir_p "${BACKUP_DIR}" && %__mv %{user_home}/* "${BACKUP_DIR}" || exit $?
+    %__mkdir_p "${BACKUP_DIR}" && \
+     %__mv %{etc_dir} "${BACKUP_DIR}/etc" && \
+     %__mv %{user_home}/data "${BACKUP_DIR}/data" && \
+     %__mv %{log_dir} "${BACKUP_DIR}/logs" && \
+     %__rm -rf "${BACKUP_DIR}/data/tmp" && \
+     %__rm -rf "${BACKUP_DIR}/data/workspaces" || exit $?
+    if [ -e %{tomcat_home}/lib/mysql-connector-java*.jar ]; then
+      echo "MySQL connector found"
+      %__mv %{tomcat_home}/lib/mysql-connector-java* "${BACKUP_DIR}"|| exit $?
+    fi
   fi
 fi
 exit 0
@@ -230,7 +244,7 @@ if [ "$1" = "0" ]; then
 
   # Ignoring user folders since the home dir is deleted already by the RPM spec
   echo "Removing user %{username}"
-  %{_sbindir}/userdel %{username} || exit $?
+  %{_sbindir}/userdel -r %{username} || exit $?
 
   EXISTING_GROUP="`grep %{group_name} /etc/group | awk -F ':' '{ print $1 }' 2>/dev/null`"
   if [ "$EXISTING_GROUP" == "%{group_name}" ]; then

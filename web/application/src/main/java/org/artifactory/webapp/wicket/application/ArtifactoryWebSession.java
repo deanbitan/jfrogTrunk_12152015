@@ -119,7 +119,7 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
     }
 
     private void setWicketRoles(Authentication authentication) {
-        Collection<GrantedAuthority> authorities = authentication.getAuthorities();
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         String[] authorityRoles = new String[authorities.size()];
         int i = 0;
         for (GrantedAuthority authority : authorities) {

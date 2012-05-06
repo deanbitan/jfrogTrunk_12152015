@@ -118,7 +118,7 @@
             </div>
 
             <div class="field repo-field field-right">
-                <label>Retrieval Cache Period</label>
+                <label>Retrieval Cache Period (Secs)</label>
                 <span wicket:id="retrievalCachePeriodSecs.help"></span>
 
                 <div class="value">
@@ -130,16 +130,16 @@
 
         <div class="field-row">
             <div class="field">
-                <label>Failed Retrieval Cache Period</label>
-                <span wicket:id="failedRetrievalCachePeriodSecs.help"></span>
+                <label>Assumed Offline Limit (Secs)</label>
+                <span wicket:id="assumedOfflinePeriodSecs.help"></span>
 
                 <div class="value">
-                    <input wicket:id="failedRetrievalCachePeriodSecs" type="text" class="text"/>
+                    <input wicket:id="assumedOfflinePeriodSecs" type="text" class="text"/>
                 </div>
             </div>
 
             <div class="field repo-field field-right">
-                <label>Missed Retrieval Cache Period</label>
+                <label>Missed Retrieval Cache Period (Secs)</label>
                 <span wicket:id="missedRetrievalCachePeriodSecs.help"></span>
 
                 <div class="value">
@@ -181,9 +181,13 @@
         </div>
 
         <div class="field">
+            <input wicket:id="archiveBrowsingEnabled" type="checkbox"/>
+            <span wicket:id="archiveBrowsingEnabled.help"></span>
+        </div>
+
+        <div class="field">
             <input wicket:id="rejectInvalidJars" type="checkbox"/>
             <span wicket:id="rejectInvalidJars.help"></span>
         </div>
-
     </div>
 </wicket:panel>

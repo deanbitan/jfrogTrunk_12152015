@@ -20,6 +20,7 @@ package org.artifactory.descriptor.config;
 
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
@@ -234,4 +235,6 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
     void setLocalReplications(List<LocalReplicationDescriptor> localReplications);
 
     void setGcConfig(GcConfigDescriptor gcConfigDescriptor);
+
+    void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor);
 }

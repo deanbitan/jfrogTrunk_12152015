@@ -121,7 +121,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         setHandleSnapshots(repoDescriptor.isHandleSnapshots());
         setSuppressPomConsistencyChecks(repoDescriptor.isSuppressPomConsistencyChecks());
         setRetrievalCachePeriodSecs(repoDescriptor.getRetrievalCachePeriodSecs());
-        setFailedRetrievalCachePeriodSecs(repoDescriptor.getFailedRetrievalCachePeriodSecs());
+        setFailedRetrievalCachePeriodSecs(repoDescriptor.getAssumedOfflinePeriodSecs());
         setMissedRetrievalCachePeriodSecs(repoDescriptor.getMissedRetrievalCachePeriodSecs());
         setUnusedArtifactsCleanupPeriodHours(repoDescriptor.getUnusedArtifactsCleanupPeriodHours());
         setFetchJarsEagerly(repoDescriptor.isFetchJarsEagerly());

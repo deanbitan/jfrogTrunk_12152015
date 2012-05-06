@@ -25,6 +25,7 @@ import org.artifactory.api.build.BuildService;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchControls;
 import org.artifactory.build.BuildRun;
+import org.artifactory.build.BuildRunImpl;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.PathFactory;
 import org.artifactory.sapi.common.PathFactoryHolder;
@@ -88,7 +89,7 @@ public class BuildSearcher extends SearcherBase {
                 log.warn("The build '{}/{}' might contain partial data. You may wish to delete this build.", buildName,
                         latestNumber);
             }
-            buildsToReturn.add(new BuildRun(buildName, latestNumber, latestStartTime.getTime()));
+            buildsToReturn.add(new BuildRunImpl(buildName, latestNumber, latestStartTime.getTime()));
         }
         return buildsToReturn;
     }
@@ -186,7 +187,7 @@ public class BuildSearcher extends SearcherBase {
             String decodedBuildName = pathFactory.unEscape(splitPath[2]);
             String decodedBuildNumber = pathFactory.unEscape(splitPath[3]);
             String decodedBuildStarted = pathFactory.unEscape(splitPath[4]);
-            results.add(new BuildRun(decodedBuildName, decodedBuildNumber, decodedBuildStarted));
+            results.add(new BuildRunImpl(decodedBuildName, decodedBuildNumber, decodedBuildStarted));
         }
     }
 }

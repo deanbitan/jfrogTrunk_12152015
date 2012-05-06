@@ -26,8 +26,11 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.common.Lock;
 import org.artifactory.spring.ReloadableBean;
+import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.util.Map;
@@ -116,4 +119,29 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      */
     @Lock(transactional = true)
     void renameBuildNode(String from, String to) throws RepositoryException;
+
+    /**
+     * Returns latest build by name and status (which can be {@link BuildService.LATEST_BUILD} or {@link BuildService.LAST_RELEASED_BUILD})
+     *
+     * @param buildName   the name of the build
+     * @param buildStatus the desired status (which can be {@link BuildService.LATEST_BUILD} or {@link BuildService.LAST_RELEASED_BUILD})
+     * @return the build (if found)
+     */
+    @Lock(transactional = true)
+    @Nullable
+    Build getLatestBuildByNameAndStatus(String buildName, String buildStatus);
+
+    /**
+     * Adds the given build configuration to Artifactory
+     *
+     * @param detailedBuildRun Build to add
+     */
+    void addBuild(@Nonnull DetailedBuildRun detailedBuildRun);
+
+    /**
+     * Persists the changes made to the given existing build configuration
+     *
+     * @param detailedBuildRun Existing build configuration
+     */
+    void updateBuild(@Nonnull DetailedBuildRun detailedBuildRun);
 }

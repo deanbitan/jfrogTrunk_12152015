@@ -36,7 +36,8 @@ public class DaoLdapAuthoritiesPopulator implements LdapAuthoritiesPopulator {
     private UserDetailsService userDetailsService;
 
     @Override
-    public Collection<GrantedAuthority> getGrantedAuthorities(DirContextOperations userData, String username) {
+    public Collection<? extends GrantedAuthority> getGrantedAuthorities(DirContextOperations userData,
+            String username) {
         try {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             return userDetails.getAuthorities();

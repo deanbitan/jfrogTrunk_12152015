@@ -91,12 +91,8 @@ abstract class JcrRepoInitHelper {
         try {
             RepositoryConfig repoConfig = RepositoryConfig.create(
                     repoXml.getInputStream(), artifactoryHome.getJcrRootDir().getAbsolutePath());
-            boolean v1 = ConstantValues.gcUseV1.getBoolean();
             File consistencyFixFile = ChecksumPathsImpl.getConsistencyFixFile();
-            boolean fixConsistency = preInit && (
-                    (v1 && ConstantValues.jcrFixConsistency.getBoolean()) ||
-                            (!v1 && !consistencyFixFile.exists())
-            );
+            boolean fixConsistency = preInit && !consistencyFixFile.exists();
             if (fixConsistency) {
                 WorkspaceConfig wsConfig = repoConfig.getWorkspaceConfigs().iterator().next();
                 PersistenceManagerConfig pmConfig = wsConfig.getPersistenceManagerConfig();
@@ -109,25 +105,14 @@ abstract class JcrRepoInitHelper {
                         pmConfig.getParameters().put("consistencyCheck", "true");
                         pmConfig.getParameters().put("consistencyFix", "true");
                     }
-                    if (v1) {
-                        log.warn("\n###########################################################################\n" +
-                                "                STARTUP CONSISTENCY CHECKS ARE ACTIVE!\n" +
-                                "Startup will take considerably longer while running consistency checks.\n" +
-                                "Make sure you do not leave consistency checks permanently on by\n" +
-                                "disabling/commenting-out the '{}' property\n" +
-                                "in the '$ARTIFACTORY_HOME/etc/artifactory.system.properties' file.\n" +
-                                "###########################################################################",
-                                ConstantValues.jcrFixConsistency.getPropertyName());
-                    } else {
-                        log.warn("\n###########################################################################\n" +
-                                "                STARTUP CONSISTENCY CHECKS ARE ACTIVE!\n" +
-                                "Startup will take considerably longer while running consistency checks.\n" +
-                                "This is normal with a first-run of a new or upgraded installation.\n" +
-                                "You can reactivate consistency checks by removing the following file:\n" +
-                                "'$ARTIFACTORY_HOME/data/{}'.\n" +
-                                "###########################################################################",
-                                consistencyFixFile.getName());
-                    }
+                    log.warn("\n###########################################################################\n" +
+                            "                STARTUP CONSISTENCY CHECKS ARE ACTIVE!\n" +
+                            "Startup will take considerably longer while running consistency checks.\n" +
+                            "This is normal with a first-run of a new or upgraded installation.\n" +
+                            "You can reactivate consistency checks by removing the following file:\n" +
+                            "'$ARTIFACTORY_HOME/data/{}'.\n" +
+                            "###########################################################################",
+                            consistencyFixFile.getName());
                 } else {
                     log.warn("Consistency checks requested on a persistence manager that doesn't support it: {}.",
                             className);

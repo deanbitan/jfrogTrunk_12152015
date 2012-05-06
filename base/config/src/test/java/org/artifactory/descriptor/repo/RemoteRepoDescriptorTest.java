@@ -37,7 +37,7 @@ public class RemoteRepoDescriptorTest {
         assertNull(remote.getExcludesPattern());
         assertNull(remote.getDescription());
         assertNull(remote.getRepoLayout());
-        assertEquals(remote.getFailedRetrievalCachePeriodSecs(), 30);
+        assertEquals(remote.getAssumedOfflinePeriodSecs(), 300);
         assertEquals(remote.getMaxUniqueSnapshots(), 0);
         assertEquals(remote.getMissedRetrievalCachePeriodSecs(), 7200);
         assertEquals(remote.getRetrievalCachePeriodSecs(), 43200);

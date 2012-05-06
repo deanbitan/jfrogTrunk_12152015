@@ -14,14 +14,6 @@ else
     fi
 fi
 
-# Verify that it is java 5+
-javaVersion=`$JAVACMD -version 2>&1 | grep "java version" | egrep -e "1\.[678]"`
-if [ -z "$javaVersion" ]; then
-    $JAVACMD -version
-    echo "** ERROR: The Java of $JAVACMD version is not 1.6 and above."
-    exit 1
-fi
-
 if [ -z "$ARTIFACTORY_HOME" ]; then
     ARTIFACTORY_HOME=`dirname "$0"`/..
 fi

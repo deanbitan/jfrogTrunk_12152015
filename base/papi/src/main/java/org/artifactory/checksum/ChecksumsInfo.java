@@ -30,7 +30,7 @@ import static org.artifactory.checksum.ChecksumInfo.TRUSTED_FILE_MARKER;
 /**
  * A container class to manage a collection of checksums, with isIdentical and other equals, hashCode goodies.
  *
- * @author Yaov Landman
+ * @author Yoav Landman
  * @author Fred Simon
  */
 @XStreamAlias("checksumsInfo")

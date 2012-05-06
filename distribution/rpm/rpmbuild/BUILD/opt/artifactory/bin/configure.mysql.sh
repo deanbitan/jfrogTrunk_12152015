@@ -30,7 +30,7 @@ echo "########################################################"
 # CHECK FOR MYSQL RUNTIME
 ###
 
-MYSQL_EXISTS=`whereis mysql`
+MYSQL_EXISTS=`which mysql`
 if [ -z "$MYSQL_EXISTS" ]; then
   echo
   echo "Unable to find MySQL. Please make sure it installed and available before continuing."

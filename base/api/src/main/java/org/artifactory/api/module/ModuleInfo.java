@@ -19,14 +19,14 @@
 package org.artifactory.api.module;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.fs.FileLayoutInfo;
 
-import java.io.Serializable;
 import java.util.Map;
 
 /**
  * @author Noam Y. Tenne
  */
-public class ModuleInfo implements Serializable {
+public class ModuleInfo implements FileLayoutInfo {
 
     private String organization;
     private String module;
@@ -41,7 +41,7 @@ public class ModuleInfo implements Serializable {
     public ModuleInfo() {
     }
 
-    public ModuleInfo(String organization, String module, String baseRevision, String folderIntegrationRevision,
+    ModuleInfo(String organization, String module, String baseRevision, String folderIntegrationRevision,
             String fileIntegrationRevision, String classifier, String ext, String type,
             Map<String, String> customFields) {
         this.organization = organization;
@@ -55,42 +55,52 @@ public class ModuleInfo implements Serializable {
         this.customFields = customFields;
     }
 
+    @Override
     public String getOrganization() {
         return organization;
     }
 
+    @Override
     public String getModule() {
         return module;
     }
 
+    @Override
     public String getBaseRevision() {
         return baseRevision;
     }
 
+    @Override
     public String getFolderIntegrationRevision() {
         return folderIntegrationRevision;
     }
 
+    @Override
     public String getFileIntegrationRevision() {
         return fileIntegrationRevision;
     }
 
+    @Override
     public String getClassifier() {
         return classifier;
     }
 
+    @Override
     public String getExt() {
         return ext;
     }
 
+    @Override
     public String getType() {
         return type;
     }
 
+    @Override
     public Map<String, String> getCustomFields() {
         return customFields;
     }
 
+    @Override
     public String getCustomField(String tokenName) {
         if (customFields == null) {
             return null;
@@ -98,19 +108,20 @@ public class ModuleInfo implements Serializable {
         return customFields.get(tokenName);
     }
 
+    @Override
     public boolean isValid() {
         return StringUtils.isNotBlank(organization) && StringUtils.isNotBlank(module) &&
                 StringUtils.isNotBlank(baseRevision);
     }
 
     /**
-     * Returns the module "id" in a "prettier" format.<br>
-     * {@link #toString()} will not omit fields like the classifier and type when
-     * they are not specified. This results in ugly artifact IDs.<br>
-     * This implementation will simply omit fields which are not specified.
+     * Returns the module "id" in a "prettier" format.<br> {@link #toString()} will not omit fields like the classifier
+     * and type when they are not specified. This results in ugly artifact IDs.<br> This implementation will simply omit
+     * fields which are not specified.
      *
      * @return Summarized module info
      */
+    @Override
     public String getPrettyModuleId() {
         if (StringUtils.isBlank(getOrganization()) || StringUtils.isBlank(getModule()) ||
                 StringUtils.isBlank(getBaseRevision())) {
@@ -136,6 +147,7 @@ public class ModuleInfo implements Serializable {
         return moduleIdBuilder.toString();
     }
 
+    @Override
     public boolean isIntegration() {
         return StringUtils.isNotBlank(getFolderIntegrationRevision()) ||
                 StringUtils.isNotBlank(getFileIntegrationRevision());

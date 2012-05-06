@@ -35,11 +35,15 @@ public class RemoteReplicationSettingsBuilder {
     private boolean deleteExisting = false;
     private boolean includeProperties = false;
     private ReplicationAddon.Overwrite overwrite = ReplicationAddon.Overwrite.force;
-    private final Writer responseWriter;
+    private Writer responseWriter;
 
-    public RemoteReplicationSettingsBuilder(RepoPath repoPath, Writer responseWriter) {
+    public RemoteReplicationSettingsBuilder(RepoPath repoPath) {
         this.repoPath = repoPath;
+    }
+
+    public RemoteReplicationSettingsBuilder responseWriter(Writer responseWriter) {
         this.responseWriter = responseWriter;
+        return this;
     }
 
     public RemoteReplicationSettingsBuilder progress(boolean progress) {
@@ -76,10 +80,6 @@ public class RemoteReplicationSettingsBuilder {
         if (repoPath == null) {
             throw new IllegalArgumentException("Repo path cannot be null.");
         }
-        if (responseWriter == null) {
-            throw new IllegalArgumentException("Response writer cannot be null.");
-        }
-
         return new RemoteReplicationSettings(repoPath, progress, mark, deleteExisting, includeProperties, overwrite,
                 responseWriter, socketTimeoutMillis);
     }

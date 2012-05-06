@@ -324,11 +324,7 @@ public class IndexerServiceImpl implements InternalIndexerService {
                     }
                 }
             }
-            boolean offlineRemote = false;
-            if (!repo.isLocal()) {
-                offlineRemote = ((RemoteRepo) repo).isOffline();
-            }
-            if (!excluded && !offlineRemote) {
+            if (!excluded) {
                 indexedRepos.add(repo);
             }
         }

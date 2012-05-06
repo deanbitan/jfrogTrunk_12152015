@@ -22,6 +22,7 @@ import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.fs.HttpCacheAvoidableResource;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.Checksums;
@@ -37,11 +38,12 @@ import java.io.IOException;
  *
  * @author Yossi Shaul
  */
-public class ResolvedResource implements RepoResource {
+public class ResolvedResource implements RepoResource, HttpCacheAvoidableResource {
 
     private final RepoResource wrappedResource;
     private final RepoResourceInfo repoResourceInfo;
     private final String content;
+    private boolean avoidHttpCaching;
 
     public ResolvedResource(RepoResource wrappedResource, String content) {
         this(wrappedResource, content, true);
@@ -145,5 +147,15 @@ public class ResolvedResource implements RepoResource {
             // rare since the checksum is calculated on in memory byte array built from a string
             throw new RuntimeException("Failed to calculate content checksum", e);
         }
+    }
+
+    @Override
+    public boolean avoidHttpCaching() {
+        return avoidHttpCaching;
+    }
+
+    @Override
+    public void setAvoidHttpCaching(boolean avoidHttpCaching) {
+        this.avoidHttpCaching = avoidHttpCaching;
     }
 }

@@ -179,7 +179,7 @@ public class JcrAclManager implements InternalAclManager {
         ArtifactorySid anonSid = anonUser.toArtifactorySid();
         ArtifactorySid readersSid = new ArtifactorySid(readersGroup.getGroupName(), true);
 
-        // create or update raed permissions on "anything"
+        // create or update read permissions on "anything"
         Acl anyAnyAcl = findAclById(ANY_PERMISSION_TARGET_NAME);
         Ace anonAnyAnyAce = new Ace(anyAnyAcl, BasePermission.READ, anonSid);
         Ace readersAnyAnyAce = new Ace(anyAnyAcl, BasePermission.READ, readersSid);

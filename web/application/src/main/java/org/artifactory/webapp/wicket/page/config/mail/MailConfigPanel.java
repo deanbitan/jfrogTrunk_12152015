@@ -31,7 +31,6 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.validation.validator.EmailAddressValidator;
-import org.apache.wicket.validation.validator.UrlValidator;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.mail.MailServerConfiguration;
 import org.artifactory.api.mail.MailService;
@@ -100,7 +99,7 @@ public class MailConfigPanel extends TitledPanel {
         form.add(new TextField<String>("subjectPrefix"));
         form.add(new SchemaHelpBubble("subjectPrefix.help"));
 
-        form.add(new TextField<String>("artifactoryUrl").add(new UrlValidator()));
+        form.add(new TextField<String>("artifactoryUrl"));
         form.add(new SchemaHelpBubble("artifactoryUrl.help"));
 
         form.add(new StyledCheckbox("tls"));

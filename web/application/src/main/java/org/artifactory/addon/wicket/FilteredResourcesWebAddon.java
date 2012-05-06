@@ -26,6 +26,7 @@ import org.artifactory.fs.ItemInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.request.Request;
 import org.artifactory.webapp.actionable.ActionableItem;
+import org.artifactory.webapp.actionable.action.ItemAction;
 
 import java.io.Reader;
 
@@ -69,4 +70,6 @@ public interface FilteredResourcesWebAddon extends Addon {
     String filterResource(Request request, Properties contextProperties, Reader reader) throws Exception;
 
     Component getZipEntryActions(String wicketId, ActionableItem repoItem);
+
+    ItemAction getZipEntryDownloadAction();
 }

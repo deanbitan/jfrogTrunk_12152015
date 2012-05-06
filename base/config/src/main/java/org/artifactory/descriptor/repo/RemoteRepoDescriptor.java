@@ -26,7 +26,7 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RemoteRepoBaseType", propOrder = {"url", "offline", "hardFail", "storeArtifactsLocally",
-        "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "failedRetrievalCachePeriodSecs",
+        "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "assumedOfflinePeriodSecs",
         "missedRetrievalCachePeriodSecs", "checksumPolicyType",
         "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties", "listRemoteFolderItems",
         "remoteRepoLayout", "rejectInvalidJars", "p2Support", "nuget"}, namespace = Descriptor.NS)
@@ -53,8 +53,8 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     @XmlElement(defaultValue = "43200", required = false)
     private long retrievalCachePeriodSecs = 43200;//12hrs
 
-    @XmlElement(defaultValue = "30", required = false)
-    private long failedRetrievalCachePeriodSecs = 30;//30secs
+    @XmlElement(defaultValue = "300", required = false)
+    private long assumedOfflinePeriodSecs = 300;   //5 minutes
 
     @XmlElement(defaultValue = "7200", required = false)
     private long missedRetrievalCachePeriodSecs = 7200;//2 hours
@@ -118,12 +118,12 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
         this.retrievalCachePeriodSecs = retrievalCachePeriodSecs;
     }
 
-    public long getFailedRetrievalCachePeriodSecs() {
-        return failedRetrievalCachePeriodSecs;
+    public long getAssumedOfflinePeriodSecs() {
+        return assumedOfflinePeriodSecs;
     }
 
-    public void setFailedRetrievalCachePeriodSecs(long failedRetrievalCachePeriodSecs) {
-        this.failedRetrievalCachePeriodSecs = failedRetrievalCachePeriodSecs;
+    public void setAssumedOfflinePeriodSecs(long assumedOfflinePeriodSecs) {
+        this.assumedOfflinePeriodSecs = assumedOfflinePeriodSecs;
     }
 
     public long getMissedRetrievalCachePeriodSecs() {
@@ -249,7 +249,7 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
         if (!PathUtils.safeStringEquals(this.url, old.url) ||
                 this.storeArtifactsLocally != old.storeArtifactsLocally ||
                 this.retrievalCachePeriodSecs != old.retrievalCachePeriodSecs ||
-                this.failedRetrievalCachePeriodSecs != old.failedRetrievalCachePeriodSecs ||
+                this.assumedOfflinePeriodSecs != old.assumedOfflinePeriodSecs ||
                 this.missedRetrievalCachePeriodSecs != old.missedRetrievalCachePeriodSecs) {
             return false;
         }

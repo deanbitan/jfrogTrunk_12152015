@@ -24,7 +24,6 @@ import org.apache.jackrabbit.core.WorkspaceImpl;
 import org.apache.jackrabbit.core.data.DataStore;
 import org.apache.jackrabbit.core.security.SecurityConstants;
 import org.apache.jackrabbit.core.state.LocalItemStateManager;
-import org.artifactory.common.ConstantValues;
 import org.artifactory.io.checksum.ChecksumPathsListener;
 import org.springframework.extensions.jcr.EventListenerDefinition;
 import org.springframework.extensions.jcr.jackrabbit.JackrabbitSessionFactory;
@@ -42,8 +41,6 @@ import javax.jcr.observation.Event;
 public class JcrSessionFactory extends JackrabbitSessionFactory {
 
     private static final String[] BINARY_CONTAINERS = new String[]{NodeType.NT_FILE, NodeType.NT_RESOURCE};
-
-    private final boolean v1 = ConstantValues.gcUseV1.getBoolean();
 
     @Override
     public void setRepository(final Repository repository) {
@@ -70,13 +67,11 @@ public class JcrSessionFactory extends JackrabbitSessionFactory {
     @Override
     public Session getSession() throws RepositoryException {
         JcrSession session = newSession();
-        if (!v1) {
-            EventListenerDefinition listenerDefinition = new EventListenerDefinition();
-            listenerDefinition.setEventTypes(listenerDefinition.getEventTypes() | Event.NODE_MOVED);
-            LocalItemStateManager ism = ((WorkspaceImpl) session.getWorkspace()).getItemStateManager();
-            listenerDefinition.setListener(new ChecksumPathsListener(ism));
-            setEventListeners(new EventListenerDefinition[]{listenerDefinition});
-        }
+        EventListenerDefinition listenerDefinition = new EventListenerDefinition();
+        listenerDefinition.setEventTypes(listenerDefinition.getEventTypes() | Event.NODE_MOVED);
+        LocalItemStateManager ism = ((WorkspaceImpl) session.getWorkspace()).getItemStateManager();
+        listenerDefinition.setListener(new ChecksumPathsListener(ism));
+        setEventListeners(new EventListenerDefinition[]{listenerDefinition});
         return addListeners(session);
     }
 

@@ -33,12 +33,12 @@ import java.io.IOException;
  */
 public interface ReplicationAddon extends Addon {
 
-    String DESCRIPTOR = "descriptor";
     //replication
     String PROP_REPLICATION_PREFIX = "artifactory.replication.";
     String PROP_REPLICATION_STARTED_SUFFIX = ".started";
     String PROP_REPLICATION_FINISHED_SUFFIX = ".finished";
     String PROP_REPLICATION_RESULT_SUFFIX = ".result";
+    String TASK_MANUAL_DESCRIPTOR = "task_manual_settings";
 
     public enum Overwrite {
         never, force
@@ -55,4 +55,14 @@ public interface ReplicationAddon extends Addon {
             MultiStatusHolder statusHolder);
 
     ReplicationStatus getReplicationStatus(RepoPath repoPath);
+
+    /**
+     * This method is kept for the old sync resource.
+     * use {@link org.artifactory.addon.ReplicationAddon#performRemoteReplication} for new implementations
+     *
+     * @param remoteReplicationSettings
+     * @throws IOException
+     */
+    @Deprecated
+    void performLegacyRemoteReplication(RemoteReplicationSettings remoteReplicationSettings) throws IOException;
 }

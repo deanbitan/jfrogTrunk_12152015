@@ -20,7 +20,11 @@ package org.artifactory.request;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.descriptor.repo.RealRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.fs.HttpCacheAvoidableResource;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.NamingUtils;
@@ -151,8 +155,16 @@ public final class RequestResponseHelper {
 
         if (response instanceof HttpArtifactoryResponse) {
             // content disposition is not set only for archive resources when archived browsing is enabled
-            if (isNotZipResource(res) || archiveBrowsingDisabled()) {
+            if (isNotZipResource(res) || archiveBrowsingDisabled(res)) {
                 ((HttpArtifactoryResponse) response).setContentDispositionAttachment();
+            }
+        }
+
+        if (res instanceof HttpCacheAvoidableResource) {
+            if (((HttpCacheAvoidableResource) res).avoidHttpCaching()) {
+                response.setHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+                response.setHeader("Pragma", "no-cache");
+                response.setHeader("Cache-Control", "no-cache, no-store");
             }
         }
     }
@@ -161,7 +173,18 @@ public final class RequestResponseHelper {
         return !(res instanceof ZipEntryResource);
     }
 
-    private boolean archiveBrowsingDisabled() {
-        return !ContextHelper.get().getCentralConfig().getDescriptor().getSecurity().isArchiveBrowsingEnabled();
+    private boolean archiveBrowsingDisabled(RepoResource res) {
+        boolean result = true;
+        RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
+        String repoKey = res.getResponseRepoPath().getRepoKey();
+        RepoDescriptor repoDescriptor = repositoryService.repoDescriptorByKey(repoKey);
+        if (repoDescriptor != null) {
+            if (repoDescriptor instanceof RealRepoDescriptor) {
+                result = !((RealRepoDescriptor) repoDescriptor).isArchiveBrowsingEnabled();
+            }
+        }
+
+        // We return true by default if we couldn't get the flag from the descriptor
+        return result;
     }
 }

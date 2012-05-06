@@ -110,7 +110,8 @@ public class TitledBorder extends Border implements Titled {
         @Override
         protected void onConfigure() {
             super.onConfigure();
-            setVisible(StringUtils.isNotEmpty(getTitle()));
+            Component tool = get("tool");
+            setVisible(StringUtils.isNotEmpty(getTitle()) || ((tool != null) && !(tool instanceof PlaceHolder)));
         }
     }
 }

@@ -34,7 +34,6 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
-import org.artifactory.jcr.jackrabbit.ArtifactoryDbDataStoreImpl;
 import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
 import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
 import org.artifactory.jcr.utils.DerbyUtils;
@@ -145,13 +144,7 @@ public class StorageServiceImpl implements InternalStorageService {
         taskService.checkCanStartManualTask(JcrGarbageCollectorJob.class, statusHolder);
         if (!statusHolder.isError()) {
             try {
-                String firstToken = execOneGcAndWait(false);
-                InternalStorageService me = InternalContextHelper.get().getBean(InternalStorageService.class);
-                if (ConstantValues.gcUseV1.getBoolean()) {
-                    me.asyncManualGarbageCollect(firstToken);
-                }
-                statusHolder
-                        .setStatus("Artifactory Storage Garbage Collector process activated in the background!", log);
+                execOneGcAndWait(true);
             } catch (Exception e) {
                 statusHolder.setError("Error activating Artifactory Storage Garbage Collector: " + e.getMessage(), e,
                         log);
@@ -184,10 +177,6 @@ public class StorageServiceImpl implements InternalStorageService {
             System.gc();
             log.info("Scheduling manual garbage collector to run immediately.");
             execOneGcAndWait(true);
-            if (ConstantValues.gcUseV1.getBoolean()) {
-                //Run a second gc
-                execOneGcAndWait(true);
-            }
         } catch (RuntimeException e) {
             throw new RuntimeException("Error in executing the manual garbage collector.", e);
         }
@@ -231,26 +220,6 @@ public class StorageServiceImpl implements InternalStorageService {
     @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         //nop
-    }
-
-    @Override
-    public void exportDbDataStore(String destDir) {
-        JcrSession session = jcrService.getUnmanagedSession();
-        try {
-            RepositoryImpl repository = (RepositoryImpl) session.getRepository();
-            ExtendedDbDataStore dataStore = JcrUtils.getExtendedDataStore(repository);
-            if (dataStore instanceof ArtifactoryDbDataStoreImpl) {
-                try {
-                    ((ArtifactoryDbDataStoreImpl) dataStore).exportData(destDir);
-                } catch (Exception e) {
-                    log.error("Failed to export datasource data.", e);
-                }
-            } else {
-                throw new IllegalArgumentException("Datasource used is not a db one.");
-            }
-        } finally {
-            session.logout();
-        }
     }
 
     static class GcSchedulerHandler extends BaseTaskServiceDescriptorHandler<GcConfigDescriptor> {

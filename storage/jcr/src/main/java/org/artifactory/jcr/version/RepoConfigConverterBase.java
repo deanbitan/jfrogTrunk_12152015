@@ -112,7 +112,6 @@ public abstract class RepoConfigConverterBase implements ConfigurationConverter<
             }
         };
 
-        //noinspection unchecked
         Collection<File> repoXmlFiles = FileUtils.listFiles(etcDir, repoXmlFileFilter, DirectoryFileFilter.DIRECTORY);
         for (File file : repoXmlFiles) {
             if (!repoConfigFileMap.containsKey(file)) {

@@ -21,7 +21,6 @@ package org.artifactory.util;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
@@ -81,6 +80,13 @@ public abstract class HttpUtils {
             userAgent = "Artifactory/" + artifactoryVersion;
         }
         return userAgent;
+    }
+
+    /**
+     * Reset the cached Artifactory user agent string (required after upgrade)
+     */
+    public static void resetArtifactoryUserAgent() {
+        userAgent = null;
     }
 
     @SuppressWarnings({"IfMayBeConditional"})

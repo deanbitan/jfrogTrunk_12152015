@@ -179,7 +179,6 @@ public class DeployServiceImpl implements DeployService {
     }
 
     @Override
-    @SuppressWarnings({"unchecked"})
     public void deployBundle(File bundle, RealRepoDescriptor targetRepo, final BasicStatusHolder status) {
         long start = System.currentTimeMillis();
         if (!bundle.exists()) {

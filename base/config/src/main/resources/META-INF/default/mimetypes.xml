@@ -69,7 +69,7 @@
     <mimetype type="application/x-nuspec+xml" extensions="nuspec" viewable="true" syntax="xml" css="xml"/>
     <mimetype type="application/x-java-jnlp-file" extensions="jnlp" viewable="true" syntax="xml" css="jnlp"/>
     <mimetype type="application/x-checksum" extensions="sha1, md5" viewable="true" syntax="plain"/>
-    <mimetype type="application/java-archive" extensions="jar, war, ear, sar, har" archive="true" index="true"
+    <mimetype type="application/java-archive" extensions="jar, war, ear, sar, har, hpi, jpi" archive="true" index="true"
               css="jar"/>
 
 </mimetypes>

@@ -184,6 +184,8 @@ import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.Module;
+import org.jfrog.build.api.dependency.BuildPatternArtifacts;
+import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
 import org.slf4j.Logger;
 import org.springframework.security.core.Authentication;
 
@@ -373,6 +375,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
+    public BuildPatternArtifacts getBuildPatternArtifacts(
+            @Nonnull BuildPatternArtifactsRequest buildPatternArtifactsRequest, String servletContextUrl) {
+        return new BuildPatternArtifacts();
+    }
+
+    @Override
     public String getSearchLimitDisclaimer() {
         return StringUtils.EMPTY;
     }
@@ -445,6 +453,14 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public Component getZipEntryActions(String wicketId, ActionableItem repoItem) {
         return new WebComponent(wicketId);
+    }
+
+    @Override
+    public ItemAction getZipEntryDownloadAction() {
+        ItemAction action = new NopAction();
+        action.setEnabled(false);
+
+        return action;
     }
 
     @Override
@@ -730,6 +746,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         AddonsManager addonsManager = getAddonsManager();
         String product = addonsManager.getProductName();
         return format("%s %s (rev. %s)", product, versionInfo.getVersion(), versionInfo.getRevision());
+    }
+
+    @Override
+    public String getListBrowsingVersion() {
+        VersionInfo versionInfo = getCentralConfig().getVersionInfo();
+        return format("Artifactory/%s", versionInfo.getVersion());
     }
 
     @Override

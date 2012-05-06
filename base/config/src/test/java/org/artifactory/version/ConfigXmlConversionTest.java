@@ -350,7 +350,13 @@ public class ConfigXmlConversionTest /** Don't extend ArtHomeBoundTest */
         CentralConfigDescriptor cc = transform("/config/test/config.1.5.0_indexing.xml", v1411);
         assertEquals(cc.getIndexer().getCronExp(), "0 23 5 * * ?");
     }
-    
+
+    public void convert1412custom() throws Exception {
+        CentralConfigDescriptor cc = transform("/config/test/config.1.4.12_failed_retrieval_cache.xml", v1412);
+        RemoteRepoDescriptor repo = cc.getRemoteRepositoriesMap().get("java.net.m2");
+        assertEquals(repo.getAssumedOfflinePeriodSecs(), 300);
+    }
+
     public void configVersionSanityCheck() {
         ArtifactoryConfigVersion[] versions = values();
         Set<XmlConverter> allConversions = new HashSet<XmlConverter>();

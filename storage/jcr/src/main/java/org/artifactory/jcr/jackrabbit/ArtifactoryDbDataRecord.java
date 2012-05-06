@@ -261,55 +261,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
     }
 
     /**
-     * This is called at the beginning of GC scan.<br/><ol> <li>If the entry is new (first time in GC), it will be
-     * changed.</li> <li>If the entry is in db used it will be marked as "found" and so not eligible for deletion at the
-     * end of GC.</li> <li>If the entry is mark for deletion it's an error (last GC should have clean it or set to
-     * error). so set to error.</li> <li>If the entry is deleted or error it should be removed from the global
-     * map.</li></ol>
-     *
-     * @return true if the init went well, false if element in error or delete state and should be removed from the map
-     */
-    public boolean updateGcState() {
-        return stateMgr.changeStateIn(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                DbRecordState dbState = getDbState();
-                switch (dbState) {
-                    case IN_ERROR:
-                    case DELETED:
-                        // Nothing to do entry should be removed
-                        if (readyToBeRemoved) {
-                            return false;
-                        }
-                        readyToBeRemoved = true;
-                        return true;
-                    case IN_DB_MARK_FOR_DELETION:
-                        throw new IllegalStateException(
-                                "Object " + ArtifactoryDbDataRecord.this.toString() +
-                                        " should have been deleted during last GC!");
-                    case IN_DB_USED:
-                        stateMgr.guardedSetState(DbRecordState.IN_DB_FOUND);
-                        readyToBeRemoved = false;
-                        return true;
-                    case IN_DB_FOUND:
-                        // Second time there (should have the readyToBeRemoved flag set to true)
-                        if (!readyToBeRemoved) {
-                            log.error("Object " + ArtifactoryDbDataRecord.this.toString() +
-                                    " should not be in found state during init scan without ready to be removed flag!");
-                        }
-                        return true;
-                    case NEW:
-                        // Nothing to do, leave it try to insert itself
-                        readyToBeRemoved = readyToMarkForDeletion = false;
-                        return true;
-                }
-                throw new IllegalStateException("Could not be reached");
-            }
-        });
-    }
-
-    /**
-     * This is called everytime the db entry is used by JCR or by the GC scan read
+     * This is called every time the db entry is used by JCR or by the GC scan read
      *
      * @return true if is in in used state
      */
@@ -451,18 +403,17 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
      * @return true if the entry is new so the DB insert should be done, false if the entry is OK to used, throw
      *         exception if non of the above case are valid
      */
-    public boolean needsReinsert(final long now, final File tempFile) {
-        return stateMgr.changeStateIn(new Callable<Boolean>() {
+    public DbRecordState needsReinsert(final long now, final File tempFile) {
+        return stateMgr.changeStateIn(new Callable<DbRecordState>() {
             @Override
-            public Boolean call() throws Exception {
+            public DbRecordState call() throws Exception {
                 DbRecordState dbState = getDbState();
                 switch (dbState) {
                     case IN_ERROR:
-                        // TODO: Find what to do here. For the moment throw the old exception
-                        RepositoryRuntimeException ex = new RepositoryRuntimeException(
-                                "Cannot insert new record " + ArtifactoryDbDataRecord.this +
-                                        " since the old one is in invalid state", error);
-                        throw ex;
+                        // In error not usable => ask for removal of entry
+                        // Forced file removal!
+                        store.deleteFile(getIdentifier());
+                        break;
                     case DELETED:
                         // Reset it to NEW for reuse
                         stateMgr.guardedSetState(DbRecordState.NEW);
@@ -496,7 +447,7 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
                 if (dbState == DbRecordState.NEW) {
                     setLastModified(now);
                     readyToBeRemoved = readyToMarkForDeletion = false;
-                    return true;
+                    return DbRecordState.NEW;
                 }
                 if (dbState == DbRecordState.IN_DB_USED) {
                     // Check the length are equal
@@ -507,21 +458,20 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
                         throw new DataStoreException(msg);
                     }
                     File cachedFile = store.getFile(getIdentifier());
-                    if (cachedFile == null || !cachedFile.exists()) {
+                    if (!cachedFile.exists()) {
                         // If no cache file copy the temp file to the cache folder and use it as the cache file
                         setFile(tempFile);
                     }
                     setLastModified(now);
                     readyToBeRemoved = readyToMarkForDeletion = false;
-                    return false;
+                    return DbRecordState.IN_DB_USED;
                 }
                 if (dbState == DbRecordState.IN_ERROR) {
-                    RepositoryRuntimeException ex = new RepositoryRuntimeException(
-                            "Cannot insert new record " + ArtifactoryDbDataRecord.this +
+                    log.error("Cannot insert new record " + ArtifactoryDbDataRecord.this +
                                     " since the old one is in invalid state", error);
-                    throw ex;
                 }
-                throw new RepositoryRuntimeException("Cannot reuse data entry " + ArtifactoryDbDataRecord.this);
+                log.error("Cannot reuse data entry " + ArtifactoryDbDataRecord.this);
+                return DbRecordState.IN_ERROR;
             }
         });
     }
@@ -578,10 +528,10 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
                 File cachedFile = store.getFile(getIdentifier());
                 if (cachedFile.exists()) {
                     //The target storage file (cache or real storage) already exists - should never happen
-                    if (cachedFile.length() != tempFile.length()) {
+                    if (tempFile.exists() && cachedFile.length() != tempFile.length()) {
                         throw new DataStoreException("File collision for id=" + getIdentifier() +
-                                " length=" + tempFile.length() +
-                                " oldLength=" + cachedFile.length());
+                                "\ncurrent length " + cachedFile.length()+ "bytes for file '"+cachedFile.getAbsolutePath()+"'"+
+                                "\nnew length " + tempFile.length()+ "bytes for file '"+tempFile.getAbsolutePath()+"'");
                     } else {
                         // The cache file is there from left over of a deletion that did not complete
                         // Since it's totally recovered, the message is debug level only

@@ -19,6 +19,7 @@
 package org.artifactory.build;
 
 import com.gc.iotools.stream.is.InputStreamFromOutputStream;
+import com.google.common.base.Predicate;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -35,6 +36,7 @@ import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.build.AfterBuildSaveAction;
 import org.artifactory.addon.plugin.build.BeforeBuildSaveAction;
+import org.artifactory.api.build.BuildNumberComparator;
 import org.artifactory.api.build.ImportableExportableBuild;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
@@ -96,6 +98,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.jcr.RepositoryException;
 import java.io.File;
@@ -107,9 +110,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -120,6 +123,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.collect.Lists.newArrayList;
+import static java.util.Collections.sort;
 import static org.artifactory.storage.StorageConstants.*;
 
 /**
@@ -193,6 +200,11 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     @Override
+    public void addBuild(@Nonnull DetailedBuildRun detailedBuildRun) {
+        getTransactionalMe().addBuild(((DetailedBuildRunImpl) detailedBuildRun).build);
+    }
+
+    @Override
     public void addBuild(final Build build) {
         String buildName = build.getName();
         String escapedBuildName = getPathFactory().escape(buildName);
@@ -211,6 +223,10 @@ public class BuildServiceImpl implements InternalBuildService {
         Set<String> dependencyChecksums = Sets.newHashSet();
         collectModuleChecksums(build.getModules(), artifactChecksums, dependencyChecksums);
 
+        DetailedBuildRun detailedBuildRun = new DetailedBuildRunImpl(build);
+        PluginsAddon pluginsAddon = addonsManager.addonByType(PluginsAddon.class);
+        pluginsAddon.execPluginActions(BeforeBuildSaveAction.class, builds, detailedBuildRun);
+
         MutableVfsNode buildNumberNode = createAndGetNumberNode(escapedBuildName, buildNumber, started);
         MutableVfsNode buildStartedNode = buildNumberNode.getOrCreateSubNode(escapedStarted, VfsNodeType.UNSTRUCTURED);
 
@@ -225,12 +241,7 @@ public class BuildServiceImpl implements InternalBuildService {
                     return null;
                 }
             };
-            PluginsAddon pluginsAddon = addonsManager.addonByType(PluginsAddon.class);
-            pluginsAddon.execPluginActions(BeforeBuildSaveAction.class, builds, new BuildContext() {
-            });
             buildStartedNode.setContent(vfsDataService.createBinary(BuildRestConstants.MT_BUILD_INFO, stream));
-            pluginsAddon.execPluginActions(AfterBuildSaveAction.class, builds, new BuildContext() {
-            });
         } catch (Exception e) {
             String errorMessage = String.format("An error occurred while writing JSON data to the node of build name " +
                     "'%s', number '%s', started at '%s'.", buildName, buildNumber, started);
@@ -259,12 +270,22 @@ public class BuildServiceImpl implements InternalBuildService {
 
         LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
         licensesAddon.performOnBuildArtifacts(build);
+
+        pluginsAddon.execPluginActions(AfterBuildSaveAction.class, builds, detailedBuildRun);
     }
 
     @Override
     public Build getBuild(String buildName, String buildNumber, String buildStarted) {
         String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
         return getBuild(buildPath);
+    }
+
+
+    @Override
+    public BuildRun getBuildRun(String buildName, String buildNumber, String buildStarted) {
+        String buildPath = getBuildPathFromParams(buildName, buildNumber, buildStarted);
+        VfsNode node = vfsDataService.findByPath(buildPath);
+        return node != null ? new BuildRunImpl(buildName, buildNumber, buildStarted) : null;
     }
 
     /**
@@ -355,7 +376,42 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     @Override
-    public Build getLatestBuildByNameAndNumber(String buildName, String buildNumber) {
+    public
+    @Nullable
+    Build getLatestBuildByNameAndStatus(String buildName, final String buildStatus) {
+        if (StringUtils.isBlank(buildName)) {
+            return null;
+        }
+        //let's find all builds
+        Set<BuildRun> buildsByName = searchBuildsByName(buildName);
+        if (buildsByName == null || buildsByName.isEmpty()) { //no builds - no glory
+            return null;
+        }
+        ArrayList<BuildRun> buildRuns = newArrayList(buildsByName);
+        sort(buildRuns, new BuildNumberComparator());
+        BuildRun latestBuildRun;
+
+        if (buildStatus.equals(LATEST_BUILD)) {
+            latestBuildRun = getLast(buildRuns, null);
+        } else {
+            latestBuildRun = getLast(filter(buildRuns, new Predicate<BuildRun>() { //filter by required status
+                @Override
+                public boolean apply(BuildRun buildRun) {
+                    //the only one we support right now is LAST_RELEASED i.e. "Released"
+                    return LAST_RELEASED_BUILD.equals(buildStatus) && PromotionStatus.RELEASED.equals(
+                            buildRun.getReleaseStatus());
+                }
+            }), null);
+
+        }
+        return latestBuildRun == null ? null :
+                getBuild(latestBuildRun.getName(), latestBuildRun.getNumber(), latestBuildRun.getStarted());
+    }
+
+    @Override
+    public
+    @Nullable
+    Build getLatestBuildByNameAndNumber(String buildName, String buildNumber) {
         if (StringUtils.isBlank(buildName)) {
             return null;
         }
@@ -405,12 +461,11 @@ public class BuildServiceImpl implements InternalBuildService {
                     String decodedBuildStarted = getPathFactory().unEscape(buildStartedNode.getName());
                     BuildRun buildRun;
                     if (!buildStartedNode.hasProperty(PROP_BUILD_RELEASE_LAST_STATUS)) {
-                        buildRun = new BuildRun(buildName, buildNumber, decodedBuildStarted);
+                        buildRun = new BuildRunImpl(buildName, buildNumber, decodedBuildStarted);
                     } else {
                         String releaseStatus = buildStartedNode
                                 .getProperty(PROP_BUILD_RELEASE_LAST_STATUS).getString();
-                        buildRun = new BuildRun(buildName, buildNumber, decodedBuildStarted,
-                                releaseStatus);
+                        buildRun = new BuildRunImpl(buildName, buildNumber, decodedBuildStarted, releaseStatus);
                     }
                     results.add(buildRun);
                     log.debug("Found {} in build '{}'.", buildRun, buildName);
@@ -440,7 +495,7 @@ public class BuildServiceImpl implements InternalBuildService {
         if (buildNumberNode != null) {
             for (VfsNode buildStartedNode : buildNumberNode.children()) {
                 String decodedBuildStarted = getPathFactory().unEscape(buildStartedNode.getName());
-                results.add(new BuildRun(buildName, buildNumber, decodedBuildStarted));
+                results.add(new BuildRunImpl(buildName, buildNumber, decodedBuildStarted));
             }
         }
 
@@ -616,7 +671,6 @@ public class BuildServiceImpl implements InternalBuildService {
             }
         };
 
-        @SuppressWarnings({"unchecked"})
         Collection<File> buildExportFiles =
                 FileUtils.listFiles(buildsFolder, buildExportFileFilter, DirectoryFileFilter.DIRECTORY);
 
@@ -870,7 +924,12 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     @Override
-    public void updateBuild(final Build build) {
+    public void updateBuild(@Nonnull DetailedBuildRun detailedBuildRun) {
+        getTransactionalMe().updateBuild(((DetailedBuildRunImpl) detailedBuildRun).build, true);
+    }
+
+    @Override
+    public void updateBuild(final Build build, boolean updateChecksumProperties) {
         String buildName = build.getName();
         String buildNumber = build.getNumber();
         String buildStarted = build.getStarted();
@@ -905,6 +964,19 @@ public class BuildServiceImpl implements InternalBuildService {
             String errorMessage = String.format("An error occurred while updating the latest release status " +
                     "property of build name '%s', number '%s', started at '%s'.", buildName, buildNumber, buildStarted);
             throw new RuntimeException(errorMessage, e);
+        }
+
+        if (updateChecksumProperties) {
+            Set<String> artifactChecksums = Sets.newHashSet();
+            Set<String> dependencyChecksums = Sets.newHashSet();
+            collectModuleChecksums(build.getModules(), artifactChecksums, dependencyChecksums);
+            try {
+                saveBuildFileChecksums(buildNode, artifactChecksums, dependencyChecksums);
+            } catch (Exception e) {
+                String errorMessage = String.format("An error occurred while updating the checksum properties on the " +
+                        "node of build name '%s', number '%s', started at '%s'.", buildName, buildNumber, buildStarted);
+                throw new RuntimeException(errorMessage, e);
+            }
         }
     }
 
@@ -1406,7 +1478,7 @@ public class BuildServiceImpl implements InternalBuildService {
             return statuses.get(0).getStatus();
         }
 
-        Collections.sort(statuses, new Comparator<PromotionStatus>() {
+        sort(statuses, new Comparator<PromotionStatus>() {
             @Override
             public int compare(PromotionStatus first, PromotionStatus second) {
                 SimpleDateFormat dateFormat = new SimpleDateFormat(Build.STARTED_FORMAT);

@@ -18,6 +18,7 @@
 
 package org.artifactory.rest.resource.ci;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.addon.AddonsManager;
@@ -36,6 +37,7 @@ import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildRun;
+import org.artifactory.exception.CancelException;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
@@ -44,6 +46,8 @@ import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.DoesNotExistException;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.dependency.BuildPatternArtifacts;
+import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
 import org.jfrog.build.api.release.Promotion;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,7 +65,11 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.text.ParseException;
+import java.util.List;
 import java.util.Set;
+
+import static com.google.common.collect.Lists.transform;
+import static org.artifactory.rest.util.RestUtils.getServletContextUrl;
 
 /**
  * A resource to manage the build actions
@@ -177,6 +185,30 @@ public class BuildResource {
     }
 
     /**
+     * Returns the outputs of build matching the request
+     *
+     * @param buildPatternArtifactsRequests contains build name and build number or keyword
+     * @return build outputs (build dependencies and generated artifacts).
+     *         The returned array will always be the same size as received, returning nulls on non-found builds.
+     */
+    @POST
+    @Path("/patternArtifacts")
+    @Consumes({BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_REQUEST, RestConstants.MT_LEGACY_ARTIFACTORY_APP,
+            MediaType.APPLICATION_JSON})
+    @Produces({BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_RESULT, MediaType.APPLICATION_JSON})
+    public List<BuildPatternArtifacts> getBuildPatternArtifacts(final List<BuildPatternArtifactsRequest> buildPatternArtifactsRequests) {
+        final RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        final String contextUrl = getServletContextUrl(request);
+        return transform(buildPatternArtifactsRequests, new Function<BuildPatternArtifactsRequest, BuildPatternArtifacts>() {
+            @Override
+            public BuildPatternArtifacts apply(BuildPatternArtifactsRequest input) {
+                return restAddon.getBuildPatternArtifacts(input, contextUrl);
+            }
+        });
+    }
+
+
+    /**
      * Adds the given build information to the DB
      *
      * @param build Build to add
@@ -191,7 +223,16 @@ public class BuildResource {
             return;
         }
 
-        buildService.addBuild(build);
+        try {
+            buildService.addBuild(build);
+        } catch (CancelException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("An error occurred while adding the build '" + build.getName() + " #" + build.getNumber() +
+                        "'.", e);
+            }
+            response.sendError(e.getErrorCode(), e.getMessage());
+            return;
+        }
         log.info("Added build '{} #{}'", build.getName(), build.getNumber());
         BuildRetention retention = build.getBuildRetention();
         if (retention != null) {

@@ -137,4 +137,23 @@ public class PathMatcherTest extends ArtifactoryHomeBoundTest {
         assertTrue(PathMatcher.matches("apath1/sub1/t", includes, null));
         assertTrue(PathMatcher.matches("apath1/sub1/toto/tutu", includes, null));
     }
+
+    public void sourcesIncludes() {
+        List<String> includes = Arrays.asList("**/*-sources.jar*");
+        assertTrue(PathMatcher.matches("apath/", includes, null));
+        assertTrue(PathMatcher.matches("apath1/", includes, null));
+        assertTrue(PathMatcher.matches("apath2/", includes, null));
+        assertTrue(PathMatcher.matches("apath1/subfolder-longer-than-pattern/", includes, null));
+        assertTrue(PathMatcher.matches("apath1/sub1/", includes, null));
+        assertTrue(PathMatcher.matches("apath1/sub1/t/", includes, null));
+        assertTrue(PathMatcher.matches("apath1/sub1/toto/tutu/", includes, null));
+        assertTrue(PathMatcher.matches("apath1/toto-sources.jar", includes, null));
+        assertTrue(PathMatcher.matches("apath1/sub/toto-sources.jar", includes, null));
+        assertTrue(PathMatcher.matches("apath1/toto-sources.jar.md5", includes, null));
+        assertTrue(PathMatcher.matches("apath1/sub/toto-sources.jar.md5", includes, null));
+        assertFalse(PathMatcher.matches("apath1/toto-1.0.jar", includes, null));
+        assertFalse(PathMatcher.matches("apath1/sub/toto-1.0.jar", includes, null));
+        assertFalse(PathMatcher.matches("apath1/toto-1.0.jar.md5", includes, null));
+        assertFalse(PathMatcher.matches("apath1/sub/toto-1.0.jar.md5", includes, null));
+    }
 }

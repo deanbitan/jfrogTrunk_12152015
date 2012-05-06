@@ -118,6 +118,116 @@ public abstract class ModuleInfoUtils {
     }
 
     /**
+     * Constructs a path according to a given {@link ModuleInfo} information and a specific repo layout
+     * This path can be used as a repoPath for searching artifacts
+     *
+     * @param moduleInfo the {@link ModuleInfo} information, it must contains at least groupId and artifactId
+     * @param repoLayout the {@link RepoLayout} to base the path on
+     * @return String path of the gathered information, null in case the given {@link RepoLayout} is invalid,
+     *         an invalid repo layout is one that has brackets between the groupId and the moduleId or a bracket before them
+     */
+    public static String constructBaseItemPath(ModuleInfo moduleInfo, RepoLayout repoLayout) {
+        if (moduleInfo == null) {
+            throw new IllegalArgumentException("Unable to construct a path from a null module info object.");
+        }
+        if (repoLayout == null) {
+            throw new IllegalArgumentException("Unable to construct a path from a null repository layout.");
+        }
+
+        String itemPathPattern = repoLayout.getArtifactPathPattern();
+        itemPathPattern = replaceDeclaredFields(moduleInfo, itemPathPattern);
+        itemPathPattern = RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets(itemPathPattern);
+        itemPathPattern = verifyAndBuildPathPattern(itemPathPattern);
+        if (StringUtils.isBlank(itemPathPattern)) {
+            log.warn("The repo layout '{}' is invalid and cannot be parsed for searching versions.",
+                    repoLayout.getName());
+        }
+
+        return itemPathPattern;
+    }
+
+    /**
+     * Constructs a module version according to the given {@link ModuleInfo} details and the {@link RepoLayout}
+     * Examples: '1.4.1-20120319.160615-2', '1.0-SNAPSHOT', '1.2'
+     *
+     * @param moduleInfo Contains the module details (base revision, file integration revision..)
+     * @param repoLayout The repo layout to calculate the module version from
+     * @return A module version string
+     */
+    public static String constructModuleVersion(ModuleInfo moduleInfo, RepoLayout repoLayout) {
+        if (moduleInfo == null) {
+            throw new IllegalArgumentException("Unable to construct a path from a null module info object.");
+        }
+        if (repoLayout == null) {
+            throw new IllegalArgumentException("Unable to construct a path from a null repository layout.");
+        }
+
+        String itemPathPattern = repoLayout.getArtifactPathPattern();
+        itemPathPattern = getModuleVersionPattern(itemPathPattern);
+        if (!StringUtils.isBlank(itemPathPattern)) {
+            itemPathPattern = replaceDeclaredFields(moduleInfo, itemPathPattern);
+            itemPathPattern = RepoLayoutUtils.removeReplacedTokenOptionalBrackets(itemPathPattern, false);
+            itemPathPattern = RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets(itemPathPattern);
+        } else {
+            log.warn("The repo layout '{}' is invalid and cannot be parsed for version file name",
+                    repoLayout.getName());
+        }
+
+        return itemPathPattern;
+    }
+
+    /**
+     * Constructs the module version pattern, starting from [baseRev] to [fileItegRev]
+     *
+     * @param itemPathPattern the item path containing all the tokens of a given repo layout
+     * @return the tokens path representing the file name, empty string ("") in case of unsupported layout,
+     *         Unsupported layout is one which [fileItegRev] is before [baseRev]
+     */
+    private static String getModuleVersionPattern(String itemPathPattern) {
+        String wrappedBaseRevisionToken = RepoLayoutUtils.wrapKeywordAsToken(RepoLayoutUtils.BASE_REVISION);
+        String wrappedFileItegRevToken = RepoLayoutUtils.wrapKeywordAsToken(RepoLayoutUtils.FILE_INTEGRATION_REVISION);
+        int baseRevStartPos = StringUtils.lastIndexOf(itemPathPattern, wrappedBaseRevisionToken);
+        int fileItegRevEndPos = StringUtils.lastIndexOf(itemPathPattern, wrappedFileItegRevToken);
+        int indexOfClosingOptionalBracket = StringUtils.indexOf(itemPathPattern, ")", fileItegRevEndPos);
+        if (indexOfClosingOptionalBracket > 0) {
+            fileItegRevEndPos = indexOfClosingOptionalBracket + 1;
+        }
+        if (fileItegRevEndPos >= baseRevStartPos) {
+            return StringUtils.substring(itemPathPattern, baseRevStartPos, fileItegRevEndPos);
+        }
+
+        return "";
+    }
+
+    /**
+     * Verifies the given path is legit and removes the remaining brackets from it
+     *
+     * @param itemPathPattern the item path to verify
+     * @return the repo path without any brackets tokens in it, null in case the repo path is invalid
+     *         an invalid repo path is one that has brackets between the groupId and the moduleId or a bracket before them
+     */
+    private static String verifyAndBuildPathPattern(String itemPathPattern) {
+        String[] tokens = StringUtils.split(itemPathPattern, "/");
+        StringBuilder newPathBuilder = new StringBuilder();
+        boolean foundBracketToken = false;
+        for (String token : tokens) {
+            if (StringUtils.containsNone(token, new char[]{'[', ']'})) {
+                if (foundBracketToken) {
+                    // Invalid repo path, found a bracket between the groupId and the moduleId
+                    // or a bracket before them, returning null
+                    return null;
+                }
+                newPathBuilder.append(token).append("/");
+                foundBracketToken = false;
+            } else {
+                foundBracketToken = true;
+            }
+        }
+
+        return newPathBuilder.toString();
+    }
+
+    /**
      * Insert all the given module info values to the pattern
      *
      * @param moduleInfo       Module info to use

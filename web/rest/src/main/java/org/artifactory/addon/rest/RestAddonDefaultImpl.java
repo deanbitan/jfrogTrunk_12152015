@@ -23,18 +23,20 @@ import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.rest.artifact.FileList;
 import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.replication.ReplicationRequest;
+import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
-import org.artifactory.rest.resource.artifact.DownloadResource;
+import org.artifactory.rest.resource.artifact.legacy.DownloadResource;
 import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.dependency.BuildPatternArtifacts;
+import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
 import org.jfrog.build.api.release.Promotion;
 import org.springframework.stereotype.Component;
 
@@ -92,12 +94,6 @@ public class RestAddonDefaultImpl implements RestAddon {
 
     @Override
     public PromotionResult promoteBuild(String buildName, String buildNumber, Promotion promotion) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public FileList getFileList(@Nullable String uri, String path, int deep, int depth, int listFolders,
-            int mdTimestamps) {
         throw new MissingRestAddonException();
     }
 
@@ -190,6 +186,11 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
+    public Response getStagingStrategy(String strategyName, String buildName, Map params) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
     public ItemPermissions getItemPermissions(HttpServletRequest request, String path) {
         throw new MissingRestAddonException();
     }
@@ -272,7 +273,30 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public Response getUserPluginInfo() {
+    public Response getUserPluginInfo(@Nullable String pluginType) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public BuildPatternArtifacts getBuildPatternArtifacts(
+            @Nonnull BuildPatternArtifactsRequest buildPatternArtifactsRequest, String servletContextUrl) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public ResponseCtx promote(String promotionName, String buildName, String buildNumber, Map params) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public ArtifactVersionsResult getArtifactVersions(String groupId, String artifactId, @Nullable String version,
+            @Nullable StringList reposToSearch, boolean remote) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public void writeStreamingFileList(HttpServletResponse response, String requestUrl, String path, int deep,
+            int depth, int listFolders, int mdTimestamps, int includeRootPath) {
         throw new MissingRestAddonException();
     }
 

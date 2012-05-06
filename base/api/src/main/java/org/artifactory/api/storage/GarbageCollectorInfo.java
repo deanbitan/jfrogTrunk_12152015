@@ -42,7 +42,6 @@ public class GarbageCollectorInfo {
     public int initialCount;
     public long totalSizeFromBinaryProperties;
     public long totalBinaryPropertiesQueryTime;
-    public long dataStoreQueryTime;
     public int cleanedElementsCount;
 
     public int uniqueChecksumsCleaned; //The number of binary node rows that were cleaned-up
@@ -53,47 +52,9 @@ public class GarbageCollectorInfo {
     /**
      * Prints a summary of the collected info to the log
      *
-     * @param cleanUpStartTime Time the cleanup was started
-     * @param dataStoreSize    The measured size of the datastore
-     */
-    public void printV1CollectionInfo(long cleanUpStartTime, long dataStoreSize) {
-        gcEnd = System.currentTimeMillis();
-        String cleanResult;
-
-        if (cleanedElementsCount > 0) {
-            cleanResult = "Deletion execution:      " + (gcEnd - cleanUpStartTime) + "ms\n" +
-                    "Initial element count:   " + initialCount + "\n" +
-                    "Bereaved nodes:          " + bereavedNodesCount + "\n" +
-                    "Elements cleaned:        " + cleanedElementsCount + "\n" +
-                    "Initial size:            " + StorageUnit.toReadableString(initialSize) + "\n" +
-                    "Total size cleaned:      " + StorageUnit.toReadableString(totalSizeCleaned) + "\n" +
-                    "Current total size:      " + StorageUnit.toReadableString(dataStoreSize);
-        } else {
-            cleanResult = "Total element count:     " + initialCount + "\n" +
-                    "Bereaved nodes:          " + bereavedNodesCount + "\n" +
-                    "No Elements cleaned\n" +
-                    "Current total size:      " + dataStoreSize;
-        }
-
-        String msg = "Artifactory Jackrabbit's datastore garbage collector report:\n" +
-                "Total execution:         " + (gcEnd - startScanTimestamp) + "ms\n" +
-                "Data Store Query:        " + dataStoreQueryTime + "ms\n" +
-                "Binary Properties Query: " + totalBinaryPropertiesQueryTime + "ms\n" +
-                "Total Scanning:          " + (stopScanTimestamp - startScanTimestamp) + "ms\n" +
-                cleanResult;
-        if (cleanedElementsCount > 0) {
-            log.info(msg);
-        } else {
-            log.debug(msg);
-        }
-    }
-
-    /**
-     * Prints a summary of the collected info to the log
-     *
      * @param dataStoreSize The measured size of the datastore
      */
-    public void printV2CollectionInfo(long dataStoreSize) {
+    public void printCollectionInfo(long dataStoreSize) {
         StringBuilder msg = new StringBuilder("\nStorage garbage collector report:\n").append(
                 "Total execution (ms):     ").append(gcEnd - startScanTimestamp).append("\n").append(
                 "Unique checksums cleaned: ").append(uniqueChecksumsCleaned).append("\n").append(

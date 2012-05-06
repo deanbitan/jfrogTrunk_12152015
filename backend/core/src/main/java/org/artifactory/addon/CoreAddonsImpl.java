@@ -87,6 +87,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -339,6 +340,10 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public ReplicationStatus getReplicationStatus(RepoPath repoPath) {
         return new ReplicationStatus(ReplicationStatusType.ERROR, "Error");
+    }
+
+    @Override
+    public void performLegacyRemoteReplication(RemoteReplicationSettings remoteReplicationSettings) throws IOException {
     }
 
     private MultiStatusHolder getReplicationRequiredStatusHolder() {

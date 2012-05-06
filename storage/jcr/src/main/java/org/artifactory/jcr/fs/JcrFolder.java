@@ -406,20 +406,17 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
         IOFileFilter metadataFilter = new MetadataFileFilter();
 
         //List all artifacts
-        @SuppressWarnings({"unchecked"})
         Collection<File> artifacts = Sets.newHashSet(
                 targetDir.listFiles((FileFilter) new NotFileFilter(metadataFilter)));
         cleanArtifacts(currentJcrFolderItems, artifacts, settings);
 
         //List all sub-target metadata
-        @SuppressWarnings({"unchecked"})
         Collection<File> subTargetMetadataFiles = FileUtils.listFiles(targetDir, metadataFilter,
                 DirectoryFileFilter.INSTANCE);
         cleanMetadata(currentJcrFolderItems, subTargetMetadataFiles, status);
 
         //List all target metadata
         File targetDirMetadataContainerFolder = getMetadataContainerFolder(targetDir);
-        @SuppressWarnings({"unchecked"})
         Collection<File> targetMetadataFiles = FileUtils.listFiles(targetDirMetadataContainerFolder, metadataFilter,
                 DirectoryFileFilter.INSTANCE);
         cleanTargetMetadata(targetMetadataFiles, status);

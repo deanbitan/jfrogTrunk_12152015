@@ -35,19 +35,15 @@ public class RemoteReplicationSettingsBuilderTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNoRepoPath() throws Exception {
-        new RemoteReplicationSettingsBuilder(null, null).build();
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testNoWriter() throws Exception {
-        new RemoteReplicationSettingsBuilder(InternalRepoPathFactory.create("moo", "goo"), null).build();
+        new RemoteReplicationSettingsBuilder(null).build();
     }
 
     @Test
     public void testDefaultValues() throws Exception {
         RepoPath repoPath = InternalRepoPathFactory.create("moo", "mieow");
         StringWriter stringWriter = new StringWriter();
-        RemoteReplicationSettings settings = new RemoteReplicationSettingsBuilder(repoPath, stringWriter).build();
+        RemoteReplicationSettings settings = new RemoteReplicationSettingsBuilder(repoPath).responseWriter(stringWriter)
+                .build();
 
         assertEquals(settings.getRepoPath(), repoPath, "Unexpected repo path.");
         assertFalse(settings.isProgress(), "Unexpected default progress display state.");
@@ -63,9 +59,9 @@ public class RemoteReplicationSettingsBuilderTest {
     public void testSetters() throws Exception {
         RepoPath repoPath = InternalRepoPathFactory.create("moo", "mieow");
         StringWriter stringWriter = new StringWriter();
-        RemoteReplicationSettings settings = new RemoteReplicationSettingsBuilder(repoPath, stringWriter).progress(
-                true).mark(15).
-                deleteExisting(true).includeProperties(true).overwrite(ReplicationAddon.Overwrite.never).build();
+        RemoteReplicationSettings settings = new RemoteReplicationSettingsBuilder(repoPath).progress(true).mark(15)
+                .responseWriter(stringWriter).deleteExisting(true).includeProperties(true)
+                .overwrite(ReplicationAddon.Overwrite.never).build();
 
         assertEquals(settings.getRepoPath(), repoPath, "Unexpected repo path.");
         assertTrue(settings.isProgress(), "Unexpected progress display state.");

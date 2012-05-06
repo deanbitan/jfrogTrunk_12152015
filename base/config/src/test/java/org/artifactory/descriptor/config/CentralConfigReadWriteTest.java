@@ -21,6 +21,7 @@ package org.artifactory.descriptor.config;
 import com.google.common.collect.Maps;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.reader.CentralConfigReader;
@@ -154,6 +155,11 @@ public class CentralConfigReadWriteTest {
         gcConfigDescriptor.setCronExp("0 0 4 * * ?");
         desc.setGcConfig(gcConfigDescriptor);
 
+        CleanupConfigDescriptor cleanupConfigDescriptor = new CleanupConfigDescriptor();
+        cleanupConfigDescriptor.setCronExp("0 12 5 * * ?");
+        desc.setCleanupConfig(cleanupConfigDescriptor);
+
+
         File outputConfig = new File(testDir, "central.config.test.xml");
         JaxbHelper.writeConfig(desc, outputConfig);
     }
@@ -225,6 +231,10 @@ public class CentralConfigReadWriteTest {
         GcConfigDescriptor gcConfigDescriptor = new GcConfigDescriptor();
         gcConfigDescriptor.setCronExp("tyrtrsg");
         cc.setGcConfig(gcConfigDescriptor);
+
+        CleanupConfigDescriptor cleanupConfigDescriptor = new CleanupConfigDescriptor();
+        cleanupConfigDescriptor.setCronExp("sdfsdf");
+        cc.setCleanupConfig(cleanupConfigDescriptor);
 
         File outputConfig = new File(testDir, "config.defaults.test.xml");
         JaxbHelper.writeConfig(cc, outputConfig);

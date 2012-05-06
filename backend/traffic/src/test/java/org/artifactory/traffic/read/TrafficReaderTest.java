@@ -152,7 +152,6 @@ public class TrafficReaderTest {
         Assert.assertTrue(trafficEntryList.isEmpty(), "Entry list shouldn't be empty.");
     }
 
-    @SuppressWarnings({"unchecked"})
     private Date[] findDateRange() {
         Date startDate = null;
         Date endDate = null;

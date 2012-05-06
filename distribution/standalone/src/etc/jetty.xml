@@ -47,7 +47,7 @@
                     <SystemProperty name="jetty.host"/>
                 </Set>
                 <Set name="port">
-                    <SystemProperty name="jetty.port" default="8080"/>
+                    <SystemProperty name="jetty.port" default="8081"/>
                 </Set>
                 <Set name="forwarded">true</Set>
                 <Set name="maxIdleTime">30000</Set>

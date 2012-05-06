@@ -93,4 +93,13 @@ public interface RepositoryBrowsingService {
      */
     @Nullable
     BrowsableItem getLocalRepoBrowsableItem(RepoPath repoPath);
+
+    /**
+     * Returns a virtual browsable item for the given repo path.
+     *
+     * @param repoPath The item repo path (file or folder)
+     * @return Virtual browsable item for the repo path
+     */
+    @Nullable
+    VirtualBrowsableItem getVirtualRepoBrowsableItem(RepoPath repoPath);
 }

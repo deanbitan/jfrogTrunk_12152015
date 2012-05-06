@@ -208,13 +208,13 @@ public class HttpRepoAdvancedPanel extends Panel {
         cacheBorder.add(new SchemaHelpBubble("unusedArtifactsCleanupPeriodHours.help"));
 
         addDurationField(cacheBorder, "retrievalCachePeriodSecs");
-        addDurationField(cacheBorder, "failedRetrievalCachePeriodSecs");
+        addDurationField(cacheBorder, "assumedOfflinePeriodSecs");
         addDurationField(cacheBorder, "missedRetrievalCachePeriodSecs");
     }
 
     private void addDurationField(WebMarkupContainer cacheBorder, String fieldName) {
         cacheBorder.add(new TextField<Long>(fieldName, Long.class).setRequired(true).
-                add(new MinimumValidator<Long>(0l)));
+                add(new MinimumValidator<Long>(0L)));
         cacheBorder.add(new SchemaHelpBubble(fieldName + ".help"));
     }
 
@@ -233,6 +233,9 @@ public class HttpRepoAdvancedPanel extends Panel {
 
         add(new StyledCheckbox("hardFail"));
         add(new SchemaHelpBubble("hardFail.help"));
+
+        add(new StyledCheckbox("archiveBrowsingEnabled"));
+        add(new SchemaHelpBubble("archiveBrowsingEnabled.help"));
 
         final StyledCheckbox checkbox = new StyledCheckbox("storeArtifactsLocally");
         boolean storeArtifactsLocallyValue = CreateUpdateAction.UPDATE.equals(action)

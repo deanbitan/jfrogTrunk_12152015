@@ -56,12 +56,14 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.jcr.JcrCacheRepo;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.repo.snapshot.RemoteLatestMavenSnapshotResolver;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.NullRequestContext;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.request.Request;
 import org.artifactory.request.RequestContext;
+import org.artifactory.request.RequestTraceLogger;
 import org.artifactory.resource.RemoteRepoResource;
 import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -102,8 +104,25 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     private LocalCacheRepo localCacheRepo;
     private RemoteRepoBase oldRemoteRepo;
-    private Map<String, RepoResource> failedRetrievalsCache;
+
+    /**
+     * Flags this repository as assumed offline. The repository enters this state when a download request fails with
+     * exception.
+     */
+    protected volatile boolean assumedOffline;
+
+    /**
+     * The next time, in milliseconds, to check online status of this repository
+     */
+    protected long nextOnlineCheckMillis;
+
+    /**
+     * Cache of resources not found on the remote machine. Keyed by resource path.
+     */
     private Map<String, RepoResource> missedRetrievalsCache;
+    /**
+     * Cache of remote directories listing.
+     */
     private Map<String, List<RemoteItem>> remoteResourceCache;
 
     private boolean globalOfflineMode;
@@ -152,7 +171,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     protected void initCaches() {
-        failedRetrievalsCache = initCache(100, getDescriptor().getFailedRetrievalCachePeriodSecs(), false);
         missedRetrievalsCache = initCache(500, getDescriptor().getMissedRetrievalCachePeriodSecs(), false);
         remoteResourceCache = initCache(1000, getDescriptor().getRetrievalCachePeriodSecs(), true);
     }
@@ -176,13 +194,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     this, retrievalCachePeriodSecs);
         } else {
             log.debug("{}: Retrieval cache will be disabled.", this);
-        }
-        long failedRetrievalCachePeriodSecs = getDescriptor().getFailedRetrievalCachePeriodSecs();
-        if (failedRetrievalCachePeriodSecs > 0) {
-            log.debug("{}: Enabling failed retrieval cache with period of {} seconds",
-                    this, failedRetrievalCachePeriodSecs);
-        } else {
-            log.debug("{}: Disabling failed retrieval cache", this);
         }
         long missedRetrievalCachePeriodSecs = getDescriptor().getMissedRetrievalCachePeriodSecs();
         if (missedRetrievalCachePeriodSecs > 0) {
@@ -215,7 +226,17 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     @Override
     public boolean isOffline() {
-        return getDescriptor().isOffline() || globalOfflineMode;
+        return getDescriptor().isOffline() || globalOfflineMode || isAssumedOffline();
+    }
+
+    @Override
+    public boolean isAssumedOffline() {
+        return assumedOffline;
+    }
+
+    @Override
+    public long getNextOnlineCheckMillis() {
+        return isAssumedOffline() ? nextOnlineCheckMillis : 0;
     }
 
     @Override
@@ -229,8 +250,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     @Override
-    public long getFailedRetrievalCachePeriodSecs() {
-        return getDescriptor().getFailedRetrievalCachePeriodSecs();
+    public long getAssumedOfflinePeriodSecs() {
+        return getDescriptor().getAssumedOfflinePeriodSecs();
     }
 
     @Override
@@ -247,34 +268,35 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      */
     @Override
     public final RepoResource getInfo(InternalRequestContext context) throws FileExpectedException {
-        // make sure the repo key is of this repository
-        String path = context.getResourcePath();
+        context = new RemoteLatestMavenSnapshotResolver().convertNonUniqueSnapshotPath(this, context);
 
+        String path = context.getResourcePath();
+        // make sure the repo key is of this repository
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), path);
 
         //Skip if in blackout or not accepting/handling or cannot download
         StatusHolder statusHolder = checkDownloadIsAllowed(repoPath);
         if (statusHolder.isError()) {
+            RequestTraceLogger.log("Download denied (%s) - returning unfound resource", statusHolder.getStatusMsg());
             return new UnfoundRepoResource(repoPath, statusHolder.getStatusMsg(), statusHolder.getStatusCode());
         }
         //Never query remote checksums
         if (NamingUtils.isChecksum(path)) {
+            RequestTraceLogger.log("Download denied - checksums are not downloadable");
             return new UnfoundRepoResource(repoPath, "Checksums are not downloadable.");
         }
 
         //Try to get it from the caches
-        RepoResource res = getFailedOrMissedResource(path);
+        RepoResource res = getMissedResource(path);
         if (res == null) {
             res = internalGetInfo(repoPath, context);
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug(this + ": " + res + " cached as not found at '" + path + "'.");
-            }
         }
 
         //If we cannot get the resource remotely and an expired (otherwise we would not be
         //attempting the remote repo at all) cache entry exists use it by unexpiring it
         if (res.isExpired() && isStoreArtifactsLocally()) {
+            RequestTraceLogger.log("Hosting repository stores locally and the resource is expired - " +
+                    "un-expiring if still exists");
             res = getRepositoryService().unexpireIfExists(localCacheRepo, path);
         }
         return res;
@@ -294,6 +316,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
 
         if (cachedResource != null && cachedResource.isFound()) {
+            RequestTraceLogger.log("Found resource in local cache - returning cached resource");
             // found in local cache
             return returnCachedResource(repoPath, cachedResource);
         }
@@ -304,21 +327,29 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         if (!isOffline()) {
             RepoResource remoteResource = getRemoteResource(context, repoPath, foundExpiredInCache);
             if (!remoteResource.isFound() && foundExpiredInCache) {
+                RequestTraceLogger.log("Resource doesn't exist remotely but is expired in the caches - " +
+                        "returning expired cached resource");
                 remoteResource = returnCachedResource(repoPath, cachedResource);
             }
             // there's a newer remote resource that should be downloaded this is not supported for zip resources
             if (remoteResource.isFound() && context.getRequest().isZipResourceRequest()) {
+                RequestTraceLogger.log("Resource exists remotely but is contained within a ZIP variant - " +
+                        "returning returning as unfound (remote download of archived content isn't supported)");
                 return new UnfoundRepoResource(repoPath,
                         "Zip resources download is only supported on cached artifacts");
             }
             return remoteResource;
         } else if (foundExpiredInCache) {
+            RequestTraceLogger.log("Repository is offline but the resource in exists in the local cache - " +
+                    "returning cached resource");
             //Return the cached resource if remote fetch failed
             return returnCachedResource(repoPath, cachedResource);
         } else {
-            String msg = String.format("%s: is offline, '%s' is not found at '%s'.", this, repoPath, path);
-            log.debug(msg);
-            return new UnfoundRepoResource(repoPath, msg);
+            String offlineMessage = isAssumedOffline() ? "assumed offline" : "offline";
+            RequestTraceLogger.log("Repository is " + offlineMessage + " and the resource doesn't exist in the " +
+                    "local cache - returning unfound resource");
+            return new UnfoundRepoResource(repoPath,
+                    String.format("%s: is %s, '%s' is not found at '%s'.", this, offlineMessage, repoPath, path));
         }
     }
 
@@ -329,29 +360,30 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @param repoPath            Item repo path
      * @param foundExpiredInCache True if the an expired item was found in the cache    @return Repo resource object
      */
-    private RepoResource getRemoteResource(RequestContext context, RepoPath repoPath,
-            boolean foundExpiredInCache) {
+    private RepoResource getRemoteResource(RequestContext context, RepoPath repoPath, boolean foundExpiredInCache) {
         String path = repoPath.getPath();
 
         if (!getDescriptor().isSynchronizeProperties() && context.getProperties().hasMandatoryProperty()) {
-            String msg = this + ": does not synchronize remote properties and request contains mandatory property, '"
-                    + repoPath + "' will not be downloaded from '" + path + "'.";
-            log.debug(msg);
-            return new UnfoundRepoResource(repoPath, msg);
+            RequestTraceLogger.log("Repository doesn't sync properties and the request contains " +
+                    "mandatory properties - returning unfound resource");
+            return new UnfoundRepoResource(repoPath, this + ": does not synchronize remote properties and request " +
+                    "contains mandatory property, '" + repoPath + "' will not be downloaded from '" + path + "'.");
         }
 
         RepoResource remoteResource;
         path = getAltRemotePath(repoPath);
+        if (!repoPath.getPath().equals(path)) {
+            RequestTraceLogger.log("Remote resource path was altered by the user plugins to - %s", path);
+        }
         try {
             remoteResource = retrieveInfo(path, context);
             if (!remoteResource.isFound() && !foundExpiredInCache) {
                 //Update the non-found cache for a miss
-                if (log.isDebugEnabled()) {
-                    log.debug(this + ": " + remoteResource + " not found at '" + path + "'.");
-                }
+                RequestTraceLogger.log("Unable to find resource remotely - adding to the missed retrieval cache.");
                 missedRetrievalsCache.put(path, remoteResource);
             }
         } catch (Exception e) {
+            RequestTraceLogger.log("Failed to retrieve information: %s", e.getMessage());
             String reason = this + ": Error in getting information for '" + path + "' (" + e.getMessage() + ").";
             if (log.isDebugEnabled()) {
                 log.warn(reason, e);
@@ -360,12 +392,14 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
             remoteResource = new UnfoundRepoResource(repoPath, reason);
             if (!foundExpiredInCache) {
-                //Update the non-found cache for a failure
-                failedRetrievalsCache.put(path, remoteResource);
+                RequestTraceLogger.log("Found no expired resource in the cache - " +
+                        "adding to the failed retrieval cache");
+                putOffline();
                 if (isHardFail()) {
                     throw new RuntimeException(this + ": Error in getting information for '" + path + "'.", e);
                 }
             }
+
         }
 
         return remoteResource;
@@ -382,6 +416,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         cachedResource.setResponseRepoPath(InternalRepoPathFactory.create(localCacheRepo.getKey(), repoPath.getPath()));
         return cachedResource;
     }
+
+    /**
+     * Temporarily puts the repository in an assumed offline mode.
+     */
+    protected abstract void putOffline();
 
     protected abstract RepoResource retrieveInfo(String path, @Nullable RequestContext context);
 
@@ -401,29 +440,38 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     @Override
     public ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, RepoResource res)
-            throws IOException, RepositoryException,
-            RepoRejectException {
+            throws IOException, RepositoryException, RepoRejectException {
+        // We also change the context here, otherwise if there is something in the cache
+        // we will receive it instead of trying to download the latest from the remote
+        requestContext = new RemoteLatestMavenSnapshotResolver().convertNonUniqueSnapshotPath(this, requestContext);
+        RequestTraceLogger.log("Creating a resource handle from '%s'", res.getResponseRepoPath().getRepoKey());
         String path = res.getRepoPath().getPath();
         if (isStoreArtifactsLocally()) {
+            RequestTraceLogger.log("Target repository is configured to retain artifacts locally - " +
+                    "resource will be stored and the streamed to the user");
             try {
                 //Reflect the fact that we return a locally cached resource
                 res.setResponseRepoPath(InternalRepoPathFactory.create(localCacheRepo.getKey(), path));
                 ResourceStreamHandle handle = getRepositoryService().downloadAndSave(requestContext, this, res);
-                log.debug("Retrieving info from cache for '{}' from '{}'.", path, localCacheRepo);
                 return handle;
             } catch (IOException e) {
+                RequestTraceLogger.log("Error occurred while downloading artifact: %s", e.getMessage());
                 //If we fail on remote fetching and we can get the resource from an expired entry in
                 //the local cache - fallback to using it, else rethrow the exception
                 if (res.isExpired()) {
                     ResourceStreamHandle result =
                             getRepositoryService().unexpireAndRetrieveIfExists(requestContext, localCacheRepo, path);
                     if (result != null) {
+                        RequestTraceLogger.log("Requested artifact is expired and exists in the cache - " +
+                                "un-expiring cached and returning it instead");
                         return result;
                     }
                 }
                 throw e;
             }
         } else {
+            RequestTraceLogger.log("Target repository is configured to not retain artifacts locally - " +
+                    "resource will be stream directly to the user");
             ResourceStreamHandle handle = downloadResource(path, requestContext);
             return handle;
         }
@@ -435,26 +483,40 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         RepoPath remoteRepoPath = remoteResource.getRepoPath();
         String path = remoteRepoPath.getPath();
 
+        boolean offline = isOffline();
+        boolean foundExpiredResourceAndNewerRemote = foundExpiredAndRemoteIsNewer(remoteResource, cachedResource);
+        boolean cachedNotFoundAndNotExpired = notFoundAndNotExpired(cachedResource);
+
+        RequestTraceLogger.log("Remote repository is offline = %s", offline);
+        RequestTraceLogger.log("Found expired cached resource but remote is newer = %s",
+                foundExpiredResourceAndNewerRemote);
+        RequestTraceLogger.log("Resource isn't cached and isn't expired = %s", cachedNotFoundAndNotExpired);
+
         //Retrieve remotely only if locally cached artifact not found or is found but expired and is older than remote one
-        if (!isOffline() && (foundExpiredAndRemoteIsNewer(remoteResource, cachedResource)
-                || notFoundAndNotExpired(cachedResource))) {
+        if (!offline && (foundExpiredResourceAndNewerRemote || cachedNotFoundAndNotExpired)) {
+            RequestTraceLogger.log("Downloading and saving");
+
             // Check for security deploy rights
+            RequestTraceLogger.log("Asserting valid deployment path");
             getRepositoryService().assertValidDeployPath(localCacheRepo, path);
 
             //Create the parent folder
             String parentPath = PathUtils.getParent(path);
             RepoPath parentRepoPath = InternalRepoPathFactory.create(localCacheRepo.getKey(), parentPath);
+
+            RequestTraceLogger.log("Locking parent folder");
             JcrFolder parentFolder = localCacheRepo.getLockedJcrFolder(parentRepoPath, true);
+            RequestTraceLogger.log("Creating folder hierarchy if needed");
             if (!parentFolder.mkdirs()) {
+                RequestTraceLogger.log("No folders created - removing lock");
                 LockingHelper.removeLockEntry(parentRepoPath);
             }
 
             //Check that the resource is not being downloaded in parallel
             DownloadEntry completedConcurrentDownload = getCompletedConcurrentDownload(path);
-            log.trace("Got completed concurrent download: {}.", completedConcurrentDownload);
             if (completedConcurrentDownload == null) {
                 //We need to download since no concurrent download of the same resource took place
-                log.debug("Starting download of '{}' in '{}'.", path, this);
+                RequestTraceLogger.log("Found no completed concurrent download - starting download");
                 ResourceStreamHandle handle = null;
                 try {
                     beforeResourceDownload(remoteResource);
@@ -462,45 +524,62 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     RepoResourceInfo remoteInfo = remoteResource.getInfo();
                     Set<ChecksumInfo> remoteChecksums = remoteInfo.getChecksumsInfo().getChecksums();
                     boolean receivedRemoteChecksums = CollectionUtils.notNullOrEmpty(remoteChecksums);
+                    if (receivedRemoteChecksums) {
+                        RequestTraceLogger.log("Received remote checksums headers - %s", remoteChecksums);
+                    } else {
+                        RequestTraceLogger.log("Received no remote checksums headers");
+                    }
 
                     //Allow plugins to provide an alternate content
                     handle = getAltContent(remoteRepoPath);
 
-                    if (handle == null && shouldSearchForExistingResource(requestContext.getRequest()) &&
-                            receivedRemoteChecksums) {
+                    if (handle == null && receivedRemoteChecksums &&
+                            shouldSearchForExistingResource(requestContext.getRequest())) {
+                        RequestTraceLogger.log("Received no alternative content, received remote checksums headers" +
+                                " and searching for existing resources on download is enabled");
                         handle = getExistingResourceByChecksum(remoteChecksums, remoteResource.getSize());
                     }
 
                     long remoteRequestStartTime = 0;
                     if (handle == null) {
+                        RequestTraceLogger.log("Received no alternative content or existing resource - " +
+                                "downloading resource");
                         //If we didn't get an alternate handle do the actual download
                         remoteRequestStartTime = System.currentTimeMillis();
                         handle = downloadResource(path, requestContext);
                     }
 
                     if (!receivedRemoteChecksums) {
+                        RequestTraceLogger.log("Trying to find remote checksums");
                         remoteChecksums = getRemoteChecksums(path);
                         if (remoteResource instanceof RemoteRepoResource) {
                             ((RemoteRepoResource) remoteResource).getInfo().setChecksums(remoteChecksums);
                         } else {
                             // Cannot set the checksums on non remote repo resource
-                            log.error("No checksums found on " + remoteResource + " and it is not a remote resource!");
+                            RequestTraceLogger.log("No checksums found on %s and it's not a remote resource!",
+                                    remoteResource);
                         }
                     }
 
                     Properties properties = null;
-                    if (getDescriptor().isSynchronizeProperties()) {
+                    boolean synchronizeProperties = getDescriptor().isSynchronizeProperties();
+
+                    RequestTraceLogger.log("Remote property synchronization enabled = %s", synchronizeProperties);
+
+                    if (synchronizeProperties) {
                         if (getAuthorizationService().canAnnotate(remoteRepoPath)) {
+                            RequestTraceLogger.log("Trying to find remote properties");
                             properties = getRemoteProperties(path);
                         } else {
+                            RequestTraceLogger.log("Skipping property synchronization - " +
+                                    "lacking annotate permissions");
                             log.warn("Skipping property synchronization of item '{}': Lacking annotate permissions.",
                                     remoteRepoPath);
                         }
                     }
 
                     //Create/override the resource in the storage cache
-                    log.debug("Copying " + path + " from " + this + " to " + localCacheRepo);
-                    log.debug("Saving resource '{}' into cache '{}'.", remoteResource, localCacheRepo);
+                    RequestTraceLogger.log("Saving resource to " + localCacheRepo);
                     SaveResourceContext saveResourceContext = new SaveResourceContext.Builder(remoteResource, handle)
                             .properties(properties).build();
                     cachedResource = localCacheRepo.saveResource(saveResourceContext);
@@ -512,6 +591,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                         TrafficService trafficService = ContextHelper.get().beanForType(TrafficService.class);
                         trafficService.handleTrafficEntry(uploadEntry);
                     }
+
                     unexpire(cachedResource);
                     afterResourceDownload(remoteResource);
                 } finally {
@@ -522,21 +602,29 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     notifyConcurrentWaiters(requestContext, cachedResource, path);
                 }
             } else {
+                RequestTraceLogger.log("Found completed concurrent download - using existing handle");
                 //We will not see the stored result here yet since it is saved in its own tx - return a direct handle
                 ConcurrentLinkedQueue<ResourceStreamHandle> preparedHandles = completedConcurrentDownload.handles;
                 ResourceStreamHandle handle = preparedHandles.poll();
                 if (handle == null) {
                     log.error("No concurrent download handle is available.");
+                    RequestTraceLogger.log("Unable find available concurrent download handle");
                 }
                 return handle;
             }
         }
 
-        if (foundExpiredAndRemoteIsNotNewer(remoteResource, cachedResource)) {
+        boolean foundExpiredAndNewerThanRemote = foundExpiredAndRemoteIsNotNewer(remoteResource, cachedResource);
+
+        RequestTraceLogger.log("Found expired cached resource and is newer than remote = %s",
+                foundExpiredAndNewerThanRemote);
+
+        if (foundExpiredAndNewerThanRemote) {
             synchronizeExpiredResourceProperties(remoteRepoPath);
             unexpire(cachedResource);
         }
 
+        RequestTraceLogger.log("Returning the cached resource");
         //Return the cached result (the newly downloaded or already cached resource)
         return localCacheRepo.getResourceStreamHandle(requestContext, cachedResource);
     }
@@ -552,36 +640,52 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     private ResourceStreamHandle getExistingResourceByChecksum(Set<ChecksumInfo> remoteChecksums, long size) {
+        RequestTraceLogger.log("Searching for existing resource based on SHA-1 checksum");
         for (ChecksumInfo remoteChecksum : remoteChecksums) {
             if (ChecksumType.sha1.equals(remoteChecksum.getType())) {
                 String sha1 = remoteChecksum.getOriginal();
+                RequestTraceLogger.log("Searching for existing resource with SHA-1 '%s'", sha1);
                 JcrService jcrService = ContextHelper.get().beanForType(JcrService.class);
                 InputStream data = null;
                 try {
                     data = jcrService.getDataStreamBySha1Checksum(sha1);
                 } catch (DataStoreException e) {
-                    log.debug("The data record for checksum '{}' could not be found.", sha1);
+                    RequestTraceLogger.log("Unable to find a data record with the same checksum");
+                    return null;
                 }
                 if (data != null) {
+                    RequestTraceLogger.log("Found existing resource with the same checksum - " +
+                            "returning as normal content handle");
                     return new SimpleResourceStreamHandle(data, size);
                 }
             }
         }
 
+        RequestTraceLogger.log("Unable to find an existing resource with the same checksum");
         return null;
     }
 
     private void unexpire(RepoResource cachedResource) {
+        RequestTraceLogger.log("Un-expiring cached resource if needed");
         String relativePath = cachedResource.getRepoPath().getPath();
-        if (MavenNaming.isMavenMetadata(relativePath) || !cachedResource.isMetadata()) {
-            if (MavenNaming.isMavenMetadata(relativePath)) {
+        boolean isMavenMetadata = MavenNaming.isMavenMetadata(relativePath);
+        boolean isMetadata = cachedResource.isMetadata();
+
+        RequestTraceLogger.log("Is resource Maven metadata = %s", isMavenMetadata);
+        RequestTraceLogger.log("Is resource metadata = %s", isMetadata);
+
+        if (isMavenMetadata || !isMetadata) {
+            if (isMavenMetadata) {
                 // unexpire the parent folder
+                RequestTraceLogger.log("Un-expiring the metadata's parent folder");
                 localCacheRepo.unexpire(NamingUtils.stripMetadataFromPath(relativePath));
             } else {
                 // unexpire the file
+                RequestTraceLogger.log("Un-expiring the resource");
                 localCacheRepo.unexpire(relativePath);
             }
             // remove it from bad retrieval caches
+            RequestTraceLogger.log("Removing the resource from all failed caches");
             removeFromCaches(relativePath, false);
         }
     }
@@ -599,23 +703,25 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     private DownloadEntry getCompletedConcurrentDownload(String relPath) {
+        RequestTraceLogger.log("Trying to find completed concurrent download");
         final DownloadEntry downloadEntry = new DownloadEntry(relPath);
         DownloadEntry currentDownload = inTransit.putIfAbsent(relPath, downloadEntry);
         if (currentDownload != null) {
             //No put since a concurrent download in progress - wait for it
             try {
-                log.trace("Current download is '{}'.", currentDownload);
+                RequestTraceLogger.log("Found download in progress '%s'", currentDownload);
                 //Increment the resource handles count
                 int prevCount = currentDownload.handlesToPrepare.getAndIncrement();
                 if (prevCount < 0) {
                     //Calculation already started
-                    log.trace("Not waiting on concurrent download {} since calculation already started.",
+                    RequestTraceLogger.log("Not waiting on concurrent download %s since calculation already started",
                             currentDownload);
                     return null;
                 }
                 log.info("Waiting on concurrent download of '{}' in '{}'.", relPath, this);
+                RequestTraceLogger.log("Waiting on concurrent download.");
                 if (LockingHelper.getSessionLockManager().hasPendingResources()) {
-                    log.debug("Session locks exit while waiting on concurrent download.");
+                    RequestTraceLogger.log("Session locks exit while waiting on concurrent download.");
                 }
                 boolean latchTriggered =
                         currentDownload.latch.await(currentDownload.getDelay(TimeUnit.SECONDS), TimeUnit.SECONDS);
@@ -623,13 +729,15 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     //We exited because of a timeout
                     log.info("Timed-out waiting on concurrent download of '{}' in '{}'. Allowing concurrent " +
                             "downloads to proceed.", relPath, this);
+                    RequestTraceLogger.log("Timed-out waiting on concurrent download. Allowing concurrent " +
+                            "downloads to proceed.");
                     currentDownload.handlesToPrepare.decrementAndGet();
                     return null;
                 } else {
                     return currentDownload;
                 }
             } catch (InterruptedException e) {
-                log.trace("Interrupted while waiting on a concurrent download.");
+                RequestTraceLogger.log("Interrupted while waiting on a concurrent download: %s", e.getMessage());
                 return null;
             }
         } else {
@@ -643,8 +751,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         if (currentDownload != null) {
             //Put it low enough in case it is incremented by multiple late waiters
             int handlesCount = currentDownload.handlesToPrepare.getAndSet(-9999);
-            log.debug("Finished concurrent download of '{}' in '{}'. Preparing {} download handles for " +
-                    "waiters.", new Object[]{relPath, this, handlesCount});
+            RequestTraceLogger.log("Finished concurrent download. Preparing %s download handles for waiters",
+                    handlesCount);
             //Add a new handle entries since the new resource is visible to this tx only
             for (int i = 0; i < handlesCount; i++) {
                 ResourceStreamHandle extHandle = localCacheRepo.getResourceStreamHandle(requestContext, resource);
@@ -655,7 +763,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
 
             //Notify the download waiters
-            log.trace("Notifying waiters on: {}.", currentDownload);
+            RequestTraceLogger.log("Notifying waiters on: %s", currentDownload);
             InternalDownloadService downloadService = InternalContextHelper.get().beanForType(
                     InternalDownloadService.class);
             downloadService.releaseDownloadWaiters(currentDownload.latch);
@@ -667,19 +775,21 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         for (ChecksumType checksumType : ChecksumType.values()) {
             String checksum = null;
             try {
+                RequestTraceLogger.log("Trying to find remote checksum - %s", checksumType.ext());
                 checksum = getRemoteChecksum(path + checksumType.ext());
             } catch (FileNotFoundException e) {
-                log.debug("Remote checksum file {} doesn't exist", path);
+                RequestTraceLogger.log("Remote checksum file doesn't exist");
             } catch (Exception e) {
-                log.debug("Could not retrieve remote checksum file {}: {}", path, e.getMessage());
+                RequestTraceLogger.log("Error occurred while retrieving remote checksum: %s", e.getMessage());
             }
             ChecksumInfo info = new ChecksumInfo(checksumType, null, null);
             if (StringUtils.isNotBlank(checksum)) {
+                RequestTraceLogger.log("Found remote checksum with the value - %s", checksum);
                 // set the remote checksum only if it is a valid string for that checksum
                 if (checksumType.isValid(checksum)) {
                     info = new ChecksumInfo(checksumType, checksum, null);
                 } else {
-                    log.debug("Invalid remote checksum for type {}: '{}'", checksumType, checksum);
+                    RequestTraceLogger.log("Remote checksum is invalid");
                 }
             }
             checksums.add(info);
@@ -721,14 +831,14 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             return cachedUrls;
         }
 
-        checkForRemoteListingInFailedCaches(directoryPath);
+        checkForRemoteListingInMissedCaches(directoryPath);
 
         List<RemoteItem> urls;
         String fullDirectoryUrl = appendAndGetUrl(directoryPath);
         try {
             urls = getChildUrls(fullDirectoryUrl);
         } catch (IOException e) {
-            addRemoteListingEntryToFailedOrMissedCache(directoryPath, e);
+            addRemoteListingEntryToMissedCache(directoryPath, e);
             throw e;
         }
 
@@ -750,29 +860,17 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         return baseUrlBuilder.toString();
     }
 
-    private void checkForRemoteListingInFailedCaches(String directoryPath) throws IOException {
-        UnfoundRepoResource unfoundRepoResource = null;
-        if (failedRetrievalsCache.containsKey(directoryPath)) {
-            unfoundRepoResource = ((UnfoundRepoResource) failedRetrievalsCache.get(directoryPath));
-        } else if (missedRetrievalsCache.containsKey(directoryPath)) {
-            unfoundRepoResource = ((UnfoundRepoResource) missedRetrievalsCache.get(directoryPath));
-        }
-
+    private void checkForRemoteListingInMissedCaches(String directoryPath) throws IOException {
+        UnfoundRepoResource unfoundRepoResource = ((UnfoundRepoResource) missedRetrievalsCache.get(directoryPath));
         if (unfoundRepoResource != null) {
             throw new IOException(unfoundRepoResource.getReason());
         }
     }
 
-    private void addRemoteListingEntryToFailedOrMissedCache(String directoryPath, IOException e) {
-        String message = e.getMessage();
-        Map<String, RepoResource> relevantCache;
-        if (StringUtils.isNotBlank(message) && message.contains("Failed")) {
-            relevantCache = failedRetrievalsCache;
-        } else {
-            relevantCache = missedRetrievalsCache;
-        }
-        if (!relevantCache.containsKey(directoryPath)) {
-            relevantCache.put(directoryPath, new UnfoundRepoResource(getRepoPath(directoryPath), message));
+    private void addRemoteListingEntryToMissedCache(String directoryPath, IOException e) {
+        if (!missedRetrievalsCache.containsKey(directoryPath)) {
+            String message = e.getMessage();
+            missedRetrievalsCache.put(directoryPath, new UnfoundRepoResource(getRepoPath(directoryPath), message));
         }
     }
 
@@ -780,12 +878,12 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     @Override
     public void clearCaches() {
-        clearCaches(failedRetrievalsCache, missedRetrievalsCache, remoteResourceCache);
+        clearCaches(missedRetrievalsCache, remoteResourceCache);
     }
 
     @Override
     public void removeFromCaches(String path, boolean removeSubPaths) {
-        removeFromCaches(path, removeSubPaths, failedRetrievalsCache, missedRetrievalsCache, remoteResourceCache);
+        removeFromCaches(path, removeSubPaths, missedRetrievalsCache, remoteResourceCache);
     }
 
     /**
@@ -794,26 +892,47 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @param resource
      * @return
      */
-    protected void beforeResourceDownload(RepoResource resource) {
-        if (!getDescriptor().isFetchSourcesEagerly() && !getDescriptor().isFetchJarsEagerly()) {
+    private void beforeResourceDownload(RepoResource resource) {
+        boolean fetchSourcesEagerly = getDescriptor().isFetchSourcesEagerly();
+        boolean fetchJarsEagerly = getDescriptor().isFetchJarsEagerly();
+
+        RequestTraceLogger.log("Eager source JAR fetching enabled = %s", fetchSourcesEagerly);
+        RequestTraceLogger.log("Eager JAR fetching enabled = %s", fetchJarsEagerly);
+
+        if (!fetchSourcesEagerly && !fetchJarsEagerly) {
             // eager fetching is disabled
+            RequestTraceLogger.log("Eager JAR and source JAR fetching is disabled");
             return;
         }
         RepoPath repoPath = resource.getRepoPath();
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(repoPath);
-        if (!artifactInfo.isValid() || artifactInfo.hasClassifier()) {
+        boolean validMavenArtifactInfo = artifactInfo.isValid();
+        boolean artifactHasClassifier = artifactInfo.hasClassifier();
+
+        RequestTraceLogger.log("Valid Maven artifact info = %s", validMavenArtifactInfo);
+        RequestTraceLogger.log("Artifact has classifier = %s", artifactHasClassifier);
+
+        if (!validMavenArtifactInfo || artifactHasClassifier) {
+            RequestTraceLogger.log("Eager JAR and source JAR fetching is not attempted");
             return;
         }
 
         String path = repoPath.getPath();
         int lastDotIndex = path.lastIndexOf('.');
         String eagerPath;
-        if (getDescriptor().isFetchJarsEagerly() && "pom".equals(artifactInfo.getType())) {
+
+        boolean artifactIsPom = "pom".equals(artifactInfo.getType());
+        boolean artifactIsJar = "jar".equals(artifactInfo.getType());
+
+        if (fetchJarsEagerly && artifactIsPom) {
             eagerPath = path.substring(0, lastDotIndex) + ".jar";
-        } else if (getDescriptor().isFetchSourcesEagerly() && "jar".equals(artifactInfo.getType())) {
+            RequestTraceLogger.log("Eagerly fetching JAR '%s'", eagerPath);
+        } else if (fetchSourcesEagerly && artifactIsJar) {
             // create a path to the sources
             eagerPath = PathUtils.injectString(path, "-sources", lastDotIndex);
+            RequestTraceLogger.log("Eagerly fetching source JAR '%s'", eagerPath);
         } else {
+            RequestTraceLogger.log("Eager JAR and source JAR fetching is not attempted");
             return;
         }
         // pass the repo path to download eagerly
@@ -823,7 +942,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         resourcesDownloader.downloadAsync(eagerRepoPath);
     }
 
-    protected void afterResourceDownload(RepoResource resource) {
+    private void afterResourceDownload(RepoResource resource) {
+        RequestTraceLogger.log("Executing async archive content indexing if needed");
         String path = resource.getRepoPath().getPath();
         InternalSearchService internalSearchService =
                 InternalContextHelper.get().beanForType(InternalSearchService.class);
@@ -858,19 +978,24 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         ResourceStreamHandle handle = null;
         InputStream is = null;
         try {
+            RequestTraceLogger.log("Trying to download remote properties");
             handle = downloadResource(relPath + ":" + Properties.ROOT);
             is = handle.getInputStream();
             if (is != null) {
+                RequestTraceLogger.log("Received remote property content");
                 Properties remoteProperties = (Properties) InfoFactoryHolder.get().getFileSystemXStream().fromXML(is);
                 for (String remotePropertyKey : remoteProperties.keySet()) {
+                    Set<String> values = remoteProperties.get(remotePropertyKey);
+                    RequestTraceLogger.log("Found remote property key '{}' with values '%s'", remotePropertyKey,
+                            values);
                     if (!remotePropertyKey.startsWith(ReplicationAddon.PROP_REPLICATION_PREFIX)) {
-                        properties.putAll(remotePropertyKey, remoteProperties.get(remotePropertyKey));
+                        properties.putAll(remotePropertyKey, values);
                     }
                 }
             }
         } catch (Exception e) {
             properties = null;
-            log.debug("Could not retrieve remote properties for file {}: {}", relPath, e.getMessage());
+            RequestTraceLogger.log("Error occurred while retrieving remote properties: %s", e.getMessage());
         } finally {
             if (handle != null) {
                 handle.close();
@@ -888,10 +1013,14 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      */
     private void synchronizeExpiredResourceProperties(RepoPath repoPath) {
         if (!getDescriptor().isSynchronizeProperties()) {
+            RequestTraceLogger.log("Remote property synchronization is disabled - " +
+                    "expired resource property synchronization not attempted");
             return;
         }
         if (!getAuthorizationService().canAnnotate(repoPath)) {
             log.warn("Skipping property synchronization of item '{}': Lacking annotate permissions.", repoPath);
+            RequestTraceLogger.log("Lacking annotate permissions - " +
+                    "expired resource property synchronization not attempted");
             return;
         }
 
@@ -901,6 +1030,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             RepoPath propertiesRepoPath = InternalRepoPathFactory.create(repoPath.getRepoKey(), propertiesRelativePath);
             String remotePropertiesRelativePath = getAltRemotePath(propertiesRepoPath);
 
+            if (!propertiesRepoPath.getPath().equals(remotePropertiesRelativePath)) {
+                RequestTraceLogger.log("Remote resource path was altered by the user plugins to - %s",
+                        remotePropertiesRelativePath);
+            }
+
             LocalCacheRepo cache = getLocalCacheRepo();
             RepoResource cachedPropertiesResource = cache.getInfo(new NullRequestContext(propertiesRepoPath));
 
@@ -909,8 +1043,10 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             //Send HEAD
             RepoResource remoteResource = retrieveInfo(remotePropertiesRelativePath, null);
             if (remoteResource.isFound()) {
+                RequestTraceLogger.log("Found remote properties");
                 if (cachedPropertiesResource.isFound() &&
                         (cachedPropertiesResource.getLastModified() > remoteResource.getLastModified())) {
+                    RequestTraceLogger.log("Remote properties were not modified - no changes will be applied");
                     // remote properties are not newer
                     return;
                 }
@@ -922,13 +1058,18 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     Properties remoteProperties = (Properties) InfoFactoryHolder.get().getFileSystemXStream().fromXML(
                             inputStream);
                     for (String remotePropertyKey : remoteProperties.keySet()) {
+                        Set<String> values = remoteProperties.get(remotePropertyKey);
+                        RequestTraceLogger.log("Found remote property key '{}' with values '%s'", remotePropertyKey,
+                                values);
                         if (!remotePropertyKey.startsWith(ReplicationAddon.PROP_REPLICATION_PREFIX)) {
-                            properties.putAll(remotePropertyKey, remoteProperties.get(remotePropertyKey));
+                            properties.putAll(remotePropertyKey, values);
                         }
                     }
                 } finally {
                     IOUtils.closeQuietly(inputStream);
                 }
+            } else {
+                RequestTraceLogger.log("Found no remote properties");
             }
 
             RepoPath localCacheRepoPath = InternalRepoPathFactory.create(cache.getKey(), artifactRelativePath);
@@ -937,17 +1078,12 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             String repoPathId = repoPath.getId();
             log.error("Unable to synchronize the properties of the item '{}' with the remote resource: {}",
                     repoPathId, e.getMessage());
-            log.debug("Unable to synchronize the properties of the item " + repoPathId +
-                    " with the remote resource.", e);
+            RequestTraceLogger.log("Error occurred while synchronizing the properties: %s", e.getMessage());
         }
     }
 
-    private RepoResource getFailedOrMissedResource(String path) {
-        RepoResource res = failedRetrievalsCache.get(path);
-        if (res == null) {
-            res = missedRetrievalsCache.get(path);
-        }
-        return res;
+    private RepoResource getMissedResource(String path) {
+        return missedRetrievalsCache.get(path);
     }
 
     private static class DownloadEntry extends ExpiringDelayed {
@@ -1008,6 +1144,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @return Alternative path from the plugin or the same if no plugin changes it
      */
     private String getAltRemotePath(RepoPath repoPath) {
+        RequestTraceLogger.log("Executing any AltRemotePath user plugins that may exist");
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
         PathCtx pathCtx = new PathCtx(repoPath.getPath());
@@ -1023,14 +1160,19 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @return
      */
     private ResourceStreamHandle getAltContent(RepoPath repoPath) {
+        RequestTraceLogger.log("Executing any AltRemoteContent user plugins that may exist");
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
         ResourceStreamCtx rsCtx = new ResourceStreamCtx();
         pluginAddon.execPluginActions(AltRemoteContentAction.class, rsCtx, repoPath);
         InputStream is = rsCtx.getInputStream();
         if (is != null) {
+            RequestTraceLogger.log("Received alternative content from a user plugin - " +
+                    "using as a normal content handle");
             return new SimpleResourceStreamHandle(is, rsCtx.getSize());
         }
+
+        RequestTraceLogger.log("Received no alternative content handle from a user plugin");
         return null;
     }
 
@@ -1062,4 +1204,5 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
         }
     }
+
 }

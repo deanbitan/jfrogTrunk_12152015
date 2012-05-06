@@ -31,6 +31,7 @@ import org.artifactory.storage.StorageConstants;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.release.Promotion;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +52,8 @@ public interface BuildService extends ImportableExportable {
      * filtering.
      */
     public static final String UNSPECIFIED_SCOPE = "unspecified";
+    static String LATEST_BUILD = "LATEST";
+    static String LAST_RELEASED_BUILD = "LAST_RELEASE";
 
 
     /**
@@ -110,6 +113,7 @@ public interface BuildService extends ImportableExportable {
      * @return Latest build if found. Null if not
      */
     @Lock(transactional = true)
+    @Nullable
     Build getLatestBuildByNameAndNumber(String buildName, String buildNumber);
 
     /**
@@ -128,6 +132,9 @@ public interface BuildService extends ImportableExportable {
      * @return Set of builds with the given name
      */
     Set<BuildRun> searchBuildsByNameAndNumber(String buildName, String buildNumber);
+
+    @Lock(transactional = true)
+    BuildRun getBuildRun(String buildName, String buildNumber, String buildStarted);
 
     @Override
     @Lock(transactional = true)
@@ -193,10 +200,12 @@ public interface BuildService extends ImportableExportable {
      * Updates the content (jcr data) of the given build. Please note that this method does nothing apart from updating
      * the JSON data. Other properties and data surrounding the build nodes (apart from mandatory) will not change
      *
-     * @param build Updated content
+     * @param build                     Updated content
+     * @param refreshChecksumProperties True if the build's searchable checksum properties should be updated with any
+     *                                  checksum modifications of the build model
      */
     @Lock(transactional = true)
-    void updateBuild(Build build);
+    void updateBuild(Build build, boolean refreshChecksumProperties);
 
     /**
      * Returns the build's latest release status

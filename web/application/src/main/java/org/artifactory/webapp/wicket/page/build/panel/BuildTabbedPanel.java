@@ -33,6 +33,7 @@ import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildEnvironmentTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildGeneralInfoTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildInfoJsonTabPanel;
+import org.artifactory.webapp.wicket.page.build.tabs.IssuesTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.PublishedModulesTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.ReleaseHistoryTabPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
@@ -121,6 +122,8 @@ public class BuildTabbedPanel extends TitledPanel {
 
         tabList.add(getEnvironmentTab("Environment", hasDeployOnLocal));
 
+        tabList.add(getIssuesTab("Issues", hasDeployOnLocal));
+
         LicensesWebAddon licensesAddon = addonsManager.addonByType(LicensesWebAddon.class);
         tabList.add(licensesAddon.getLicensesInfoTab("Licenses", build, hasDeployOnLocal));
 
@@ -174,6 +177,19 @@ public class BuildTabbedPanel extends TitledPanel {
                 @Override
                 public Panel getPanel(String panelId) {
                     return new BuildEnvironmentTabPanel(panelId, build);
+                }
+            };
+        } else {
+            return getDisabledTab(title);
+        }
+    }
+
+    private ITab getIssuesTab(String title, boolean enabled) {
+        if (enabled) {
+            return new BaseTab(title) {
+                @Override
+                public Panel getPanel(String panelId) {
+                    return new IssuesTabPanel(panelId, build);
                 }
             };
         } else {

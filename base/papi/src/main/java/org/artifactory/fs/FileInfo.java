@@ -22,8 +22,7 @@ import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.resource.RepoResourceInfo;
 
 /**
- * Date: 8/1/11
- * Time: 7:12 PM
+ * Date: 8/1/11 Time: 7:12 PM
  *
  * @author Fred Simon
  */
@@ -36,4 +35,5 @@ public interface FileInfo extends ItemInfo, RepoResourceInfo {
 
     @Override
     ChecksumsInfo getChecksumsInfo();
+
 }

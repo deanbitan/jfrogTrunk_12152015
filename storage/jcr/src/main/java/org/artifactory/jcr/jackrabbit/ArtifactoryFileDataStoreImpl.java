@@ -21,7 +21,6 @@ package org.artifactory.jcr.jackrabbit;
 import org.apache.jackrabbit.core.data.DataIdentifier;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.apache.jackrabbit.core.util.db.DatabaseAware;
-import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -53,30 +52,6 @@ public class ArtifactoryFileDataStoreImpl extends ArtifactoryDataStore implement
         MissingOrInvalidDataStoreRecordException e = new MissingOrInvalidDataStoreRecordException(
                 "Record not found: '" + identifier + "' as file '" + result.getAbsolutePath() +
                         "' does not exist or has wrong length.");
-
-        //Delete if fix consistency flag is on
-        if (v1 && ConstantValues.jcrFixConsistency.getBoolean()) {
-            try {
-                ArtifactoryDbDataRecord record = getCachedRecord(identifier.toString());
-                if (log.isDebugEnabled()) {
-                    log.debug("Deleting record " + record + ".", e);
-                } else {
-                    log.info("Deleting record " + record + " (cause: " + e.getMessage() + ").");
-                }
-                //rs.delete() will have no effect since we rollback the tx - do it in a separate tx
-                deleteEntry(identifier);
-                if (record != null) {
-                    try {
-                        record.markForDeletion();
-                        deleteRecord(record);
-                    } catch (Exception ignore) {
-                        // will be deleted soon
-                    }
-                }
-            } catch (Exception deleteException) {
-                log.debug("Could not delete record with identifier '" + identifier + "'.", deleteException);
-            }
-        }
         throw e;
     }
 

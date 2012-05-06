@@ -2,7 +2,6 @@
 
 #Default values
 #export ARTIFACTORY_HOME=/opt/artifactory/current
-#export ARTIFACTORY_BIN_HOME=/var/lib/artifactory
 #export TOMCAT_HOME=/opt/artifactory/tomcat
 #export ARTIFACTORY_USER=artifactory
 #export JAVA_HOME=/opt/java/1.6.0

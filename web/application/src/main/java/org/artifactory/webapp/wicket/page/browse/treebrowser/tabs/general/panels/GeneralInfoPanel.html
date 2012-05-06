@@ -15,14 +15,20 @@
             <span wicket:id="urlLabel" class="label"/>
             <a wicket:id="url" target="_blank"></a>
         </div>
-        <div wicket:id="status"/>
+
+        <div wicket:id="onlineStatusPanel"/>
+
         <div class="labeled-value">
             <span wicket:id="artifactCountLabel" class="label"/><span wicket:id="artifactCountValue"/>
             <a wicket:id="link">Show...</a>
         </div>
         <div wicket:id="watchingSince"/>
         <div wicket:id="watchedPath"/>
-        <div wicket:id="repoPath"/>
+        <div class="labeled-value">
+            <span wicket:id="repoPath" class="label"/>
+            <a wicket:id="repoPathLink" target="_blank"></a>
+            <span wicket:id="repoPathLink.help"/>
+        </div>
         <div wicket:id="localLayout"/>
         <div wicket:id="remoteLayout"/>
         <div wicket:id="lastReplication"/>
