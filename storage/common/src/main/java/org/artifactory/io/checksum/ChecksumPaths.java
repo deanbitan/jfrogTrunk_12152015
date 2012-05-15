@@ -70,8 +70,8 @@ public interface ChecksumPaths extends ReloadableBean {
     void txEnd(boolean commit);
 
     /**
-     * Get all files containing the like query expressions. Note that the implementation may return files that no longer
-     * exist or that are in the trash, so it is up to the application to verify the file validity.
+     * Get all files containing the like query expressions. The files that returned are guaranteed to exist at the time
+     * the query was executed. For repository files prefix the path expressions with '/repositories/.
      *
      * @param fileExpressions SQL expression for the file names
      * @param pathExpressions SQL expression for the file paths

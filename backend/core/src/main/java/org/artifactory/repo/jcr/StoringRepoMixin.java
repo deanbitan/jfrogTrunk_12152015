@@ -109,7 +109,6 @@ import org.slf4j.Logger;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -618,9 +617,6 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                     throw new RepositoryException("Cannot save resource, no parent repo path exists");
                 }
 
-                BufferedInputStream bufferedIs = new BufferedInputStream(in);
-                validateArtifactIfRequired(bufferedIs, repoPath);
-
                 //Write lock auto upgrade supported LockingHelper.releaseReadLock(repoPath);
                 JcrFile jcrFile = getLockedJcrFile(repoPath, true);
                 onBeforeCreate(jcrFile);
@@ -634,7 +630,11 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                 ChecksumsInfo existingChecksumsToCompare = setResourceChecksums(res, jcrFile,
                         artifactNonUniqueSnapshot);
 
-                fillJcrFileData(res, bufferedIs, jcrFile);
+                fillJcrFileData(res, in, jcrFile);
+
+                if (jarValidationRequired(repoPath)) {
+                    validateArtifactIfRequired(jcrFile, repoPath);
+                }
 
                 /**
                  * Populating info details from request should come after fillJcrFileData() since the method sets it's
@@ -684,9 +684,9 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         }
     }
 
-    private void validateArtifactIfRequired(InputStream in, RepoPath repoPath) throws IOException, RepoRejectException {
+    private boolean jarValidationRequired(RepoPath repoPath) {
         if (!NamingUtils.isJarVariant(repoPath.getPath())) {
-            return;
+            return false;
         }
 
         RemoteRepoDescriptor remoteRepoDescriptor;
@@ -697,18 +697,21 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         } else if (repoDescriptor instanceof LocalCacheRepoDescriptor) {
             remoteRepoDescriptor = ((LocalCacheRepoDescriptor) repoDescriptor).getRemoteRepo();
         } else {
-            return;
+            return false;
         }
 
         if (!remoteRepoDescriptor.isRejectInvalidJars()) {
-            return;
+            return false;
         }
+        return true;
+    }
 
+    private void validateArtifactIfRequired(JcrFile file, RepoPath repoPath) throws IOException, RepoRejectException {
         String pathId = repoPath.getId();
+        InputStream jarStream = file.getStream();
         try {
-            in.mark(Integer.MAX_VALUE);
             log.info("Validating the content of '{}'.", pathId);
-            JarInputStream jarInputStream = new JarInputStream(in, true);
+            JarInputStream jarInputStream = new JarInputStream(jarStream, true);
             JarEntry entry = jarInputStream.getNextJarEntry();
 
             if (entry == null) {
@@ -726,9 +729,10 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             } else {
                 log.error(message);
             }
+            file.bruteForceDelete();
             throw new RepoRejectException(message, HttpStatus.SC_CONFLICT);
         } finally {
-            in.reset();
+            IOUtils.closeQuietly(jarStream);
         }
     }
 
@@ -786,7 +790,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         }
     }
 
-    private long fillJcrFileData(RepoResource res, BufferedInputStream in, JcrFile jcrFile) throws Exception {
+    private long fillJcrFileData(RepoResource res, InputStream in, JcrFile jcrFile) throws Exception {
         //Deploy
         long lastModified = res.getInfo().getLastModified();
         final long start = System.currentTimeMillis();

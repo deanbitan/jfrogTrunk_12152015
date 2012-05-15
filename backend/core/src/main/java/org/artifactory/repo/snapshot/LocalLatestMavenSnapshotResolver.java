@@ -19,25 +19,28 @@
 package org.artifactory.repo.snapshot;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
-import org.artifactory.api.module.VersionUnit;
+import org.artifactory.api.repo.BaseBrowsableItem;
+import org.artifactory.api.repo.BrowsableItemCriteria;
+import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
-import org.artifactory.fs.ItemInfo;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.versioning.MavenVersionComparator;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.request.InternalRequestContext;
-import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.PathUtils;
+import org.slf4j.Logger;
 
-import java.util.Collections;
-import java.util.Comparator;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Resolves the latest unique snapshot version given a non-unique Maven snapshot artifact request
@@ -46,6 +49,9 @@ import java.util.Set;
  * @author Shay Yaakov
  */
 public class LocalLatestMavenSnapshotResolver extends LatestMavenSnapshotResolver {
+    private static final Logger log = LoggerFactory.getLogger(LocalLatestMavenSnapshotResolver.class);
+
+    private final MavenVersionComparator mavenVersionComparator = new MavenVersionComparator();
 
     @Override
     protected InternalRequestContext getRequestContext(InternalRequestContext requestContext, Repo repo,
@@ -62,65 +68,90 @@ public class LocalLatestMavenSnapshotResolver extends LatestMavenSnapshotResolve
         String path = requestContext.getResourcePath();
         String parentPath = PathUtils.getParent(path);
         RepoPath parentRepoPath = RepoPathFactory.create(repo.getKey(), parentPath);
-        List<VersionUnit> versionUnitsUnder = getRepositoryService().getVersionUnitsUnder(parentRepoPath);
-        if (CollectionUtils.notNullOrEmpty(versionUnitsUnder)) {
-            if (SnapshotVersionBehavior.DEPLOYER.equals(repoDescriptor.getSnapshotVersionBehavior())) {
-                sortByLastModified(versionUnitsUnder);
-            } else {
-                sortByVersionString(versionUnitsUnder);
-            }
-
+        boolean isDeployerBehavior = SnapshotVersionBehavior.DEPLOYER.equals(
+                repoDescriptor.getSnapshotVersionBehavior());
+        String artifactPath = getLatestArtifactPath(parentRepoPath, originalModuleInfo, isDeployerBehavior);
+        if (artifactPath != null) {
             String metadataName = null;
             if (NamingUtils.isMetadata(path)) {
                 metadataName = NamingUtils.getMetadataName(path);
             }
-            for (VersionUnit versionUnit : versionUnitsUnder) {
-                Set<RepoPath> latestVersionRepoPaths = versionUnit.getRepoPaths();
-                for (RepoPath currentVersionUnitRepoPath : latestVersionRepoPaths) {
-                    ModuleInfo itemModuleInfo = getRepositoryService().getItemModuleInfo(currentVersionUnitRepoPath);
-                    if (areModuleInfosTheSame(originalModuleInfo, itemModuleInfo)) {
-                        String artifactPath = currentVersionUnitRepoPath.getPath();
-                        if (StringUtils.isNotBlank(metadataName)) {
-                            artifactPath = NamingUtils.getMetadataPath(artifactPath, metadataName);
-                        }
-                        requestContext = translateRepoRequestContext(requestContext, repo, artifactPath);
-                        return requestContext;
-                    }
-                }
+            if (StringUtils.isNotBlank(metadataName)) {
+                artifactPath = NamingUtils.getMetadataPath(artifactPath, metadataName);
             }
+            requestContext = translateRepoRequestContext(requestContext, repo, artifactPath);
+            return requestContext;
         }
 
         return requestContext;
     }
 
-    private void sortByVersionString(List<VersionUnit> versionUnitsUnder) {
-        // sort all the artifacts under the parent directory, latest first
-        final MavenVersionComparator mavenVersionComparator = new MavenVersionComparator();
-        Collections.sort(versionUnitsUnder, new Comparator<VersionUnit>() {
-            @Override
-            public int compare(VersionUnit versionUnit1, VersionUnit versionUnit2) {
-                ModuleInfo moduleInfo1 = versionUnit1.getModuleInfo();
-                ModuleInfo moduleInfo2 = versionUnit2.getModuleInfo();
-                String version1 = moduleInfo1.getBaseRevision() + "-" + moduleInfo1.getFileIntegrationRevision();
-                String version2 = moduleInfo2.getBaseRevision() + "-" + moduleInfo2.getFileIntegrationRevision();
-                return mavenVersionComparator.compare(version2, version1);
+    /**
+     * Retrieves the path to the latest unique artifact (null if not found)
+     *
+     * @param parentRepoPath     the parent folder to search within
+     * @param originalModuleInfo the user request module info to compare with
+     * @param isDeployerBehavior on deployer behaviour compares by last modified, otherwise by version string
+     * @return a path to the latest unique artifact (null if not found)
+     */
+    private String getLatestArtifactPath(RepoPath parentRepoPath, ModuleInfo originalModuleInfo,
+            boolean isDeployerBehavior) {
+        RepositoryService repositoryService = getRepositoryService();
+        ModuleInfo latestModuleInfo = null;
+        long latestLastModified = 0;
+        String latestArtifactPath = null;
+        BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(parentRepoPath).
+                includeChecksums(false).includeRemoteResources(false).build();
+        RepositoryBrowsingService repositoryBrowsingService = ContextHelper.get().beanForType(
+                RepositoryBrowsingService.class);
+
+        List<BaseBrowsableItem> children;
+        try {
+            children = repositoryBrowsingService.getLocalRepoBrowsableChildren(criteria);
+        } catch (ItemNotFoundRuntimeException e) {
+            // Simply log the message and return null
+            log.debug(e.getMessage());
+            return null;
+        }
+
+        for (BaseBrowsableItem child : children) {
+            if (!child.isFolder()) {
+                ModuleInfo itemModuleInfo = repositoryService.getItemModuleInfo(child.getRepoPath());
+                if (itemModuleInfo.isValid()) {
+                    if (areModuleInfosTheSame(originalModuleInfo, itemModuleInfo)) {
+                        if (isDeployerBehavior) {
+                            long childLastModified = child.getLastModified();
+                            if (childLastModified > latestLastModified) {
+                                latestLastModified = childLastModified;
+                                latestArtifactPath = child.getRepoPath().getPath();
+                            }
+                        } else {
+                            ModuleInfo resultModuleInfo = getLatestModuleInfo(itemModuleInfo, latestModuleInfo);
+                            if (!resultModuleInfo.equals(latestModuleInfo)) {
+                                latestModuleInfo = resultModuleInfo;
+                                latestArtifactPath = child.getRepoPath().getPath();
+                            }
+                        }
+                    }
+                }
             }
-        });
+        }
+
+        return latestArtifactPath;
     }
 
-    private void sortByLastModified(List<VersionUnit> versionUnitsUnder) {
-        // On deployer snapshot behavior we need to sort the results by the last modified field
-        Collections.sort(versionUnitsUnder, new Comparator<VersionUnit>() {
-            @Override
-            public int compare(VersionUnit versionUnit1, VersionUnit versionUnit2) {
-                RepoPath repoPath1 = versionUnit1.getRepoPaths().iterator().next();
-                RepoPath repoPath2 = versionUnit2.getRepoPaths().iterator().next();
-                RepositoryService repositoryService = getRepositoryService();
-                ItemInfo itemInfo1 = repositoryService.getItemInfo(repoPath1);
-                ItemInfo itemInfo2 = repositoryService.getItemInfo(repoPath2);
-                return new Long(itemInfo2.getLastModified()).compareTo(itemInfo1.getLastModified());
-            }
-        });
+    /**
+     * Compares 2 given module infos and returns the latest one
+     */
+    private ModuleInfo getLatestModuleInfo(@Nonnull ModuleInfo moduleInfo1, @Nullable ModuleInfo moduleInfo2) {
+        if (moduleInfo2 == null) {
+            return moduleInfo1;
+        }
+
+        String version1 = moduleInfo1.getBaseRevision() + "-" + moduleInfo1.getFileIntegrationRevision();
+        String version2 = moduleInfo2.getBaseRevision() + "-" + moduleInfo2.getFileIntegrationRevision();
+
+        return (mavenVersionComparator.compare(version1, version2) >= 0) ? moduleInfo1 : moduleInfo2;
     }
 
     private boolean areModuleInfosTheSame(ModuleInfo originalModuleInfo, ModuleInfo moduleInfo) {

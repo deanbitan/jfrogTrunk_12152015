@@ -94,6 +94,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
     public CentralConfigServiceImpl() {
     }
 
+    @Override
     public void init() {
         SerializablePair<CentralConfigDescriptor, Boolean> result = getCurrentConfig();
         CentralConfigDescriptor currentConfig = result.getFirst();
@@ -129,40 +130,50 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
                 new CentralConfigReader().read(currentConfigXml), updateDescriptor);
     }
 
+    @Override
     public void setDescriptor(CentralConfigDescriptor descriptor) {
         setDescriptor(descriptor, true);
     }
 
+    @Override
     public CentralConfigDescriptor getDescriptor() {
         return descriptor;
     }
 
+    @Override
     public DateFormat getDateFormatter() {
         return dateFormatter;
     }
 
+    @Override
     public String getServerName() {
         return serverName;
     }
 
+    @Override
     public synchronized String format(long date) {
         return dateFormatter.format(new Date(date));
     }
 
+    @Override
     public VersionInfo getVersionInfo() {
         return new VersionInfo(ConstantValues.artifactoryVersion.getString(),
                 ConstantValues.artifactoryRevision.getString());
     }
 
+    @Override
     public String getConfigXml() {
         return JaxbHelper.toXml(descriptor);
     }
 
+    @Override
     public void setConfigXml(String xmlConfig) {
         CentralConfigDescriptor newDescriptor = new CentralConfigReader().read(xmlConfig);
         reloadConfiguration(newDescriptor);
+        storeLatestConfigToFile(xmlConfig);
     }
 
+    @Override
     public void setLogo(File logo) throws IOException {
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
         final File targetFile = new File(artifactoryHome.getLogoDir(), "logo");
@@ -173,6 +184,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         }
     }
 
+    @Override
     public boolean defaultProxyDefined() {
         List<ProxyDescriptor> proxyDescriptors = descriptor.getProxies();
         for (ProxyDescriptor proxyDescriptor : proxyDescriptors) {
@@ -183,10 +195,12 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         return false;
     }
 
+    @Override
     public MutableCentralConfigDescriptor getMutableDescriptor() {
         return (MutableCentralConfigDescriptor) SerializationUtils.clone(descriptor);
     }
 
+    @Override
     public void saveEditedDescriptorAndReload(CentralConfigDescriptor descriptor) {
         if (descriptor == null) {
             throw new IllegalStateException("Currently edited descriptor is null.");
@@ -199,13 +213,11 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         // before doing anything do a sanity check that the edited descriptor is valid
         // will fail if not valid without affecting the current configuration
         // in any case we will use this newly loaded config as the descriptor
-        CentralConfigReader centralConfigReader = new CentralConfigReader();
         String configXml = JaxbHelper.toXml(descriptor);
-        CentralConfigDescriptor newDescriptor = centralConfigReader.read(configXml);// will fail if invalid
-        reloadConfiguration(newDescriptor);
-        storeLatestConfigToFile(configXml);
+        setConfigXml(configXml);
     }
 
+    @Override
     public void importFrom(ImportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         File dirToImport = settings.getBaseDir();
@@ -224,6 +236,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         }
     }
 
+    @Override
     public void exportTo(ExportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         status.setStatus("Exporting config...", log);
@@ -337,16 +350,19 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
     public void onContextReady() {
     }
 
+    @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         // Nothing to do
     }
 
+    @Override
     public void destroy() {
         // Nothing to do
     }
 
     // Convert and save the artifactory config descriptor
 
+    @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         //Initialize the enum registration
         ArtifactoryConfigVersion.values();

@@ -41,6 +41,7 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.PathUtils;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Remote repository configuration panel.
@@ -137,6 +139,11 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     public void saveEditDescriptor(HttpRepoDescriptor repoDescriptor) {
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
+        //update the model being saved
+        Map<String, RemoteRepoDescriptor> remoteRepositoriesMap = mccd.getRemoteRepositoriesMap();
+        if (remoteRepositoriesMap.containsKey(repoDescriptor.getKey())) {
+            remoteRepositoriesMap.put(repoDescriptor.getKey(), repoDescriptor);
+        }
         if (replicationDescriptor.isEnabled() && !mccd.isRemoteReplicationExists(replicationDescriptor)) {
             if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
                 replicationDescriptor.setRepoKey(key);

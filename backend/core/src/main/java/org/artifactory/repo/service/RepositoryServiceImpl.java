@@ -154,6 +154,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -220,6 +222,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public void init() {
         rebuildRepositories(null);
+        HttpUtils.resetArtifactoryUserAgent();
         try {
             //Dump info to the log
             InfoWriter.writeInfo();
@@ -779,9 +782,32 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         statusHolder.setStatus("Started exporting search result '" + searchResults.getName() + "'.", log);
 
         File baseDir = baseSettings.getBaseDir();
+        DateFormat formatter = new SimpleDateFormat("yyyyMMdd.HHmmss");
+        String timestamp = formatter.format(baseSettings.getTime());
+        String baseExportName = searchResults.getName() + "-" + timestamp;
+        File tmpExportDir = new File(baseDir, baseExportName + ".tmp");
+        //Make sure the directory does not already exist
+        try {
+            FileUtils.deleteDirectory(tmpExportDir);
+        } catch (IOException e) {
+            statusHolder.setError("Failed to delete old temp export directory: " + tmpExportDir.getAbsolutePath(), e,
+                    log);
+            return statusHolder;
+        }
+
+        statusHolder.setStatus("Creating temp export directory: " + tmpExportDir.getAbsolutePath(), log);
+        try {
+            FileUtils.forceMkdir(tmpExportDir);
+        } catch (IOException e) {
+            statusHolder.setError("Failed to create temp export dir: " + tmpExportDir.getAbsolutePath(), e, log);
+            return statusHolder;
+        }
+        statusHolder.setStatus("Using temp export directory: '" + tmpExportDir.getAbsolutePath() + "'.", log);
+
+
         for (org.artifactory.fs.FileInfo searchResult : searchResults.getResults()) {
             RepoPath repoPath = searchResult.getRepoPath();
-            ExportSettings settings = new ExportSettingsImpl(baseDir, baseSettings);
+            ExportSettings settings = new ExportSettingsImpl(tmpExportDir, baseSettings);
             StoringRepo storingRepo = storingRepositoryByKey(repoPath.getRepoKey());
             JcrFile jcrFile = storingRepo.getJcrFile(repoPath);
             jcrFile.exportTo(settings);
@@ -790,11 +816,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             try {
                 statusHolder.setStatus("Archiving exported search result '" + searchResults.getName() + "'.", log);
                 String tempDir = System.getProperty("java.io.tmpdir");
-                File tempArchive = new File(tempDir, baseDir.getName() + ".zip");
+                File tempArchive = new File(tempDir, baseExportName + ".zip");
                 // Create the archive
-                ZipUtils.archive(baseDir, tempArchive, true);
+                ZipUtils.archive(tmpExportDir, tempArchive, true);
                 //Delete the exploded directory
-                FileUtils.deleteDirectory(baseDir);
+                FileUtils.deleteDirectory(tmpExportDir);
                 //Copy the zip back into the deleted directory
                 FileUtils.copyFile(tempArchive, new File(baseDir, tempArchive.getName()));
                 //Delete the temporary zip
@@ -802,9 +828,31 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             } catch (IOException e) {
                 statusHolder.setError("Unable to create zip archive", -1, e, log);
             }
+        } else {
+            moveTmpToExportDir(statusHolder, baseExportName, baseDir, tmpExportDir);
         }
+
         statusHolder.setStatus("Finished exporting search result '" + searchResults.getName() + "'.", log);
         return statusHolder;
+    }
+
+    private void moveTmpToExportDir(MutableStatusHolder status, String finalExportDirName, File baseDir,
+            File tmpExportDir) {
+        //Delete any exiting final export dir
+        File exportDir = new File(baseDir, finalExportDirName);
+        try {
+            FileUtils.deleteDirectory(exportDir);
+        } catch (IOException e) {
+            log.warn("Failed to delete existing final export directory.", e);
+        }
+        //Switch the directories
+        try {
+            FileUtils.moveDirectory(tmpExportDir, exportDir);
+        } catch (IOException e) {
+            log.error("Failed to move '{}' to '{}': {}", new Object[]{tmpExportDir, exportDir, e.getMessage()});
+        } finally {
+            status.setOutputFile(exportDir);
+        }
     }
 
     @Override

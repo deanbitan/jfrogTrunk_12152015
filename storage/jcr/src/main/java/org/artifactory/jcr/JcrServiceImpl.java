@@ -18,6 +18,8 @@
 
 package org.artifactory.jcr;
 
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -45,6 +47,7 @@ import org.artifactory.api.storage.GarbageCollectorInfo;
 import org.artifactory.checksum.ChecksumStorageHelper;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.config.xml.ArtifactoryXmlFactory;
 import org.artifactory.config.xml.EntityResolvingContentHandler;
@@ -69,6 +72,7 @@ import org.artifactory.jcr.utils.JcrHelper;
 import org.artifactory.jcr.utils.JcrUtils;
 import org.artifactory.jcr.version.JcrVersion;
 import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.ImportInterceptors;
@@ -1037,6 +1041,22 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
 
     @Override
     public ArtifactCount getArtifactCount(@Nullable String repoKey) {
+
+        if (StringUtils.isNotBlank(repoKey) && ConstantValues.searchArtifactSearchUseV2Storage.getBoolean()) {
+            repoKey = StringUtils.isBlank(repoKey) ? "" : repoKey + "/";
+            ChecksumPaths checksumPaths = ContextHelper.get().beanForType(ChecksumPaths.class);
+            ImmutableCollection<String> fileOrPathsLike = checksumPaths.getFileOrPathsLike(Lists.newArrayList("%"),
+                    Lists.newArrayList("/repositories/" + repoKey + "%"));
+            int realArtifactsCount = 0;
+            // remove metadata entries
+            for (String s : fileOrPathsLike) {
+                if (!s.contains(NamingUtils.METADATA_PREFIX)) {
+                    realArtifactsCount++;
+                }
+            }
+            return new ArtifactCount(realArtifactsCount);
+        }
+
         StringBuilder sb = new StringBuilder();
 
         if (StringUtils.isNotBlank(repoKey)) {

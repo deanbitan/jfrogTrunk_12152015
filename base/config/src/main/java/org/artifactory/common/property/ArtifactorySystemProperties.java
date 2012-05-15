@@ -58,12 +58,6 @@ public class ArtifactorySystemProperties {
                             new SamePropertyMapper("artifactory.authentication.cache.idleTimeSecs"))
                     .put("artifactory.maven.suppressPomConsistencyChecks", new NullPropertyMapper())
                     .put("artifactory.metadataCacheIdleTimeSecs", new NullPropertyMapper())
-                    .put("artifactory.gcIntervalMins",
-                            new MinutesToSecondsPropertyMapper("artifactory.gc.intervalSecs"))
-                    .put("artifactory.gc.intervalMins",
-                            new MinutesToSecondsPropertyMapper("artifactory.gc.intervalSecs"))
-                    .put("artifactory.gcBatchDeleteMaxSize",
-                            new SamePropertyMapper("artifactory.gc.batchDeleteMaxSize"))
                     .put("artifactory.logs.refreshrate.secs",
                             new SamePropertyMapper("artifactory.logs.viewRefreshRateSecs"))
                     .put("artifactory.jcr.configPath", new SamePropertyMapper("artifactory.jcr.configDir"))
@@ -71,6 +65,7 @@ public class ArtifactorySystemProperties {
                     .put("artifactory.lockTimeoutSecs", new SamePropertyMapper("artifactory.locks.timeoutSecs"))
                     .put("artifactory.xmlAdditionalMimeTypeExtensions", new NullPropertyMapper())
                     .put("artifactory.jcr.session.pool.maxSize", new NullPropertyMapper())
+                    .put("artifactory.gcIntervalMins", new NullPropertyMapper())
                     .put("artifactory.gc.intervalSecs", new NullPropertyMapper())
                     .put("artifactory.gc.delaySecs", new NullPropertyMapper())
                     .put("repo.cleanup.intervalHours", new NullPropertyMapper())

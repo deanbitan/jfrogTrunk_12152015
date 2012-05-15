@@ -37,7 +37,6 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.PathFactory;
 import org.artifactory.sapi.common.PathFactoryHolder;
-import org.artifactory.sapi.data.VfsDataService;
 import org.artifactory.sapi.data.VfsNode;
 import org.artifactory.sapi.data.VfsNodeType;
 import org.artifactory.sapi.search.VfsComparatorType;
@@ -72,14 +71,11 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
             ImmutableCollection<String> rawResults = checksumPaths.getFileOrPathsLike(
                     Lists.<String>newArrayList(providedQuery), createPathExpressions(controls, pathFactory));
 
-            VfsDataService vfsDataService = getVfsDataService();
             for (String rawResult : rawResults) {
                 if (limit && results.size() >= getMaxResults()) {
                     break;
                 }
-                if (vfsDataService.pathExists(rawResult)) {
-                    appendResult(results, pathFactory, rawResult);
-                }
+                appendResult(results, pathFactory, rawResult);
             }
 
             resultCount = rawResults.size();

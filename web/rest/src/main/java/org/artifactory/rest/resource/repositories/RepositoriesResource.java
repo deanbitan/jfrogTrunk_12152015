@@ -31,8 +31,6 @@ import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoDetails;
 import org.artifactory.repo.RepoDetailsType;
-import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.rest.util.RestUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -232,7 +230,7 @@ public class RepositoriesResource {
             RepoDetailsType type) {
         for (RepoDescriptor repoToAdd : reposToAdd) {
             String key = repoToAdd.getKey();
-            if (isAuthorizedToReadRepo(key)) {
+            if (authorizationService.userHasPermissionsOnRepositoryRoot(key)) {
                 detailsList.add(new RepoDetails(key, repoToAdd.getDescription(), type, getRepoUrl(key)));
             }
         }
@@ -248,7 +246,7 @@ public class RepositoriesResource {
 
         for (RemoteRepoDescriptor remoteRepo : remoteRepos) {
             String key = remoteRepo.getKey();
-            if (isAuthorizedToReadRepo(key)) {
+            if (authorizationService.userHasPermissionsOnRepositoryRoot(key)) {
                 String configUrl = null;
                 if (remoteRepo.isShareConfiguration()) {
                     configUrl = getRepoConfigUrl(key);
@@ -258,11 +256,6 @@ public class RepositoriesResource {
                         configUrl));
             }
         }
-    }
-
-    private boolean isAuthorizedToReadRepo(String repoKey) {
-        RepoPath repoPath = RepoPathFactory.create(repoKey);
-        return authorizationService.canRead(repoPath);
     }
 
     /**

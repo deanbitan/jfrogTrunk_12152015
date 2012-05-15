@@ -36,6 +36,7 @@ import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Local repository configuration panel.
@@ -107,6 +108,11 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
     public void saveEditDescriptor(LocalRepoDescriptor repoDescriptor) {
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
+        //update the model being saved
+        Map<String, LocalRepoDescriptor> localRepositoriesMap = mccd.getLocalRepositoriesMap();
+        if (localRepositoriesMap.containsKey(repoDescriptor.getKey())) {
+            localRepositoriesMap.put(repoDescriptor.getKey(), repoDescriptor);
+        }
         if (replicationDescriptor.isEnabled() && !mccd.isLocalReplicationExists(replicationDescriptor)) {
             if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
                 replicationDescriptor.setRepoKey(key);

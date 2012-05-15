@@ -61,7 +61,14 @@ public final class ArtifactoryConnectionHelper extends ConnectionHelper {
     }
 
     public ResultSet select(final String sql, final Object... params) throws SQLException {
-        return exec(sql, params, false, 0);
+        if (log.isTraceEnabled()) {
+            log.trace("select begin: {}", sql);
+        }
+        ResultSet result = exec(sql, params, false, 0);
+        if (log.isTraceEnabled()) {
+            log.trace("select ended: {}", sql);
+        }
+        return result;
     }
 
     public void txBegin() {

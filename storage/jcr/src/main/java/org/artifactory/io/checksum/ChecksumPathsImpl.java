@@ -413,6 +413,7 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
 
     @Override
     public ImmutableCollection<String> getFileOrPathsLike(List<String> fileExpressions, List<String> pathExpressions) {
+        log.debug("Executing paths search {}:{}", fileExpressions, pathExpressions);
         ResultSet rs = null;
         StringBuilder likeSectionBuilder = new StringBuilder();
 
@@ -429,6 +430,7 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
             while (rs.next()) {
                 resultPaths.add(rs.getString(1));
             }
+            log.debug("Finished paths search {}:{}", fileExpressions, pathExpressions);
             return ImmutableList.copyOf(resultPaths);
         } catch (Exception e) {
             throw new RuntimeException("Could not select items (file likes =" + fileExpressions + ", path likes=" +
@@ -722,7 +724,9 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
                         "(SELECT MAX(TS) FROM ${tableName} TGT WHERE TGT.BINNODE=SRC.BINNODE)");
         SQL_RETRIEVE_ALL_CSPATHS = getProperty(dbprops, "retrievAllCsPaths",
                 "SELECT CHECKSUM, PATH, BSIZE, BINNODE, TS FROM ${tableName}");
-        SQL_RETRIEVE_PATHS = getProperty(dbprops, "retrievePaths", "SELECT PATH FROM ${tableName} SRC WHERE %s");
+        SQL_RETRIEVE_PATHS = getProperty(dbprops, "retrievePaths", "SELECT PATH FROM ${tableName} SRC " +
+                "WHERE %s AND SRC.TS IN " +
+                "(SELECT MAX(TS) FROM ${tableName} TGT WHERE TGT.BINNODE=SRC.BINNODE)");
         SQL_RETRIEVE_MAX_TS =
                 getProperty(dbprops, "retrieveMaxCreated", "SELECT MAX(TS) FROM ${tableName}");
 

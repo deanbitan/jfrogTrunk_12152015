@@ -40,4 +40,8 @@ public class ResourceStreamCtx {
     public void setSize(long size) {
         this.size = size;
     }
+
+    public boolean hasSize() {
+        return size >= 0;
+    }
 }

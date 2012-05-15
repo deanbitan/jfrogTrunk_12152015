@@ -345,6 +345,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
                 response.sendSuccess();
             } else {//yay, content from plugin!
                 RequestTraceLogger.log("Received a response content stream from the user plugins - sending");
+                if (responseCtx.hasSize()) {
+                    response.setContentLength(responseCtx.getSize());
+                }
                 response.sendStream(responseCtx.getInputStream());
             }
         } else { //still error, proceed as usual

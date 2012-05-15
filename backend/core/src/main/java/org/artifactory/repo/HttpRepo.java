@@ -583,6 +583,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             }
             onlineMonitorThread = new Thread(new OnlineMonitorRunnable(), "online-monitor-" + getKey());
             onlineMonitorThread.setDaemon(true);
+            log.trace("Online monitor starting {}", onlineMonitorThread.getName());
             onlineMonitorThread.start();
         }
     }
