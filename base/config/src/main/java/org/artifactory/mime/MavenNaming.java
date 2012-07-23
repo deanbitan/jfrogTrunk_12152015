@@ -112,14 +112,6 @@ public abstract class MavenNaming {
     }
 
     /**
-     * @param path Checksum path (ie ends with checksum file extension, for example file.jar.sha1)
-     * @return The file name without the checksum extension
-     */
-    public static String getChecksumTargetFile(String filePath) {
-        return PathUtils.stripExtension(filePath);
-    }
-
-    /**
      * @param path Path to test
      * @return True if this path points to nexus index file.
      */

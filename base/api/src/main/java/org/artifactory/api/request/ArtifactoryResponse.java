@@ -28,6 +28,8 @@ import java.io.Writer;
 
 public interface ArtifactoryResponse {
 
+    String ARTIFACTORY_ID = "X-Artifactory-Id";
+
     void setException(Exception exception);
 
     boolean isError();

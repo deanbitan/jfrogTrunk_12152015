@@ -19,7 +19,6 @@
 package org.artifactory.engine;
 
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.ResponseCtx;
@@ -46,10 +45,10 @@ import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.DownloadRequestContext;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.RemoteRequestException;
+import org.artifactory.request.RepoRequests;
 import org.artifactory.request.Request;
 import org.artifactory.request.RequestContext;
 import org.artifactory.request.RequestResponseHelper;
-import org.artifactory.request.RequestTraceLogger;
 import org.artifactory.resource.ChecksumResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
@@ -127,21 +126,20 @@ public class DownloadServiceImpl implements InternalDownloadService {
      */
     @Override
     public void process(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
-        RequestTraceLogger.log("Request source = %s, Last modified = %s, If modified since = %s, Thread name = %s",
+        RepoRequests.logToContext("Request source = %s, Last modified = %s, If modified since = %s, Thread name = %s",
                 request.getClientAddress(), centralConfig.format(request.getLastModified()),
                 request.getIfModifiedSince(), Thread.currentThread().getName());
         //Check that this is not a recursive call
         if (request.isRecursive()) {
-            RequestTraceLogger.log("Exiting download process - recursive call detected");
+            RepoRequests.logToContext("Exiting download process - recursive call detected");
             String msg = "Recursive call detected for '" + request + "'. Returning nothing.";
             response.sendError(HttpStatus.SC_NOT_FOUND, msg, log);
             return;
         }
 
-        String intercept = addonsManager.interceptRequest();
-        if (StringUtils.isNotBlank(intercept)) {
-            RequestTraceLogger.log("Exiting download process - intercepted by addon manager: %s", intercept);
-            response.sendError(HttpStatus.SC_FORBIDDEN, intercept, log);
+        addonsManager.interceptResponse(response);
+        if (responseWasIntercepted(response)) {
+            RepoRequests.logToContext("Exiting download process - intercepted by addon manager");
             return;
         }
 
@@ -153,11 +151,11 @@ public class DownloadServiceImpl implements InternalDownloadService {
             DownloadRequestContext requestContext = new DownloadRequestContext(request);
 
             if (repository == null) {
-                RequestTraceLogger.log("Exiting download process - failed to find the repository");
+                RepoRequests.logToContext("Exiting download process - failed to find the repository");
                 resource = new UnfoundRepoResource(request.getRepoPath(), "Failed to find the repository '" + repoKey +
                         "' specified in the request.");
             } else {
-                RequestTraceLogger.log("Retrieving info");
+                RepoRequests.logToContext("Retrieving info");
                 resource = callGetInfoInTransaction(repository, requestContext);
             }
 
@@ -173,13 +171,13 @@ public class DownloadServiceImpl implements InternalDownloadService {
             throw e;
         } finally {
             if (response.isSuccessful()) {
-                RequestTraceLogger.log("Request succeeded");
+                RepoRequests.logToContext("Request succeeded");
             } else {
                 Exception exception = response.getException();
                 if (exception != null) {
-                    RequestTraceLogger.log("Request failed: %s", exception.getMessage());
+                    RepoRequests.logToContext("Request failed: %s", exception.getMessage());
                 } else {
-                    RequestTraceLogger.log("Request failed with no exception");
+                    RepoRequests.logToContext("Request failed with no exception");
                 }
             }
         }
@@ -195,6 +193,10 @@ public class DownloadServiceImpl implements InternalDownloadService {
         latch.countDown();
     }
 
+    private boolean responseWasIntercepted(ArtifactoryResponse response) {
+        return response.isError();
+    }
+
     private void respond(InternalRequestContext requestContext, ArtifactoryResponse response, RepoResource resource)
             throws IOException {
         try {
@@ -204,17 +206,17 @@ public class DownloadServiceImpl implements InternalDownloadService {
             boolean headRequest = request.isHeadOnly();
             boolean checksumRequest = request.isChecksum();
             boolean targetRepoIsNotRemoteOrDoesntStore = isRepoNotRemoteOrDoesntStoreLocally(resource);
-            boolean notModified = request.isNewerThan(resource.getLastModified());
 
-            RequestTraceLogger.log("Requested resource is found = %s", resourceFound);
-            RequestTraceLogger.log("Request is HEAD = %s", headRequest);
-            RequestTraceLogger.log("Request is for a checksum = %s", checksumRequest);
-            RequestTraceLogger.log("Target repository is not remote or doesn't store locally = %s",
+            RepoRequests.logToContext("Requested resource is found = %s", resourceFound);
+            RepoRequests.logToContext("Request is HEAD = %s", headRequest);
+            RepoRequests.logToContext("Request is for a checksum = %s", checksumRequest);
+            RepoRequests.logToContext("Target repository is not remote or doesn't store locally = %s",
                     targetRepoIsNotRemoteOrDoesntStore);
-            RequestTraceLogger.log("Requested resource was not modified = %s", notModified);
+            boolean notModified = isNotModified(request, resource);
+            RepoRequests.logToContext("Requested resource was not modified = %s", notModified);
 
             if (!resourceFound) {
-                RequestTraceLogger.log("Responding with unfound resource");
+                RepoRequests.logToContext("Responding with unfound resource");
                 respondResourceNotFound(requestContext, response, resource);
             } else if (headRequest && !checksumRequest && targetRepoIsNotRemoteOrDoesntStore) {
                 /**
@@ -222,22 +224,41 @@ public class DownloadServiceImpl implements InternalDownloadService {
                  * like this if we don't store artifacts locally (so that the whole artifact won't be requested twice),
                  * otherwise download the artifact normally and return the full info for the head request
                  */
-                RequestTraceLogger.log("Responding to HEAD request with status %s", response.getStatus());
-                requestResponseHelper.sendHeadResponse(response, resource);
+                RepoRequests.logToContext("Responding to HEAD request with status %s", response.getStatus());
+                if (notModified) {
+                    requestResponseHelper.sendNotModifiedResponse(response, resource);
+                } else {
+                    requestResponseHelper.sendHeadResponse(response, resource);
+                }
             } else if (notModified) {
-                RequestTraceLogger.log("Local resource isn't newer - sending a not modified response");
                 requestResponseHelper.sendNotModifiedResponse(response, resource);
             } else if (checksumRequest) {
-                RequestTraceLogger.log("Responding to checksum request");
+                RepoRequests.logToContext("Responding to checksum request");
                 respondForChecksumRequest(request, response, resource);
             } else {
-                RequestTraceLogger.log("Responding with found resource");
+                RepoRequests.logToContext("Responding with found resource");
                 respondFoundResource(requestContext, response, resource);
             }
         } catch (IOException e) {
-            RequestTraceLogger.log("Error occurred while sending request response: %s", e.getMessage());
+            RepoRequests.logToContext("Error occurred while sending request response: %s", e.getMessage());
             handleGenericIoException(response, resource, e);
         }
+    }
+
+    private boolean isNotModified(Request request, RepoResource resource) {
+        boolean hasIfModifiedSince = request.hasIfModifiedSince();
+        boolean notModified = request.isNewerThan(resource.getLastModified());
+        boolean hasIfNoneMatch = request.hasIfNoneMatch();
+        boolean nonMatch = resource.getInfo() == null || request.isNoneMatch(resource.getInfo().getSha1());
+
+        if (notModified && !(hasIfNoneMatch && nonMatch)) {
+            RepoRequests.logToContext("Local resource isn't newer - sending a not modified response");
+            return true;
+        } else if (!nonMatch && hasIfNoneMatch && !hasIfModifiedSince) {
+            RepoRequests.logToContext("Local resource's entity exists - sending a not modified response");
+            return true;
+        }
+        return false;
     }
 
     private boolean isRepoNotRemoteOrDoesntStoreLocally(RepoResource resource) {
@@ -255,7 +276,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
         //Send the resource file back (will update the cache for remote repositories)
         ResourceStreamHandle handle = getAlternateHandle(requestContext, response, responseRepoPath);
         if (response.isError()) {
-            RequestTraceLogger.log("Alternative response reset status as error - returning");
+            RepoRequests.logToContext("Alternative response reset status as error - returning");
             return;
         }
 
@@ -263,7 +284,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
 
         try {
             if (handle == null) {
-                RequestTraceLogger.log("Retrieving a content handle from target repo");
+                RepoRequests.logToContext("Retrieving a content handle from target repo");
                 //Only if we didn't already set an alternate response
                 handle = repositoryService.getResourceStreamHandle(requestContext, responseRepo, resource);
             }
@@ -271,44 +292,44 @@ public class DownloadServiceImpl implements InternalDownloadService {
             PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
             pluginAddon.execPluginActions(BeforeDownloadAction.class, null, requestContext.getRequest(),
                     responseRepoPath);
-            RequestTraceLogger.log("Executing any BeforeDownload user plugins that may exist");
+            RepoRequests.logToContext("Executing any BeforeDownload user plugins that may exist");
 
             if (requestContext.getRequest().isHeadOnly()) {
                 /**
                  * If we should response to a head, make sure repo is a remote and that stores locally (to save the
                  * double artifact downloads)
                  */
-                RequestTraceLogger.log("Request was of type HEAD - responding with no content");
+                RepoRequests.logToContext("Request was of type HEAD - responding with no content");
                 requestResponseHelper.sendHeadResponse(response, resource);
             } else {
-                RequestTraceLogger.log("Responding with selected content handle");
+                RepoRequests.logToContext("Responding with selected content handle");
                 //Streaming the file is done outside a tx, so there is a chance that the content will change!
                 requestResponseHelper.sendBodyResponse(response, resource, handle);
             }
         } catch (RepoRejectException rre) {
             int status = rre.getErrorCode();
             if (status == HttpStatus.SC_FORBIDDEN && authorizationService.isAnonymous()) {
-                RequestTraceLogger.log("Response status is '%s' and authenticated as anonymous - sending challenge",
+                RepoRequests.logToContext("Response status is '%s' and authenticated as anonymous - sending challenge",
                         status);
 
                 // Transform a forbidden to unauthorized if received for an anonymous user
                 response.sendAuthorizationRequired(rre.getMessage(), authenticationEntryPoint.getRealmName());
             } else {
-                RequestTraceLogger.log("Error occurred while sending response - sending error instead: %s",
+                RepoRequests.logToContext("Error occurred while sending response - sending error instead: %s",
                         rre.getMessage());
                 String msg = "Rejected artifact download request: " + rre.getMessage();
                 sendError(requestContext, response, status, msg, log);
             }
         } catch (RemoteRequestException rre) {
-            RequestTraceLogger.log("Error occurred while sending response - sending error instead: %s",
+            RepoRequests.logToContext("Error occurred while sending response - sending error instead: %s",
                     rre.getMessage());
             sendError(requestContext, response, rre.getRemoteReturnCode(), rre.getMessage(), log);
         } catch (BadPomException bpe) {
-            RequestTraceLogger.log("Error occurred while sending response - sending error instead: %s",
+            RepoRequests.logToContext("Error occurred while sending response - sending error instead: %s",
                     bpe.getMessage());
             sendError(requestContext, response, HttpStatus.SC_CONFLICT, bpe.getMessage(), log);
         } catch (RepositoryException re) {
-            RequestTraceLogger.log("Error occurred while sending response - sending error instead: %s",
+            RepoRequests.logToContext("Error occurred while sending response - sending error instead: %s",
                     re.getMessage());
             sendError(requestContext, response, HttpStatus.SC_INTERNAL_SERVER_ERROR, re.getMessage(), log);
         } finally {
@@ -320,50 +341,50 @@ public class DownloadServiceImpl implements InternalDownloadService {
 
     private void sendError(InternalRequestContext requestContext, ArtifactoryResponse response, int status,
             String reason, Logger log) throws IOException {
-        RequestTraceLogger.log("Sending error with status %s and message '%s'", status, reason);
+        RepoRequests.logToContext("Sending error with status %s and message '%s'", status, reason);
         PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
         ResponseCtx responseCtx = new ResponseCtx();
         responseCtx.setMessage(reason);
         responseCtx.setStatus(status);
         pluginAddon.execPluginActions(AfterDownloadErrorAction.class, responseCtx, requestContext.getRequest());
-        RequestTraceLogger.log("Executing any AfterDownloadErrorAction user plugins that may exist");
+        RepoRequests.logToContext("Executing any AfterDownloadErrorAction user plugins that may exist");
 
         status = responseCtx.getStatus();
         String message = responseCtx.getMessage();
 
         if (HttpUtils.isSuccessfulResponseCode(status)) {//plugin changed the status, it's not error anymore
-            RequestTraceLogger.log("Response code was modified to %s by the user plugins", status);
+            RepoRequests.logToContext("Response code was modified to %s by the user plugins", status);
             response.setStatus(status);
             if (responseCtx.getInputStream() == null) {// no content, so only message (if set) and status
-                RequestTraceLogger.log("Received no response content from the user plugins");
+                RepoRequests.logToContext("Received no response content from the user plugins");
                 //message changed in the plugin, need to write it as response
                 if (reason != null && !reason.equals(message)) {
-                    RequestTraceLogger.log("Response message was modified to '%s' by the user plugins", message);
+                    RepoRequests.logToContext("Response message was modified to '%s' by the user plugins", message);
                     response.getWriter().write(message);
                 }
-                RequestTraceLogger.log("Sending successful response");
+                RepoRequests.logToContext("Sending successful response");
                 response.sendSuccess();
             } else {//yay, content from plugin!
-                RequestTraceLogger.log("Received a response content stream from the user plugins - sending");
+                RepoRequests.logToContext("Received a response content stream from the user plugins - sending");
                 if (responseCtx.hasSize()) {
                     response.setContentLength(responseCtx.getSize());
                 }
                 response.sendStream(responseCtx.getInputStream());
             }
         } else { //still error, proceed as usual
-            RequestTraceLogger.log("Response code wasn't modified by the user plugins");
+            RepoRequests.logToContext("Response code wasn't modified by the user plugins");
             if (!message.equals(reason)) {
-                RequestTraceLogger.log("Response message was modified to '%s' by the user plugins", message);
+                RepoRequests.logToContext("Response message was modified to '%s' by the user plugins", message);
             }
             reason = message; // in case user changed the reason in the plugin
             if (status == HttpStatus.SC_FORBIDDEN && authorizationService.isAnonymous()) {
-                RequestTraceLogger.log("Response status is '%s' and authenticated as anonymous - sending challenge",
+                RepoRequests.logToContext("Response status is '%s' and authenticated as anonymous - sending challenge",
                         status);
                 // Transform a forbidden to unauthorized if received for an anonymous user
                 String realmName = authenticationEntryPoint.getRealmName();
                 response.sendAuthorizationRequired(reason, realmName);
             } else {
-                RequestTraceLogger.log("Sending response with the status '%s' and the message '%s'", status,
+                RepoRequests.logToContext("Sending response with the status '%s' and the message '%s'", status,
                         message);
                 response.sendError(status, reason, log);
             }
@@ -383,7 +404,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
             RepoPath responseRepoPath) throws IOException {
         //See if we need to return an alternate response
 
-        RequestTraceLogger.log("Executing any AltResponse user plugins that may exist");
+        RepoRequests.logToContext("Executing any AltResponse user plugins that may exist");
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
         ResponseCtx responseCtx = new ResponseCtx();
@@ -391,29 +412,29 @@ public class DownloadServiceImpl implements InternalDownloadService {
                 responseRepoPath);
         int status = responseCtx.getStatus();
         String message = responseCtx.getMessage();
-        RequestTraceLogger.log("Alternative response status is set to %s and message to '%s'", status, message);
+        RepoRequests.logToContext("Alternative response status is set to %s and message to '%s'", status, message);
         if (status != ResponseCtx.UNSET_STATUS) {
             if (HttpUtils.isSuccessfulResponseCode(status)) {
-                RequestTraceLogger.log("Setting response status to %s", status);
+                RepoRequests.logToContext("Setting response status to %s", status);
                 response.setStatus(status);
                 if (message != null) {
-                    RequestTraceLogger.log("Found non-null alternative response message - " +
+                    RepoRequests.logToContext("Found non-null alternative response message - " +
                             "returning as content handle");
                     return new StringResourceStreamHandle(message);
                 }
             } else {
-                RequestTraceLogger.log("Sending error response with alternative status and message");
+                RepoRequests.logToContext("Sending error response with alternative status and message");
                 response.sendError(status, message, log);
                 return null;
             }
         }
         InputStream is = responseCtx.getInputStream();
         if (is != null) {
-            RequestTraceLogger.log("Found non-null alternative response content stream - " +
+            RepoRequests.logToContext("Found non-null alternative response content stream - " +
                     "returning as content handle");
             return new SimpleResourceStreamHandle(is, responseCtx.getSize());
         }
-        RequestTraceLogger.log("Found no alternative content handles");
+        RepoRequests.logToContext("Found no alternative content handles");
         return null;
     }
 
@@ -421,27 +442,27 @@ public class DownloadServiceImpl implements InternalDownloadService {
             RepoResource resource) throws IOException {
         String reason = "Resource not found";
         int status = HttpStatus.SC_NOT_FOUND;
-        RequestTraceLogger.log("Setting default response status to '%s' reason to '%s'", status, reason);
+        RepoRequests.logToContext("Setting default response status to '%s' reason to '%s'", status, reason);
         if (resource instanceof UnfoundRepoResourceReason) {
-            RequestTraceLogger.log("Response is an instance of UnfoundRepoResourceReason");
+            RepoRequests.logToContext("Response is an instance of UnfoundRepoResourceReason");
             UnfoundRepoResourceReason unfound = (UnfoundRepoResourceReason) resource;
             // use the reason and status from the resource unless it's authorization response and the
             // settings prohibit revealing this information
             boolean hideUnauthorizedResources =
                     centralConfig.getDescriptor().getSecurity().isHideUnauthorizedResources();
             boolean originalStatusNotAuthorization = notAuthorizationStatus(unfound.getStatusCode());
-            RequestTraceLogger.log("Configured to hide un-authorized resources = %s",
+            RepoRequests.logToContext("Configured to hide un-authorized resources = %s",
                     Boolean.toString(hideUnauthorizedResources));
-            RequestTraceLogger.log("Original response status is auth related = %s",
+            RepoRequests.logToContext("Original response status is auth related = %s",
                     Boolean.toString(!originalStatusNotAuthorization));
             if (!hideUnauthorizedResources || originalStatusNotAuthorization) {
                 reason = unfound.getReason();
                 status = unfound.getStatusCode();
-                RequestTraceLogger.log("Using original response status of '%s' and message '%s'", status, reason);
+                RepoRequests.logToContext("Using original response status of '%s' and message '%s'", status, reason);
             }
         }
         if (status == HttpStatus.SC_FORBIDDEN && authorizationService.isAnonymous()) {
-            RequestTraceLogger.log("Response status is '%s' and authenticated as anonymous - sending challenge",
+            RepoRequests.logToContext("Response status is '%s' and authenticated as anonymous - sending challenge",
                     status);
             // Transform a forbidden to unauthorized if received for an anonymous user
             String realmName = authenticationEntryPoint.getRealmName();
@@ -466,14 +487,14 @@ public class DownloadServiceImpl implements InternalDownloadService {
 
         RepoPath requestRepoPath = request.getRepoPath();
         if (request.isZipResourceRequest()) {
-            RequestTraceLogger.log("Requested resource is located within an archive");
+            RepoRequests.logToContext("Requested resource is located within an archive");
             requestRepoPath = InternalRepoPathFactory
                     .archiveResourceRepoPath(requestRepoPath, request.getZipResourcePath());
         }
         String requestChecksumFilePath = requestRepoPath.getPath();
         ChecksumType checksumType = ChecksumType.forFilePath(requestChecksumFilePath);
         if (checksumType == null) {
-            RequestTraceLogger.log("Unable to detect the type of the requested checksum - responding with status %s",
+            RepoRequests.logToContext("Unable to detect the type of the requested checksum - responding with status %s",
                     HttpStatus.SC_NOT_FOUND);
             response.sendError(HttpStatus.SC_NOT_FOUND, "Checksum not found: " + requestChecksumFilePath, log);
             return;
@@ -485,14 +506,14 @@ public class DownloadServiceImpl implements InternalDownloadService {
         Repo repository = repositoryService.repositoryByKey(repoKey);
         String checksum = repository.getChecksum(responsePath + checksumType.ext(), resource);
         if (checksum == null) {
-            RequestTraceLogger.log("Unable to find the the requested checksum - responding with status %s",
+            RepoRequests.logToContext("Unable to find the the requested checksum - responding with status %s",
                     HttpStatus.SC_NOT_FOUND);
             response.sendError(HttpStatus.SC_NOT_FOUND, "Checksum not found for " + responsePath, log);
             return;
         }
 
         if (request.isHeadOnly()) {
-            RequestTraceLogger.log("Sending checksum HEAD response");
+            RepoRequests.logToContext("Sending checksum HEAD response");
             // send head response using the checksum data
             ChecksumResource checksumResource = new ChecksumResource(resource, checksumType, checksum);
             requestResponseHelper.sendHeadResponse(response, checksumResource);
@@ -500,10 +521,10 @@ public class DownloadServiceImpl implements InternalDownloadService {
             AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
             PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
             pluginAddon.execPluginActions(BeforeDownloadAction.class, null, request, responseRepoPath);
-            RequestTraceLogger.log("Executing any BeforeDownloadAction user plugins that may exist");
+            RepoRequests.logToContext("Executing any BeforeDownloadAction user plugins that may exist");
             // send the checksum as the response body, use the original repo path (the checksum path,
             // not the file) from the request
-            RequestTraceLogger.log("Sending checksum response with status %s", response.getStatus());
+            RepoRequests.logToContext("Sending checksum response with status %s", response.getStatus());
             requestResponseHelper.sendBodyResponse(response, requestRepoPath, checksum);
         }
     }
@@ -518,7 +539,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
         if (e instanceof InterruptedIOException) {
             String msg = this + ": Timed out when retrieving data for " + res.getRepoPath()
                     + " (" + e.getMessage() + ").";
-            RequestTraceLogger.log("Setting response status to %s - %s", HttpStatus.SC_NOT_FOUND, msg);
+            RepoRequests.logToContext("Setting response status to %s - %s", HttpStatus.SC_NOT_FOUND, msg);
             response.sendError(HttpStatus.SC_NOT_FOUND, msg, log);
         } else {
             throw e;

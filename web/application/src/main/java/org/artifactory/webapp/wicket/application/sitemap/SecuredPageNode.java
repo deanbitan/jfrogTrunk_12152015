@@ -22,6 +22,7 @@ import org.apache.wicket.Page;
 import org.apache.wicket.injection.Injector;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.AddonsWebManager;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
@@ -39,6 +40,9 @@ public abstract class SecuredPageNode extends MenuNode {
     @SpringBean
     private AddonsManager addons;
 
+    @SpringBean
+    private AddonsWebManager addonsWebManager;
+
     protected SecuredPageNode(Class<? extends Page> pageClass, String name) {
         super(name, pageClass);
 
@@ -55,6 +59,10 @@ public abstract class SecuredPageNode extends MenuNode {
 
     public AddonsManager getAddons() {
         return addons;
+    }
+
+    public AddonsWebManager getAddonsWebManager() {
+        return addonsWebManager;
     }
 
     @Override

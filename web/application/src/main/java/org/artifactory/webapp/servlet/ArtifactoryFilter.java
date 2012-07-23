@@ -21,6 +21,7 @@ package org.artifactory.webapp.servlet;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
+import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.ResourceUtils;
@@ -64,6 +65,9 @@ public class ArtifactoryFilter implements Filter {
                     //Add the server header (curl -I http://localhost:8080/artifactory/)
                     httpResponse.setHeader("Server", HttpUtils.getArtifactoryUserAgent());
                 }
+
+                // set the Artifactory instance id header
+                httpResponse.setHeader(ArtifactoryResponse.ARTIFACTORY_ID, HttpUtils.getHostId());
             }
             chain.doFilter(request, response);
         } finally {

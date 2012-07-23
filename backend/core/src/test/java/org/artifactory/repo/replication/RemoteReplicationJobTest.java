@@ -19,14 +19,16 @@
 package org.artifactory.repo.replication;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.ReplicationAddon;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.addon.replication.RemoteReplicationSettingsBuilder;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
+import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.schedule.Task;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -45,6 +47,7 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
     private static final RemoteReplicationJob job = new RemoteReplicationJob();
     private RemoteReplicationDescriptor replicationDescriptor;
     private RemoteReplicationSettings replicationSettings;
+    private RemoteRepoDescriptor repoDescriptor = new HttpRepoDescriptor();
 
     @BeforeClass
     public void setUp() throws Exception {
@@ -56,12 +59,10 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
         replicationDescriptor.setPathPrefix("path");
         replicationDescriptor.setSyncDeletes(true);
         replicationDescriptor.setSyncProperties(true);
-        replicationDescriptor.setSocketTimeoutMillis(111111);
 
         replicationSettings = new RemoteReplicationSettingsBuilder(replicationDescriptor.getRepoPath())
                 .deleteExisting(replicationDescriptor.isSyncDeletes())
                 .includeProperties(replicationDescriptor.isSyncProperties())
-                .timeout(replicationDescriptor.getSocketTimeoutMillis())
                 .build();
     }
 
@@ -95,13 +96,14 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
         centralConfig.addRemoteReplication(replicationDescriptor);
         expect(configService.getDescriptor()).andReturn(centralConfig);
         expect(artifactoryContext.getCentralConfig()).andReturn(configService);
+        expect(artifactoryContext.getRepositoryService()).andReturn(repositoryService);
+        expect(repositoryService.remoteRepoDescriptorByKey("key")).andReturn(repoDescriptor);
         expect(artifactoryContext.beanForType(SecurityService.class)).andReturn(securityService);
         securityService.authenticateAsSystem();
         expectLastCall();
         expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
         expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
-        expect(replicationAddon.performRemoteReplication(replicationSettings))
-                .andThrow(new IOException());
+        expect(replicationAddon.performRemoteReplication(replicationSettings)).andThrow(new IOException());
         securityService.nullifyContext();
         expectLastCall();
         replayMocks();
@@ -122,12 +124,13 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
         expect(configService.getDescriptor()).andReturn(centralConfig);
         expect(artifactoryContext.getCentralConfig()).andReturn(configService);
         expect(artifactoryContext.beanForType(SecurityService.class)).andReturn(securityService);
+        expect(artifactoryContext.getRepositoryService()).andReturn(repositoryService);
+        expect(repositoryService.remoteRepoDescriptorByKey("key")).andReturn(repoDescriptor);
         securityService.authenticateAsSystem();
         expectLastCall();
         expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
         expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
-        expect(replicationAddon.performRemoteReplication(replicationSettings))
-                .andReturn(new MultiStatusHolder());
+        expect(replicationAddon.performRemoteReplication(replicationSettings)).andReturn(new MultiStatusHolder());
         securityService.nullifyContext();
         expectLastCall();
         replayMocks();
@@ -147,8 +150,9 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
         expectLastCall();
         expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
         expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
-        expect(replicationAddon.performRemoteReplication(replicationSettings))
-                .andReturn(new MultiStatusHolder());
+        expect(artifactoryContext.getRepositoryService()).andReturn(repositoryService);
+        expect(repositoryService.remoteRepoDescriptorByKey("key")).andReturn(repoDescriptor);
+        expect(replicationAddon.performRemoteReplication(replicationSettings)).andReturn(new MultiStatusHolder());
         securityService.nullifyContext();
         expectLastCall();
         replayMocks();

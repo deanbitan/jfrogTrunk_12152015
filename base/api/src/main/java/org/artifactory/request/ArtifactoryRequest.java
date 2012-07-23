@@ -32,6 +32,8 @@ public interface ArtifactoryRequest extends Request {
 
     String CHECKSUM_MD5 = "X-Checksum-Md5";
 
+    String FILE_NAME = "X-Artifactory-Filename";
+
     /**
      * An header to trigger checksum deploy (when the value is true). Request must also include
      * {@link org.artifactory.request.ArtifactoryRequest#CHECKSUM_SHA1}.

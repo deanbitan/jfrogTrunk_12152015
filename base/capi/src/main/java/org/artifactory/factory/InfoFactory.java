@@ -107,7 +107,7 @@ public interface InfoFactory {
 
     Tree<ZipEntryInfo> createZipEntriesTree();
 
-    ZipEntryInfo createZipEntry(ZipEntry zipEntry);
+    ZipEntryInfo createZipEntry(ZipEntry... zipEntry);
 
     ZipEntryResourceInfo createZipEntryResource(FileInfo info, ZipEntryInfo zipEntryInfo, Long first,
             ChecksumsInfo checksumsInfo);

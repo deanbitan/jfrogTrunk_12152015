@@ -28,6 +28,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonInfo;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.AddonsWebManager;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ConstantValues;
@@ -47,6 +48,9 @@ public class AddonsInfoPanel extends TitledPanel {
 
     @SpringBean
     private AddonsManager addonsManager;
+
+    @SpringBean
+    private AddonsWebManager addonsWebManager;
 
     @SpringBean
     private AuthorizationService authorizationService;
@@ -98,7 +102,7 @@ public class AddonsInfoPanel extends TitledPanel {
 
         add(new Label("noAddons", "No add-ons currently installed.").setVisible(noAddons));
 
-        String licenseRequiredMessage = addonsManager.getLicenseRequiredMessage(
+        String licenseRequiredMessage = addonsWebManager.getLicenseRequiredMessage(
                 WicketUtils.absoluteMountPathForPage(LicensePage.class));
         Label noLicenseKeyLabel = new Label("noLicenseKey", licenseRequiredMessage);
         noLicenseKeyLabel.setVisible(

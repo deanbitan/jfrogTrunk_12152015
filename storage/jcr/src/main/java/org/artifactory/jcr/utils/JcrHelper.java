@@ -455,7 +455,7 @@ public abstract class JcrHelper {
         if (NT_ARTIFACTORY_FILE.equals(nodeType) || NT_ARTIFACTORY_FOLDER.equals(nodeType) ||
                 "nt:unstructured".equals(nodeType)) {
             //Remove myself
-            log.debug("Deleting node: {}", node.getPath());
+            log.debug("Deleting node: {}, id: {}", node.getPath(), node.getIdentifier());
             node.remove();
             count++;
         }
@@ -472,6 +472,7 @@ public abstract class JcrHelper {
             } catch (RepositoryException e) {
                 log.warn("Attempting force removal of parent node at '{}.'", absPath);
                 try {
+                    log.debug("Could not recursively delete node at '" + absPath + "' (" + node + ").", e);
                     node.remove();
                     //Saving the session manually after removal since we might not be in a transaction
                     node.getSession().save();

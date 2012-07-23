@@ -18,7 +18,6 @@
 
 package org.artifactory.md;
 
-import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.resource.RepoResourceInfo;
 
 /**
@@ -28,8 +27,6 @@ import org.artifactory.resource.RepoResourceInfo;
  * @author Fred Simon
  */
 public interface MetadataInfo extends RepoResourceInfo {
-    @Override
-    ChecksumsInfo getChecksumsInfo();
 
     long getCreated();
 

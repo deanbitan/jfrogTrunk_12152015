@@ -120,7 +120,7 @@ public class PermissionTargetImpl implements MutablePermissionTargetInfo {
     @Override
     public void setIncludesPattern(String includesPattern) {
         //Must be wrapped for ocm, otherwise uses an internal Arrays.List class
-        this.includes = PathUtils.delimitedListToStringList(includesPattern, DELIMITER, "\r\n\f ");
+        this.includes = PathUtils.includesExcludesPatternToStringList(includesPattern);
     }
 
     @Override
@@ -131,7 +131,7 @@ public class PermissionTargetImpl implements MutablePermissionTargetInfo {
     @Override
     public void setExcludesPattern(String excludesPattern) {
         //Must be wrapped for ocm, otherwise uses an internal Arrays.List class
-        this.excludes = PathUtils.delimitedListToStringList(excludesPattern, DELIMITER, "\r\n\f ");
+        this.excludes = PathUtils.includesExcludesPatternToStringList(excludesPattern);
     }
 
     @Override

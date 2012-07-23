@@ -831,6 +831,16 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public Map<String, LocalReplicationDescriptor> getLocalReplicationsMap() {
+        Map<String, LocalReplicationDescriptor> localReplicationsMap = Maps.newHashMap();
+        for (LocalReplicationDescriptor localReplication : localReplications) {
+            localReplicationsMap.put(localReplication.getRepoKey(), localReplication);
+        }
+
+        return localReplicationsMap;
+    }
+
+    @Override
     public void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor) {
         this.cleanupConfig = cleanupConfigDescriptor;
     }

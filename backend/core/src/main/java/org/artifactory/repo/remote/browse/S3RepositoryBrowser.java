@@ -126,7 +126,7 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
      * @return True if the url points to an S3 repository.
      */
     public static boolean isS3Repository(String url, HttpClient client) {
-        HeadMethod headMethod = new HeadMethod(url);
+        HeadMethod headMethod = new HeadMethod(HttpUtils.encodeQuery(url));
         try {
             client.executeMethod(headMethod);
             Header s3RequestId = headMethod.getResponseHeader(HEADER_S3_REQUEST_ID);

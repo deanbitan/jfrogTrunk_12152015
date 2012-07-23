@@ -41,6 +41,8 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.util.HttpUtils;
+import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -61,6 +63,7 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -312,23 +315,22 @@ public class WebdavServiceImpl implements WebdavService {
                     "Please specify a valid path", log);
             return;
         }
-        String targetRepoKey = request.getParameter("targetRepoKey");
-        if (StringUtils.isEmpty(targetRepoKey)) {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, "Parameter 'targetRepoKey' is required.", log);
+
+        String destination = URLDecoder.decode(request.getHeader("Destination"), "UTF-8");
+        if (StringUtils.isEmpty(destination)) {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, "Header 'Destination' is required.", log);
             return;
         }
-        LocalRepo targetRepo = repoService.localRepositoryByKey(targetRepoKey);
-        if (targetRepo == null) {
-            response.sendError(HttpStatus.SC_NOT_FOUND, "Target local repository not found.", log);
-            return;
-        }
-        if (!authService.canDelete(repoPath) || !authService.canDeploy(
-                InternalRepoPathFactory.create(targetRepoKey, ""))) {
+
+        String targetPathWithoutContextUrl = StringUtils.remove(destination, request.getServletContextUrl());
+        String targetPathParent = PathUtils.getParent(targetPathWithoutContextUrl);
+        RepoPath targetPath = InternalRepoPathFactory.create(targetPathParent);
+        if (!authService.canDelete(repoPath) || !authService.canDeploy(targetPath)) {
             response.sendError(HttpStatus.SC_FORBIDDEN, "Insufficient permissions.", log);
             return;
         }
 
-        MoveMultiStatusHolder status = repoService.move(repoPath, targetRepoKey, false);
+        MoveMultiStatusHolder status = repoService.move(repoPath, targetPath, false, true, true);
         if (!status.hasWarnings() && !status.hasErrors()) {
             response.sendSuccess();
         } else {
@@ -398,6 +400,7 @@ public class WebdavServiceImpl implements WebdavService {
         String origPath = request.getPath();
         String uri = request.getUri();
         String hrefBase = uri;
+        origPath = HttpUtils.encodeQuery(origPath);
         if (origPath.length() > 0) {
             int idx = uri.lastIndexOf(origPath);
             if (idx > 0) {
@@ -409,12 +412,10 @@ public class WebdavServiceImpl implements WebdavService {
         if (StringUtils.isNotBlank(path) && !hrefBase.endsWith("/")) {
             hrefBase += "/";
         }
-        String href = hrefBase + path;
-        /*if (isFolder && !href.endsWith("/")) {
-            href += "/";
-        }*/
 
-        //String encodedHref = encoder.encode(href);
+        // Encode only the path since the base is already encoded
+        String href = hrefBase + HttpUtils.encodeQuery(path);
+
         xmlResponse.writeText(href);
         xmlResponse.writeElement(null, "href", XmlWriter.CLOSING);
 

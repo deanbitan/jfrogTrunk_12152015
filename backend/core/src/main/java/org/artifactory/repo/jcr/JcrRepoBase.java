@@ -58,7 +58,7 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.InternalRequestContext;
-import org.artifactory.request.RequestTraceLogger;
+import org.artifactory.request.RepoRequests;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.sapi.common.ExportSettings;
@@ -487,7 +487,7 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), path);
         StatusHolder statusHolder = checkDownloadIsAllowed(repoPath);
         if (statusHolder.isError()) {
-            RequestTraceLogger.log("Download denied (%s) - returning unfound resource", statusHolder.getStatusMsg());
+            RepoRequests.logToContext("Download denied (%s) - returning unfound resource", statusHolder.getStatusMsg());
             return new UnfoundRepoResource(repoPath, statusHolder.getStatusMsg(), statusHolder.getStatusCode());
         }
         return storageMixin.getInfo(context);

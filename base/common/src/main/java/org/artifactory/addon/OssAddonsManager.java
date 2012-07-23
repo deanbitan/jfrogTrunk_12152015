@@ -20,7 +20,10 @@ package org.artifactory.addon;
 
 import com.google.common.collect.Lists;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.sapi.common.ImportSettings;
+import org.artifactory.security.ArtifactoryPermission;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -32,7 +35,7 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 @Component
-public class OssAddonsManager implements AddonsManager {
+public class OssAddonsManager implements AddonsManager, AddonsWebManager {
 
     @Override
     public <T extends Addon> T addonByType(Class<T> type) {
@@ -47,6 +50,16 @@ public class OssAddonsManager implements AddonsManager {
     @Override
     public String getLicenseRequiredMessage(String licensePageUrl) {
         return "Add-ons are currently disabled.";
+    }
+
+    @Override
+    public void onNoInstalledLicense(boolean userVisitedLicensePage, NoInstalledLicenseAction action) {
+    }
+
+    @Override
+    public boolean isAdminPageAccessible() {
+        AuthorizationService authService = ContextHelper.get().beanForType(AuthorizationService.class);
+        return authService.isAdmin() || authService.hasPermission(ArtifactoryPermission.ADMIN);
     }
 
     @Override
@@ -77,11 +90,6 @@ public class OssAddonsManager implements AddonsManager {
     @Override
     public void refresh() {
 
-    }
-
-    @Override
-    public AddonInfo getAddonInfoByName(String addonName) {
-        return null;
     }
 
     @Override
@@ -145,7 +153,6 @@ public class OssAddonsManager implements AddonsManager {
     }
 
     @Override
-    public String interceptRequest() {
-        return null;
+    public void interceptResponse(ArtifactoryResponse response) {
     }
 }

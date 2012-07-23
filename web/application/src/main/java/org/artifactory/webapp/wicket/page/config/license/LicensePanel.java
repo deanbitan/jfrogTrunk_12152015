@@ -27,6 +27,7 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -36,6 +37,7 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
+import org.artifactory.webapp.wicket.page.base.BasePage;
 
 import java.io.IOException;
 
@@ -51,6 +53,9 @@ public class LicensePanel extends TitledPanel {
 
     @SpringBean
     private AddonsManager addonsManager;
+
+    @SpringBean
+    private AuthorizationService authService;
 
     @WicketProperty
     private String licenseKey;
@@ -90,7 +95,9 @@ public class LicensePanel extends TitledPanel {
                     // rebuild the site map and refresh the whole page to reload the new site map
                     ArtifactoryApplication.get().rebuildSiteMap();
                     Session.get().info("Successfully installed license.");
-                    setResponsePage(new LicensePage());
+                    Class<? extends BasePage> redirectPage =
+                            authService.isAdmin() ? LicensePage.class : ArtifactoryApplication.get().getHomePage();
+                    setResponsePage(redirectPage);
                 } catch (IOException e) {
                     error("Failed to install license");
                     AjaxUtils.refreshFeedback(target);

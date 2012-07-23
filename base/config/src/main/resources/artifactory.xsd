@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.14"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.14"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.15"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.15"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -237,9 +237,9 @@
                                 The options are:
                                 (1) Verify against client checksums (default) - Until a client has sent a valid checksum
                                 for a deployed artifact that matches the server's locally calculated checksum, the
-                                artifact will not be available and will return 404 (not found). If the client has sent a
-                                checksum that conflicts with the one calculated on the server a 409 (conflict) will be
-                                returned until a valid checksum is deployed.
+                                artifact's checksum will not be available and will return 404 (not found).
+                                If the client has sent a checksum that conflicts with the one calculated on the server a
+                                409 (conflict) will be returned until a valid checksum is deployed.
                                 (2) Trust server generated checksums - Do not verify against checksums sent by clients
                                 and trust the ones store server's locally calculated checksums. An uploaded artifact
                                 will be available for consumption immediately, but integrity might be compromised.
@@ -648,6 +648,14 @@
                         <xs:annotation>
                             <xs:documentation source="description">
                                 Proxy and cache NuGet libraries from the remote repository.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="p2OriginalUrl" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The URL for the original P2 repository. Currently only HTTP/S URLs are
+                                supported.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -2018,6 +2026,13 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                         <xs:annotation>
                             <xs:documentation source="description">
                                 HTTP authentication password.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="enableEventReplication" type="xs:boolean" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Replicate additions and modifications as they occur.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>

@@ -191,8 +191,14 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
             updateFileInfoFromImportedFile(file, mutableFileInfo);
             setMetadata(StatsInfo.class, InfoFactoryHolder.get().createStats());
 
+            boolean metadataImported = false;
             if (settings.isIncludeMetadata()) {
-                importMetadata(file, status, settings);
+                metadataImported = importMetadata(file, status, settings);
+            }
+
+            // Couldn't import metadata, try to import checksums from files (FILENAME.md5, FILENAME.sha1)
+            if (!metadataImported) {
+                uploadOriginalChecksums(file);
             }
 
             // trust server checksums if the settings said so and client checksum is missing
@@ -235,6 +241,49 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
             throw new RepositoryRuntimeException(
                     "Could not create file node resource at '" + getAbsolutePath() + "': " + e.getMessage(), e);
         }
+    }
+
+    private void uploadOriginalChecksums(File file) throws IOException {
+        String md5 = getOriginalChecksumFromFile(file, ChecksumType.md5);
+        if (StringUtils.isNotBlank(md5)) {
+            updateOriginalChecksumInfo(ChecksumType.md5, md5);
+        }
+
+        String sha1 = getOriginalChecksumFromFile(file, ChecksumType.sha1);
+        if (StringUtils.isNotBlank(sha1)) {
+            updateOriginalChecksumInfo(ChecksumType.sha1, sha1);
+        }
+    }
+
+    private String getOriginalChecksumFromFile(File artifactFile, ChecksumType checksumType) throws IOException {
+        File checksumFile = new File(artifactFile.getParent(), getName() + checksumType.ext());
+        InputStream is = null;
+        try {
+            is = new BufferedInputStream(new FileInputStream(checksumFile));
+            return Checksum.checksumStringFromStream(is);
+        } catch (FileNotFoundException e) {
+            log.warn("Couldn't find '{}' checksum file and Artifactory metadata doesn't exist.",
+                    checksumFile.getName());
+        } finally {
+            IOUtils.closeQuietly(is);
+        }
+
+        return null;
+    }
+
+    private void updateOriginalChecksumInfo(ChecksumType checksumType, String checksumValue) {
+        ChecksumsInfo checksums = getInfo().getChecksumsInfo();
+        if (!checksumType.isValid(checksumValue)) {
+            log.warn("Uploading non valid original checksum for {}", getRepoPath());
+        }
+
+        ChecksumInfo checksumInfo = checksums.getChecksumInfo(checksumType);
+        if (checksumInfo == null) {
+            checksumInfo = new ChecksumInfo(checksumType, checksumValue, null);
+        } else {
+            checksumInfo = new ChecksumInfo(checksumType, checksumValue, checksumInfo.getActual());
+        }
+        checksums.addChecksumInfo(checksumInfo);
     }
 
     private void updateFileInfoFromImportedFile(File file, MutableFileInfo mutableFileInfo) {
@@ -578,14 +627,16 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         log.debug("Calculating checksums of '{}'.", getRepoPath());
         Checksum[] checksums = JcrVfsHelper.getChecksumsToCompute();
         ChecksumInputStream checksumInputStream = new ChecksumInputStream(in, checksums);
+        try {
+            //Do this after xml import: since Jackrabbit 1.4
+            //org.apache.jackrabbit.core.value.BLOBInTempFile.BLOBInTempFile will close the stream
+            Binary binary = resourceNode.getSession().getValueFactory().createBinary(checksumInputStream);
+            resourceNode.setProperty(JCR_DATA, binary);
+        } finally {
+            // make sure the stream is closed. Jackrabbit doesn't close the stream if the file is small (violating the contract)
+            IOUtils.closeQuietly(checksumInputStream);  // if close is failed we'll fail in setting the checksums
+        }
 
-        //Do this after xml import: since Jackrabbit 1.4
-        //org.apache.jackrabbit.core.value.BLOBInTempFile.BLOBInTempFile will close the stream
-        Binary binary = resourceNode.getSession().getValueFactory().createBinary(checksumInputStream);
-        resourceNode.setProperty(JCR_DATA, binary);
-
-        // make sure the stream is closed. Jackrabbit doesn't close the stream if the file is small (violating the contract)
-        IOUtils.closeQuietly(checksumInputStream);  // if close is failed we'll fail in setting the checksums
         if (log.isTraceEnabled()) {
             StringBuilder sb = new StringBuilder();
             for (Checksum checksum : checksums) {

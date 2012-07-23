@@ -114,6 +114,7 @@ public final class RequestResponseHelper {
 
     public void sendNotModifiedResponse(ArtifactoryResponse response, RepoResource res) throws IOException {
         log.debug("{}: Sending NOT-MODIFIED response", res.toString());
+        response.setContentLength(0);
         updateResponseFromRepoResource(response, res);
         response.setStatus(HttpStatus.SC_NOT_MODIFIED);
     }
@@ -154,10 +155,18 @@ public final class RequestResponseHelper {
         response.setMd5(md5);
 
         if (response instanceof HttpArtifactoryResponse) {
+            String fileName = info.getName();
+            if (!isNotZipResource(res)) {
+                // The filename is the zip entry inside the zip
+                ZipEntryResource zipEntryResource = (ZipEntryResource) res;
+                fileName = zipEntryResource.getEntryPath();
+            }
+
             // content disposition is not set only for archive resources when archived browsing is enabled
             if (isNotZipResource(res) || archiveBrowsingDisabled(res)) {
-                ((HttpArtifactoryResponse) response).setContentDispositionAttachment();
+                ((HttpArtifactoryResponse) response).setContentDispositionAttachment(fileName);
             }
+            ((HttpArtifactoryResponse) response).setFilename(fileName);
         }
 
         if (res instanceof HttpCacheAvoidableResource) {

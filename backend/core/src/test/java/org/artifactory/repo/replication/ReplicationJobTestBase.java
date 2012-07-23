@@ -19,8 +19,9 @@
 package org.artifactory.repo.replication;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.ReplicationAddon;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.easymock.EasyMock;
@@ -43,20 +44,21 @@ public abstract class ReplicationJobTestBase {
     protected static final SecurityService securityService = EasyMock.createMock(SecurityService.class);
     protected static final AddonsManager addonsManager = EasyMock.createMock(AddonsManager.class);
     protected static final ReplicationAddon replicationAddon = EasyMock.createMock(ReplicationAddon.class);
+    protected static final RepositoryService repositoryService = EasyMock.createMock(RepositoryService.class);
 
     @BeforeMethod
     public void reset() throws Exception {
         EasyMock.reset(artifactoryContext, executionContext, jobDetail, jobDataMap, configService, securityService,
-                addonsManager, replicationAddon);
+                addonsManager, replicationAddon, repositoryService);
     }
 
     protected void replayMocks() {
         EasyMock.replay(artifactoryContext, executionContext, jobDetail, jobDataMap, configService, securityService,
-                addonsManager, replicationAddon);
+                addonsManager, replicationAddon, repositoryService);
     }
 
     protected void verifyMocks() {
         EasyMock.verify(artifactoryContext, executionContext, jobDetail, jobDataMap, configService, securityService,
-                addonsManager, replicationAddon);
+                addonsManager, replicationAddon, repositoryService);
     }
 }

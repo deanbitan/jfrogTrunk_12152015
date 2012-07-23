@@ -53,8 +53,8 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
     @Override
     public void setDescriptor(T descriptor) {
         this.descriptor = descriptor;
-        this.includes = PathUtils.delimitedListToStringList(descriptor.getIncludesPattern(), ",", "\r\n\f ");
-        this.excludes = PathUtils.delimitedListToStringList(descriptor.getExcludesPattern(), ",", "\r\n\f ");
+        this.includes = PathUtils.includesExcludesPatternToStringList(descriptor.getIncludesPattern());
+        this.excludes = PathUtils.includesExcludesPatternToStringList(descriptor.getExcludesPattern());
         excludes.addAll(PathMatcher.getGlobalExcludes());
     }
 

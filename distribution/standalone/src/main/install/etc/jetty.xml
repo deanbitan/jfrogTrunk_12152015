@@ -99,6 +99,7 @@
             <Set name="SessionManager">
                 <New class="org.eclipse.jetty.server.session.HashSessionManager">
                     <Set name="maxInactiveInterval">1600</Set>
+                    <Set name="sessionIdPathParameterName">none</Set>
                 </New>
             </Set>
         </Get>

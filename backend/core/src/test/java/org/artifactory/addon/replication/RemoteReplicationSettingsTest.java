@@ -18,7 +18,6 @@
 
 package org.artifactory.addon.replication;
 
-import org.artifactory.addon.ReplicationAddon;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.testng.annotations.Test;
@@ -38,7 +37,7 @@ public class RemoteReplicationSettingsTest {
         RepoPath repoPath = InternalRepoPathFactory.create("momo", "pop");
         StringWriter responseWriter = new StringWriter();
         RemoteReplicationSettings settings = new RemoteReplicationSettings(repoPath, true, 15, true,
-                true, ReplicationAddon.Overwrite.never, responseWriter, 100);
+                true, ReplicationAddon.Overwrite.never, responseWriter, "momo.com", 100);
 
         assertEquals(settings.getRepoPath(), repoPath, "Unexpected repo path.");
         assertTrue(settings.isProgress(), "Unexpected progress display state.");
@@ -48,6 +47,7 @@ public class RemoteReplicationSettingsTest {
         assertEquals(settings.getOverwrite(), ReplicationAddon.Overwrite.never,
                 "Unexpected overwrite switch state.");
         assertEquals(settings.getResponseWriter(), responseWriter, "Unexpected response writer.");
+        assertEquals(settings.getUrl(), "momo.com", "Unexpected target URL.");
         assertEquals(settings.getSocketTimeoutMillis(), 100, "Unexpected socket timeout.");
     }
 }

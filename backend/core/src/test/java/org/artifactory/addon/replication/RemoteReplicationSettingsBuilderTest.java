@@ -18,7 +18,6 @@
 
 package org.artifactory.addon.replication;
 
-import org.artifactory.addon.ReplicationAddon;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.testng.annotations.Test;

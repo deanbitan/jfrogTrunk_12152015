@@ -21,8 +21,7 @@ package org.artifactory.descriptor.replication;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import static org.testng.Assert.*;
 
 /**
  * @author Noam Y. Tenne
@@ -39,6 +38,8 @@ public class LocalReplicationDescriptorTest extends ReplicationBaseDescriptorTes
                 "Unexpected default local replication timeout.");
         assertNull(replicationDescriptor.getUsername(), "Unexpected default local replication username.");
         assertNull(replicationDescriptor.getPassword(), "Unexpected default local replication password.");
+        assertFalse(replicationDescriptor.isEnableEventReplication(),
+                "Unexpected default enabled event replication state.");
     }
 
     @Test
@@ -51,12 +52,14 @@ public class LocalReplicationDescriptorTest extends ReplicationBaseDescriptorTes
         replicationDescriptor.setSocketTimeoutMillis(545454);
         replicationDescriptor.setUsername("momo");
         replicationDescriptor.setPassword("popo");
+        replicationDescriptor.setEnableEventReplication(true);
 
         assertEquals(replicationDescriptor.getUrl(), "http://asfaf.com", "Unexpected local replication URL.");
         assertEquals(replicationDescriptor.getProxy(), proxy, "Unexpected local replication proxy.");
         assertEquals(replicationDescriptor.getSocketTimeoutMillis(), 545454, "Unexpected local replication timeout.");
         assertEquals(replicationDescriptor.getUsername(), "momo", "Unexpected local replication username.");
         assertEquals(replicationDescriptor.getPassword(), "popo", "Unexpected local replication password.");
+        assertTrue(replicationDescriptor.isEnableEventReplication(), "Unexpected enabled event replication state.");
     }
 
     @Override

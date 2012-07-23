@@ -29,7 +29,7 @@ import javax.xml.bind.annotation.XmlType;
         "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "assumedOfflinePeriodSecs",
         "missedRetrievalCachePeriodSecs", "checksumPolicyType",
         "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties", "listRemoteFolderItems",
-        "remoteRepoLayout", "rejectInvalidJars", "p2Support", "nuget"}, namespace = Descriptor.NS)
+        "remoteRepoLayout", "rejectInvalidJars", "p2Support", "nuget", "p2OriginalUrl"}, namespace = Descriptor.NS)
 public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(required = true)
@@ -83,6 +83,9 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(defaultValue = "false", required = false)
     private boolean p2Support;
+
+    @XmlElement(required = false)
+    private String p2OriginalUrl;
 
     private NuGetConfiguration nuget;
 
@@ -220,6 +223,14 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     public void setP2Support(boolean p2Support) {
         this.p2Support = p2Support;
+    }
+
+    public String getP2OriginalUrl() {
+        return p2OriginalUrl;
+    }
+
+    public void setP2OriginalUrl(String p2OriginalUrl) {
+        this.p2OriginalUrl = p2OriginalUrl;
     }
 
     public NuGetConfiguration getNuget() {

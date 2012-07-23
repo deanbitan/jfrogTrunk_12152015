@@ -26,12 +26,16 @@ import org.artifactory.util.HttpUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 
 public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
 
     private final HttpServletRequest httpRequest;
 
-    public HttpArtifactoryRequest(HttpServletRequest httpRequest) {
+    public HttpArtifactoryRequest(HttpServletRequest httpRequest) throws UnsupportedEncodingException {
         this.httpRequest = httpRequest;
         String servletPath = RequestUtils.getServletPathFromRequest(httpRequest);
         RepoPath repoPath = calculateRepoPath(servletPath);
@@ -64,15 +68,31 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
     }
 
     @Override
+    public boolean hasIfModifiedSince() {
+        return getIfModifiedSince() != -1;
+    }
+
+    @Override
     public boolean isFromAnotherArtifactory() {
-        String origin = getOrigin();
-        return origin != null;
+        Enumeration origins = getOrigins();
+        return origins.hasMoreElements();
     }
 
     @Override
     public boolean isRecursive() {
-        String origin = getOrigin();
-        return origin != null && origin.equals(HttpUtils.getHostId());
+        Enumeration<String> origins = getOrigins();
+        if (origins != null && origins.hasMoreElements()) {
+            ArrayList<String> originsList = Collections.list(origins);
+            String currentHostId = HttpUtils.getHostId();
+            int numOfOrigins = originsList.size();
+            for (String origin : originsList) {
+                if (numOfOrigins > 1 && currentHostId.equals(origin)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -91,6 +111,11 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
     @Override
     public String getHeader(String headerName) {
         return httpRequest.getHeader(headerName);
+    }
+
+    @Override
+    public Enumeration getHeaders(String headerName) {
+        return httpRequest.getHeaders(headerName);
     }
 
     @Override
@@ -113,12 +138,11 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
         return getUri();
     }
 
-    @SuppressWarnings({"deprecation"})
-    private String getOrigin() {
-        String origin = httpRequest.getHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED);
-        if (origin == null) {
-            origin = httpRequest.getHeader(ArtifactoryRequest.ORIGIN_ARTIFACTORY);
+    private Enumeration getOrigins() {
+        Enumeration origins = getHeaders(ArtifactoryRequest.ARTIFACTORY_ORIGINATED);
+        if (origins == null) {
+            origins = getHeaders(ArtifactoryRequest.ORIGIN_ARTIFACTORY);
         }
-        return origin;
+        return origins;
     }
 }

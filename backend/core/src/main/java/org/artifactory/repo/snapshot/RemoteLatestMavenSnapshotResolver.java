@@ -49,17 +49,17 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 /**
- * Resolves the latest unique snapshot version given a non-unique Maven snapshot artifact request
- * for remote repositories.
+ * Resolves the latest unique snapshot version given a non-unique Maven snapshot artifact request for remote
+ * repositories.
  *
  * @author Shay Yaakov
  */
-public class RemoteLatestMavenSnapshotResolver extends LatestMavenSnapshotResolver {
+public class RemoteLatestMavenSnapshotResolver extends LatestSnapshotResolver {
     private static final Logger log = LoggerFactory.getLogger(RemoteLatestMavenSnapshotResolver.class);
 
     /**
-     * Downloads maven-metadata.xml from the remote and analyzes the latest version from it.
-     * If it does not exist, we return the original request context.
+     * Downloads maven-metadata.xml from the remote and analyzes the latest version from it. If it does not exist, we
+     * return the original request context.
      */
     @Override
     protected InternalRequestContext getRequestContext(InternalRequestContext requestContext, Repo repo,
@@ -117,7 +117,7 @@ public class RemoteLatestMavenSnapshotResolver extends LatestMavenSnapshotResolv
             }
         } catch (Exception e) {
             log.info("Could not download remote maven metadata for repo '{}' and path '{}'",
-                    metadataRepoPath.getRepoKey(), metadataRepoPath.getPath());
+                    new Object[]{metadataRepoPath.getRepoKey(), metadataRepoPath.getPath()}, e);
         }
         return null;
     }

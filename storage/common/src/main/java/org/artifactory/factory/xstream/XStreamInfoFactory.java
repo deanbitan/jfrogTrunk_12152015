@@ -262,8 +262,8 @@ public class XStreamInfoFactory extends AbstractInfoFactory {
     }
 
     @Override
-    public ZipEntryInfo createZipEntry(ZipEntry zipEntry) {
-        return new ZipEntryImpl(zipEntry);
+    public ZipEntryInfo createZipEntry(ZipEntry... zipEntries) {
+        return new ZipEntryImpl(zipEntries);
     }
 
     @Override

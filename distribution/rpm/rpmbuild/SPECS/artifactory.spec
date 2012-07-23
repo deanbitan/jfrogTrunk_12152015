@@ -141,7 +141,7 @@ if [ -e "$SERVICE_FILE" ]; then
 fi
 
 echo "Checking if group %{group_name} exists..."
-EXISTING_GROUP="`grep %{group_name} /etc/group | awk -F ':' '{ print $1 }' 2>/dev/null`"
+EXISTING_GROUP="`grep "%{group_name}:" /etc/group | awk -F ':' '{ print $1 }' 2>/dev/null`"
 
 if [ "$EXISTING_GROUP" != "%{group_name}" ]; then
   echo "Group %{group_name} doesn't exist. Creating ..."

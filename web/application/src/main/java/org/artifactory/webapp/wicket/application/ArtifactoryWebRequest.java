@@ -38,8 +38,8 @@ import org.apache.wicket.util.string.UrlUtils;
 import org.apache.wicket.util.time.Time;
 import org.apache.wicket.util.upload.FileItemFactory;
 import org.apache.wicket.util.upload.FileUploadException;
+import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.http.Cookie;

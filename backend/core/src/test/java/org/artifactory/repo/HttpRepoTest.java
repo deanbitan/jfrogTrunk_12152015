@@ -26,7 +26,6 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
-import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -63,9 +62,6 @@ public class HttpRepoTest extends ArtifactoryHomeBoundTest {
 
     @Test
     public void testProxyRemoteAuthAndMultihome() {
-        // set artifactory version (used by getUserAgent)
-        getBound().setProperty(ConstantValues.artifactoryVersion, "test");
-
         ProxyDescriptor proxyDescriptor = new ProxyDescriptor();
         proxyDescriptor.setHost("proxyHost");
         proxyDescriptor.setUsername("proxy-username");

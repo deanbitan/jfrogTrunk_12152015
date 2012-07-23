@@ -30,11 +30,13 @@ public class VersionRestResult {
     public String version;
     public String revision;
     public List<String> addons;
+    public String license;
 
-    public VersionRestResult(String version, String revision, List<String> addons) {
+    public VersionRestResult(String version, String revision, List<String> addons, String license) {
         this.version = version;
         this.revision = revision;
         this.addons = addons;
+        this.license = license;
     }
 
     /**

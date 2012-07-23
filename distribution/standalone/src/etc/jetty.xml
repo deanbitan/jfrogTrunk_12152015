@@ -83,6 +83,13 @@
             <Arg><SystemProperty name="jetty.home" default="."/>./open/web/war/src/main/webapp
             </Arg>
         </Call>
+        <Get name="SessionHandler">
+            <Set name="SessionManager">
+                <New class="org.eclipse.jetty.server.session.HashSessionManager">
+                    <Set name="sessionIdPathParameterName">none</Set>
+                </New>
+            </Set>
+        </Get>
     </New>
 
     <!-- =========================================================== -->

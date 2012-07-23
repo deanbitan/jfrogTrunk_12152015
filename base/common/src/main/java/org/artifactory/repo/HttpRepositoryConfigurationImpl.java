@@ -55,7 +55,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private String url;
     private String username = "";
     private String password = "";
-    private String proxy = "";
+    private String proxy;
     private boolean handleReleases = true;
     private boolean handleSnapshots = true;
     private boolean suppressPomConsistencyChecks = false;

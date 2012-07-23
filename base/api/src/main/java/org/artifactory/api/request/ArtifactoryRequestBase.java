@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Enumeration;
 
 public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryRequestBase.class);
@@ -85,6 +86,26 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
     @Override
     public boolean isZipResourceRequest() {
         return StringUtils.isNotBlank(zipResourcePath);
+    }
+
+    @Override
+    public boolean isNoneMatch(String etag) {
+        if (StringUtils.isBlank(etag)) {
+            return true;
+        }
+        Enumeration ifNoneMatch = getHeaders("If-None-Match");
+        while (ifNoneMatch != null && ifNoneMatch.hasMoreElements()) {
+            Object requestIfNoneMatch = ifNoneMatch.nextElement();
+            if (etag.equals(requestIfNoneMatch)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean hasIfNoneMatch() {
+        return getHeader("If-None-Match") != null;
     }
 
     @Override
@@ -164,10 +185,11 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
     }
 
     /**
-     * Calculates a repoPath based on the given servlet path (path after the context root, including the repo prefix).
+     * Decodes and calculates a repoPath based on the given servlet path (path after the context root, including the
+     * repo prefix).
      */
     @SuppressWarnings({"deprecation"})
-    protected RepoPath calculateRepoPath(String requestPath) {
+    protected RepoPath calculateRepoPath(String requestPath) throws UnsupportedEncodingException {
         String repoKey = PathUtils.getFirstPathElement(requestPath);
         // index where the path to the file or directory starts (i.e., the request path after the repository key)
         int pathStartIndex;
@@ -202,6 +224,12 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         //Calculate matrix params on the repo
         repoKey = processMatrixParamsIfExist(repoKey);
 
+        /**
+         * Decode the repo key before performing sys-prop based substitution, otherwise the substitution would be based
+         * on the potentially encoded repo key
+         */
+        repoKey = URLDecoder.decode(repoKey, "UTF-8");
+
         //Test if we need to substitute the targetRepo due to system prop existence
         String substTargetRepo = ArtifactoryHome.get().getArtifactoryProperties().getSubstituteRepoKeys().get(repoKey);
         if (substTargetRepo != null) {
@@ -220,10 +248,11 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         // calculate zip resource path and return path without the zip resource path
         path = processZipResourcePathIfExist(path);
 
+        path = URLDecoder.decode(path.replace("+", "%2B"), "UTF-8").replace("%2B", "+");
         return InfoFactoryHolder.get().createRepoPath(repoKey, path);
     }
 
-    private String processMatrixParamsIfExist(String fragment) {
+    protected String processMatrixParamsIfExist(String fragment) {
         int matrixParamStart = fragment.indexOf(Properties.MATRIX_PARAMS_SEP);
         if (matrixParamStart > 0) {
             processMatrixParams(this.properties, fragment.substring(matrixParamStart));
@@ -244,17 +273,11 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
      *         contain '!' as part of the path).
      */
     private String processZipResourcePathIfExist(String path) {
-        int zipResourceStart = path.indexOf(RepoPath.ARCHIVE_SEP);
-        if (zipResourceStart > 0) {
-            zipResourcePath = path.substring(zipResourceStart + 1, path.length());
-            if (zipResourcePath.startsWith("/")) {
-                // all paths are relative inside the zip, so remove the '/' from the beginning
-                zipResourcePath = zipResourcePath.substring(1, zipResourcePath.length());
-            }
-            // remove the zip resource sub path from the main path
-            path = path.substring(0, zipResourceStart);
+        String[] splitPath = PathUtils.splitZipResourcePathIfExist(path, false);
+        if (splitPath.length > 1) {
+            zipResourcePath = splitPath[1];
         }
-        return path;
+        return splitPath[0];
     }
 
     @Override
@@ -298,6 +321,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         } while (matrixParamStart > 0 && matrixParamStart < matrixParams.length());
     }
 
+    @Override
     public boolean isDirectoryRequest() {
         String uri = this.getUri();
         boolean endsWithSlash = uri.endsWith("/");

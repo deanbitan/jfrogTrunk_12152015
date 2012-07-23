@@ -45,9 +45,11 @@ checkCurrentInstall() {
 # List backups available
 listCurrentBackups() {
     NO_FHS_BACKUP_FOLDER="/var/lib"
-    FHS_BACKUP_FOLDER="/var/opt"
+    OLD_FHS_BACKUP_FOLDER="/var/opt"
+    FHS_BACKUP_FOLDER="/var/opt/jfrog"
     NO_FHS_BACKUP_FOLDERS=`'ls' --format=single-column $NO_FHS_BACKUP_FOLDER | grep artifactory.backup`
-    FHS_BACKUP_FOLDERS=`'ls' --format=single-column $FHS_BACKUP_FOLDER | grep jfrog.artifactory.backup`
+    OLD_FHS_BACKUP_FOLDERS=`'ls' --format=single-column $OLD_FHS_BACKUP_FOLDER | grep jfrog.artifactory.backup`
+    FHS_BACKUP_FOLDERS=`'ls' --format=single-column $FHS_BACKUP_FOLDER | grep artifactory.backup`
     if [ -n "$NO_FHS_BACKUP_FOLDERS" ] || [ -n "$FHS_BACKUP_FOLDERS" ]; then
         echo "INFO: Backups available: "
         echo ""
@@ -58,6 +60,11 @@ listCurrentBackups() {
             let C=$C+1
         done
         FHS_NUMBER=$C
+        for j in $OLD_FHS_BACKUP_FOLDERS; do
+            FILE_LIST[$C]="$OLD_FHS_BACKUP_FOLDER/$j"
+            echo "$C) ${FILE_LIST[$C]}"
+            let C=$C+1
+        done
         for j in $FHS_BACKUP_FOLDERS; do
             FILE_LIST[$C]="$FHS_BACKUP_FOLDER/$j"
             echo "$C) ${FILE_LIST[$C]}"

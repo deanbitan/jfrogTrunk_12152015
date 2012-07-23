@@ -19,15 +19,18 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.panels;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.util.time.Duration;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.webapp.wicket.behavior.AbstractAjaxRestartableTimerBehavior;
 
 import java.util.concurrent.TimeUnit;
 
@@ -47,50 +50,108 @@ public class OnlineStatusPanel extends Panel {
     @SpringBean
     private AuthorizationService authorizationService;
 
-    public OnlineStatusPanel(String id, RemoteRepoDescriptor remoteRepo) {
+
+    private RemoteRepoDescriptor remoteReposetry;
+    private AbstractAjaxRestartableTimerBehavior behavior;
+    private LabeledValue onlineStatusLabel;
+    private boolean isOffline;
+
+    OnlineStatusPanel(String id, RemoteRepoDescriptor remoteRepo) {
         super(id);
         setOutputMarkupId(true);
-        addOnlineInfo(remoteRepo);
+        this.remoteReposetry = remoteRepo;
+        isOffline = remoteRepo.isOffline() || centralConfigService.getDescriptor().isOfflineMode();
+        onlineStatusLabel = new LabeledValue("status", "Online Status: ", "");
+        onlineStatusLabel.setValue(getStatusText(remoteRepo, isOffline));
+        behavior = new AbstractAjaxRestartableTimerBehavior(Duration.seconds(getSecondsForNextRefresh()),
+                "ajaxRefresh") {
+
+            @Override
+            protected void onTimer(AjaxRequestTarget target) {
+                onlineStatusLabel.setValue(getStatusText(remoteReposetry, isOffline));
+                this.setUpdateInterval(Duration.seconds(getSecondsForNextRefresh()));
+                target.add(OnlineStatusPanel.this);
+            }
+        };
+
+        // WebMarkupContainer statusLabel=new WebMarkupContainer("statusLabel");
+        // add(statusLabel);
+        onlineStatusLabel.setOutputMarkupId(true);
+
+        addOnlineInfo();
     }
 
-    private void addOnlineInfo(final RemoteRepoDescriptor remoteRepo) {
-        final boolean isOffline = remoteRepo == null || remoteRepo.isOffline()
-                || centralConfigService.getDescriptor().isOfflineMode();
-        String status = getStatusText(remoteRepo, isOffline);
-        final LabeledValue offlineLabel = new LabeledValue("status", "Online Status: ", status);
-        add(offlineLabel);
+    @Override
+    public void renderHead(IHeaderResponse response) {
+        super.renderHead(response);
+        response.renderOnDomReadyJavaScript("var refreshLabel");
+        response.renderOnDomReadyJavaScript("clearTimeout(refreshLabel)");
+        if (behavior != null && remoteReposetry != null && onlineStatusLabel != null) {
+            onlineStatusLabel.setValue(getStatusText(remoteReposetry, isOffline));
 
+            if (repositoryService.isRemoteAssumedOffline(remoteReposetry.getKey())) {
+
+                response.renderOnLoadJavaScript("refreshLabel=GetCount(" + repositoryService.getRemoteNextOnlineCheck(
+                        remoteReposetry.getKey()) + ", 'statusLabel')");
+                if (behavior.isStopped()) {
+                    behavior.setUpdateInterval(Duration.seconds(getSecondsForNextRefresh()));
+                    behavior.start();
+                }
+
+            } else {
+                behavior.stop();
+                response.renderOnDomReadyJavaScript("clearTimeout(ajaxRefresh)");
+                response.renderOnDomReadyJavaScript("clearTimeout(refreshLabel)");
+            }
+
+        }
+    }
+
+    private void addOnlineInfo() {
+
+
+        onlineStatusLabel.add(behavior);
+        add(onlineStatusLabel);
         WebMarkupContainer resetButton = new TitledAjaxLink("resetButton", "Set Online") {
+
             @Override
             public void onClick(AjaxRequestTarget target) {
-                repositoryService.resetAssumedOffline(remoteRepo.getKey());
-                offlineLabel.setValue(getStatusText(remoteRepo, isOffline));
+                repositoryService.resetAssumedOffline(remoteReposetry.getKey());
+                onlineStatusLabel.setValue(getStatusText(remoteReposetry, isOffline));
+                /* //stops java script refreshing of counter
+                behavior.stop();
+                target.appendJavaScript("clearTimeout(refreshLabel)");*/
                 target.add(OnlineStatusPanel.this);
+                target.appendJavaScript("clearTimeout(refreshLabel)");
             }
 
             @Override
             public boolean isVisible() {
-                return authorizationService.isAdmin() &&
-                        repositoryService.isRemoteAssumedOffline(remoteRepo.getKey());
+
+                return (authorizationService.isAdmin() &&
+                        repositoryService.isRemoteAssumedOffline(remoteReposetry.getKey()));
             }
         };
-
         add(resetButton);
+    }
+
+    private long getSecondsForNextRefresh() {
+        long nextCheckTime = repositoryService.getRemoteNextOnlineCheck(remoteReposetry.getKey());
+        long nextCheckSeconds = Math.max(0,
+                TimeUnit.MILLISECONDS.toSeconds(nextCheckTime - System.currentTimeMillis()));
+        return nextCheckSeconds + 1;
     }
 
     private String getStatusText(RemoteRepoDescriptor remoteRepo, boolean offline) {
         String status = "Online";
         if (offline) {
             status = "Offline";
-        } else {
-            if (repositoryService.isRemoteAssumedOffline(remoteRepo.getKey())) {
-                long nextCheckTime = repositoryService.getRemoteNextOnlineCheck(remoteRepo.getKey());
-                long nextCheckSeconds = Math.max(0,
-                        TimeUnit.MILLISECONDS.toSeconds(nextCheckTime - System.currentTimeMillis()));
-                status = "Assumed offline (retry in " + nextCheckSeconds + " seconds...)";
-
-            }
+        }
+        if (repositoryService.isRemoteAssumedOffline(remoteRepo.getKey())) {
+            status = "Assumed offline.";
         }
         return status;
     }
+
+
 }

@@ -22,6 +22,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
@@ -769,6 +771,11 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         return StorageContextHelper.get().getAuthorizationService();
     }
 
+    protected ReplicationAddon getReplicationAddon() {
+        AddonsManager addonsManager = StorageContextHelper.get().beanForType(AddonsManager.class);
+        return addonsManager.addonByType(ReplicationAddon.class);
+    }
+
     /**
      * Export all metadata as the real xml content (jcr:data, including comments etc.) into a
      * {item-name}.artifactory-metadata folder, where each metadata is named {metadata-name}.xml
@@ -871,7 +878,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         }
     }
 
-    protected void importMetadata(File sourcePath, MutableStatusHolder status, ImportSettings settings) {
+    protected boolean importMetadata(File sourcePath, MutableStatusHolder status, ImportSettings settings) {
         try {
             File metadataFolder = getMetadataContainerFolder(sourcePath);
             if (!metadataFolder.exists()) {
@@ -881,7 +888,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
                             "' during import into " + getRepoPath();
                     status.setWarning(msg, log);
                 }
-                return;
+                return false;
             }
 
             MetadataReader metadataReader = getVfsDataService().fillBestMatchMetadataReader(settings, metadataFolder);
@@ -915,7 +922,10 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
             String msg =
                     "Failed to import metadata of " + sourcePath.getAbsolutePath() + " into '" + getRepoPath() + "'.";
             status.setError(msg, e, log);
+            return false;
         }
+
+        return true;
     }
 
     private VfsService getVfsDataService() {
@@ -1142,7 +1152,9 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         MetadataDefinition<T, T> definition = getMdService().getMetadataDefinition(mdClass);
         MetadataPersistenceHandler<T, T> mdph = definition.getPersistenceHandler();
         mdph.update(this, metadata);
-        if (definition.getMetadataName().equals(PropertiesInfo.ROOT)) {
+        String metadataName = definition.getMetadataName();
+        getReplicationAddon().offerLocalReplicationMetadataDeploymentEvent(this.getRepoPath(), metadataName);
+        if (metadataName.equals(PropertiesInfo.ROOT)) {
             if (!((Properties) metadata).isEmpty()) {
                 // only log the properties as metadata/annotate access (the rest are internal)
                 AccessLogger.annotated(getRepoPath(), "properties");
@@ -1166,6 +1178,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         MetadataDefinition definition = getMdService().getMetadataDefinition(metadataName, true);
         MetadataPersistenceHandler mdph = definition.getPersistenceHandler();
         mdph.update(this, definition.getXmlProvider().fromXml(xmlData));
+        getReplicationAddon().offerLocalReplicationMetadataDeploymentEvent(this.getRepoPath(), metadataName);
         AccessLogger.annotated(getRepoPath(), metadataName);
     }
 
@@ -1184,6 +1197,7 @@ public abstract class JcrFsItem<T extends ItemInfo, MT extends MutableItemInfo>
         MetadataPersistenceHandler metadataPersistenceHandler = definition.getPersistenceHandler();
         if (metadataPersistenceHandler.hasMetadata(this)) {
             metadataPersistenceHandler.remove(this);
+            getReplicationAddon().offerLocalReplicationMetadataDeleteEvent(this.getRepoPath(), metadataName);
             AccessLogger.annotationDeleted(getRepoPath(), metadataName);
         }
     }

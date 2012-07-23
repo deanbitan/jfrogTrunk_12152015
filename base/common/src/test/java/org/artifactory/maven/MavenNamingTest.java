@@ -21,6 +21,7 @@ package org.artifactory.maven;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
+import org.artifactory.util.PathUtils;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -282,9 +283,9 @@ public class MavenNamingTest extends ArtifactoryHomeBoundTest {
     }
 
     public void checksumTargetFile() {
-        assertEquals(MavenNaming.getChecksumTargetFile("/a/b/c.jar.sha1"), "/a/b/c.jar");
-        assertEquals(MavenNaming.getChecksumTargetFile("a.pom.md5"), "a.pom");
-        assertEquals(MavenNaming.getChecksumTargetFile("/a/b/c.jar"), "/a/b/c");
-        assertEquals(MavenNaming.getChecksumTargetFile("/a/b/c"), "/a/b/c");
+        assertEquals(PathUtils.stripExtension("/a/b/c.jar.sha1"), "/a/b/c.jar");
+        assertEquals(PathUtils.stripExtension("a.pom.md5"), "a.pom");
+        assertEquals(PathUtils.stripExtension("/a/b/c.jar"), "/a/b/c");
+        assertEquals(PathUtils.stripExtension("/a/b/c"), "/a/b/c");
     }
 }

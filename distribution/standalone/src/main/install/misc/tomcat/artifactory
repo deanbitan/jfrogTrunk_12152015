@@ -58,8 +58,8 @@ findShutdownPort() {
 isAlive() {
     pidValue=""
     javaPs=""
-    if [ -e "${CATALINA_PID}" ]; then
-        pidValue=`cat ${CATALINA_PID}`
+    if [ -e "$CATALINA_PID" ]; then
+        pidValue=`cat $CATALINA_PID`
         if [ -n "$pidValue" ]; then
             javaPs="`ps -p $pidValue | grep java`"
         fi
@@ -102,7 +102,7 @@ to your /etc/security/limits.conf file."
             exit 1
         fi
         echo "Artifactory Tomcat started in normal mode"
-        [ $RETVAL=0 ] && touch ${CATALINA_LOCK_FILE}
+        [ $RETVAL=0 ] && touch $CATALINA_LOCK_FILE
     fi
 }
 

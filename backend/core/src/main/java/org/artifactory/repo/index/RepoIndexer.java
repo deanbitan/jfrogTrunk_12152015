@@ -19,7 +19,6 @@ import org.apache.maven.index.ArtifactScanningListener;
 import org.apache.maven.index.DefaultIndexerEngine;
 import org.apache.maven.index.DefaultNexusIndexer;
 import org.apache.maven.index.DefaultQueryCreator;
-import org.apache.maven.index.DefaultScanner;
 import org.apache.maven.index.DefaultSearchEngine;
 import org.apache.maven.index.ScanningResult;
 import org.apache.maven.index.context.IndexCreator;
@@ -86,11 +85,10 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
         this.repo = repo;
         //Unplexus
         FieldUtils.setProtectedFieldValue("indexerEngine", this, new DefaultIndexerEngine());
-        DefaultScanner scanner = new DefaultScanner();
         ArtifactoryArtifactContextProducer artifactContextProducer = new ArtifactoryArtifactContextProducer(repo);
         FieldUtils.setProtectedFieldValue("pl", artifactContextProducer, new PomLocator());
         FieldUtils.setProtectedFieldValue("ml", artifactContextProducer, new MetadataLocator());
-        FieldUtils.setProtectedFieldValue("artifactContextProducer", scanner, artifactContextProducer);
+        ArtifactoryContentScanner scanner = new ArtifactoryContentScanner(artifactContextProducer);
         FieldUtils.setProtectedFieldValue("scanner", this, scanner);
         DefaultQueryCreator queryCreator = new DefaultQueryCreator();
         FieldUtils.setProtectedFieldValue("logger", queryCreator,

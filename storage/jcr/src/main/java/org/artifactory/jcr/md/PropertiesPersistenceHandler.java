@@ -18,7 +18,6 @@
 
 package org.artifactory.jcr.md;
 
-import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
@@ -35,7 +34,6 @@ import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
 import java.util.Set;
 
@@ -107,6 +105,7 @@ public class PropertiesPersistenceHandler
     public void update(MetadataAware metadataAware, MutablePropertiesInfo properties) {
         if (properties == null || properties.isEmpty()) {
             remove(metadataAware);
+
             return;
         }
         Node propertiesNode = getPropertiesNode(metadataAware, true);

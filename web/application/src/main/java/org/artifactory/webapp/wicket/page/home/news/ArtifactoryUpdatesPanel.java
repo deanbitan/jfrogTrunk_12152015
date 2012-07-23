@@ -36,7 +36,11 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.template.HtmlTemplate;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 import org.artifactory.common.wicket.util.CookieUtils;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.util.HttpUtils;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Yoav Aharoni
@@ -61,7 +65,8 @@ public class ArtifactoryUpdatesPanel extends Panel {
         }
 
         // init message model
-        final Message message = artifactoryUpdatesService.getMessage();
+        HttpServletRequest httpServletRequest = WicketUtils.getHttpServletRequest();
+        final Message message = artifactoryUpdatesService.getMessage(HttpUtils.isSSL(httpServletRequest));
 
         // add collapsible container
         final HtmlTemplate template = new HtmlTemplate("container");

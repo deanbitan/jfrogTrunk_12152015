@@ -115,6 +115,10 @@ public interface NuGetAddon extends Addon {
     void handlePackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
             @Nonnull OutputStream output) throws IOException;
 
+    @Lock(transactional = true)
+    void handleFindPackagesByIdRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
+            @Nonnull OutputStream output) throws IOException;
+
     /**
      * Prepares a nupkg deployment repository path
      *

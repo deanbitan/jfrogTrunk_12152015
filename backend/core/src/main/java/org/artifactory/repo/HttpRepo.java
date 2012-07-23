@@ -27,6 +27,7 @@ import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.StatusLine;
+import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.util.DateParseException;
@@ -48,6 +49,7 @@ import org.artifactory.io.NullResourceStreamHandle;
 import org.artifactory.io.RemoteResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.remote.browse.HtmlRepositoryBrowser;
 import org.artifactory.repo.remote.browse.HttpExecutor;
 import org.artifactory.repo.remote.browse.RemoteItem;
@@ -57,9 +59,9 @@ import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.NullRequestContext;
 import org.artifactory.request.RemoteRequestException;
+import org.artifactory.request.RepoRequests;
 import org.artifactory.request.Request;
 import org.artifactory.request.RequestContext;
-import org.artifactory.request.RequestTraceLogger;
 import org.artifactory.resource.RemoteRepoResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
@@ -74,11 +76,10 @@ import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -218,7 +219,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         assert !isOffline() : "Should never be called in offline mode";
         String pathForUrl = convertRequestPathIfNeeded(relPath);
         if (!relPath.equals(pathForUrl)) {
-            RequestTraceLogger.log("Remote resource path was translated (%s) due to repository " +
+            RepoRequests.logToContext("Remote resource path was translated (%s) due to repository " +
                     "layout differences", pathForUrl);
         }
         Request request = requestContext.getRequest();
@@ -226,46 +227,44 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             String alternativeRemoteDownloadUrl =
                     request.getParameter(ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL);
             if (StringUtils.isNotBlank(alternativeRemoteDownloadUrl)) {
-                RequestTraceLogger.log("Request contains alternative remote resource path ({}=%s)",
+                RepoRequests.logToContext("Request contains alternative remote resource path ({}=%s)",
                         ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL, alternativeRemoteDownloadUrl);
                 pathForUrl = alternativeRemoteDownloadUrl;
             }
         }
 
-        if (getDescriptor().isSynchronizeProperties()) {
-            RequestTraceLogger.log("Appending properties to remote request URL if needed");
-            pathForUrl += encodeForRequest(requestContext.getProperties());
-        }
+        RepoRequests.logToContext("Appending matrix params to remote request URL");
+        pathForUrl += buildRequestMatrixParams(requestContext.getProperties());
         final String fullUrl = appendAndGetUrl(convertRequestPathIfNeeded(pathForUrl));
-        RequestTraceLogger.log("Using remote request URL - %s", fullUrl);
+        RepoRequests.logToContext("Using remote request URL - %s", fullUrl);
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         final PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
 
         final RepoPath repoPath = InternalRepoPathFactory.create(getKey(), pathForUrl);
         final Request requestForPlugins = requestContext.getRequest();
         pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, null, requestForPlugins, repoPath);
-        RequestTraceLogger.log("Executing any BeforeRemoteDownload user plugins the may exist");
+        RepoRequests.logToContext("Executing any BeforeRemoteDownload user plugins the may exist");
 
-        final GetMethod method = new GetMethod(fullUrl);
-        RequestTraceLogger.log("Executing GET request to %s", fullUrl);
+        final GetMethod method = new GetMethod(HttpUtils.encodeQuery(fullUrl));
+        RepoRequests.logToContext("Executing GET request to %s", fullUrl);
         executeMethod(method);
 
         int statusCode = method.getStatusCode();
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
             //Not found
             method.releaseConnection();
-            RequestTraceLogger.log("Received response status %s - throwing exception", statusCode);
+            RepoRequests.logToContext("Received response status %s - throwing exception", statusCode);
             throw new RemoteRequestException("Unable to find " + fullUrl, statusCode);
         }
         if (statusCode != HttpStatus.SC_OK) {
             String msg = "Error fetching " + fullUrl;
             method.releaseConnection();
-            RequestTraceLogger.log("Received response status %s - throwing exception", statusCode);
+            RepoRequests.logToContext("Received response status %s - throwing exception", statusCode);
             throw new RemoteRequestException(msg, statusCode);
         }
         //Found
         log.info("{}: Downloading content from '{}'...", this, fullUrl);
-        RequestTraceLogger.log("Downloading content");
+        RepoRequests.logToContext("Downloading content");
 
         final InputStream is = HttpUtils.getGzipAwareResponseStream(method);
 
@@ -292,47 +291,16 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                             new Object[]{HttpRepo.this, fullUrl,
                                     statusLine != null ? statusLine.getStatusCode() : "unknown",
                                     throwable.getMessage()});
-                    RequestTraceLogger.log("Failed to download: %s", throwable.getMessage());
+                    RepoRequests.logToContext("Failed to download: %s", throwable.getMessage());
                 } else {
                     log.info("{}: Downloaded '{}' with return code: {}.", new Object[]{HttpRepo.this, fullUrl,
                             statusLine != null ? statusLine.getStatusCode() : "unknown"});
-                    RequestTraceLogger.log("Downloaded content");
+                    RepoRequests.logToContext("Downloaded content");
                 }
                 pluginAddon.execPluginActions(AfterRemoteDownloadAction.class, null, requestForPlugins, repoPath);
-                RequestTraceLogger.log("Executing any AfterRemoteDownload user plugins the may exist");
+                RepoRequests.logToContext("Executing any AfterRemoteDownload user plugins the may exist");
             }
         };
-    }
-
-    /**
-     * Encodes the given properties ready to attach to an HTTP request
-     *
-     * @param requestProperties Properties to encode. Can be null
-     * @return HTTP request ready property chain
-     */
-    public static String encodeForRequest(Properties requestProperties) throws UnsupportedEncodingException {
-        StringBuilder requestPropertyBuilder = new StringBuilder();
-        if (requestProperties != null) {
-            for (Map.Entry<String, String> requestPropertyEntry : requestProperties.entries()) {
-                requestPropertyBuilder.append(Properties.MATRIX_PARAMS_SEP);
-
-                String key = requestPropertyEntry.getKey();
-                boolean isMandatory = false;
-                if (key.endsWith(Properties.MANDATORY_SUFFIX)) {
-                    key = key.substring(0, key.length() - 1);
-                    isMandatory = true;
-                }
-                requestPropertyBuilder.append(URLEncoder.encode(key, "utf-8"));
-                if (isMandatory) {
-                    requestPropertyBuilder.append("+");
-                }
-                String value = requestPropertyEntry.getValue();
-                if (StringUtils.isNotBlank(value)) {
-                    requestPropertyBuilder.append("=").append(URLEncoder.encode(value, "utf-8"));
-                }
-            }
-        }
-        return requestPropertyBuilder.toString();
     }
 
     /**
@@ -365,14 +333,14 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         RepoPath repoPath = InternalRepoPathFactory.create(this.getKey(), path);
 
         String fullUrl = assembleRetrieveInfoUrl(path, context);
-        HeadMethod method = new HeadMethod(fullUrl);
-        RequestTraceLogger.log("Executing HEAD request to %s", fullUrl);
+        HeadMethod method = new HeadMethod(HttpUtils.encodeQuery(fullUrl));
+        RepoRequests.logToContext("Executing HEAD request to %s", fullUrl);
         try {
 
             try {
                 executeMethod(method);
             } catch (IOException e) {
-                RequestTraceLogger.log("Failed to execute HEAD request: %s", e.getMessage());
+                RepoRequests.logToContext("Failed to execute HEAD request: %s", e.getMessage());
                 StringBuilder messageBuilder = new StringBuilder("Failed retrieving resource from ").append(fullUrl).
                         append(": ");
                 if (e instanceof UnknownHostException) {
@@ -382,7 +350,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 throw new RuntimeException(messageBuilder.toString(), e);
             }
 
-            return handleGetInfoResponse(repoPath, fullUrl, method);
+            return handleGetInfoResponse(repoPath, method);
         } finally {
             //Released the connection back to the connection manager
             method.releaseConnection();
@@ -392,7 +360,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     protected String assembleRetrieveInfoUrl(String path, RequestContext context) {
         String pathForUrl = convertRequestPathIfNeeded(path);
         if (!path.equals(pathForUrl)) {
-            RequestTraceLogger.log("Remote resource path was translated (%s) due to repository " +
+            RepoRequests.logToContext("Remote resource path was translated (%s) due to repository " +
                     "layout differences", pathForUrl);
         }
         boolean validContext = context != null;
@@ -402,7 +370,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 String alternativeRemoteDownloadUrl =
                         request.getParameter(ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL);
                 if (StringUtils.isNotBlank(alternativeRemoteDownloadUrl)) {
-                    RequestTraceLogger.log("Request contains alternative remote resource path ({}=%s)",
+                    RepoRequests.logToContext("Request contains alternative remote resource path ({}=%s)",
                             ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL, alternativeRemoteDownloadUrl);
                     pathForUrl = alternativeRemoteDownloadUrl;
                 }
@@ -410,54 +378,63 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
 
         String fullUrl = appendAndGetUrl(pathForUrl);
-        if (validContext && getDescriptor().isSynchronizeProperties()) {
-            RequestTraceLogger.log("Appending properties to remote request URL if needed");
+        if (validContext) {
+            RepoRequests.logToContext("Appending matrix params to remote request URL");
             Properties properties = context.getProperties();
-            try {
-                fullUrl += encodeForRequest(properties);
-            } catch (UnsupportedEncodingException e) {
-                RequestTraceLogger.log("Failed to encode remote request properties: %s", e.getMessage());
-                throw new RuntimeException("Failed to encode request properties '" + properties + "' for request '" +
-                        fullUrl + "'.", e);
-            }
+            fullUrl += buildRequestMatrixParams(properties);
         }
-        RequestTraceLogger.log("Using remote request URL - %s", fullUrl);
+        RepoRequests.logToContext("Using remote request URL - %s", fullUrl);
         return fullUrl;
     }
 
-    protected RepoResource handleGetInfoResponse(RepoPath repoPath, String fullUrl, HttpMethodBase method) {
+    protected RepoResource handleGetInfoResponse(RepoPath repoPath, HttpMethodBase method) {
         if (method.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-            RequestTraceLogger.log("Received status 404 (message: %s) on remote info request - returning unfound " +
+            RepoRequests.logToContext("Received status 404 (message: %s) on remote info request - returning unfound " +
                     "resource", method.getStatusText());
             return new UnfoundRepoResource(repoPath, method.getStatusText());
         }
         //If redirected to a directory - return 404
         if (method.getPath().endsWith("/")) {
-            RequestTraceLogger.log("Remote info request was redirected to a directory - returning unfound resource");
+            RepoRequests.logToContext("Remote info request was redirected to a directory - returning unfound resource");
             return new UnfoundRepoResource(repoPath, "Expected file response but received a directory response.");
         }
         if (method.getStatusCode() != HttpStatus.SC_OK) {
-            RequestTraceLogger.log("Received status {} (message: %s) on remote info request - returning unfound " +
+            RepoRequests.logToContext("Received status {} (message: %s) on remote info request - returning unfound " +
                     "resource", method.getStatusCode(), method.getStatusText());
             // send back unfound resource with 404 status
             return new UnfoundRepoResource(repoPath, method.getStatusText());
         }
 
         long lastModified = getLastModified(method);
-        RequestTraceLogger.log("Found remote resource with last modified time - %s",
+        RepoRequests.logToContext("Found remote resource with last modified time - %s",
                 new Date(lastModified).toString());
 
         long size = getContentLength(method);
         if (size != -1) {
-            RequestTraceLogger.log("Found remote resource with content length - %s", size);
+            RepoRequests.logToContext("Found remote resource with content length - %s", size);
         }
 
         Set<ChecksumInfo> checksums = getChecksums(method);
         if (!checksums.isEmpty()) {
-            RequestTraceLogger.log("Found remote resource with checksums - %s", checksums);
+            RepoRequests.logToContext("Found remote resource with checksums - %s", checksums);
         }
 
-        RequestTraceLogger.log("Returning found remote resource info");
+        String filename = getFilename(method);
+        if (StringUtils.isNotBlank(filename)) {
+            RepoRequests.logToContext("Found remote resource with filename header - %s", filename);
+            String originalPath = repoPath.getPath();
+            if (NamingUtils.isMetadata(originalPath)) {
+                String originalPathStrippedOfMetadata = NamingUtils.getMetadataParentPath(originalPath);
+                String originalPathWithMetadataNameFromHeader =
+                        NamingUtils.getMetadataPath(originalPathStrippedOfMetadata, filename);
+                repoPath = InternalRepoPathFactory.create(repoPath.getRepoKey(),
+                        originalPathWithMetadataNameFromHeader);
+            } else {
+                repoPath = InternalRepoPathFactory.create(repoPath.getParent(), filename);
+            }
+        }
+
+        RepoRequests.logToContext("Returning found remote resource info");
         RepoResource res = new RemoteRepoResource(repoPath, lastModified, size, checksums);
         return res;
     }
@@ -488,12 +465,22 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private void updateMethod(HttpMethod method, boolean followRedirects) {
         //Explicitly force keep alive
         method.setRequestHeader("Connection", "Keep-Alive");
-        //Set the current requester
-        method.setRequestHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, HttpUtils.getHostId());
+
+        //Add the current requester host id
+        Set<String> originatedHeaders = RepoRequests.getOriginatedHeaders();
+        for (String originatedHeader : originatedHeaders) {
+            method.addRequestHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, originatedHeader);
+        }
+        method.addRequestHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, HttpUtils.getHostId());
+
         //For backwards compatibility
         method.setRequestHeader(ArtifactoryRequest.ORIGIN_ARTIFACTORY, HttpUtils.getHostId());
+
         //Follow redirects
-        method.setFollowRedirects(followRedirects);
+        if (!(method instanceof EntityEnclosingMethod)) {
+            method.setFollowRedirects(followRedirects);
+        }
+
         //Set gzip encoding
         if (handleGzipResponse) {
             method.addRequestHeader("Accept-Encoding", "gzip");
@@ -512,6 +499,24 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             log.warn("Unable to parse Last-Modified header : " + lastModifiedString);
             return System.currentTimeMillis();
         }
+    }
+
+    private static String getFilename(HttpMethod method) {
+        // Try our custom X-Artifactory-Filename header
+        Header filenameHeader = method.getResponseHeader(ArtifactoryRequest.FILE_NAME);
+        if (filenameHeader != null) {
+            String filenameString = filenameHeader.getValue();
+            try {
+                return URLDecoder.decode(filenameString, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                log.warn("Unable to decode '{}' header '{}', returning un-encoded value.",
+                        ArtifactoryRequest.FILE_NAME, filenameString);
+                return filenameString;
+            }
+        }
+
+        // Didn't find any filename, return null
+        return null;
     }
 
     public static long getContentLength(HttpMethod method) {
@@ -672,7 +677,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         private boolean checkOnline() {
             // always test with url trailing slash
             String url = PathUtils.addTrailingSlash(getDescriptor().getUrl());
-            GetMethod getMethod = new GetMethod(url);
+            GetMethod getMethod = new GetMethod(HttpUtils.encodeQuery(url));
             try {
                 log.debug("Online monitor checking URL: {}", url);
                 int status = client.executeMethod(getMethod);

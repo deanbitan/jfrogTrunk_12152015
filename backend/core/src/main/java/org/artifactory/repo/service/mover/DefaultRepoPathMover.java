@@ -18,6 +18,8 @@
 
 package org.artifactory.repo.service.mover;
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.StatusEntry;
@@ -36,6 +38,7 @@ import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.sapi.fs.VfsItem;
+import org.artifactory.spring.InternalArtifactoryContext;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -50,11 +53,16 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultRepoPathMover.class);
 
-    private InternalRepositoryService repositoryService;
+    private final InternalRepositoryService repositoryService;
+    private final ReplicationAddon replicationAddon;
 
     DefaultRepoPathMover(MoveMultiStatusHolder status, MoverConfig moverConfig) {
         super(status, moverConfig);
-        repositoryService = ContextHelper.get().beanForType(InternalRepositoryService.class);
+        InternalArtifactoryContext internalContext = (InternalArtifactoryContext) ContextHelper.get();
+        repositoryService = internalContext.beanForType(InternalRepositoryService.class);
+
+        AddonsManager addonsManager = internalContext.beanForType(AddonsManager.class);
+        replicationAddon = addonsManager.addonByType(ReplicationAddon.class);
     }
 
     MoveMultiStatusHolder moveOrCopy(VfsItem fsItemToMove, LocalRepo targetLocalRepo, RepoPath targetLocalRepoPath,
@@ -135,7 +143,7 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
             // folder is empty remove it immediately
             // we don't use folder.delete() as it will move to trash and will fire additional events
             storageInterceptors.afterMove(source, targetFolder, status, properties);
-            source.bruteForceDelete();
+            bruteForceDeleteAndReplicateEvent(source);
         } else if (!dryRun && copy) {
             storageInterceptors.afterCopy(source, targetFolder, status, properties);
         }
@@ -145,7 +153,7 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
                 targetFolder.list().length == 0 && children.size() != 0) {
             // folder is empty remove it immediately
             // we don't use folder.delete() as it will move to trash and will fire additional events
-            targetFolder.bruteForceDelete();
+            bruteForceDeleteAndReplicateEvent(targetFolder);
         }
     }
 
@@ -182,6 +190,7 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
                 if (!MavenNaming.MAVEN_METADATA_NAME.equals(metadataName)) {
                     Object metadata = mdph.read((MetadataAware) sourceFolder);
                     mdph.update((MetadataAware) targetFolder, metadata);
+                    replicationAddon.offerLocalReplicationMetadataDeploymentEvent(targetRepoPath, metadataName);
                 }
             }
         } catch (RepositoryRuntimeException e) {

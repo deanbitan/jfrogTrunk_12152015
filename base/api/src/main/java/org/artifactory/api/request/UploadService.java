@@ -24,5 +24,5 @@ import org.artifactory.request.ArtifactoryRequest;
 import java.io.IOException;
 
 public interface UploadService {
-    void process(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException, RepoRejectException;
+    void upload(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException, RepoRejectException;
 }

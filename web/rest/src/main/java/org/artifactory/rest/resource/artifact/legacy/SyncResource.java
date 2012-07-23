@@ -19,9 +19,9 @@
 package org.artifactory.rest.resource.artifact.legacy;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.ReplicationAddon;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.addon.replication.RemoteReplicationSettingsBuilder;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;

@@ -65,6 +65,9 @@ public class NuGetResourceTest {
         EasyMock.expect(restAddonMock.handleNuGetPackagesRequest(EasyMock.isA(HttpServletRequest.class),
                 EasyMock.eq("repoKey"))).andReturn(Response.ok("DAMN STRAIGHT!").build());
 
+        EasyMock.expect(restAddonMock.handleFindPackagesByIdRequest(EasyMock.isA(HttpServletRequest.class),
+                EasyMock.eq("repoKey"))).andReturn(Response.ok("DAMN STRAIGHT!").build());
+
         EasyMock.expect(restAddonMock.handleNuGetDownloadRequest(EasyMock.isA(HttpServletResponse.class),
                 EasyMock.eq("repoKey"), EasyMock.eq("packageId"), EasyMock.eq("packageVersion")))
                 .andReturn(Response.ok("DAMN STRAIGHT!").build());
@@ -116,6 +119,13 @@ public class NuGetResourceTest {
     public void testPackagesQueryMethodCallsAddon() throws Exception {
         NuGetResource nuGetResource = getNuGetResourceInstance();
         Response response = nuGetResource.getPackages("repoKey");
+        verifyResponse(response);
+    }
+
+    @Test
+    public void testFindPackagesPackagesByIdQueryMethodCallsAddon() throws Exception {
+        NuGetResource nuGetResource = getNuGetResourceInstance();
+        Response response = nuGetResource.findPackagesById("repoKey");
         verifyResponse(response);
     }
 

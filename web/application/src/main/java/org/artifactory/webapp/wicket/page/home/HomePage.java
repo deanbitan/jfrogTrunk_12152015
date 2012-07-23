@@ -18,11 +18,16 @@
 
 package org.artifactory.webapp.wicket.page.home;
 
+import org.apache.wicket.RestartResponseException;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.AddonsWebManager;
+import org.artifactory.addon.NoInstalledLicenseAction;
 import org.artifactory.addon.wicket.WebApplicationAddon;
+import org.artifactory.common.wicket.util.CookieUtils;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
+import org.artifactory.webapp.wicket.page.config.license.LicensePage;
 
 /**
  * @author Yoav Landman
@@ -32,11 +37,22 @@ public class HomePage extends AuthenticatedPage {
     @SpringBean
     private AddonsManager addonsManager;
 
+    @SpringBean
+    private AddonsWebManager addonsWebManager;
+
     public HomePage() {
         add(new WelcomeBorder("welcomeBorder"));
         WebApplicationAddon applicationAddon = addonsManager.addonByType(WebApplicationAddon.class);
         WebMarkupContainer addonsInfoPanel = applicationAddon.getAddonsInfoPanel("addonsInfoPanel");
         add(addonsInfoPanel);
+
+        boolean userVisitedLicensePage = CookieUtils.getCookie(LicensePage.COOKIE_LICENSE_PAGE_VISITED) != null;
+        addonsWebManager.onNoInstalledLicense(userVisitedLicensePage, new NoInstalledLicenseAction() {
+            @Override
+            public void act() {
+                throw new RestartResponseException(LicensePage.class);
+            }
+        });
     }
 
     @Override

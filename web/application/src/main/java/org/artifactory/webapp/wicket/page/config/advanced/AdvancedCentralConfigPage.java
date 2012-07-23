@@ -57,6 +57,9 @@ public class AdvancedCentralConfigPage extends AuthenticatedPage {
      */
     private void addCentralConfigPanel() {
         Form centralForm = new Form("centralForm");
+        // Set the form as multi part since the config can be quite big and jetty for example
+        // doesn't support more than 200K POST data, see RTFACT-4931
+        centralForm.setMultiPart(true);
         add(centralForm);
 
         final TextEditorPanel centralPanel = new TextEditorPanel("centralPanel", "Central Configuration Descriptor",

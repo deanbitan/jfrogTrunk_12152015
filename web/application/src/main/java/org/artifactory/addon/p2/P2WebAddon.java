@@ -23,11 +23,14 @@ import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.addon.Addon;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Web interface of P2 addon.
@@ -46,15 +49,14 @@ public interface P2WebAddon extends Addon {
             CachingDescriptorHelper cachingDescriptorHelper);
 
     /**
-     * @param currentDescriptor The mutable descriptor
-     * @param virtualRepo
-     * @param currentList
-     * @param statusHolder      A status holder to fill with error/warn messages
+     * Verifies all the remotes repositories and returns a list to be presented in the UI
+     *
      * @return A list of remote repositories that are added/created/verified based on the virtual repo configuration.
      */
-    List<P2RemoteRepository> verifyRemoteRepositories(MutableCentralConfigDescriptor currentDescriptor,
+    List<P2Repository> verifyRemoteRepositories(MutableCentralConfigDescriptor currentDescriptor,
             VirtualRepoDescriptor virtualRepo,
-            @Nullable List<P2RemoteRepository> currentList,
+            @Nullable List<P2Repository> currentList,
+            @Nonnull Map<String, List<String>> subCompositeUrls,
             MutableStatusHolder statusHolder);
 
     /**
@@ -62,5 +64,5 @@ public interface P2WebAddon extends Addon {
      *
      * @param form Form from the remote repository's packages config tab
      */
-    void createAndAddRemoteRepoConfigP2Section(Form form);
+    void createAndAddRemoteRepoConfigP2Section(Form form, RemoteRepoDescriptor descriptor);
 }

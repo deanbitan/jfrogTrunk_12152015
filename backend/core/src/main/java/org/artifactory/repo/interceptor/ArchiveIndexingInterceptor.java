@@ -18,6 +18,8 @@
 
 package org.artifactory.repo.interceptor;
 
+import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.mime.MimeType;
@@ -64,7 +66,21 @@ public class ArchiveIndexingInterceptor extends StorageInterceptorAdapter implem
         if (!fsItem.isFile()) {
             return false;
         }
+
+
         MimeType mimeType = NamingUtils.getMimeType(fsItem.getName());
-        return mimeType.isArchive() && mimeType.isIndex();
+        boolean supportsIndexing = mimeType.isArchive() && mimeType.isIndex();
+
+        if (!supportsIndexing) {
+            return false;
+        }
+
+        // Skip indexing on virtual repo
+        RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
+        if (repositoryService.virtualRepoDescriptorByKey(fsItem.getRepoKey()) != null) {
+            return false;
+        }
+
+        return true;
     }
 }

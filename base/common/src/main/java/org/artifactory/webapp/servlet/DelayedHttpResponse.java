@@ -33,7 +33,7 @@ import java.io.StringWriter;
 
 /**
  * This class delays successful responses until {@link org.artifactory.webapp.servlet.DelayedHttpResponse#commitResponseCode()}.
- * if manually called. Use it whenever using http response inside a transaction that might fail after interacting with
+ * is manually called. Use it whenever using http response inside a transaction that might fail after interacting with
  * the response.<p/> It assumes the clients will not call sendStream directly. When used, any writes to the output will
  * be cached. So be aware not to use it when responding with a lot of data.
  *

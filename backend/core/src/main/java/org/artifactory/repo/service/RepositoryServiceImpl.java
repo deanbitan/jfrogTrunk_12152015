@@ -108,7 +108,7 @@ import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.request.InternalArtifactoryResponse;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.NullRequestContext;
-import org.artifactory.request.RequestTraceLogger;
+import org.artifactory.request.RepoRequests;
 import org.artifactory.resource.ResolvedResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
@@ -516,14 +516,18 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public boolean mkdirs(RepoPath folderRepoPath) {
-        if (!exists(folderRepoPath)) {
-
-            LocalRepo localRepo = getLocalRepository(folderRepoPath);
-
-            JcrFolder jcrFolder = localRepo.getLockedJcrFolder(folderRepoPath.getPath(), true);
+        // Support virtual repo cache folder creation
+        StoringRepo mixin;
+        VirtualRepo virtualRepo = virtualRepositoryByKey(folderRepoPath.getRepoKey());
+        if (virtualRepo != null) {
+            mixin = virtualRepo.getStorageMixin();
+        } else {
+            mixin = getLocalRepository(folderRepoPath).getStorageMixin();
+        }
+        if (!mixin.itemExists(folderRepoPath.getPath())) {
+            JcrFolder jcrFolder = mixin.getLockedJcrFolder(folderRepoPath.getPath(), true);
             return jcrFolder.exists() || jcrFolder.mkdirs();
         }
-
         return false;
     }
 
@@ -1142,7 +1146,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             ArtifactoryDeployRequest request =
                     new ArtifactoryDeployRequest(repoPath, inputStream, -1, System.currentTimeMillis());
             InternalArtifactoryResponse response = new InternalArtifactoryResponse();
-            uploadService.process(request, response);
+            uploadService.upload(request, response);
             return response.getStatusHolder();
         } catch (Exception e) {
             String msg = String.format("Cannot deploy to '{%s}'.", repoPath);
@@ -1762,25 +1766,31 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     public ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, Repo repo,
             RepoResource res) throws IOException, RepoRejectException, RepositoryException {
         if (res instanceof ResolvedResource) {
-            RequestTraceLogger.log("The requested resource is already resolved - using a string resource handle");
+            RepoRequests.logToContext("The requested resource is already resolved - using a string resource handle");
             // resource already contains the content - just extract it and return a string resource handle
             String content = ((ResolvedResource) res).getContent();
             return new StringResourceStreamHandle(content);
         } else {
-            RequestTraceLogger.log("The requested resource isn't pre-resolved");
+            RepoRequests.logToContext("The requested resource isn't pre-resolved");
             RepoPath repoPath = res.getRepoPath();
             if (repo.isReal()) {
-                RequestTraceLogger.log("Target repository isn't virtual - verifying that downloading is allowed");
+                RepoRequests.logToContext("Target repository isn't virtual - verifying that downloading is allowed");
                 //Permissions apply only to real repos
                 StatusHolder holder = ((RealRepo) repo).checkDownloadIsAllowed(repoPath);
                 if (holder.isError()) {
-                    RequestTraceLogger.log("Download isn't allowed - received status {} and message '%s'",
+                    RepoRequests.logToContext("Download isn't allowed - received status {} and message '%s'",
                             holder.getStatusCode(), holder.getStatusMsg());
                     throw new RepoRejectException(holder.getStatusMsg(), holder.getStatusCode());
                 }
             }
             return repo.getResourceStreamHandle(requestContext, res);
         }
+    }
+
+    @Override
+    public RepoResource saveResource(StoringRepo repo, SaveResourceContext saveContext)
+            throws IOException, RepoRejectException, RepositoryException {
+        return repo.saveResource(saveContext);
     }
 
     @Override

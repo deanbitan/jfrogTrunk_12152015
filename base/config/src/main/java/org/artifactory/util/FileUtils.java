@@ -270,7 +270,13 @@ public abstract class FileUtils {
             org.apache.commons.io.FileUtils.copyInputStreamToFile(in, file);
         } catch (IOException e) {
             try {
-                log.error("Could not fill content in file '" + file.getAbsolutePath() + "'. Deleting it if possible!");
+                String msg = "Could not fill content in file '" + file.getAbsolutePath()
+                        + "' due to " + e.getMessage() + "\n. Deleting it if possible!";
+                if (log.isDebugEnabled()) {
+                    log.error(msg, e);
+                } else {
+                    log.error(msg);
+                }
                 if (file.exists()) {
                     if (!file.delete()) {
                         log.error("Could not delete wrong file '" + file.getAbsolutePath() + "'!");

@@ -76,7 +76,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
     public JcrTreeNode calculate(RepoPath folder, MultiStatusHolder status) {
         log.debug("Calculating maven metadata recursively on '{}'", folder);
 
-        JcrTreeNode treeNode = getJcrService().getTreeNode(folder, status, new JcrTreeNodeFileFilter() {
+        JcrTreeNode rootNode = getJcrService().getTreeNode(folder, status, new JcrTreeNodeFileFilter() {
             @Override
             public boolean acceptsFile(RepoPath repoPath) {
                 String path = repoPath.getPath();
@@ -84,18 +84,27 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
             }
         });
 
-        if (treeNode != null) {
-            calculateAndSet(folder, treeNode, status);
+        if (rootNode != null) {
+            calculateAndSet(rootNode, status);
             log.debug("Finished maven metadata calculation on '{}'", folder);
         }
-        return treeNode;
+        return rootNode;
     }
 
-    private void calculateAndSet(RepoPath repoPath, JcrTreeNode treeNode, MultiStatusHolder status) {
+    private void calculateAndSet(JcrTreeNode treeNode, MultiStatusHolder status) {
         if (!treeNode.isFolder()) {
             // Nothing to do here for non folder tree node
             return;
         }
+
+        RepoPath repoPath = treeNode.getRepoPath();
+        if (repoPath == null) {
+            // since the JcrTreeNode is detached form the database and holds no locks, it might happen that a node
+            // is in the trash in time of construction and hence the null repo path (see RTFACT-5053)
+            log.debug("Null repo path for node with children: {}", treeNode.getChildren());
+            return;
+        }
+
         String nodePath = repoPath.getPath();
         boolean containsMetadataInfo;
         if (MavenNaming.isSnapshot(nodePath)) {
@@ -106,7 +115,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
             // if this folder contains "version folders" create versions maven metadata
             List<JcrTreeNode> subFoldersContainingPoms = getSubFoldersContainingPoms(treeNode);
             if (!subFoldersContainingPoms.isEmpty()) {
-                log.trace("Detected versions container: {}", treeNode.getRepoPath().getId());
+                log.trace("Detected versions container: {}", repoPath.getId());
                 createVersionsMetadata(repoPath, subFoldersContainingPoms, status);
                 containsMetadataInfo = true;
             } else {
@@ -124,7 +133,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
             Set<JcrTreeNode> children = treeNode.getChildren();
             if (children != null) {
                 for (JcrTreeNode child : children) {
-                    calculateAndSet(child.getRepoPath(), child, status);
+                    calculateAndSet(child, status);
                 }
             }
         }

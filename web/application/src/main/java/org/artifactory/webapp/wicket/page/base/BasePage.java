@@ -35,6 +35,7 @@ import org.apache.wicket.request.flow.RedirectToUrlException;
 import org.apache.wicket.request.http.WebResponse;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.AddonsWebManager;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
@@ -69,7 +70,10 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
     private AuthorizationService authorizationService;
 
     @SpringBean
-    private AddonsManager addons;
+    private AddonsManager addonsManager;
+
+    @SpringBean
+    private AddonsWebManager addonsWebManager;
 
     private ModalHandler modalHandler;
 
@@ -84,7 +88,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
     @WicketProperty
     public String getPageTitle() {
-        return addons.addonByType(WebApplicationAddon.class).getPageTitle(this);
+        return addonsManager.addonByType(WebApplicationAddon.class).getPageTitle(this);
     }
 
     protected void init() {
@@ -102,7 +106,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
         add(new FooterLabel("footer"));
 
-        String license = addons.getFooterMessage(authorizationService.isAdmin());
+        String license = addonsWebManager.getFooterMessage(authorizationService.isAdmin());
         Label licenseLabel = new Label("license", license);
         licenseLabel.setEscapeModelStrings(false);
         add(licenseLabel);
@@ -178,8 +182,8 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
                 //urlBuilder.append("/webapp/search/artifact");
                 if (StringUtils.isNotBlank(query)) {
                     try {
-                        urlBuilder.append("?").append(BaseSearchPage.QUERY_PARAM).append("=").
-                                append(URLEncoder.encode(query, "UTF-8"));
+                        urlBuilder.append("?").append(BaseSearchPage.QUERY_PARAM).append("=").append(
+                                URLEncoder.encode(query, "UTF-8"));
                     } catch (UnsupportedEncodingException e) {
                         log.error(String.format("Unable to append the Quick-Search query '%s'", query), e);
                     }
@@ -192,7 +196,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
     }
 
     private void addVersionInfo() {
-        String versionInfo = addons.addonByType(WebApplicationAddon.class).getVersionInfo();
+        String versionInfo = addonsManager.addonByType(WebApplicationAddon.class).getVersionInfo();
         add(new Label("version", versionInfo));
     }
 
@@ -201,7 +205,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         WebApplicationAddon applicationAddon;
         AbstractLink profileLink;
         // Enable only for signed in users
-        applicationAddon = addons.addonByType(WebApplicationAddon.class);
+        applicationAddon = addonsManager.addonByType(WebApplicationAddon.class);
         logoutLink = applicationAddon.getLogoutLink("logoutPage");
         profileLink = applicationAddon.getProfileLink("profilePage");
         add(logoutLink);
@@ -266,6 +270,9 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         @SpringBean
         private AddonsManager addons;
 
+        @SpringBean
+        private AddonsWebManager addonsWebManager;
+
         public LicenseFooterLabel(String id) {
             super(id, "");
             setOutputMarkupId(true);
@@ -273,7 +280,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
             String message = null;
             if (authorizationService.isAdmin() || isTrial()) {
-                message = addons.getLicenseFooterMessage();
+                message = addonsWebManager.getLicenseFooterMessage();
                 setDefaultModelObject(message);
             }
             setVisible(StringUtils.isNotEmpty(message));

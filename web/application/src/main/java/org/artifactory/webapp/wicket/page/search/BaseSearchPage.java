@@ -74,9 +74,12 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
         String requestQuery = WicketUtils.getParameter(QUERY_PARAM);
         if (StringUtils.isNotBlank(requestQuery)) {
             try {
-                searchQuery = URLDecoder.decode(requestQuery, "UTF-8");
+                searchQuery = URLDecoder.decode(requestQuery.replace("+", "%2B"), "UTF-8").replace("%2B", "+");
             } catch (UnsupportedEncodingException e) {
                 log.error(String.format("Unable to extract the query request parameter '%s'", requestQuery), e);
+            } catch (IllegalArgumentException e) {
+                log.warn(String.format("Illegal query request parameter '%s'", requestQuery));
+                error(String.format("Illegal query request parameter '%s'", requestQuery));
             }
         }
         addTabs();

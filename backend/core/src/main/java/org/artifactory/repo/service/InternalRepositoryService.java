@@ -31,6 +31,7 @@ import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoRepoPath;
+import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.request.InternalRequestContext;
@@ -127,6 +128,10 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
 
     @Lock(transactional = true)
     ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, Repo repo, RepoResource res)
+            throws IOException, RepoRejectException, RepositoryException;
+
+    @Lock(transactional = true)
+    RepoResource saveResource(StoringRepo repo, SaveResourceContext saveContext)
             throws IOException, RepoRejectException, RepositoryException;
 
     @Override

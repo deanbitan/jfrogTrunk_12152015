@@ -28,8 +28,8 @@ import javax.xml.bind.annotation.XmlType;
 /**
  * @author Noam Y. Tenne
  */
-@XmlType(name = "LocalReplicationType", propOrder = {"url", "proxy", "socketTimeoutMillis", "username", "password"},
-        namespace = Descriptor.NS)
+@XmlType(name = "LocalReplicationType", propOrder = {"url", "proxy", "socketTimeoutMillis", "username", "password",
+        "enableEventReplication"}, namespace = Descriptor.NS)
 public class LocalReplicationDescriptor extends ReplicationBaseDescriptor {
 
     @XmlElement(required = false)
@@ -47,6 +47,9 @@ public class LocalReplicationDescriptor extends ReplicationBaseDescriptor {
 
     @XmlElement(required = false)
     private String password;
+
+    @XmlElement(defaultValue = "true")
+    private boolean enableEventReplication = false;
 
     public String getUrl() {
         return url;
@@ -88,12 +91,20 @@ public class LocalReplicationDescriptor extends ReplicationBaseDescriptor {
         this.password = password;
     }
 
+    public boolean isEnableEventReplication() {
+        return enableEventReplication;
+    }
+
+    public void setEnableEventReplication(boolean enableEventReplication) {
+        this.enableEventReplication = enableEventReplication;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof LocalReplicationDescriptor)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
         if (!super.equals(o)) {
@@ -102,6 +113,9 @@ public class LocalReplicationDescriptor extends ReplicationBaseDescriptor {
 
         LocalReplicationDescriptor that = (LocalReplicationDescriptor) o;
 
+        if (enableEventReplication != that.enableEventReplication) {
+            return false;
+        }
         if (socketTimeoutMillis != that.socketTimeoutMillis) {
             return false;
         }
@@ -111,7 +125,7 @@ public class LocalReplicationDescriptor extends ReplicationBaseDescriptor {
         if (proxy != null ? !proxy.equals(that.proxy) : that.proxy != null) {
             return false;
         }
-        if (url != null ? !url.equals(that.url) : that.url != null) {
+        if (!url.equals(that.url)) {
             return false;
         }
         if (username != null ? !username.equals(that.username) : that.username != null) {
@@ -124,11 +138,12 @@ public class LocalReplicationDescriptor extends ReplicationBaseDescriptor {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (url != null ? url.hashCode() : 0);
+        result = 31 * result + url.hashCode();
         result = 31 * result + (proxy != null ? proxy.hashCode() : 0);
         result = 31 * result + socketTimeoutMillis;
         result = 31 * result + (username != null ? username.hashCode() : 0);
         result = 31 * result + (password != null ? password.hashCode() : 0);
+        result = 31 * result + (enableEventReplication ? 1 : 0);
         return result;
     }
 }

@@ -53,7 +53,6 @@ public class SuccessfulDeploymentResponseHelper {
      * Writes the spec implementation response
      *
      * @param repoService Instance of repo service
-     * @param request
      * @param response    Response object
      * @param repoPath    Repo path of deployed artifact
      * @param url         Final reachable URI of deployed file

@@ -57,7 +57,7 @@ import org.artifactory.addon.AddonType;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.addon.OssAddonsManager;
-import org.artifactory.addon.p2.P2RemoteRepository;
+import org.artifactory.addon.p2.P2Repository;
 import org.artifactory.addon.p2.P2WebAddon;
 import org.artifactory.addon.wicket.disabledaddon.AddonNeededBehavior;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
@@ -69,6 +69,7 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.license.LicenseInfo;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.version.VersionHolder;
 import org.artifactory.api.version.VersionInfoService;
@@ -293,6 +294,18 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public boolean isInstantiationAuthorized(Class componentClass) {
+        if (componentClass.equals(LicensePage.class)) {
+            AuthorizationService authorizationService = ContextHelper.get().getAuthorizationService();
+            if (!authorizationService.isAdmin() && getAddonsManager().isLicenseInstalled()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean isVisibilityAuthorized(Class componentClass) {
         return true;
     }
 
@@ -796,6 +809,17 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         return adminEmails;
     }
 
+    @Override
+    public void validateTargetHasDifferentLicenseKeyHash(String targetLicenseHash) {
+        AddonsManager addonsManager = getAddonsManager();
+        if (StringUtils.isBlank(targetLicenseHash)) {
+            throw new IllegalArgumentException("Target Artifactory instance license key is null, perhaps OSS version?");
+        }
+        if (addonsManager.getLicenseKeyHash().equals(targetLicenseHash)) {
+            throw new IllegalArgumentException("Replication between same-license servers is not supported.");
+        }
+    }
+
     private CentralConfigService getCentralConfig() {
         return ArtifactoryApplication.get().getCentralConfig();
     }
@@ -821,13 +845,14 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public ITab getLocalRepoReplicationPanel(String tabTitle, LocalReplicationDescriptor replicationDescriptor,
+    public ITab getLocalRepoReplicationPanel(String tabTitle, LocalRepoDescriptor entity,
+            LocalReplicationDescriptor replicationDescriptor,
             MutableCentralConfigDescriptor mutableDescriptor, CreateUpdateAction action) {
         return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.REPLICATION);
     }
 
     @Override
-    public MarkupContainer getLastReplicationStatusLabel(String id, RepoPath repoPath) {
+    public MarkupContainer getLastReplicationStatusLabel(String id, RepoPath repoPath, boolean isCache) {
         return new PlaceHolder(id);
     }
 
@@ -865,15 +890,16 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public List<P2RemoteRepository> verifyRemoteRepositories(MutableCentralConfigDescriptor currentDescriptor,
-            VirtualRepoDescriptor virtualRepo, List<P2RemoteRepository> currentList, MutableStatusHolder statusHolder) {
+    public List<P2Repository> verifyRemoteRepositories(MutableCentralConfigDescriptor currentDescriptor,
+            VirtualRepoDescriptor virtualRepo, List<P2Repository> currentList,
+            Map<String, List<String>> subCompositeUrls, MutableStatusHolder statusHolder) {
         statusHolder.setError("Error: the P2 addon is required for this operation.",
                 HttpStatus.SC_BAD_REQUEST, log);
         return null;
     }
 
     @Override
-    public void createAndAddRemoteRepoConfigP2Section(Form form) {
+    public void createAndAddRemoteRepoConfigP2Section(Form form, RemoteRepoDescriptor descriptor) {
         WebMarkupContainer p2Border = new WebMarkupContainer("p2Border");
         p2Border.add(new TitledBorderBehavior("fieldset-border", "P2 Support"));
         p2Border.add(new DisabledAddonBehavior(AddonType.P2));
@@ -914,7 +940,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public HttpMethodBase getRemoteRepoTestMethod(String repoUrl, HttpRepoDescriptor repo) {
-        return new HeadMethod(repoUrl);
+        return new HeadMethod(HttpUtils.encodeQuery(repoUrl));
     }
 
     @Override

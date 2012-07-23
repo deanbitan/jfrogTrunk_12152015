@@ -19,9 +19,9 @@
 package org.artifactory.repo.replication;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.ReplicationAddon;
 import org.artifactory.addon.replication.LocalReplicationSettings;
 import org.artifactory.addon.replication.LocalReplicationSettingsBuilder;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.security.SecurityService;
@@ -61,6 +61,7 @@ public class LocalReplicationJobTest extends ReplicationJobTestBase {
         replicationDescriptor.setProxy(new ProxyDescriptor());
         replicationDescriptor.setUsername("username");
         replicationDescriptor.setPassword("password");
+        replicationDescriptor.setEnableEventReplication(true);
 
         replicationSettings = new LocalReplicationSettingsBuilder(replicationDescriptor.getRepoPath(),
                 replicationDescriptor.getUrl())

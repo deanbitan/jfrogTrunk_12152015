@@ -43,16 +43,12 @@ import org.artifactory.common.wicket.ajax.AjaxLazyLoadSpanPanel;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
-import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.mime.MavenNaming;
-import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.PathUtils;
@@ -63,9 +59,6 @@ import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.slf4j.Logger;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 
 /**
  * Displays general item information. Placed inside the general info panel.
@@ -209,7 +202,7 @@ public class GeneralInfoPanel extends Panel {
 
         addLocalLayoutInfo(infoBorder, repoDescriptor, itemIsRepo);
         addRemoteLayoutInfo(infoBorder, remoteRepo, itemIsRepo);
-        addLastReplicationInfo(infoBorder, path);
+        addLastReplicationInfo(infoBorder, path, isCache);
 
         addFilteredResourceCheckbox(infoBorder, itemInfo);
 
@@ -342,38 +335,9 @@ public class GeneralInfoPanel extends Panel {
         }
     }
 
-    private void addLastReplicationInfo(FieldSetBorder infoBorder, RepoPath repoPath) {
+    private void addLastReplicationInfo(FieldSetBorder infoBorder, RepoPath repoPath, boolean isCache) {
         ReplicationWebAddon replicationWebAddon = addonsManager.addonByType(ReplicationWebAddon.class);
-        infoBorder.add(replicationWebAddon.getLastReplicationStatusLabel("lastReplication", repoPath));
-    }
-
-    private String getRepoPathUrl(RepoAwareActionableItem repoItem) {
-        String artifactPath;
-        if (repoItem instanceof CannonicalEnabledActionableFolder) {
-            artifactPath = ((CannonicalEnabledActionableFolder) repoItem).getCanonicalPath().getPath();
-        } else {
-            artifactPath = repoItem.getRepoPath().getPath();
-        }
-
-        StringBuilder urlBuilder = new StringBuilder();
-        if (NamingUtils.isChecksum(artifactPath)) {
-            // if a checksum file is deployed, link to the target file
-            artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
-        }
-        String repoPathId = InternalRepoPathFactory.create(repoItem.getRepo().getKey(), artifactPath).getId();
-
-        String encodedPathId;
-        try {
-            encodedPathId = URLEncoder.encode(repoPathId, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            log.error("Unable to encode deployed artifact ID '{}': {}.", repoPathId, e.getMessage());
-            return null;
-        }
-
-        //Using request parameters instead of wicket's page parameters. See RTFACT-2843
-        urlBuilder.append(WicketUtils.absoluteMountPathForPage(BrowseRepoPage.class)).append("?").
-                append(BrowseRepoPage.PATH_ID_PARAM).append("=").append(encodedPathId);
-        return urlBuilder.toString();
+        infoBorder.add(replicationWebAddon.getLastReplicationStatusLabel("lastReplication", repoPath, isCache));
     }
 
     private void addFilteredResourceCheckbox(FieldSetBorder infoBorder, ItemInfo itemInfo) {

@@ -25,6 +25,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.search.SearchControlsBase;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.help.HelpBubble;
@@ -44,20 +45,33 @@ public class AdvancedSearchPanel extends WhiteTitlePanel {
     @SpringBean
     private RepositoryService repoService;
 
+    private CollapsibleBehavior collapsibleBehavior;
+    private SearchControlsBase searchControlsBase;
 
-    public AdvancedSearchPanel(String id, IModel model) {
+    public AdvancedSearchPanel(String id, IModel<SearchControlsBase> model) {
         super(id, model);
+        searchControlsBase = model.getObject();
         add(new CssClass("advanced-search-panel"));
-        add(new CollapsibleBehavior().setResizeModal(true));
 
         List<String> repoList = getOrderdRepoKeys();
         ListMultipleChoice choice = new ListMultipleChoice<String>("selectedRepoForSearch", repoList);
+        choice.setOutputMarkupId(true);
         add(choice);
+
+        collapsibleBehavior = new CollapsibleBehavior().setResizeModal(true).setUseAjax(true);
+        add(collapsibleBehavior);
     }
 
     @Override
     protected Component newToolbar(String id) {
         return new HelpBubble(id, new ResourceModel("advancedHelp"));
+    }
+
+    /**
+     * Repos list should be expanded iff at least one repo is selected
+     */
+    public void expandCollapseReposList() {
+        collapsibleBehavior.setExpanded(searchControlsBase.isSpecificRepoSearch());
     }
 
     private List<String> getOrderdRepoKeys() {

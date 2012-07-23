@@ -112,4 +112,11 @@ public interface JcrRepoService {
 
     @Lock(transactional = true)
     void writeMetadataEntries(JcrFsItem fsItem, MutableStatusHolder status, File folder, boolean incremental);
+
+    /**
+     * Brute force deletes the given item and fires a local replication delete event as well
+     *
+     * @param item Item to delete
+     */
+    void bruteForceDeleteAndReplicateEvent(VfsItem item);
 }

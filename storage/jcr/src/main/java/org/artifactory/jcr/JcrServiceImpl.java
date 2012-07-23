@@ -37,6 +37,8 @@ import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
 import org.apache.jackrabbit.ocm.manager.impl.ObjectContentManagerImpl;
 import org.apache.jackrabbit.ocm.mapper.Mapper;
 import org.apache.jackrabbit.spi.QNodeTypeDefinition;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.ArtifactCount;
@@ -168,6 +170,8 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     @Autowired
     private VfsQueryService queryService;
 
+    @Autowired
+    private AddonsManager addonsManager;
 
     private Mapper ocmMapper;
 
@@ -545,7 +549,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
             Node node = (Node) session.getItem(absPath);
             return getFsItem(node, repo);
         } catch (RuntimeException e) {
-            if (ExceptionUtils.getCauseOfTypes(e, PathNotFoundException.class) != null) {
+            if (ExceptionUtils.getCauseOfTypes(e, PathNotFoundException.class, RepositoryException.class) != null) {
                 log.debug("Path not found : {}.", repoPath);
                 return null;
             }
@@ -572,6 +576,12 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
     @Override
     public void writeMetadataEntries(JcrFsItem fsItem, MutableStatusHolder status, File folder, boolean incremental) {
         fsItem.writeMetadataEntries(status, folder, incremental);
+    }
+
+    @Override
+    public void bruteForceDeleteAndReplicateEvent(VfsItem item) {
+        item.bruteForceDelete();
+        addonsManager.addonByType(ReplicationAddon.class).offerLocalReplicationDeleteEvent(item.getRepoPath());
     }
 
     /**

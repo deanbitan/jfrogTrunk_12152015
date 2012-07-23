@@ -70,6 +70,8 @@ public interface WebApplicationAddon extends Addon {
      */
     boolean isInstantiationAuthorized(Class componentClass);
 
+    boolean isVisibilityAuthorized(Class componentClass);
+
     Class<? extends Page> getHomePage();
 
     Label getUptimeLabel(String wicketId);

@@ -162,7 +162,8 @@ public class MetadataPanel extends TitledPanel {
             Object defaultSelection = metadataTypeList.get(0);
             if (StringUtils.isNotBlank(selectMetadata)) {
                 try {
-                    String decodedSelectedMetadata = URLDecoder.decode(selectMetadata, "utf-8");
+                    String decodedSelectedMetadata = URLDecoder.decode(selectMetadata.replace("+", "%2B"),
+                            "UTF-8").replace("%2B", "+");
                     for (String metadataType : metadataTypeList) {
                         if (decodedSelectedMetadata.equals(metadataType)) {
                             defaultSelection = metadataType;

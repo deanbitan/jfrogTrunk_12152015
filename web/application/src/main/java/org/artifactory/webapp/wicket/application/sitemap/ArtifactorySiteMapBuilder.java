@@ -184,8 +184,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         @Override
         public boolean isEnabled() {
             // allow only admins or users with admin permissions on a permission target
-            AuthorizationService authService = getAuthorizationService();
-            return authService.isAdmin() || authService.hasPermission(ArtifactoryPermission.ADMIN);
+            return getAddonsWebManager().isAdminPageAccessible();
         }
     }
 
@@ -207,7 +206,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
             Class<? extends Page> pageClass = node.getPageClass();
             if (pageClass != null) {
                 WebApplicationAddon applicationAddon = addons.addonByType(WebApplicationAddon.class);
-                boolean instantiationAuthorized = applicationAddon.isInstantiationAuthorized(pageClass);
+                boolean instantiationAuthorized = applicationAddon.isVisibilityAuthorized(pageClass);
                 if (!instantiationAuthorized) {
                     iterator.remove();
                 }

@@ -21,7 +21,7 @@ package org.artifactory.webapp.wicket.page.config.repos;
 import com.google.common.collect.Lists;
 import org.apache.wicket.injection.Injector;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.addon.p2.P2RemoteRepositoryModel;
+import org.artifactory.addon.p2.P2RepositoryModel;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
@@ -50,7 +50,7 @@ public class CachingDescriptorHelper implements Serializable {
     @SpringBean
     private CentralConfigService centralConfigService;
 
-    private List<P2RemoteRepositoryModel> p2RemoteRepositoryModels = Lists.newArrayList();
+    private List<P2RepositoryModel> p2RepositoryModels = Lists.newArrayList();
 
     {
         Injector.get().inject(this);
@@ -88,22 +88,26 @@ public class CachingDescriptorHelper implements Serializable {
         saveDescriptor(configDescriptor);
     }
 
-    public void syncAndSaveVirtualRepositories(boolean updateRemotes) {
+    public void syncAndSaveVirtualRepositories(boolean updateRemotes, boolean updateLocals) {
         MutableCentralConfigDescriptor configDescriptor = getSavedMutableDescriptor();
         configDescriptor.setVirtualRepositoriesMap(modelMutableDescriptor.getVirtualRepositoriesMap());
         if (updateRemotes) {
             configDescriptor.setRemoteRepositoriesMap(modelMutableDescriptor.getRemoteRepositoriesMap());
             configDescriptor.setRemoteReplications(modelMutableDescriptor.getRemoteReplications());
         }
+        if (updateLocals) {
+            configDescriptor.setLocalRepositoriesMap(modelMutableDescriptor.getLocalRepositoriesMap());
+            configDescriptor.setLocalReplications(modelMutableDescriptor.getLocalReplications());
+        }
         saveDescriptor(configDescriptor);
     }
 
-    public void setP2RemoteRepositoryModels(List<P2RemoteRepositoryModel> p2RemoteRepositoryModels) {
-        this.p2RemoteRepositoryModels = p2RemoteRepositoryModels;
+    public void setP2RepositoryModels(List<P2RepositoryModel> p2RepositoryModels) {
+        this.p2RepositoryModels = p2RepositoryModels;
     }
 
-    public List<P2RemoteRepositoryModel> getP2RemoteRepositoryModels() {
-        return p2RemoteRepositoryModels;
+    public List<P2RepositoryModel> getP2RepositoryModels() {
+        return p2RepositoryModels;
     }
 
     protected void removeRepositoryAndSave(String repoKey) {
@@ -157,6 +161,6 @@ public class CachingDescriptorHelper implements Serializable {
     public void reset() {
         // TODO: check if it's possible to reset the model (it is shared by all the tables)
         //modelMutableDescriptor = getSavedMutableDescriptor();
-        p2RemoteRepositoryModels.clear();
+        p2RepositoryModels.clear();
     }
 }

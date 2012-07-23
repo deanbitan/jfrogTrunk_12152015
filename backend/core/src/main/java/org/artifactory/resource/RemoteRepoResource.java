@@ -106,4 +106,12 @@ public class RemoteRepoResource implements RepoResource {
     public String getMimeType() {
         return NamingUtils.getMimeType(getRepoPath().getPath()).getType();
     }
+
+    @Override
+    public String toString() {
+        return "RemoteRepoResource{" +
+                "info=" + info +
+                ", responseRepoPath=" + responseRepoPath +
+                '}';
+    }
 }

@@ -128,7 +128,7 @@ public class DeployServiceImpl implements DeployService {
             ArtifactoryDeployRequest request = new ArtifactoryDeployRequest(repoPath, fileToDeploy);
             request.setSkipJarIndexing(partOfBundleDeploy);
             InternalArtifactoryResponse response = new InternalArtifactoryResponse();
-            uploadService.process(request, response);
+            uploadService.upload(request, response);
             assertNotFailedRequest(fileToDeploy.getName(), response);
         } catch (IOException e) {
             String msg = "Cannot deploy file " + fileToDeploy.getName() + ". Cause: " + e.getMessage();
@@ -148,7 +148,7 @@ public class DeployServiceImpl implements DeployService {
                         fileToDeploy.lastModified());
                 InternalArtifactoryResponse pomResponse = new InternalArtifactoryResponse();
                 // upload the POM if needed
-                uploadService.process(pomRequest, pomResponse);
+                uploadService.upload(pomRequest, pomResponse);
                 assertNotFailedRequest(fileToDeploy.getName(), pomResponse);
             } catch (IOException e) {
                 String msg = "Cannot deploy file " + pomPath.getName() + ". Cause: " + e.getMessage();

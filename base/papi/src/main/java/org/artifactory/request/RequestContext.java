@@ -40,4 +40,8 @@ public interface RequestContext {
      * @return The request or null if not set.
      */
     Request getRequest();
+
+    void setAttribute(String name, String value);
+
+    String getAttribute(String name);
 }

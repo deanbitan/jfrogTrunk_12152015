@@ -21,11 +21,15 @@ package org.artifactory.util;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.request.ArtifactoryRequest;
+import org.slf4j.Logger;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +44,7 @@ import java.util.zip.GZIPInputStream;
  * @author yoavl
  */
 public abstract class HttpUtils {
+    private static final Logger log = LoggerFactory.getLogger(HttpUtils.class);
 
     private static String userAgent;
 
@@ -219,5 +224,21 @@ public abstract class HttpUtils {
             }
         }
         return is;
+    }
+
+    public static String encodeQuery(String unescaped) {
+        try {
+            return URIUtil.encodeQuery(unescaped, "UTF-8");
+        } catch (URIException e) {
+            // Nothing to do here, we will return the un-escaped value.
+            log.warn("Could not encode path '{}' with UTF-8 charset, returning the un-escaped value.", unescaped);
+        }
+
+        return unescaped;
+    }
+
+    public static boolean isSSL(HttpServletRequest httpServletRequest) {
+        String scheme = httpServletRequest.getScheme();
+        return StringUtils.equalsIgnoreCase(scheme, "https");
     }
 }

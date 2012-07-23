@@ -18,9 +18,11 @@
 
 package org.artifactory.webapp.servlet;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.log.logback.LogbackContextSelector;
 import org.artifactory.log.logback.LoggerConfigInfo;
@@ -33,6 +35,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.core.JdkVersion;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -40,8 +43,10 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -50,6 +55,8 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
     @Override
     public void contextInitialized(ServletContextEvent event) {
         final ServletContext servletContext = event.getServletContext();
+
+        setSessionTrackingMode(servletContext);
 
         final Thread initThread = new Thread("art-init") {
             boolean success = true;
@@ -103,6 +110,48 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             } catch (InterruptedException e) {
                 getLogger().error("Artifactory initialization thread got interrupted", e);
             }
+        }
+    }
+
+    /**
+     * Disable sessionId in URL (Servlet 3.0 containers) by setting the session tracking mode to SessionTrackingMode.COOKIE
+     * For Servlet container < 3.0 we use differnet method (for tomcat 6 we use custom context.xml and for jetty
+     * there is a custom jetty.xml file).
+     */
+    @SuppressWarnings("unchecked")
+    private void setSessionTrackingMode(ServletContext servletContext) {
+        // Only for Servlet container version 3.0 and above
+        if (servletContext.getMajorVersion() < 3) {
+            return;
+        }
+
+        // We cannot use ConstantValue.enableURLSessionId.getBoolean() since ArtifactoryHome is not binded yet.
+        ArtifactoryHome artifactoryHome = (ArtifactoryHome) servletContext.getAttribute(
+                ArtifactoryHome.SERVLET_CTX_ATTR);
+        if (artifactoryHome == null) {
+            throw new IllegalStateException("Artifactory home not initialized.");
+        }
+
+        if (artifactoryHome.getArtifactoryProperties().getBooleanProperty(
+                ConstantValues.supportUrlSessionTracking.getPropertyName(),
+                ConstantValues.supportUrlSessionTracking.getDefValue())) {
+            getLogger().info("Skipping setting session tracking mode to COOKIE, enableURLSessionId flag it on.");
+            return;
+        }
+
+        try {
+            // load enum with reflection
+            ClassLoader cl = ClassUtils.getDefaultClassLoader();
+            Class<Enum> trackingModeEnum = (Class<Enum>) cl.loadClass("javax.servlet.SessionTrackingMode");
+            Enum cookieTrackingMode = Enum.valueOf(trackingModeEnum, "COOKIE");
+
+            // reflective call servletContext.setSessionTrackingModes(trackingModes)
+            Method method = servletContext.getClass().getMethod("setSessionTrackingModes", Set.class);
+            method.setAccessible(true);
+            ReflectionUtils.invokeMethod(method, servletContext, Sets.newHashSet(cookieTrackingMode));
+            getLogger().info("Successfully set session tracking mode to COOKIE");
+        } catch (Exception e) {
+            getLogger().warn("Failed to set session tracking mode: " + e.getMessage());
         }
     }
 

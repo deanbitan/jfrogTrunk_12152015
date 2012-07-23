@@ -110,7 +110,6 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
 
     @Override
     public void sendError(int statusCode, String reason, Logger log) throws IOException {
-        log.info("Internal request failed with code {}. Reason: {}", statusCode, reason);
         super.sendError(statusCode, reason, log);
     }
 

@@ -19,6 +19,7 @@
 package org.artifactory.repo;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.BlackedOutException;
@@ -78,7 +79,7 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
             log.debug("{} is not a valid module info -  '{}': not enforcing snapshot/release policy.", this, path);
             return true;
         }
-        boolean snapshot = moduleInfo.isIntegration();
+        boolean snapshot = moduleInfo.isIntegration() || StringUtils.contains(path, "[INTEGRATION]");
         if (snapshot && !isHandleSnapshots()) {
             log.debug("{} rejected '{}': not handling snapshots.", this, path);
             return false;

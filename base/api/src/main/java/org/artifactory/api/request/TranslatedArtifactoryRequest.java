@@ -26,6 +26,7 @@ import org.artifactory.util.PathUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 
 /**
  * @author Noam Y. Tenne
@@ -111,6 +112,11 @@ public class TranslatedArtifactoryRequest implements ArtifactoryRequest {
     }
 
     @Override
+    public boolean hasIfModifiedSince() {
+        return originalRequest.hasIfModifiedSince();
+    }
+
+    @Override
     public boolean isNewerThan(long time) {
         return originalRequest.isNewerThan(time);
     }
@@ -118,6 +124,11 @@ public class TranslatedArtifactoryRequest implements ArtifactoryRequest {
     @Override
     public String getHeader(String headerName) {
         return originalRequest.getHeader(headerName);
+    }
+
+    @Override
+    public Enumeration getHeaders(String headerName) {
+        return originalRequest.getHeaders(headerName);
     }
 
     @Override
@@ -168,6 +179,16 @@ public class TranslatedArtifactoryRequest implements ArtifactoryRequest {
     @Override
     public int getContentLength() {
         return originalRequest.getContentLength();
+    }
+
+    @Override
+    public boolean isNoneMatch(String etag) {
+        return originalRequest.isNoneMatch(etag);
+    }
+
+    @Override
+    public boolean hasIfNoneMatch() {
+        return originalRequest.hasIfNoneMatch();
     }
 
     @Override

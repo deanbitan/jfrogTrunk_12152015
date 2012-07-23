@@ -60,11 +60,11 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
                             TimeUnit.SECONDS).makeMap();
 
     @Override
-    public void fetchMessage() {
+    public void fetchMessage(boolean ssl) {
         if (!ConstantValues.versionQueryEnabled.getBoolean() && centralConfigService.getDescriptor().isOfflineMode()) {
             return;
         }
-        final Message message = getRemoteMessage();
+        final Message message = getRemoteMessage(ssl);
         cache.put(MESSAGE_CACHE_KEY, message);
     }
 
@@ -74,16 +74,16 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
     }
 
     @Override
-    public Message getMessage() {
+    public Message getMessage(boolean ssl) {
         Message message = getCachedMessage();
         if (ConstantValues.versionQueryEnabled.getBoolean() && !cache.containsKey(MESSAGE_CACHE_KEY)) {
             cache.put(MESSAGE_CACHE_KEY, PROCESSING_MESSAGE);
-            ContextHelper.get().beanForType(ArtifactoryUpdatesService.class).fetchMessage();
+            ContextHelper.get().beanForType(ArtifactoryUpdatesService.class).fetchMessage(ssl);
         }
         return message;
     }
 
-    private Message getRemoteMessage() {
+    private Message getRemoteMessage(boolean ssl) {
         final String url = ConstantValues.artifactoryUpdatesUrl.getString();
         try {
             GetMethod getMethod = new GetMethod(url);
@@ -91,7 +91,7 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
 
             client.executeMethod(getMethod);
             if (getMethod.getStatusCode() == HttpStatus.SC_OK) {
-                final String body = messageBody(getMethod);
+                final String body = messageBody(getMethod, ssl);
                 final String id = messageId(body);
                 return new Message(id, body);
             }
@@ -114,9 +114,14 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
                 .replaceAll("=", "").replaceAll("\\+", "-").replaceAll("/", "_");
     }
 
-    private String messageBody(GetMethod getMethod) throws IOException {
+    private String messageBody(GetMethod getMethod, boolean ssl) throws IOException {
         final String body = getMethod.getResponseBodyAsString();
-        return StringUtils.defaultString(body);
+        String defaultBody = StringUtils.defaultString(body);
+        if (ssl) {
+            defaultBody = StringUtils.replace(defaultBody, "http", "https");
+        }
+
+        return defaultBody;
     }
 
     private HttpClient createHTTPClient() {

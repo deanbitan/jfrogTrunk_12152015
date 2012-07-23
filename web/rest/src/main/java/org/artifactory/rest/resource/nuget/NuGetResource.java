@@ -22,6 +22,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -100,6 +101,20 @@ public class NuGetResource {
     public Response getPackages(@PathParam(NuGetAddon.REPO_KEY_PARAM) String repoKey) {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         return addonsManager.addonByType(RestAddon.class).handleNuGetPackagesRequest(request, repoKey);
+    }
+
+    /**
+     * Handles search requests for packages by ID
+     *
+     * @param repoKey Key of NuGet supporting repository
+     * @return Response
+     */
+    @GET
+    @Path("{repoKey: [^/]+}/FindPackagesById()")
+    @Produces({MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    public Response findPackagesById(@PathParam(NuGetAddon.REPO_KEY_PARAM) String repoKey) {
+        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+        return addonsManager.addonByType(RestAddon.class).handleFindPackagesByIdRequest(request, repoKey);
     }
 
     /**

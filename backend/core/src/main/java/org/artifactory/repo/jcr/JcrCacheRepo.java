@@ -39,8 +39,8 @@ import org.artifactory.repo.jcr.cache.expirable.ZapItemVisitor;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.InternalRequestContext;
+import org.artifactory.request.RepoRequests;
 import org.artifactory.request.Request;
-import org.artifactory.request.RequestTraceLogger;
 import org.artifactory.resource.ExpiredRepoResource;
 import org.slf4j.Logger;
 
@@ -73,23 +73,23 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         RepoResource repoResource = super.getInfo(context);
         if (repoResource.isFound()) {
             //Check for expiry
-            RequestTraceLogger.log("Found the resource in the cache - checking for expiry");
+            RepoRequests.logToContext("Found the resource in the cache - checking for expiry");
             boolean forceDownloadIfNewer = false;
             Request request = context.getRequest();
             if (request != null) {
                 String forcePropValue = request.getParameter(ArtifactoryRequest.PARAM_FORCE_DOWNLOAD_IF_NEWER);
                 if (StringUtils.isNotBlank(forcePropValue)) {
                     forceDownloadIfNewer = Boolean.valueOf(forcePropValue);
-                    RequestTraceLogger.log("Found request parameter {}=%s",
+                    RepoRequests.logToContext("Found request parameter {}=%s",
                             ArtifactoryRequest.PARAM_FORCE_DOWNLOAD_IF_NEWER, forceDownloadIfNewer);
                 }
             }
 
             if (forceDownloadIfNewer || isExpired(repoResource)) {
-                RequestTraceLogger.log("Returning resource as expired");
+                RepoRequests.logToContext("Returning resource as expired");
                 repoResource = new ExpiredRepoResource(repoResource);
             } else {
-                RequestTraceLogger.log("Returning cached resource");
+                RepoRequests.logToContext("Returning cached resource");
             }
         }
         return repoResource;

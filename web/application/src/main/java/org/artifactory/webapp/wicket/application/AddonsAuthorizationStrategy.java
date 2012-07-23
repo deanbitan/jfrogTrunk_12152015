@@ -50,5 +50,4 @@ public class AddonsAuthorizationStrategy implements IAuthorizationStrategy {
     public boolean isActionAuthorized(Component component, Action action) {
         return true;
     }
-
 }

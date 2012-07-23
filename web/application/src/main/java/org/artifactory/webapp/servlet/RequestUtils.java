@@ -29,7 +29,6 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.HttpUtils;
@@ -42,6 +41,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
@@ -60,7 +60,6 @@ public abstract class RequestUtils {
     private static final Set<String> NON_UI_PATH_PREFIXES = new HashSet<String>();
     private static final Set<String> UI_PATH_PREFIXES = new HashSet<String>();
     public static final String LAST_USER_KEY = "artifactory:lastUserId";
-    private static boolean USE_PATH_INFO = false;
     private static final String DEFAULT_ENCODING = "utf-8";
 
     private RequestUtils() {
@@ -120,6 +119,12 @@ public abstract class RequestUtils {
         }
         RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
         Set<String> allRepos = repositoryService.getAllRepoKeys();
+        try {
+            repoKey = URLDecoder.decode(repoKey, "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            log.warn("Could not decode repo key '" + repoKey + "' in utf-8");
+            return false;
+        }
         if (!allRepos.contains(repoKey)) {
             log.warn("Request " + servletPath + " should be a repo request and does not match any repo key");
             return false;
@@ -200,19 +205,7 @@ public abstract class RequestUtils {
     }
 
     /**
-     * Sets the value which indicates if to use path info instead of servlet path in getServletPathFromRequest method
-     *
-     * @param usePathInfo True if to prefer path info over servlet path
-     * @deprecated deprecated by yoava, this value is never used
-     */
-    @Deprecated
-    public static void setUsePathInfo(boolean usePathInfo) {
-        USE_PATH_INFO = usePathInfo;
-    }
-
-    /**
-     * Returns the servlet path from the request, in accordance to the boolean value of USE_PATH_INFO which Decides if
-     * to try and use getPathInfo() instead of getServletPath().
+     * Returns the un-decoded servlet path from the request
      *
      * @param req The received request
      * @return String - Servlet path
@@ -223,28 +216,6 @@ public abstract class RequestUtils {
             return req.getRequestURI();
         }
         return req.getRequestURI().substring(contextPath.length());
-        /**
-         if (USE_PATH_INFO) {
-         //Websphere returns the path in the getPathInfo()
-         String path = req.getPathInfo();
-         //path == null so no Websphere
-         if (path == null) {
-         return req.getServletPath();
-         }
-         if (path.length() == 0) {
-         path = "/" + WEBAPP_URL_PATH_PREFIX;
-         }
-         return path;
-         } else {
-         String uri = req.getRequestURI();
-         String path = req.getServletPath();
-         int idx = uri.lastIndexOf(path);
-         if (idx > 0) {
-         path = uri.substring(idx);
-         }
-         return path;
-         }
-         */
     }
 
     /**
@@ -257,15 +228,6 @@ public abstract class RequestUtils {
 
     public static RepoPath getRepoPath(HttpServletRequest servletRequest) {
         return (RepoPath) servletRequest.getAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH);
-    }
-
-    /**
-     * Calculates a repoPath based on the given servlet path (path after the context root, including the repo prefix).
-     */
-    public static RepoPath calculateRepoPath(String requestPath) {
-        String repoKey = PathUtils.getFirstPathElement(requestPath);
-        String path = PathUtils.stripFirstPathElement(requestPath);
-        return InternalRepoPathFactory.create(repoKey, path);
     }
 
     public static void removeRepoPath(Request request, boolean storeAsRemoved) {
@@ -306,10 +268,6 @@ public abstract class RequestUtils {
             return username;
         }
         return EMPTY;
-    }
-
-    public static boolean isAuthPresent(Request request) {
-        return isAuthHeaderPresent((HttpServletRequest) request.getContainerRequest());
     }
 
     public static String getWicketServletContextUrl() {

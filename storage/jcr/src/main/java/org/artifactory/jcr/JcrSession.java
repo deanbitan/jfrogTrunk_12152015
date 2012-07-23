@@ -20,11 +20,13 @@ package org.artifactory.jcr;
 
 import com.google.common.collect.Sets;
 import org.apache.jackrabbit.api.XASession;
+import org.apache.jackrabbit.core.util.db.ArtifactoryConnectionHelper;
 import org.apache.lucene.util.CloseableThreadLocal;
 import org.artifactory.jcr.data.VfsNodeJcrImpl;
 import org.artifactory.jcr.lock.InternalLockManager;
 import org.artifactory.jcr.lock.SessionLockManager;
 import org.artifactory.jcr.lock.aop.LockingAdvice;
+import org.artifactory.jcr.utils.JcrUtils;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.ArtifactorySession;
 import org.artifactory.sapi.common.PathFactoryHolder;
@@ -381,6 +383,13 @@ public class JcrSession implements XASession, ArtifactorySession {
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     private void validateSessionCleaness() {
         try {
+            if (log.isDebugEnabled()) {
+                ArtifactoryConnectionHelper connectionHelper =
+                        JcrUtils.getExtendedDataStore(this).getConnectionHelper();
+                if (connectionHelper.isTxActive()) {
+                    log.debug("Transaction still active on session logout!");
+                }
+            }
             SessionResourceManager resourceManager = getSessionResourceManager();
             if (resourceManager != null && resourceManager.hasPendingResources()) {
                 IllegalStateException e = new IllegalStateException(

@@ -340,7 +340,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             @Override
             protected void saveItems(AjaxRequestTarget target) {
                 try {
-                    cachingDescriptorHelper.syncAndSaveVirtualRepositories(false);
+                    cachingDescriptorHelper.syncAndSaveVirtualRepositories(false, false);
                     info("Virtual repositories order was successfully saved.");
                 } catch (Exception e) {
                     error("Could not save virtual repositories order: " + e.getMessage());

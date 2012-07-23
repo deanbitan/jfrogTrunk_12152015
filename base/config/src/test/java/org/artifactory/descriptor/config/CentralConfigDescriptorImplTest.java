@@ -114,6 +114,7 @@ public class CentralConfigDescriptorImplTest {
         localReplication1.setUrl("http://momo.com");
         localReplication1.setUsername("user1");
         localReplication1.setPassword("password1");
+        localReplication1.setEnableEventReplication(true);
         cc.addLocalReplication(localReplication1);
 
         LocalReplicationDescriptor localReplication2 = new LocalReplicationDescriptor();
@@ -122,6 +123,7 @@ public class CentralConfigDescriptorImplTest {
         localReplication2.setUrl("http://popo.com");
         localReplication2.setUsername("user2");
         localReplication2.setPassword("password2");
+        localReplication1.setEnableEventReplication(true);
         cc.addLocalReplication(localReplication2);
     }
 

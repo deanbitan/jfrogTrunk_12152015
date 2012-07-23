@@ -44,6 +44,6 @@ public class HttpRepoPackagesPanel<T extends RemoteRepoDescriptor> extends Panel
         add(form);
 
         addonsManager.addonByType(NuGetWebAddon.class).createAndAddRepoConfigNuGetSection(form, descriptor);
-        addonsManager.addonByType(P2WebAddon.class).createAndAddRemoteRepoConfigP2Section(form);
+        addonsManager.addonByType(P2WebAddon.class).createAndAddRemoteRepoConfigP2Section(form, descriptor);
     }
 }

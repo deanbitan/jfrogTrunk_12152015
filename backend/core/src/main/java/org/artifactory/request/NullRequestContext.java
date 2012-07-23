@@ -50,4 +50,8 @@ public class NullRequestContext extends BaseRequestContext {
     public Properties getProperties() {
         return (Properties) InfoFactoryHolder.get().createProperties();
     }
+
+    public void setServletContextUrl(String servletContextUrl) {
+        ((InternalArtifactoryRequest)getRequest()).setServletContextUrl(servletContextUrl);
+    }
 }

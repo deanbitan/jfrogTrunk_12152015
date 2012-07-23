@@ -19,9 +19,12 @@
 package org.artifactory.webapp.servlet;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.ArtifactoryResponseBase;
+import org.artifactory.util.HttpUtils;
+import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletResponse;
@@ -76,8 +79,20 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
      * We don't set the name here and let the browser decide based on download URL.
      * For more info read <a href="https://www.ietf.org/rfc/rfc2183.txt">RFC2183</a>
      */
-    public void setContentDispositionAttachment() {
-        response.setHeader("Content-Disposition", "attachment");
+    public void setContentDispositionAttachment(String filename) {
+        if (ConstantValues.responseDisableContentDispositionFilename.getBoolean() || StringUtils.isBlank(filename)) {
+            response.setHeader("Content-Disposition", "attachment");
+        } else {
+            response.setHeader("Content-Disposition", "attachment; filename=" + filename);
+        }
+    }
+
+    public void setFilename(String filename) {
+        if (StringUtils.isNotBlank(filename)) {
+            response.setHeader(ArtifactoryRequest.FILE_NAME, HttpUtils.encodeQuery(filename));
+        } else {
+            log.debug("Could not register a null filename with the response.");
+        }
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.repo.RepoPath;
 
 /**
@@ -36,8 +37,9 @@ public interface ReplicationWebAddon extends Addon {
     ITab getHttpRepoReplicationPanel(String tabTitle, HttpRepoDescriptor repoDescriptor,
             RemoteReplicationDescriptor replicationDescriptor, CreateUpdateAction action);
 
-    ITab getLocalRepoReplicationPanel(String tabTitle, LocalReplicationDescriptor replicationDescriptor,
+    ITab getLocalRepoReplicationPanel(String tabTitle, LocalRepoDescriptor entity,
+            LocalReplicationDescriptor replicationDescriptor,
             MutableCentralConfigDescriptor mutableDescriptor, CreateUpdateAction action);
 
-    MarkupContainer getLastReplicationStatusLabel(String id, RepoPath repoPath);
+    MarkupContainer getLastReplicationStatusLabel(String id, RepoPath repoPath, boolean isCache);
 }

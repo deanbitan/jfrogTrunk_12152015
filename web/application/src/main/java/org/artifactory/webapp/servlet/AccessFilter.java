@@ -79,10 +79,6 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         filterChain.addFilters(context.beansForType(ArtifactoryAuthenticationFilter.class).values());
         authFilter = filterChain;
         initCaches(filterConfig);
-        String usePathInfo = filterConfig.getInitParameter("usePathInfo");
-        if (usePathInfo != null) {
-            RequestUtils.setUsePathInfo(Boolean.parseBoolean(usePathInfo));
-        }
         authFilter.init(filterConfig);
     }
 

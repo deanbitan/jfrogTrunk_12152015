@@ -19,10 +19,11 @@
 package org.artifactory.repo.replication;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.ReplicationAddon;
 import org.artifactory.addon.replication.LocalReplicationSettings;
-import org.artifactory.addon.replication.LocalReplicationSettingsBuilder;
+import org.artifactory.addon.replication.ReplicationAddon;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.SecurityService;
+import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.service.ImportJob;
@@ -35,6 +36,7 @@ import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
@@ -57,28 +59,13 @@ public class LocalReplicationJob extends QuartzCommand {
             return;
         }
 
-        LocalReplicationDescriptor replication;
-
-        JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
-
-        Object manualInvocationDescriptor = jobDataMap.get(ReplicationAddon.TASK_MANUAL_DESCRIPTOR);
-        if (manualInvocationDescriptor != null) {
-            replication = ((LocalReplicationDescriptor) manualInvocationDescriptor);
-        } else {
-            replication = context.getCentralConfig().getDescriptor().getLocalReplication(
-                    jobDataMap.getString(Task.REPO_KEY));
-        }
-
+        LocalReplicationDescriptor replication = replicationDescriptorFromJobOrConfig(context, callbackContext);
         if (replication == null) {
             log.warn("Unable to execute replication for repo: cannot find replication descriptor.");
             return;
         }
 
-        LocalReplicationSettings settings = new LocalReplicationSettingsBuilder(replication.getRepoPath(),
-                replication.getUrl()).proxyDescriptor(replication.getProxy()).
-                socketTimeoutMillis(replication.getSocketTimeoutMillis()).username(replication.getUsername()).
-                password(replication.getPassword()).deleteExisting(replication.isSyncDeletes()).
-                includeProperties(replication.isSyncProperties()).build();
+        LocalReplicationSettings settings = new LocalReplicationSettings(replication);
 
         SecurityService securityService = context.beanForType(SecurityService.class);
         try {
@@ -92,6 +79,20 @@ public class LocalReplicationJob extends QuartzCommand {
             log.debug("An error occurred while performing replication for repository '{}'.", e);
         } finally {
             securityService.nullifyContext();
+        }
+    }
+
+    private LocalReplicationDescriptor replicationDescriptorFromJobOrConfig(InternalArtifactoryContext context,
+            JobExecutionContext callbackContext) {
+        JobDetail jobDetail = callbackContext.getJobDetail();
+        JobDataMap jobDataMap = jobDetail.getJobDataMap();
+        Object manualInvocationDescriptor = jobDataMap.get(ReplicationAddon.TASK_MANUAL_DESCRIPTOR);
+        if (manualInvocationDescriptor != null) {
+            return ((LocalReplicationDescriptor) manualInvocationDescriptor);
+        } else {
+            CentralConfigService centralConfig = context.getCentralConfig();
+            CentralConfigDescriptor centralConfigDescriptor = centralConfig.getDescriptor();
+            return centralConfigDescriptor.getLocalReplication(jobDataMap.getString(Task.REPO_KEY));
         }
     }
 }

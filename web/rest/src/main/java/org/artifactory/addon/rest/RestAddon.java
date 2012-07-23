@@ -343,6 +343,8 @@ public interface RestAddon extends Addon {
      */
     Response handleNuGetPackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey);
 
+    Response handleFindPackagesByIdRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey);
+
     /**
      * Handles a NuGet package download request
      *

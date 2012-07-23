@@ -18,9 +18,11 @@
 
 package org.artifactory.request;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,6 +33,13 @@ public abstract class BaseRequestContext implements InternalRequestContext {
     private static final Pattern PATTERN_JAVA_AGENT = Pattern.compile("[Jj]ava/(.+)");
 
     protected final ArtifactoryRequest request;
+
+    /**
+     * Generic attributes which can be added and queried, this should not be mistaken with
+     * request properties which are the matrix params of the request, the attributes are
+     * essentially meant for internal usage.
+     */
+    protected Map<String, String> attributes;
 
     protected BaseRequestContext(@Nonnull ArtifactoryRequest request) {
         this.request = request;
@@ -65,5 +74,21 @@ public abstract class BaseRequestContext implements InternalRequestContext {
     @Nonnull
     public ArtifactoryRequest getRequest() {
         return request;
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        if (attributes == null) {
+            attributes = Maps.newHashMap();
+        }
+        attributes.put(name, value);
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        if (attributes == null) {
+            return null;
+        }
+        return attributes.get(name);
     }
 }

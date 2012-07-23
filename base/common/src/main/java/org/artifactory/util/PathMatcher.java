@@ -28,6 +28,7 @@ import org.springframework.util.AntPathMatcher;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -78,12 +79,14 @@ public abstract class PathMatcher {
         return path;
     }
 
-    public static boolean matches(File file, @Nullable List<String> includes, @Nullable List<String> excludes) {
+    public static boolean matches(File file, @Nullable Collection<String> includes,
+            @Nullable Collection<String> excludes) {
         return matches(cleanPath(file), includes, excludes);
     }
 
-    public static boolean matches(String path, @Nullable List<String> includes, @Nullable List<String> excludes) {
-        if (!CollectionUtils.isNullOrEmpty(excludes)) {
+    public static boolean matches(String path, @Nullable Collection<String> includes,
+            @Nullable Collection<String> excludes) {
+        if (CollectionUtils.notNullOrEmpty(excludes)) {
             for (String exclude : excludes) {
                 boolean match = antPathMatcher.match(exclude, path);
                 if (match) {
@@ -96,7 +99,7 @@ public abstract class PathMatcher {
         if ("".equals(path) || "/".equals(path)) {
             return true;
         }
-        if (!CollectionUtils.isNullOrEmpty(includes)) {
+        if (CollectionUtils.notNullOrEmpty(includes)) {
             for (String include : includes) {
                 // If path is smaller than include or end with / verify if it's a sub path then return true
                 if ((path.endsWith("/") || path.length() <= include.length())

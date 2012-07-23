@@ -536,7 +536,8 @@ public class ArtifactoryDbDataRecord extends AbstractDataRecord implements State
                         // The cache file is there from left over of a deletion that did not complete
                         // Since it's totally recovered, the message is debug level only
                         log.debug(
-                                "Unexpected condition when switching temp file target datastore file {} already exists!");
+                                "Unexpected condition when switching temp file target datastore file {} already exists!",
+                                cachedFile.getAbsolutePath());
                     }
                 } else {
                     File parentFile = cachedFile.getParentFile();

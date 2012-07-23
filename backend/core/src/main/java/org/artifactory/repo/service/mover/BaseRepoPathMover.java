@@ -206,7 +206,7 @@ public abstract class BaseRepoPathMover {
             // target repository already contains file with the same name, delete it
             log.debug("File {} already exists in target repository. Overriding.", targetRrp.getRepoPath().getPath());
             VfsItem existingTargetFile = targetRepo.getLockedJcrFsItem(targetRrp.getRepoPath().getPath());
-            existingTargetFile.bruteForceDelete();
+            bruteForceDeleteAndReplicateEvent(existingTargetFile);
         } else {
             // make sure parent directories exist
             RepoPath targetParentRepoPath = InternalRepoPathFactory.create(targetRepo.getKey(),
@@ -320,7 +320,7 @@ public abstract class BaseRepoPathMover {
             if (emptyAndNotRoot) {
                 //Remove current folder, continue to the parent
                 storageInterceptors.afterDelete(highestRemovedPath, status);
-                highestRemovedPath.bruteForceDelete();
+                bruteForceDeleteAndReplicateEvent(highestRemovedPath);
                 highestRemovedPath = highestRemovedPath.getLockedParentFolder();
             }
         }
@@ -386,5 +386,9 @@ public abstract class BaseRepoPathMover {
 
     protected boolean errorsOrWarningsOccurredAndFailFast() {
         return (status.hasWarnings() || status.hasErrors()) && failFast;
+    }
+
+    protected void bruteForceDeleteAndReplicateEvent(VfsItem item) {
+        jcrRepoService.bruteForceDeleteAndReplicateEvent(item);
     }
 }

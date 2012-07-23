@@ -34,6 +34,7 @@ import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
+import org.artifactory.webapp.wicket.util.CronUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -76,7 +77,7 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
             replicationDescriptor.setRepoKey(entity.getKey());
         }
         ReplicationWebAddon replicationWebAddon = addons.addonByType(ReplicationWebAddon.class);
-        tabList.add(replicationWebAddon.getLocalRepoReplicationPanel("Replication", replicationDescriptor,
+        tabList.add(replicationWebAddon.getLocalRepoReplicationPanel("Replication", entity, replicationDescriptor,
                 mutableDescriptor, action));
 
         tabList.add(new AbstractTab(Model.of("Packages")) {
@@ -124,6 +125,29 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
 
     @Override
     protected boolean validate(LocalRepoDescriptor repoDescriptor) {
+        if (replicationDescriptor != null && replicationDescriptor.isEnabled()) {
+            if (StringUtils.isBlank(replicationDescriptor.getUrl())) {
+                error("Field 'Url' is required.");
+                return false;
+            }
+
+            if (StringUtils.isBlank(replicationDescriptor.getUsername())) {
+                error("Username is required.");
+                return false;
+            }
+
+            if (replicationDescriptor.getSocketTimeoutMillis() < 0) {
+                error("Socket Timeout must be positive or zero.");
+                return false;
+            }
+
+            String cronExp = replicationDescriptor.getCronExp();
+            if (StringUtils.isBlank(cronExp) || !CronUtils.isValid(cronExp)) {
+                error("Invalid cron expression");
+                return false;
+            }
+        }
+
         return true;
     }
 }

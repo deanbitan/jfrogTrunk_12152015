@@ -257,6 +257,11 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
+    public Response handleFindPackagesByIdRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
     public Response handleNuGetDownloadRequest(@Nonnull HttpServletResponse response, @Nonnull String repoKey,
             @Nonnull String packageId, @Nonnull String packageVersion) {
         throw new MissingRestAddonException();

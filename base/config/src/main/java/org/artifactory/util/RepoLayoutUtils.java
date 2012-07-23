@@ -100,9 +100,10 @@ public abstract class RepoLayoutUtils {
     public static final String CLASSIFIER = "classifier";
     public static final String EXT = "ext";
     public static final String TYPE = "type";
+    public static final String RELEASE = "RELEASE";
 
     public static final Set<String> TOKENS = Sets.newHashSet(ORGANIZATION, ORGANIZATION_PATH, MODULE, BASE_REVISION,
-            FOLDER_INTEGRATION_REVISION, FILE_INTEGRATION_REVISION, CLASSIFIER, EXT, TYPE);
+            FOLDER_INTEGRATION_REVISION, FILE_INTEGRATION_REVISION, CLASSIFIER, EXT, TYPE, RELEASE);
 
     public static final Map<String, BaseTokenFilter> TOKEN_FILTERS;
 
@@ -241,11 +242,12 @@ public abstract class RepoLayoutUtils {
      * @return Regular expression of given path
      */
     public static String generateRegExpFromPattern(RepoLayout repoLayout, String patternToUse) {
-        return generateRegExpFromPattern(repoLayout, patternToUse, false);
+        return generateRegExpFromPattern(repoLayout, patternToUse, false, false);
     }
 
     /**
      * Creates a regular expression based on the given path pattern and layout
+     * the pattern may contain version tokens ([RELEASE] or [INTEGRATION])
      *
      * @param repoLayout         Repo layout to target
      * @param patternToUse       Pattern to translate
@@ -254,6 +256,20 @@ public abstract class RepoLayoutUtils {
      */
     public static String generateRegExpFromPattern(RepoLayout repoLayout, String patternToUse,
             boolean failOnUnknownToken) {
+        return generateRegExpFromPattern(repoLayout, patternToUse, failOnUnknownToken, false);
+    }
+
+    /**
+     * Creates a regular expression based on the given path pattern and layout
+     *
+     * @param repoLayout         Repo layout to target
+     * @param patternToUse       Pattern to translate
+     * @param failOnUnknownToken Throw exception if the pattern contains an unknown token (neither reserved nor custom)
+     * @param hasVersionTokens   indicates if the pattern contains version tokens
+     * @return Regular expression of given path
+     */
+    public static String generateRegExpFromPattern(RepoLayout repoLayout, String patternToUse,
+            boolean failOnUnknownToken, boolean hasVersionTokens) {
         List<String> tokenAppearance = Lists.newArrayList();
         StringBuilder itemPathPatternRegExpBuilder = new StringBuilder();
 
@@ -270,7 +286,7 @@ public abstract class RepoLayoutUtils {
                 currentTokenBuilder.delete(0, currentTokenBuilder.length());
                 if (isReservedToken(currentToken)) {
                     appendToken(itemPathPatternRegExpBuilder, currentToken, tokenAppearance,
-                            getTokenRegExp(currentToken, repoLayout));
+                            getTokenRegExp(currentToken, repoLayout, hasVersionTokens));
                 } else if (customRegExTokenBuilder.length() != 0) {
                     appendToken(itemPathPatternRegExpBuilder, currentToken, tokenAppearance,
                             customRegExTokenBuilder.toString());
@@ -405,7 +421,7 @@ public abstract class RepoLayoutUtils {
         return TOKENS.contains(pathElement);
     }
 
-    private static String getTokenRegExp(String tokenName, RepoLayout repoLayout) {
+    private static String getTokenRegExp(String tokenName, RepoLayout repoLayout, boolean hasVersionTokens) {
         if (ORGANIZATION.equals(tokenName)) {
             return "[^/]+?";
         } else if (ORGANIZATION_PATH.equals(tokenName)) {
@@ -415,14 +431,24 @@ public abstract class RepoLayoutUtils {
         } else if (BASE_REVISION.equals(tokenName)) {
             return "[^/]+?";
         } else if (FOLDER_INTEGRATION_REVISION.equals(tokenName)) {
-            return repoLayout.getFolderIntegrationRevisionRegExp();
+            String regExp = repoLayout.getFolderIntegrationRevisionRegExp();
+            if (hasVersionTokens) {
+                regExp = regExp + "|\\[INTEGRATION\\]" + "|\\[RELEASE\\]";
+            }
+            return regExp;
         } else if (FILE_INTEGRATION_REVISION.equals(tokenName)) {
-            return repoLayout.getFileIntegrationRevisionRegExp();
+            String regExp = repoLayout.getFileIntegrationRevisionRegExp();
+            if (hasVersionTokens) {
+                regExp = regExp + "|\\[INTEGRATION\\]" + "|\\[RELEASE\\]";
+            }
+            return regExp;
         } else if (CLASSIFIER.equals(tokenName)) {
             return "[^/]+?";
         } else if (EXT.equals(tokenName)) {
             return "(?:(?!\\d))[^\\-/]+";
         } else if (TYPE.equals(tokenName)) {
+            return "[^/]+?";
+        } else if (hasVersionTokens && RELEASE.equals(tokenName)) {
             return "[^/]+?";
         }
         return null;

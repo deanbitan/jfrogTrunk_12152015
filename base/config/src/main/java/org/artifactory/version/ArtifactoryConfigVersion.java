@@ -36,6 +36,11 @@ import org.artifactory.version.converter.v135.ProxyNTHostConverter;
 import org.artifactory.version.converter.v136.IndexerCronRemoverConverter;
 import org.artifactory.version.converter.v136.RepositoryTypeConverter;
 import org.artifactory.version.converter.v141.ProxyDefaultConverter;
+import org.artifactory.version.converter.v1410.GcSystemPropertyConverter;
+import org.artifactory.version.converter.v1412.IndexerCronExpPropertyConverter;
+import org.artifactory.version.converter.v1414.ArchiveBrowsingConverter;
+import org.artifactory.version.converter.v1414.AssumedOfflineConverter;
+import org.artifactory.version.converter.v1414.CleanupConfigConverter;
 import org.artifactory.version.converter.v142.RepoIncludeExcludePatternsConverter;
 import org.artifactory.version.converter.v143.RemoteChecksumPolicyConverter;
 import org.artifactory.version.converter.v144.MultiLdapXmlConverter;
@@ -44,11 +49,6 @@ import org.artifactory.version.converter.v147.DefaultRepoLayoutConverter;
 import org.artifactory.version.converter.v147.JfrogRemoteRepoUrlConverter;
 import org.artifactory.version.converter.v147.UnusedArtifactCleanupSwitchConverter;
 import org.artifactory.version.converter.v149.ReplicationElementNameConverter;
-import org.artifactory.version.converter.v150.GcSystemPropertyConverter;
-import org.artifactory.version.converter.v151.IndexerCronExpPropertyConverter;
-import org.artifactory.version.converter.v152.ArchiveBrowsingConverter;
-import org.artifactory.version.converter.v152.AssumedOfflineConverter;
-import org.artifactory.version.converter.v152.CleanupConfigConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -175,6 +175,10 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
     v1414("http://artifactory.jfrog.org/xsd/1.4.14",
             "http://www.jfrog.org/xsd/artifactory-v1_4_14.xsd",
             ArtifactoryVersion.v260,
+            ArtifactoryVersion.v261),
+    v1415("http://artifactory.jfrog.org/xsd/1.4.15",
+            "http://www.jfrog.org/xsd/artifactory-v1_4_15.xsd",
+            ArtifactoryVersion.v262,
             ArtifactoryVersion.getCurrent());
 
     private final String xsdUri;

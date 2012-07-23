@@ -23,6 +23,7 @@ import org.artifactory.repo.RepoPath;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 
 public interface Request {
 
@@ -43,9 +44,13 @@ public interface Request {
 
     long getIfModifiedSince();
 
+    public boolean hasIfModifiedSince();
+
     boolean isNewerThan(long time);
 
     String getHeader(String headerName);
+
+    Enumeration getHeaders(String headerName);
 
     String getServletContextUrl();
 
@@ -74,9 +79,9 @@ public interface Request {
     String getClientAddress();
 
     /**
-     * Returns the internal zip resource path if such existed in the request.<p/>
-     * For example if the request path is /path/to/zip!/path/to/resource/in/zip the method will return the zip resource
-     * path: '/path/to/zip' as the root path.
+     * Returns the internal zip resource path if such existed in the request.<p/> For example if the request path is
+     * /path/to/zip!/path/to/resource/in/zip the method will return the zip resource path: '/path/to/zip' as the root
+     * path.
      *
      * @return The zip resource path. Null or empty is such doesn't exist in the request path.
      */
@@ -87,4 +92,20 @@ public interface Request {
      * @see org.artifactory.request.Request#getZipResourcePath()
      */
     boolean isZipResourceRequest();
+
+    /**
+     * Checks whether an entity with the provided etag does not already exist by comparing it to the request's
+     * If-None-Match
+     *
+     * @param etag
+     * @return
+     */
+    boolean isNoneMatch(String etag);
+
+    /**
+     * Checks whether the request has an If-None-Match header specified
+     *
+     * @return Request has non-null If-None-Match
+     */
+    boolean hasIfNoneMatch();
 }

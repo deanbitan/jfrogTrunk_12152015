@@ -136,7 +136,7 @@ public abstract class NamingUtils {
      */
     public static boolean isMetadataChecksum(String path) {
         if (isChecksum(path)) {
-            String checksumTargetFile = MavenNaming.getChecksumTargetFile(path);
+            String checksumTargetFile = PathUtils.stripExtension(path);
             return isMetadata(checksumTargetFile);
         } else {
             return false;

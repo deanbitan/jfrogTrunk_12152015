@@ -28,6 +28,7 @@ import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.addon.replication.LocalReplicationSettings;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
@@ -41,6 +42,7 @@ import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
+import org.artifactory.descriptor.replication.ReplicationBaseDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
@@ -343,6 +345,31 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public void offerLocalReplicationDeploymentEvent(RepoPath repoPath) {
+    }
+
+    @Override
+    public void offerLocalReplicationMkDirEvent(RepoPath repoPath) {
+    }
+
+    @Override
+    public void offerLocalReplicationDeleteEvent(RepoPath repoPath) {
+    }
+
+    @Override
+    public void offerLocalReplicationMetadataDeploymentEvent(RepoPath repoPath, String metadataName) {
+    }
+
+    @Override
+    public void offerLocalReplicationMetadataDeleteEvent(RepoPath repoPath, String metadataName) {
+    }
+
+    @Override
+    public void validateTargetIsDifferentInstance(ReplicationBaseDescriptor descriptor,
+            RealRepoDescriptor repoDescriptor) throws IOException {
+    }
+
+    @Override
     public void performLegacyRemoteReplication(RemoteReplicationSettings remoteReplicationSettings) throws IOException {
     }
 
@@ -400,6 +427,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public void handlePackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
             @Nonnull OutputStream output) {
+    }
+
+    @Override
+    public void handleFindPackagesByIdRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
+            @Nonnull OutputStream output) throws IOException {
     }
 
     @Override

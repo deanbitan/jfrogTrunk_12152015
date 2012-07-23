@@ -100,7 +100,7 @@ public class LocalRepoBasicPanel extends Panel {
         snapshotVersionDropDown.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
-                if (NONUNIQUE.equals(descriptor.getSnapshotVersionBehavior())) {
+                if (NONUNIQUE.equals(descriptor.getSnapshotVersionBehavior()) && descriptor.isMavenRepoLayout()) {
                     descriptor.setMaxUniqueSnapshots(0);
                 }
                 target.add(maxUniqueSnapshots);
@@ -136,6 +136,7 @@ public class LocalRepoBasicPanel extends Panel {
                 suppressPomConsistencyChecks.setEnabled(repoDescriptor.isMavenRepoLayout());
                 suppressPomConsistencyChecks.setDefaultModelObject(!repoDescriptor.isMavenRepoLayout());
                 snapshotVersionDropDown.setEnabled(descriptor.isMavenRepoLayout());
+                target.add(maxUniqueSnapshots);
                 target.add(snapshotVersionDropDown);
                 target.add(suppressPomConsistencyChecks);
             }
@@ -158,7 +159,8 @@ public class LocalRepoBasicPanel extends Panel {
             SnapshotVersionBehavior snapshotVersionBehavior = descriptor.getSnapshotVersionBehavior();
             boolean isUnique = UNIQUE.equals(snapshotVersionBehavior);
             boolean isDeployer = DEPLOYER.equals(snapshotVersionBehavior);
-            return (descriptor.isHandleSnapshots() && (isUnique || isDeployer));
+            boolean isMavenLayout = descriptor.isMavenRepoLayout();
+            return (descriptor.isHandleSnapshots() && ((isUnique || isDeployer) || !isMavenLayout));
         }
     }
 

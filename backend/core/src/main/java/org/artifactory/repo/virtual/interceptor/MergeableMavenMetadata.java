@@ -25,10 +25,12 @@ import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.fs.RepoResource;
+import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.versioning.MavenVersionComparator;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.util.CollectionUtils;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +39,8 @@ import java.util.List;
  * @author Noam Y. Tenne
  */
 class MergeableMavenMetadata {
+    private static final Logger log = LoggerFactory.getLogger(MergeableMavenMetadata.class);
+
     private Metadata metadata;
     private long lastModified;
     private boolean mergeSnapshotVersions;
@@ -74,7 +78,17 @@ class MergeableMavenMetadata {
             if (existingVersioning != null) {
                 List<String> versions = existingVersioning.getVersions();
                 if (!CollectionUtils.isNullOrEmpty(versions)) {
-                    Collections.sort(versions, new MavenVersionComparator());
+                    try {
+                        Collections.sort(versions, new MavenVersionComparator());
+                    } catch (IllegalArgumentException e) {
+                        // New Java 7 TimSort is pointing out the non transitive behavior
+                        // of the Mercury version comparator => Doing fallback to natural string order
+                        log.info("Hitting Mercury version comparator non transitive behavior message='"+e.getMessage()+"'");
+                        if (log.isDebugEnabled()) {
+                            log.debug("The lists of versions is: "+versions);
+                        }
+                        Collections.sort(versions);
+                    }
                     // latest is simply the last (be it snapshot or release version)
                     String latestVersion = versions.get(versions.size() - 1);
                     existingVersioning.setLatest(latestVersion);

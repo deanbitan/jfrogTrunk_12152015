@@ -74,7 +74,8 @@ import java.util.Map;
  * This class wraps the JAXB config descriptor.
  */
 @Repository("centralConfig")
-@Reloadable(beanClass = InternalCentralConfigService.class, initAfter = ChecksumPaths.class)
+@Reloadable(beanClass = InternalCentralConfigService.class,
+        initAfter = {ChecksumPaths.class, ConfigurationChangesInterceptors.class})
 public class CentralConfigServiceImpl implements InternalCentralConfigService, ContextReadinessListener {
     private static final Logger log = LoggerFactory.getLogger(CentralConfigServiceImpl.class);
 
@@ -246,6 +247,12 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
 
     private void setDescriptor(CentralConfigDescriptor descriptor, boolean save) {
         log.trace("Setting central config descriptor for config #{}.", System.identityHashCode(this));
+
+        if (save) {
+            // call the interceptors before saving the new descriptor
+            interceptors.onBeforeSave(descriptor);
+        }
+
         this.descriptor = descriptor;
         checkUniqueProxies();
         //Create the date formatter
@@ -281,8 +288,6 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
             if (oldDescriptor == null) {
                 throw new IllegalStateException("The system was not loaded, and a reload was called");
             }
-            // call the interceptors before saving the new descriptor
-            interceptors.onBeforeSave(newDescriptor);
 
             InternalArtifactoryContext ctx = InternalContextHelper.get();
 

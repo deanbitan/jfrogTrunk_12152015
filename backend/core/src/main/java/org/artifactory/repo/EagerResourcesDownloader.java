@@ -24,6 +24,7 @@ import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.InternalArtifactoryRequest;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.request.InternalArtifactoryResponse;
+import org.artifactory.sapi.common.Lock;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -41,9 +42,14 @@ public class EagerResourcesDownloader {
     @Async(transactional = true)
     public void downloadAsync(RepoPath eagerRepoPath) {
         InternalArtifactoryRequest internalRequest = new InternalArtifactoryRequest(eagerRepoPath);
+        downloadNow(eagerRepoPath, internalRequest);
+    }
+
+    @Lock(transactional = true)
+    public void downloadNow(RepoPath repoPath, InternalArtifactoryRequest internalRequest) {
         InternalArtifactoryResponse internalResponse = new InternalArtifactoryResponse();
         DownloadService downloadService = ContextHelper.get().beanForType(DownloadService.class);
-        log.debug("Eager fetching path {}", eagerRepoPath);
+        log.debug("Eager fetching path {}", repoPath);
         try {
             downloadService.process(internalRequest, internalResponse);
         } catch (IOException e) {

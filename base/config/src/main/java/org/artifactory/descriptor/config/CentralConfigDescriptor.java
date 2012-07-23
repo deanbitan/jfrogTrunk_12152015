@@ -111,4 +111,6 @@ public interface CentralConfigDescriptor extends Descriptor {
     String getServerUrlForEmail();
 
     CleanupConfigDescriptor getCleanupConfig();
+
+    Map<String, LocalReplicationDescriptor> getLocalReplicationsMap();
 }

@@ -18,6 +18,7 @@
 
 package org.artifactory.addon;
 
+import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.sapi.common.ImportSettings;
 
 import javax.annotation.Nullable;
@@ -39,8 +40,6 @@ public interface AddonsManager {
     List<AddonInfo> getInstalledAddons(@Nullable Set<String> excludedAddonKeys);
 
     List<String> getEnabledAddonNames();
-
-    AddonInfo getAddonInfoByName(String addonName);
 
     boolean isLicenseInstalled();
 
@@ -85,21 +84,20 @@ public interface AddonsManager {
      */
     String getLicenseKeyHash();
 
-    String getFooterMessage(boolean admin);
-
-    String getLicenseFooterMessage();
-
     boolean lockdown();
 
     boolean isInstantiationAuthorized(Class componentClass);
 
-    String interceptRequest();
+    /**
+     * Sends a "forbidden" response to the request if no valid license is installed
+     *
+     * @param response Response to intercept
+     */
+    void interceptResponse(ArtifactoryResponse response) throws IOException;
 
     String[] getLicenseDetails();
 
     String getProductName();
-
-    String getLicenseRequiredMessage(String licensePageUrl);
 
     void importFrom(ImportSettings settings);
 }

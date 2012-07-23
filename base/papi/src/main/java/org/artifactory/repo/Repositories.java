@@ -239,7 +239,7 @@ public interface Repositories {
      * to the layout of the repository the file is part of.
      * * @param repoPath the file path
      *
-     * @return the module information
+     * @return the file layout information, which can be empty in case of incorrect repoPath or when the layout can't be determined
      */
     public FileLayoutInfo getLayoutInfo(RepoPath repoPath);
 

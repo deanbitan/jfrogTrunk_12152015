@@ -26,6 +26,8 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.util.HttpUtils;
+import org.artifactory.util.PathUtils;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.MetadataPanel;
@@ -55,7 +57,7 @@ public abstract class TreeUtils {
         StringBuilder urlBuilder = new StringBuilder();
         if (NamingUtils.isChecksum(artifactPath)) {
             // if a checksum file is deployed, link to the target file
-            artifactPath = MavenNaming.getChecksumTargetFile(artifactPath);
+            artifactPath = PathUtils.stripExtension(artifactPath);
         }
 
         String metadataName = null;
@@ -80,12 +82,8 @@ public abstract class TreeUtils {
         if (StringUtils.isNotBlank(metadataName)) {
             urlBuilder.append("&").append(PersistentTabbedPanel.SELECT_TAB_PARAM).append("=Metadata");
 
-            try {
-                urlBuilder.append("&").append(MetadataPanel.SELECT_METADATA_PARAM).append("=").
-                        append(URLEncoder.encode(metadataName, "utf-8"));
-            } catch (UnsupportedEncodingException e) {
-                log.warn("Unable to link to tree item metadata '" + metadataName + "'.", e);
-            }
+            urlBuilder.append("&").append(MetadataPanel.SELECT_METADATA_PARAM).append("=").append(
+                    HttpUtils.encodeQuery(metadataName));
         }
         return urlBuilder.toString();
     }

@@ -33,6 +33,7 @@ public enum ConstantValues {
     artifactoryVersion("version"),
     artifactoryRevision("revision"),
     artifactoryTimestamp("timestamp"),
+    supportUrlSessionTracking("servlet.supportUrlSessionTracking", FALSE),
     disabledAddons("addons.disabled", ""),
     addonsInfoUrl("addons.info.url", "http://service.jfrog.org/artifactory/addons/info/%s"),
     springConfigDir("spring.configDir"),
@@ -75,7 +76,8 @@ public enum ConstantValues {
     mvnMetadataVersionsComparator("mvn.metadataVersionsComparatorFqn"),
     mvnDynamicMetadataCacheRetentionSecs("mvn.dynamicMetadata.cacheRetentionSecs", 10),
     mvnMetadataVersion3Enabled("mvn.metadata.version3.enabled", TRUE),
-    mvnLatestSnapshotResolutionEnabled("mvn.mvnLatestSnapshotResolutionEnabled", TRUE),
+    requestDisableVersionTokens("request.disableVersionTokens", FALSE),
+    requestSearchLatestReleaseByDateCreated("request.searchLatestReleaseByDateCreated", FALSE),
     buildMaxFoldersToScanForDeletionWarnings("build.maxFoldersToScanForDeletionWarnings", 2),
     missingBuildChecksumCacheIdeTimeSecs("build.checksum.cache.idleTimeSecs", Seconds.MINUTE * 5),
     artifactoryUpdatesRefreshIntervalSecs("updates.refreshIntervalSecs", Seconds.HOUR * 4),
@@ -99,6 +101,7 @@ public enum ConstantValues {
     searchForExistingResourceOnRemoteRequest("repo.remote.checkForExistingResourceOnRequest", TRUE),
     versionQueryEnabled("version.query.enabled", true),
     hostId("host.id"),
+    responseDisableContentDispositionFilename("response.disableContentDispositionFilename", FALSE),
     yumCalculationRequestAggregationTimeWindowSecs("yum.calculationRequest.aggregationTimeWindowSecs", 60),
     yumCalculationRequestAggregationCycleSecs("yum.calculationRequest.aggregationCycleSecs", 60),
     globalExcludes("repo.includeExclude.globalExcludes"),
@@ -110,7 +113,8 @@ public enum ConstantValues {
     replicationChecksumDeployMinSizeKb("replication.checksumDeploy.minSizeKb", 10),
     replicationConsumerQueueSize("replication.consumer.queueSize", 1),
     replicationLocalIterationSleepThresholdMillis("replication.local.iteration.sleepThresholdMillis", 1000),
-    replicationLocalIterationSleepMillis("replication.local.iteration.sleepMillis", 100);
+    replicationLocalIterationSleepMillis("replication.local.iteration.sleepMillis", 100),
+    replicationEventQueueSize("replication.event.queue.size", 50000);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

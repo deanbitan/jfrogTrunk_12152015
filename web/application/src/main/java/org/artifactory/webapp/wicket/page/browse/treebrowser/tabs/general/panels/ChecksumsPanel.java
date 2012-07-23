@@ -75,20 +75,20 @@ public class ChecksumsPanel extends Panel {
         border.add(new Label("sha1", sha1).setEscapeModelStrings(false));
         WebMarkupContainer checksumMismatchContainer = new WebMarkupContainer("mismatch");
         border.add(checksumMismatchContainer);
-        if (checksumsMatch) {
+        if (checksumsMatch || isOneMissingOtherMatches(sha1Info, md5Info)) {
             checksumMismatchContainer.setVisible(false);
         } else {
             Label mismatchMessageLabel = new Label("mismatchMessage", "");
             // if one is missing but the other is broken display the following
             StringBuilder message = new StringBuilder();
-            if (isAllChecksumsMissing(sha1Info, md5Info) || isOneMissingOtherMatches(sha1Info, md5Info)) {
+            if (isAllChecksumsMissing(sha1Info, md5Info)) {
                 if (isLocalRepo) {
                     message.append(" Client did not publish a checksum value. <br/>");
                 } else {
                     message.append(" Remote checksum doesn't exist. <br/>");
                 }
                 mismatchMessageLabel.add(new CssClass("missing-checksum-warning"));
-            } else if (isAllChecksumsBroken(sha1Info, md5Info) || isOneOkOtherMissing(sha1Info, md5Info) ||
+            } else if (isAllChecksumsBroken(sha1Info, md5Info) || isOneOkOtherBroken(sha1Info, md5Info) ||
                     isOneMissingOtherBroken(sha1Info, md5Info)) {
                 String repoClass = isLocalRepo ? "Uploaded" : "Remote";
                 message = new StringBuilder().append(repoClass).append(" checksum doesn't match the actual checksum. ")
@@ -114,9 +114,9 @@ public class ChecksumsPanel extends Panel {
 
 
     /**
-     * @return Check if one of the {@link ChecksumType} is ok and the other missing
+     * @return Check if one of the {@link ChecksumType} is ok and the other broken
      */
-    private boolean isOneOkOtherMissing(ChecksumInfo sha1Info, ChecksumInfo md5Info) {
+    private boolean isOneOkOtherBroken(ChecksumInfo sha1Info, ChecksumInfo md5Info) {
         return (isChecksumMatch(sha1Info) && isChecksumBroken(md5Info))
                 || (isChecksumMatch(md5Info) && isChecksumBroken(sha1Info));
     }

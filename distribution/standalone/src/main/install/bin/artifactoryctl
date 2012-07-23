@@ -600,9 +600,9 @@ case "$ACTION" in
 
   check)
 
-   if [ -f $ARTIFACTORY_RUN/artifactory.pid ]
+   if [ -f $ARTIFACTORY_PID ]
         then
-            echo "Artifactory is running, on pid="`cat $ARTIFACTORY_RUN/artifactory.pid`
+            echo "Artifactory is running, on pid="`cat $ARTIFACTORY_PID`
             echo ""
             exit 0
         fi

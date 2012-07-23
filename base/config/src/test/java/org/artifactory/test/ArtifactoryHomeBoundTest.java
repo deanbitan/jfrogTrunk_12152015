@@ -19,9 +19,11 @@
 package org.artifactory.test;
 
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.mime.MimeTypes;
 import org.artifactory.mime.MimeTypesReader;
 import org.artifactory.util.ResourceUtils;
+import org.artifactory.version.ArtifactoryVersion;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -54,7 +56,13 @@ public class ArtifactoryHomeBoundTest {
     protected ArtifactoryHomeStub getOrCreateArtifactoryHomeStub() {
         ArtifactoryHomeStub artifactory = new ArtifactoryHomeStub();
         artifactory.setMimeTypes(mimeTypes);
+        loadAndBindArtifactoryProperties(artifactory);
         return artifactory;
+    }
+
+    private void loadAndBindArtifactoryProperties(ArtifactoryHomeStub artifactory) {
+        artifactory.loadSystemProperties();
+        artifactory.setProperty(ConstantValues.artifactoryVersion, ArtifactoryVersion.getCurrent().getValue());
     }
 
     @AfterMethod

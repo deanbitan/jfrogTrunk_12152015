@@ -19,11 +19,9 @@
 package org.artifactory.webapp.servlet;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.DownloadService;
@@ -33,7 +31,7 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
-import org.artifactory.request.RequestTraceLogger;
+import org.artifactory.request.RepoRequests;
 import org.artifactory.security.HttpAuthenticationDetails;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
@@ -125,17 +123,33 @@ public class RepoFilter extends DelayedFilterBase {
                 return;
             }
 
-            if ("get".equals(method) || "head".equals(method)) {
-                doDownload(request, response, method, artifactoryRequest, artifactoryResponse);
-                return;
-            }
+            try {
+                initRequestContext(method, artifactoryRequest, artifactoryResponse);
+                if ("get".equals(method) || "head".equals(method)) {
 
-            if ("put".equals(method)) {
-                doUpload(artifactoryRequest, artifactoryResponse);
-                return;
-            }
+                    /**
+                     * Do not check for this parameter when not performing a get/head request so that the container
+                     * doesn't try to read the parameters and verify the size of the form in case of an upload
+                     */
+                    String trace = artifactoryRequest.getParameter("trace");
+                    if (trace != null) {
+                        //Re-init the context with the trace logging response
+                        artifactoryResponse = new TraceLoggingResponse(artifactoryResponse);
+                        initRequestContext(method, artifactoryRequest, artifactoryResponse);
+                    }
+                    doDownload(request, response, method, artifactoryRequest, artifactoryResponse);
+                    return;
+                }
 
-            doWebDavMethod(request, response, method, artifactoryRequest, artifactoryResponse);
+                if ("put".equals(method)) {
+                    doUpload(artifactoryRequest, artifactoryResponse);
+                    return;
+                }
+
+                doWebDavMethod(request, response, method, artifactoryRequest, artifactoryResponse);
+            } finally {
+                RepoRequests.destroy();
+            }
 
         } else if (!response.isCommitted()) {
             // Webdav request not on repository, return 403
@@ -152,6 +166,12 @@ public class RepoFilter extends DelayedFilterBase {
         if (log.isDebugEnabled()) {
             log.debug("Exiting request " + requestDebugString(request));
         }
+    }
+
+    private void initRequestContext(String method, ArtifactoryRequest artifactoryRequest,
+            ArtifactoryResponse artifactoryResponse) {
+        RepoRequests.set(method, getContext().getAuthorizationService().currentUsername(),
+                artifactoryRequest, artifactoryResponse);
     }
 
     private void doWebDavMethod(HttpServletRequest request, HttpServletResponse response, String method,
@@ -180,7 +200,7 @@ public class RepoFilter extends DelayedFilterBase {
         //We expect a url with the repo prefix and a mandatory repo-key@repo
         try {
             log.debug("Serving an upload request.");
-            getUploadEngine().process(artifactoryRequest, artifactoryResponse);
+            getUploadEngine().upload(artifactoryRequest, artifactoryResponse);
         } catch (Exception e) {
             log.debug("Upload request of {} failed due to {}", artifactoryRequest.getRepoPath(), e);
             artifactoryResponse.sendInternalError(e, log);
@@ -191,14 +211,7 @@ public class RepoFilter extends DelayedFilterBase {
             ArtifactoryRequest artifactoryRequest, ArtifactoryResponse artifactoryResponse) throws IOException {
         //We expect either a url with the repo prefix and an optional repo-key@repo
         try {
-            String trace = artifactoryRequest.getParameter("trace");
-            if (trace != null) {
-                artifactoryResponse = new TraceLoggingResponse(artifactoryResponse);
-            }
-            RequestTraceLogger.startNewContext(method, getContext().getAuthorizationService().currentUsername(),
-                    artifactoryRequest.getRepoPath().getId(), artifactoryResponse);
-
-            RequestTraceLogger.log("Received request");
+            RepoRequests.logToContext("Received request");
             getDownloadService().process(artifactoryRequest, artifactoryResponse);
         } catch (FileExpectedException e) {
             // If we try to get a file but encounter a folder and the request does not end with a '/' send a redirect
@@ -208,23 +221,21 @@ public class RepoFilter extends DelayedFilterBase {
             // see RTFACT-2738 and RTFACT-3510
             if (!request.getServletPath().endsWith("/")) {
                 String dirPath = request.getRequestURL().append("/").toString();
-                RequestTraceLogger.log("Redirecting to the directory path '%s'", dirPath);
+                RepoRequests.logToContext("Redirecting to the directory path '%s'", dirPath);
                 response.sendRedirect(dirPath);
             } else if ("head".equals(method)) {
-                RequestTraceLogger.log("Handling directory HEAD request ");
+                RepoRequests.logToContext("Handling directory HEAD request ");
             } else {
-                RequestTraceLogger.log("Expected file but received a directory - returning a %s response",
+                RepoRequests.logToContext("Expected file but received a directory - returning a %s response",
                         HttpServletResponse.SC_NOT_FOUND);
                 artifactoryResponse.sendError(HttpServletResponse.SC_NOT_FOUND,
                         "Expected file response but received a directory response: " + e.getRepoPath(), log);
             }
         } catch (Exception e) {
-            RequestTraceLogger.log("Error handling request: %s - returning a %s response", e.getMessage(),
+            RepoRequests.logToContext("Error handling request: %s - returning a %s response", e.getMessage(),
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             artifactoryResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Could not process download request: " + e.getMessage(), log);
-        } finally {
-            RequestTraceLogger.destroyContext();
         }
     }
 
@@ -268,27 +279,6 @@ public class RepoFilter extends DelayedFilterBase {
         RequestDispatcher dispatcher =
                 request.getRequestDispatcher("/" + HttpUtils.WEBAPP_URL_PATH_PREFIX + "/" + ArtifactListPage.PATH);
         dispatcher.forward(request, response);
-    }
-
-    /**
-     * Check if the path that is being used for browsing (both simple and naked listing) is a valid path, and that the
-     * path that is being navigated to is a valid one, if it isn't then {@link HttpServletResponse#SC_NOT_FOUND} is
-     * being sent.
-     *
-     * @param response The response that is being manipulated with the correct response code.
-     * @param repoPath The repo path that is being checked.
-     * @return True if the path is invalid, false if it's valid.
-     */
-    private boolean checkForInvalidPath(HttpServletResponse response, RepoPath repoPath) throws IOException {
-        List<VirtualRepoDescriptor> virtualRepoDescriptors =
-                getContext().getRepositoryService().getVirtualRepoDescriptors();
-        if (Iterables.any(virtualRepoDescriptors, new VirtualDescriptorPredicate(repoPath.getRepoKey()))) {
-            if (getContext().beanForType(RepositoryBrowsingService.class).getVirtualRepoItem(repoPath) == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return true;
-            }
-        }
-        return false;
     }
 
     private boolean doWebDavDirectory(HttpServletResponse response, ArtifactoryRequest artifactoryRequest)

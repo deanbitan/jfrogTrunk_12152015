@@ -149,6 +149,7 @@ public class CentralConfigReadWriteTest {
         localReplication.setUrl("http://momo.com");
         localReplication.setUsername("user1");
         localReplication.setPassword("password1");
+        localReplication.setEnableEventReplication(true);
         desc.addLocalReplication(localReplication);
 
         GcConfigDescriptor gcConfigDescriptor = new GcConfigDescriptor();

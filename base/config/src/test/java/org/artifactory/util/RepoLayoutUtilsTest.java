@@ -84,11 +84,11 @@ public class RepoLayoutUtilsTest {
     }
 
     public void testDefaultTokenSet() {
-        assertEquals(RepoLayoutUtils.TOKENS.size(), 9, "Unexpected size of layout token set.");
+        assertEquals(RepoLayoutUtils.TOKENS.size(), 10, "Unexpected size of layout token set.");
         assertTokenSetContents(RepoLayoutUtils.ORGANIZATION, RepoLayoutUtils.ORGANIZATION_PATH,
                 RepoLayoutUtils.MODULE, RepoLayoutUtils.BASE_REVISION, RepoLayoutUtils.FOLDER_INTEGRATION_REVISION,
                 RepoLayoutUtils.FILE_INTEGRATION_REVISION, RepoLayoutUtils.CLASSIFIER, RepoLayoutUtils.EXT,
-                RepoLayoutUtils.TYPE);
+                RepoLayoutUtils.TYPE, RepoLayoutUtils.RELEASE);
     }
 
     public void testDefaultTokenFilterMap() {

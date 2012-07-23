@@ -24,6 +24,7 @@ import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.api.rest.search.result.VersionRestResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.security.ArtifactoryPermission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -54,6 +55,9 @@ public class VersionResource {
     @Autowired
     private AddonsManager addonsManager;
 
+    @Autowired
+    private AuthorizationService authorizationService;
+
     /**
      * @return The artifactory version and enabled addons
      */
@@ -62,9 +66,18 @@ public class VersionResource {
     public VersionRestResult getArtifactoryVersion() {
         VersionInfo versionInfo = centralConfigService.getVersionInfo();
         List<String> addonNames = addonsManager.getEnabledAddonNames();
+
+        // Add the license to the JSON result object only for Artifactory Pro and user with deploy permissions
+        String licenseKeyHash = null;
+        if (authorizationService.hasPermission(ArtifactoryPermission.DEPLOY)) {
+            licenseKeyHash = addonsManager.getLicenseKeyHash();
+        }
+
+        // By assigning null we prevent the field from appearing in the result (our parser ignores nulls)
+        String license = "".equals(licenseKeyHash) ? null : licenseKeyHash;
+
         VersionRestResult versionRestResult =
-                new VersionRestResult(versionInfo.getVersion(), versionInfo.getRevision(), addonNames);
+                new VersionRestResult(versionInfo.getVersion(), versionInfo.getRevision(), addonNames, license);
         return versionRestResult;
     }
-
 }

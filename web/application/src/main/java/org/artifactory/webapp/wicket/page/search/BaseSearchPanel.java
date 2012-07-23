@@ -42,6 +42,7 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.search.ItemSearchResults;
+import org.artifactory.api.search.SearchControlsBase;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.ajax.ImmediateAjaxIndicatorDecorator;
@@ -155,8 +156,8 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
         addSearchComponents(form);
 
         //selected repo for search
-        CompoundPropertyModel advancedModel = new CompoundPropertyModel<Object>(getSearchControls());
-        AdvancedSearchPanel advancedPanel = new AdvancedSearchPanel("advancedPanel", advancedModel);
+        CompoundPropertyModel advancedModel = new CompoundPropertyModel<SearchControlsBase>(getSearchControls());
+        final AdvancedSearchPanel advancedPanel = new AdvancedSearchPanel("advancedPanel", advancedModel);
         form.add(advancedPanel);
 
         SearchAddon searchAddon = addons.addonByType(SearchAddon.class);
@@ -175,6 +176,7 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
                     fetchResults(parent);
                     table.setCurrentPage(0);    // scroll back to the first page
                     target.add(searchBorder);
+                    advancedPanel.expandCollapseReposList();
                 } catch (IllegalArgumentException iae) {
                     error(iae.getMessage());
                 }
@@ -224,7 +226,7 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
 
     protected abstract void addSearchComponents(Form form);
 
-    protected abstract Object getSearchControls();
+    protected abstract SearchControlsBase getSearchControls();
 
     protected abstract Class<? extends BaseSearchPage> getMenuPageClass();
 

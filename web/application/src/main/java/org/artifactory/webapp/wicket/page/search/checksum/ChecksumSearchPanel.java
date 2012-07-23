@@ -70,7 +70,7 @@ public class ChecksumSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
     }
 
     @Override
-    protected Object getSearchControls() {
+    protected ChecksumSearchControls getSearchControls() {
         return searchControls;
     }
 

@@ -57,4 +57,6 @@ public interface CoreAddons extends Addon {
      */
     @Nonnull
     List<String> getUsersForBackupNotifications();
+
+    void validateTargetHasDifferentLicenseKeyHash(String targetLicenseHash);
 }

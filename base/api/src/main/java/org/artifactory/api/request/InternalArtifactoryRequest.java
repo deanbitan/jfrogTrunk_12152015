@@ -18,9 +18,11 @@
 
 package org.artifactory.api.request;
 
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.repo.RepoPath;
 
 import java.io.InputStream;
+import java.util.Enumeration;
 
 /**
  * An internal resource request that is sent by Artifactory itself to the DownloadService asking for a resource.
@@ -39,8 +41,12 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     private String alternativeRemoteDownloadUrl;
 
+    private String servletContextUrl = "";
+
     public InternalArtifactoryRequest(RepoPath repoPath) {
-        setRepoPath(repoPath);
+        String repoKey = processMatrixParamsIfExist(repoPath.getRepoKey());
+        String path = processMatrixParamsIfExist(repoPath.getPath());
+        setRepoPath(InfoFactoryHolder.get().createRepoPath(repoKey, path));
     }
 
     @Override
@@ -64,6 +70,11 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
     @Override
     public long getIfModifiedSince() {
         return 0;
+    }
+
+    @Override
+    public boolean hasIfModifiedSince() {
+        return false;
     }
 
     @Override
@@ -98,13 +109,22 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
     }
 
     @Override
+    public Enumeration getHeaders(String headerName) {
+        return null;
+    }
+
+    @Override
     public String getUri() {
         return "";
     }
 
     @Override
     public String getServletContextUrl() {
-        return "";
+        return servletContextUrl;
+    }
+
+    public void setServletContextUrl(String servletContextUrl) {
+        this.servletContextUrl = servletContextUrl;
     }
 
     public void setSkipJarIndexing(boolean skipJarIndexing) {

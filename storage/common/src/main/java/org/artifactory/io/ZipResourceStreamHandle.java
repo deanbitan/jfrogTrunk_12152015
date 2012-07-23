@@ -23,6 +23,7 @@ import org.artifactory.fs.RepoResource;
 import org.artifactory.fs.ZipEntryRepoResource;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.resource.ResourceStreamHandle;
+import org.artifactory.util.PathUtils;
 import org.artifactory.util.ZipUtils;
 import org.slf4j.Logger;
 
@@ -42,26 +43,35 @@ public class ZipResourceStreamHandle implements ResourceStreamHandle {
 
     private final ZipEntryRepoResource zipResource;
     private final InputStream stream;
-    private final ZipInputStream zipStream;
+    private final ZipInputStream[] zipStreams;
 
     public ZipResourceStreamHandle(RepoResource zipResource, InputStream stream) throws IOException {
         if (!(zipResource instanceof ZipEntryRepoResource)) {
-            throw new IllegalArgumentException("Unexpected resource type: " + zipResource);
+            throw new IllegalArgumentException(
+                    "Unexpected resource type: " + zipResource.getClass() + " value=" + zipResource);
         }
         this.zipResource = (ZipEntryRepoResource) zipResource;
         this.stream = stream;
-        String zipEntryName = this.zipResource.getEntryPath();
+        String[] zipEntryNames = PathUtils.splitZipResourcePathIfExist(this.zipResource.getEntryPath(), true);
+        zipStreams = new ZipInputStream[zipEntryNames.length];
         try {
-            zipStream = new ZipInputStream(new BufferedInputStream(stream));
-            ZipEntry zipEntry = ZipUtils.locateEntry(zipStream, zipEntryName);
-            if (zipEntry == null) {
-                throw new IOException(String.format("Zip resource '%s' not found in '%s'",
-                        zipEntryName, zipResource.getRepoPath()));
+            for (int i = 0; i < zipEntryNames.length; i++) {
+                String zipEntryName = zipEntryNames[i];
+                if (i == 0) {
+                    zipStreams[i] = new ZipInputStream(new BufferedInputStream(stream));
+                } else {
+                    zipStreams[i] = new ZipInputStream(zipStreams[i - 1]);
+                }
+                ZipEntry zipEntry = ZipUtils.locateEntry(zipStreams[i], zipEntryName);
+                if (zipEntry == null) {
+                    throw new IOException(String.format("Zip resource '%s' not found in '%s'",
+                            zipEntryName, zipResource.getRepoPath()));
+                }
             }
         } catch (IOException e) {
             close();    // close stream now
             log.error(String.format("Failed to retrieve zip resource '%s' from '%s'",
-                    zipEntryName, zipResource.getRepoPath()), e);
+                    this.zipResource.getEntryPath(), zipResource.getRepoPath()), e);
             throw e;
         }
 
@@ -71,7 +81,7 @@ public class ZipResourceStreamHandle implements ResourceStreamHandle {
     public InputStream getInputStream() {
         // the zip stream is in a state where it points to the start of the requested entry. calling getInputStream will
         // return the stream of the requested entry (not of the zip file)
-        return zipStream;
+        return zipStreams[zipStreams.length - 1];
     }
 
     @Override
@@ -81,7 +91,9 @@ public class ZipResourceStreamHandle implements ResourceStreamHandle {
 
     @Override
     public void close() {
+        for (ZipInputStream zipStream : zipStreams) {
+            IOUtils.closeQuietly(zipStream);
+        }
         IOUtils.closeQuietly(stream);   // in case the zip stream creation failed
-        IOUtils.closeQuietly(zipStream);
     }
 }

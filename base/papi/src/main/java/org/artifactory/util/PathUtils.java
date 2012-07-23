@@ -19,6 +19,7 @@
 package org.artifactory.util;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.repo.RepoPath;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -190,6 +191,10 @@ public class PathUtils {
             }
         }
         return sb.toString();
+    }
+
+    public static List<String> includesExcludesPatternToStringList(String str) {
+        return delimitedListToStringList(str, ",", "\r\n\f ");
     }
 
     public static List<String> delimitedListToStringList(String str, String delimiter) {
@@ -502,5 +507,28 @@ public class PathUtils {
 
     public static boolean isDirectoryPath(String path) {
         return StringUtils.isEmpty(path) || path.matches(".*[/\\\\]$");
+    }
+
+    public static String[] splitZipResourcePathIfExist(String path, boolean recursive) {
+        int zipResourceStart = path.indexOf(RepoPath.ARCHIVE_SEP);
+        if (zipResourceStart > 0) {
+            String zipResourcePath = path.substring(zipResourceStart + 1, path.length());
+            if (zipResourcePath.startsWith("/")) {
+                // all paths are relative inside the zip, so remove the '/' from the beginning
+                zipResourcePath = zipResourcePath.substring(1, zipResourcePath.length());
+            }
+            String[] subSplit;
+            if (recursive) {
+                subSplit = splitZipResourcePathIfExist(zipResourcePath, true);
+            } else {
+                subSplit = new String[]{zipResourcePath};
+            }
+            String[] result = new String[subSplit.length + 1];
+            // remove the zip resource sub path from the main path
+            result[0] = path.substring(0, zipResourceStart);
+            System.arraycopy(subSplit, 0, result, 1, result.length - 1);
+            return result;
+        }
+        return new String[]{path};
     }
 }

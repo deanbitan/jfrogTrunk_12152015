@@ -19,6 +19,7 @@
 package org.artifactory.model.xstream.fs;
 
 import org.artifactory.fs.ZipEntryInfo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 
 import javax.annotation.Nonnull;
@@ -43,7 +44,7 @@ public class ZipEntryImpl implements Serializable, ZipEntryInfo {
     /**
      * Builds a directory entry with just a name (some jar files doesn't contain ZipEntry for directories).
      *
-     * @param name      The full path of the entry
+     * @param path      The full path of the entry
      * @param directory
      */
     public ZipEntryImpl(@Nonnull String path, boolean directory) {
@@ -57,9 +58,26 @@ public class ZipEntryImpl implements Serializable, ZipEntryInfo {
         this.directory = directory;
     }
 
-    public ZipEntryImpl(@Nonnull ZipEntry entry) {
-        this.path = entry.getName();
-        this.name = PathUtils.getFileName(path);
+    public ZipEntryImpl(@Nonnull ZipEntry... entries) {
+        if (entries.length == 0) {
+            throw new IllegalArgumentException("Cannot create ZipEntryInfo without a ZipEntry!");
+        }
+
+        ZipEntry entry = entries[entries.length-1];
+
+        if (entries.length > 1) {
+            StringBuilder fullPath = new StringBuilder();
+            for (int i = 0; i < entries.length; i++) {
+                fullPath.append(entries[i].getName());
+                if (i != entries.length-1) {
+                    fullPath.append(RepoPath.ARCHIVE_SEP).append('/');
+                }
+            }
+            this.path = fullPath.toString();
+        } else {
+            this.path = entry.getName();
+        }
+        this.name = PathUtils.getFileName(entry.getName());
         this.time = entry.getTime();
         this.size = entry.getSize();
         this.compressedSize = entry.getCompressedSize();

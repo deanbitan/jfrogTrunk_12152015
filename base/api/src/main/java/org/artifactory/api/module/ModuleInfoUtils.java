@@ -66,7 +66,24 @@ public abstract class ModuleInfoUtils {
      * @return Module info object. When supplied with a path that does not match the layout, validity is unwarranted.
      */
     public static ModuleInfo moduleInfoFromArtifactPath(String itemPath, RepoLayout repoLayout) {
-        return moduleInfoFromItemPath(itemPath, repoLayout, false);
+        return moduleInfoFromItemPath(itemPath, repoLayout, false, false);
+    }
+
+    public static ModuleInfo moduleInfoFromArtifactPath(String itemPath, RepoLayout repoLayout,
+            boolean supportVersionstokens) {
+        ModuleInfo moduleInfo = null;
+        if (repoLayout.isDistinctiveDescriptorPathPattern()) {
+            moduleInfo = moduleInfoFromItemPath(itemPath, repoLayout, true, supportVersionstokens);
+            if (moduleInfo.isValid() && StringUtils.isBlank(moduleInfo.getExt())) {
+                moduleInfo = new ModuleInfoBuilder(moduleInfo).ext(PathUtils.getExtension(itemPath)).build();
+            }
+        }
+
+        if ((moduleInfo == null) || !moduleInfo.isValid()) {
+            moduleInfo = moduleInfoFromItemPath(itemPath, repoLayout, false, supportVersionstokens);
+        }
+
+        return moduleInfo;
     }
 
     /**
@@ -79,7 +96,7 @@ public abstract class ModuleInfoUtils {
      * @return Module info object. When supplied with a path that does not match the layout, validity is unwarranted.
      */
     public static ModuleInfo moduleInfoFromDescriptorPath(String itemPath, RepoLayout repoLayout) {
-        ModuleInfo moduleInfo = moduleInfoFromItemPath(itemPath, repoLayout, true);
+        ModuleInfo moduleInfo = moduleInfoFromItemPath(itemPath, repoLayout, true, false);
         if (repoLayout.isDistinctiveDescriptorPathPattern() && moduleInfo.isValid() &&
                 StringUtils.isBlank(moduleInfo.getExt())) {
             return new ModuleInfoBuilder(moduleInfo).ext(PathUtils.getExtension(itemPath)).build();
@@ -293,7 +310,8 @@ public abstract class ModuleInfoUtils {
         }
     }
 
-    private static ModuleInfo moduleInfoFromItemPath(String itemPath, RepoLayout repoLayout, boolean descriptor) {
+    private static ModuleInfo moduleInfoFromItemPath(String itemPath, RepoLayout repoLayout, boolean descriptor,
+            boolean supportVersionsTokens) {
         if (StringUtils.isBlank(itemPath)) {
             throw new IllegalArgumentException("Cannot construct a module info object from a blank item path.");
         }
@@ -308,11 +326,13 @@ public abstract class ModuleInfoUtils {
             pattern = repoLayout.getArtifactPathPattern();
         }
 
-        return moduleInfoFromPattern(itemPath, repoLayout, pattern);
+        return moduleInfoFromPattern(itemPath, repoLayout, pattern, supportVersionsTokens);
     }
 
-    private static ModuleInfo moduleInfoFromPattern(String itemPath, RepoLayout repoLayout, String pattern) {
-        String itemPathPatternRegExp = RepoLayoutUtils.generateRegExpFromPattern(repoLayout, pattern);
+    private static ModuleInfo moduleInfoFromPattern(String itemPath, RepoLayout repoLayout, String pattern,
+            boolean supportVersionsTokens) {
+        String itemPathPatternRegExp = RepoLayoutUtils.generateRegExpFromPattern(repoLayout, pattern, false,
+                supportVersionsTokens);
         //TODO: [by yl] Cache the patterns
         NamedPattern itemPathRegExPattern = NamedPattern.compile(itemPathPatternRegExp);
         NamedMatcher itemPathMatcher = itemPathRegExPattern.matcher(itemPath);

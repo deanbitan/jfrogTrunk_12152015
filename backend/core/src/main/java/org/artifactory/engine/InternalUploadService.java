@@ -36,14 +36,15 @@ import java.io.IOException;
 public interface InternalUploadService extends UploadService {
 
     /**
-     * Performs the actual uploading process.
+     * Performs the upload within a new transaction.
      *
      * @param request  Originating request
      * @param response Response to send
-     * @param repo     Target local non-cahce repo
+     * @param repo     Target local non-cache repo
      */
     @Lock(transactional = true)
     @Request(aggregateEventsByTimeWindow = true)
-    void doProcess(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo) throws IOException,
+    void uploadWithinTransaction(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
+            throws IOException,
             RepoRejectException;
 }

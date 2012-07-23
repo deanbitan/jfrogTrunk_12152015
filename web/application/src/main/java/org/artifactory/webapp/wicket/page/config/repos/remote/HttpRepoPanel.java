@@ -48,6 +48,7 @@ import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
+import org.artifactory.webapp.wicket.util.CronUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -125,6 +126,9 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
         repoDescriptor.setKey(key);
+        if (StringUtils.isBlank(repoDescriptor.getP2OriginalUrl())) {
+            repoDescriptor.setP2OriginalUrl(getUrlWithoutSubpath(repoDescriptor.getUrl()));
+        }
         mccd.addRemoteRepository(repoDescriptor);
         if (replicationDescriptor.isEnabled()) {
             if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
@@ -142,6 +146,13 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         //update the model being saved
         Map<String, RemoteRepoDescriptor> remoteRepositoriesMap = mccd.getRemoteRepositoriesMap();
         if (remoteRepositoriesMap.containsKey(repoDescriptor.getKey())) {
+            if (StringUtils.isBlank(repoDescriptor.getP2OriginalUrl())) {
+                RemoteRepoDescriptor oldDescriptor = helper.getSavedMutableDescriptor().getRemoteRepositoriesMap().get(
+                        repoDescriptor.getKey());
+                if (oldDescriptor != null) {
+                    repoDescriptor.setP2OriginalUrl(getUrlWithoutSubpath(oldDescriptor.getUrl()));
+                }
+            }
             remoteRepositoriesMap.put(repoDescriptor.getKey(), repoDescriptor);
         }
         if (replicationDescriptor.isEnabled() && !mccd.isRemoteReplicationExists(replicationDescriptor)) {
@@ -153,13 +164,34 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         helper.syncAndSaveRemoteRepositories();
     }
 
+    private String getUrlWithoutSubpath(String url) {
+        int slashslash = url.indexOf("//") + 2;
+        int nextSlash = url.indexOf('/', slashslash);
+        return nextSlash < 0 ? url : PathUtils.trimSlashes(url.substring(0, nextSlash)).toString();
+    }
+
     @Override
     protected boolean validate(HttpRepoDescriptor repoDescriptor) {
         boolean urlValid = StringUtils.isNotEmpty(repoDescriptor.getUrl());
         if (!urlValid) {
             error("Field 'Url' is required.");
+            return false;
         }
-        return urlValid;
+
+        if (repoDescriptor.getSocketTimeoutMillis() < 0) {
+            error("Socket Timeout must be positive or zero.");
+            return false;
+        }
+
+        if (replicationDescriptor != null && replicationDescriptor.isEnabled()) {
+            String cronExp = replicationDescriptor.getCronExp();
+            if (StringUtils.isBlank(cronExp) || !CronUtils.isValid(cronExp)) {
+                error("Invalid cron expression");
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
