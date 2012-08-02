@@ -25,8 +25,10 @@ import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.module.ModuleInfo;
+import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryResponse;
@@ -116,6 +118,9 @@ public class UploadServiceImpl implements InternalUploadService {
 
     @Autowired
     private TrafficService trafficService;
+
+    @Autowired
+    private DeployService deployService;
 
     private SuccessfulDeploymentResponseHelper successfulDeploymentResponseHelper =
             new SuccessfulDeploymentResponseHelper();
@@ -409,9 +414,14 @@ public class UploadServiceImpl implements InternalUploadService {
 
     private void uploadArtifact(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException, RepoRejectException {
+        if (isDeployArchiveBundle(request)) {
+            RestCoreAddon restCoreAddon = addonsManager.addonByType(RestCoreAddon.class);
+            restCoreAddon.deployArchiveBundle(request, response, repo);
+            return;
+        }
+
         int length = request.getContentLength();
         log.info("Deploy to '{}' Content-Length: {}", request.getRepoPath(), length < 0 ? "unspecified" : length);
-
         if (NamingUtils.isMetadata(request.getPath())) {
             uploadMetadata(request, response, repo);
         } else {
@@ -488,6 +498,10 @@ public class UploadServiceImpl implements InternalUploadService {
         return Boolean.parseBoolean(request.getHeader(ArtifactoryRequest.CHECKSUM_DEPLOY));
     }
 
+    private boolean isDeployArchiveBundle(ArtifactoryRequest request) {
+        return Boolean.parseBoolean(request.getHeader(ArtifactoryRequest.EXPLODE_ARCHIVE));
+    }
+
     private void uploadItemWithReusedContent(ArtifactoryRequest request, ArtifactoryResponse response,
             LocalRepo repo, RepoResource res) throws IOException, RepoRejectException {
 
@@ -506,8 +520,7 @@ public class UploadServiceImpl implements InternalUploadService {
         try {
             inputStream = jcrService.getDataStreamBySha1Checksum(sha1);
             if (inputStream == null) {
-                response.sendError(SC_NOT_FOUND, "Checksum deploy failed. No existing file with SHA1: " +
-                        sha1, log);
+                response.sendError(SC_NOT_FOUND, "Checksum deploy failed. No existing file with SHA1: " + sha1, log);
                 return;
             }
             uploadItemWithContent(request, response, repo, res, inputStream);

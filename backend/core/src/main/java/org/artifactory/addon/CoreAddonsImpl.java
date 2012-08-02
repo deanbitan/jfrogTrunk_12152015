@@ -33,6 +33,7 @@ import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.rest.replication.ReplicationStatus;
 import org.artifactory.api.rest.replication.ReplicationStatusType;
 import org.artifactory.common.MutableStatusHolder;
@@ -66,6 +67,7 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.service.mover.MoverConfig;
 import org.artifactory.repo.virtual.VirtualRepo;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.Request;
 import org.artifactory.resource.MetadataResource;
@@ -105,7 +107,7 @@ import java.util.Set;
  */
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
-        FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon {
+        FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -435,6 +437,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public void handleGetUpdatesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
+            @Nullable String actionParam, @Nonnull OutputStream output) {
+    }
+
+    @Override
     @Nonnull
     public RepoPath assembleDeploymentRepoPathFromNuPkgSpec(@Nonnull String repoKey, @Nonnull byte[] packageBytes) {
         throw new IllegalArgumentException("Unable to assemble deployment repo path.");
@@ -452,5 +459,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     public RemoteRepo createRemoteRepo(InternalRepositoryService repoService, RemoteRepoDescriptor repoDescriptor,
             boolean offlineMode, RemoteRepo oldRemoteRepo) {
         return new HttpRepo(repoService, (HttpRepoDescriptor) repoDescriptor, offlineMode, oldRemoteRepo);
+    }
+
+    @Override
+    public void deployArchiveBundle(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
+            throws IOException {
+        response.sendError(HttpStatus.SC_BAD_REQUEST, "This REST API is available only in Artifactory Pro.", log);
     }
 }

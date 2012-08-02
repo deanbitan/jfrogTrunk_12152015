@@ -16,22 +16,17 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.webapp.wicket.page.deploy.fromzip;
-
-import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
+package org.artifactory.spring;
 
 /**
- * The page to display the Deploy Artifacts From Zip panel
+ * Marks recipients of license installation events
  *
- * @author Noam Tenne
+ * @author Natan Schochet
  */
-public class DeployFromZipPage extends AuthenticatedPage {
-    public DeployFromZipPage() {
-        add(new DeployFromZipPanel("deployFromZipPanel"));
-    }
+public interface LicenseEventListener {
 
-    @Override
-    public String getPageName() {
-        return "Archive Deployer";
-    }
+    /**
+     * Called when a new license is installed (not applicable to reloads on import and startup)
+     */
+    void onLicenseLoaded();
 }

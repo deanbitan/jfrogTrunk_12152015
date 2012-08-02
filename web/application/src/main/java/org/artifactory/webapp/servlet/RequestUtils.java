@@ -90,6 +90,10 @@ public abstract class RequestUtils {
     }
 
     public static boolean isRepoRequest(HttpServletRequest request) {
+        return isRepoRequest(request, false);
+    }
+
+    public static boolean isRepoRequest(HttpServletRequest request, boolean warnIfRepoDoesNotExist) {
         String servletPath = getServletPathFromRequest(request);
         String pathPrefix = PathUtils.getFirstPathElement(servletPath);
         if (pathPrefix == null || pathPrefix.length() == 0) {
@@ -126,7 +130,9 @@ public abstract class RequestUtils {
             return false;
         }
         if (!allRepos.contains(repoKey)) {
-            log.warn("Request " + servletPath + " should be a repo request and does not match any repo key");
+            if (warnIfRepoDoesNotExist) {
+                log.warn("Request " + servletPath + " should be a repo request and does not match any repo key");
+            }
             return false;
         }
         return true;

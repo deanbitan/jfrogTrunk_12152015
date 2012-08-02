@@ -19,6 +19,8 @@
 package org.artifactory.api.storage;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 /**
  * Represent the different storage units and their conversion to/from bytes Based on {@link
@@ -118,7 +120,7 @@ public enum StorageUnit {
         if (size < UNITS_TO_NEXT_UNIT) {
             return size + " bytes";
         }
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        DecimalFormat decimalFormat = new DecimalFormat("#.##", new DecimalFormatSymbols(Locale.ENGLISH));
         decimalFormat.setMinimumFractionDigits(2);
         // convert to KB
         double readableSize = KB.fromBytes(size);

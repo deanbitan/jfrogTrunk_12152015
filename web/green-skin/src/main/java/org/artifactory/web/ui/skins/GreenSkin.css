@@ -2617,20 +2617,16 @@ div.wicket-modal div.w_modal div.w_content, div.wicket-modal div.w_modal div.w_c
 div.wicket-modal div.w_modal div.w_caption {
     background: none;
     height: auto;
-    padding-top: 15px;
+    padding-top: 10px;
     padding-bottom: 10px;
     cursor: move;
-}
-
-.Safari div.wicket-modal div.w_modal div.w_caption, .Chrome div.wicket-modal div.w_modal div.w_caption {
-    padding-bottom: 4px;
 }
 
 div.wicket-modal span.w_captionText {
     height: auto;
     color: #4C4E53;
     font-size: 20px;
-    padding: 0 15px;
+    padding: 0 10px;
     margin-right: 30px;
     display: inline-block;
     position: relative !important;

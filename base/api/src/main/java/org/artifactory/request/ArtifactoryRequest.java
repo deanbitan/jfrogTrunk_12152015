@@ -40,6 +40,11 @@ public interface ArtifactoryRequest extends Request {
      */
     String CHECKSUM_DEPLOY = "X-Checksum-Deploy";
 
+    /**
+     * Header to trigger bundle archive deployment (supports zip/tar/tar.gz)
+     */
+    String EXPLODE_ARCHIVE = "X-Explode-Archive";
+
     String PARAM_SKIP_JAR_INDEXING = "artifactory.skipJarIndexing";
 
     String PARAM_FORCE_DOWNLOAD_IF_NEWER = "artifactory.forceDownloadIfNewer";

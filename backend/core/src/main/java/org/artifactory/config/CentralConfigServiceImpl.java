@@ -232,7 +232,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
                 status.setStatus("Configuration reloaded from " + newConfigFile, log);
             }
         } else if (settings.isFailIfEmpty()) {
-            String error = "The given base directory is either empty, or non-existant";
+            String error = "The given base directory is either empty, or non-existent";
             throw new IllegalArgumentException(error);
         }
     }

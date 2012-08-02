@@ -343,7 +343,25 @@ public interface RestAddon extends Addon {
      */
     Response handleNuGetPackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey);
 
+    /**
+     * Handles NuGet package search by ID requests
+     *
+     * @param request Request
+     * @param repoKey Repo key
+     * @return Response
+     */
     Response handleFindPackagesByIdRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey);
+
+    /**
+     * Handles NuGet package update search requests
+     *
+     * @param request     Request
+     * @param repoKey     Repo key
+     * @param actionParam Path parameter identifying the action
+     * @return Response
+     */
+    Response handleGetUpdatesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
+            @Nullable String actionParam);
 
     /**
      * Handles a NuGet package download request

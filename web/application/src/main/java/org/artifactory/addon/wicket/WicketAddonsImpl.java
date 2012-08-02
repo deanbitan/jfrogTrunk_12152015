@@ -812,12 +812,21 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public void validateTargetHasDifferentLicenseKeyHash(String targetLicenseHash) {
         AddonsManager addonsManager = getAddonsManager();
+        // Skip Trial license
+        if (isTrial(addonsManager)) {
+            log.debug("Source has trial license, skipping target instance license validation.");
+            return;
+        }
         if (StringUtils.isBlank(targetLicenseHash)) {
             throw new IllegalArgumentException("Target Artifactory instance license key is null, perhaps OSS version?");
         }
         if (addonsManager.getLicenseKeyHash().equals(targetLicenseHash)) {
             throw new IllegalArgumentException("Replication between same-license servers is not supported.");
         }
+    }
+
+    private boolean isTrial(AddonsManager addonsManager) {
+        return addonsManager.isLicenseInstalled() && "Trial".equalsIgnoreCase(addonsManager.getLicenseDetails()[2]);
     }
 
     private CentralConfigService getCentralConfig() {
@@ -902,6 +911,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     public void createAndAddRemoteRepoConfigP2Section(Form form, RemoteRepoDescriptor descriptor) {
         WebMarkupContainer p2Border = new WebMarkupContainer("p2Border");
         p2Border.add(new TitledBorderBehavior("fieldset-border", "P2 Support"));
+        p2Border.add(new WebMarkupContainer("p2OriginalUrl"));
         p2Border.add(new DisabledAddonBehavior(AddonType.P2));
         form.add(p2Border);
         p2Border.add(new StyledCheckbox("p2Support").setEnabled(false));

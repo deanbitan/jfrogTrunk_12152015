@@ -17,7 +17,7 @@
  */
 
 var DisabledAddon = {
-    create:function (id, position, iconClassName) {
+    create:function (id, position, iconClassName, addon) {
         // create only once
         var node = dojo.byId(id);
         if (node.DisabledAddon) {
@@ -35,20 +35,31 @@ var DisabledAddon = {
         var icon = document.createElement('span');
         icon.className = iconClassName;
         node.insertBefore(icon, node.firstChild);
+
+        // Set link css class
+        this.setChecked(dojo.byId(id + '_hide'), addon);
     },
 
     toogle:function (link, id, serverToken, addon) {
         // toggle show/hide
         if (!link.className.match(/checked/)) {
             dojo.cookie('addon-' + addon, serverToken, {expires:3650, path:artApp});
-            link.className = 'hide-link hide-link-checked';
         } else {
             dojo.cookie('addon-' + addon, null, {expires:-1, path:artApp});
-            link.className = 'hide-link';
         }
+        this.setChecked(link, addon);
 
         // sync className
         dojo.byId(id + '_hide').className = link.className;
         return false;
+    },
+
+    setChecked:function (link, addon) {
+        // set show/hide of link
+        if (dojo.cookie('addon-' + addon) != null) {
+            link.className = 'hide-link hide-link-checked';
+        } else {
+            link.className = 'hide-link';
+        }
     }
 };

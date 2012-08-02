@@ -114,7 +114,8 @@ public enum ConstantValues {
     replicationConsumerQueueSize("replication.consumer.queueSize", 1),
     replicationLocalIterationSleepThresholdMillis("replication.local.iteration.sleepThresholdMillis", 1000),
     replicationLocalIterationSleepMillis("replication.local.iteration.sleepMillis", 100),
-    replicationEventQueueSize("replication.event.queue.size", 50000);
+    replicationEventQueueSize("replication.event.queue.size", 50000),
+    requestExplodedArchiveExtensions("request.explodedArchiveExtensions", "zip,tar,tar.gz,tgz");
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

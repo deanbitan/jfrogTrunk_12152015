@@ -27,6 +27,7 @@ import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.sapi.common.Lock;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 
@@ -47,7 +48,11 @@ public interface DeployService {
             boolean forceDeployPom, boolean partOfBundleDeploy) throws RepoRejectException;
 
     @Request
-    void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status);
+    void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status, boolean failFast);
+
+    @Request
+    void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status, boolean failFast,
+            @Nonnull String prefix);
 
     /**
      * Validates pom before deployment.

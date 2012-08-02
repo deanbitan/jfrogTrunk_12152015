@@ -16,22 +16,31 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.webapp.wicket.page.deploy.fromzip;
+package org.artifactory.request;
 
-import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
+import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.common.StatusHolder;
 
 /**
- * The page to display the Deploy Artifacts From Zip panel
+ * Only maps exceptions in case there is no status code inside the status holder
  *
- * @author Noam Tenne
+ * @author Shay Yaakov
  */
-public class DeployFromZipPage extends AuthenticatedPage {
-    public DeployFromZipPage() {
-        add(new DeployFromZipPanel("deployFromZipPanel"));
+public class ResponseWithStatusHolderMapper extends ResponseStatusCodesMapper {
+
+    private StatusHolder statusHolder;
+
+    public ResponseWithStatusHolderMapper(StatusHolder statusHolder) {
+        this.statusHolder = statusHolder;
     }
 
     @Override
-    public String getPageName() {
-        return "Archive Deployer";
+    public int getStatusCode(Throwable e) {
+        int statusCode = statusHolder.getStatusCode();
+        if (statusCode != HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+            return statusCode;
+        }
+
+        return super.getStatusCode(e);
     }
 }

@@ -18,7 +18,10 @@
 
 package org.artifactory.util;
 
+import com.google.common.collect.Lists;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -27,11 +30,11 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
+import static org.testng.Assert.*;
 
 /**
  * Tests the {@link ZipUtils} class.
@@ -39,7 +42,7 @@ import static org.testng.Assert.assertNull;
  * @author Yossi Shaul
  */
 @Test
-public class ZipUtilsTest {
+public class ZipUtilsTest extends ArtifactoryHomeBoundTest {
     private File zipFile;
     private ZipInputStream zis;
 
@@ -68,5 +71,50 @@ public class ZipUtilsTest {
     public void locateMissingEntry() throws Exception {
         ZipEntry zipEntry = ZipUtils.locateEntry(zis, "nosuchfile.txt", null);
         assertNull(zipEntry, "Shouldn't have found zip entry");
+    }
+
+    public void testExtractZipFile() throws Exception {
+        File tempExtractedDir = extract(zipFile);
+        assertExtractedFiles(tempExtractedDir);
+    }
+
+    public void testExtractTarFile() throws Exception {
+        File tarFile = ResourceUtils.getResourceAsFile("/tartest.tar");
+        File tempExtractedDir = extract(tarFile);
+        assertExtractedFiles(tempExtractedDir);
+    }
+
+    public void testExtractTarGzFile() throws Exception {
+        File gzipFile = ResourceUtils.getResourceAsFile("/gziptest.tar.gz");
+        File tempExtractedDir = extract(gzipFile);
+        assertExtractedFiles(tempExtractedDir);
+    }
+
+    public void testExtractTgzFile() throws Exception {
+        File tgzFile = ResourceUtils.getResourceAsFile("/tgztest.tgz");
+        File tempExtractedDir = extract(tgzFile);
+        assertExtractedFiles(tempExtractedDir);
+    }
+
+    @Test(expectedExceptions = RuntimeException.class,
+            expectedExceptionsMessageRegExp = "(.*)Unsupported(.*)archive(.*)extension(.*)")
+    public void testUnsupportedArchive() throws Exception {
+        File unsupportedFile = ResourceUtils.getResourceAsFile("/unsupported.ar");
+        extract(unsupportedFile);
+    }
+
+    private File extract(File fileToExtract) throws Exception {
+        File tempExtractedDir = new File(fileToExtract.getParentFile(), "temp");
+        FileUtils.deleteDirectory(tempExtractedDir);
+        FileUtils.forceMkdir(tempExtractedDir);
+        ZipUtils.extract(fileToExtract, tempExtractedDir);
+        return tempExtractedDir;
+    }
+
+    private void assertExtractedFiles(File tempExtractedDir) {
+        List<String> files = Lists.newArrayList(tempExtractedDir.list());
+        assertEquals(files.size(), 2, "Unexpected files size");
+        assertTrue(files.contains("file.txt"), "Unexpected file name");
+        assertTrue(files.contains("folder"), "Unexpected folder name");
     }
 }

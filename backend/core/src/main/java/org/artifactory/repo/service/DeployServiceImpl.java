@@ -179,7 +179,13 @@ public class DeployServiceImpl implements DeployService {
     }
 
     @Override
-    public void deployBundle(File bundle, RealRepoDescriptor targetRepo, final BasicStatusHolder status) {
+    public void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status, boolean failFast) {
+        deployBundle(bundle, targetRepo, status, failFast, "");
+    }
+
+    @Override
+    public void deployBundle(File bundle, RealRepoDescriptor targetRepo, final BasicStatusHolder status,
+            boolean failFast, String prefix) {
         long start = System.currentTimeMillis();
         if (!bundle.exists()) {
             String message =
@@ -194,7 +200,7 @@ public class DeployServiceImpl implements DeployService {
             if (!status.isVerbose()) {
                 status.setVerbose(true);
             }
-            status.setError("A problem has occurred during extraction", e, log);
+            status.setError(e.getLocalizedMessage(), e, log);
             return;
         }
         if (extractFolder == null) {
@@ -222,7 +228,8 @@ public class DeployServiceImpl implements DeployService {
             for (File file : archiveContent) {
                 String parentPath = extractFolder.getAbsolutePath();
                 String filePath = file.getAbsolutePath();
-                String relPath = PathUtils.getRelativePath(parentPath, filePath);
+                String relPath = PathUtils.trimSlashes(
+                        prefix + "/" + PathUtils.getRelativePath(parentPath, filePath)).toString();
 
                 ModuleInfo moduleInfo = repo.getItemModuleInfo(relPath);
                 if (MavenNaming.isPom(file.getName())) {
@@ -231,32 +238,27 @@ public class DeployServiceImpl implements DeployService {
                     } catch (Exception e) {
                         String msg = "The pom: " + file.getName() +
                                 " could not be validated, and thus was not deployed.";
-                        status.setWarning(msg, log);
+                        status.setWarning(msg, e, log);
+                        if (failFast) {
+                            return;
+                        }
                         continue;
                     }
                 }
 
                 try {
-                    UnitInfo artifactInfo = null;
-
-                    /**
-                     * No use in creating a maven artifact info if it's not a valid module. Will just create a weird
-                     * path
-                     */
-                    if (targetRepo.isMavenRepoLayout() && moduleInfo.isValid()) {
-                        artifactInfo = MavenArtifactInfo.fromRepoPath(
-                                InternalRepoPathFactory.create(targetRepo.getKey(), relPath));
-                    }
-
-                    if ((artifactInfo == null) || !artifactInfo.isValid()) {
-                        artifactInfo = new ArtifactInfo(relPath);
-                    }
-
-                    getTransactionalMe().deploy(targetRepo, artifactInfo, file, null, false, true);
+                    getTransactionalMe().deploy(targetRepo, new ArtifactInfo(relPath), file, null, false, true);
                 } catch (IllegalArgumentException iae) {
-                    status.setWarning(iae.getMessage(), log);
+                    status.setWarning(iae.getMessage(), iae, log);
+                    if (failFast) {
+                        return;
+                    }
                 } catch (Exception e) {
+                    // Fail fast
                     status.setError("Error during deployment: " + e.getMessage(), e, log);
+                    if (failFast) {
+                        return;
+                    }
                 }
             }
 

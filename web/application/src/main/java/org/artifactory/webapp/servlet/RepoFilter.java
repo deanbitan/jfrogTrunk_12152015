@@ -99,7 +99,7 @@ public class RepoFilter extends DelayedFilterBase {
         }
 
         String method = request.getMethod().toLowerCase().intern();
-        if (servletPath != null && RequestUtils.isRepoRequest(request)) {
+        if (servletPath != null && RequestUtils.isRepoRequest(request, true)) {
             //Handle upload and download requests
             ArtifactoryResponse artifactoryResponse = new HttpArtifactoryResponse(response);
 
