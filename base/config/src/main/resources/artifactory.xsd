@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.15"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.15"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.16"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.16"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -198,6 +198,7 @@
             </xs:element>
             <xs:element name="gcConfig" type="GcConfigType" minOccurs="1"/>
             <xs:element name="cleanupConfig" type="CleanupConfigType" minOccurs="1"/>
+            <xs:element name="quotaConfig" type="QuotaConfigType" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -2067,6 +2068,42 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         Artifacts cleanup cron exp
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="QuotaConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Quota management configuration
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable control over the size of storage space used for binaries to avoid running out of disk space.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="diskSpaceLimitPercentage" type="xs:int" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The maximum allowed disk usage, in percentage, of the partition containing the binaries folder.
+                        Once this limit has been reached deployments will be rejected with a 413 error (request entity too large) and an
+                        error message will be displayed in the UI (visible for admin users only).
+                        With a filesystem storage the partition checked is one containing the '$ARTIFACTORY_HOME/data/filestore' directory.
+                        With a database blob storage the partition checked is one containing the '$ARTIFACTORY_HOME/data/cache' directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="diskSpaceWarningPercentage" type="xs:int" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The maximum warning-level disk usage, in percentage, of the partition containing the binaries folder.
+                        Once this limit has been reached a warning will be logged and a
+                        warning message will be displayed in the UI (visible for admin users only).
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

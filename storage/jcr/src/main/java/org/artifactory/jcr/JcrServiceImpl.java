@@ -64,6 +64,7 @@ import org.artifactory.jcr.fs.JcrFolder;
 import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.jcr.fs.JcrTreeNode;
 import org.artifactory.jcr.fs.JcrTreeNodeFileFilter;
+import org.artifactory.jcr.jackrabbit.ArtifactoryDataStore;
 import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
 import org.artifactory.jcr.lock.aop.LockingAdvice;
 import org.artifactory.jcr.md.MetadataDefinitionService;
@@ -844,6 +845,11 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
                 session.logout();
             }
         }
+    }
+
+    @Override
+    public File getBinariesFolder() {
+        return ((ArtifactoryDataStore) ((RepositoryImpl) sessionFactory.getRepository()).getDataStore()).getBinariesFolder();
     }
 
     @Override

@@ -118,9 +118,9 @@ public class RepositoriesResource {
             RepositoriesRestConstants.MT_REMOTE_REPOSITORY_CONFIG,
             RepositoriesRestConstants.MT_VIRTUAL_REPOSITORY_CONFIGURATION, MediaType.APPLICATION_JSON})
     public Response getRepoConfig(@PathParam("repoKey") String repoKey) {
-        List<MediaType> acceptableMediaTypes = requestHeaders.getAcceptableMediaTypes();
+        MediaType mediaType = requestHeaders.getMediaType();
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return restAddon.getRepositoryConfiguration(repoKey, acceptableMediaTypes);
+        return restAddon.getRepositoryConfiguration(repoKey, mediaType);
     }
 
     @PUT
@@ -133,9 +133,9 @@ public class RepositoriesResource {
     public Response createOrReplaceRepository(@PathParam("repoKey") String repoKey,
             @QueryParam(RepositoriesRestConstants.POSITION) int position, Map repositoryConfiguration)
             throws IOException {
+        MediaType mediaType = requestHeaders.getMediaType();
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        List<MediaType> acceptableMediaTypes = requestHeaders.getAcceptableMediaTypes();
-        return restAddon.createOrReplaceRepository(repoKey, repositoryConfiguration, acceptableMediaTypes, position);
+        return restAddon.createOrReplaceRepository(repoKey, repositoryConfiguration, mediaType, position);
     }
 
     @POST
@@ -147,11 +147,10 @@ public class RepositoriesResource {
     @Path("{repoKey: .+}")
     public Response updateRepository(@PathParam("repoKey") String repoKey, Map repositoryConfiguration)
             throws IOException {
+        MediaType mediaType = requestHeaders.getMediaType();
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        List<MediaType> acceptableMediaTypes = requestHeaders.getAcceptableMediaTypes();
-        return restAddon.updateRepository(repoKey, repositoryConfiguration, acceptableMediaTypes);
+        return restAddon.updateRepository(repoKey, repositoryConfiguration, mediaType);
     }
-
 
     /**
      * Returns a JSON list of repository details.
@@ -174,10 +173,8 @@ public class RepositoriesResource {
     @DELETE
     @Produces(MediaType.TEXT_PLAIN)
     @Path("{repoKey: .+}")
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
     public Response deleteRepository(@PathParam("repoKey") String repoKey) throws IOException {
-        if (!authorizationService.isAdmin()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
         if (StringUtils.isBlank(repoKey)) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Repo key must not be null\n").build();
         }

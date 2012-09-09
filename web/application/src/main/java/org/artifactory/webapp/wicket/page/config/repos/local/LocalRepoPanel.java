@@ -94,11 +94,10 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
     public void addAndSaveDescriptor(LocalRepoDescriptor repoDescriptor) {
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
-        repoDescriptor.setKey(key);
         mccd.addLocalRepository(repoDescriptor);
         if (replicationDescriptor.isEnabled()) {
             if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
-                replicationDescriptor.setRepoKey(key);
+                replicationDescriptor.setRepoKey(repoDescriptor.getKey());
             }
             mccd.addLocalReplication(replicationDescriptor);
         }
@@ -116,7 +115,7 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         }
         if (replicationDescriptor.isEnabled() && !mccd.isLocalReplicationExists(replicationDescriptor)) {
             if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
-                replicationDescriptor.setRepoKey(key);
+                replicationDescriptor.setRepoKey(repoDescriptor.getKey());
             }
             mccd.addLocalReplication(replicationDescriptor);
         }

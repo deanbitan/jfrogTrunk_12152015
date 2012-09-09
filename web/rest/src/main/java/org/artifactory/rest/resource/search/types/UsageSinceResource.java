@@ -19,6 +19,7 @@
 
 package org.artifactory.rest.resource.search.types;
 
+import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.LastDownloadRestResult;
 import org.artifactory.api.search.SearchService;
@@ -68,9 +69,7 @@ public class UsageSinceResource {
             @QueryParam(SearchRestConstants.PARAM_CREATED_BEFORE) Long createdBefore,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
         if (authorizationService.isAnonymous()) {
-            RestUtils.sendUnauthorizedResponse(response,
-                    "This search resource is available to authenticated users only.");
-            return null;
+            throw new AuthorizationRestException();
         }
         return search(lastDownloaded, createdBefore, reposToSearch);
     }

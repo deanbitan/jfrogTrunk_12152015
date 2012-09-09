@@ -34,7 +34,6 @@ import org.artifactory.api.rest.build.BuildsByName;
 import org.artifactory.api.rest.constant.BuildRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.SearchService;
-import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.exception.CancelException;
@@ -339,8 +338,6 @@ public class BuildResource {
             response.setStatus(HttpStatus.SC_OK);
 
             return String.format("Build renaming of '%s' to '%s' was successfully started.\n", from, to);
-        } catch (AuthorizationException ae) {
-            response.sendError(HttpStatus.SC_FORBIDDEN, ae.getMessage());
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnne) {
@@ -368,8 +365,6 @@ public class BuildResource {
             }
 
             restAddon.deleteBuilds(response, buildName, buildNumbers, artifacts);
-        } catch (AuthorizationException ae) {
-            response.sendError(HttpStatus.SC_FORBIDDEN, ae.getMessage());
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnne) {

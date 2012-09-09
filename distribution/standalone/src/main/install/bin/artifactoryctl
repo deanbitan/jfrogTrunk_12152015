@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # chkconfig: 345 80 20
 # description: Artifactory on Jetty
@@ -12,7 +12,7 @@
 # Default-Start:     3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Start Artifactory at boot time
-# Description:       Manages the services needed to run Artifactory - a Maven Proxy
+# Description:       Manages the services needed to run Artifactory - a Binary Repository Manager
 ### END INIT INFO 
 # Startup script for artifactory under *nix systems (it works under NT/cygwin too).
 #
@@ -161,11 +161,11 @@ ARTIFACTORY_START_FILE="bin/artifactory.sh"
 ##################################################
 if [ -z "$ARTIFACTORY_HOME" ]
 then
-  ARTIFACTORY_HOME_1=`dirname "$0"`
-  ARTIFACTORY_HOME_1=`dirname "$ARTIFACTORY_HOME_1"`
-  if [ -f "${ARTIFACTORY_HOME_1}/${ARTIFACTORY_START_FILE}" ] ;
+  ARTIFACTORY_HOME_1="`dirname "$0"`"
+  ARTIFACTORY_HOME_1="`cd "$ARTIFACTORY_HOME_1/.."; pwd`"
+  if [ -f "$ARTIFACTORY_HOME_1/$ARTIFACTORY_START_FILE" ] ;
   then
-     ARTIFACTORY_HOME=${ARTIFACTORY_HOME_1}
+     ARTIFACTORY_HOME="$ARTIFACTORY_HOME_1"
   fi
 fi
 
@@ -173,7 +173,7 @@ fi
 ##################################################
 # if no ARTIFACTORY_HOME, search likely locations.
 ##################################################
-if [ "$ARTIFACTORY_HOME" = "" ] ; then
+if [ -z "$ARTIFACTORY_HOME" ] ; then
   STANDARD_LOCATIONS="           \
         $HOME                    \
         $HOME/src                \
@@ -198,7 +198,7 @@ if [ "$ARTIFACTORY_HOME" = "" ] ; then
   do
      for N in $ARTIFACTORY_DIR_NAMES
      do
-         if [ -d $L/$N ] && [ -f "$L/${N}/${ARTIFACTORY_START_FILE}" ] ;
+         if [ -d "$L/$N" ] && [ -f "$L/${N}/${ARTIFACTORY_START_FILE}" ] ;
          then
             ARTIFACTORY_HOME="$L/$N"
             echo "Defaulting ARTIFACTORY_HOME to $ARTIFACTORY_HOME"
@@ -219,7 +219,7 @@ fi
 #####################################################
 # Check that jetty is where we think it is
 #####################################################
-if [ ! -r $ARTIFACTORY_HOME/$ARTIFACTORY_START_FILE ]
+if [ ! -r "$ARTIFACTORY_HOME/$ARTIFACTORY_START_FILE" ]
 then
    echo "** ERROR: Oops! Artifactory doesn't appear to be installed in $ARTIFACTORY_HOME"
    echo "** ERROR:  $ARTIFACTORY_HOME/$ARTIFACTORY_START_FILE is not readable!"
@@ -265,7 +265,13 @@ fi
 ##################################################
 if [ -n "$ARTIFACTORY_USER" ]
 then
-  curUser=`id -nu`
+  curUser=
+  if [ -x "/usr/xpg4/bin/id" ]
+  then
+    curUser=`/usr/xpg4/bin/id -nu`
+  else
+    curUser=`id -nu`
+  fi
   if [ "$curUser" != "root" ]
   then
     echo "** ERROR: Only root user can change execution user to $ARTIFACTORY_USER"
@@ -548,15 +554,15 @@ case "$ACTION" in
             fi
         fi
 
-        echo "STARTED Jetty `date`" >> $ARTIFACTORY_CONSOLE
-
         ulimit -n 20000
         ulimit -s 128
 
         if [ -z "$ARTIFACTORY_USER" ]; then
+            echo "STARTED Jetty `date`" >> $ARTIFACTORY_CONSOLE
             nohup sh -c "exec $RUN_CMD >>$ARTIFACTORY_CONSOLE 2>&1" >/dev/null &
         else
-            nohup su - ${ARTIFACTORY_USER} --shell=/bin/sh -c "exec $RUN_CMD >>$ARTIFACTORY_CONSOLE 2>&1" >/dev/null &
+            su - ${ARTIFACTORY_USER} --shell=/bin/bash -c "echo \"STARTED Jetty `date`\" >> $ARTIFACTORY_CONSOLE" && \
+             nohup su - ${ARTIFACTORY_USER} --shell=/bin/sh -c "exec $RUN_CMD >>$ARTIFACTORY_CONSOLE 2>&1" >/dev/null &
         fi
         echo $! > $ARTIFACTORY_PID
         echo "Jetty running pid="`cat $ARTIFACTORY_PID`
@@ -566,7 +572,7 @@ case "$ACTION" in
         PID=`cat $ARTIFACTORY_PID 2>/dev/null`
         echo "Shutting down Jetty: $PID"
         kill $PID 2>/dev/null
-        sleep 20
+        sleep 10
         kill -9 $PID 2>/dev/null
         rm -f $ARTIFACTORY_PID
         echo "STOPPED `date`" >>$ARTIFACTORY_CONSOLE
@@ -600,9 +606,9 @@ case "$ACTION" in
 
   check)
 
-   if [ -f $ARTIFACTORY_PID ]
+   if [ -f $ARTIFACTORY_RUN/artifactory.pid ]
         then
-            echo "Artifactory is running, on pid="`cat $ARTIFACTORY_PID`
+            echo "Artifactory is running, on pid="`cat $ARTIFACTORY_RUN/artifactory.pid`
             echo ""
             exit 0
         fi

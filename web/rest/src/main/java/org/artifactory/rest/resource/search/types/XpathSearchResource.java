@@ -18,7 +18,6 @@
 
 package org.artifactory.rest.resource.search.types;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.InfoRestSearchResult;
@@ -141,16 +140,12 @@ public class XpathSearchResource {
         }
 
         List results = searchResults.getResults();
-        if (!results.isEmpty()) {
-            InfoRestSearchResult infoRestSearchResult = new InfoRestSearchResult();
-            for (Object result : results) {
-                String uri = RestUtils.buildStorageInfoUri(request, (SearchResultBase) result);
-                infoRestSearchResult.results.add(new InfoRestSearchResult.SearchEntry(uri));
-            }
-            return Response.ok(infoRestSearchResult).build();
+        InfoRestSearchResult infoRestSearchResult = new InfoRestSearchResult();
+        for (Object result : results) {
+            String uri = RestUtils.buildStorageInfoUri(request, (SearchResultBase) result);
+            infoRestSearchResult.results.add(new InfoRestSearchResult.SearchEntry(uri));
         }
-
-        return Response.status(HttpStatus.SC_NOT_FOUND).build();
+        return Response.ok(infoRestSearchResult).build();
     }
 
 }

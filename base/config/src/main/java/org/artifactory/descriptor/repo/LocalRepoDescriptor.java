@@ -78,5 +78,4 @@ public class LocalRepoDescriptor extends RealRepoDescriptor {
     public void setYumRootDepth(int yumRootDepth) {
         this.yumRootDepth = yumRootDepth;
     }
-
 }

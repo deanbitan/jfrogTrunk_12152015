@@ -216,11 +216,11 @@ public interface RestAddon extends Addon {
      * Get Repository configuration according to the repository key in conjunction with the media type to enforce a
      * certain type of repository configuration.
      *
-     * @param repoKey    The repokey of the repository.
-     * @param mediaTypes The acceptable media types for this request
+     * @param repoKey   The repokey of the repository.
+     * @param mediaType The acceptable media type for this request
      * @return The response with the configuration embedded in it.
      */
-    Response getRepositoryConfiguration(String repoKey, List<MediaType> mediaTypes);
+    Response getRepositoryConfiguration(String repoKey, MediaType mediaType);
 
     /**
      * Create or replace an existing repository via REST.
@@ -230,17 +230,17 @@ public interface RestAddon extends Addon {
      * @param mediaTypes       The mediatypes of which are applicable. {@link org.artifactory.api.rest.constant.RepositoriesRestConstants}
      * @param position         The position in the map that the newly created repository will be placed
      */
-    Response createOrReplaceRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes, int position);
+    Response createOrReplaceRepository(String repoKey, Map repositoryConfig, MediaType mediaType, int position);
 
     /**
      * Update an existing repository via REST.
      *
      * @param repoKey          The repokey of the repository to be updated.
      * @param repositoryConfig The repository config of what is to be updated.
-     * @param mediaTypes       The acceptable media types for this REST command.
+     * @param mediaType        The acceptable media type for this REST command.
      * @return The response for this command.
      */
-    Response updateRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes);
+    Response updateRepository(String repoKey, Map repositoryConfig, MediaType mediaType);
 
     /**
      * Search for artifacts by their checksums

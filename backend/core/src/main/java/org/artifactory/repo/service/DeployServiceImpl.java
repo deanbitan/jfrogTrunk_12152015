@@ -31,19 +31,17 @@ import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.maven.MavenService;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.exception.RepoAccessException;
 import org.artifactory.api.repo.exception.RepoRejectException;
-import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.UploadService;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.maven.MavenModelUtils;
-import org.artifactory.maven.PomTargetPathValidator;
+import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -62,11 +60,8 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -91,15 +86,18 @@ public class DeployServiceImpl implements DeployService {
     @Autowired
     private UploadService uploadService;
 
+    @Autowired
+    private MavenService mavenService;
+
     @Override
     public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File file) throws RepoRejectException {
-        String pomString = getPomModelString(file);
-        deploy(targetRepo, artifactInfo, file, pomString, false, false);
+        String pomString = mavenService.getPomModelString(file);
+        deploy(targetRepo, artifactInfo, file, pomString, false, false, null);
     }
 
     @Override
     public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy, String pomString,
-            boolean forceDeployPom, boolean partOfBundleDeploy) throws RepoRejectException {
+            boolean forceDeployPom, boolean partOfBundleDeploy, Properties properties) throws RepoRejectException {
         String path = artifactInfo.getPath();
         if (!artifactInfo.isValid()) {
             throw new IllegalArgumentException("Invalid unit info for '" + path + "'.");
@@ -125,7 +123,8 @@ public class DeployServiceImpl implements DeployService {
         }
         // upload the main file
         try {
-            ArtifactoryDeployRequest request = new ArtifactoryDeployRequest(repoPath, fileToDeploy);
+            ArtifactoryDeployRequest request = new ArtifactoryDeployRequestBuilder(repoPath)
+                    .fileToDeploy(fileToDeploy).properties(properties).build();
             request.setSkipJarIndexing(partOfBundleDeploy);
             InternalArtifactoryResponse response = new InternalArtifactoryResponse();
             uploadService.upload(request, response);
@@ -143,9 +142,12 @@ public class DeployServiceImpl implements DeployService {
                     mavenArtifactInfo.getArtifactId() + "-" + mavenArtifactInfo.getVersion() + ".pom");
             RepoPath uploadPomPath = InternalRepoPathFactory.create(targetRepo.getKey(), pomPath.getPath());
             try {
-                ArtifactoryDeployRequest pomRequest = new ArtifactoryDeployRequest(
-                        uploadPomPath, IOUtils.toInputStream(pomString), pomString.getBytes().length,
-                        fileToDeploy.lastModified());
+                ArtifactoryDeployRequest pomRequest = new ArtifactoryDeployRequestBuilder(uploadPomPath)
+                        .inputStream(IOUtils.toInputStream(pomString))
+                        .contentLength(pomString.getBytes().length)
+                        .lastModified(fileToDeploy.lastModified())
+                        .properties(properties)
+                        .build();
                 InternalArtifactoryResponse pomResponse = new InternalArtifactoryResponse();
                 // upload the POM if needed
                 uploadService.upload(pomRequest, pomResponse);
@@ -180,12 +182,12 @@ public class DeployServiceImpl implements DeployService {
 
     @Override
     public void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status, boolean failFast) {
-        deployBundle(bundle, targetRepo, status, failFast, "");
+        deployBundle(bundle, targetRepo, status, failFast, "", null);
     }
 
     @Override
     public void deployBundle(File bundle, RealRepoDescriptor targetRepo, final BasicStatusHolder status,
-            boolean failFast, String prefix) {
+            boolean failFast, String prefix, Properties properties) {
         long start = System.currentTimeMillis();
         if (!bundle.exists()) {
             String message =
@@ -234,7 +236,8 @@ public class DeployServiceImpl implements DeployService {
                 ModuleInfo moduleInfo = repo.getItemModuleInfo(relPath);
                 if (MavenNaming.isPom(file.getName())) {
                     try {
-                        validatePom(file, relPath, moduleInfo, targetRepo.isSuppressPomConsistencyChecks());
+                        mavenService.validatePomFile(file, relPath, moduleInfo,
+                                targetRepo.isSuppressPomConsistencyChecks());
                     } catch (Exception e) {
                         String msg = "The pom: " + file.getName() +
                                 " could not be validated, and thus was not deployed.";
@@ -247,7 +250,8 @@ public class DeployServiceImpl implements DeployService {
                 }
 
                 try {
-                    getTransactionalMe().deploy(targetRepo, new ArtifactInfo(relPath), file, null, false, true);
+                    getTransactionalMe().deploy(targetRepo, new ArtifactInfo(relPath), file, null, false, true,
+                            properties);
                 } catch (IllegalArgumentException iae) {
                     status.setWarning(iae.getMessage(), iae, log);
                     if (failFast) {
@@ -275,34 +279,6 @@ public class DeployServiceImpl implements DeployService {
         } finally {
             FileUtils.deleteQuietly(extractFolder);
         }
-    }
-
-    @Override
-    public MavenArtifactInfo getArtifactInfo(File uploadedFile) {
-        return MavenModelUtils.artifactInfoFromFile(uploadedFile);
-    }
-
-    @Override
-    public String getPomModelString(File file) {
-        if (MavenNaming.isPom(file.getAbsolutePath())) {
-            try {
-                FileInputStream fileInputStream = new FileInputStream(file);
-                return IOUtils.toString(fileInputStream);
-            } catch (IOException e) {
-                log.error("The following error occurred while reading {} {}", file.getAbsolutePath(), e);
-            }
-        }
-        String pomFromJar = MavenModelUtils.getPomFileAsStringFromJar(file);
-        if (StringUtils.isNotBlank(pomFromJar)) {
-            try {
-                MavenModelUtils.stringToMavenModel(pomFromJar);
-                return pomFromJar;
-            } catch (RepositoryRuntimeException rre) {
-                log.error("Failed to validate the model of the POM file within '{}'.", file.getAbsolutePath());
-            }
-        }
-        MavenArtifactInfo model = getArtifactInfo(file);
-        return MavenModelUtils.mavenModelToString(MavenModelUtils.toMavenModel(model));
     }
 
     private File extractArchive(BasicStatusHolder status, File archive) throws Exception {
@@ -353,34 +329,6 @@ public class DeployServiceImpl implements DeployService {
             throw e;
         }
         return extractFolder;
-    }
-
-    @Override
-    public void validatePom(String pomContent, String relPath, ModuleInfo moduleInfo,
-            boolean suppressPomConsistencyChecks) throws IOException {
-        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-        File tempFile = File.createTempFile("pom.validation", ".tmp", artifactoryHome.getWorkTmpDir());
-        try {
-            FileUtils.writeStringToFile(tempFile, pomContent, "utf-8");
-            validatePom(tempFile, relPath, moduleInfo, suppressPomConsistencyChecks);
-        } finally {
-            FileUtils.forceDelete(tempFile);
-        }
-    }
-
-    private static void validatePom(File pomFile, String relPath, ModuleInfo moduleInfo,
-            boolean suppressPomConsistencyChecks) throws BadPomException {
-        InputStream inputStream = null;
-        try {
-            inputStream = new BufferedInputStream(new FileInputStream(pomFile));
-            new PomTargetPathValidator(relPath, moduleInfo).validate(inputStream, suppressPomConsistencyChecks);
-        } catch (Exception e) {
-            String message = "Error while validating POM for path: " + relPath +
-                    ". Please assure the validity of the POM file.";
-            throw new BadPomException(message);
-        } finally {
-            IOUtils.closeQuietly(inputStream);
-        }
     }
 
     private static DeployService getTransactionalMe() {

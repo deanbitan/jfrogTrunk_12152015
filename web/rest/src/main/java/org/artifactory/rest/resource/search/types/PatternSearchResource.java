@@ -20,6 +20,7 @@ package org.artifactory.rest.resource.search.types;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.repo.RepositoryService;
@@ -73,9 +74,7 @@ public class PatternSearchResource {
     @Produces({SearchRestConstants.MT_PATTERN_SEARCH_RESULT, MediaType.APPLICATION_JSON})
     public PatternResultFileSet get(@QueryParam(SearchRestConstants.PARAM_PATTERN) String pattern) throws IOException {
         if (!authorizationService.isAuthenticated() || authorizationService.isAnonymous()) {
-            RestUtils.sendUnauthorizedResponse(response,
-                    "This search resource is available to authenticated users only.");
-            return null;
+            throw new AuthorizationRestException();
         }
         try {
             return search(pattern);

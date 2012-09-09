@@ -49,8 +49,6 @@ import java.util.SortedSet;
 public class IntegrationCleanerInterceptor extends StorageInterceptorAdapter {
     private static final Logger log = LoggerFactory.getLogger(IntegrationCleanerInterceptor.class);
 
-    private SnapshotVersionsRetriever retriever;
-
     /**
      * Cleanup old snapshots etc.
      *
@@ -83,7 +81,7 @@ public class IntegrationCleanerInterceptor extends StorageInterceptorAdapter {
             ModuleInfo baseRevisionModule = getBaseRevisionModuleInfo(deployedModuleInfo);
             String baseArtifactPath = ModuleInfoUtils.constructArtifactPath(baseRevisionModule, repoLayout, false);
 
-            retriever = new SnapshotVersionsRetriever();
+            SnapshotVersionsRetriever retriever = new SnapshotVersionsRetriever();
             JcrTreeNode artifactSearchNode = retriever.getTreeNode(repo, repoLayout, baseArtifactPath, false);
             TreeMultimap<Calendar, VfsItem> cleanupCandidates = TreeMultimap.create();
             if (artifactSearchNode != null) {
@@ -106,7 +104,7 @@ public class IntegrationCleanerInterceptor extends StorageInterceptorAdapter {
 
             Multimap<Calendar, ModuleInfo> folderIntegrationMap = retriever.getFolderIntegrationMap();
             while (cleanupCandidates.keySet().size() > maxUniqueSnapshots) {
-                performCleanup(repo, cleanupCandidates, folderIntegrationMap);
+                performCleanup(retriever, repo, cleanupCandidates, folderIntegrationMap);
             }
         }
     }
@@ -116,8 +114,8 @@ public class IntegrationCleanerInterceptor extends StorageInterceptorAdapter {
                 module(deployedModuleInfo.getModule()).baseRevision(deployedModuleInfo.getBaseRevision()).build();
     }
 
-    private void performCleanup(StoringRepo repo, TreeMultimap<Calendar, VfsItem> cleanupCandidates,
-            Multimap<Calendar, ModuleInfo> folderIntegrationMap) {
+    private void performCleanup(SnapshotVersionsRetriever retriever, StoringRepo repo,
+            TreeMultimap<Calendar, VfsItem> cleanupCandidates, Multimap<Calendar, ModuleInfo> folderIntegrationMap) {
         Calendar first = cleanupCandidates.keySet().first();
 
         SortedSet<VfsItem> itemsToRemove = cleanupCandidates.removeAll(first);
@@ -128,16 +126,17 @@ public class IntegrationCleanerInterceptor extends StorageInterceptorAdapter {
 
         Collection<ModuleInfo> integrationFolderModuleInfos = folderIntegrationMap.get(first);
         for (ModuleInfo integrationFolderModuleInfo : integrationFolderModuleInfos) {
-            prepareIntegrationFolderForCleanup(integrationFolderModuleInfo, repo);
+            prepareIntegrationFolderForCleanup(retriever, integrationFolderModuleInfo, repo);
         }
     }
 
-    private void prepareIntegrationFolderForCleanup(ModuleInfo integrationFolderModuleInfo, StoringRepo repo) {
+    private void prepareIntegrationFolderForCleanup(SnapshotVersionsRetriever retriever,
+            ModuleInfo integrationFolderModuleInfo, StoringRepo repo) {
         RepoLayout repoLayout = repo.getDescriptor().getRepoLayout();
 
         String baseArtifactPath = ModuleInfoUtils.constructArtifactPath(integrationFolderModuleInfo, repoLayout, false);
 
-        cleanIntegrationFolderIfNeeded(repo, baseArtifactPath);
+        cleanIntegrationFolderIfNeeded(retriever, repo, baseArtifactPath);
 
         if (repoLayout.isDistinctiveDescriptorPathPattern()) {
 
@@ -146,12 +145,13 @@ public class IntegrationCleanerInterceptor extends StorageInterceptorAdapter {
             if (!baseArtifactPath.equals(baseDescriptorPath) &&
                     baseDescriptorPath.contains(integrationFolderModuleInfo.getFolderIntegrationRevision())) {
 
-                cleanIntegrationFolderIfNeeded(repo, baseArtifactPath);
+                cleanIntegrationFolderIfNeeded(retriever, repo, baseArtifactPath);
             }
         }
     }
 
-    private void cleanIntegrationFolderIfNeeded(StoringRepo repo, String basePath) {
+    private void cleanIntegrationFolderIfNeeded(SnapshotVersionsRetriever retriever, StoringRepo repo,
+            String basePath) {
         JcrTreeNode folderTreeNode = retriever.getTreeNode(repo, repo.getDescriptor().getRepoLayout(), basePath, false);
         if ((folderTreeNode != null) && folderTreeNode.isFolder()) {
             if (isFolderTreeNodeEmptyOfFiles(folderTreeNode)) {

@@ -38,7 +38,7 @@ public interface HttpRepositoryConfiguration extends RepositoryConfiguration {
 
     boolean isBlackedOut();
 
-    long getFailedRetrievalCachePeriodSecs();
+    long getAssumedOfflinePeriodSecs();
 
     boolean isFetchJarsEagerly();
 
@@ -75,4 +75,12 @@ public interface HttpRepositoryConfiguration extends RepositoryConfiguration {
     String getUsername();
 
     String getRemoteRepoLayoutRef();
+
+    boolean isArchiveBrowsingEnabled();
+
+    boolean isListRemoteFolderItems();
+
+    boolean isRejectInvalidJars();
+
+    boolean isP2Support();
 }

@@ -23,13 +23,12 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.CssClass;
+import org.artifactory.common.wicket.behavior.OnKeyUpUpdatingBehavior;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
@@ -64,10 +63,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
 
     protected final CachingDescriptorHelper cachingDescriptorHelper;
 
-    @WicketProperty
-    protected String key;
-
-    protected RepoConfigCreateUpdatePanel(CreateUpdateAction action, E repoDescriptor,
+    protected RepoConfigCreateUpdatePanel(CreateUpdateAction action, final E repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
         super(action, repoDescriptor);
 
@@ -76,7 +72,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         add(new CssClass("repo-config"));
         setWidth(650);
         TitledBorder repoConfigBorder = new TitledBorder("repoConfigBorder");
-        TextField<String> repoKeyField = new TextField<String>("key", new PropertyModel<String>(this, "key"));
+        TextField<String> repoKeyField = new TextField<String>("key");
         setDefaultFocusField(repoKeyField);
 
         boolean create = isCreate();
@@ -86,8 +82,14 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
             repoKeyField.add(new XsdNCNameValidator("Invalid repository key '%s'."));
             repoKeyField.add(new UniqueXmlIdValidator(cachingDescriptorHelper.getModelMutableDescriptor()));
             repoKeyField.add(new ReservedPathPrefixValidator());
-        } else {
-            repoKeyField.setModelObject(repoDescriptor.getKey());
+            // we don't use a delay since it causes an error when the panel is closed while the focus is on the repo
+            // key field
+            repoKeyField.add(new OnKeyUpUpdatingBehavior(0) {
+                @Override
+                protected void onUpdate(AjaxRequestTarget target) {
+                    // TODO: [by sy] send an event to interested components? (nuget panel)
+                }
+            });
         }
 
         repoConfigBorder.add(repoKeyField);
@@ -136,7 +138,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 E repoDescriptor = getRepoDescriptor();
-                if (StringUtils.isBlank(key)) {
+                if (StringUtils.isBlank(repoDescriptor.getKey())) {
                     error("Please enter the repository key.");
                     AjaxUtils.refreshFeedback(target);
                     return;

@@ -1,16 +1,15 @@
 package org.artifactory.rest.resource.search.types;
 
+import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.rest.common.list.StringList;
-import org.artifactory.rest.util.RestUtils;
 import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -29,14 +28,12 @@ public class BadChecksumSearchResource {
     private final RestAddon restAddon;
     private final AuthorizationService authorizationService;
     private final HttpServletRequest request;
-    private final HttpServletResponse response;
 
     public BadChecksumSearchResource(AuthorizationService authorizationService, RestAddon restAddon,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletRequest request) {
         this.restAddon = restAddon;
         this.authorizationService = authorizationService;
         this.request = request;
-        this.response = response;
     }
 
     /**
@@ -51,9 +48,7 @@ public class BadChecksumSearchResource {
     public Object get(@QueryParam("type") String type,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
         if (!authorizationService.isAuthenticated()) {
-            RestUtils.sendUnauthorizedResponse(response,
-                    "This search resource is available to authenticated users only.");
-            return null;
+            throw new AuthorizationRestException();
         }
         log.debug("Finding bad '{}' checksum artifacts in {} ", type, reposToSearch);
         try {

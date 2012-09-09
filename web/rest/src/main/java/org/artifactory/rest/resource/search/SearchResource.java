@@ -157,7 +157,7 @@ public class SearchResource {
     @Path(SearchRestConstants.PATH_BAD_CHECKSUM)
     public BadChecksumSearchResource badChecksumSearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new BadChecksumSearchResource(authorizationService, restAddon, request, response);
+        return new BadChecksumSearchResource(authorizationService, restAddon, request);
     }
 
     @Path(SearchRestConstants.PATH_DEPENDENCY)

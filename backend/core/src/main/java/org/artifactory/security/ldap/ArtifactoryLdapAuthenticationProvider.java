@@ -40,7 +40,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceAware;
 import org.springframework.ldap.AuthenticationException;
 import org.springframework.ldap.CommunicationException;
-import org.springframework.ldap.NameNotFoundException;
+import org.springframework.ldap.NamingException;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
@@ -209,11 +209,11 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
             String message = String.format("Failed to authenticate user '%s' via LDAP: %s", userName, e.getMessage());
             log.debug(message);
             throw e;
-        } catch (NameNotFoundException e) {
-            String message = String.format("Server failed to parse the request: %s",
+        } catch (NamingException e) {
+            String message = String.format("Failed to locate directory entry for authenticated user: %s",
                     e.getMostSpecificCause().getMessage());
             log.debug(message);
-            throw e;
+            throw new AuthenticationServiceException(message, e);
         } catch (Exception e) {
             String message = "Unexpected exception in LDAP authentication:";
             log.error(message, e);

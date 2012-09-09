@@ -42,6 +42,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private String includesPattern = "";
     private String excludesPattern = "";
     private String repoLayoutRef;
+    private boolean enableNuGetSupport = false;
 
     protected RepositoryConfigurationBase() {
     }
@@ -69,6 +70,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
         if (repoLayout != null) {
             setRepoLayoutRef(repoLayout.getName());
         }
+        setEnableNuGetSupport(repoDescriptor.isEnableNuGetSupport());
     }
 
     public void setKey(String key) {
@@ -133,6 +135,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setRepoLayoutRef(String repoLayoutRef) {
         this.repoLayoutRef = repoLayoutRef;
+    }
+
+    @Override
+    public boolean isEnableNuGetSupport() {
+        return enableNuGetSupport;
+    }
+
+    public void setEnableNuGetSupport(boolean enableNuGetSupport) {
+        this.enableNuGetSupport = enableNuGetSupport;
     }
 
     /**

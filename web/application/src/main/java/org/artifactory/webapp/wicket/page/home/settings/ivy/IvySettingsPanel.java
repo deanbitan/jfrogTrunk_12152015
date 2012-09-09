@@ -58,6 +58,7 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
             List<? extends RepoDescriptor> virtualRepoDescriptors) {
         super(id, servletContextUrl);
 
+        //noinspection unchecked
         resolverPanel = new IvySettingsRepoSelectorPanel("resolverPanel", virtualRepoDescriptors, servletContextUrl,
                 IvySettingsRepoSelectorPanel.RepoType.LIBS);
         form.add(resolverPanel);

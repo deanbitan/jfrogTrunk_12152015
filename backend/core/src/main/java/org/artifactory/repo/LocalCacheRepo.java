@@ -27,7 +27,6 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
  * @author Noam Tenne
  */
 public interface LocalCacheRepo extends LocalRepo<LocalCacheRepoDescriptor> {
-    String PATH_SUFFIX = "-cache";
 
     RemoteRepo<? extends RemoteRepoDescriptor> getRemoteRepo();
 

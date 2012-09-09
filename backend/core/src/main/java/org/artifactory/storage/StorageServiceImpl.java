@@ -27,11 +27,13 @@ import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.storage.StorageQuotaInfo;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
+import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
 import org.artifactory.jcr.JcrService;
 import org.artifactory.jcr.JcrSession;
 import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
@@ -137,6 +139,22 @@ public class StorageServiceImpl implements InternalStorageService {
         } else {
             statusHolder.setError("Conversion failed", log);
         }
+    }
+
+    @Override
+    public StorageQuotaInfo getStorageQuotaInfo() {
+        CentralConfigDescriptor descriptor = centralConfigService.getDescriptor();
+        QuotaConfigDescriptor quotaConfig = descriptor.getQuotaConfig();
+        if (quotaConfig == null) {
+            return null;
+        }
+        if (!quotaConfig.isEnabled()) {
+            return null;
+        }
+
+        File binariesFolder = jcrService.getBinariesFolder();
+        return new StorageQuotaInfo(binariesFolder, quotaConfig.getDiskSpaceLimitPercentage(),
+                quotaConfig.getDiskSpaceWarningPercentage());
     }
 
     @Override

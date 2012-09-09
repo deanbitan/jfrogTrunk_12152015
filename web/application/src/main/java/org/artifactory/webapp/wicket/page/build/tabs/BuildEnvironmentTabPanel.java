@@ -18,7 +18,10 @@
 
 package org.artifactory.webapp.wicket.page.build.tabs;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
@@ -26,12 +29,13 @@ import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvid
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
+import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.util.SerializablePair;
 import org.jfrog.build.api.Build;
 
+import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -46,8 +50,13 @@ public class BuildEnvironmentTabPanel extends Panel {
     public BuildEnvironmentTabPanel(String id, Build build) {
         super(id);
 
-        FieldSetBorder propertiesBorder = new FieldSetBorder("propertiesBorder");
-        add(propertiesBorder);
+        EnvironmentVariablesPanel environmentVariablesPanel = new EnvironmentVariablesPanel("envVariablesPanel");
+        environmentVariablesPanel.add(new CollapsibleBehavior().setExpanded(true));
+        add(environmentVariablesPanel);
+
+        SystemVariablesPanel systemVariablesPanel = new SystemVariablesPanel("sysVariablesPanel");
+        systemVariablesPanel.add(new CollapsibleBehavior().setExpanded(true));
+        add(systemVariablesPanel);
 
         List<IColumn<SerializablePair<String, String>>> columns = Lists.newArrayList();
         columns.add(new PropertyColumn<SerializablePair<String, String>>(Model.of("Key"), "first", "first"));
@@ -55,9 +64,33 @@ public class BuildEnvironmentTabPanel extends Panel {
 
         List<SerializablePair<String, String>> propertyPairs = getPropertiesAsPairs(build);
 
-        PropertiesDataProvider dataProvider = new PropertiesDataProvider(propertyPairs);
-        propertiesBorder.add(new SortableTable<SerializablePair<String, String>>(
-                "properties", columns, dataProvider, Integer.MAX_VALUE));
+        PropertiesDataProvider envDataProvider = new PropertiesDataProvider(filterEnvProperties(propertyPairs));
+        environmentVariablesPanel.add(new SortableTable<SerializablePair<String, String>>(
+                "envTable", columns, envDataProvider, Integer.MAX_VALUE));
+
+        PropertiesDataProvider sysDataProvider = new PropertiesDataProvider(filterSystemProperties(propertyPairs));
+        systemVariablesPanel.add(new SortableTable<SerializablePair<String, String>>(
+                "systemTable", columns, sysDataProvider, Integer.MAX_VALUE));
+    }
+
+    private List<SerializablePair<String, String>> filterEnvProperties(
+            List<SerializablePair<String, String>> propertyPairs) {
+        return Lists.newArrayList(Iterables.filter(propertyPairs, new Predicate<SerializablePair<String, String>>() {
+            @Override
+            public boolean apply(@Nullable SerializablePair<String, String> input) {
+                return input != null && StringUtils.startsWithIgnoreCase(input.getFirst(), "buildInfo.env.");
+            }
+        }));
+    }
+
+    private List<SerializablePair<String, String>> filterSystemProperties(
+            List<SerializablePair<String, String>> propertyPairs) {
+        return Lists.newArrayList(Iterables.filter(propertyPairs, new Predicate<SerializablePair<String, String>>() {
+            @Override
+            public boolean apply(@Nullable SerializablePair<String, String> input) {
+                return input != null && !StringUtils.startsWithIgnoreCase(input.getFirst(), "buildInfo.env.");
+            }
+        }));
     }
 
     /**
@@ -71,7 +104,6 @@ public class BuildEnvironmentTabPanel extends Panel {
         List<SerializablePair<String, String>> list = Lists.newArrayList();
 
         Properties properties = build.getProperties();
-
         if (properties != null) {
             for (Object key : properties.keySet()) {
                 String keyString = String.valueOf(key);

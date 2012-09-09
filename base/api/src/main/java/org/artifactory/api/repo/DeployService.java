@@ -20,16 +20,14 @@ package org.artifactory.api.repo;
 
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.common.BasicStatusHolder;
-import org.artifactory.api.maven.MavenArtifactInfo;
-import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.md.Properties;
 import org.artifactory.sapi.common.Lock;
 
 import javax.annotation.Nonnull;
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Provides artifacts deploy services.
@@ -45,46 +43,12 @@ public interface DeployService {
     @Request
     @Lock(transactional = true)
     void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy, String pomString,
-            boolean forceDeployPom, boolean partOfBundleDeploy) throws RepoRejectException;
+            boolean forceDeployPom, boolean partOfBundleDeploy, Properties properties) throws RepoRejectException;
 
     @Request
     void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status, boolean failFast);
 
     @Request
     void deployBundle(File bundle, RealRepoDescriptor targetRepo, BasicStatusHolder status, boolean failFast,
-            @Nonnull String prefix);
-
-    /**
-     * Validates pom before deployment.
-     *
-     * @param pomContent                   Pom content to validate
-     * @param relPath                      Relative deployment path of the pom
-     * @param moduleInfo                   POM module info
-     * @param suppressPomConsistencyChecks If true will not throw an exception is pom consistency fails (eg, groupId
-     *                                     doesn't match target relative path)
-     * @throws IOException If pom is invalid
-     */
-    void validatePom(String pomContent, String relPath, ModuleInfo moduleInfo, boolean suppressPomConsistencyChecks)
-            throws IOException;
-
-
-    /**
-     * Get the artifact model from a jar or pom file
-     *
-     * @param uploadedFile .jar or .pom file
-     * @return null if no pom found
-     * @throws java.io.IOException if uploaded file is unreadable
-     */
-    MavenArtifactInfo getArtifactInfo(File uploadedFile);
-
-    /**
-     * Get the POM model that represents a file. If the file is a POM file then we simply return it. If it is a jar with
-     * a POM then we check that we return its contents. Otherwise we generate a default POM according to the file's
-     * GAVC.
-     *
-     * @param file The file to analyze.
-     * @return The file's POM in string representation.
-     */
-    String getPomModelString(File file);
-
+            @Nonnull String prefix, Properties properties);
 }

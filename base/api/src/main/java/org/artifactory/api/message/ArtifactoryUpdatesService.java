@@ -28,10 +28,10 @@ public interface ArtifactoryUpdatesService {
     Message PROCESSING_MESSAGE = new Message("running", "");
     Message ERROR_MESSAGE = new Message("na", "");
 
-    Message getMessage(boolean ssl);
+    Message getMessage();
 
     Message getCachedMessage();
 
     @Async
-    void fetchMessage(boolean ssl);
+    void fetchMessage();
 }

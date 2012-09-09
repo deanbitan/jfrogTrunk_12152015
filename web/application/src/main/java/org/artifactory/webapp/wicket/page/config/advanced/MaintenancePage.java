@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.config.advanced;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
+import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
 import org.apache.wicket.markup.html.border.Border;
 import org.apache.wicket.markup.html.form.Form;
@@ -27,6 +28,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.validation.validator.RangeValidator;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.cleanup.ArtifactCleanupService;
@@ -35,6 +37,7 @@ import org.artifactory.api.storage.StorageService;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.component.CancelLink;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
+import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -42,6 +45,7 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
+import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
@@ -70,6 +74,7 @@ public class MaintenancePage extends AuthenticatedPage {
 
     private GcConfigDescriptor gcConfigDescriptor;
     private CleanupConfigDescriptor cleanupConfigDescriptor;
+    private QuotaConfigDescriptor quotaConfigDescriptor;
 
     public MaintenancePage() {
         Form form = new Form("form");
@@ -79,11 +84,18 @@ public class MaintenancePage extends AuthenticatedPage {
         MutableCentralConfigDescriptor mutableDescriptor = centralConfigService.getMutableDescriptor();
         gcConfigDescriptor = mutableDescriptor.getGcConfig();
         cleanupConfigDescriptor = mutableDescriptor.getCleanupConfig();
+        quotaConfigDescriptor = mutableDescriptor.getQuotaConfig();
+        if (quotaConfigDescriptor == null) {
+            quotaConfigDescriptor = new QuotaConfigDescriptor();
+            quotaConfigDescriptor.setDiskSpaceLimitPercentage(95);
+            quotaConfigDescriptor.setDiskSpaceWarningPercentage(85);
+        }
 
         setOutputMarkupId(true);
         addStorageMaintenance();
         addGarbageCollectorMaintenance(form);
         addArtifactsCleanupMaintenance(form);
+        addDiskQuotaManagement(form);
         addButtons(form);
     }
 
@@ -94,8 +106,9 @@ public class MaintenancePage extends AuthenticatedPage {
                 MutableCentralConfigDescriptor mutableDescriptor = centralConfigService.getMutableDescriptor();
                 mutableDescriptor.setGcConfig(gcConfigDescriptor);
                 mutableDescriptor.setCleanupConfig(cleanupConfigDescriptor);
+                mutableDescriptor.setQuotaConfig(quotaConfigDescriptor);
                 centralConfigService.saveEditedDescriptorAndReload(mutableDescriptor);
-                info("Garbage collection settings were successfully saved.");
+                info("Maintenance settings were successfully saved.");
                 AjaxUtils.refreshFeedback();
             }
         });
@@ -165,6 +178,41 @@ public class MaintenancePage extends AuthenticatedPage {
         boolean isDerbyUsed = storageService.isDerbyUsed();
         compressLink.setVisible(isDerbyUsed);
         compressHelpBubble.setVisible(isDerbyUsed);
+    }
+
+    private void addDiskQuotaManagement(Form form) {
+        final Border quotaBorder = new TitledBorder("quotaBorder", new CompoundPropertyModel(quotaConfigDescriptor));
+        form.add(quotaBorder);
+
+        final StyledCheckbox enableCheckbox = new StyledCheckbox("enabled");
+        enableCheckbox.setOutputMarkupId(true);
+        quotaBorder.add(enableCheckbox.setTitle("Enable Quota Control"));
+        quotaBorder.add(new SchemaHelpBubble("enabled.help"));
+        boolean quotaEnabled = quotaConfigDescriptor.isEnabled();
+
+        final TextField<Integer> diskSpaceLimitPercentage = new TextField<Integer>("diskSpaceLimitPercentage",
+                Integer.class);
+        diskSpaceLimitPercentage.add(new RangeValidator<Integer>(0, 99));
+        diskSpaceLimitPercentage.setEnabled(quotaEnabled).setOutputMarkupId(true);
+        quotaBorder.add(diskSpaceLimitPercentage);
+        quotaBorder.add(new SchemaHelpBubble("diskSpaceLimitPercentage.help"));
+
+        final TextField<Integer> diskSpaceWarningPercentage = new TextField<Integer>("diskSpaceWarningPercentage",
+                Integer.class);
+        diskSpaceWarningPercentage.add(new RangeValidator<Integer>(0, 99));
+        diskSpaceWarningPercentage.setEnabled(quotaEnabled).setOutputMarkupId(true);
+        quotaBorder.add(diskSpaceWarningPercentage);
+        quotaBorder.add(new SchemaHelpBubble("diskSpaceWarningPercentage.help"));
+
+        enableCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
+            @Override
+            protected void onUpdate(AjaxRequestTarget ajaxRequestTarget) {
+                boolean enabled = enableCheckbox.isChecked();
+                diskSpaceLimitPercentage.setEnabled(enabled);
+                diskSpaceWarningPercentage.setEnabled(enabled);
+                ajaxRequestTarget.add(diskSpaceLimitPercentage, diskSpaceWarningPercentage);
+            }
+        });
     }
 
     private void addGarbageCollectorMaintenance(Form form) {

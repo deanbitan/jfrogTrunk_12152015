@@ -18,6 +18,8 @@
 
 package org.artifactory.maven;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.settings.Mirror;
 import org.apache.maven.settings.Profile;
@@ -26,14 +28,27 @@ import org.apache.maven.settings.RepositoryPolicy;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
+import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenService;
 import org.artifactory.api.maven.MavenSettings;
 import org.artifactory.api.maven.MavenSettingsMirror;
 import org.artifactory.api.maven.MavenSettingsRepository;
 import org.artifactory.api.maven.MavenSettingsServer;
+import org.artifactory.api.module.ModuleInfo;
+import org.artifactory.api.repo.exception.maven.BadPomException;
+import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.MavenNaming;
+import org.artifactory.sapi.common.RepositoryRuntimeException;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Collections;
 import java.util.List;
@@ -45,6 +60,7 @@ import java.util.List;
  */
 @Service
 public class MavenServiceImpl implements MavenService {
+    private static final Logger log = LoggerFactory.getLogger(MavenServiceImpl.class);
 
     /**
      * {@inheritDoc}
@@ -182,5 +198,62 @@ public class MavenServiceImpl implements MavenService {
             }
             settings.addServer(serverToAdd);
         }
+    }
+
+    @Override
+    public void validatePomContent(String pomContent, String relPath, ModuleInfo moduleInfo,
+            boolean suppressPomConsistencyChecks) throws IOException {
+        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
+        File tempFile = File.createTempFile("pom.validation", ".tmp", artifactoryHome.getWorkTmpDir());
+        try {
+            FileUtils.writeStringToFile(tempFile, pomContent, "utf-8");
+            validatePomFile(tempFile, relPath, moduleInfo, suppressPomConsistencyChecks);
+        } finally {
+            FileUtils.forceDelete(tempFile);
+        }
+    }
+
+    @Override
+    public void validatePomFile(File pomFile, String relPath, ModuleInfo moduleInfo,
+            boolean suppressPomConsistencyChecks) throws BadPomException {
+        InputStream inputStream = null;
+        try {
+            inputStream = new BufferedInputStream(new FileInputStream(pomFile));
+            new PomTargetPathValidator(relPath, moduleInfo).validate(inputStream, suppressPomConsistencyChecks);
+        } catch (Exception e) {
+            String message = "Error while validating POM for path: " + relPath +
+                    ". Please assure the validity of the POM file.";
+            throw new BadPomException(message);
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+        }
+    }
+
+    @Override
+    public MavenArtifactInfo getMavenArtifactInfo(File uploadedFile) {
+        return MavenModelUtils.artifactInfoFromFile(uploadedFile);
+    }
+
+    @Override
+    public String getPomModelString(File file) {
+        if (MavenNaming.isPom(file.getAbsolutePath())) {
+            try {
+                FileInputStream fileInputStream = new FileInputStream(file);
+                return IOUtils.toString(fileInputStream);
+            } catch (IOException e) {
+                log.error("The following error occurred while reading {} {}", file.getAbsolutePath(), e);
+            }
+        }
+        String pomFromJar = MavenModelUtils.getPomFileAsStringFromJar(file);
+        if (StringUtils.isNotBlank(pomFromJar)) {
+            try {
+                MavenModelUtils.stringToMavenModel(pomFromJar);
+                return pomFromJar;
+            } catch (RepositoryRuntimeException rre) {
+                log.error("Failed to validate the model of the POM file within '{}'.", file.getAbsolutePath());
+            }
+        }
+        MavenArtifactInfo model = getMavenArtifactInfo(file);
+        return MavenModelUtils.mavenModelToString(MavenModelUtils.toMavenModel(model));
     }
 }

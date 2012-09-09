@@ -111,17 +111,12 @@ public class ArtifactSearchResource {
             RestUtils.sendNotFoundResponse(response, e.getMessage());
             return null;
         }
-        if (!searchResults.getResults().isEmpty()) {
             InfoRestSearchResult result = new InfoRestSearchResult();
             for (ArtifactSearchResult searchResult : searchResults.getResults()) {
                 String uri = RestUtils.buildStorageInfoUri(request, searchResult);
                 result.results.add(new InfoRestSearchResult.SearchEntry(uri));
             }
             return result;
-        } else {
-            RestUtils.sendNotFoundResponse(response, String.format("Could not find '%s' in requested repos", name));
-            return null;
-        }
     }
 
     private String appendAndReturnWildcards(String name) {

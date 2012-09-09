@@ -125,7 +125,6 @@ public class GavcSearchResource {
                 return null;
             }
 
-            if (!searchResults.getResults().isEmpty()) {
                 InfoRestSearchResult gavcRestSearchResult = new InfoRestSearchResult();
                 for (GavcSearchResult result : searchResults.getResults()) {
                     String uri = RestUtils.buildStorageInfoUri(request, result);
@@ -133,8 +132,6 @@ public class GavcSearchResource {
                 }
                 return gavcRestSearchResult;
             }
-        }
-        RestUtils.sendNotFoundResponse(response, NOT_FOUND);
         return null;
     }
 

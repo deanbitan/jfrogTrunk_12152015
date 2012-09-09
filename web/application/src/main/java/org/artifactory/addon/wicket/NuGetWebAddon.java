@@ -20,6 +20,7 @@ package org.artifactory.addon.wicket;
 
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
@@ -69,4 +70,11 @@ public interface NuGetWebAddon extends Addon {
      * @return Tab if successfully assembled, none if not
      */
     ITab getNuPkgInfoTab(String tabTitle, RepoPath nuPkgRepoPath);
+
+    /**
+     * Returns the NuGet full access URL label which clients need to use
+     *
+     * @param repoDescriptor
+     */
+    Label getNuGetUrlLabel(RepoDescriptor repoDescriptor);
 }

@@ -25,7 +25,6 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -37,10 +36,6 @@ import java.util.Map;
  * @author Tomer Cohen
  * @see org.artifactory.descriptor.repo.VirtualRepoDescriptor
  */
-@JsonPropertyOrder(
-        {"key", RepositoryConfigurationBase.TYPE_KEY, "repositories", "description", "notes", "includesPattern", "excludesPattern",
-                "artifactoryRequestsCanRetrieveRemoteArtifacts", "keyPair", "pomRepositoryReferencesCleanupPolicy",
-                "repoLayoutRef"})
 public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationBase
         implements VirtualRepositoryConfiguration {
 

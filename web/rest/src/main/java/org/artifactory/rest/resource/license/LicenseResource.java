@@ -103,9 +103,6 @@ public class LicenseResource {
             @QueryParam(SearchRestConstants.AUTOFIND_PARAM) String autofindString,
             @QueryParam(SearchRestConstants.REPOS_PARAM) StringList repos) throws IOException {
 
-        if (!authorizationService.isAdmin()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
         if (repos == null || repos.isEmpty()) {
             repos = getAllRealRepoKeys();
         }

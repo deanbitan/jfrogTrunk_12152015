@@ -21,8 +21,6 @@ package org.artifactory.rest.resource.search.types;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
-import org.artifactory.api.security.AuthorizationException;
-import org.artifactory.rest.util.RestUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -53,8 +51,6 @@ public class DependencySearchResource {
     public Response get(@QueryParam(SearchRestConstants.PARAM_SHA1_CHECKSUM) String sha1) throws IOException {
         try {
             return restAddon.searchDependencyBuilds(request, sha1);
-        } catch (AuthorizationException ae) {
-            RestUtils.sendUnauthorizedResponse(response, ae.getMessage());
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         }

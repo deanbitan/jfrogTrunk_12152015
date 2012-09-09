@@ -25,7 +25,6 @@ import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.util.RepoLayoutUtils;
-import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -37,12 +36,6 @@ import java.util.Map;
  * @author Tomer Cohen
  * @see org.artifactory.descriptor.repo.LocalRepoDescriptor
  */
-@JsonPropertyOrder(
-        {"key", RepositoryConfigurationBase.TYPE_KEY, "description", "notes", "includesPattern", "excludesPattern",
-                "checksumPolicyType",
-                "handleReleases", "handleSnapshots", "maxUniqueSnapshots", "snapshotVersionBehavior",
-                "suppressPomConsistencyChecks",
-                "blackedOut", "propertySets", "repoLayoutRef"})
 public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBase
         implements LocalRepositoryConfiguration {
 
@@ -54,6 +47,9 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
     private boolean suppressPomConsistencyChecks = false;
     private boolean blackedOut = false;
     private List<String> propertySets;
+    private boolean archiveBrowsingEnabled = false;
+    private boolean calculateYumMetadata = false;
+    private int yumRootDepth = 0;
 
     public LocalRepositoryConfigurationImpl() {
         setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
@@ -85,6 +81,9 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         } else {
             setPropertySets(Lists.<String>newArrayList());
         }
+        setArchiveBrowsingEnabled(localRepoDescriptor.isArchiveBrowsingEnabled());
+        setCalculateYumMetadata(localRepoDescriptor.isCalculateYumMetadata());
+        setYumRootDepth(localRepoDescriptor.getYumRootDepth());
     }
 
     @Override
@@ -157,5 +156,32 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
 
     public void setSuppressPomConsistencyChecks(boolean suppressPomConsistencyChecks) {
         this.suppressPomConsistencyChecks = suppressPomConsistencyChecks;
+    }
+
+    @Override
+    public boolean isArchiveBrowsingEnabled() {
+        return archiveBrowsingEnabled;
+    }
+
+    public void setArchiveBrowsingEnabled(boolean archiveBrowsingEnabled) {
+        this.archiveBrowsingEnabled = archiveBrowsingEnabled;
+    }
+
+    @Override
+    public boolean isCalculateYumMetadata() {
+        return calculateYumMetadata;
+    }
+
+    public void setCalculateYumMetadata(boolean calculateYumMetadata) {
+        this.calculateYumMetadata = calculateYumMetadata;
+    }
+
+    @Override
+    public int getYumRootDepth() {
+        return yumRootDepth;
+    }
+
+    public void setYumRootDepth(int yumRootDepth) {
+        this.yumRootDepth = yumRootDepth;
     }
 }

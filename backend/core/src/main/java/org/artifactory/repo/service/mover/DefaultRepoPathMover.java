@@ -235,13 +235,17 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
             repositoryService.calculateMavenMetadataAsync(rootTargetFolderForMetadataCalculation.getRepoPath());
         }
 
-        // recalculate the source repository only if it's not a cache repo and not copy
-        JcrFsItemFactory sourceRepo = VfsItemFactory.getStoringRepo(rootFolderToMove);
-        if (!copy && !sourceRepo.isCache() && rootFolderToMove.getLockedParentFolder() != null) {
-            VfsFolder sourceFolderMetadata = rootFolderToMove.getLockedParentFolder();
-            repositoryService.markBaseForMavenMetadataRecalculation(sourceFolderMetadata.getRepoPath());
-            if (executeMavenMetadataCalculation) {
-                repositoryService.calculateMavenMetadataAsync(sourceFolderMetadata.getRepoPath());
+        // Do not recalculate if parent is root
+        RepoPath parentPath = rootFolderToMove.getRepoPath().getParent();
+        if (parentPath != null && !parentPath.isRoot()) {
+            // recalculate the source repository only if it's not a cache repo and not copy
+            JcrFsItemFactory sourceRepo = VfsItemFactory.getStoringRepo(rootFolderToMove);
+            if (!copy && !sourceRepo.isCache() && rootFolderToMove.getLockedParentFolder() != null) {
+                VfsFolder sourceFolderMetadata = rootFolderToMove.getLockedParentFolder();
+                repositoryService.markBaseForMavenMetadataRecalculation(sourceFolderMetadata.getRepoPath());
+                if (executeMavenMetadataCalculation) {
+                    repositoryService.calculateMavenMetadataAsync(sourceFolderMetadata.getRepoPath());
+                }
             }
         }
     }

@@ -41,4 +41,10 @@ public interface LocalRepositoryConfiguration extends RepositoryConfiguration {
     String getSnapshotVersionBehavior();
 
     boolean isSuppressPomConsistencyChecks();
+
+    boolean isArchiveBrowsingEnabled();
+
+    boolean isCalculateYumMetadata();
+
+    int getYumRootDepth();
 }

@@ -91,9 +91,6 @@ public class ImportResource {
     public Response activateImport(ImportSettingsConfigurationImpl settings) {
         log.debug("Activating import {}", settings);
         StreamStatusHolder holder = new StreamStatusHolder(httpResponse);
-        if (!authorizationService.isAdmin()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
         try {
             ImportSettings importSettings = new ImportSettingsImpl(new File(settings.importPath), holder);
             importSettings.setIncludeMetadata(settings.includeMetadata);

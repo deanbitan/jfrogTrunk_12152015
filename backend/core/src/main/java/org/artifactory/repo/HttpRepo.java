@@ -49,6 +49,7 @@ import org.artifactory.io.NullResourceStreamHandle;
 import org.artifactory.io.RemoteResourceStreamHandle;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
+import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.remote.browse.HtmlRepositoryBrowser;
 import org.artifactory.repo.remote.browse.HttpExecutor;
@@ -419,10 +420,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             RepoRequests.logToContext("Found remote resource with checksums - %s", checksums);
         }
 
-        String filename = getFilename(method);
+        String originalPath = repoPath.getPath();
+        String filename = getFilename(method, originalPath);
         if (StringUtils.isNotBlank(filename)) {
             RepoRequests.logToContext("Found remote resource with filename header - %s", filename);
-            String originalPath = repoPath.getPath();
             if (NamingUtils.isMetadata(originalPath)) {
                 String originalPathStrippedOfMetadata = NamingUtils.getMetadataParentPath(originalPath);
                 String originalPathWithMetadataNameFromHeader =
@@ -501,7 +502,12 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
     }
 
-    private static String getFilename(HttpMethod method) {
+    private String getFilename(HttpMethod method, String originalPath) {
+        // Skip filename parsing if we are not dealing with latest maven non-unique snapshot request
+        if (!isRequestForLatestMavenSnapshot(originalPath)) {
+            return null;
+        }
+
         // Try our custom X-Artifactory-Filename header
         Header filenameHeader = method.getResponseHeader(ArtifactoryRequest.FILE_NAME);
         if (filenameHeader != null) {
@@ -517,6 +523,22 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
         // Didn't find any filename, return null
         return null;
+    }
+
+    private boolean isRequestForLatestMavenSnapshot(String originalPath) {
+        if (ConstantValues.requestDisableVersionTokens.getBoolean()) {
+            return false;
+        }
+
+        if (!getDescriptor().isMavenRepoLayout()) {
+            return false;
+        }
+
+        if (!MavenNaming.isNonUniqueSnapshot(originalPath)) {
+            return false;
+        }
+
+        return true;
     }
 
     public static long getContentLength(HttpMethod method) {

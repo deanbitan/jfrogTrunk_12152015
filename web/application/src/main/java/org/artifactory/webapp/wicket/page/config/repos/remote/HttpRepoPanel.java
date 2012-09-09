@@ -125,14 +125,13 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     public void addAndSaveDescriptor(HttpRepoDescriptor repoDescriptor) {
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
-        repoDescriptor.setKey(key);
         if (StringUtils.isBlank(repoDescriptor.getP2OriginalUrl())) {
             repoDescriptor.setP2OriginalUrl(getUrlWithoutSubpath(repoDescriptor.getUrl()));
         }
         mccd.addRemoteRepository(repoDescriptor);
         if (replicationDescriptor.isEnabled()) {
             if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
-                replicationDescriptor.setRepoKey(key);
+                replicationDescriptor.setRepoKey(repoDescriptor.getKey());
             }
             mccd.addRemoteReplication(replicationDescriptor);
         }
@@ -157,7 +156,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         }
         if (replicationDescriptor.isEnabled() && !mccd.isRemoteReplicationExists(replicationDescriptor)) {
             if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
-                replicationDescriptor.setRepoKey(key);
+                replicationDescriptor.setRepoKey(repoDescriptor.getKey());
             }
             mccd.addRemoteReplication(replicationDescriptor);
         }
@@ -210,8 +209,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                 HttpMethodBase testMethod = nuGetWebAddon.getRemoteRepoTestMethod(url, repo);
                 HttpClient client = new HttpClientConfigurator()
                         .hostFromUrl(url)
-                        .defaultMaxConnectionsPerHost(5)
-                        .maxTotalConnections(5)
+                                //.defaultMaxConnectionsPerHost(5)
+                                //.maxTotalConnections(5)
                         .connectionTimeout(repo.getSocketTimeoutMillis())
                         .soTimeout(repo.getSocketTimeoutMillis())
                         .staleCheckingEnabled(true)

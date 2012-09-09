@@ -272,10 +272,10 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     private RemoteRepo remoteRepositoryByRemoteOrCacheKey(String key) {
         //Try to get cached repositories
-        int idx = key.lastIndexOf(LocalCacheRepo.PATH_SUFFIX);
+        int idx = key.lastIndexOf(RepoPath.REMOTE_CACHE_SUFFIX);
         RemoteRepo remoteRepo;
         //Get the cache either by <remote-repo-name> or by <remote-repo-name>-cache
-        if (idx > 1 && idx + LocalCacheRepo.PATH_SUFFIX.length() == key.length()) {
+        if (idx > 1 && idx + RepoPath.REMOTE_CACHE_SUFFIX.length() == key.length()) {
             remoteRepo = remoteRepositoryByKey(key.substring(0, idx));
         } else {
             remoteRepo = remoteRepositoryByKey(key);

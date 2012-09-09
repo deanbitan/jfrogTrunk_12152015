@@ -58,10 +58,6 @@ public class YumResource {
     public Response calculateYumMetadata(@PathParam("repoKey") String repoKey,
             @QueryParam(YumRestConstants.PARAM_ASYNC) int async) {
 
-        if (!authorizationService.isAdmin()) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("Only an administrator can trigger YUM metadata calculation.").build();
-        }
         if (StringUtils.isBlank(repoKey)) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Target repository key cannot be blank").build();
         }

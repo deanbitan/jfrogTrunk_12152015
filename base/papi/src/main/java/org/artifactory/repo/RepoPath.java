@@ -26,6 +26,7 @@ import org.artifactory.common.Info;
 public interface RepoPath extends Info {
     char REPO_PATH_SEP = ':';
     char ARCHIVE_SEP = '!';
+    String REMOTE_CACHE_SUFFIX = "-cache";
 
     String getRepoKey();
 

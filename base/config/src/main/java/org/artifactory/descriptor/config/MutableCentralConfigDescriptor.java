@@ -25,6 +25,7 @@ import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -237,4 +238,6 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
     void setGcConfig(GcConfigDescriptor gcConfigDescriptor);
 
     void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor);
+
+    void setQuotaConfig(QuotaConfigDescriptor descriptor);
 }

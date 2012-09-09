@@ -15,7 +15,13 @@ else
 fi
 
 if [ -z "$ARTIFACTORY_HOME" ]; then
-    ARTIFACTORY_HOME=`dirname "$0"`/..
+    ARTIFACTORY_HOME="`dirname "$0"`/.."
+    ARTIFACTORY_HOME="`cd "$ARTIFACTORY_HOME"; pwd`"
+fi
+
+if [ ! -w "$ARTIFACTORY_HOME/logs" ]; then
+    echo "** ERROR: Current user does not have write access to $ARTIFACTORY_HOME/logs"
+    exit 1
 fi
 
 # Verify minimal JVM props are set
@@ -45,7 +51,7 @@ if [ -z "$hasMaxNewSize" ]; then
 fi
 hasGcFlags=`echo "$JAVA_OPTIONS" | grep "\\-XX:-Use.*GC"`
 if [ -z "$hasGcFlags" ]; then
-    JAVA_OPTIONS="$JAVA_OPTIONS -XX:-UseConcMarkSweepGC -XX:+UseParNewGC"
+    JAVA_OPTIONS="$JAVA_OPTIONS -XX:+UseConcMarkSweepGC"
 fi
 
 JAVA_OPTIONS="$JAVA_OPTIONS -server -Djetty.home=$ARTIFACTORY_HOME -Dartifactory.home=$ARTIFACTORY_HOME -Dfile.encoding=UTF8"

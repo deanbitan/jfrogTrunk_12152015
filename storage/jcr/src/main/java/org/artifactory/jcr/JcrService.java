@@ -42,6 +42,7 @@ import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.QueryResult;
+import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
@@ -253,4 +254,10 @@ public interface JcrService extends ReloadableBean {
     void activateMarkerFileConverters();
 
     void ping();
+
+    /**
+     * The location of the datastore binaries, in case of filesystem datastore the actual binaries folder will be returned,
+     * In case of full DB datastore the cache folder of the BLOBs will be returned.
+     */
+    File getBinariesFolder();
 }

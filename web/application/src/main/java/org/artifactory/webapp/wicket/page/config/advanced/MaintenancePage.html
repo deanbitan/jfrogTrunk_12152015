@@ -28,6 +28,35 @@
             </div>
         </div>
 
+        <div wicket:id="quotaBorder" class="cron-fields">
+            <div class="field-row">
+                <div class="field">
+                    <input wicket:id="enabled" type="checkbox"/>
+                    <span wicket:id="enabled.help"></span>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div class="field field-sep">
+                    <label>Storage Space Limit (Percentage)</label>
+                    <span wicket:id="diskSpaceLimitPercentage.help"></span>
+
+                    <div class="value">
+                        <input wicket:id="diskSpaceLimitPercentage" type="text" class="text"/>
+                    </div>
+                </div>
+
+                <div class="field field-sep">
+                    <label>Storage Space Warning (Percentage)</label>
+                    <span wicket:id="diskSpaceWarningPercentage.help"></span>
+
+                    <div class="value">
+                        <input wicket:id="diskSpaceWarningPercentage" type="text" class="text"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div wicket:id="cleanupBorder" class="cron-fields">
             <div class="field-row">
                 <div class="field required field-sep" style="margin-left: 2px;">

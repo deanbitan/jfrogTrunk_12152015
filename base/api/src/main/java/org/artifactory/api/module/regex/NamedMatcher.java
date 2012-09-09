@@ -20,6 +20,8 @@ package org.artifactory.api.module.regex;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.artifactory.log.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,8 @@ import java.util.regex.Pattern;
  * @author Noam Y. Tenne
  */
 public class NamedMatcher implements NamedMatchResult {
+    private static final Logger log = LoggerFactory.getLogger(NamedMatcher.class);
+
     private Matcher matcher;
     private NamedPattern parentPattern;
 
@@ -75,7 +79,18 @@ public class NamedMatcher implements NamedMatchResult {
         return this;
     }
 
+    public boolean regexpMatches() {
+        return matcher.matches();
+    }
+
     public boolean matches() {
+        if (!matcher.matches()) {
+            return false;
+        }
+        if (groupCount() != parentPattern.groupNames().size()) {
+            log.error("Regular expression '"+parentPattern.namedPattern()+"' uses unnamed capturing group!");
+            return false;
+        }
         return matcher.matches();
     }
 
@@ -136,6 +151,10 @@ public class NamedMatcher implements NamedMatchResult {
     @Override
     public Map<String, String> namedGroups() {
         Map<String, String> result = Maps.newLinkedHashMap();
+        if (!matches()) {
+            log.error("Pattern did not match! Cannot extract named groups!");
+            return result;
+        }
 
         for (int i = 1; i <= groupCount(); i++) {
             String groupName = parentPattern.groupNames().get(i - 1);

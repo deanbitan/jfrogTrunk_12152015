@@ -70,14 +70,6 @@ public abstract class RestUtils {
         response.sendError(HttpStatus.SC_NOT_FOUND);
     }
 
-    public static void sendUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
-        response.sendError(HttpStatus.SC_UNAUTHORIZED, message);
-    }
-
-    public static void sendUnauthorizedNoLimitResponse(HttpServletResponse response) throws IOException {
-        sendUnauthorizedResponse(response, "Unlimited search results are available to authenticated users only.");
-    }
-
     public static String buildStorageInfoUri(HttpServletRequest request, SearchResultBase result) {
         return buildStorageInfoUri(request, result.getRepoKey(), result.getRelativePath());
     }
@@ -106,16 +98,6 @@ public abstract class RestUtils {
             relPath = relPath.substring(0, index);
         }
         return InternalRepoPathFactory.create(repoKey, relPath);
-    }
-
-    public static String newlineResp(Appendable format, Object... args) {
-        Appendable appended = null;
-        try {
-            appended = format.append("\n");
-        } catch (IOException e) {
-            throw new RuntimeException("Could not append string", e);
-        }
-        return String.format(appended.toString(), args);
     }
 
     public static String getBaseBuildsHref(HttpServletRequest request) {

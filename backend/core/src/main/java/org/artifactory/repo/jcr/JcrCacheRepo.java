@@ -57,7 +57,7 @@ public class JcrCacheRepo extends JcrRepoBase<LocalCacheRepoDescriptor> implemen
         // create descriptor on-the-fly since this repo is created by a remote repo
         LocalCacheRepoDescriptor descriptor = new LocalCacheRepoDescriptor();
         descriptor.setDescription(remoteRepo.getDescription() + " (local file cache)");
-        descriptor.setKey(remoteRepo.getKey() + PATH_SUFFIX);
+        descriptor.setKey(remoteRepo.getKey() + RepoPath.REMOTE_CACHE_SUFFIX);
 
         RemoteRepoDescriptor remoteRepoDescriptor = remoteRepo.getDescriptor();
 

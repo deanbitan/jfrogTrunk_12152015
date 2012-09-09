@@ -19,11 +19,10 @@
 package org.artifactory.repo.service;
 
 import org.artifactory.api.request.InternalArtifactoryRequest;
+import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 /**
@@ -34,18 +33,20 @@ public class ArtifactoryDeployRequest extends InternalArtifactoryRequest {
     private InputStream inputStream;
     private int contentLength;
     private long lastModified;
+    private Properties properties;
 
-    public ArtifactoryDeployRequest(RepoPath pathToUpload, File fileToUpload) throws FileNotFoundException {
-        this(pathToUpload, new FileInputStream(fileToUpload), fileToUpload.length(), fileToUpload.lastModified());
-    }
-
-    public ArtifactoryDeployRequest(RepoPath pathToUpload, InputStream inputStream, long contentLength,
-            long lastModified) {
+    /**
+     * Use {@link ArtifactoryDeployRequestBuilder} to instantiate this object
+     */
+    ArtifactoryDeployRequest(RepoPath pathToUpload, InputStream inputStream, long contentLength,
+            long lastModified, Properties properties) {
         super(pathToUpload);
         this.inputStream = inputStream;
         this.contentLength = (int) contentLength;
         this.lastModified = lastModified;
-        // when uploading from the ui, trust the server checksums
+        this.properties = properties != null ? properties : (Properties) InfoFactoryHolder.get().createProperties();
+
+        // When uploading from the UI/REST, trust the server checksums
         setTrustServerChecksums(true);
     }
 
@@ -62,5 +63,15 @@ public class ArtifactoryDeployRequest extends InternalArtifactoryRequest {
     @Override
     public int getContentLength() {
         return contentLength;
+    }
+
+    @Override
+    public Properties getProperties() {
+        return properties;
+    }
+
+    @Override
+    public boolean hasProperties() {
+        return !properties.isEmpty();
     }
 }

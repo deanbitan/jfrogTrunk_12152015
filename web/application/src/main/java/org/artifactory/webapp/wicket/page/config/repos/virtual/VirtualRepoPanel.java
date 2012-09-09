@@ -84,7 +84,6 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
     public void addAndSaveDescriptor(VirtualRepoDescriptor virtualRepo) {
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
         MutableCentralConfigDescriptor mccd = helper.getModelMutableDescriptor();
-        virtualRepo.setKey(key);
         mccd.addVirtualRepository(virtualRepo);
 
         processP2Configuration(virtualRepo, helper);

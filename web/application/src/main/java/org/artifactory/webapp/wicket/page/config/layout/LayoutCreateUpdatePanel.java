@@ -38,6 +38,8 @@ import org.apache.wicket.validation.IValidator;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
+import org.artifactory.api.module.regex.NamedMatcher;
+import org.artifactory.api.module.regex.NamedPattern;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
@@ -276,12 +278,17 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                 try {
                     ModuleInfo moduleInfo = null;
                     if (entity.isDistinctiveDescriptorPathPattern()) {
-                        RepoLayoutUtils.generateRegExpFromPattern(entity, entity.getDescriptorPathPattern(), true);
+                        String pathPattern = entity.getDescriptorPathPattern();
+                        String regExp = RepoLayoutUtils.generateRegExpFromPattern(entity, pathPattern, true);
                         moduleInfo = ModuleInfoUtils.moduleInfoFromDescriptorPath(pathToTest, entity);
+                        checkIfEmptyCapturingGroup(moduleInfo, regExp);
                     }
+
                     if ((moduleInfo == null) || !moduleInfo.isValid()) {
-                        RepoLayoutUtils.generateRegExpFromPattern(entity, entity.getArtifactPathPattern(), true);
+                        String pathPattern = entity.getArtifactPathPattern();
+                        String regExp = RepoLayoutUtils.generateRegExpFromPattern(entity, pathPattern, true);
                         moduleInfo = ModuleInfoUtils.moduleInfoFromArtifactPath(pathToTest, entity);
+                        checkIfEmptyCapturingGroup(moduleInfo, regExp);
                     }
                     testBorder.setDefaultModelObject(moduleInfo);
                     organization.setVisible(true);
@@ -292,6 +299,17 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                 }
                 ModalHandler.resizeAndCenterCurrent();
                 AjaxUtils.refreshFeedback();
+            }
+
+            private void checkIfEmptyCapturingGroup(ModuleInfo moduleInfo, String regExp) {
+                if (!moduleInfo.isValid()) {
+                    // May be due to empty capturing blocks
+                    NamedPattern compileArtifactRegex = NamedPattern.compile(regExp);
+                    NamedMatcher matcher = compileArtifactRegex.matcher(pathToTest);
+                    if (matcher.regexpMatches() && !matcher.matches()) {
+                        error("Non named capturing groups are not allowed! Use (?:XXX)");
+                    }
+                }
             }
         };
 

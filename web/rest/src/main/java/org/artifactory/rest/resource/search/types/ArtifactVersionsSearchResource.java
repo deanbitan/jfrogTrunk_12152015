@@ -21,7 +21,6 @@ package org.artifactory.rest.resource.search.types;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
-import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 
@@ -64,9 +63,7 @@ public class ArtifactVersionsSearchResource {
             } else {
                 return artifactVersions;
             }
-        } catch (AuthorizationException e) {
-            RestUtils.sendUnauthorizedResponse(response, e.getMessage());
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
         return null;

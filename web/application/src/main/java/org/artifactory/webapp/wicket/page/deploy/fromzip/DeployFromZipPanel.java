@@ -150,10 +150,10 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
             }
 
             if (!errors.isEmpty()) {
-                error("There were " + errors.size() + " errors during import. Please review the " + logs +
+                error("There were " + errors.size() + " errors during deployment. Please review the " + logs +
                         " for more details.");
             } else if (!warnings.isEmpty()) {
-                warn("There were " + warnings.size() + " warnings during import. Please review the " + logs +
+                warn("There were " + warnings.size() + " warnings during deployment. Please review the " + logs +
                         " for more details.");
             } else {
                 info(statusHolder.getStatusMsg());

@@ -40,7 +40,6 @@ import org.artifactory.api.rest.artifact.ItemProperties;
 import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
 import org.artifactory.api.rest.artifact.RestFileInfo;
 import org.artifactory.api.rest.artifact.RestFolderInfo;
-import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
@@ -301,8 +300,6 @@ public class ArtifactResource {
             return sendAndCreateBadRequestResponse(iae.getMessage());
         } catch (ItemNotFoundRuntimeException infre) {
             return sendAndCreateNotFoundResponse(infre.getMessage());
-        } catch (AuthorizationException ae) {
-            return sendAndCreateForbiddenResponse(ae.getMessage());
         }
     }
 
@@ -318,7 +315,7 @@ public class ArtifactResource {
             }
             return getAnnotatingMetadataResponse();
         } else {
-            return notAcceptableResponse();
+            return notAcceptableResponse(MT_ITEM_METADATA_NAMES);
         }
     }
 
@@ -359,7 +356,7 @@ public class ArtifactResource {
             }
             return getPropertiesResponse();
         } else {
-            return notAcceptableResponse();
+            return notAcceptableResponse(MT_ITEM_PROPERTIES);
         }
     }
 
@@ -394,7 +391,7 @@ public class ArtifactResource {
         if (isMediaTypeAcceptableByUser(MT_ITEM_PERMISSIONS)) {
             return getPermissionsResponse(path);
         } else {
-            return notAcceptableResponse();
+            return notAcceptableResponse(MT_ITEM_PERMISSIONS);
         }
     }
 
@@ -406,8 +403,6 @@ public class ArtifactResource {
             return sendAndCreateBadRequestResponse(iae.getMessage());
         } catch (ItemNotFoundRuntimeException infre) {
             return sendAndCreateNotFoundResponse(infre.getMessage());
-        } catch (AuthorizationException ae) {
-            return sendAndCreateForbiddenResponse(ae.getMessage());
         }
     }
 
@@ -443,14 +438,14 @@ public class ArtifactResource {
             if (isMediaTypeAcceptableByUser(MT_FOLDER_INFO)) {
                 return okResponse(storageInfoRest, MT_FOLDER_INFO);
             } else {
-                return notAcceptableResponse();
+                return notAcceptableResponse(MT_FOLDER_INFO);
 
             }
         } else {
             if (isMediaTypeAcceptableByUser(MT_FILE_INFO)) {
                 return okResponse(storageInfoRest, MT_FILE_INFO);
             } else {
-                return notAcceptableResponse();
+                return notAcceptableResponse(MT_FILE_INFO);
             }
         }
     }
@@ -560,8 +555,10 @@ public class ArtifactResource {
         return Response.ok(entity, mediaType).build();
     }
 
-    private Response notAcceptableResponse() {
-        return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).build();
+    private Response notAcceptableResponse(String producedMediaType) {
+        return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).entity(
+                "Resource produces " + producedMediaType
+                        + " but client only accepts " + requestHeaders.getAcceptableMediaTypes()).build();
     }
 
     private boolean isRequestToNoneLocalRepo() {
@@ -606,7 +603,7 @@ public class ArtifactResource {
             ItemMetadata res = getItemMetadata(path, new StringList(queryParams().getFirst(MD_PARAM)));
             return okResponse(res, MT_ITEM_METADATA);
         } else {
-            return notAcceptableResponse();
+            return notAcceptableResponse(MT_ITEM_METADATA);
         }
     }
 

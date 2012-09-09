@@ -19,6 +19,7 @@
 package org.artifactory.rest.resource.search.types;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
@@ -74,11 +75,10 @@ public class ChecksumSearchResource {
     @Produces({SearchRestConstants.MT_CHECKSUM_SEARCH_RESULT, MediaType.APPLICATION_JSON})
     public ChecksumRestSearchResult get(@QueryParam(SearchRestConstants.PARAM_MD5_CHECKSUM) String md5Checksum,
             @QueryParam(SearchRestConstants.PARAM_SHA1_CHECKSUM) String sha1Checksum,
-            @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
+            @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch)
+            throws IOException, AuthorizationRestException {
         if (!authorizationService.isAuthenticated()) {
-            RestUtils.sendUnauthorizedResponse(response,
-                    "This search resource is available to authenticated users only.");
-            return null;
+            throw new AuthorizationRestException();
         }
 
         try {

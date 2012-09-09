@@ -131,18 +131,21 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
         if (userDnPattern != null) {
             // If DN patterns are configured, try authenticating with them directly
             user = bindWithDn(userDnPattern.format(new Object[]{username}), username, password);
+            if (user != null) {
+                return user;
+            }
         }
 
         if (userSearches != null && !userSearches.isEmpty()) {
             for (FilterBasedLdapUserSearch userSearch : userSearches) {
-                if (user != null) {
-                    break;
-                }
                 try {
                     // Otherwise use the configured locator to find the user
                     // and authenticate with the returned DN.
                     DirContextOperations userFromSearch = userSearch.searchForUser(username);
                     user = bindWithDn(userFromSearch.getDn().toString(), username, password);
+                    if (user != null) {
+                        return user;
+                    }
                 } catch (UsernameNotFoundException e) {
                     log.debug("Searching for user {} failed for {}: {}",
                             new Object[]{userSearch, username, e.getMessage()});
@@ -150,10 +153,6 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
                     log.error("User: {} found {} times in LDAP server", username, irsae.getActualSize());
                 }
             }
-        }
-
-        if (user != null) {
-            return user;
         }
 
         throw new BadCredentialsException(

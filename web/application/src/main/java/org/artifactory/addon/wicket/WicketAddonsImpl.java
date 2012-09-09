@@ -940,6 +940,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
             nuGetBorder.add(new SchemaHelpBubble("downloadContextPath.help",
                     new SchemaHelpModel(dummyConf, "downloadContextPath")));
         }
+        nuGetBorder.add(getNuGetUrlLabel(repoDescriptor));
         form.add(nuGetBorder);
     }
 
@@ -956,6 +957,13 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public ITab getNuPkgInfoTab(String tabTitle, RepoPath nuPkgRepoPath) {
         return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.NUGET);
+    }
+
+    @Override
+    public Label getNuGetUrlLabel(RepoDescriptor repoDescriptor) {
+        Label label = new Label("nuGetRepoUrlLabel", "");
+        label.setVisible(false);
+        return label;
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

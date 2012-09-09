@@ -686,7 +686,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         Acl anyTargetAcl = new Acl(factory.createAcl(anyTarget, anyTargetAces, "me"));
 
         // acl with multiple repo keys with read permissions to group and anonymous
-        PermissionTargetInfo multiReposTarget = InfoFactoryHolder.get().createPermissionTarget("anyRepoTarget",
+        PermissionTargetInfo multiReposTarget = InfoFactoryHolder.get().createPermissionTarget("multiRepoTarget",
                 Arrays.asList("multi1", "multi2"));
         MutableAceInfo multiReaderGroupAce =
                 factory.createAce("multiRepoReadersGroup", true, ArtifactoryPermission.READ.getMask());

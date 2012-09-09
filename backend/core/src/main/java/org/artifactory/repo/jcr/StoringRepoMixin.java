@@ -664,12 +664,12 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             //Unwrap any IOException and throw it
             Throwable ioCause = ExceptionUtils.getCauseOfTypes(e, IOException.class);
             if (ioCause != null) {
-                log.warn("IO error while trying to save resource '{}': {}", res.getRepoPath(), ioCause.getMessage());
+                log.warn("Could not save resource '{}': {}", res.getRepoPath(), ioCause.getMessage());
                 context.setException(ioCause);
                 throw (IOException) ioCause;
             }
             context.setException(e);
-            throw new RuntimeException("Failed to save resource '" + res.getRepoPath() + "'.", e);
+            throw new RuntimeException("Could not save resource '" + res.getRepoPath() + "'.", e);
         }
     }
 

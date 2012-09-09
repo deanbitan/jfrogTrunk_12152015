@@ -22,7 +22,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.BeforeClass;
@@ -30,8 +29,6 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
@@ -48,7 +45,7 @@ public class HtmlRepositoryBrowserTest {
     private String baseUrl;
 
     @BeforeClass
-    public void setUp() throws MalformedURLException {
+    public void setUp() {
         final HttpClient hc = new HttpClient();
         HttpExecutor httpExecutor = new HttpExecutor() {
             @Override

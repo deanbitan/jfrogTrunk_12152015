@@ -27,7 +27,6 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.util.RepoLayoutUtils;
-import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 import javax.annotation.Nonnull;
 import java.net.MalformedURLException;
@@ -41,14 +40,6 @@ import java.util.Map;
  * @author Tomer Cohen
  * @see org.artifactory.descriptor.repo.HttpRepoDescriptor
  */
-@JsonPropertyOrder(
-        {"key", RepositoryConfigurationBase.TYPE_KEY, "url", "username", "password", "proxy", "description", "notes", "includesPattern",
-                "excludesPattern", "remoteRepoChecksumPolicyType", "handleReleases", "handleSnapshots", "maxUniqueSnapshots",
-                "suppressPomConsistencyChecks", "hardFail", "offline", "blackedOut", "storeArtifactsLocally", "socketTimeoutMillis",
-                "localAddress", "retrievalCachePeriodSecs", "failedRetrievalCachePeriodSecs", "missedRetrievalCachePeriodSecs",
-                "failedRetrievalCachePeriodSecs", "unusedArtifactsCleanupPeriodHours",
-                "fetchJarsEagerly", "fetchSourcesEagerly", "shareConfiguration", "synchronizeProperties", "propertySets",
-                "repoLayoutRef", "remoteRepoLayoutRef"})
 public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         implements HttpRepositoryConfiguration {
 
@@ -67,7 +58,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private int socketTimeoutMillis = 15000;
     private String localAddress = "";
     private long retrievalCachePeriodSecs = 43200L;
-    private long failedRetrievalCachePeriodSecs = 30L;
+    private long assumedOfflinePeriodSecs = 300L;
     private long missedRetrievalCachePeriodSecs = 7200L;
     private int unusedArtifactsCleanupPeriodHours = 0;
     private boolean fetchJarsEagerly = false;
@@ -77,6 +68,10 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private int maxUniqueSnapshots = 0;
     private List<String> propertySets;
     private String remoteRepoLayoutRef;
+    private boolean archiveBrowsingEnabled = false;
+    private boolean listRemoteFolderItems = true;
+    private boolean rejectInvalidJars = false;
+    private boolean p2Support = false;
 
     public HttpRepositoryConfigurationImpl() {
         setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
@@ -87,7 +82,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         try {
             new URL(repoDescriptor.getUrl());
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Remote URL is not valid", e);
+            throw new IllegalArgumentException("Remote URL '"+repoDescriptor.getUrl()+"' is not valid", e);
         }
         this.url = repoDescriptor.getUrl();
         String username = repoDescriptor.getUsername();
@@ -121,7 +116,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         setHandleSnapshots(repoDescriptor.isHandleSnapshots());
         setSuppressPomConsistencyChecks(repoDescriptor.isSuppressPomConsistencyChecks());
         setRetrievalCachePeriodSecs(repoDescriptor.getRetrievalCachePeriodSecs());
-        setFailedRetrievalCachePeriodSecs(repoDescriptor.getAssumedOfflinePeriodSecs());
+        setAssumedOfflinePeriodSecs(repoDescriptor.getAssumedOfflinePeriodSecs());
         setMissedRetrievalCachePeriodSecs(repoDescriptor.getMissedRetrievalCachePeriodSecs());
         setUnusedArtifactsCleanupPeriodHours(repoDescriptor.getUnusedArtifactsCleanupPeriodHours());
         setFetchJarsEagerly(repoDescriptor.isFetchJarsEagerly());
@@ -144,6 +139,10 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         if (remoteRepoLayout != null) {
             setRemoteRepoLayoutRef(remoteRepoLayout.getName());
         }
+        setArchiveBrowsingEnabled(repoDescriptor.isArchiveBrowsingEnabled());
+        setListRemoteFolderItems(repoDescriptor.isListRemoteFolderItems());
+        setRejectInvalidJars(repoDescriptor.isRejectInvalidJars());
+        setP2Support(repoDescriptor.isP2Support());
     }
 
     @Override
@@ -201,12 +200,12 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     }
 
     @Override
-    public long getFailedRetrievalCachePeriodSecs() {
-        return failedRetrievalCachePeriodSecs;
+    public long getAssumedOfflinePeriodSecs() {
+        return assumedOfflinePeriodSecs;
     }
 
-    public void setFailedRetrievalCachePeriodSecs(long failedRetrievalCachePeriodSecs) {
-        this.failedRetrievalCachePeriodSecs = failedRetrievalCachePeriodSecs;
+    public void setAssumedOfflinePeriodSecs(long assumedOfflinePeriodSecs) {
+        this.assumedOfflinePeriodSecs = assumedOfflinePeriodSecs;
     }
 
     @Override
@@ -369,5 +368,41 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
 
     public void setRemoteRepoLayoutRef(String remoteRepoLayoutRef) {
         this.remoteRepoLayoutRef = remoteRepoLayoutRef;
+    }
+
+    @Override
+    public boolean isArchiveBrowsingEnabled() {
+        return archiveBrowsingEnabled;
+    }
+
+    public void setArchiveBrowsingEnabled(boolean archiveBrowsingEnabled) {
+        this.archiveBrowsingEnabled = archiveBrowsingEnabled;
+    }
+
+    @Override
+    public boolean isListRemoteFolderItems() {
+        return listRemoteFolderItems;
+    }
+
+    public void setListRemoteFolderItems(boolean listRemoteFolderItems) {
+        this.listRemoteFolderItems = listRemoteFolderItems;
+    }
+
+    @Override
+    public boolean isRejectInvalidJars() {
+        return rejectInvalidJars;
+    }
+
+    public void setRejectInvalidJars(boolean rejectInvalidJars) {
+        this.rejectInvalidJars = rejectInvalidJars;
+    }
+
+    @Override
+    public boolean isP2Support() {
+        return p2Support;
+    }
+
+    public void setP2Support(boolean p2Support) {
+        this.p2Support = p2Support;
     }
 }

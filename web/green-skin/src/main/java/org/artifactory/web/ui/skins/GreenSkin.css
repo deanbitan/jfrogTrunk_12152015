@@ -1835,6 +1835,24 @@ div.footer, .copywrites, .version {
     text-align: center;
 }
 
+.storage-quota-limit {
+    background-color: #FF6241;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px;
+    text-align: center;
+}
+
+.storage-quota-warning {
+    background-color: #FFCB24;
+    color: black;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px;
+    text-align: center;
+}
+
 .no-license a {
     color: white;
     text-decoration: underline;

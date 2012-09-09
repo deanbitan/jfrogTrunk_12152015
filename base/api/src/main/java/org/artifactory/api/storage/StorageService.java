@@ -48,4 +48,13 @@ public interface StorageService {
     void ping();
 
     void convertActualChecksums(MultiStatusHolder statusHolder);
+
+    /**
+     * Create and retrieve a storage quota info object which contains information about
+     * the system storage total space, free space etc.
+     *
+     * @return The {@link StorageQuotaInfo} object, might return null if quota management doesn't exist inside
+     *         the central config or it is disabled.
+     */
+    StorageQuotaInfo getStorageQuotaInfo();
 }

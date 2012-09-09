@@ -100,7 +100,7 @@ public abstract class HttpUtils {
         //Check if there is a remote address coming from a proxied request
         //(http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypreservehost)
         String header = request.getHeader("X-Forwarded-For");
-        if (header != null) {
+        if (StringUtils.isNotBlank(header)) {
             //Might contain multiple entries - take the first
             remoteAddress = new StringTokenizer(header, ",").nextToken();
         } else {
@@ -235,10 +235,5 @@ public abstract class HttpUtils {
         }
 
         return unescaped;
-    }
-
-    public static boolean isSSL(HttpServletRequest httpServletRequest) {
-        String scheme = httpServletRequest.getScheme();
-        return StringUtils.equalsIgnoreCase(scheme, "https");
     }
 }

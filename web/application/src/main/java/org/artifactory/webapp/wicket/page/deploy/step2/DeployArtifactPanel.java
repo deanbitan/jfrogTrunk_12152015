@@ -42,6 +42,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.artifact.ArtifactInfo;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
+import org.artifactory.api.maven.MavenService;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.RepositoryService;
@@ -104,6 +105,9 @@ public class DeployArtifactPanel extends TitledActionPanel {
         @SpringBean
         private DeployService deployService;
 
+        @SpringBean
+        private MavenService mavenService;
+
         private DeployModel model;
 
         private DeployArtifactForm(File file) {
@@ -111,7 +115,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             model = new DeployModel();
             model.file = file;
             model.mavenArtifactInfo = guessArtifactInfo();
-            model.pomXml = deployService.getPomModelString(file);
+            model.pomXml = mavenService.getPomModelString(file);
             model.deployPom = isPomArtifact() || !isPomExists(getPersistentTargetRepo());
             model.repos = getRepos();
             model.targetRepo = getPersistentTargetRepo();
@@ -270,7 +274,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
         private MavenArtifactInfo guessArtifactInfo() {
             try {
                 // if (pom or jar) get pom xml as string
-                return deployService.getArtifactInfo(model.file);
+                return mavenService.getMavenArtifactInfo(model.file);
             } catch (Exception e) {
                 String msg = "Unable to analyze uploaded file content. Cause: " + e.getMessage();
                 log.debug(msg, e);
@@ -416,7 +420,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 if (model.deployPom) {
                     model.pomChanged = false;
                     if (StringUtils.isBlank(model.pomXml)) {
-                        model.pomXml = deployService.getPomModelString(model.file);
+                        model.pomXml = mavenService.getPomModelString(model.file);
                     }
                 }
                 target.add(getPomEditorContainer());
@@ -520,9 +524,10 @@ public class DeployArtifactPanel extends TitledActionPanel {
             private void deployFileAndPom() throws IOException, RepoRejectException {
                 ModuleInfo moduleInfo = repoService.getItemModuleInfo(
                         InternalRepoPathFactory.create(model.targetRepo.getKey(), model.getTargetPathFieldValue()));
-                deployService.validatePom(model.pomXml, model.getTargetPathFieldValue(),
+                mavenService.validatePomContent(model.pomXml, model.getTargetPathFieldValue(),
                         moduleInfo, model.targetRepo.isSuppressPomConsistencyChecks());
-                deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, model.pomXml, true, false);
+                deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, model.pomXml, true, false,
+                        null);
             }
 
             private void deployFile() throws RepoRejectException {

@@ -19,6 +19,7 @@
 
 package org.artifactory.rest.resource.search.types;
 
+import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.rest.constant.SearchRestConstants;
@@ -85,9 +86,7 @@ public class CreatedInRangeResource {
             @QueryParam(PARAM_IN_RANGE_TO) Long to,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
         if (authorizationService.isAnonymous()) {
-            RestUtils.sendUnauthorizedResponse(response,
-                    "This search resource is available to authenticated users only.");
-            return null;
+            throw new AuthorizationRestException();
         }
         return search(from, to, reposToSearch);
     }

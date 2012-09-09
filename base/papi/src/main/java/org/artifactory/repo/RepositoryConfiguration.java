@@ -38,4 +38,6 @@ public interface RepositoryConfiguration {
     String getNotes();
 
     String getRepoLayoutRef();
+
+    boolean isEnableNuGetSupport();
 }

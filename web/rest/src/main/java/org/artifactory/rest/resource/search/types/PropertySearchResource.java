@@ -112,17 +112,12 @@ public class PropertySearchResource {
         }
 
         List<PropertySearchResult> results = searchResults.getResults();
-        if (!results.isEmpty()) {
-            InfoRestSearchResult infoSearchResult = new InfoRestSearchResult();
-            for (PropertySearchResult result : results) {
-                String uri = RestUtils.buildStorageInfoUri(request, result);
-                InfoRestSearchResult.SearchEntry entry = new InfoRestSearchResult.SearchEntry(uri);
-                infoSearchResult.results.add(entry);
-            }
-            return infoSearchResult;
-        } else {
-            RestUtils.sendNotFoundResponse(response, SearchRestConstants.NOT_FOUND);
-            return null;
+        InfoRestSearchResult infoSearchResult = new InfoRestSearchResult();
+        for (PropertySearchResult result : results) {
+            String uri = RestUtils.buildStorageInfoUri(request, result);
+            InfoRestSearchResult.SearchEntry entry = new InfoRestSearchResult.SearchEntry(uri);
+            infoSearchResult.results.add(entry);
         }
+        return infoSearchResult;
     }
 }

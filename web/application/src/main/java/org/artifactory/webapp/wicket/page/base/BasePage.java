@@ -39,7 +39,10 @@ import org.artifactory.addon.AddonsWebManager;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.api.storage.StorageQuotaInfo;
+import org.artifactory.api.storage.StorageService;
 import org.artifactory.common.wicket.WicketProperty;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.HasModalHandler;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
@@ -112,6 +115,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         add(licenseLabel);
 
         add(new LicenseFooterLabel("licenseFooter"));
+        add(new StorageQuotaLabel("storageQuotaFooter"));
 
         add(new HeaderLogoPanel("logo"));
 
@@ -296,4 +300,38 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         }
     }
 
+    private static class StorageQuotaLabel extends Label implements IHeaderContributor {
+        @SpringBean
+        private AuthorizationService authorizationService;
+
+        @SpringBean
+        private StorageService storageService;
+
+        public StorageQuotaLabel(String id) {
+            super(id, "");
+            setOutputMarkupId(true);
+            setEscapeModelStrings(false);
+
+            String message = null;
+            if (authorizationService.isAdmin()) {
+                StorageQuotaInfo info = storageService.getStorageQuotaInfo();
+                if (info != null) {
+                    if (info.isLimitReached()) {
+                        add(new CssClass("storage-quota-limit"));
+                        message = info.getErrorMessage();
+                    } else if (info.isWarningLimitReached()) {
+                        add(new CssClass("storage-quota-warning"));
+                        message = info.getWarningMessage();
+                    }
+                    setDefaultModelObject(message);
+                }
+            }
+            setVisible(StringUtils.isNotEmpty(message));
+        }
+
+        @Override
+        public void renderHead(IHeaderResponse response) {
+            response.renderJavaScript("DomUtils.footerHeight = 18;", getMarkupId() + "js");
+        }
+    }
 }

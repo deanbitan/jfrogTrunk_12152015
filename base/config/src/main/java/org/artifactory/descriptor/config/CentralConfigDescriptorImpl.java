@@ -31,6 +31,7 @@ import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.replication.ReplicationBaseDescriptor;
@@ -69,7 +70,8 @@ import java.util.Map;
         propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
                 "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
                 "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
-                "remoteReplications", "localReplications", "gcConfig", "cleanupConfig"}, namespace = Descriptor.NS)
+                "remoteReplications", "localReplications", "gcConfig", "cleanupConfig", "quotaConfig"},
+        namespace = Descriptor.NS)
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CentralConfigDescriptorImpl implements MutableCentralConfigDescriptor {
 
@@ -155,6 +157,8 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElement
     private CleanupConfigDescriptor cleanupConfig;
+
+    private QuotaConfigDescriptor quotaConfig;
 
     @Override
     public Map<String, LocalRepoDescriptor> getLocalRepositoriesMap() {
@@ -831,6 +835,11 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public QuotaConfigDescriptor getQuotaConfig() {
+        return quotaConfig;
+    }
+
+    @Override
     public Map<String, LocalReplicationDescriptor> getLocalReplicationsMap() {
         Map<String, LocalReplicationDescriptor> localReplicationsMap = Maps.newHashMap();
         for (LocalReplicationDescriptor localReplication : localReplications) {
@@ -843,6 +852,11 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @Override
     public void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor) {
         this.cleanupConfig = cleanupConfigDescriptor;
+    }
+
+    @Override
+    public void setQuotaConfig(QuotaConfigDescriptor descriptor) {
+        this.quotaConfig = descriptor;
     }
 
     private <T extends ReplicationBaseDescriptor> void addReplication(T replicationDescriptor,

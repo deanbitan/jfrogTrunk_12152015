@@ -143,18 +143,18 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public Response getRepositoryConfiguration(String repoKey, List<MediaType> mediaTypes) {
+    public Response getRepositoryConfiguration(String repoKey, MediaType mediaType) {
         throw new MissingRestAddonException();
     }
 
     @Override
-    public Response createOrReplaceRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes,
+    public Response createOrReplaceRepository(String repoKey, Map repositoryConfig, MediaType mediaType,
             int position) {
         throw new MissingRestAddonException();
     }
 
     @Override
-    public Response updateRepository(String repoKey, Map repositoryConfig, List<MediaType> mediaTypes) {
+    public Response updateRepository(String repoKey, Map repositoryConfig, MediaType mediaType) {
         throw new MissingRestAddonException();
     }
 
