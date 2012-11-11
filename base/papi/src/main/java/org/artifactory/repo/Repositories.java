@@ -37,6 +37,27 @@ import java.util.Set;
  */
 public interface Repositories {
 
+    /**
+     * Returns a list of keys of local repositories
+     *
+     * @return keys of local repositories
+     */
+    public List<String> getLocalRepositories();
+
+    /**
+     * Returns a list of keys of remote repositories
+     *
+     * @return keys of remote repositories
+     */
+    public List<String> getRemoteRepositories();
+
+    /**
+     * Returns a list of keys of virtual repositories
+     *
+     * @return keys of virtual repositories
+     */
+    public List<String> getVirtualRepositories();
+
     RepositoryConfiguration getRepositoryConfiguration(String repoKey);
 
     /**
@@ -245,10 +266,31 @@ public interface Repositories {
 
     /**
      * Translates the path of a file from source repository layout to target's one.
-     * @param source the source repository path
+     *
+     * @param source        the source repository path
      * @param targetRepoKey the target repository key
      * @return the file path according to target repository layout
      */
     String translateFilePath(RepoPath source, String targetRepoKey);
+
+    /**
+     * Returns actual repository path for layout information (group, artifact, version, etc.) of an artifact
+     * as it is built according to the layout of the repository.
+     *
+     * @param layoutInfo the layout information to build the path from
+     * @param repoKey    the repository the path will be in
+     * @return the repository path to the file
+     */
+    RepoPath getArtifactRepoPath(FileLayoutInfo layoutInfo, String repoKey);
+
+    /**
+     * Returns actual repository path for layout information (group, artifact, version, etc.) of a descriptor
+     * as it is built according to the layout of the repository.
+     *
+     * @param layoutInfo the layout information to build the path from
+     * @param repoKey    the repository the path will be in
+     * @return the repository path to the file
+     */
+    RepoPath getDescriptorRepoPath(FileLayoutInfo layoutInfo, String repoKey);
 
 }

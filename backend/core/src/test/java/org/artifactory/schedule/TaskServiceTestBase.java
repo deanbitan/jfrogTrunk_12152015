@@ -94,16 +94,21 @@ public class TaskServiceTestBase extends ArtifactoryHomeBoundTest {
         EasyMock.expect(context.getTaskService()).andReturn(taskService).anyTimes();
 
         //Put the scheduler into the context
-        ArtifactorySchedulerFactoryBean schedulerFactory = new ArtifactorySchedulerFactoryBean();
-        schedulerFactory.setTaskExecutor(new CachedThreadPoolTaskExecutor());
-        schedulerFactory.afterPropertiesSet();
-        Scheduler scheduler = (Scheduler) schedulerFactory.getObject();
-        EasyMock.expect(context.beanForType(Scheduler.class)).andReturn(scheduler).anyTimes();
-        schedulerFactory.setApplicationContext(context);
+        try {
+            super.bindArtifactoryHome();
+            ArtifactorySchedulerFactoryBean schedulerFactory = new ArtifactorySchedulerFactoryBean();
+            schedulerFactory.setTaskExecutor(new CachedThreadPoolTaskExecutor());
+            schedulerFactory.afterPropertiesSet();
+            Scheduler scheduler = (Scheduler) schedulerFactory.getObject();
+            EasyMock.expect(context.beanForType(Scheduler.class)).andReturn(scheduler).anyTimes();
+            schedulerFactory.setApplicationContext(context);
 
-        //Charge the mocks
-        EasyMock.replay(context, cc, ccd);
-        schedulerFactory.start();
+            //Charge the mocks
+            EasyMock.replay(context, cc, ccd);
+            schedulerFactory.start();
+        } finally {
+            super.unbindArtifactoryHome();
+        }
     }
 
     @BeforeClass

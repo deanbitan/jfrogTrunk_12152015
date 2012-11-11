@@ -125,6 +125,16 @@ public interface BuildService extends ImportableExportable {
     Set<BuildRun> searchBuildsByName(String buildName);
 
     /**
+     * Returns a sorted list of all previous builds to the given one
+     *
+     * @param buildName    Name of build to locate
+     * @param buildNumber  Number of build to locate
+     * @param buildStarted The started time of the given build, will return all builds prior to this value
+     * @return Ordered list (newest first) of builds prior to the given one
+     */
+    List<BuildRun> getAllPreviousBuilds(String buildName, String buildNumber, String buildStarted);
+
+    /**
      * Locates builds that are named and numbered as the given name and number
      *
      * @param buildName   Name of builds to locate

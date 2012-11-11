@@ -69,6 +69,7 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.license.LicenseInfo;
+import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.version.VersionHolder;
@@ -143,6 +144,7 @@ import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActiona
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildSearchResultsPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.DisabledModuleInfoTabPanel;
+import org.artifactory.webapp.wicket.page.build.tabs.diff.DisabledBuildDiffTabPanel;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpModel;
 import org.artifactory.webapp.wicket.page.config.advanced.AdvancedCentralConfigPage;
@@ -193,6 +195,7 @@ import org.springframework.security.core.Authentication;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.List;
@@ -391,6 +394,16 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     public BuildPatternArtifacts getBuildPatternArtifacts(
             @Nonnull BuildPatternArtifactsRequest buildPatternArtifactsRequest, String servletContextUrl) {
         return new BuildPatternArtifacts();
+    }
+
+    @Override
+    public Map<FileInfo, String> getBuildArtifacts(BuildArtifactsRequest buildArtifactsRequest) {
+        return null;
+    }
+
+    @Override
+    public File getBuildArtifactsArchive(BuildArtifactsRequest buildArtifactsRequest) {
+        return null;
     }
 
     @Override
@@ -598,8 +611,13 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public ITab getModuleInfoTab(String buildName, String buildNumber, final Module module) {
+    public ITab getModuleInfoTab(Build build, Module module) {
         return new DisabledPublishedTab();
+    }
+
+    @Override
+    public ITab getBuildDiffTab(Build build) {
+        return new DisabledBuildDiffTab();
     }
 
     @Override
@@ -888,7 +906,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public ITab getRpmInfoTab(String tabTitle, RepoPath repoPath) {
+    public ITab getRpmInfoTab(String tabTitle, FileInfo fileInfo) {
         return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.YUM);
     }
 
@@ -1030,6 +1048,23 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         @Override
         public Panel getPanel(String panelId) {
             return new DisabledModuleInfoTabPanel(panelId);
+        }
+
+        @Override
+        public void onNewTabItem(LoopItem item) {
+            super.onNewTabItem(item);
+            item.add(new AddonNeededBehavior(AddonType.BUILD));
+        }
+    }
+
+    private static class DisabledBuildDiffTab extends BaseTab {
+        public DisabledBuildDiffTab() {
+            super("Diff");
+        }
+
+        @Override
+        public Panel getPanel(String panelId) {
+            return new DisabledBuildDiffTabPanel(panelId);
         }
 
         @Override

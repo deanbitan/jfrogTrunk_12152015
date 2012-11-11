@@ -282,6 +282,8 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
                         log.trace("Registered deleted node {}.", binaryNodeId);
                     }
                 }
+                DbUtility.close(rs);
+                rs = null;
                 for (Map.Entry<String, Long> deadNodeEntry : deadBinaryNodes.entrySet()) {
                     //Clean up the cspaths table history
                     int deleted =
@@ -293,35 +295,32 @@ public class ChecksumPathsImpl implements JcrChecksumPaths {
                 int cleanedChecksums = 0;
                 ArtifactoryDataStore dataStore = JcrUtils.getArtifactoryDataStore();
                 //Check if the checksum is in the db
-                ResultSet liveChecksumsRs = null;
-                try {
-                    liveChecksumsRs = connHelper.select(SQL_RETRIEVE_DELETED_CHECKSUM);
-                    while (liveChecksumsRs.next()) {
-                        //Clean up the datastore and add to the live checksums count
-                        String checksum = liveChecksumsRs.getString(1);
-                        long size = liveChecksumsRs.getLong(2);
-                        ArtifactoryDbDataRecord dataRecord = dataStore.getCachedRecord(checksum);
-                        if (dataRecord == null) {
-                            dataRecord = ArtifactoryDbDataRecord.createForDeletion(dataStore, checksum, size);
-                            dataRecord = dataStore.addRecord(dataRecord);
-                        }
-                        if (dataRecord.markForDeletion(processingStart)) {
-                            long sizeDeleted = dataStore.deleteRecord(dataRecord);
-                            if (sizeDeleted == -1) {
-                                //Deletion failed
-                                log.debug("Could not delete artifact record {}", checksum);
-                            } else {
-                                cleanedChecksums++;
-                                totalSize += size;
-                                log.debug("Deleted artifact record: {}.", checksum);
-                            }
-                        } else {
-                            log.debug("Skipping deletion for in-use artifact record: {}.", checksum);
-                        }
+                rs = connHelper.select(SQL_RETRIEVE_DELETED_CHECKSUM);
+                while (rs.next()) {
+                    //Clean up the datastore and add to the live checksums count
+                    String checksum = rs.getString(1);
+                    long size = rs.getLong(2);
+                    ArtifactoryDbDataRecord dataRecord = dataStore.getCachedRecord(checksum);
+                    if (dataRecord == null) {
+                        dataRecord = ArtifactoryDbDataRecord.createForDeletion(dataStore, checksum, size);
+                        dataRecord = dataStore.addRecord(dataRecord);
                     }
-                } finally {
-                    DbUtility.close(liveChecksumsRs);
+                    if (dataRecord.markForDeletion(processingStart)) {
+                        long sizeDeleted = dataStore.deleteRecord(dataRecord);
+                        if (sizeDeleted == -1) {
+                            //Deletion failed
+                            log.debug("Could not delete artifact record {}", checksum);
+                        } else {
+                            cleanedChecksums++;
+                            totalSize += size;
+                            log.debug("Deleted artifact record: {}.", checksum);
+                        }
+                    } else {
+                        log.debug("Skipping deletion for in-use artifact record: {}.", checksum);
+                    }
                 }
+                DbUtility.close(rs);
+                rs = null;
                 dumpChecksumPathsTable();
                 if (started) {
                     txEnd(true);

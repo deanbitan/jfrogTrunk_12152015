@@ -19,7 +19,10 @@
 package org.artifactory.webapp.wicket.page.build.tabs;
 
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.Model;
 import org.artifactory.common.wicket.behavior.CssClass;
+import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
+import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.webapp.wicket.page.build.tabs.list.DisabledModuleArtifactsListPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.list.DisabledModuleDependenciesListPanel;
@@ -42,18 +45,26 @@ public class DisabledModuleInfoTabPanel extends BaseModuleInfoTabPanel {
 
         addArtifactsTable();
         addDependenciesTable();
+        addBuildToCompareComboBox();
 
         setEnabled(false);
         visitChildren(new SetEnableVisitor(false));
     }
 
+    private void addBuildToCompareComboBox() {
+        add(new StyledCheckbox("compareDiffWithPrevBuild", new Model<Boolean>()));
+        add(new HelpBubble("compareDiffWithPrevBuild.help", ""));
+    }
+
     @Override
     protected Panel getModuleArtifactsListPanel(String id) {
-        return new DisabledModuleArtifactsListPanel(id);
+        moduleArtifactsListPanel = new DisabledModuleArtifactsListPanel(id);
+        return moduleArtifactsListPanel;
     }
 
     @Override
     protected Panel getModuleDependenciesListPanel(String id) {
-        return new DisabledModuleDependenciesListPanel(id);
+        moduleDependenciesListPanel = new DisabledModuleDependenciesListPanel(id);
+        return moduleDependenciesListPanel;
     }
 }

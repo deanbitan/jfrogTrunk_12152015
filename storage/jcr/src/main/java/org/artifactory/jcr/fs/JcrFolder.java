@@ -531,9 +531,10 @@ public class JcrFolder extends JcrFsItem<FolderInfo, MutableFolderInfo> implemen
                 try {
                     hasMetadata = hasMetadata(metadataName);
                 } catch (RepositoryRuntimeException e) {
+                    // File may be deleted in the meantime, so this is just a warning
                     String message = String.format("Unable to determine whether %s is annotated by metadata of type " +
-                            "%s. Metadata was not cleaned.", getAbsolutePath(), metadataName);
-                    status.setError(message, e, log);
+                            "%s. Metadata entry not present!", getAbsolutePath(), metadataName);
+                    status.setWarning(message, e, log);
                 }
                 //If the metadata container does not contain this metadata anymore
                 if (!hasMetadata) {

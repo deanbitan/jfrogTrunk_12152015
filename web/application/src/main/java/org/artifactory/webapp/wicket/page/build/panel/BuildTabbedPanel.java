@@ -116,7 +116,7 @@ public class BuildTabbedPanel extends TitledPanel {
             });
         } else {
             BuildAddon buildAddon = addonsManager.addonByType(BuildAddon.class);
-            ITab tab = buildAddon.getModuleInfoTab(build.getName(), build.getNumber(), module);
+            ITab tab = buildAddon.getModuleInfoTab(build, module);
             tabList.add(tab);
         }
 
@@ -126,6 +126,10 @@ public class BuildTabbedPanel extends TitledPanel {
 
         LicensesWebAddon licensesAddon = addonsManager.addonByType(LicensesWebAddon.class);
         tabList.add(licensesAddon.getLicensesInfoTab("Licenses", build, hasDeployOnLocal));
+
+        BuildAddon buildAddon = addonsManager.addonByType(BuildAddon.class);
+        ITab tab = buildAddon.getBuildDiffTab(build);
+        tabList.add(tab);
 
         tabList.add(getReleaseHistoryTab("Release History", hasDeployOnLocal));
 

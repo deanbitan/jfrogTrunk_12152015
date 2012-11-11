@@ -19,6 +19,8 @@
 package org.artifactory.webapp.wicket.page.build.tabs;
 
 import org.apache.wicket.markup.html.panel.Panel;
+import org.artifactory.webapp.wicket.page.build.tabs.list.BaseModuleArtifactsListPanel;
+import org.artifactory.webapp.wicket.page.build.tabs.list.BaseModuleDependenciesListPanel;
 
 /**
  * The base module information panel
@@ -26,6 +28,9 @@ import org.apache.wicket.markup.html.panel.Panel;
  * @author Noam Y. Tenne
  */
 public abstract class BaseModuleInfoTabPanel extends Panel {
+
+    protected BaseModuleArtifactsListPanel moduleArtifactsListPanel;
+    protected BaseModuleDependenciesListPanel moduleDependenciesListPanel;
 
     /**
      * Main constructor

@@ -60,12 +60,12 @@ public class StartWebContainer {
         }
         System.setProperty(ArtifactoryHome.SYS_PROP, artHome.getAbsolutePath());
 
+        updateDefaultResources(new File(standalone, "etc"));
+
         copyNewerDevResources(standalone, artHome);
 
         // set the logback.xml
         System.setProperty("logback.configurationFile", new File(artHome + "/etc/logback.xml").getAbsolutePath());
-
-        updateDefaultResources(new File(standalone, "etc"));
 
         //Manually set the selector (needed explicitly here before any logger kicks in)
         // create the logger only after artifactory.home is set

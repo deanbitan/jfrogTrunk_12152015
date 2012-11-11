@@ -19,7 +19,6 @@
 package org.artifactory.repo.virtual;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
@@ -30,15 +29,16 @@ import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.TranslatedArtifactoryRequest;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
+import org.artifactory.descriptor.repo.VirtualRepoResolver;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.jcr.lock.LockingHelper;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
-import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RemoteRepo;
@@ -58,7 +58,6 @@ import org.slf4j.Logger;
 import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Default download strategy of a virtual repository.
@@ -198,7 +197,7 @@ public class VirtualRepoDownloadStrategy {
                 result = processSnapshot(context, repoPath, repositories);
             } else {
                 RepoRequests.logToContext("Processing request as a release resource");
-                result = processStandard(context, repoPath, repositories);
+                result = processStandard(context, repoPath, repositories, artifactModuleInfo.isValid());
             }
         } catch (IOException e) {
             RepoRequests.logToContext("Processing to get resource info: %s", e.getMessage());
@@ -216,19 +215,29 @@ public class VirtualRepoDownloadStrategy {
      */
     private List<RealRepo> assembleSearchRepositoriesList(RepoPath repoPath, RequestContext context) {
         RepoRequests.logToContext("Preparing list of aggregated repositories to search in");
-        Map<String, LocalRepo> searchableLocalRepositories = Maps.newLinkedHashMap();
-        Map<String, LocalCacheRepo> searchableLocalCacheRepositories = Maps.newLinkedHashMap();
-        Map<String, RemoteRepo> searchableRemoteRepositories = Maps.newLinkedHashMap();
-        deeplyAssembleSearchRepositoryLists(repoPath.getPath(), Maps.<String, VirtualRepo>newLinkedHashMap(),
-                searchableLocalRepositories, searchableLocalCacheRepositories, searchableRemoteRepositories);
+        VirtualResolverRequestFilter filter = new VirtualResolverRequestFilter(virtualRepo, repoPath.getPath(),
+                repositoryService, layoutsCoreAddon);
+        VirtualRepoResolver resolver = new VirtualRepoResolver(virtualRepo.getDescriptor(), filter);
 
         //Add all local repositories
         List<RealRepo> repositories = Lists.newArrayList();
         RepoRequests.logToContext("Appending collective local repositories");
-        repositories.addAll(searchableLocalRepositories.values());
+        for (LocalRepoDescriptor localRepoDescriptor : resolver.getLocalRepos()) {
+            String key = localRepoDescriptor.getKey();
+            LocalRepo localRepo = repositoryService.localRepositoryByKey(key);
+            if (localRepo != null) {
+                repositories.add(localRepo);
+            }
+        }
+
         //Add all caches
         RepoRequests.logToContext("Appending collective local cache repositories");
-        repositories.addAll(searchableLocalCacheRepositories.values());
+        for (RemoteRepoDescriptor remoteRepoDescriptor : resolver.getRemoteRepos()) {
+            LocalRepo localCacheRepo = repositoryService.localOrCachedRepositoryByKey(remoteRepoDescriptor.getKey());
+            if (localCacheRepo != null) {
+                repositories.add(localCacheRepo);
+            }
+        }
 
         //Add all remote repositories conditionally
         boolean fromAnotherArtifactory = context.isFromAnotherArtifactory();
@@ -240,7 +249,12 @@ public class VirtualRepoDownloadStrategy {
                     "received from another Artifactory instance but is forbidden to search in remote repositories.");
         } else {
             RepoRequests.logToContext("Appending collective remote repositories");
-            repositories.addAll(searchableRemoteRepositories.values());
+            for (RemoteRepoDescriptor remoteRepoDescriptor : resolver.getRemoteRepos()) {
+                RemoteRepo remoteRepo = repositoryService.remoteRepositoryByKey(remoteRepoDescriptor.getKey());
+                if (remoteRepo != null) {
+                    repositories.add(remoteRepo);
+                }
+            }
         }
         return repositories;
     }
@@ -250,12 +264,14 @@ public class VirtualRepoDownloadStrategy {
      * resource that is found is returned. The order of searching is: local repos, cache repos and remote repos (unless
      * request originated from another Artifactory).
      *
-     * @param context      Original download request context
-     * @param repoPath     The repository path of the resource to find
-     * @param repositories List of repositories to look in (doesn't include virtual repos)
+     * @param context         Original download request context
+     * @param repoPath        The repository path of the resource to find
+     * @param repositories    List of repositories to look in (doesn't include virtual repos)
+     * @param validModuleInfo Whether the module info is valid, if not we will pass the request to the aggregated
+     *                        repos even if they do not handle releases
      */
-    private RepoResource processStandard(InternalRequestContext context, RepoPath repoPath, List<RealRepo> repositories)
-            throws IOException {
+    private RepoResource processStandard(InternalRequestContext context, RepoPath repoPath, List<RealRepo> repositories,
+            boolean validModuleInfo) throws IOException {
         // save forbidden unfound response
         UnfoundRepoResource forbidden = null;
         //Locate the resource matching the request
@@ -267,7 +283,7 @@ public class VirtualRepoDownloadStrategy {
             // Now, checksums are always considered standard, even if executed against a snapshot repository.
             // So, we should not skip snapshots repositories for checksums.
             String path = repoPath.getPath();
-            if (!repo.isHandleReleases() && !NamingUtils.isChecksum(path)) {
+            if (validModuleInfo && !repo.isHandleReleases() && !NamingUtils.isChecksum(path)) {
                 RepoRequests.logToContext("Skipping %s - doesn't handle releases", repo.getKey());
                 continue;
             }
@@ -449,59 +465,6 @@ public class VirtualRepoDownloadStrategy {
     private void updateResponseRepoPath(Repo foundInRepo, RepoResource resource) {
         resource.setResponseRepoPath(
                 InternalRepoPathFactory.create(foundInRepo.getKey(), resource.getRepoPath().getPath()));
-    }
-
-
-    /**
-     * Assembles a list of search repositories grouped by type. Virtual repositories that don't accept the input
-     * repoPath pattern are not added to the list and are not recursively visited.
-     */
-    private void deeplyAssembleSearchRepositoryLists(
-            String path, Map<String, VirtualRepo> visitedVirtualRepositories,
-            Map<String, LocalRepo> searchableLocalRepositories,
-            Map<String, LocalCacheRepo> searchableLocalCacheRepositories,
-            Map<String, RemoteRepo> searchableRemoteRepositories) {
-
-        if (!virtualRepo.accepts(path)) {
-            // includes/excludes should not affect system paths
-            RepoRequests.logToContext("Adding no aggregated repositories - requested artifact is rejected by the " +
-                    "include exclude patterns of '%s'", virtualRepo.getKey());
-            return;
-        }
-        RepoRequests.logToContext("Appending '%s'", virtualRepo.getKey());
-        visitedVirtualRepositories.put(virtualRepo.getKey(), virtualRepo);
-
-        //Add its local repositories
-        RepoRequests.logToContext("Appending the local repositories of '%s'", virtualRepo.getKey());
-        searchableLocalRepositories.putAll(virtualRepo.getLocalRepositoriesMap());
-        //Add the caches
-        RepoRequests.logToContext("Appending the local cache repositories of '%s'", virtualRepo.getKey());
-        searchableLocalCacheRepositories.putAll(virtualRepo.getLocalCacheRepositoriesMap());
-        //Add the remote repositories
-        RepoRequests.logToContext("Appending the remote repositories repositories of '%s'", virtualRepo.getKey());
-        searchableRemoteRepositories.putAll(virtualRepo.getRemoteRepositoriesMap());
-        //Add any contained virtual repo
-        List<VirtualRepo> childrenVirtualRepos = virtualRepo.getVirtualRepositories();
-
-        for (VirtualRepo childVirtualRepo : childrenVirtualRepos) {
-            String key = childVirtualRepo.getKey();
-            if (visitedVirtualRepositories.containsKey(key)) {
-                //Avoid infinite loop - stop if already processed virtual repo is encountered
-                RepoRequests.logToContext("Skipping '%s' to avoid infinite loop - already processed", key);
-                return;
-            } else {
-                String translatedPath = translateRepoPath(virtualRepo, childVirtualRepo, path);
-                if (!translatedPath.equals(path)) {
-                    RepoRequests.logToContext("Resource was translated to '%s' in order to search within '%s'",
-                            translatedPath, key);
-                }
-                childVirtualRepo.downloadStrategy.deeplyAssembleSearchRepositoryLists(
-                        translatedPath, visitedVirtualRepositories,
-                        searchableLocalRepositories,
-                        searchableLocalCacheRepositories,
-                        searchableRemoteRepositories);
-            }
-        }
     }
 
     /**

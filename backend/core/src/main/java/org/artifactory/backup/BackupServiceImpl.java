@@ -155,7 +155,11 @@ public class BackupServiceImpl implements InternalBackupService {
             //Schedule the cron'd backup
             String key = descriptor.getKey();
             String cronExp = descriptor.getCronExp();
-            if (descriptor.isEnabled() && cronExp != null) {
+            if (descriptor.isEnabled()) {
+                if (cronExp == null) {
+                    log.warn("No backup cron expression is configured. Backup " + key + " will be disabled.");
+                    return;
+                }
                 try {
                     TaskBase task = TaskUtils.createCronTask(BackupJob.class, cronExp);
                     task.addAttribute(BackupJob.BACKUP_KEY, key);
@@ -164,11 +168,8 @@ public class BackupServiceImpl implements InternalBackupService {
                         log.info("Backup " + key + " activated with cron expression '" + cronExp + "'.");
                     }
                 } catch (Exception e) {
-                    log.warn("Activation of backup " + key + ":" + descriptor + " failed:" +
-                            e.getMessage(), e);
+                    log.warn("Activation of backup " + key + ":" + descriptor + " failed:" + e.getMessage(), e);
                 }
-            } else {
-                log.warn("No backup cron expression is configured. Backup " + key + " will be disabled.");
             }
         }
 

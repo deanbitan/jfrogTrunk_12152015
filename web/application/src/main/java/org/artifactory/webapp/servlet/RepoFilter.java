@@ -236,6 +236,7 @@ public class RepoFilter extends DelayedFilterBase {
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             artifactoryResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Could not process download request: " + e.getMessage(), log);
+            log.debug("Could not process download request: " + e.getMessage(), e);
         }
     }
 

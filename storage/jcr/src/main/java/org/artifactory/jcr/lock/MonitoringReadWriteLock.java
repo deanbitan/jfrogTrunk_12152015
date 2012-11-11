@@ -18,33 +18,39 @@
 
 package org.artifactory.jcr.lock;
 
+import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
+
 import java.util.Collection;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.Collections;
 
 /**
- * A ReentrantReadWriteLock that exposes information about the owner thread
+ * A WriterPreferenceReadWriteLock that exposes information about the owner thread
  *
  * @author Yoav Landman
  */
-public class MonitoringReadWriteLock extends ReentrantReadWriteLock {
+public class MonitoringReadWriteLock extends ReentrantWriterPreferenceReadWriteLock {
 
-    @Override
+    public MonitoringReadWriteLock() {
+        super();
+    }
+
     public final Thread getOwner() {
-        return super.getOwner();
+        return super.activeWriter_;
     }
 
-    @Override
     public final Collection<Thread> getQueuedWriterThreads() {
-        return super.getQueuedWriterThreads();
+        return Collections.emptyList();
     }
 
-    @Override
     public final Collection<Thread> getQueuedReaderThreads() {
-        return super.getQueuedReaderThreads();
+        return Collections.emptyList();
     }
 
-    @Override
-    public final Collection<Thread> getQueuedThreads() {
-        return super.getQueuedThreads();
+    public boolean isWriteLockedByCurrentThread() {
+        return Thread.currentThread() == super.activeWriter_;
+    }
+
+    public boolean willOrIsWriteLock() {
+        return super.activeWriter_ != null || super.waitingWriters_ != 0;
     }
 }

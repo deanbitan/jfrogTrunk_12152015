@@ -73,6 +73,9 @@ public class SystemInfoPage extends AuthenticatedPage {
 
         infoBuilder.append("System Properties:").append("\n");
         Properties properties = System.getProperties();
+        //// add Artifactory version to the properties, will be alphabetically sorted later.
+        properties.setProperty(ConstantValues.artifactoryVersion.getPropertyName(),
+                ConstantValues.artifactoryVersion.getString());
         // add the JCR config dir to the properties, will be alphabetically sorted later.
         String jcrConfigHome = ConstantValues.jcrConfigDir.getString();
         if (StringUtils.isBlank(jcrConfigHome)) {

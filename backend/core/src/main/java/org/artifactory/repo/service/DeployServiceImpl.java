@@ -113,7 +113,7 @@ public class DeployServiceImpl implements DeployService {
         }
         //Check acceptance according to include/exclude patterns
         //TODO: [by yl] assertValidDeployPath is already called by the upload service, including security checks!
-        repositoryService.assertValidDeployPath(localRepo, path);
+        repositoryService.assertValidDeployPath(localRepo, path, fileToDeploy.length());
         RepoPath repoPath = InternalRepoPathFactory.create(targetRepo.getKey(), path);
         //TODO: [by yl] assertValidDeployPath is already checking deploy permissions!
         if (!authService.canDeploy(repoPath)) {

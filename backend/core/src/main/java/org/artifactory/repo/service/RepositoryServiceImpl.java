@@ -1534,7 +1534,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
 
         // If already write locked nothing to do the stats, metadata in queue will be updated
-        if (!repo.isWriteLocked(repoPath)) {
+        if (!repo.willOrIsWriteLocked(repoPath)) {
             // Just write locking the file will save any dirty state upon commit (stats and metadata)
             repo.getLockedJcrFsItem(repoPath);
         }
@@ -1660,13 +1660,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public void assertValidDeployPath(RepoPath repoPath) throws RepoRejectException {
+    public void assertValidDeployPath(RepoPath repoPath, long contentLength) throws RepoRejectException {
         String repoKey = repoPath.getRepoKey();
         LocalRepo localRepo = localOrCachedRepositoryByKey(repoKey);
         if (localRepo == null) {
             throw new RepoRejectException("The repository '" + repoKey + "' is not configured.");
         }
-        assertValidDeployPath(localRepo, repoPath.getPath());
+        assertValidDeployPath(localRepo, repoPath.getPath(), contentLength);
     }
 
     @Override
@@ -1696,7 +1696,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public void assertValidDeployPath(LocalRepo repo, String path) throws RepoRejectException {
+    public void assertValidDeployPath(LocalRepo repo, String path, long contentLength) throws RepoRejectException {
         BasicStatusHolder status = repo.assertValidPath(path, false);
 
         if (!status.isError()) {
@@ -1726,7 +1726,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
             if (!status.isError()) {
                 // Assert that we don't exceed the user configured maximum storage size
-                assertStorageQuota(status);
+                assertStorageQuota(status, contentLength);
             }
         }
         if (status.isError()) {
@@ -1741,8 +1741,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
     }
 
-    private void assertStorageQuota(MutableStatusHolder statusHolder) {
-        StorageQuotaInfo info = storageService.getStorageQuotaInfo();
+    private void assertStorageQuota(MutableStatusHolder statusHolder, long contentLength) {
+        StorageQuotaInfo info = storageService.getStorageQuotaInfo(contentLength);
         if (info == null) {
             return;
         }

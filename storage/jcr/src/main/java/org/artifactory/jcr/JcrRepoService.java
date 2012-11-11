@@ -106,6 +106,9 @@ public interface JcrRepoService {
     @Lock(transactional = true)
     List<String> getChildrenNames(String absPath);
 
+    @Lock(transactional = true)
+    List<String> getChildrenNames(String absPath, boolean folderOnly);
+
     void trash(List<VfsItem> items);
 
     String getNodeTypeName(RepoPath repoPath);

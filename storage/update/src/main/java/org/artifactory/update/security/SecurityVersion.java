@@ -30,6 +30,7 @@ import org.artifactory.update.security.v4.AnnotatePermissionXmlConverter;
 import org.artifactory.update.security.v6.LdapGroupSettingLowerCaseOcmConverter;
 import org.artifactory.update.security.v6.LdapGroupSettingXmlConverter;
 import org.artifactory.update.security.v6.LowercaseUsernameXmlConverter;
+import org.artifactory.update.security.v7.DeleteForSecurityDumpConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
@@ -65,7 +66,8 @@ public enum SecurityVersion implements SubConfigElementVersion {
     // due to a bug 2.1.2 was released with new security version that is the same as 4
     v6(ArtifactoryVersion.v213, ArtifactoryVersion.v213, new LdapGroupSettingLowerCaseOcmConverter(),
             new LdapGroupSettingXmlConverter(), new LowercaseUsernameXmlConverter()),
-    v7(ArtifactoryVersion.v220, ArtifactoryVersion.getCurrent(), null);
+    v7(ArtifactoryVersion.v220, ArtifactoryVersion.v264, new DeleteForSecurityDumpConverter()),
+    v8(ArtifactoryVersion.v265, ArtifactoryVersion.getCurrent(), null);
 
     private static final String VERSION_ATT = "version=\"";
 

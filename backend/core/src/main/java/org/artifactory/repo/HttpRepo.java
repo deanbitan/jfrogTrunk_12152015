@@ -486,6 +486,18 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         if (handleGzipResponse) {
             method.addRequestHeader("Accept-Encoding", "gzip");
         }
+
+        // Set custom query params
+        String queryParams = getDescriptor().getQueryParams();
+        if (StringUtils.isNotBlank(queryParams)) {
+            String existingQueryParams = method.getQueryString();
+            String encodedQueryParams = HttpUtils.encodeQuery(queryParams);
+            if (StringUtils.isBlank(existingQueryParams)) {
+                method.setQueryString(encodedQueryParams);
+            } else {
+                method.setQueryString(existingQueryParams + "&" + encodedQueryParams);
+            }
+        }
     }
 
     private static long getLastModified(HttpMethod method) {

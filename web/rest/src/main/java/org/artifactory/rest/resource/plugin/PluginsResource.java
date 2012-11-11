@@ -51,7 +51,7 @@ import static org.artifactory.api.rest.constant.PluginRestConstants.*;
  * @author Tomer Cohen
  */
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @Path(PATH_ROOT)
 @RolesAllowed({AuthorizationService.ROLE_USER, AuthorizationService.ROLE_ADMIN})
 public class PluginsResource {

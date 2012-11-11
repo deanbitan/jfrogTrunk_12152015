@@ -81,11 +81,16 @@ public abstract class PathMatcher {
 
     public static boolean matches(File file, @Nullable Collection<String> includes,
             @Nullable Collection<String> excludes) {
-        return matches(cleanPath(file), includes, excludes);
+        return matches(cleanPath(file), includes, excludes, true);
     }
 
     public static boolean matches(String path, @Nullable Collection<String> includes,
             @Nullable Collection<String> excludes) {
+        return matches(path, includes, excludes, true);
+    }
+
+    public static boolean matches(String path, @Nullable Collection<String> includes,
+            @Nullable Collection<String> excludes, boolean matchStart) {
         if (CollectionUtils.notNullOrEmpty(excludes)) {
             for (String exclude : excludes) {
                 boolean match = antPathMatcher.match(exclude, path);
@@ -95,14 +100,12 @@ public abstract class PathMatcher {
                 }
             }
         }
-        //Always match the repository itself
-        if ("".equals(path) || "/".equals(path)) {
-            return true;
-        }
+
         if (CollectionUtils.notNullOrEmpty(includes)) {
             for (String include : includes) {
                 // If path is smaller than include or end with / verify if it's a sub path then return true
-                if ((path.endsWith("/") || path.length() <= include.length())
+                if (matchStart
+                        && (path.endsWith("/") || path.length() <= include.length())
                         && antPathMatcher.matchStart(include, path)) {
                     return true;
                 }

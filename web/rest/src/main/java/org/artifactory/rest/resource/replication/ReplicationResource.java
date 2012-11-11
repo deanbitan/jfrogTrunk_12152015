@@ -47,7 +47,7 @@ import java.io.IOException;
  * @author Noam Y. Tenne
  */
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @Path(ReplicationRestConstants.ROOT)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class ReplicationResource {

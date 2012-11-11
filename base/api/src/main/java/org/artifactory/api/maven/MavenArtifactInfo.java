@@ -18,8 +18,12 @@
 
 package org.artifactory.api.maven;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.artifact.UnitInfo;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
@@ -27,7 +31,9 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
@@ -199,16 +205,15 @@ public class MavenArtifactInfo implements UnitInfo {
         String groupId, artifactId, version, type = MavenArtifactInfo.NA, classifier = MavenArtifactInfo.NA;
 
         String path = repoPath.getPath();
-        String name = repoPath.getName();
+        String fileName = repoPath.getName();
 
-        //The format of the relative path in maven is a/b/c/artifactId/version/fileName where
+        //The format of the relative path in maven is a/b/c/artifactId/baseVer/fileName where
         //groupId="a.b.c". We split the path to elements and analyze the needed fields.
         LinkedList<String> pathElements = new LinkedList<String>();
         StringTokenizer tokenizer = new StringTokenizer(path, "/");
         while (tokenizer.hasMoreTokens()) {
             pathElements.add(tokenizer.nextToken());
         }
-        boolean metaData = NamingUtils.isMetadata(name);
         //Sanity check, we need groupId, artifactId and version
         if (pathElements.size() < 3) {
             log.debug("Cannot build MavenArtifactInfo from '{}'. The groupId, artifactId and version are unreadable.",
@@ -229,26 +234,48 @@ public class MavenArtifactInfo implements UnitInfo {
         }
         groupId = groupIdBuff.toString();
         //Extract the type and classifier except for metadata files
+        boolean metaData = NamingUtils.isMetadata(fileName);
         if (!metaData) {
-            boolean snapshot = MavenNaming.isNonUniqueSnapshotVersion(version);
-            //Extract the type
-            String versionInName = version;
-            if (snapshot && MavenNaming.isUniqueSnapshotFileName(name)) {
-                //For uniqueVersion snapshots extract the version pattern for calculating the type
-                versionInName = MavenNaming.getUniqueSnapshotVersionTimestampAndBuildNumber(name);
+            if (MavenNaming.isUniqueSnapshotFileName(fileName)) {
+                version = StringUtils.remove(version, "-" + MavenNaming.SNAPSHOT);
+                version = version + "-" + MavenNaming.getUniqueSnapshotVersionTimestampAndBuildNumber(fileName);
             }
-            int versionEndIdx = name.lastIndexOf(versionInName) + versionInName.length();
-            int typeDotStartIdx = name.indexOf('.', versionEndIdx);
-            type = name.substring(typeDotStartIdx + 1);
-            //Extract the classifier as the delta between the actual name and the base name:
-            //[artifactId]-[version]-[classifier].[type]
-            if (versionEndIdx < typeDotStartIdx) {
-                classifier = name.substring(
-                        versionEndIdx + 1, //After the '-'
-                        typeDotStartIdx);//To the .[type]
+
+            type = StringUtils.substring(fileName, artifactId.length() + version.length() + 2);
+            int versionStartIndex = StringUtils.indexOf(fileName, "-", artifactId.length()) + 1;
+            int classifierStartIndex = StringUtils.indexOf(fileName, "-", versionStartIndex + version.length());
+            if (classifierStartIndex >= 0) {
+                Set<String> customMavenTypes = getMavenCustomTypes();
+                for (String customMavenType : customMavenTypes) {
+                    if (StringUtils.endsWith(fileName, customMavenType)) {
+                        classifier = StringUtils.remove(type, "." + customMavenType);
+                        type = customMavenType;
+                        break;
+                    }
+                }
+
+                if (MavenArtifactInfo.NA.equals(classifier)) {
+                    int typeDotStartIndex = StringUtils.lastIndexOf(type, ".");
+                    classifier = StringUtils.substring(type, 0, typeDotStartIndex);
+                    type = StringUtils.substring(type, classifier.length() + 1);
+                }
             }
         }
         return new MavenArtifactInfo(groupId, artifactId, version, classifier, type);
+    }
+
+    private static Set<String> getMavenCustomTypes() {
+        String mvnCustomTypes = ConstantValues.mvnCustomTypes.getString();
+        return Sets.newHashSet(
+                Iterables.transform(Sets.newHashSet(StringUtils.split(mvnCustomTypes, ",")),
+                        new Function<String, String>() {
+                            @Override
+                            public String apply(@Nullable String input) {
+                                return StringUtils.isBlank(input) ? input : StringUtils.trim(input);
+                            }
+                        }
+                )
+        );
     }
 
     /**

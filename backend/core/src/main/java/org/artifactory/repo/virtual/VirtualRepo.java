@@ -640,8 +640,8 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     }
 
     @Override
-    public boolean isWriteLocked(RepoPath path) {
-        return storageMixin.isWriteLocked(path);
+    public boolean willOrIsWriteLocked(RepoPath path) {
+        return storageMixin.willOrIsWriteLocked(path);
     }
 
     @Override

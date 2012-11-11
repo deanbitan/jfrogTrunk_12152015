@@ -29,26 +29,24 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.archive.ArchiveType;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 /**
  * A utility class to perform different archive related actions
@@ -56,63 +54,21 @@ import java.util.zip.ZipOutputStream;
  * @author Noam Tenne
  */
 public abstract class ZipUtils {
-
     private static final Logger log = LoggerFactory.getLogger(ZipUtils.class);
 
     /**
-     * Archives the contents of the given directory into the given archive using the java.util.zip tools
+     * Archives the contents of the given directory into the given archive using the apache commons compress tools
      *
      * @param sourceDirectory    Directory to archive
      * @param destinationArchive Archive file to create
      * @param recurse            True if should recurse file scan of source directory. False if not
      * @throws IOException              Any exceptions that might occur while handling the given files and used streams
      * @throws IllegalArgumentException Thrown when given invalid destinations
+     * @see ArchiveUtils#archive(java.io.File, java.io.File, boolean, org.artifactory.api.archive.ArchiveType)
      */
     public static void archive(File sourceDirectory, File destinationArchive, boolean recurse)
             throws IOException {
-        if ((sourceDirectory == null) || (destinationArchive == null)) {
-            throw new IllegalArgumentException("Supplied destinations cannot be null.");
-        }
-        if (!sourceDirectory.isDirectory()) {
-            throw new IllegalArgumentException("Supplied source directory must be an existing directory.");
-        }
-        String sourcePath = sourceDirectory.getAbsolutePath();
-        String archivePath = destinationArchive.getAbsolutePath();
-        log.debug("Begining to archive '{}' into '{}'", sourcePath, archivePath);
-        FileOutputStream destinationOutputStream = new FileOutputStream(destinationArchive);
-        ZipOutputStream zipOutputStream = new ZipOutputStream(new BufferedOutputStream(destinationOutputStream));
-
-        try {
-            @SuppressWarnings({"unchecked"})
-            Collection<File> childrenFiles = org.apache.commons.io.FileUtils.listFiles(sourceDirectory, null, recurse);
-
-            ZipEntry zipEntry;
-            FileInputStream fileInputStream;
-            for (File childFile : childrenFiles) {
-                String childPath = childFile.getAbsolutePath();
-                String relativePath = childPath.substring((sourcePath.length() + 1), childPath.length());
-
-                /**
-                 * Need to convert separators to unix format since zipping on windows machines creates windows specific
-                 * FS file paths
-                 */
-                relativePath = FilenameUtils.separatorsToUnix(relativePath);
-                zipEntry = new ZipEntry(relativePath);
-                fileInputStream = new FileInputStream(childFile);
-                zipOutputStream.putNextEntry(zipEntry);
-
-                try {
-                    IOUtils.copy(fileInputStream, zipOutputStream);
-                } finally {
-                    IOUtils.closeQuietly(fileInputStream);
-                }
-                log.debug("Archive '{}' into '{}'", childPath, archivePath);
-            }
-        } finally {
-            IOUtils.closeQuietly(zipOutputStream);
-        }
-
-        log.debug("Completed archiving of '{}' into '{}'", sourcePath, archivePath);
+        ArchiveUtils.archive(sourceDirectory, destinationArchive, recurse, ArchiveType.ZIP);
     }
 
     /**

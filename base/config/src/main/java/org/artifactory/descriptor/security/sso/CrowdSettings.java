@@ -31,7 +31,8 @@ import java.util.Properties;
  * @author Noam Y. Tenne
  */
 @XmlType(name = "CrowdSettingsType", propOrder = {"enableIntegration", "serverUrl", "applicationName", "password",
-        "sessionValidationInterval", "useDefaultProxy", "noAutoUserCreation"}, namespace = Descriptor.NS)
+        "sessionValidationInterval", "useDefaultProxy", "noAutoUserCreation", "customCookieTokenKey"},
+        namespace = Descriptor.NS)
 public class CrowdSettings implements Descriptor {
 
     @XmlElement(defaultValue = "false")
@@ -50,6 +51,8 @@ public class CrowdSettings implements Descriptor {
 
     @XmlElement(defaultValue = "true")
     private boolean noAutoUserCreation = true;
+
+    private String customCookieTokenKey;
 
     public boolean isEnableIntegration() {
         return enableIntegration;
@@ -107,6 +110,14 @@ public class CrowdSettings implements Descriptor {
         this.noAutoUserCreation = noAutoUserCreation;
     }
 
+    public String getCustomCookieTokenKey() {
+        return customCookieTokenKey;
+    }
+
+    public void setCustomCookieTokenKey(String customCookieTokenKey) {
+        this.customCookieTokenKey = customCookieTokenKey;
+    }
+
     public Properties getConfigurationProperties() {
         Properties properties = new Properties();
         if (isEnableIntegration()) {
@@ -123,6 +134,9 @@ public class CrowdSettings implements Descriptor {
             properties.setProperty("session.isauthenticated", "artifactory.crowd.session.isAuthenticated");
             properties.setProperty("session.tokenkey", "artifactory.crowd.session.tokenKey");
             properties.setProperty("session.lastvalidation", "artifactory.crowd.session.lastValidation");
+            if (StringUtils.isNotBlank(customCookieTokenKey)) {
+                properties.setProperty("cookie.tokenkey", customCookieTokenKey);
+            }
         }
         return properties;
     }
@@ -159,6 +173,10 @@ public class CrowdSettings implements Descriptor {
         if (serverUrl != null ? !serverUrl.equals(that.serverUrl) : that.serverUrl != null) {
             return false;
         }
+        if (customCookieTokenKey != null ? !customCookieTokenKey.equals(that.customCookieTokenKey) :
+                that.customCookieTokenKey != null) {
+            return false;
+        }
 
         return true;
     }
@@ -172,6 +190,7 @@ public class CrowdSettings implements Descriptor {
         result = 31 * result + (int) (sessionValidationInterval ^ (sessionValidationInterval >>> 32));
         result = 31 * result + (useDefaultProxy ? 1 : 0);
         result = 31 * result + (noAutoUserCreation ? 1 : 0);
+        result = 31 * result + (customCookieTokenKey != null ? customCookieTokenKey.hashCode() : 0);
         return result;
     }
 }

@@ -74,17 +74,18 @@ public class MavenMetadataVersionComparatorTest {
         Iterator<String> it = testList.iterator();
         while (it.hasNext()) {
             String version = it.next();
-            if (version.contains("pre")) it.remove();
+            if (version.contains("pre")) {
+                it.remove();
+            }
         }
         // Without pre we are OK
         Collections.sort(testList, versionComparator);
         try {
             // On the full list will fail on comparison contract
             Arrays.sort(versionsJetty, versionComparator);
-            assertTrue(!SystemUtils.IS_JAVA_1_7,"Should have get comparison contract error!");
+            assertTrue(!SystemUtils.IS_JAVA_1_7, "Should have get comparison contract error!");
         } catch (IllegalArgumentException e) {
             assertEquals(e.getMessage(), "Comparison method violates its general contract!");
-            e.printStackTrace();
             Arrays.sort(versionsJetty);
         }
     }

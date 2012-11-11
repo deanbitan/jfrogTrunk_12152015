@@ -53,8 +53,9 @@ public interface StorageService {
      * Create and retrieve a storage quota info object which contains information about
      * the system storage total space, free space etc.
      *
+     * @param fileContentLength The uploaded file content length to include in the quota calculation
      * @return The {@link StorageQuotaInfo} object, might return null if quota management doesn't exist inside
      *         the central config or it is disabled.
      */
-    StorageQuotaInfo getStorageQuotaInfo();
+    StorageQuotaInfo getStorageQuotaInfo(long fileContentLength);
 }

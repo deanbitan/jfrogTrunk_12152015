@@ -18,6 +18,7 @@
 
 package org.artifactory.jcr.lock;
 
+import EDU.oswego.cs.dl.util.concurrent.Sync;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.concurrent.LockingException;
 import org.artifactory.log.LoggerFactory;
@@ -28,9 +29,6 @@ import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
 
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author freds
@@ -44,7 +42,7 @@ class SessionLockEntry implements FsItemLockEntry {
     private VfsItem lockedFsItem;
     private VfsItem immutableFsItem;
     //The (per-session) acquired lock state
-    private ReentrantReadWriteLock.ReadLock acquiredReadLock;
+    private Sync acquiredReadLock;
 
     enum LockMode {
         READ, WRITE
@@ -221,7 +219,7 @@ class SessionLockEntry implements FsItemLockEntry {
         log.trace("Releasing READ lock on {}", id);
         try {
             if (acquiredReadLock != null) {
-                acquiredReadLock.unlock();
+                acquiredReadLock.release();
                 return true;
             }
             return false;
@@ -232,10 +230,9 @@ class SessionLockEntry implements FsItemLockEntry {
 
     private void acquire(LockMode mode) {
         MonitoringReadWriteLock rwLock = getLock();
-        Lock lock = mode == LockMode.READ ? rwLock.readLock() : rwLock.writeLock();
+        Sync lock = mode == LockMode.READ ? rwLock.readLock() : rwLock.writeLock();
         try {
-            boolean success =
-                    lock.tryLock() || lock.tryLock(ConstantValues.locksTimeoutSecs.getLong(), TimeUnit.SECONDS);
+            boolean success = lock.attempt(ConstantValues.locksTimeoutSecs.getLong() * 1000L);
             if (!success) {
                 StringBuilder msg =
                         new StringBuilder().append(mode).append(" lock on ").append(id).append(" not acquired in ")
@@ -253,7 +250,7 @@ class SessionLockEntry implements FsItemLockEntry {
                                     " while already has a read only session lock.");
                 }
                 //Update the local read-lock tracker
-                acquiredReadLock = (ReentrantReadWriteLock.ReadLock) lock;
+                acquiredReadLock = lock;
             }
         } catch (InterruptedException e) {
             throw new LockingException(mode + " lock on " + id + " not acquired!", e);
@@ -270,7 +267,7 @@ class SessionLockEntry implements FsItemLockEntry {
                 }
             }
             lockedFsItem = null;
-            getLock().writeLock().unlock();
+            getLock().writeLock().release();
         }
     }
 

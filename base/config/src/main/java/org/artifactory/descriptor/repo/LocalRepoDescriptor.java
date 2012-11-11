@@ -24,7 +24,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "LocalRepoType", propOrder = {"snapshotVersionBehavior", "checksumPolicyType", "calculateYumMetadata",
-        "yumRootDepth"}, namespace = Descriptor.NS)
+        "yumRootDepth", "yumGroupFileNames"}, namespace = Descriptor.NS)
 public class LocalRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(defaultValue = "unique", required = false)
@@ -36,6 +36,8 @@ public class LocalRepoDescriptor extends RealRepoDescriptor {
     private boolean calculateYumMetadata;
 
     private int yumRootDepth;
+
+    private String yumGroupFileNames;
 
     public SnapshotVersionBehavior getSnapshotVersionBehavior() {
         return snapshotVersionBehavior;
@@ -77,5 +79,13 @@ public class LocalRepoDescriptor extends RealRepoDescriptor {
 
     public void setYumRootDepth(int yumRootDepth) {
         this.yumRootDepth = yumRootDepth;
+    }
+
+    public String getYumGroupFileNames() {
+        return yumGroupFileNames;
+    }
+
+    public void setYumGroupFileNames(String yumGroupFileNames) {
+        this.yumGroupFileNames = yumGroupFileNames;
     }
 }

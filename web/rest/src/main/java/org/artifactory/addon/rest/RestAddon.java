@@ -30,9 +30,11 @@ import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
+import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.rest.replication.ReplicationRequest;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
@@ -49,6 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
@@ -422,6 +425,25 @@ public interface RestAddon extends Addon {
     @Nullable
     BuildPatternArtifacts getBuildPatternArtifacts(@Nonnull BuildPatternArtifactsRequest buildPatternArtifactsRequest,
             @NotNull String servletContextUrl);
+
+    /**
+     * Returns build artifacts map according to the param input regexp patterns.
+     *
+     * @param buildArtifactsRequest A wrapper which contains the necessary parameters
+     * @return A map from {@link FileInfo}s to their target directories relative paths
+     * @see BuildArtifactsRequest
+     */
+    Map<FileInfo, String> getBuildArtifacts(BuildArtifactsRequest buildArtifactsRequest);
+
+    /**
+     * Returns an archive file according to the param archive type (zip/tar/tar.gz/tgz) which contains
+     * all build artifacts according to the given build name and number (can be latest or latest by status).
+     *
+     * @param buildArtifactsRequest A wrapper which contains the necessary parameters
+     * @return The archived file of build artifacts with their hierarchy rules
+     * @see BuildArtifactsRequest
+     */
+    File getBuildArtifactsArchive(BuildArtifactsRequest buildArtifactsRequest) throws IOException;
 
     /**
      * Invokes a user plugin based build promotion action

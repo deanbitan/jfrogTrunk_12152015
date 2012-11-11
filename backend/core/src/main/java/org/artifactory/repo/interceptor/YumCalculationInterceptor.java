@@ -18,6 +18,8 @@
 
 package org.artifactory.repo.interceptor;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.YumAddon;
@@ -29,8 +31,11 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.storage.StorageInterceptorAdapter;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.fs.VfsItem;
+import org.artifactory.util.PathUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.util.List;
 
 /**
  * @author Noam Y. Tenne
@@ -68,10 +73,10 @@ public class YumCalculationInterceptor extends StorageInterceptorAdapter {
 
     private void invokeCalculationIfNeed(VfsItem fsItem) {
         RepoPath repoPath = fsItem.getRepoPath();
-        if (repoPath.getPath().endsWith(".rpm")) {
-            String repoKey = repoPath.getRepoKey();
-            LocalRepoDescriptor hostingLocalRepo = repositoryService.localRepoDescriptorByKey(repoKey);
-            if ((hostingLocalRepo != null) && hostingLocalRepo.isCalculateYumMetadata()) {
+        String repoKey = repoPath.getRepoKey();
+        LocalRepoDescriptor hostingLocalRepo = repositoryService.localRepoDescriptorByKey(repoKey);
+        if ((hostingLocalRepo != null) && hostingLocalRepo.isCalculateYumMetadata()) {
+            if (repoPath.getPath().endsWith(".rpm") || isYumGroupFile(repoPath.getPath(), hostingLocalRepo)) {
                 String[] itemPathFolders = StringUtils.split(repoPath.getParent().getPath(), '/');
                 int yumCalculationDepth = hostingLocalRepo.getYumRootDepth();
                 if (itemPathFolders.length >= yumCalculationDepth) {
@@ -87,6 +92,18 @@ public class YumCalculationInterceptor extends StorageInterceptorAdapter {
                 }
             }
         }
+    }
+
+    private boolean isYumGroupFile(final String path, LocalRepoDescriptor hostingLocalRepo) {
+        List<String> yumGroupFileNames = PathUtils.delimitedListToStringList(
+                hostingLocalRepo.getYumGroupFileNames(), ",");
+
+        return StringUtils.isNotBlank(Iterables.find(yumGroupFileNames, new Predicate<String>() {
+            @Override
+            public boolean apply(@Nullable String input) {
+                return StringUtils.endsWith(path, YumAddon.REPO_DATA_DIR + input);
+            }
+        }, null));
     }
 
     private YumAddon getYumAddon() {

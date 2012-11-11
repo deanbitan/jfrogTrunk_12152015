@@ -73,8 +73,12 @@ public class KeyValueList extends ArrayList<String> {
                 Property propertyDescriptor = new Property();
                 propertyDescriptor.setName(split[0]);
                 String value = split[1];
-                String[] valueSplit = StringUtils.split(value, ",");
-                List<String> values = Lists.newArrayList(valueSplit);
+                String replacedValue = StringUtils.replace(value, "\\,", "|");
+                String[] valueSplit = StringUtils.split(replacedValue, ",");
+                List<String> values = Lists.newArrayList();
+                for (String s : valueSplit) {
+                    values.add(StringUtils.replace(s, "|", ","));
+                }
                 map.put(propertyDescriptor, values);
             } else if (split.length == 1) {
                 //Empty value

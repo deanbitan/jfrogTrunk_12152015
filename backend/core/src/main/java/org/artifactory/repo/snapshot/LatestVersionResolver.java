@@ -18,6 +18,7 @@
 
 package org.artifactory.repo.snapshot;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
@@ -33,7 +34,6 @@ import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.DownloadRequestContext;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.NullRequestContext;
-import org.codehaus.plexus.util.StringUtils;
 
 /**
  * Resolves the latest unique snapshot version given a non-unique Maven snapshot artifact request or a request with
@@ -41,15 +41,13 @@ import org.codehaus.plexus.util.StringUtils;
  *
  * @author Shay Yaakov
  */
-public abstract class LatestSnapshotResolver {
+public abstract class LatestVersionResolver {
 
     /**
-     * Checks if the given path is in a non unique maven format and replaces it with the path to the latest version of
-     * that file (whether it's unique or not).
-     *
-     * @param path
-     * @return If the given path is in a maven non unique format and this repo is in maven layout then returns the
-     *         latest path; if not, returns the given path as is
+     * Retrieves a transformed request context with the actual latest release/integration version.
+     * Request with the [RELEASE] token will be transformed to the actual release version.
+     * For maven a SNAPSHOT request will be transformed to a unique snapshot version while for non-maven
+     * the [INTEGRATION] token will be transformed to the actual integration version according the the underlying repo layout.
      */
     public InternalRequestContext getDynamicVersionContext(Repo repo, InternalRequestContext originalRequestContext) {
         String path = originalRequestContext.getResourcePath();
@@ -57,8 +55,7 @@ public abstract class LatestSnapshotResolver {
         if (!ConstantValues.requestDisableVersionTokens.getBoolean() && StringUtils.isNotBlank(
                 path) && repoLayout != null) {
 
-            // For maven, only process non unique snapshot requests
-            if (repo.getDescriptor().isMavenRepoLayout() && !MavenNaming.isNonUniqueSnapshot(path)) {
+            if (repo.getDescriptor().isMavenRepoLayout() && shouldSkipMavenRequest(path)) {
                 return originalRequestContext;
             }
 
@@ -71,6 +68,13 @@ public abstract class LatestSnapshotResolver {
         }
 
         return originalRequestContext;
+    }
+
+    /**
+     * For maven, only process non unique snapshot requests or path with release tokens
+     */
+    private boolean shouldSkipMavenRequest(String path) {
+        return !MavenNaming.isNonUniqueSnapshot(path) && !StringUtils.contains(path, "[RELEASE]");
     }
 
     /**

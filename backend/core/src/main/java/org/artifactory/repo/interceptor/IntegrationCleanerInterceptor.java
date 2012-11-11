@@ -42,6 +42,8 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author yoav
@@ -50,12 +52,17 @@ public class IntegrationCleanerInterceptor extends StorageInterceptorAdapter {
     private static final Logger log = LoggerFactory.getLogger(IntegrationCleanerInterceptor.class);
 
     /**
+     * Holds all the snapshot folders currently being cleaned up (1.0-SNAPSHOT, 1.1-SNAPSHOT etc)
+     * So there will be only one worker which cleans them up to avoid locking issues
+     */
+    private ConcurrentMap<String, String> foldersInTransit = new ConcurrentHashMap<String, String>();
+
+    /**
      * Cleanup old snapshots etc.
      *
      * @param fsItem
      * @param statusHolder
      */
-    //@Async(delayUntilAfterCommit = true, transactional = true, shared = true, failIfNotScheduledFromTransaction = true)
     @Override
     public void afterCreate(VfsItem fsItem, MutableStatusHolder statusHolder) {
         final StoringRepo repo = (StoringRepo) VfsItemFactory.getStoringRepo(fsItem);
@@ -69,43 +76,50 @@ public class IntegrationCleanerInterceptor extends StorageInterceptorAdapter {
 
         int maxUniqueSnapshots = ((LocalRepo) repo).getMaxUniqueSnapshots();
         if (maxUniqueSnapshots > 0) {
-
             JcrFile file = (JcrFile) fsItem;
-
-            ModuleInfo deployedModuleInfo = repo.getItemModuleInfo(file.getRelativePath());
-            if (!deployedModuleInfo.isValid() || !deployedModuleInfo.isIntegration()) {
-                return;
-            }
-
-            RepoLayout repoLayout = repo.getDescriptor().getRepoLayout();
-            ModuleInfo baseRevisionModule = getBaseRevisionModuleInfo(deployedModuleInfo);
-            String baseArtifactPath = ModuleInfoUtils.constructArtifactPath(baseRevisionModule, repoLayout, false);
-
-            SnapshotVersionsRetriever retriever = new SnapshotVersionsRetriever();
-            JcrTreeNode artifactSearchNode = retriever.getTreeNode(repo, repoLayout, baseArtifactPath, false);
-            TreeMultimap<Calendar, VfsItem> cleanupCandidates = TreeMultimap.create();
-            if (artifactSearchNode != null) {
-                cleanupCandidates = retriever.collectVersionsItems(repo, artifactSearchNode);
-            }
-
-            if (repoLayout.isDistinctiveDescriptorPathPattern()) {
-
-                String baseDescriptorPath = ModuleInfoUtils.constructDescriptorPath(baseRevisionModule, repoLayout,
-                        false);
-                if (!baseDescriptorPath.equals(baseArtifactPath)) {
-
-                    JcrTreeNode descriptorSearchNode = retriever.getTreeNode(repo, repoLayout, baseDescriptorPath,
-                            false);
-                    if (descriptorSearchNode != null) {
-                        cleanupCandidates = retriever.collectVersionsItems(repo, descriptorSearchNode);
+            String parentPath = file.getParent();
+            String currentCleanup = foldersInTransit.putIfAbsent(parentPath, parentPath);
+            if (currentCleanup == null) {
+                try {
+                    log.debug("Adding parent folder '{}' to in transit map.", parentPath);
+                    ModuleInfo deployedModuleInfo = repo.getItemModuleInfo(file.getRelativePath());
+                    if (!deployedModuleInfo.isValid() || !deployedModuleInfo.isIntegration()) {
+                        return;
                     }
+
+                    conditionalCleanup(repo, maxUniqueSnapshots, deployedModuleInfo);
+                } finally {
+                    log.debug("Removing '{}' from in transit map.", parentPath);
+                    foldersInTransit.remove(parentPath);
                 }
             }
+        }
+    }
 
-            Multimap<Calendar, ModuleInfo> folderIntegrationMap = retriever.getFolderIntegrationMap();
-            while (cleanupCandidates.keySet().size() > maxUniqueSnapshots) {
-                performCleanup(retriever, repo, cleanupCandidates, folderIntegrationMap);
+    private void conditionalCleanup(StoringRepo repo, int maxUniqueSnapshots, ModuleInfo deployedModuleInfo) {
+        RepoLayout repoLayout = repo.getDescriptor().getRepoLayout();
+        ModuleInfo baseRevisionModule = getBaseRevisionModuleInfo(deployedModuleInfo);
+        String baseArtifactPath = ModuleInfoUtils.constructArtifactPath(baseRevisionModule, repoLayout, false);
+        SnapshotVersionsRetriever retriever = new SnapshotVersionsRetriever();
+        JcrTreeNode artifactSearchNode = retriever.getTreeNode(repo, repoLayout, baseArtifactPath, false);
+        TreeMultimap<Calendar, VfsItem> cleanupCandidates = TreeMultimap.create();
+        if (artifactSearchNode != null) {
+            cleanupCandidates = retriever.collectVersionsItems(repo, artifactSearchNode);
+        }
+
+        if (repoLayout.isDistinctiveDescriptorPathPattern()) {
+            String baseDescriptorPath = ModuleInfoUtils.constructDescriptorPath(baseRevisionModule, repoLayout, false);
+            if (!baseDescriptorPath.equals(baseArtifactPath)) {
+                JcrTreeNode descriptorSearchNode = retriever.getTreeNode(repo, repoLayout, baseDescriptorPath, false);
+                if (descriptorSearchNode != null) {
+                    cleanupCandidates = retriever.collectVersionsItems(repo, descriptorSearchNode);
+                }
             }
+        }
+
+        Multimap<Calendar, ModuleInfo> folderIntegrationMap = retriever.getFolderIntegrationMap();
+        while (cleanupCandidates.keySet().size() > maxUniqueSnapshots) {
+            performCleanup(retriever, repo, cleanupCandidates, folderIntegrationMap);
         }
     }
 
@@ -175,6 +189,8 @@ public class IntegrationCleanerInterceptor extends StorageInterceptorAdapter {
     }
 
     private void bruteForceDeleteAndReplicateEvent(VfsItem item) {
-        InternalContextHelper.get().getJcrRepoService().bruteForceDeleteAndReplicateEvent(item);
+        if (item != null) {
+            InternalContextHelper.get().getJcrRepoService().bruteForceDeleteAndReplicateEvent(item);
+        }
     }
 }

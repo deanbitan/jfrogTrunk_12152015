@@ -71,6 +71,7 @@ public class HttpRepoAdvancedPanel extends Panel {
         addLayoutFields(action);
         addNetworkFields(action, mutableDescriptor);
         addCacheFields();
+        addOtherFields();
         addFlags(action);
     }
 
@@ -216,6 +217,16 @@ public class HttpRepoAdvancedPanel extends Panel {
         cacheBorder.add(new TextField<Long>(fieldName, Long.class).setRequired(true).
                 add(new MinimumValidator<Long>(0L)));
         cacheBorder.add(new SchemaHelpBubble(fieldName + ".help"));
+    }
+
+    private void addOtherFields() {
+        WebMarkupContainer otherBorder = new WebMarkupContainer("otherBorder");
+        otherBorder.add(new TitledBorderBehavior("fieldset-border", "Other"));
+        add(otherBorder);
+
+        // query params
+        otherBorder.add(new TextField("queryParams"));
+        otherBorder.add(new SchemaHelpBubble("queryParams.help"));
     }
 
     private void addFlags(CreateUpdateAction action) {

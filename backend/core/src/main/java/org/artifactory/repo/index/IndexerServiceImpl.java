@@ -366,9 +366,14 @@ public class IndexerServiceImpl implements InternalIndexerService {
                         }
                         LocalRepo localRepo = indexedRepo.isLocal() ? (LocalRepo) indexedRepo :
                                 ((RemoteRepo) indexedRepo).getLocalCacheRepo();
-                        //Extract aside the index from the local repo
-                        if (localRepos.contains(localRepo)) {
-                            indexer.mergeInto(localRepo, extractedLocalRepoIndexes);
+                        try {
+                            //Extract aside the index from the local repo
+                            if (localRepos.contains(localRepo)) {
+                                indexer.mergeInto(localRepo, extractedLocalRepoIndexes);
+                            }
+                        } catch (Exception e) {
+                            log.warn("Could not merge index of local repo '{}' into virtual repo '{}'",
+                                    localRepo.getKey(), virtualRepo.getKey());
                         }
                     }
                     //Store the index into the virtual repo

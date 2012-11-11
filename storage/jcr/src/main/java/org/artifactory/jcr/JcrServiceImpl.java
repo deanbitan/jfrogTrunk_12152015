@@ -458,7 +458,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
         log.debug("Importing '{}'.", targetRepoPath);
         //Takes a read lock
         ArtifactoryStorageContext context = StorageContextHelper.get();
-        context.getRepositoryService().assertValidDeployPath(targetRepoPath);
+        context.getRepositoryService().assertValidDeployPath(targetRepoPath, file.length());
         JcrFile jcrFile = null;
         try {
             jcrFile = parentFolder.getRepo().getLockedJcrFile(targetRepoPath, true);
@@ -508,6 +508,11 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
 
     @Override
     public List<String> getChildrenNames(String absPath) {
+        return getChildrenNames(absPath, false);
+    }
+
+    @Override
+    public List<String> getChildrenNames(String absPath, boolean folderOnly) {
         JcrSession session = getManagedSession();
         if (!session.itemExists(absPath)) {
             throw new RepositoryRuntimeException("Tried to get children of a non exiting node '" + absPath + "'.");
@@ -519,7 +524,7 @@ public class JcrServiceImpl implements JcrService, JcrRepoService, ContextReadin
             while (nodes.hasNext()) {
                 Node childNode = nodes.nextNode();
                 String name = childNode.getName();
-                if (!NODE_ARTIFACTORY_METADATA.equals(name)) {
+                if (!NODE_ARTIFACTORY_METADATA.equals(name) && (!folderOnly || JcrHelper.isFolder(childNode))) {
                     names.add(name);
                 }
             }

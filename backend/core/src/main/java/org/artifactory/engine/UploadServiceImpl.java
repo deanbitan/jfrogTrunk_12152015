@@ -168,7 +168,10 @@ public class UploadServiceImpl implements InternalUploadService {
         }
 
         try {
-            repoService.assertValidDeployPath(targetRepository, request.getPath());
+            // Servlet container doesn't support long values so we take it manually from the header
+            String contentLengthHeader = request.getHeader("Content-Length");
+            long contentLength = StringUtils.isBlank(contentLengthHeader) ? -1 : Long.parseLong(contentLengthHeader);
+            repoService.assertValidDeployPath(targetRepository, request.getPath(), contentLength);
         } catch (RepoRejectException e) {
             handleInvalidDeployPathError(response, e);
             return;

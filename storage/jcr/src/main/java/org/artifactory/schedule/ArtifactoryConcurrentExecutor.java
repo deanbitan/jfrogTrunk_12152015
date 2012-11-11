@@ -20,6 +20,7 @@ package org.artifactory.schedule;
 
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.jcr.spring.ArtifactoryStorageContext;
 import org.artifactory.jcr.spring.StorageContextHelper;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
@@ -27,9 +28,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -39,13 +39,19 @@ import java.util.concurrent.TimeUnit;
  */
 class ArtifactoryConcurrentExecutor implements Executor {
     private final ArtifactoryStorageContext storageContext;
-    private final ExecutorService executor;
+    private final ThreadPoolExecutor executor;
 
     ArtifactoryConcurrentExecutor() {
         CustomizableThreadFactory threadFactory = new CustomizableThreadFactory("art-exec-");
-        threadFactory.setThreadPriority(Thread.NORM_PRIORITY - 1);
+        threadFactory.setThreadPriority(Thread.NORM_PRIORITY);
         executor = new ThreadPoolExecutor(
-                0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), threadFactory);
+                ConstantValues.asyncCorePoolSize.getInt(),
+                ConstantValues.asyncCorePoolSize.getInt(),
+                ConstantValues.asyncPoolTtlSecs.getInt(),
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(ConstantValues.asyncPoolMaxQueueSize.getInt()),
+                threadFactory);
+        executor.allowCoreThreadTimeOut(true);
         storageContext = StorageContextHelper.get();
     }
 

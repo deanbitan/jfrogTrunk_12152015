@@ -368,6 +368,43 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
     }
 
     @Test
+    public void hasPermissionWithSpecificTarget() {
+        SimpleUser user = createNonAdminUser("shay");
+        UserInfo userInfo = user.getDescriptor();
+
+        RepoPath testRepo1Path = InternalRepoPathFactory.create("specific-repo", "com");
+
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("specific-repo")).andReturn(localRepoMock).anyTimes();
+        expectGetAllAclsCallWithAnyArray();
+        replay(internalAclManagerMock, repositoryServiceMock);
+        boolean canRead = service.canRead(userInfo, testRepo1Path);
+        assertTrue(canRead, "User should have read permissions for this path");
+        verify(internalAclManagerMock, repositoryServiceMock);
+        reset(internalAclManagerMock);
+
+        expectGetAllAclsCallWithAnyArray();
+        replay(internalAclManagerMock);
+        boolean canDeploy = service.canDeploy(userInfo, testRepo1Path);
+        assertTrue(canDeploy, "User should have deploy permissions for this path");
+        verify(internalAclManagerMock, repositoryServiceMock);
+        reset(internalAclManagerMock);
+
+        expectGetAllAclsCallWithAnyArray();
+        replay(internalAclManagerMock);
+        boolean canDelete = service.canDelete(userInfo, testRepo1Path);
+        assertFalse(canDelete, "User should not have delete permissions for this path");
+        verify(internalAclManagerMock, repositoryServiceMock);
+        reset(internalAclManagerMock);
+
+        expectGetAllAclsCallWithAnyArray();
+        replay(internalAclManagerMock);
+        boolean canAdmin = service.canAdmin(userInfo, testRepo1Path);
+        assertFalse(canAdmin, "User should not have admin permissions for this path");
+        verify(internalAclManagerMock, repositoryServiceMock);
+        reset(internalAclManagerMock, repositoryServiceMock);
+    }
+
+    @Test
     public void hasPermissionForGroupInfo() {
         GroupInfo groupInfo = InfoFactoryHolder.get().createGroup("deployGroup");
 
@@ -640,6 +677,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         expect(internalAclManagerMock.findAclById(permissionTargets.get(1))).andReturn(testAcls.get(1));
         expect(internalAclManagerMock.findAclById(permissionTargets.get(2))).andReturn(testAcls.get(2));
         expect(internalAclManagerMock.findAclById(permissionTargets.get(3))).andReturn(testAcls.get(3));
+        expect(internalAclManagerMock.findAclById(permissionTargets.get(4))).andReturn(testAcls.get(4));
         replay(internalAclManagerMock);
     }
 
@@ -662,12 +700,16 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         adminAce.setDeploy(true);
         adminAce.setRead(true);
         MutableAceInfo readerAce = factory.createAce("user", false, ArtifactoryPermission.READ.getMask());
+        MutableAceInfo deleteAce = factory.createAce("shay", false, ArtifactoryPermission.DELETE.getMask());
+        deleteAce.setDeploy(true);
+        deleteAce.setAnnotate(true);
+        deleteAce.setRead(true);
         MutableAceInfo userGroupAce =
                 factory.createAce(userAndGroupSharedName, false, ArtifactoryPermission.READ.getMask());
         MutableAceInfo deployerGroupAce =
                 factory.createAce("deployGroup", true, ArtifactoryPermission.DEPLOY.getMask());
         Set<AceInfo> aces = new HashSet<AceInfo>(
-                Arrays.asList(adminAce, readerAce, userGroupAce, deployerGroupAce));
+                Arrays.asList(adminAce, readerAce, deleteAce, userGroupAce, deployerGroupAce));
         Acl aclInfo = new Acl(factory.createAcl(pmi, aces, "me"));
 
         PermissionTargetInfo pmi2 = InfoFactoryHolder.get().createPermissionTarget("target2",
@@ -695,10 +737,19 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         Set<AceInfo> multiTargetAces = new HashSet<AceInfo>(Arrays.asList(multiReaderGroupAce, multiReaderAnonAce));
         Acl multiReposAcl = new Acl(factory.createAcl(multiReposTarget, multiTargetAces, "me"));
 
-        List<Acl> acls = Arrays.asList(aclInfo, aclInfo2, anyTargetAcl, multiReposAcl);
+        // acl for any repository with specific path delete permissions to user
+        MutablePermissionTargetInfo anyRepoSpecificPathTarget = InfoFactoryHolder.get().createPermissionTarget();
+        anyRepoSpecificPathTarget.setName("anyRepoSpecificPathTarget");
+        anyRepoSpecificPathTarget.setRepoKeys(Arrays.asList("specific-repo"));
+        anyRepoSpecificPathTarget.setIncludes(Arrays.asList("com/acme/**"));
+        Set<AceInfo> specificDeleteAces = new HashSet<AceInfo>(Arrays.asList(deleteAce));
+        Acl allReposSpecificPathAcl = new Acl(factory.createAcl(anyRepoSpecificPathTarget, specificDeleteAces, "me"));
+
+        List<Acl> acls = Arrays.asList(aclInfo, aclInfo2, anyTargetAcl, multiReposAcl, allReposSpecificPathAcl);
         permissionTargets = Arrays.asList(
                 aclInfo.getPermissionTarget(), aclInfo2.getPermissionTarget(),
-                anyTargetAcl.getPermissionTarget(), multiReposAcl.getPermissionTarget());
+                anyTargetAcl.getPermissionTarget(), multiReposAcl.getPermissionTarget(),
+                allReposSpecificPathAcl.getPermissionTarget());
         return acls;
     }
 

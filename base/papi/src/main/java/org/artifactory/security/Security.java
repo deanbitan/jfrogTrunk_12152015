@@ -43,7 +43,9 @@ public interface Security {
     /**
      * @return True if the current user can read the specified path implicitly by having a read permissions on part of
      *         the path
+     * @deprecated Equivalent to canRead on a folder path - Will be removed in next major version
      */
+    @Deprecated
     boolean canImplicitlyReadParentPath(RepoPath repoPath);
 
     /**

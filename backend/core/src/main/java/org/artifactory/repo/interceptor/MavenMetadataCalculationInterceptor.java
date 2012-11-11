@@ -18,18 +18,16 @@
 
 package org.artifactory.repo.interceptor;
 
-import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.jcr.factory.JcrFsItemFactory;
 import org.artifactory.jcr.factory.VfsItemFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.storage.StorageInterceptorAdapter;
-import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.sapi.fs.VfsItem;
 
 /**
@@ -50,20 +48,28 @@ public class MavenMetadataCalculationInterceptor extends StorageInterceptorAdapt
     public void afterCreate(VfsItem fsItem, MutableStatusHolder statusHolder) {
         if (shouldRecalculateOnCreate(fsItem)) {
             // calculate maven metadata on the grandparent folder (the artifact id node)
-            VfsFolder artifactIdFolder = null;
+            if (MavenNaming.isUniqueSnapshot(fsItem.getPath())) {
+                // unique snapshots require instant metadata calculation since it is used to calculate future snapshots
+                RepoPath parentFolder = fsItem.getRepoPath().getParent();
+                ContextHelper.get().getRepositoryService().calculateMavenMetadata(parentFolder);
+            }
 
             if (isPomFile(fsItem)) {
-                artifactIdFolder = fsItem.getAncestor(2);
-            } else if (MavenNaming.isUniqueSnapshot(fsItem.getRelativePath())) {
-                artifactIdFolder = fsItem.getAncestor(1);
-            }
-
-            if (artifactIdFolder != null) {
-                ArtifactoryContext context = ContextHelper.get();
-                RepositoryService repositoryService = context.getRepositoryService();
-                repositoryService.calculateMavenMetadata(artifactIdFolder.getRepoPath());
+                // for pom files we need to trigger metadata calculation on the grandparent -
+                // potential new version and snapshot.
+                // this can be done asynchronously since it's usually not requires instant update
+                RepoPath grandparentFolder = getAncestor(fsItem.getRepoPath(), 2);
+                ContextHelper.get().getRepositoryService().calculateMavenMetadataAsync(grandparentFolder);
             }
         }
+    }
+
+    public static RepoPath getAncestor(RepoPath repoPath, int degree) {
+        RepoPath result = repoPath.getParent();   // first ancestor
+        for (int i = degree - 1; i > 0 && result != null; i--) {
+            result = result.getParent();
+        }
+        return result;
     }
 
     private boolean shouldRecalculateOnCreate(VfsItem fsItem) {

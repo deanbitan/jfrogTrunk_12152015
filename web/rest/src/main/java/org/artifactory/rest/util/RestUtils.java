@@ -82,6 +82,13 @@ public abstract class RestUtils {
         return sb.toString();
     }
 
+    public static String buildDownloadUri(HttpServletRequest request, String repoKey, String relativePath) {
+        String servletContextUrl = HttpUtils.getServletContextUrl(request);
+        StringBuilder sb = new StringBuilder(servletContextUrl);
+        sb.append("/").append(repoKey).append("/").append(relativePath);
+        return sb.toString();
+    }
+
     public static String buildSecurityInfoUri(HttpServletRequest request, String entityType, String entityKey)
             throws UnsupportedEncodingException {
         String servletContextUrl = HttpUtils.getServletContextUrl(request);

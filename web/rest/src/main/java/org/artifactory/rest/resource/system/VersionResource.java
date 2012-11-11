@@ -44,7 +44,7 @@ import java.util.List;
  * @author Tomer Cohen
  */
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @Path(SystemRestConstants.PATH_ROOT + "/" + SystemRestConstants.PATH_VERSION)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class VersionResource {

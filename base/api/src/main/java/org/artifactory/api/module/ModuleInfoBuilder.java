@@ -19,6 +19,7 @@
 package org.artifactory.api.module;
 
 import com.google.common.collect.Maps;
+import org.artifactory.fs.FileLayoutInfo;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -41,7 +42,7 @@ public class ModuleInfoBuilder implements Serializable {
     public ModuleInfoBuilder() {
     }
 
-    public ModuleInfoBuilder(ModuleInfo copy) {
+    public ModuleInfoBuilder(FileLayoutInfo copy) {
         organization = copy.getOrganization();
         module = copy.getModule();
         baseRevision = copy.getBaseRevision();

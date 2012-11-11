@@ -3636,6 +3636,10 @@ div.general-settings-panel input.text-file {
     color: blue;
 }
 
+.green-listed-label {
+    color: green;
+}
+
 .orange-listed-label {
     color: #FF6600;
 }
@@ -4330,7 +4334,7 @@ div.wupb-progressBar .wupb-background {
 }
 
 /*  Small Text box for hours fields */
-.cron-fields input.indexing-interval-hours, input.retention-period-hours {
+.cron-fields input.indexing-interval-hours, input.retention-period-hours, input.yum-folder-depth {
     width: 70px;
 }
 
@@ -5554,7 +5558,7 @@ td.warn span {
 }
 
 .checkbox-row .field {
-    min-width: 180px;
+    min-width: 210px;
     padding: 0 10px 0 0;
 }
 
@@ -5587,6 +5591,10 @@ td.warn span {
 
 .local-repo-config .field-row select {
     width: 266px;
+}
+
+.local-repo-config .line-sep {
+    height: 88px;
 }
 
 .advanced-remote-repo .line-sep {

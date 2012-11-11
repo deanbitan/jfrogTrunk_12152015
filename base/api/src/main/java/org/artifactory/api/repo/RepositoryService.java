@@ -78,6 +78,7 @@ public interface RepositoryService extends ImportableExportable {
 
     /**
      * Doesn't work for virtual repositories (RTFACT-4891)
+     *
      * @param key
      * @return
      */
@@ -604,7 +605,7 @@ public interface RepositoryService extends ImportableExportable {
     @Lock(transactional = true)
     MetadataInfo getVirtualMetadataInfo(RepoPath repoPath, String metadataName);
 
-    void assertValidDeployPath(RepoPath repoPath) throws RepoRejectException;
+    void assertValidDeployPath(RepoPath repoPath, long contentLength) throws RepoRejectException;
 
     /**
      * @param remoteRepoKey The remote repository key

@@ -70,17 +70,17 @@ public abstract class ModuleInfoUtils {
     }
 
     public static ModuleInfo moduleInfoFromArtifactPath(String itemPath, RepoLayout repoLayout,
-            boolean supportVersionstokens) {
+            boolean supportVersionsTokens) {
         ModuleInfo moduleInfo = null;
         if (repoLayout.isDistinctiveDescriptorPathPattern()) {
-            moduleInfo = moduleInfoFromItemPath(itemPath, repoLayout, true, supportVersionstokens);
+            moduleInfo = moduleInfoFromItemPath(itemPath, repoLayout, true, supportVersionsTokens);
             if (moduleInfo.isValid() && StringUtils.isBlank(moduleInfo.getExt())) {
                 moduleInfo = new ModuleInfoBuilder(moduleInfo).ext(PathUtils.getExtension(itemPath)).build();
             }
         }
 
         if ((moduleInfo == null) || !moduleInfo.isValid()) {
-            moduleInfo = moduleInfoFromItemPath(itemPath, repoLayout, false, supportVersionstokens);
+            moduleInfo = moduleInfoFromItemPath(itemPath, repoLayout, false, supportVersionsTokens);
         }
 
         return moduleInfo;

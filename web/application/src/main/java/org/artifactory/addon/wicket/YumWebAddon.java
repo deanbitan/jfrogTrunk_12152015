@@ -22,7 +22,7 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.repo.RepoPath;
+import org.artifactory.fs.FileInfo;
 
 import javax.annotation.Nullable;
 
@@ -41,5 +41,5 @@ public interface YumWebAddon extends Addon {
     void createAndAddLocalRepoYumSection(Form<LocalRepoDescriptor> form, String repoKey, boolean isCreate);
 
     @Nullable
-    ITab getRpmInfoTab(String tabTitle, RepoPath repoPath) throws Exception;
+    ITab getRpmInfoTab(String tabTitle, FileInfo fileInfo);
 }

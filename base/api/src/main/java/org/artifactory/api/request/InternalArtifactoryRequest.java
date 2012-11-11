@@ -39,6 +39,8 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     private Boolean searchForExistingResourceOnRemoteRequest;
 
+    private Boolean replicationDownloadRequest;
+
     private String alternativeRemoteDownloadUrl;
 
     private String servletContextUrl = "";
@@ -159,6 +161,10 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         this.alternativeRemoteDownloadUrl = alternativeRemoteDownloadUrl;
     }
 
+    public void setReplicationDownloadRequest(Boolean replicationDownloadRequest) {
+        this.replicationDownloadRequest = replicationDownloadRequest;
+    }
+
     @Override
     public void setZipResourcePath(String zipResourcePath) {
         super.setZipResourcePath(zipResourcePath);
@@ -178,6 +184,9 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         }
         if (PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL.equals(name)) {
             return alternativeRemoteDownloadUrl;
+        }
+        if (PARAM_REPLICATION_DOWNLOAD_REQUESET.equals(name)) {
+            return String.valueOf(replicationDownloadRequest);
         }
         return null;
     }

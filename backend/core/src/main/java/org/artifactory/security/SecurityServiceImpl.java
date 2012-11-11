@@ -28,6 +28,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.mail.MailService;
@@ -36,6 +37,7 @@ import org.artifactory.api.security.SecurityListener;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserInfoBuilder;
 import org.artifactory.api.security.ldap.LdapService;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.config.ConfigurationException;
@@ -87,9 +89,12 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -100,6 +105,8 @@ import java.util.concurrent.TimeUnit;
         initAfter = {JcrService.class, UserGroupManager.class, InternalAclManager.class})
 public class SecurityServiceImpl implements InternalSecurityService {
     private static final Logger log = LoggerFactory.getLogger(SecurityServiceImpl.class);
+
+    private static final String DELETE_FOR_SECURITY_MARKER_FILENAME = ".deleteForSecurityMarker";
 
     @Autowired
     private InternalAclManager internalAclManager;
@@ -142,6 +149,9 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     @Override
     public void init() {
+        // Check if we need to dump the current security config (.deleteForSecurityMarker doesn't exist)
+        dumpCurrentSecurityConfig();
+
         //Locate and import external configuration file
         checkForExternalConfiguration();
         checkOcmFolders();
@@ -172,6 +182,43 @@ public class SecurityServiceImpl implements InternalSecurityService {
         } finally {
             rawSession.logout();
         }
+    }
+
+    private void dumpCurrentSecurityConfig() {
+        File deleteForConsistencyFix = getSecurityDumpMarkerFile();
+        if (deleteForConsistencyFix.exists()) {
+            return;
+        }
+
+        File etcDir = ArtifactoryHome.get().getEtcDir();
+        ExportSettingsImpl exportSettings = new ExportSettingsImpl(etcDir);
+
+        DateFormat formatter = new SimpleDateFormat("yyyyMMdd.HHmmss");
+        String timestamp = formatter.format(exportSettings.getTime());
+        String fileName = "security." + timestamp + ".xml";
+        exportSecurityInfo(exportSettings, fileName);
+        log.debug("Successfully dumped '{}' configuration file to '{}'", fileName, etcDir.getAbsolutePath());
+
+        createSecurityDumpMarkerFile();
+    }
+
+    /**
+     * Creates/recreates the file that enabled security descriptor dump.
+     * Also checks we have proper write access to the data folder.
+     *
+     * @return true if the deleteForSecurityMarker file did not exist and was created
+     */
+    private void createSecurityDumpMarkerFile() {
+        File securityDumpMarkerFile = getSecurityDumpMarkerFile();
+        try {
+            securityDumpMarkerFile.createNewFile();
+        } catch (IOException e) {
+            log.debug("Could not create file: '" + securityDumpMarkerFile.getAbsolutePath() + "'.", e);
+        }
+    }
+
+    private File getSecurityDumpMarkerFile() {
+        return new File(ArtifactoryHome.get().getDataDir(), DELETE_FOR_SECURITY_MARKER_FILENAME);
     }
 
     /**
@@ -846,32 +893,66 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     @Override
     public boolean canRead(RepoPath repoPath) {
-        return hasPermission(repoPath, ArtifactoryPermission.READ, false);
+        return hasPermission(repoPath, ArtifactoryPermission.READ);
     }
 
     @Override
     public boolean canImplicitlyReadParentPath(RepoPath repoPath) {
-        return hasPermission(repoPath, ArtifactoryPermission.READ, true);
+        return hasPermission(addSlashToRepoPath(repoPath), ArtifactoryPermission.READ);
+    }
+
+    public static RepoPath addSlashToRepoPath(final RepoPath repoPath) {
+        return new RepoPath() {
+            @Override
+            public String getPath() {
+                return repoPath.getPath() + "/";
+            }
+
+            @Override
+            public String getRepoKey() {
+                return repoPath.getRepoKey();
+            }
+
+            @Override
+            public String getId() {
+                return repoPath.getId();
+            }
+
+            @Override
+            public String getName() {
+                return repoPath.getName();
+            }
+
+            @Override
+            public RepoPath getParent() {
+                return repoPath.getParent();
+            }
+
+            @Override
+            public boolean isRoot() {
+                return repoPath.isRoot();
+            }
+        };
     }
 
     @Override
     public boolean canAnnotate(RepoPath repoPath) {
-        return hasPermission(repoPath, ArtifactoryPermission.ANNOTATE, false);
+        return hasPermission(repoPath, ArtifactoryPermission.ANNOTATE);
     }
 
     @Override
     public boolean canDeploy(RepoPath repoPath) {
-        return hasPermission(repoPath, ArtifactoryPermission.DEPLOY, false);
+        return hasPermission(repoPath, ArtifactoryPermission.DEPLOY);
     }
 
     @Override
     public boolean canDelete(RepoPath repoPath) {
-        return hasPermission(repoPath, ArtifactoryPermission.DELETE, false);
+        return hasPermission(repoPath, ArtifactoryPermission.DELETE);
     }
 
     @Override
     public boolean canAdmin(RepoPath repoPath) {
-        return hasPermission(repoPath, ArtifactoryPermission.ADMIN, false);
+        return hasPermission(repoPath, ArtifactoryPermission.ADMIN);
     }
 
     @Override
@@ -1027,18 +1108,18 @@ public class SecurityServiceImpl implements InternalSecurityService {
         RepoPath path = InternalRepoPathFactory.repoRootPath(repoKey);
         for (ArtifactoryPermission permission : ArtifactoryPermission.values()) {
             Permission artifactoryPermission = permissionFor(permission);
-            if (hasPermission(path, artifactoryPermission, false)) {
+            if (hasPermission(path, artifactoryPermission)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean hasPermission(RepoPath repoPath, ArtifactoryPermission permission, boolean checkPartialPath) {
-        return hasPermission(repoPath, permissionFor(permission), checkPartialPath);
+    private boolean hasPermission(RepoPath repoPath, ArtifactoryPermission permission) {
+        return hasPermission(repoPath, permissionFor(permission));
     }
 
-    private boolean hasPermission(RepoPath repoPath, Permission permission, boolean checkPartialPath) {
+    private boolean hasPermission(RepoPath repoPath, Permission permission) {
         Authentication authentication = AuthenticationHelper.getAuthentication();
         if (!isAuthenticated(authentication)) {
             return false;
@@ -1055,7 +1136,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
 
         ArtifactorySid[] sids = getUserEffectiveSids(getSimpleUser(authentication));
-        return isGranted(repoPath, permission, sids, checkPartialPath);
+        return isGranted(repoPath, permission, sids);
     }
 
     private boolean hasPermission(SimpleUser user, RepoPath repoPath, Permission permission) {
@@ -1089,23 +1170,15 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     private boolean isGranted(RepoPath repoPath, Permission permission, ArtifactorySid[] sids) {
-        return isGranted(repoPath, permission, sids, false);
-    }
-
-    private boolean isGranted(
-            RepoPath repoPath, Permission permission, ArtifactorySid[] sids, boolean checkPartialPath) {
         List<Acl> acls = internalAclManager.getAllAcls(sids);
         for (Acl acl : acls) {
             String repoKey = repoPath.getRepoKey();
             String path = repoPath.getPath();
             PermissionTarget aclPermissionTarget = acl.getPermissionTarget();
             if (isPermissionTargetIncludesRepoKey(repoKey, aclPermissionTarget)) {
-                boolean containsPartialPath = false;
-                if (checkPartialPath) {
-                    containsPartialPath = isPartialPathIncluded(aclPermissionTarget, path);
-                }
-                boolean match = matches(aclPermissionTarget, path);
-                if (match || containsPartialPath) {
+                boolean checkPartialPath = (permission.getMask() & (ArtifactoryPermission.READ.getMask() | ArtifactoryPermission.DEPLOY.getMask())) != 0;
+                boolean match = matches(aclPermissionTarget, path, checkPartialPath);
+                if (match) {
                     boolean granted = acl.isGranted(new Permission[]{permission}, sids, false);
                     if (granted) {
                         return true;
@@ -1113,17 +1186,6 @@ public class SecurityServiceImpl implements InternalSecurityService {
                 }
             }
         }
-        return false;
-    }
-
-    private boolean isPartialPathIncluded(PermissionTarget aclPermissionTarget, String path) {
-        List<String> includesList = aclPermissionTarget.getIncludes();
-        for (String includes : includesList) {
-            if (includes.startsWith(path)) {
-                return true;
-            }
-        }
-
         return false;
     }
 
@@ -1177,13 +1239,13 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     @Override
     public void exportTo(ExportSettings settings) {
-        exportSecurityInfo(settings);
+        exportSecurityInfo(settings, FILE_NAME);
     }
 
-    private void exportSecurityInfo(ExportSettings settings) {
+    private void exportSecurityInfo(ExportSettings settings, String fileName) {
         //Export the security settings as xml using xstream
         SecurityInfo descriptor = getSecurityData();
-        String path = settings.getBaseDir() + "/" + FILE_NAME;
+        String path = settings.getBaseDir() + "/" + fileName;
         XStream xstream = getXstream();
         OutputStream os = null;
         try {
@@ -1387,8 +1449,9 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return (SimpleUser) authentication.getPrincipal();
     }
 
-    private static boolean matches(PermissionTarget aclPermissionTarget, String path) {
-        return PathMatcher.matches(path, aclPermissionTarget.getIncludes(), aclPermissionTarget.getExcludes());
+    private static boolean matches(PermissionTarget aclPermissionTarget, String path, boolean matchStart) {
+        return PathMatcher.matches(path, aclPermissionTarget.getIncludes(), aclPermissionTarget.getExcludes(),
+                matchStart);
     }
 
     private static XStream getXstream() {

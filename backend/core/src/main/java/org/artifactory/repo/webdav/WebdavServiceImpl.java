@@ -234,7 +234,10 @@ public class WebdavServiceImpl implements WebdavService {
         }
         //Check that we are allowed to write
         try {
-            repoService.assertValidDeployPath(repo, path);
+            // Servlet container doesn't support long values so we take it manually from the header
+            String contentLengthHeader = request.getHeader("Content-Length");
+            long contentLength = StringUtils.isBlank(contentLengthHeader) ? -1 : Long.parseLong(contentLengthHeader);
+            repoService.assertValidDeployPath(repo, path, contentLength);
         } catch (RepoRejectException rre) {
             response.sendError(rre.getErrorCode(), rre.getMessage(), log);
             return;

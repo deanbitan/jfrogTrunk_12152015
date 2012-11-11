@@ -19,7 +19,6 @@
 package org.artifactory.webapp.wicket.page.build.tabs;
 
 import com.google.common.collect.Lists;
-import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
@@ -33,7 +32,6 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
@@ -95,18 +93,8 @@ public class IssuesTabPanel extends Panel {
                 cellItem.add(link.add(new CssClass("item-link")));
             }
         });
-        columns.add(new PropertyColumn<Issue>(Model.of("Summary"), "summary") {
-            @Override
-            public void populateItem(Item<ICellPopulator<Issue>> cellItem, String componentId, IModel<Issue> model) {
-                final Issue issue = (Issue) cellItem.getParent().getParent().getDefaultModelObject();
-                LabeledValue label = new LabeledValue(componentId, "", issue.getSummary());
-                if (!issue.isAggregated()) {
-                    label.add(new CssClass("bold-listed-label"));
-                }
-                cellItem.add(label);
-            }
-        });
-        columns.add(new BooleanColumn<Issue>(Model.of("From Previous Build"), "aggregated"));
+        columns.add(new PropertyColumn<Issue>(Model.of("Summary"), "summary"));
+        columns.add(new BooleanColumn<Issue>(Model.of("Previous Build"), "aggregated"));
 
         IssueDataProvider dataProvider = new IssueDataProvider(affectedIssues);
 

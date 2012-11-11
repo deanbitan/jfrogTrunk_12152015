@@ -178,6 +178,12 @@ public class SearchResource {
         return new ArtifactLatestVersionSearchResource(restAddon, response);
     }
 
+    @Path(SearchRestConstants.PATH_BUILD_ARTIFACTS)
+    public BuildArtifactsSearchResource buildArtifactsSearch() {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return new BuildArtifactsSearchResource(restAddon, authorizationService, request, response);
+    }
+
     /**
      * Searches the repository and returns a plain text result
      *

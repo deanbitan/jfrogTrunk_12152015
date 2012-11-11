@@ -42,7 +42,7 @@ import javax.ws.rs.core.Response;
  * @author Shay Yaakov
  */
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @Path(MavenRestConstants.PATH_ROOT)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN})
 public class MavenResource {

@@ -24,7 +24,9 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.module.ModuleInfo;
+import org.artifactory.api.module.ModuleInfoBuilder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -70,8 +72,24 @@ public class GeneralTabPanel extends Panel {
 
         org.artifactory.fs.ItemInfo itemInfo = repoItem.getItemInfo();
         if (!itemInfo.isFolder()) {
+            ModuleInfo moduleInfo = null;
+            if (repoItem.getRepo().isMavenRepoLayout()) {
+                MavenArtifactInfo mavenArtifactInfo = MavenArtifactInfo.fromRepoPath(itemInfo.getRepoPath());
+                if (mavenArtifactInfo.isValid()) {
+                    moduleInfo = new ModuleInfoBuilder()
+                            .organization(mavenArtifactInfo.getGroupId())
+                            .module(mavenArtifactInfo.getArtifactId())
+                            .baseRevision(mavenArtifactInfo.getVersion())
+                            .classifier(mavenArtifactInfo.getClassifier())
+                            .ext(mavenArtifactInfo.getType())
+                            .build();
+                }
+            }
 
-            ModuleInfo moduleInfo = repositoryService.getItemModuleInfo(itemInfo.getRepoPath());
+
+            if (moduleInfo == null) {
+                moduleInfo = repositoryService.getItemModuleInfo(itemInfo.getRepoPath());
+            }
 
             if (moduleInfo.isValid()) {
                 this.replace(new DependencyDeclarationPanel(markupContainer.getId(), moduleInfo,

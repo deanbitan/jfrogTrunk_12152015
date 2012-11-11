@@ -160,17 +160,8 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
         if (isRpmFile()) {
             AddonsManager addonsProvider = getAddonsProvider();
             YumWebAddon yumWebAddon = addonsProvider.addonByType(YumWebAddon.class);
-            try {
-                ITab rpmInfoTab = yumWebAddon.getRpmInfoTab("RPM Info", getRepoPath());
-                if (rpmInfoTab != null) {
-                    tabs.add(rpmInfoTab);
-                }
-            } catch (Exception e) {
-                log.error("Error occurred while processing RPM display info: " + e.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Error occurred while processing RPM display info.", e);
-                }
-            }
+            ITab rpmInfoTab = yumWebAddon.getRpmInfoTab("RPM Info", getFileInfo());
+            tabs.add(rpmInfoTab);
         }
 
         if (getRepo().isEnableNuGetSupport() && isNuPkgFile()) {

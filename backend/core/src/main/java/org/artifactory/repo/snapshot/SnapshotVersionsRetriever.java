@@ -164,10 +164,10 @@ public class SnapshotVersionsRetriever extends VersionsRetriever {
 
             boolean integrationCondition = itemModuleInfo.isIntegration() &&
                     //Checks to make sure it is not a non-unique integration mixed with unique integrations
-                    (repoLayout.getFolderIntegrationRevisionRegExp().
-                            equals(repoLayout.getFileIntegrationRevisionRegExp()) ||
-                            !itemModuleInfo.getFolderIntegrationRevision().
-                                    equals(itemModuleInfo.getFileIntegrationRevision()));
+                    (StringUtils.equals(repoLayout.getFolderIntegrationRevisionRegExp(),
+                            repoLayout.getFileIntegrationRevisionRegExp()) ||
+                            !StringUtils.equals(itemModuleInfo.getFolderIntegrationRevision(),
+                                    itemModuleInfo.getFileIntegrationRevision()));
 
             //Make sure this file's module info is valid and is actually an integration version
             return itemModuleInfo.isValid() && integrationCondition;

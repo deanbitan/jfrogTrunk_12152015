@@ -121,10 +121,10 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
     void renameBuildNode(String from, String to) throws RepositoryException;
 
     /**
-     * Returns latest build by name and status (which can be {@link BuildService.LATEST_BUILD} or {@link BuildService.LAST_RELEASED_BUILD})
+     * Returns latest build by name and status (which can be {@link BuildService.LATEST_BUILD} or a status value (e.g: "Released")
      *
      * @param buildName   the name of the build
-     * @param buildStatus the desired status (which can be {@link BuildService.LATEST_BUILD} or {@link BuildService.LAST_RELEASED_BUILD})
+     * @param buildStatus the desired status (which can be {@link BuildService.LATEST_BUILD} or a status value (e.g: "Released")
      * @return the build (if found)
      */
     @Lock(transactional = true)

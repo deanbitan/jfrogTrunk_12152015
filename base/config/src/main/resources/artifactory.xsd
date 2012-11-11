@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.16"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.16"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.17"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.17"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -271,6 +271,15 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
+                    <xs:element name="yumGroupFileNames" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                A comma-separated list of xml file names that contain YUM group component definitions.
+                                Artifactory will include the group definitions as part of the calculated YUM metadata,
+                                as well as automatically generate a gzipped version of the group files if needed.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -466,6 +475,16 @@
                         <xs:annotation>
                             <xs:documentation source="description">
                                 Network proxy reference.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="queryParams" type="xs:string" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                <![CDATA[
+                                Custom HTTP query parameters that will be automatically included in all remote resource requests.
+                                For example: param1=val1&amp;param2=val2&amp;param3=val3
+                                ]]>
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -1293,7 +1312,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                The time window in which the session does not need to be revalidated.
+                                The time window, in minutes, in which the session does not need to be revalidated.
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1318,6 +1337,16 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                         Without auto user creation, you will need to manually create the user inside Artifactory in
                         order to manage user permissions that are not attached to his default groups.
                         ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="customCookieTokenKey" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Specify the SSO custom cookie name. Out of the box Crowd uses the 'crowd.token_key' cookie name for all Crowd-connected applications.
+                                You can override the default value with your own cookie name. This is useful in environments with multiple Crowd servers.
+                                ]]>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2083,7 +2112,8 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Enable control over the size of storage space used for binaries to avoid running out of disk space.
+                        Enable control over the size of storage space used for binaries to avoid running out of disk
+                        space.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2091,17 +2121,21 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         The maximum allowed disk usage, in percentage, of the partition containing the binaries folder.
-                        Once this limit has been reached deployments will be rejected with a 413 error (request entity too large) and an
+                        Once this limit has been reached deployments will be rejected with a 413 error (request entity
+                        too large) and an
                         error message will be displayed in the UI (visible for admin users only).
-                        With a filesystem storage the partition checked is one containing the '$ARTIFACTORY_HOME/data/filestore' directory.
-                        With a database blob storage the partition checked is one containing the '$ARTIFACTORY_HOME/data/cache' directory.
+                        With a filesystem storage the partition checked is one containing the
+                        '$ARTIFACTORY_HOME/data/filestore' directory.
+                        With a database blob storage the partition checked is one containing the
+                        '$ARTIFACTORY_HOME/data/cache' directory.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="diskSpaceWarningPercentage" type="xs:int" default="0" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The maximum warning-level disk usage, in percentage, of the partition containing the binaries folder.
+                        The maximum warning-level disk usage, in percentage, of the partition containing the binaries
+                        folder.
                         Once this limit has been reached a warning will be logged and a
                         warning message will be displayed in the UI (visible for admin users only).
                     </xs:documentation>

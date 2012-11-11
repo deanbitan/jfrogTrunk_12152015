@@ -20,6 +20,8 @@ package org.artifactory.build;
 
 import com.gc.iotools.stream.is.InputStreamFromOutputStream;
 import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -115,6 +117,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -428,10 +431,11 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     @Override
-    public
-    @Nullable
-    Build getLatestBuildByNameAndStatus(String buildName, final String buildStatus) {
+    public Build getLatestBuildByNameAndStatus(String buildName, final String buildStatus) {
         if (StringUtils.isBlank(buildName)) {
+            return null;
+        }
+        if (StringUtils.isBlank(buildStatus)) {
             return null;
         }
         //let's find all builds
@@ -446,12 +450,11 @@ public class BuildServiceImpl implements InternalBuildService {
         if (buildStatus.equals(LATEST_BUILD)) {
             latestBuildRun = getLast(buildRuns, null);
         } else {
-            latestBuildRun = getLast(filter(buildRuns, new Predicate<BuildRun>() { //filter by required status
+            latestBuildRun = getLast(filter(buildRuns, new Predicate<BuildRun>() {
                 @Override
                 public boolean apply(BuildRun buildRun) {
-                    //the only one we support right now is LAST_RELEASED i.e. "Released"
-                    return LAST_RELEASED_BUILD.equals(buildStatus) && PromotionStatus.RELEASED.equals(
-                            buildRun.getReleaseStatus());
+                    // Search for the latest build by the given status
+                    return buildStatus.equals(buildRun.getReleaseStatus());
                 }
             }), null);
 
@@ -492,6 +495,26 @@ public class BuildServiceImpl implements InternalBuildService {
     @Override
     public Set<BuildRun> searchBuildsByName(String buildName) {
         return getTransactionalMe().transactionalSearchBuildsByName(buildName);
+    }
+
+    @Override
+    public List<BuildRun> getAllPreviousBuilds(String buildName, String buildNumber, String buildStarted) {
+        final BuildRun currentBuildRun = getTransactionalMe().getBuildRun(buildName, buildNumber, buildStarted);
+        Set<BuildRun> buildRuns = searchBuildsByName(buildName);
+        final BuildNumberComparator buildNumberComparator = new BuildNumberComparator();
+        Iterables.removeIf(buildRuns, new Predicate<BuildRun>() {
+            @Override
+            public boolean apply(@Nullable BuildRun input) {
+                // Remove all builds equals or after the current one
+                return buildNumberComparator.compare(currentBuildRun, input) <= 0;
+            }
+        });
+
+        List<BuildRun> buildRunsList = Lists.newArrayList(buildRuns);
+        Comparator<BuildRun> reverseComparator = Collections.reverseOrder(buildNumberComparator);
+        Collections.sort(buildRunsList, reverseComparator);
+
+        return buildRunsList;
     }
 
     @Override

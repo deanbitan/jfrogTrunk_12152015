@@ -63,6 +63,7 @@ import org.artifactory.md.Properties;
 import org.artifactory.repo.HttpRepo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RemoteRepo;
+import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.service.mover.MoverConfig;
@@ -387,10 +388,6 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public void calculateYumMetadata(RepoPath repoPath) {
-    }
-
-    @Override
     public void requestAsyncRepositoryYumMetadataCalculation(LocalRepoDescriptor repo) {
     }
 
@@ -465,5 +462,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     public void deployArchiveBundle(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException {
         response.sendError(HttpStatus.SC_BAD_REQUEST, "This REST API is available only in Artifactory Pro.", log);
+    }
+
+    @Override
+    public InternalRequestContext getDynamicVersionContext(Repo repo, InternalRequestContext originalRequestContext,
+            boolean isRemote) {
+        return originalRequestContext;
     }
 }

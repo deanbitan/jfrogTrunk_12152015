@@ -41,54 +41,114 @@ public class YumCalculationInterceptorTest {
         VfsFile copyTargetMock = EasyMock.createMock(VfsFile.class);
         VfsFile moveSourceMock = EasyMock.createMock(VfsFile.class);
         VfsFile moveTargetMock = EasyMock.createMock(VfsFile.class);
+        LocalRepoDescriptor descriptorMock = EasyMock.createMock(LocalRepoDescriptor.class);
+        InternalRepositoryService repoServiceMock = EasyMock.createMock(InternalRepositoryService.class);
+        yumCalculationInterceptor.repositoryService = repoServiceMock;
 
         EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.zip")).times(2);
         EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.zip")).times(1);
         EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.zip")).times(1);
         EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.zip")).times(1);
-        EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
+        EasyMock.expect(descriptorMock.isCalculateYumMetadata()).andReturn(true).anyTimes();
+        EasyMock.expect(descriptorMock.getYumGroupFileNames()).andReturn("").anyTimes();
+        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("")).andReturn(descriptorMock).anyTimes();
+        EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         yumCalculationInterceptor.afterCreate(vfsFileMock, null);
         yumCalculationInterceptor.afterDelete(vfsFileMock, null);
         yumCalculationInterceptor.afterCopy(copySourceMock, copyTargetMock, null, null);
         yumCalculationInterceptor.afterMove(moveSourceMock, moveTargetMock, null, null);
-        EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
-        EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
+        EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
+        EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
 
         EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.jar")).times(2);
         EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.jar")).times(1);
         EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.jar")).times(1);
         EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.jar")).times(1);
-        EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
+        EasyMock.expect(descriptorMock.isCalculateYumMetadata()).andReturn(true).anyTimes();
+        EasyMock.expect(descriptorMock.getYumGroupFileNames()).andReturn("").anyTimes();
+        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("")).andReturn(descriptorMock).anyTimes();
+        EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         yumCalculationInterceptor.afterCreate(vfsFileMock, null);
         yumCalculationInterceptor.afterDelete(vfsFileMock, null);
         yumCalculationInterceptor.afterCopy(copySourceMock, copyTargetMock, null, null);
         yumCalculationInterceptor.afterMove(moveSourceMock, moveTargetMock, null, null);
-        EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
-        EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
+        EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
+        EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
 
         EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.pom")).times(2);
         EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.pom")).times(1);
         EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.pom")).times(1);
         EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.pom")).times(1);
-        EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
+        EasyMock.expect(descriptorMock.isCalculateYumMetadata()).andReturn(true).anyTimes();
+        EasyMock.expect(descriptorMock.getYumGroupFileNames()).andReturn("").anyTimes();
+        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("")).andReturn(descriptorMock).anyTimes();
+        EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         yumCalculationInterceptor.afterCreate(vfsFileMock, null);
         yumCalculationInterceptor.afterDelete(vfsFileMock, null);
         yumCalculationInterceptor.afterCopy(copySourceMock, copyTargetMock, null, null);
         yumCalculationInterceptor.afterMove(moveSourceMock, moveTargetMock, null, null);
-        EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
-        EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
+        EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
+        EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
 
         EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.xml")).times(2);
         EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.xml")).times(1);
         EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.xml")).times(1);
         EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.xml")).times(1);
-        EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
+        EasyMock.expect(descriptorMock.isCalculateYumMetadata()).andReturn(true).anyTimes();
+        EasyMock.expect(descriptorMock.getYumGroupFileNames()).andReturn("").anyTimes();
+        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("")).andReturn(descriptorMock).anyTimes();
+        EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         yumCalculationInterceptor.afterCreate(vfsFileMock, null);
         yumCalculationInterceptor.afterDelete(vfsFileMock, null);
         yumCalculationInterceptor.afterCopy(copySourceMock, copyTargetMock, null, null);
         yumCalculationInterceptor.afterMove(moveSourceMock, moveTargetMock, null, null);
-        EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
-        EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock);
+        EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
+        EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
+    }
+
+    @Test
+    public void testRpmGroupFile() throws Exception {
+        YumCalculationInterceptor yumCalculationInterceptor = new YumCalculationInterceptor();
+
+        VfsFile vfsFileMock = EasyMock.createMock(VfsFile.class);
+        VfsFile copySourceMock = EasyMock.createMock(VfsFile.class);
+        VfsFile copyTargetMock = EasyMock.createMock(VfsFile.class);
+        VfsFile moveSourceMock = EasyMock.createMock(VfsFile.class);
+        VfsFile moveTargetMock = EasyMock.createMock(VfsFile.class);
+        YumAddon yumAddonMock = EasyMock.createMock(YumAddon.class);
+        AddonsManager addonsManagerMock = EasyMock.createMock(AddonsManager.class);
+        yumCalculationInterceptor.addonsManager = addonsManagerMock;
+        LocalRepoDescriptor descriptorMock = EasyMock.createMock(LocalRepoDescriptor.class);
+        InternalRepositoryService repoServiceMock = EasyMock.createMock(InternalRepositoryService.class);
+        yumCalculationInterceptor.repositoryService = repoServiceMock;
+
+        EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(
+                new RepoPathImpl("bubu-local", "repodata/comps.xml")).times(2);
+        EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(
+                new RepoPathImpl("bubu-local", "repodata/comps.xml")).times(1);
+        EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(
+                new RepoPathImpl("bubu-local", "repodata/comps.xml")).times(1);
+        EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(
+                new RepoPathImpl("bubu-local", "repodata/comps.xml")).times(1);
+        EasyMock.expect(descriptorMock.isCalculateYumMetadata()).andReturn(true).anyTimes();
+        EasyMock.expect(descriptorMock.getYumRootDepth()).andReturn(0).anyTimes();
+        EasyMock.expect(descriptorMock.getYumGroupFileNames()).andReturn("comps.xml").anyTimes();
+        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("bubu-local")).andReturn(descriptorMock).anyTimes();
+
+        yumAddonMock.requestAsyncRepositoryYumMetadataCalculation(new RepoPathImpl("bubu-local", ""));
+        EasyMock.expectLastCall().times(5);
+        EasyMock.expect(addonsManagerMock.addonByType(YumAddon.class)).andReturn(yumAddonMock).times(5);
+
+        EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock,
+                yumAddonMock, addonsManagerMock);
+        yumCalculationInterceptor.afterCreate(vfsFileMock, null);
+        yumCalculationInterceptor.afterDelete(vfsFileMock, null);
+        yumCalculationInterceptor.afterCopy(copySourceMock, copyTargetMock, null, null);
+        yumCalculationInterceptor.afterMove(moveSourceMock, moveTargetMock, null, null);
+        EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock,
+                yumAddonMock, addonsManagerMock);
+        EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock,
+                yumAddonMock, addonsManagerMock);
     }
 
     @Test

@@ -20,7 +20,9 @@ package org.artifactory.addon;
 
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.Repo;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.request.InternalRequestContext;
 
 import java.io.IOException;
 
@@ -41,4 +43,20 @@ public interface RestCoreAddon extends Addon {
      */
     void deployArchiveBundle(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException;
+
+    /**
+     * Retrieves a transformed request context with the actual latest release/integration version.
+     * Request with the [RELEASE] token will be transformed to the actual release version.
+     * For maven a SNAPSHOT request will be transformed to a unique snapshot version while for non-maven
+     * the [INTEGRATION] token will be transformed to the actual integration version according the the underlying repo layout.
+     *
+     * @param repo                   The repo from the request, it is queried for it's layout etc.
+     * @param originalRequestContext The original request context which will be returned in case we couldn't perform the transformation.
+     *                               (for example if the snapshot policy for maven repo is non-unique).
+     * @param isRemote               A flag which indicates if we are dealing with a remote (false = local/cache/virtual).
+     * @return A transformed request context which points to the actual latest version (wheater it's release or integration),
+     *         the original request context param in case the transformation couldn't happen.
+     */
+    InternalRequestContext getDynamicVersionContext(Repo repo, InternalRequestContext originalRequestContext,
+            boolean isRemote);
 }

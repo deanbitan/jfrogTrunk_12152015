@@ -53,7 +53,7 @@ public class DisabledModuleDependenciesListPanel extends BaseModuleDependenciesL
     }
 
     @Override
-    protected List<ModuleDependencyActionableItem> getDependencies() {
+    public List<ModuleDependencyActionableItem> getDependencies() {
         return Lists.newArrayList();
     }
 

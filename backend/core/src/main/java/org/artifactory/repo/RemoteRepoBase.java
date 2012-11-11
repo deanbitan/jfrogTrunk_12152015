@@ -25,6 +25,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.core.data.DataStoreException;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AltRemoteContentAction;
 import org.artifactory.addon.plugin.download.AltRemotePathAction;
@@ -56,7 +57,6 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.jcr.JcrCacheRepo;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.repo.snapshot.RemoteLatestMavenSnapshotResolver;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.NullRequestContext;
@@ -268,7 +268,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      */
     @Override
     public final RepoResource getInfo(InternalRequestContext context) throws FileExpectedException {
-        context = new RemoteLatestMavenSnapshotResolver().getDynamicVersionContext(this, context);
+        AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
+        RestCoreAddon restCoreAddon = addonsManager.addonByType(RestCoreAddon.class);
+        context = restCoreAddon.getDynamicVersionContext(this, context, true);
 
         String path = context.getResourcePath();
         // make sure the repo key is of this repository
@@ -443,7 +445,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             throws IOException, RepositoryException, RepoRejectException {
         // We also change the context here, otherwise if there is something in the cache
         // we will receive it instead of trying to download the latest from the remote
-        requestContext = new RemoteLatestMavenSnapshotResolver().getDynamicVersionContext(this, requestContext);
+        AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
+        RestCoreAddon restCoreAddon = addonsManager.addonByType(RestCoreAddon.class);
+        requestContext = restCoreAddon.getDynamicVersionContext(this, requestContext, true);
         RepoRequests.logToContext("Creating a resource handle from '%s'", res.getResponseRepoPath().getRepoKey());
         String path = res.getRepoPath().getPath();
         if (isStoreArtifactsLocally()) {
@@ -498,7 +502,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
             // Check for security deploy rights
             RepoRequests.logToContext("Asserting valid deployment path");
-            getRepositoryService().assertValidDeployPath(localCacheRepo, path);
+            getRepositoryService().assertValidDeployPath(localCacheRepo, path, remoteResource.getInfo().getSize());
 
             //Create the parent folder
             String parentPath = PathUtils.getParent(path);
@@ -519,7 +523,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 RepoRequests.logToContext("Found no completed concurrent download - starting download");
                 ResourceStreamHandle handle = null;
                 try {
-                    beforeResourceDownload(remoteResource, requestContext.getProperties());
+                    beforeResourceDownload(remoteResource, requestContext.getProperties(), requestContext.getRequest());
 
                     RepoResourceInfo remoteInfo = remoteResource.getInfo();
                     Set<ChecksumInfo> remoteChecksums = remoteInfo.getChecksumsInfo().getChecksums();
@@ -888,11 +892,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     /**
      * Executed before actual download. May return an alternate handle with its own input stream to circumvent download
-     *
-     * @param resource
-     * @return
      */
-    private void beforeResourceDownload(RepoResource resource, Properties properties) {
+    private void beforeResourceDownload(RepoResource resource, Properties properties, Request request) {
         boolean fetchSourcesEagerly = getDescriptor().isFetchSourcesEagerly();
         boolean fetchJarsEagerly = getDescriptor().isFetchJarsEagerly();
 
@@ -902,6 +903,12 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         if (!fetchSourcesEagerly && !fetchJarsEagerly) {
             // eager fetching is disabled
             RepoRequests.logToContext("Eager JAR and source JAR fetching is disabled");
+            return;
+        }
+        String replicationDownload = request.getParameter(ArtifactoryRequest.PARAM_REPLICATION_DOWNLOAD_REQUESET);
+        if (StringUtils.isNotBlank(replicationDownload) && Boolean.valueOf(replicationDownload)) {
+            // Do not perform eager fetching in case of replication download
+            RepoRequests.logToContext("Eager JAR and source JAR fetching is disabled for replication download request");
             return;
         }
         RepoPath repoPath = resource.getRepoPath();

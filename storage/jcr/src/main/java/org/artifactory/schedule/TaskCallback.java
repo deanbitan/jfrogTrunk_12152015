@@ -51,7 +51,7 @@ public abstract class TaskCallback<C> {
     protected boolean beforeExecute(C callbackContext) {
         ArtifactoryStorageContext context = StorageContextHelper.get();
         if (context == null || !context.isReady()) {
-            log.error("Running before initialization finished.");
+            log.error("Task {} was running before context={} initialization finished.", this, context);
             return false;
         }
         String taskToken = triggeringTaskTokenFromWorkContext(callbackContext);

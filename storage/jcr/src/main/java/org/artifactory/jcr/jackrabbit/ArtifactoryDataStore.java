@@ -257,6 +257,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
             rs = conHelper.select(selectMetaSQL, new Object[]{id});
             boolean lineExists = rs.next();
             DbUtility.close(rs);
+            rs = null;
             if (!lineExists) {
                 // Need to insert a new row
                 conHelper.exec(insertTempSQL, id, dataRecord.length, dataRecord.getLastModified());

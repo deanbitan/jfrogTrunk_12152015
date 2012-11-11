@@ -65,7 +65,7 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, JcrFsIte
     @Override
     void onDelete(JcrFsItem fsItem);
 
-    boolean isWriteLocked(RepoPath path);
+    boolean willOrIsWriteLocked(RepoPath path);
 
     StoringRepo<T> getStorageMixin();
 

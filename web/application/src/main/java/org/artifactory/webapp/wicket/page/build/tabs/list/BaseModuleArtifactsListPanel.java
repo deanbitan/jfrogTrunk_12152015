@@ -19,18 +19,19 @@
 package org.artifactory.webapp.wicket.page.build.tabs.list;
 
 import com.google.common.collect.Lists;
+import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.util.ListPropertySorter;
+import org.artifactory.webapp.actionable.event.ItemEventTargetComponents;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
-import org.jfrog.build.api.Artifact;
 
 import java.util.Iterator;
 import java.util.List;
@@ -61,15 +62,7 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
      *
      * @return Artifact list to display
      */
-    protected abstract List<Artifact> getArtifacts();
-
-    /**
-     * Returns a list of artifact actionable items
-     *
-     * @param artifacts Artifacts to create actionable items from
-     * @return Artifact actionable item list
-     */
-    protected abstract List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(List<Artifact> artifacts);
+    public abstract List<ModuleArtifactActionableItem> getArtifacts();
 
     /**
      * Adds the artifacts table
@@ -77,34 +70,51 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
     protected void addTable() {
         List<IColumn<ModuleArtifactActionableItem>> columns = Lists.newArrayList();
         columns.add(new ActionsColumn<ModuleArtifactActionableItem>(""));
-        columns.add(new PropertyColumn<ModuleArtifactActionableItem>(Model.of("Name"), "name", "artifact.name"));
-        columns.add(new PropertyColumn<ModuleArtifactActionableItem>(Model.of("Type"), "type", "artifact.type"));
-        columns.add(new PropertyColumn<ModuleArtifactActionableItem>(Model.of("Repo Path"), "repoPath"));
+        columns.add(new ModuleArtifactPropertyColumn(Model.of("Name"), "name", "artifact.name"));
+        columns.add(new ModuleArtifactPropertyColumn(Model.of("Type"), "type", "artifact.type"));
+        columns.add(new ModuleArtifactPropertyColumn(Model.of("Repo Path"), null, "repoPath"));
         add(new SortableTable<ModuleArtifactActionableItem>(
                 "artifacts", columns, new ModuleArtifactsDataProvider(), 10));
+    }
+
+    public ModuleArtifactsDataProvider getTableDataProvider() {
+        return ((ModuleArtifactsDataProvider) getTable().getSortableDataProvider());
+    }
+
+    private SortableTable<ModuleArtifactActionableItem> getTable() {
+        return (SortableTable<ModuleArtifactActionableItem>) get("artifacts");
     }
 
     /**
      * The published module's artifacts table data provider
      */
-    private class ModuleArtifactsDataProvider extends SortableDataProvider<ModuleArtifactActionableItem> {
+    public class ModuleArtifactsDataProvider extends SortableDataProvider<ModuleArtifactActionableItem> {
 
-        private List<Artifact> artifactsList;
+        private List<ModuleArtifactActionableItem> artifactsList;
 
         /**
          * Default constructor
          */
         public ModuleArtifactsDataProvider() {
-            setSort("artifactName", SortOrder.ASCENDING);
+            setSort("artifact.artifactName", SortOrder.ASCENDING);
             this.artifactsList = getArtifacts();
         }
 
         @Override
         public Iterator<ModuleArtifactActionableItem> iterator(int first, int count) {
             ListPropertySorter.sort(artifactsList, getSort());
-            List<ModuleArtifactActionableItem> listToReturn =
-                    getModuleArtifactActionableItems(artifactsList.subList(first, first + count));
+            List<ModuleArtifactActionableItem> listToReturn = artifactsList.subList(first, first + count);
+            setEventTargetComponents(listToReturn);
             return listToReturn.iterator();
+        }
+
+        private void setEventTargetComponents(List<ModuleArtifactActionableItem> items) {
+            ModalWindow contentDialog = ModalHandler.getInstanceFor(getPage());
+            ItemEventTargetComponents targets = new ItemEventTargetComponents(BaseModuleArtifactsListPanel.this, null,
+                    contentDialog);
+            for (ModuleArtifactActionableItem item : items) {
+                item.setEventTargetComponents(targets);
+            }
         }
 
         @Override
@@ -115,6 +125,10 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
         @Override
         public IModel<ModuleArtifactActionableItem> model(ModuleArtifactActionableItem object) {
             return new Model<ModuleArtifactActionableItem>(object);
+        }
+
+        public void setArtifactsList(List<ModuleArtifactActionableItem> artifactsList) {
+            this.artifactsList = artifactsList;
         }
     }
 }

@@ -29,12 +29,15 @@ import java.util.List;
 /**
  * Resolved recursively the search order of the virtual repositories. The resolving is done according to the virtual
  * repository repositories list order. Local repositories are always placed first. If the virtual repo has cycles (one
- * or more virtual repos appears more than once) the resolver will skip the repeated virtual repo.
+ * or more virtual repos appear more than once) the resolver will skip the repeated virtual repo.
+ * <p><b>NOTE!</b> Do not remove the serializable interface since this class is being used inside a wicket page.
  *
  * @author Yossi Shaul
  */
 public class VirtualRepoResolver implements Serializable {
     private static final Logger log = LoggerFactory.getLogger(VirtualRepoResolver.class);
+
+    private VirtualResolverFilter filter;
 
     private List<LocalRepoDescriptor> localRepos;
     private List<RemoteRepoDescriptor> remoteRepos;
@@ -42,6 +45,12 @@ public class VirtualRepoResolver implements Serializable {
     private boolean hasCycle = false;
 
     public VirtualRepoResolver(VirtualRepoDescriptor virtual) {
+        filter = new EmptyVirtualResolverFilter();
+        update(virtual);
+    }
+
+    public VirtualRepoResolver(VirtualRepoDescriptor virtual, VirtualResolverFilter filter) {
+        this.filter = filter;
         update(virtual);
     }
 
@@ -52,11 +61,16 @@ public class VirtualRepoResolver implements Serializable {
         resolve(virtual, new ArrayList<VirtualRepoDescriptor>());
     }
 
-    private void resolve(VirtualRepoDescriptor virtualRepo, ArrayList<VirtualRepoDescriptor> visitedVirtualRepos) {
+    private void resolve(VirtualRepoDescriptor virtualRepo, List<VirtualRepoDescriptor> visitedVirtualRepos) {
         if (visitedVirtualRepos.contains(virtualRepo)) {
             // don't visit twice the same virtual repo to prevent cycles
             log.debug("Virtual repo {} already visited.", visitedVirtualRepos);
             hasCycle = true;
+            return;
+        }
+
+        // First filter the current virtual repo
+        if (!filter.accepts(virtualRepo)) {
             return;
         }
 
@@ -75,7 +89,10 @@ public class VirtualRepoResolver implements Serializable {
                 }
             } else if (repo instanceof VirtualRepoDescriptor) {
                 // resolve recursively
-                resolve((VirtualRepoDescriptor) repo, visitedVirtualRepos);
+                VirtualRepoDescriptor virtualRepoDescriptor = (VirtualRepoDescriptor) repo;
+                if (filter.accepts(virtualRepoDescriptor)) {
+                    resolve(virtualRepoDescriptor, visitedVirtualRepos);
+                }
             } else {
                 log.warn("Unexpected repository of type '{}'.", repo.getClass());
             }

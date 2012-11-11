@@ -313,16 +313,22 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         }
     }
 
-    public void updateDownloadStats() {
+    public boolean updateDownloadStats() {
+        if (!getRepo().isReal() || !ConstantValues.downloadStatsEnabled.getBoolean()) {
+            return false;
+        }
         if (log.isTraceEnabled()) {
             log.trace("Adding +1 download count to " + getRepoPath() + " from " + Thread.currentThread().getName());
         }
         BlockingQueue<StatsInfo> localDownloads = getOrCreateDownloads();
+        // If not in write lock on the file and first to download => send mark for commit
+        boolean sendMarkForCommit = !isMutable() && localDownloads.isEmpty();
         MutableStatsInfo statsInfo = InfoFactoryHolder.get().createStats();
         statsInfo.setDownloadCount(1);
         statsInfo.setLastDownloaded(System.currentTimeMillis());
         statsInfo.setLastDownloadedBy(getAuthorizationService().currentUsername());
         localDownloads.add(statsInfo);
+        return sendMarkForCommit;
     }
 
     /**
@@ -365,7 +371,10 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         }
         saveDirtyState();
         log.trace("Creating '{}' at {}.", getRepoPath(), new Date(getCreated()));
-        return new JcrFile(getNode(), getRepo(), this);
+        JcrFile immutableJcrFile = new JcrFile(getNode(), getRepo(), this);
+        // Now the immutable download queue will be reused, The locked version should stop seeing new downloads
+        this.downloads = null;
+        return immutableJcrFile;
     }
 
     @Override

@@ -18,6 +18,7 @@
 
 package org.artifactory.descriptor.repo;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
 
 import javax.xml.bind.annotation.XmlElement;
@@ -25,7 +26,7 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RemoteRepoType",
-        propOrder = {"username", "password", "socketTimeoutMillis", "localAddress", "proxy"},
+        propOrder = {"username", "password", "socketTimeoutMillis", "localAddress", "proxy", "queryParams"},
         namespace = Descriptor.NS)
 public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
@@ -41,6 +42,8 @@ public class HttpRepoDescriptor extends RemoteRepoDescriptor {
     @XmlIDREF
     @XmlElement(name = "proxyRef")
     private ProxyDescriptor proxy;
+
+    private String queryParams;
 
     public String getUsername() {
         return username;
@@ -80,5 +83,13 @@ public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
     public void setProxy(ProxyDescriptor proxy) {
         this.proxy = proxy;
+    }
+
+    public String getQueryParams() {
+        return StringUtils.removeStart(queryParams, "?");
+    }
+
+    public void setQueryParams(String queryParams) {
+        this.queryParams = queryParams;
     }
 }

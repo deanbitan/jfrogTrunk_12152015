@@ -44,7 +44,7 @@ import static org.artifactory.api.rest.constant.ArtifactRestConstants.PATH_COPY;
  * @author Tomer Cohen
  */
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @Path(PATH_COPY)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class CopyResource {

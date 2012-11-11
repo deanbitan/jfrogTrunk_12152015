@@ -58,12 +58,13 @@ import java.util.SortedSet;
 
 /**
  * Resolves the latest unique snapshot version given a non-unique Maven snapshot artifact request
- * or a request with [RELEASE]/[INTEGRATION] place holders for non-maven for local and cache repositories.
+ * or a request with [RELEASE]/[INTEGRATION] place holders for latest release or latest integration version respectively
+ * from local and cache repositories (from remotes only works for maven repos by analyzing the remote maven-metadata).
  *
  * @author Shay Yaakov
  */
-public class LocalLatestSnapshotResolver extends LatestSnapshotResolver {
-    private static final Logger log = LoggerFactory.getLogger(LocalLatestSnapshotResolver.class);
+public class LocalLatestVersionResolver extends LatestVersionResolver {
+    private static final Logger log = LoggerFactory.getLogger(LocalLatestVersionResolver.class);
 
     private final MavenVersionComparator mavenVersionComparator = new MavenVersionComparator();
 
@@ -81,7 +82,7 @@ public class LocalLatestSnapshotResolver extends LatestSnapshotResolver {
             boolean searchForReleaseVersion = StringUtils.contains(path, "[RELEASE]");
             boolean searchForIntegrationVersion = StringUtils.contains(path, "[INTEGRATION]");
             if (searchForReleaseVersion || searchForIntegrationVersion) {
-                requestContext = getNonMavenLatestSnapshotRequestContext(requestContext, (StoringRepo) repo,
+                requestContext = getLatestVersionRequestContext(requestContext, (StoringRepo) repo,
                         originalModuleInfo, searchForReleaseVersion);
             }
         }
@@ -89,7 +90,7 @@ public class LocalLatestSnapshotResolver extends LatestSnapshotResolver {
         return requestContext;
     }
 
-    private InternalRequestContext getNonMavenLatestSnapshotRequestContext(InternalRequestContext requestContext,
+    private InternalRequestContext getLatestVersionRequestContext(InternalRequestContext requestContext,
             StoringRepo repo, ModuleInfo originalModuleInfo, boolean searchForReleaseVersion) {
         RepoLayout repoLayout = repo.getDescriptor().getRepoLayout();
         ModuleInfo baseRevisionModule = getBaseRevisionModuleInfo(originalModuleInfo);

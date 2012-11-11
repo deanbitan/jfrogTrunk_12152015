@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
-import org.jfrog.build.api.Artifact;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -54,12 +53,7 @@ public class DisabledModuleArtifactsListPanel extends BaseModuleArtifactsListPan
     }
 
     @Override
-    protected List<Artifact> getArtifacts() {
-        return Lists.newArrayList();
-    }
-
-    @Override
-    protected List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(List<Artifact> artifacts) {
+    public List<ModuleArtifactActionableItem> getArtifacts() {
         return Lists.newArrayList();
     }
 }

@@ -28,6 +28,7 @@ import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.FilteredResourcesAddon;
 import org.artifactory.addon.PropertiesAddon;
+import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
@@ -85,7 +86,6 @@ import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.jcr.cache.expirable.CacheExpiry;
 import org.artifactory.repo.jcr.local.LocalNonCacheOverridable;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.repo.snapshot.LocalLatestSnapshotResolver;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.RepoRequests;
 import org.artifactory.request.Request;
@@ -364,7 +364,8 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
      */
     @Override
     public RepoResource getInfo(InternalRequestContext context) throws FileExpectedException {
-        context = new LocalLatestSnapshotResolver().getDynamicVersionContext(this, context);
+        RestCoreAddon restCoreAddon = addonsManager.addonByType(RestCoreAddon.class);
+        context = restCoreAddon.getDynamicVersionContext(this, context, false);
         String path = context.getResourcePath();
         RepoPath repoPath = InternalRepoPathFactory.create(getKey(), path);
         JcrFsItem<?, ?> item = getPathItem(repoPath);
@@ -469,12 +470,9 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             JcrFile jcrFile = (JcrFile) item;
             final InputStream is = jcrFile.getStream();
             //Update the stats queue counter
-            jcrFile.updateDownloadStats();
-            //Send the async event to save the stats
-
-            RepoPath responsePath = res.getRepoPath();
-            if (getRepositoryService().virtualRepositoryByKey(responsePath.getRepoKey()) == null) {
-                getRepositoryService().markForSaveOnCommit(responsePath);
+            if (jcrFile.updateDownloadStats() && !willOrIsWriteLocked(jcrFile.getRepoPath())) {
+                //Send the async event to save the stats
+                getRepositoryService().markForSaveOnCommit(jcrFile.getRepoPath());
             }
 
             Request request = requestContext.getRequest();
@@ -524,7 +522,8 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
         if (checksumType == null) {
             throw new IllegalArgumentException("Checksum type not found for path " + checksumFileUrl);
         }
-        return getChecksumPolicy().getChecksum(checksumType, resource.getInfo().getChecksums(), resource.getRepoPath());
+        return getChecksumPolicy().getChecksum(checksumType, resource.getInfo().getChecksums(),
+                resource.getRepoPath());
     }
 
     @Override
@@ -1016,9 +1015,9 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
     }
 
     @Override
-    public boolean isWriteLocked(RepoPath path) {
+    public boolean willOrIsWriteLocked(RepoPath path) {
         MonitoringReadWriteLock lock = locks.get(path);
-        return lock != null && lock.isWriteLocked();
+        return lock != null && lock.willOrIsWriteLock();
     }
 
     @Override

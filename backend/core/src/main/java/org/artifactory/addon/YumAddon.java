@@ -20,22 +20,38 @@ package org.artifactory.addon;
 
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.Lock;
 
 /**
  * @author Noam Y. Tenne
  */
 public interface YumAddon extends Addon {
 
-    @Lock(transactional = true)
+    String REPO_DATA_DIR = "repodata/";
+
+    /**
+     * Activate the YUM metadata calculation for all needed paths under the local repository.
+     * The paths are the parent of all repodata needed based on the yum depth parameter.
+     * Each calculation will be queued and processed asynchronously.
+     *
+     * @param repo the local repository to activate YUM calculation on.
+     */
     void requestAsyncRepositoryYumMetadataCalculation(LocalRepoDescriptor repo);
 
-    @Lock(transactional = true)
+    /**
+     * Activate the YUM metadata calculation for the specific list of paths.
+     * Each paths should be a parent of a repodata folder that need recalculation.
+     * Each calculation will be queued and processed asynchronously.
+     *
+     * @param repoPaths
+     */
     void requestAsyncRepositoryYumMetadataCalculation(RepoPath... repoPaths);
 
-    @Lock(transactional = true)
+    /**
+     * Activate the YUM metadata calculation for all needed paths under the local repository.
+     * The paths are the parent of all repodata needed based on the yum depth parameter.
+     * Each calculation will be processed in a separate transaction but synchronously to this method.
+     *
+     * @param repo the local repository to activate YUM calculation on.
+     */
     void requestYumMetadataCalculation(LocalRepoDescriptor repo);
-
-    @Lock(transactional = true)
-    void calculateYumMetadata(RepoPath repoPath);
 }

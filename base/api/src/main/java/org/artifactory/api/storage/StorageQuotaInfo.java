@@ -33,16 +33,21 @@ public class StorageQuotaInfo {
     private final int diskSpaceLimitPercentage;
     private final int diskSpaceWarningPercentage;
 
-    public StorageQuotaInfo(File dataDir, int diskSpaceLimitPercentage, int diskSpaceWarningPercentage) {
+    public StorageQuotaInfo(File dataDir, int diskSpaceLimitPercentage, int diskSpaceWarningPercentage,
+            long fileContentLength) {
         this.diskSpaceLimitPercentage = diskSpaceLimitPercentage;
         this.diskSpaceWarningPercentage = diskSpaceWarningPercentage;
-        build(dataDir);
+        build(dataDir, fileContentLength);
     }
 
-    private void build(File dataDir) {
+    private void build(File dataDir, long fileContentLength) {
         freeSpace = dataDir.getFreeSpace();
         totalSpace = dataDir.getTotalSpace();
-        usedSpace = totalSpace - freeSpace;
+        if (fileContentLength > 0) {
+            usedSpace = totalSpace + fileContentLength - freeSpace;
+        } else {
+            usedSpace = totalSpace - freeSpace;
+        }
         dataUsagePercentage = (double) usedSpace / totalSpace * 100;
     }
 

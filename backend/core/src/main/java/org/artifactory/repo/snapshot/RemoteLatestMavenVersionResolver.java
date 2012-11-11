@@ -54,8 +54,8 @@ import java.io.StringWriter;
  *
  * @author Shay Yaakov
  */
-public class RemoteLatestMavenSnapshotResolver extends LatestSnapshotResolver {
-    private static final Logger log = LoggerFactory.getLogger(RemoteLatestMavenSnapshotResolver.class);
+public class RemoteLatestMavenVersionResolver extends LatestVersionResolver {
+    private static final Logger log = LoggerFactory.getLogger(RemoteLatestMavenVersionResolver.class);
 
     /**
      * Downloads maven-metadata.xml from the remote and analyzes the latest version from it. If it does not exist, we
@@ -68,28 +68,51 @@ public class RemoteLatestMavenSnapshotResolver extends LatestSnapshotResolver {
             return requestContext;
         }
         RemoteRepo remoteRepo = (RemoteRepo) repo;
+        if (!remoteRepo.getDescriptor().isMavenRepoLayout()) {
+            // Latest from remote is supported only for maven2 layout
+            return requestContext;
+        }
         if (remoteRepo.isOffline()) {
             // will fallback to local cache search
             return requestContext;
         }
 
         String path = requestContext.getResourcePath();
-        RepoPath repoPath = InternalRepoPathFactory.create(repo.getKey(), path);
+        if(MavenNaming.isMavenMetadata(path)) {
+            // Recursive request for maven metadata, simply return the original request context
+            return requestContext;
+        }
+        boolean searchForReleaseVersion = StringUtils.contains(path, "[RELEASE]");
+        RepoPath repoPath;
+        if (searchForReleaseVersion) {
+            repoPath = InternalRepoPathFactory.create(repo.getKey(), path).getParent();
+        } else {
+            repoPath = InternalRepoPathFactory.create(repo.getKey(), path);
+        }
         Metadata metadata = tryDownloadingMavenMetadata(repoPath);
         if (metadata != null) {
             try {
                 Versioning versioning = metadata.getVersioning();
                 if (versioning != null) {
-                    Snapshot snapshot = versioning.getSnapshot();
-                    if (snapshot != null) {
-                        String timestamp = snapshot.getTimestamp();
-                        int buildNumber = snapshot.getBuildNumber();
-                        if (StringUtils.isNotBlank(timestamp) && buildNumber > 0) {
-                            String originalFileName = PathUtils.getFileName(path);
-                            String fileName = originalFileName.replaceFirst("SNAPSHOT", timestamp + "-" + buildNumber);
-                            RepoPath parentRepoPath = repoPath.getParent();
-                            String uniqueRepoPath = PathUtils.addTrailingSlash(parentRepoPath.getPath()) + fileName;
-                            requestContext = translateRepoRequestContext(requestContext, repo, uniqueRepoPath);
+                    if (searchForReleaseVersion) {
+                        String release = versioning.getRelease();
+                        if (StringUtils.isNotBlank(release)) {
+                            String releaseRepoPath = path.replace("[RELEASE]", release);
+                            requestContext = translateRepoRequestContext(requestContext, repo, releaseRepoPath);
+                        }
+                    } else {
+                        Snapshot snapshot = versioning.getSnapshot();
+                        if (snapshot != null) {
+                            String timestamp = snapshot.getTimestamp();
+                            int buildNumber = snapshot.getBuildNumber();
+                            if (StringUtils.isNotBlank(timestamp) && buildNumber > 0) {
+                                String originalFileName = PathUtils.getFileName(path);
+                                String fileName = originalFileName.replaceFirst("SNAPSHOT",
+                                        timestamp + "-" + buildNumber);
+                                RepoPath parentRepoPath = repoPath.getParent();
+                                String uniqueRepoPath = PathUtils.addTrailingSlash(parentRepoPath.getPath()) + fileName;
+                                requestContext = translateRepoRequestContext(requestContext, repo, uniqueRepoPath);
+                            }
                         }
                     }
                 }
@@ -103,6 +126,11 @@ public class RemoteLatestMavenSnapshotResolver extends LatestSnapshotResolver {
     }
 
     private Metadata tryDownloadingMavenMetadata(RepoPath repoPath) {
+        if (repoPath == null) {
+            log.debug("Could not download remote maven metadata for null repo path '{}'", repoPath);
+            return null;
+        }
+
         String parentFolder = PathUtils.getParent(repoPath.getPath());
         RepoPath parentRepoPath = RepoPathFactory.create(repoPath.getRepoKey(), parentFolder);
         RepoPath metadataRepoPath = new RepoPathImpl(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME);

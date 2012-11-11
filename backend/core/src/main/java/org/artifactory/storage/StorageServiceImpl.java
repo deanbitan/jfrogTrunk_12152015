@@ -142,7 +142,7 @@ public class StorageServiceImpl implements InternalStorageService {
     }
 
     @Override
-    public StorageQuotaInfo getStorageQuotaInfo() {
+    public StorageQuotaInfo getStorageQuotaInfo(long fileContentLength) {
         CentralConfigDescriptor descriptor = centralConfigService.getDescriptor();
         QuotaConfigDescriptor quotaConfig = descriptor.getQuotaConfig();
         if (quotaConfig == null) {
@@ -154,7 +154,7 @@ public class StorageServiceImpl implements InternalStorageService {
 
         File binariesFolder = jcrService.getBinariesFolder();
         return new StorageQuotaInfo(binariesFolder, quotaConfig.getDiskSpaceLimitPercentage(),
-                quotaConfig.getDiskSpaceWarningPercentage());
+                quotaConfig.getDiskSpaceWarningPercentage(), fileContentLength);
     }
 
     @Override

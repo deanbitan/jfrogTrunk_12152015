@@ -41,7 +41,7 @@ import javax.ws.rs.core.Response;
  * @author Noam Y. Tenne
  */
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @Path(YumRestConstants.PATH_ROOT)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN})
 public class YumResource {

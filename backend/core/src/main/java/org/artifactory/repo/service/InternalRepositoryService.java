@@ -113,7 +113,7 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * @return A status holder with info on error
      */
     @Transactional
-    void assertValidDeployPath(LocalRepo repo, String path) throws RepoRejectException;
+    void assertValidDeployPath(LocalRepo repo, String path, long contentLength) throws RepoRejectException;
 
     @Lock(transactional = true)
     <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext,

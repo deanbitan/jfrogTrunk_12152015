@@ -21,15 +21,14 @@ package org.artifactory.webapp.wicket.page.build.tabs.list;
 import com.google.common.collect.Lists;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
+import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.groupable.GroupableTable;
-import org.artifactory.common.wicket.component.table.groupable.column.GroupableColumn;
 import org.artifactory.common.wicket.component.table.groupable.provider.GroupableDataProvider;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
@@ -65,7 +64,7 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
      *
      * @return Unpopulated actionable items
      */
-    protected abstract List<ModuleDependencyActionableItem> getDependencies();
+    public abstract List<ModuleDependencyActionableItem> getDependencies();
 
     /**
      * Populates dependency actionable items with their corresponding repo paths (if exist)
@@ -82,23 +81,27 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
     protected void addTable() {
         List<IColumn<ModuleDependencyActionableItem>> columns = Lists.newArrayList();
         columns.add(new ActionsColumn<ModuleDependencyActionableItem>(""));
-        columns.add(new PropertyColumn<ModuleDependencyActionableItem>(
-                Model.of("ID"), "dependency.id", "dependency.id"));
-        columns.add(new GroupableColumn<ModuleDependencyActionableItem>(
-                Model.of("Scopes"), "dependencyScope", "dependencyScope"));
-        columns.add(new PropertyColumn<ModuleDependencyActionableItem>(
-                Model.of("Type"), "dependency.type", "dependency.type"));
-        columns.add(new PropertyColumn<ModuleDependencyActionableItem>(
-                Model.of("Repo Path"), "repoPathOrMissingMessage"));
+        columns.add(new ModuleDependencyPropertyColumn(Model.of("ID"), "dependency.id", "dependency.id"));
+        columns.add(new ModuleDependencyGroupableColumn(Model.of("Scopes"), "dependencyScope", "dependencyScope"));
+        columns.add(new ModuleDependencyPropertyColumn(Model.of("Type"), "dependency.type", "dependency.type"));
+        columns.add(new ModuleDependencyPropertyColumn(Model.of("Repo Path"), null, "repoPathOrMissingMessage"));
 
         add(new GroupableTable<ModuleDependencyActionableItem>(
                 "dependencies", columns, new ModuleDependenciesDataProvider(), 10));
     }
 
+    public ModuleDependenciesDataProvider getTableDataProvider() {
+        return ((ModuleDependenciesDataProvider) getTable().getSortableDataProvider());
+    }
+
+    private SortableTable<ModuleDependencyActionableItem> getTable() {
+        return (SortableTable<ModuleDependencyActionableItem>) get("dependencies");
+    }
+
     /**
      * The published module's dependencies table data provider
      */
-    private class ModuleDependenciesDataProvider extends GroupableDataProvider<ModuleDependencyActionableItem> {
+    public class ModuleDependenciesDataProvider extends GroupableDataProvider<ModuleDependencyActionableItem> {
 
         public ModuleDependenciesDataProvider() {
             super(getDependencies());
@@ -119,7 +122,7 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
 
         @Override
         public IModel<ModuleDependencyActionableItem> model(ModuleDependencyActionableItem item) {
-            item = new ModuleDependencyActionableItem(item.getRepoPath(), item.getDependency()) {
+            item = new ModuleDependencyActionableItem(item.getRepoPath(), item.getDependency(), item.getStatus()) {
                 public Object getRepoPathOrMissingMessage() {
                     if (super.getRepoPath() == null) {
                         return "Not in repository (externally resolved or deleted/overwritten)";

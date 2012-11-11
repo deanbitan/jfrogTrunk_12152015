@@ -54,6 +54,8 @@ public interface ArtifactoryRequest extends Request {
 
     String PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL = "artifactory.alternativeRemoteDownloadUrl";
 
+    String PARAM_REPLICATION_DOWNLOAD_REQUESET = "artifactory.replicationDownloadRequest";
+
     /**
      * The path prefix name for list browsing.
      */

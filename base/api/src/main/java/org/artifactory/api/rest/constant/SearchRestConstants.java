@@ -39,6 +39,7 @@ public interface SearchRestConstants {
     String PATH_DEPENDENCY = "dependency";
     String PATH_VERSIONS = "versions";
     String PATH_LATEST_VERSION = "latestVersion";
+    String PATH_BUILD_ARTIFACTS = "buildArtifacts";
 
     //Common query params
     String PARAM_REPO_TO_SEARCH = "repos";
@@ -82,6 +83,12 @@ public interface SearchRestConstants {
     //Artifact versions params
     String PARAM_FETCH_FROM_REMOTE = "remote";
 
+    //Build artifacts params
+    String BUILD_NAME_PARAM = "buildName";
+    String BUILD_NUMBER_PARAM = "buildNumber";
+    String BUILD_ARTIFACTS_INCLUDES = "includes";
+    String BUILD_ARTIFACTS_EXCLUDES = "excludes";
+
     //Media types
     String MT_ARTIFACT_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactSearchResult+json";
     String MT_ARCHIVE_ENTRY_SEARCH_RESULT =
@@ -100,6 +107,7 @@ public interface SearchRestConstants {
     String MT_DEPENDENCY_BUILDS = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".DependencyBuilds+json";
     String MT_ARTIFACT_VERSIONS_SEARCH_RESULT =
             RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactVersionsResult+json";
+    String MT_BUILD_ARTIFACTS_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".BuildArtifactsSearchResult+json";
 
     String NOT_FOUND = "No results found.";
 }

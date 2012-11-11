@@ -538,8 +538,8 @@ public abstract class JcrRepoBase<T extends LocalRepoDescriptor> extends RealRep
     }
 
     @Override
-    public boolean isWriteLocked(RepoPath path) {
-        return storageMixin.isWriteLocked(path);
+    public boolean willOrIsWriteLocked(RepoPath path) {
+        return storageMixin.willOrIsWriteLocked(path);
     }
 
     @Override

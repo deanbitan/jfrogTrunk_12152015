@@ -314,7 +314,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
             String message = null;
             if (authorizationService.isAdmin()) {
-                StorageQuotaInfo info = storageService.getStorageQuotaInfo();
+                StorageQuotaInfo info = storageService.getStorageQuotaInfo(0);
                 if (info != null) {
                     if (info.isLimitReached()) {
                         add(new CssClass("storage-quota-limit"));

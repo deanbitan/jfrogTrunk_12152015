@@ -54,7 +54,7 @@ import javax.ws.rs.core.Response;
  * @author Fred Simon
  */
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope(BeanDefinition.SCOPE_SINGLETON)
 @Path(SystemRestConstants.PATH_ROOT + "/" + SystemRestConstants.PATH_PING)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class PingResource {
