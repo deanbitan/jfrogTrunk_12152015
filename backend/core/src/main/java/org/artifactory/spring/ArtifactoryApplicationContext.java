@@ -642,7 +642,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             }
 
             // repositories content
-            if (!settings.isExcludeContent()) {
+            if (settings.isIncludeMetadata() || !settings.isExcludeContent()) {
                 getRepositoryService().exportTo(exportSettings);
             }
             if (status.isError() && settings.isFailFast()) {
@@ -810,7 +810,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
     private void exportBuildInfo(ExportSettingsImpl exportSettings) {
         MutableStatusHolder status = exportSettings.getStatusHolder();
-        if(exportSettings.isExcludeBuilds()) {
+        if (exportSettings.isExcludeBuilds()) {
             status.setStatus("Skipping build info ...", log);
             return;
         }

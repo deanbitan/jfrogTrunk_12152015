@@ -37,6 +37,7 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.injection.Injector;
 import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
@@ -70,6 +71,7 @@ import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.license.LicenseInfo;
 import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
+import org.artifactory.api.rest.build.diff.BuildsDiff;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.version.VersionHolder;
@@ -124,7 +126,6 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.request.Request;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.security.GroupInfo;
-import org.artifactory.security.UserGroupInfo;
 import org.artifactory.security.UserInfo;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.actionable.ActionableItem;
@@ -135,6 +136,7 @@ import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.base.BasePage;
 import org.artifactory.webapp.wicket.page.base.EditProfileLink;
+import org.artifactory.webapp.wicket.page.base.LoginLink;
 import org.artifactory.webapp.wicket.page.base.LogoutLink;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.BaseBuildsTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildDependencyActionableItem;
@@ -190,7 +192,6 @@ import org.jfrog.build.api.Module;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
 import org.slf4j.Logger;
-import org.springframework.security.core.Authentication;
 
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
@@ -215,8 +216,10 @@ import static org.artifactory.addon.AddonType.*;
  */
 @org.springframework.stereotype.Component
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesWebAddon, SearchAddon,
-        WatchAddon, WebstartWebAddon, SsoAddon, LdapGroupWebAddon, BuildAddon, LicensesWebAddon, LayoutsWebAddon,
-        FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon, P2WebAddon, NuGetWebAddon {
+        WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
+        BuildAddon,
+        LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon, P2WebAddon,
+        NuGetWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     @Override
@@ -226,16 +229,20 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public MenuNode getSecurityMenuNode(WebstartWebAddon webstartAddon, SsoAddon ssoAddon) {
+    public MenuNode getSecurityMenuNode(WebstartWebAddon webstartAddon) {
         MenuNode security = new MenuNode("Security");
         security.addChild(new MenuNode("General", SecurityGeneralConfigPage.class));
         security.addChild(new MenuNode("Users", UsersPage.class));
         security.addChild(new MenuNode("Groups", GroupsPage.class));
         security.addChild(new MenuNode("Permissions", AclsPage.class));
         security.addChild(new MenuNode("LDAP Settings", LdapsListPage.class));
-        security.addChild(ssoAddon.getCrowdAddonMenuNode("Crowd Integration"));
+        CrowdWebAddon crowdWebAddon = getAddonsManager().addonByType(CrowdWebAddon.class);
+        security.addChild(crowdWebAddon.getCrowdAddonMenuNode("Crowd Integration"));
+        SamlWebAddon samlWebAddon = getAddonsManager().addonByType(SamlWebAddon.class);
+        security.addChild(samlWebAddon.getSamlAddonMenuNode("SAML Integration"));
+        HttpSsoAddon httpSsoAddon = getAddonsManager().addonByType(HttpSsoAddon.class);
+        security.addChild(httpSsoAddon.getHttpSsoMenuNode("HTTP SSO"));
         security.addChild(webstartAddon.getKeyPairMenuNode());
-        security.addChild(ssoAddon.getHttpSsoMenuNode("HTTP SSO"));
         return security;
     }
 
@@ -282,6 +289,27 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public LogoutLink getLogoutLink(String wicketId) {
         return new LogoutLink(wicketId, "Log Out");
+    }
+
+    @Override
+    public AbstractLink getLoginLink(String wicketId) {
+        return new LoginLink(wicketId, "Log In");
+    }
+
+    @Override
+    public boolean isAutoRedirectToSamlIdentityProvider() {
+        return false;
+    }
+
+
+    @Override
+    public boolean isSamlEnabled() {
+        return false;
+    }
+
+    @Override
+    public String getSamlLoginIdentityProviderUrl() {
+        return null;
     }
 
     @Override
@@ -403,6 +431,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public File getBuildArtifactsArchive(BuildArtifactsRequest buildArtifactsRequest) {
+        return null;
+    }
+
+    @Override
+    public BuildsDiff getBuildsDiff(Build firstBuild, Build secondBuild, String baseStorageInfoUri) {
         return null;
     }
 
@@ -549,16 +582,6 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public boolean isCrowdAuthenticationSupported(Class<?> authentication) {
-        return false;
-    }
-
-    @Override
-    public Authentication authenticateCrowd(Authentication authentication) {
-        throw new UnsupportedOperationException("This feature requires the Crowd SSO addon.");
-    }
-
-    @Override
     public MenuNode getCrowdAddonMenuNode(String nodeName) {
         return new DisabledAddonMenuNode(nodeName, AddonType.SSO);
     }
@@ -569,7 +592,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public void logOffSso(HttpServletRequest request, HttpServletResponse response) {
+    public void logOffCrowd(HttpServletRequest request, HttpServletResponse response) {
     }
 
     @Override
@@ -578,13 +601,18 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public boolean findUser(String userName) {
-        return false;
+    public Class<? extends WebPage> getSamlLoginRequestPageClass() {
+        return null;
     }
 
     @Override
-    public void addExternalGroups(String userName, Set<UserGroupInfo> groups) {
-        // nop
+    public Class<? extends Page> getSamlLoginResponsePageClass() {
+        return null;
+    }
+
+    @Override
+    public Class<? extends WebPage> getSamlLogoutRequestPageClass() {
+        return null;
     }
 
     @Override
@@ -616,7 +644,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public ITab getBuildDiffTab(Build build) {
+    public ITab getBuildDiffTab(String title, Build build, boolean hasDeployOnLocal) {
         return new DisabledBuildDiffTab();
     }
 
@@ -982,6 +1010,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         Label label = new Label("nuGetRepoUrlLabel", "");
         label.setVisible(false);
         return label;
+    }
+
+    @Override
+    public MenuNode getSamlAddonMenuNode(String nodeName) {
+        return new DisabledAddonMenuNode(nodeName, AddonType.SSO);
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

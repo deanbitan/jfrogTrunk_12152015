@@ -104,7 +104,7 @@ public class SuccessfulDeploymentResponseHelper {
         fileInfo.originalChecksums = getOriginalChecksums(checksumsInfo);
         fileInfo.path = "/" + repoPath.getPath();
         fileInfo.repo = repoPath.getRepoKey();
-        fileInfo.size = deployedInfo.getSize();
+        fileInfo.size = String.valueOf(deployedInfo.getSize());
         fileInfo.slf = url;
         return fileInfo;
     }
@@ -126,7 +126,7 @@ public class SuccessfulDeploymentResponseHelper {
         fileInfo.originalChecksums = getOriginalChecksums(checksumsInfo);
         fileInfo.path = "/" + repoPath.getPath();
         fileInfo.repo = repoPath.getRepoKey();
-        fileInfo.size = deployedInfo.getSize();
+        fileInfo.size = String.valueOf(deployedInfo.getSize());
         fileInfo.slf = url;
         return fileInfo;
     }

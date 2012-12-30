@@ -38,6 +38,7 @@ public interface PropertiesService {
      * @param property    Property to add
      * @param values      Property values (if null, will not add the property)
      */
+    @Lock(transactional = true)
     void addProperty(RepoPath repoPath, @Nullable PropertySet propertySet, Property property, String... values);
 
     /**
@@ -48,6 +49,7 @@ public interface PropertiesService {
      * @param property    The property to add
      * @param values      Property values
      */
+    @Lock(transactional = true)
     void editProperty(RepoPath repoPath, PropertySet propertySet, Property property, String... values);
 
 
@@ -69,6 +71,7 @@ public interface PropertiesService {
      * @param repoPath The item repo path
      * @param property Property name to delete
      */
+    @Lock(transactional = true)
     void deleteProperty(RepoPath repoPath, String property);
 
     /**

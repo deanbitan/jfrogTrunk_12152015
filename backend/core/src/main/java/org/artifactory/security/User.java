@@ -99,6 +99,15 @@ public class User implements OcmStorable {
     }
 
     @Field
+    public String getBintrayAuth() {
+        return info.getBintrayAuth();
+    }
+
+    public void setBintrayAuth(String bintrayAuth) {
+        info.setBintrayAuth(bintrayAuth);
+    }
+
+    @Field
     public String getRealm() {
         return info.getRealm();
     }

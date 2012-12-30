@@ -23,6 +23,7 @@ import org.artifactory.addon.Addon;
 import org.artifactory.addon.AddonType;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
+import org.artifactory.api.rest.build.diff.BuildsDiff;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.Lock;
@@ -73,10 +74,12 @@ public interface BuildAddon extends Addon {
     /**
      * Returns the builds diff tab panel
      *
-     * @param build The selected build to perform comparison with
+     * @param title            The Tab title
+     * @param build            The selected build to perform comparison with
+     * @param hasDeployOnLocal whether to display the actual tab or a disabled one
      * @return Builds diff tab panel
      */
-    ITab getBuildDiffTab(Build build);
+    ITab getBuildDiffTab(String title, Build build, boolean hasDeployOnLocal);
 
     /**
      * Returns a customized delete confirmation message that adds alerts in case any selected items are used by builds
@@ -216,4 +219,13 @@ public interface BuildAddon extends Addon {
      * @see BuildArtifactsRequest
      */
     File getBuildArtifactsArchive(BuildArtifactsRequest buildArtifactsRequest) throws IOException;
+
+    /**
+     * Returns diff object between two given builds (same build name, different numbers)
+     *
+     * @param firstBuild         The first build to compare, must be newer than the second build
+     * @param secondBuild        The second build to compare against
+     * @param baseStorageInfoUri Base storage uri
+     */
+    BuildsDiff getBuildsDiff(Build firstBuild, Build secondBuild, String baseStorageInfoUri);
 }

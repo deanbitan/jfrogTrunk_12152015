@@ -18,6 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.security.profile;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.io.Serializable;
 
 /**
@@ -29,6 +31,8 @@ public class ProfileModel implements Serializable {
     private String newPassword;
     private String retypedPassword;
     private String email;
+    private String bintrayUsername;
+    private String bintrayApiKey;
 
     public String getCurrentPassword() {
         return currentPassword;
@@ -60,5 +64,44 @@ public class ProfileModel implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getBintrayUsername() {
+        return bintrayUsername;
+    }
+
+    public void setBintrayUsername(String bintrayUsername) {
+        this.bintrayUsername = bintrayUsername;
+    }
+
+    public String getBintrayApiKey() {
+        return bintrayApiKey;
+    }
+
+    public void setBintrayApiKey(String bintrayApiKey) {
+        this.bintrayApiKey = bintrayApiKey;
+    }
+
+    public void setBintrayAuth(String bintrayAuth) {
+        if (StringUtils.isBlank(bintrayAuth)) {
+            return;
+        }
+
+        String[] split = StringUtils.split(bintrayAuth, ':');
+        if (split.length != 2) {
+            throw new IllegalArgumentException("Bintray authentication token '" + bintrayAuth
+                    + "' should have both username and api key separated with a colon between them.");
+        }
+
+        this.bintrayUsername = split[0];
+        this.bintrayApiKey = split[1];
+    }
+
+    public String getBintrayAuth() {
+        if (StringUtils.isNotBlank(bintrayUsername) && StringUtils.isNotBlank(bintrayApiKey)) {
+            return bintrayUsername + ":" + bintrayApiKey;
+        }
+
+        return null;
     }
 }

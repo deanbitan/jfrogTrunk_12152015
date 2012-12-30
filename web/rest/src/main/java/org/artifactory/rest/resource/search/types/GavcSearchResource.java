@@ -19,6 +19,7 @@
 package org.artifactory.rest.resource.search.types;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.InfoRestSearchResult;
 import org.artifactory.api.search.ItemSearchResults;
@@ -26,7 +27,10 @@ import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.rest.common.list.StringList;
+import org.artifactory.rest.util.FileStorageInfoHelper;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 
@@ -39,8 +43,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.List;
 
-import static org.artifactory.api.rest.constant.SearchRestConstants.NOT_FOUND;
-
 /**
  * Resource class that handles GAVC search actions
  *
@@ -50,16 +52,20 @@ public class GavcSearchResource {
 
     private AuthorizationService authorizationService;
     private SearchService searchService;
+    private RepositoryService repositoryService;
     private HttpServletRequest request;
     private HttpServletResponse response;
 
     /**
-     * @param searchService Search service instance
+     * @param searchService     Search service instance
+     * @param repositoryService
+     * @param uriInfo
      */
     public GavcSearchResource(AuthorizationService authorizationService, SearchService searchService,
-            HttpServletRequest request, HttpServletResponse response) {
+            RepositoryService repositoryService, HttpServletRequest request, HttpServletResponse response) {
         this.authorizationService = authorizationService;
         this.searchService = searchService;
+        this.repositoryService = repositoryService;
         this.request = request;
         this.response = response;
     }
@@ -125,13 +131,17 @@ public class GavcSearchResource {
                 return null;
             }
 
-                InfoRestSearchResult gavcRestSearchResult = new InfoRestSearchResult();
-                for (GavcSearchResult result : searchResults.getResults()) {
-                    String uri = RestUtils.buildStorageInfoUri(request, result);
-                    gavcRestSearchResult.results.add(new InfoRestSearchResult.SearchEntry(uri));
+            InfoRestSearchResult gavcRestSearchResult = new InfoRestSearchResult();
+            for (GavcSearchResult result : searchResults.getResults()) {
+                ItemInfo itemInfo = result.getItemInfo();
+                if (!itemInfo.isFolder()) {
+                    FileStorageInfoHelper fileStorageInfoHelper = new FileStorageInfoHelper(request, repositoryService,
+                            (FileInfo) itemInfo);
+                    gavcRestSearchResult.results.add(fileStorageInfoHelper.createFileInfoData());
                 }
-                return gavcRestSearchResult;
             }
+            return gavcRestSearchResult;
+        }
         return null;
     }
 

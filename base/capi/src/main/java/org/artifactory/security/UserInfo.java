@@ -76,4 +76,6 @@ public interface UserInfo extends Info {
     String getLastAccessClientIp();
 
     boolean hasInvalidPassword();
+
+    String getBintrayAuth();
 }

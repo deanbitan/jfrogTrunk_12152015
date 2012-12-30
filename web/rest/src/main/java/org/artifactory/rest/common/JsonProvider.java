@@ -96,6 +96,7 @@ import javax.ws.rs.ext.Provider;
         BuildRestConstants.MT_BUILDS_BY_NAME,
         BuildRestConstants.MT_BUILD,
         BuildRestConstants.MT_BUILD_INFO,
+        BuildRestConstants.MT_BUILDS_DIFF,
         BuildRestConstants.MT_COPY_MOVE_RESULT,
         BuildRestConstants.MT_PROMOTION_RESULT,
         RepositoriesRestConstants.MT_REPOSITORY_DETAILS_LIST,

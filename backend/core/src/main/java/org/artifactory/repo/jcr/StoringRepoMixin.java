@@ -645,12 +645,7 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
                 jcrFile.setMetadata(StatsInfo.class, InfoFactoryHolder.get().createStats());
                 updateResourceSize(res, jcrFile.getSize());
                 createJcrFile(res, jcrFile);
-
-                //Save properties
-                Properties properties = context.getProperties();
-                if ((properties != null) && !properties.isEmpty()) {
-                    jcrFile.setMetadata(Properties.class, properties);
-                }
+                saveProperties(context, jcrFile);
             }
             return res;
         } catch (Exception e) {
@@ -669,6 +664,29 @@ public class StoringRepoMixin<T extends RepoDescriptor> implements StoringRepo<T
             }
             context.setException(e);
             throw new RuntimeException("Could not save resource '" + res.getRepoPath() + "'.", e);
+        }
+    }
+
+    private void saveProperties(SaveResourceContext context, JcrFile jcrFile) throws RepoRejectException {
+        Properties properties = context.getProperties();
+        if ((properties != null) && !properties.isEmpty()) {
+            BasicStatusHolder statusHolder = new BasicStatusHolder();
+            for (String key : properties.keys()) {
+                Set<String> values = properties.get(key);
+                String[] vals = (values != null) ? values.toArray(new String[values.size()]) : new String[]{};
+                interceptors.beforePropertyCreate(jcrFile, statusHolder, key, vals);
+            }
+            CancelException cancelException = statusHolder.getCancelException();
+            if (cancelException != null) {
+                LockingHelper.removeLockEntry(jcrFile.getRepoPath());
+                throw new RepoRejectException(cancelException);
+            }
+            jcrFile.setMetadata(Properties.class, properties);
+            for (String key : properties.keys()) {
+                Set<String> values = properties.get(key);
+                String[] vals = (values != null) ? values.toArray(new String[values.size()]) : new String[]{};
+                interceptors.afterPropertyCreate(jcrFile, statusHolder, key, vals);
+            }
         }
     }
 

@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.17"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.17"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.18"
+           xmlns="http://artifactory.jfrog.org/xsd/1.4.18"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -1195,6 +1195,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="samlSettings" type="SamlSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to SAML.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
 
@@ -1326,7 +1335,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="noAutoUserCreation" type="xs:boolean" minOccurs="0" default="false">
+            <xs:element name="noAutoUserCreation" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
@@ -1346,6 +1355,70 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                         <![CDATA[
                                 Specify the SSO custom cookie name. Out of the box Crowd uses the 'crowd.token_key' cookie name for all Crowd-connected applications.
                                 You can override the default value with your own cookie name. This is useful in environments with multiple Crowd servers.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SamlSettingsType">
+        <xs:sequence>
+            <xs:element name="enableIntegration" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Enable security integration with SAML.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="loginUrl" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The identity provider login URL (when the user tries to login, the service provider redirects to this URL)
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="logoutUrl" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The identity provider logout URL (when the user tries to logout, the service provider redirects to this URL)
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="certificate" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                The certificate for SAML Authentication. NOTE: The certificate must contain the public key in order to allow Artifactory to verify sign-in requests
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="serviceProviderName" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                SAML service provider name: this is the Artifactory name in the SAML federation
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="noAutoUserCreation" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                When automatic user creation is off, authenticated users will not be automatically created
+                        inside Artifactory. Instead, for every request from a SAML user, the user will be temporarily
+                        associated with default groups (if such groups are defined), and the permissions for these
+                        groups will apply.
+                        Without auto user creation, you will need to manually create the user inside Artifactory in
+                        order to manage user permissions that are not attached to his default groups.
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>

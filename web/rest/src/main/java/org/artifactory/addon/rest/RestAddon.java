@@ -40,6 +40,7 @@ import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.legacy.DownloadResource;
 import org.artifactory.sapi.common.Lock;
+import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
@@ -425,6 +426,15 @@ public interface RestAddon extends Addon {
     @Nullable
     BuildPatternArtifacts getBuildPatternArtifacts(@Nonnull BuildPatternArtifactsRequest buildPatternArtifactsRequest,
             @NotNull String servletContextUrl);
+
+    /**
+     * Returns diff object between two given builds (same build name, different numbers)
+     *
+     * @param firstBuild  The first build to compare, must be newer than the second build
+     * @param secondBuild The second build to compare against
+     * @param request     The request to extract the base uri from
+     */
+    Response getBuildsDiff(Build firstBuild, Build secondBuild, HttpServletRequest request);
 
     /**
      * Returns build artifacts map according to the param input regexp patterns.

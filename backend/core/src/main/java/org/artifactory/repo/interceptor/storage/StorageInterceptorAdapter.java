@@ -64,4 +64,20 @@ public abstract class StorageInterceptorAdapter implements StorageInterceptor {
     public void beforeMove(VfsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
             Properties properties) {
     }
+
+    @Override
+    public void beforePropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+    }
+
+    @Override
+    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+    }
+
+    @Override
+    public void beforePropertyDelete(VfsItem fsItem, MutableStatusHolder statusHolder, String name) {
+    }
+
+    @Override
+    public void afterPropertyDelete(VfsItem fsItem, MutableStatusHolder statusHolder, String name) {
+    }
 }

@@ -36,6 +36,7 @@ import org.apache.wicket.request.http.WebResponse;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.AddonsWebManager;
+import org.artifactory.addon.wicket.SamlAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
@@ -205,21 +206,22 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
     }
 
     private void addUserInfo() {
-        AbstractLink logoutLink;
-        WebApplicationAddon applicationAddon;
-        AbstractLink profileLink;
+
         // Enable only for signed in users
-        applicationAddon = addonsManager.addonByType(WebApplicationAddon.class);
-        logoutLink = applicationAddon.getLogoutLink("logoutPage");
-        profileLink = applicationAddon.getProfileLink("profilePage");
+        SamlAddon samlAddon = addonsManager.addonByType(SamlAddon.class);
+        AbstractLink logoutLink = samlAddon.getLogoutLink("logoutPage");
         add(logoutLink);
+
         // Enable only if signed in as anonymous
-        add(new LoginLink("loginPage", "Log In"));
+        AbstractLink loginLink = samlAddon.getLoginLink("loginPage");
+        add(loginLink);
 
         // logged in or not logged in
         add(new Label("loggedInLabel", getLoggedInMessage()));
 
         // update profile link
+        WebApplicationAddon applicationAddon = addonsManager.addonByType(WebApplicationAddon.class);
+        AbstractLink profileLink = applicationAddon.getProfileLink("profilePage");
         add(profileLink);
     }
 

@@ -79,4 +79,5 @@ public interface MutableUserInfo extends UserInfo {
 
     void setLastAccessClientIp(String lastAccessClientIp);
 
+    void setBintrayAuth(String bintrayAuth);
 }

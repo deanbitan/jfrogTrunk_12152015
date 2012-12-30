@@ -48,8 +48,10 @@ public class CronExpValidator extends StringValidator {
     protected void onValidate(IValidatable validatable) {
         String expression = (String) validatable.getValue();
         if (!CronUtils.isValid(expression)) {
+            String invalidMessage = CronUtils.getInvalidMessage(expression);
             ValidationError error = new ValidationError();
-            error.setMessage("Invalid cron expression");
+            error.setMessage("Invalid cron expression" +
+                    ((invalidMessage != null && !invalidMessage.isEmpty()) ? " [" + invalidMessage + "]" : "."));
             validatable.error(error);
             return;
         }

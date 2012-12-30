@@ -23,32 +23,32 @@ import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColu
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
-import org.artifactory.addon.build.diff.BuildsDiffModel;
+import org.artifactory.api.build.diff.BuildsDiffStatus;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.webapp.wicket.page.build.actionable.BuildDiffModelActionableItem;
+import org.artifactory.webapp.wicket.page.build.actionable.BuildsDiffActionableItem;
 
 /**
  * @author Shay Yaakov
  */
-public class BuildDiffPropertyColumn extends PropertyColumn<BuildDiffModelActionableItem> {
+public class BuildDiffPropertyColumn extends PropertyColumn<BuildsDiffActionableItem> {
 
     public BuildDiffPropertyColumn(IModel<String> displayModel, String sortProperty, String propertyExpression) {
         super(displayModel, sortProperty, propertyExpression);
     }
 
     @Override
-    public void populateItem(Item<ICellPopulator<BuildDiffModelActionableItem>> item, String componentId,
-            final IModel<BuildDiffModelActionableItem> model) {
+    public void populateItem(Item<ICellPopulator<BuildsDiffActionableItem>> item, String componentId,
+            final IModel<BuildsDiffActionableItem> model) {
         item.add(new Label(componentId, createLabelModel(model)) {
             @Override
             protected void onBeforeRender() {
                 super.onBeforeRender();
-                BuildsDiffModel buildsDiffModel = model.getObject().getModel();
-                if (BuildsDiffModel.Status.NEW.equals(buildsDiffModel.getStatus())) {
+                BuildsDiffStatus status = model.getObject().getStatus();
+                if (BuildsDiffStatus.NEW.equals(status)) {
                     add(new CssClass("green-listed-label"));
-                } else if (BuildsDiffModel.Status.UPDATED.equals(buildsDiffModel.getStatus())) {
+                } else if (BuildsDiffStatus.UPDATED.equals(status)) {
                     add(new CssClass("blue-listed-label"));
-                } else if (BuildsDiffModel.Status.REMOVED.equals(buildsDiffModel.getStatus())) {
+                } else if (BuildsDiffStatus.REMOVED.equals(status)) {
                     add(new CssClass("gray-listed-label"));
                 }
             }

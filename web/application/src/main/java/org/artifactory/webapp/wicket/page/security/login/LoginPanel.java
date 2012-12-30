@@ -20,18 +20,22 @@ package org.artifactory.webapp.wicket.page.security.login;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.IFormSubmittingComponent;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.TextField;
+import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.SamlAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.links.TitledPageLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
@@ -77,6 +81,14 @@ public class LoginPanel extends TitledActionPanel {
         username.setRequired(true);
         username.setMarkupId("username");
         username.setOutputMarkupId(true);
+        username.add(new AttributeModifier("autocomplete", new AbstractReadOnlyModel<String>() {
+            @Override
+            public String getObject() {
+
+                return ConstantValues.useUserNameAutoCompleteOnLogin.getString();
+            }
+        }));
+
         add(username);
 
         // add password
@@ -86,6 +98,24 @@ public class LoginPanel extends TitledActionPanel {
         password.setOutputMarkupId(true);
         add(password);
 
+        // add login link
+        TitledPageLink ssoLoginLink = new TitledPageLink("ssoLogin", "SSO Login", null) {
+            @Override
+            protected CharSequence getURL() {
+                return addons.addonByType(SamlAddon.class).getSamlLoginIdentityProviderUrl();
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return addons.addonByType(SamlAddon.class).isSamlEnabled();
+            }
+
+            @Override
+            public boolean isVisible() {
+                return addons.addonByType(SamlAddon.class).isSamlEnabled();
+            }
+        };
+        add(ssoLoginLink);
         // add login link
         IFormSubmittingComponent loginLink =
                 addons.addonByType(WebApplicationAddon.class).getLoginLink("loginLink", form);

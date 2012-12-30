@@ -19,14 +19,7 @@
 package org.artifactory.repo;
 
 import com.google.common.collect.Sets;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpConnectionManager;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.StatusLine;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
@@ -51,18 +44,9 @@ import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.remote.browse.HtmlRepositoryBrowser;
-import org.artifactory.repo.remote.browse.HttpExecutor;
-import org.artifactory.repo.remote.browse.RemoteItem;
-import org.artifactory.repo.remote.browse.RemoteRepositoryBrowser;
-import org.artifactory.repo.remote.browse.S3RepositoryBrowser;
+import org.artifactory.repo.remote.browse.*;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.request.ArtifactoryRequest;
-import org.artifactory.request.NullRequestContext;
-import org.artifactory.request.RemoteRequestException;
-import org.artifactory.request.RepoRequests;
-import org.artifactory.request.Request;
-import org.artifactory.request.RequestContext;
+import org.artifactory.request.*;
 import org.artifactory.resource.RemoteRepoResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
@@ -87,6 +71,7 @@ import java.util.concurrent.TimeUnit;
 public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(HttpRepo.class);
 
+    @Nullable
     private HttpClient client;
     private boolean handleGzipResponse;
     protected RemoteRepositoryBrowser remoteBrowser;
@@ -97,7 +82,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private Object onlineMonitorSync = new Object();
 
     public HttpRepo(InternalRepositoryService repositoryService, HttpRepoDescriptor descriptor,
-            boolean globalOfflineMode, RemoteRepo oldRemoteRepo) {
+                    boolean globalOfflineMode, RemoteRepo oldRemoteRepo) {
         super(repositoryService, descriptor, globalOfflineMode, oldRemoteRepo);
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         layoutsCoreAddon = addonsManager.addonByType(LayoutsCoreAddon.class);
@@ -122,7 +107,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 return HttpRepo.this.executeMethod(method);
             }
         };
-        boolean s3Repository = S3RepositoryBrowser.isS3Repository(getUrl(), client);
+        boolean s3Repository = S3RepositoryBrowser.isS3Repository(getUrl(), getHttpClient());
         if (s3Repository) {
             log.debug("Repository {} caches S3 repository", getKey());
             remoteBrowser = new S3RepositoryBrowser(clientExec);
@@ -325,7 +310,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
      */
     public int executeMethod(HttpMethod method, boolean followRedirects) throws IOException {
         updateMethod(method, followRedirects);
-        return client.executeMethod(method);
+        return getHttpClient().executeMethod(method);
     }
 
     @Override
@@ -646,6 +631,13 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
     }
 
+    private HttpClient getHttpClient() {
+        if (client == null) {
+            throw new IllegalStateException("Repo is offline. Cannot use the HTTP client.");
+        }
+        return client;
+    }
+
     private class OnlineMonitorRunnable implements Runnable {
         /**
          * max attempts until reaching the maximum wait time
@@ -714,7 +706,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             GetMethod getMethod = new GetMethod(HttpUtils.encodeQuery(url));
             try {
                 log.debug("Online monitor checking URL: {}", url);
-                int status = client.executeMethod(getMethod);
+                int status = getHttpClient().executeMethod(getMethod);
                 String statusText = getMethod.getStatusText();
                 log.debug("Online monitor http method completed with no exception: {}: {}", status, statusText);
                 // consider putting offline if status > 500 && status < 600

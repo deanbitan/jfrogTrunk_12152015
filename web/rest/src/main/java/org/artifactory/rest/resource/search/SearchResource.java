@@ -73,7 +73,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_ARTIFACT)
     public ArtifactSearchResource artifactQuery() {
-        return new ArtifactSearchResource(authorizationService, searchService, request, response);
+        return new ArtifactSearchResource(authorizationService, searchService, repositoryService, request, response);
     }
 
     /**
@@ -93,7 +93,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_GAVC)
     public GavcSearchResource gavcQuery() {
-        return new GavcSearchResource(authorizationService, searchService, request, response);
+        return new GavcSearchResource(authorizationService, searchService, repositoryService, request, response);
     }
 
     /**
@@ -103,7 +103,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_PROPERTY)
     public PropertySearchResource propertyQuery() {
-        return new PropertySearchResource(authorizationService, searchService, request, response);
+        return new PropertySearchResource(authorizationService, searchService, repositoryService, request, response);
     }
 
     /**
@@ -113,7 +113,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_XPATH)
     public XpathSearchResource metadataQuery() {
-        return new XpathSearchResource(authorizationService, searchService, request, response);
+        return new XpathSearchResource(authorizationService, searchService, repositoryService, request, response);
     }
 
     /**
@@ -151,7 +151,7 @@ public class SearchResource {
     @Path(SearchRestConstants.PATH_CHECKSUM)
     public ChecksumSearchResource checksumSearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new ChecksumSearchResource(authorizationService, restAddon, request, response);
+        return new ChecksumSearchResource(authorizationService, restAddon, repositoryService, request, response);
     }
 
     @Path(SearchRestConstants.PATH_BAD_CHECKSUM)

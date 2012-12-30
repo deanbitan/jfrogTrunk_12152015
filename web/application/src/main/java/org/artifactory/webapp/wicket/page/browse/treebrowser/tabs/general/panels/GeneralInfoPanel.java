@@ -33,6 +33,7 @@ import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.addon.wicket.LicensesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
 import org.artifactory.addon.wicket.WatchAddon;
+import org.artifactory.api.bintray.BintrayService;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.ArtifactCount;
@@ -43,6 +44,9 @@ import org.artifactory.common.wicket.ajax.AjaxLazyLoadSpanPanel;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.common.wicket.component.modal.links.ModalShowLink;
+import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -58,6 +62,8 @@ import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.action.BintrayArtifactPanel;
+import org.artifactory.webapp.wicket.page.security.profile.ProfilePage;
 import org.slf4j.Logger;
 
 /**
@@ -79,6 +85,9 @@ public class GeneralInfoPanel extends Panel {
 
     @SpringBean
     private RepositoryService repositoryService;
+
+    @SpringBean
+    private BintrayService bintrayService;
 
     public GeneralInfoPanel(String id) {
         super(id);
@@ -205,6 +214,8 @@ public class GeneralInfoPanel extends Panel {
         addLastReplicationInfo(infoBorder, path, isCache);
 
         addFilteredResourceCheckbox(infoBorder, itemInfo);
+
+        addBintrayButton(infoBorder, itemInfo, isCache, repoDescriptor.isHandleReleases());
 
         return this;
     }
@@ -360,5 +371,37 @@ public class GeneralInfoPanel extends Panel {
                     .replaceWith(new HelpBubble("filteredResource.help", getString("filteredResource.help")));
             filteredResourceContainer.setVisible(true);
         }
+    }
+
+    private void addBintrayButton(FieldSetBorder infoBorder, final ItemInfo itemInfo, boolean isCache,
+            boolean handleReleases) {
+        RepoPath repoPath = itemInfo.getRepoPath();
+        if (!isCache && !itemInfo.isFolder() && authorizationService.canAnnotate(repoPath)
+                && !isIntegration(repoPath) && handleReleases) {
+            infoBorder.add(new ModalShowLink("pushToBintray", "") {
+                @Override
+                protected BaseModalPanel getModelPanel() {
+                    return new BintrayArtifactPanel(itemInfo);
+                }
+
+                @Override
+                public void onClick(AjaxRequestTarget target) {
+                    if (!bintrayService.isUserHasBintrayAuth()) {
+                        String profilePagePath = WicketUtils.absoluteMountPathForPage(ProfilePage.class);
+                        getPage().error("User doesn't have Bintray credentials, " +
+                                "please configure them from the user <a href=\"" + profilePagePath + "\">profile page</a>.");
+                    } else {
+                        super.onClick(target);
+                    }
+                }
+            });
+        } else {
+            infoBorder.add(new WebMarkupContainer("pushToBintray").setVisible(false));
+        }
+    }
+
+    private boolean isIntegration(RepoPath repoPath) {
+        ModuleInfo moduleInfo = repositoryService.getItemModuleInfo(repoPath);
+        return moduleInfo.isIntegration();
     }
 }

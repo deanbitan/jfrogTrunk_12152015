@@ -23,7 +23,7 @@ import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColu
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
-import org.artifactory.addon.build.diff.BuildsDiffModel;
+import org.artifactory.api.build.diff.BuildsDiffStatus;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
 
@@ -43,12 +43,12 @@ public class ModuleArtifactPropertyColumn extends PropertyColumn<ModuleArtifactA
             @Override
             protected void onBeforeRender() {
                 super.onBeforeRender();
-                BuildsDiffModel.Status status = model.getObject().getStatus();
-                if (BuildsDiffModel.Status.NEW.equals(status)) {
+                BuildsDiffStatus status = model.getObject().getStatus();
+                if (BuildsDiffStatus.NEW.equals(status)) {
                     add(new CssClass("green-listed-label"));
-                } else if (BuildsDiffModel.Status.UPDATED.equals(status)) {
+                } else if (BuildsDiffStatus.UPDATED.equals(status)) {
                     add(new CssClass("blue-listed-label"));
-                } else if (BuildsDiffModel.Status.REMOVED.equals(status)) {
+                } else if (BuildsDiffStatus.REMOVED.equals(status)) {
                     add(new CssClass("gray-listed-label"));
                 }
             }

@@ -137,11 +137,10 @@ public class ExportSystemPanel extends TitledPanel {
                 if (excludeMDSelected != excludeContentSelected) {
                     excludeMetadataCheckbox.setDefaultModelObject(excludeContentSelected);
                 }
-                if(excludeBuildsSelected != excludeContentSelected) {
+                if (excludeBuildsSelected != excludeContentSelected) {
                     excludeBuildsCheckbox.setDefaultModelObject(excludeContentSelected);
                 }
 
-                excludeMetadataCheckbox.setEnabled(!excludeContentSelected);
                 m2CompatibleCheckbox.setEnabled(!excludeContentSelected);
 
                 target.add(excludeMetadataCheckbox);
@@ -151,7 +150,8 @@ public class ExportSystemPanel extends TitledPanel {
         });
         exportForm.add(excludeContentCheckbox);
         exportForm.add(new HelpBubble("excludeContentHelp",
-                "Exclude repository content from the export.\n" + "(Export only settings)"));
+                "Exclude repository binaries content from the export." +
+                        "To export repositories metadata uncheck the 'Exclude Metadata' checkbox.)"));
 
         //Create a zip archive (slow!)
         exportForm.add(new StyledCheckbox("createArchive", new PropertyModel<Boolean>(this, "createArchive")));
@@ -182,7 +182,7 @@ public class ExportSystemPanel extends TitledPanel {
                     settings.setExcludeBuilds(excludeBuilds);
                     settings.setM2Compatible(m2Compatible);
                     settings.setExcludeContent(excludeContent);
-                    if (!excludeContent) {
+                    if (!excludeMetadata || !excludeContent) {
                         settings.setRepositories(getAllLocalRepoKeys());
                     }
                     context.exportTo(settings);

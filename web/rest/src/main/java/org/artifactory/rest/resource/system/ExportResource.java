@@ -70,7 +70,7 @@ public class ExportResource {
     @Produces({SystemRestConstants.MT_EXPORT_SETTINGS, MediaType.APPLICATION_JSON})
     public ExportSettingsConfigurationImpl settingsExample() {
         ExportSettingsConfigurationImpl settings = new ExportSettingsConfigurationImpl();
-        settings.exportPath = "/export/path";
+        settings.setExportPath("/export/path");
         return settings;
     }
 
@@ -79,18 +79,18 @@ public class ExportResource {
     @Consumes({SystemRestConstants.MT_EXPORT_SETTINGS, MediaType.APPLICATION_JSON})
     public Response activateExport(ExportSettingsConfigurationImpl settings) {
         StreamStatusHolder holder = new StreamStatusHolder(httpResponse);
-        ExportSettingsImpl exportSettings = new ExportSettingsImpl(new File(settings.exportPath), holder);
-        exportSettings.setIncludeMetadata(settings.includeMetadata);
-        exportSettings.setCreateArchive(settings.createArchive);
-        exportSettings.setIgnoreRepositoryFilteringRulesOn(settings.bypassFiltering);
-        exportSettings.setVerbose(settings.verbose);
-        exportSettings.setFailFast(settings.failOnError);
-        exportSettings.setFailIfEmpty(settings.failIfEmpty);
-        exportSettings.setM2Compatible(settings.m2);
-        exportSettings.setIncremental(settings.incremental);
-        exportSettings.setExcludeContent(settings.excludeContent);
+        ExportSettingsImpl exportSettings = new ExportSettingsImpl(new File(settings.getExportPath()), holder);
+        exportSettings.setIncludeMetadata(settings.isIncludeMetadata());
+        exportSettings.setCreateArchive(settings.isCreateArchive());
+        exportSettings.setIgnoreRepositoryFilteringRulesOn(settings.isBypassFiltering());
+        exportSettings.setVerbose(settings.isVerbose());
+        exportSettings.setFailFast(settings.isFailOnError());
+        exportSettings.setFailIfEmpty(settings.isFailIfEmpty());
+        exportSettings.setM2Compatible(settings.isM2());
+        exportSettings.setIncremental(settings.isIncremental());
+        exportSettings.setExcludeContent(settings.isExcludeContent());
 
-        if (!settings.excludeContent) {
+        if (settings.isIncludeMetadata() || !settings.isExcludeContent()) {
             exportSettings.setRepositories(getAllLocalRepoKeys());
         }
         log.debug("Activating export {}", settings);

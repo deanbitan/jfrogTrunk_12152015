@@ -19,6 +19,8 @@
 
 package org.artifactory.api.rest.search.result;
 
+import org.artifactory.api.rest.artifact.RestFileInfo;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,16 +30,5 @@ import java.util.List;
  * @author Eli Givoni
  */
 public class InfoRestSearchResult {
-    public List<SearchEntry> results = new ArrayList<SearchEntry>();
-
-    public static class SearchEntry {
-        public String uri;
-
-        public SearchEntry(String uri) {
-            this.uri = uri;
-        }
-
-        private SearchEntry() {
-        }
-    }
+    public List<RestFileInfo> results = new ArrayList<RestFileInfo>();
 }

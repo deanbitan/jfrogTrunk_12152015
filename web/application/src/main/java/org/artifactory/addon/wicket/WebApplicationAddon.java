@@ -105,10 +105,9 @@ public interface WebApplicationAddon extends Addon {
     /**
      * Returns an addon-customized security menu node
      *
-     * @param ssoAddon
      * @return Security menu node  @param webstartAddon
      */
-    MenuNode getSecurityMenuNode(WebstartWebAddon webstartAddon, SsoAddon ssoAddon);
+    MenuNode getSecurityMenuNode(WebstartWebAddon webstartAddon);
 
     /**
      * Returns an addon-customized services menu node

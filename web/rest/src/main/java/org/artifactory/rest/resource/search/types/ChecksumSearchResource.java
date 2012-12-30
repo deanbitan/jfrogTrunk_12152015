@@ -22,13 +22,15 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.SearchRestConstants;
-import org.artifactory.api.rest.search.result.ChecksumRestSearchResult;
+import org.artifactory.api.rest.search.result.InfoRestSearchResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.StringList;
-import org.artifactory.rest.util.RestUtils;
+import org.artifactory.rest.util.FileStorageInfoHelper;
 import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -51,14 +53,15 @@ public class ChecksumSearchResource {
     private AuthorizationService authorizationService;
 
     private RestAddon restAddon;
+    private RepositoryService repositoryService;
     private HttpServletRequest request;
     private HttpServletResponse response;
 
     public ChecksumSearchResource(AuthorizationService authorizationService, RestAddon restAddon,
-            HttpServletRequest request,
-            HttpServletResponse response) {
+            RepositoryService repositoryService, HttpServletRequest request, HttpServletResponse response) {
         this.authorizationService = authorizationService;
         this.restAddon = restAddon;
+        this.repositoryService = repositoryService;
         this.request = request;
         this.response = response;
     }
@@ -73,7 +76,7 @@ public class ChecksumSearchResource {
      */
     @GET
     @Produces({SearchRestConstants.MT_CHECKSUM_SEARCH_RESULT, MediaType.APPLICATION_JSON})
-    public ChecksumRestSearchResult get(@QueryParam(SearchRestConstants.PARAM_MD5_CHECKSUM) String md5Checksum,
+    public InfoRestSearchResult get(@QueryParam(SearchRestConstants.PARAM_MD5_CHECKSUM) String md5Checksum,
             @QueryParam(SearchRestConstants.PARAM_SHA1_CHECKSUM) String sha1Checksum,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch)
             throws IOException, AuthorizationRestException {
@@ -97,13 +100,15 @@ public class ChecksumSearchResource {
         return null;
     }
 
-    private ChecksumRestSearchResult search(String md5Checksum, String sha1Checksum, StringList reposToSearch) {
+    private InfoRestSearchResult search(String md5Checksum, String sha1Checksum, StringList reposToSearch) {
         Set<RepoPath> matchingArtifacts = restAddon.searchArtifactsByChecksum(md5Checksum, sha1Checksum, reposToSearch);
 
-        ChecksumRestSearchResult resultToReturn = new ChecksumRestSearchResult();
+        InfoRestSearchResult resultToReturn = new InfoRestSearchResult();
         for (RepoPath matchingArtifact : matchingArtifacts) {
-            resultToReturn.addResult(new ChecksumRestSearchResult.SearchEntry(
-                    RestUtils.buildStorageInfoUri(request, matchingArtifact.getRepoKey(), matchingArtifact.getPath())));
+            FileInfo fileInfo = repositoryService.getFileInfo(matchingArtifact);
+            FileStorageInfoHelper fileStorageInfoHelper = new FileStorageInfoHelper(request, repositoryService,
+                    fileInfo);
+            resultToReturn.results.add(fileStorageInfoHelper.createFileInfoData());
         }
 
         return resultToReturn;

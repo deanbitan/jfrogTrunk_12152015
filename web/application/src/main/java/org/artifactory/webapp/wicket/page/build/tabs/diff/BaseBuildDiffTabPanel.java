@@ -34,7 +34,8 @@ import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
-import org.artifactory.webapp.wicket.page.build.actionable.BuildDiffModelActionableItem;
+import org.artifactory.webapp.wicket.page.build.actionable.BuildsDiffActionableItem;
+import org.artifactory.webapp.wicket.page.build.actionable.BuildsDiffDependencyActionableItem;
 import org.jfrog.build.api.Build;
 
 import javax.annotation.Nonnull;
@@ -50,9 +51,9 @@ public abstract class BaseBuildDiffTabPanel extends Panel {
 
     protected BaseArtifactsDiffListPanel artifactsDiffListPanel;
     protected BaseDependenciesDiffListPanel dependenciesDiffListPanel;
-    protected BaseEnvDiffListPanel envDiffListPanel;
+    protected BasePropertiesDiffListPanel envDiffListPanel;
 
-    private List<BuildDiffModelActionableItem> dependencies;
+    private List<BuildsDiffActionableItem> dependencies;
     protected Build build;
 
     @WicketProperty
@@ -95,7 +96,7 @@ public abstract class BaseBuildDiffTabPanel extends Panel {
                 dependencies = dependenciesDiffListPanel.getDependencies(selectedBuild);
                 setDependenciesDataProvider();
                 dependenciesDiffListPanel.setSecondItemName(selectedBuild.getNumber());
-                envDiffListPanel.getTableDataProvider().setData(envDiffListPanel.getEnv(selectedBuild));
+                envDiffListPanel.getTableDataProvider().setData(envDiffListPanel.getProperties(selectedBuild));
                 envDiffListPanel.setSecondItemName(selectedBuild.getNumber());
                 target.add(artifactsDiffListPanel, dependenciesDiffListPanel, envDiffListPanel);
             }
@@ -127,8 +128,8 @@ public abstract class BaseBuildDiffTabPanel extends Panel {
     }
 
     private void setDataProviderWithExcludedDependencies() {
-        List<BuildDiffModelActionableItem> artifactsData = artifactsDiffListPanel.getTableDataProvider().getData();
-        List<BuildDiffModelActionableItem> dependenciesData = dependencies;
+        List<BuildsDiffActionableItem> artifactsData = artifactsDiffListPanel.getTableDataProvider().getData();
+        List<BuildsDiffActionableItem> dependenciesData = dependencies;
 
         if (artifactsData == null || dependenciesData == null) {
             if (dependencies != null) {
@@ -137,11 +138,11 @@ public abstract class BaseBuildDiffTabPanel extends Panel {
             return;
         }
 
-        Iterable<BuildDiffModelActionableItem> filtered = Iterables.filter(dependenciesData,
-                new Predicate<BuildDiffModelActionableItem>() {
+        Iterable<BuildsDiffActionableItem> filtered = Iterables.filter(dependenciesData,
+                new Predicate<BuildsDiffActionableItem>() {
                     @Override
-                    public boolean apply(@Nonnull BuildDiffModelActionableItem input) {
-                        return !input.getModel().isInternalDependency();
+                    public boolean apply(@Nonnull BuildsDiffActionableItem input) {
+                        return !((BuildsDiffDependencyActionableItem) input).isInternalDependency();
                     }
                 });
 

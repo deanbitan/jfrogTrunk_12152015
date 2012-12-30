@@ -57,6 +57,7 @@ public class UserModel extends ProfileModel {
     public UserModel(UserInfo userInfo) {
         this.username = userInfo.getUsername();
         setEmail(userInfo.getEmail());
+        setBintrayAuth(userInfo.getBintrayAuth());
         this.admin = userInfo.isAdmin();
         this.updatableProfile = userInfo.isUpdatableProfile();
         groups = Sets.newHashSet(userInfo.getGroups());

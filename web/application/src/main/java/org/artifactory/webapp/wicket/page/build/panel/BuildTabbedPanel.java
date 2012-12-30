@@ -128,7 +128,7 @@ public class BuildTabbedPanel extends TitledPanel {
         tabList.add(licensesAddon.getLicensesInfoTab("Licenses", build, hasDeployOnLocal));
 
         BuildAddon buildAddon = addonsManager.addonByType(BuildAddon.class);
-        ITab tab = buildAddon.getBuildDiffTab(build);
+        ITab tab = buildAddon.getBuildDiffTab("Diff", build, hasDeployOnLocal);
         tabList.add(tab);
 
         tabList.add(getReleaseHistoryTab("Release History", hasDeployOnLocal));

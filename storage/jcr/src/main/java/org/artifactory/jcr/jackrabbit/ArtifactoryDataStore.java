@@ -31,7 +31,10 @@ import org.apache.jackrabbit.core.util.db.DbUtility;
 import org.apache.jackrabbit.core.util.db.StreamWrapper;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.storage.StorageUnit;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.io.checksum.Checksum;
+import org.artifactory.io.checksum.ChecksumInputStream;
 import org.artifactory.jcr.spring.ArtifactoryStorageContext;
 import org.artifactory.jcr.spring.StorageContextHelper;
 import org.artifactory.log.LoggerFactory;
@@ -56,6 +59,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -171,18 +175,38 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
     public DataRecord addRecord(InputStream stream) throws DataStoreException {
         ArtifactoryDbDataRecord dataRecord = null;
         File tempFile = null;
-        DigestInputStream digestStream = null;
+        InputStream wrappedIs = null;
         try {
-            // First create the temp file with checksum digest
-            MessageDigest digest = getDigest();
-            digestStream = new DigestInputStream(stream, digest);
+            MessageDigest digest = null;
+            if (stream instanceof ChecksumInputStream) {
+                wrappedIs = stream;
+            } else {
+                // First create the temp file with checksum digest
+                digest = getDigest();
+                wrappedIs = new DigestInputStream(stream, digest);
+            }
+
             //TODO: [by yl] For blob store - write a temp file directly to jcr and delete it from jcr if exists,
             //instead of using a real temp file as medium between the input stream and the jcr stream
-            tempFile = moveToTempFile(digestStream);
+            tempFile = moveToTempFile(wrappedIs);
 
             // Then create the new DB record
             long now = System.currentTimeMillis();
-            DataIdentifier identifier = new DataIdentifier(digest.digest());
+            DataIdentifier identifier = null;
+            if (digest != null) {
+                identifier = new DataIdentifier(digest.digest());
+            } else {
+                Checksum[] checksums = ((ChecksumInputStream) stream).getChecksums();
+                for (Checksum checksum : checksums) {
+                    if (checksum.getType() == ChecksumType.sha1) {
+                        identifier = new DataIdentifier(checksum.getChecksum());
+                    }
+                }
+                if (identifier == null) {
+                    throw new DataStoreException(
+                            "Cannot find SHA1 checksum in " + Arrays.toString(checksums) + "!");
+                }
+            }
             String id = identifier.toString();
             log.trace("Datastore checksum: 'MD5:{}", id);
             dataRecord = new ArtifactoryDbDataRecord(this, identifier, tempFile.length(), now);
@@ -234,7 +258,7 @@ public abstract class ArtifactoryDataStore extends ExtendedDbDataStoreBase {
             }
             throw convert("Can not insert new record", e);
         } finally {
-            IOUtils.closeQuietly(digestStream);
+            IOUtils.closeQuietly(wrappedIs);
             if (tempFile != null && tempFile.exists()) {
                 if (!tempFile.delete()) {
                     log.error("Could not delete temp file " + tempFile.getAbsolutePath());

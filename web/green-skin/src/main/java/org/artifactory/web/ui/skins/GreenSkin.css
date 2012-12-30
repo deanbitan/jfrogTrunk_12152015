@@ -1934,6 +1934,19 @@ div.footer, .copywrites, .version {
     line-height: 1em;
 }
 
+.bintray_button {
+    background: url("images/buttons/bintray/BTN-bintray-normal.png");
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    width: 158px;
+    height: 41px;
+}
+
+.bintray_button:hover, .bintray_button:focus {
+    background: url("images/buttons/bintray/BTN-bintray-over.png");;
+}
+
 .quick-search-box {
     position: absolute;
     top: 36px;
@@ -3615,6 +3628,11 @@ div.general-settings-panel input.text-file {
     width: 650px
 }
 
+.certificate-text-area {
+    font-family: monospace;
+    width: 650px
+}
+
 .license-border {
     margin-top: -3px;
     margin-left: 8px;
@@ -4383,7 +4401,7 @@ table.data-table tr.headers button.styled-checkbox .button-center {
 /*-- ProfilePanel --*/
 
 .unlock-profile-form input.text {
-    width: 150px;
+    width: 200px;
 }
 
 .unlock-profile-form  button {
@@ -4414,15 +4432,23 @@ table.data-table tr.headers button.styled-checkbox .button-center {
 }
 
 .update-profile-form input.text {
-    width: 150px;
+    width: 200px;
 }
 
 .update-profile-form .textbox-disabled {
-    min-width: 150px;
+    min-width: 200px;
 }
 
 .update-profile-form .value {
     padding-top: 2px;
+}
+
+.bintray-profile-form input.text {
+    width: 330px;
+}
+
+.bintray-link {
+    background-image: url("images/icons/bintray.png");
 }
 
 .profile-password {
@@ -4431,7 +4457,7 @@ table.data-table tr.headers button.styled-checkbox .button-center {
 
 .profile-password .password-strength {
     position: relative;
-    left: 170px;
+    left: 220px;
     top: -22px;
 }
 
@@ -5105,7 +5131,6 @@ table.data-table td.add-value-row {
 
 .settings-snippet {
     position: relative;
-    margin-top: 25px;
 }
 
 .settings-snippet .info {

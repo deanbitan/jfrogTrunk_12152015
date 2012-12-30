@@ -29,7 +29,7 @@ import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.groupable.GroupableTable;
 import org.artifactory.common.wicket.component.table.groupable.provider.GroupableDataProvider;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
-import org.artifactory.webapp.wicket.page.build.actionable.BuildDiffModelActionableItem;
+import org.artifactory.webapp.wicket.page.build.actionable.BuildsDiffActionableItem;
 import org.jfrog.build.api.Build;
 
 import java.util.List;
@@ -55,18 +55,18 @@ public abstract class BaseArtifactsDiffListPanel extends TitledPanel {
         return "Artifacts";
     }
 
-    protected abstract List<BuildDiffModelActionableItem> getArtifacts(Build selectedBuild);
+    protected abstract List<BuildsDiffActionableItem> getArtifacts(Build selectedBuild);
 
     protected void addTable() {
-        List<IColumn<BuildDiffModelActionableItem>> columns = Lists.newArrayList();
-        columns.add(new ActionsColumn<BuildDiffModelActionableItem>(""));
-        columns.add(new BuildDiffPropertyColumn(Model.of("Name (Current Build)"), "model.firstItemName",
-                "model.firstItemName"));
+        List<IColumn<BuildsDiffActionableItem>> columns = Lists.newArrayList();
+        columns.add(new ActionsColumn(""));
+        columns.add(new BuildDiffPropertyColumn(Model.of("Name (Current Build)"), "model.name",
+                "model.name"));
         columns.add(new BuildDiffPropertyColumn(new PropertyModel<String>(this, "secondItemName"),
-                "model.secondItemName", "model.secondItemName"));
+                "model.secondItemName", "model.diffName"));
         columns.add(new BuildDiffGroupableColumn(Model.of("Status"), "model.status", "model.status"));
-        columns.add(new BuildDiffGroupableColumn(Model.of("Module"), "model.moduleId", "model.moduleId"));
-        add(new GroupableTable<BuildDiffModelActionableItem>("artifactsDiff", columns, new ArtifactsDiffDataProvider(),
+        columns.add(new BuildDiffGroupableColumn(Model.of("Module"), "model.module", "model.module"));
+        add(new GroupableTable<BuildsDiffActionableItem>("artifactsDiff", columns, new ArtifactsDiffDataProvider(),
                 10));
     }
 
@@ -74,11 +74,11 @@ public abstract class BaseArtifactsDiffListPanel extends TitledPanel {
         return ((ArtifactsDiffDataProvider) getTable().getSortableDataProvider());
     }
 
-    private SortableTable<BuildDiffModelActionableItem> getTable() {
-        return (SortableTable<BuildDiffModelActionableItem>) get("artifactsDiff");
+    private SortableTable<BuildsDiffActionableItem> getTable() {
+        return (SortableTable<BuildsDiffActionableItem>) get("artifactsDiff");
     }
 
-    public class ArtifactsDiffDataProvider extends GroupableDataProvider<BuildDiffModelActionableItem> {
+    public class ArtifactsDiffDataProvider extends GroupableDataProvider<BuildsDiffActionableItem> {
 
         public ArtifactsDiffDataProvider() {
             super(getArtifacts(null));

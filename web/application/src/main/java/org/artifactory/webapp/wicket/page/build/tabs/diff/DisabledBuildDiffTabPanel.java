@@ -49,7 +49,7 @@ public class DisabledBuildDiffTabPanel extends BaseBuildDiffTabPanel {
 
     @Override
     protected Panel getEnvDiffListPanel(String id) {
-        envDiffListPanel = new DisabledEnvDiffListPanel(id);
+        envDiffListPanel = new DisabledPropertiesDiffListPanel(id);
         return envDiffListPanel;
     }
 }

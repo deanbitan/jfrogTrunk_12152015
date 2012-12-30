@@ -426,7 +426,7 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         status.setDebug("Exporting file '" + getRelativePath() + "'...", log);
         File targetFile = new File(settings.getBaseDir(), getRelativePath());
         try {
-            //Invoke the callback if exists
+            // Invoke the callback if exists
             settings.executeCallbacks(
                     new FileExportInfoImpl(getInfo(), targetFile, FileExportInfo.FileExportStatus.PENDING),
                     FileExportEvent.BEFORE_FILE_EXPORT);
@@ -435,14 +435,17 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
             if (!parentFile.exists()) {
                 FileUtils.forceMkdir(parentFile);
             }
-
-            final boolean skipped = exportFileContent(targetFile, settings);
-
+            // Export file only if "incremental export" and the file to export is newer than the target file.
+            boolean skipFileContentExport = isSkipFileContentExport(targetFile, settings);
+            if (!skipFileContentExport) {
+                exportFileContent(targetFile);
+            }
             settings.executeCallbacks(
                     new FileExportInfoImpl(
                             getInfo(),
                             targetFile,
-                            skipped ? FileExportInfo.FileExportStatus.SKIPPED : FileExportInfo.FileExportStatus.ADDED),
+                            skipFileContentExport ? FileExportInfo.FileExportStatus.SKIPPED :
+                                    FileExportInfo.FileExportStatus.ADDED),
                     FileExportEvent.AFTER_FILE_EXPORT);
 
             if (settings.isIncludeMetadata()) {
@@ -463,14 +466,7 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
         }
     }
 
-    private boolean exportFileContent(File targetFile, ExportSettings settings) throws IOException {
-        if (settings.isIncremental() && targetFile.exists()) {
-            // incremental export - only export the file if it is newer
-            if (getInfo().getLastModified() <= targetFile.lastModified()) {
-                log.debug("Skipping not modified file {}", getPath());
-                return true;
-            }
-        }
+    private void exportFileContent(File targetFile) throws IOException {
         log.debug("Exporting file content to {}", targetFile.getAbsolutePath());
         OutputStream os = null;
         InputStream is = null;
@@ -490,6 +486,19 @@ public class JcrFile extends JcrFsItem<FileInfo, MutableFileInfo> implements Vfs
 
         if (getLastModified() >= 0) {
             targetFile.setLastModified(getLastModified());
+        }
+    }
+
+    private boolean isSkipFileContentExport(File targetFile, ExportSettings settings) {
+        if (settings.isExcludeContent()) {
+            return true;
+        }
+        if (settings.isIncremental() && targetFile.exists()) {
+            // incremental export - only export the file if it is newer
+            if (getInfo().getLastModified() <= targetFile.lastModified()) {
+                log.debug("Skipping not modified file {}", getPath());
+                return true;
+            }
         }
         return false;
     }

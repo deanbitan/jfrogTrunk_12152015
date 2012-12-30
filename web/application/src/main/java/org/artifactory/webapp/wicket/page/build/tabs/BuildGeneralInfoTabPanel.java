@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.build.tabs;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.ExternalLink;
@@ -28,9 +29,15 @@ import org.apache.wicket.util.time.Duration;
 import org.artifactory.addon.AddonType;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.SearchAddon;
+import org.artifactory.api.bintray.BintrayService;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
+import org.artifactory.common.wicket.component.modal.links.ModalShowLink;
+import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
+import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.action.BintrayBuildPanel;
 import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
+import org.artifactory.webapp.wicket.page.security.profile.ProfilePage;
 import org.jfrog.build.api.Agent;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildAgent;
@@ -47,6 +54,9 @@ public class BuildGeneralInfoTabPanel extends Panel {
 
     @SpringBean
     private AddonsManager addonsManager;
+
+    @SpringBean
+    private BintrayService bintrayService;
 
     /**
      * Main constructor
@@ -114,6 +124,28 @@ public class BuildGeneralInfoTabPanel extends Panel {
                 StringUtils.isNotBlank(build.getParentNumber()));
 
         addIssueTrackerInformation(infoBorder, build.getIssues());
+
+        addBintrayButton(infoBorder, build);
+    }
+
+    private void addBintrayButton(FieldSetBorder infoBorder, final Build build) {
+        infoBorder.add(new ModalShowLink("pushToBintray", "") {
+            @Override
+            protected BaseModalPanel getModelPanel() {
+                return new BintrayBuildPanel(build);
+            }
+
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                if (!bintrayService.isUserHasBintrayAuth()) {
+                    String profilePagePath = WicketUtils.absoluteMountPathForPage(ProfilePage.class);
+                    getPage().error("User doesn't have Bintray credentials, " +
+                            "please configure them from the user <a href=\"" + profilePagePath + "\">profile page</a>.");
+                } else {
+                    super.onClick(target);
+                }
+            }
+        });
     }
 
     private void addIssueTrackerInformation(FieldSetBorder infoBorder, Issues issues) {

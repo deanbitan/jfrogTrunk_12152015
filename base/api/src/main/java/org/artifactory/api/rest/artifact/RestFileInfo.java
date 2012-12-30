@@ -18,6 +18,8 @@
 
 package org.artifactory.api.rest.artifact;
 
+import java.util.Map;
+
 /**
  * @author Eli Givoni
  */
@@ -26,9 +28,10 @@ public class RestFileInfo extends RestBaseStorageInfo {
     public String downloadUri;
     public String remoteUrl;
     public String mimeType;
-    public long size;
+    public String size;
     public Checksums checksums;
     public Checksums originalChecksums;
+    public Map<String, String[]> properties;
 
     public static class Checksums {
         public String sha1;

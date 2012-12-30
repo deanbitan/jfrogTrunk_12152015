@@ -36,6 +36,7 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.legacy.DownloadResource;
+import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
@@ -294,6 +295,11 @@ public class RestAddonDefaultImpl implements RestAddon {
     @Override
     public BuildPatternArtifacts getBuildPatternArtifacts(
             @Nonnull BuildPatternArtifactsRequest buildPatternArtifactsRequest, String servletContextUrl) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public Response getBuildsDiff(Build firstBuild, Build secondBuild, HttpServletRequest request) {
         throw new MissingRestAddonException();
     }
 

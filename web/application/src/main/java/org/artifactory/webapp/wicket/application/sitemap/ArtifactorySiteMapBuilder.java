@@ -24,7 +24,6 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.LicensesWebAddon;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.SearchAddon;
-import org.artifactory.addon.wicket.SsoAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.addon.wicket.WebstartWebAddon;
 import org.artifactory.api.security.AuthorizationService;
@@ -122,8 +121,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         adminPage.addChild(adminConfiguration);
 
         WebstartWebAddon webstartAddon = addons.addonByType(WebstartWebAddon.class);
-        SsoAddon ssoAddon = addons.addonByType(SsoAddon.class);
-        MenuNode securityConfiguration = applicationAddon.getSecurityMenuNode(webstartAddon, ssoAddon);
+        MenuNode securityConfiguration = applicationAddon.getSecurityMenuNode(webstartAddon);
         adminPage.addChild(securityConfiguration);
 
         MenuNode adminServices = applicationAddon.getServicesMenuNode();

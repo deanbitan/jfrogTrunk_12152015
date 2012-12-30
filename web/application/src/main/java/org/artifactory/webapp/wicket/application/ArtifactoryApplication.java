@@ -41,7 +41,9 @@ import org.apache.wicket.settings.IResourceSettings;
 import org.apache.wicket.settings.ISecuritySettings;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
+import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.BootstrapListener;
+import org.artifactory.addon.wicket.SamlAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
@@ -102,6 +104,9 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
     @SpringBean
     private RepositoryService repositoryService;
+
+    @SpringBean
+    private AddonsManager addons;
 
     private SiteMap siteMap;
 
@@ -214,6 +219,12 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
 
     @Override
     protected Class<? extends WebPage> getSignInPageClass() {
+        SamlAddon samlAddon = addons.addonByType(SamlAddon.class);
+        if (samlAddon.isAutoRedirectToSamlIdentityProvider()) {
+            return samlAddon.getSamlLoginRequestPageClass();
+        }
+
+        // return default login page
         return LoginPage.class;
     }
 
@@ -362,6 +373,20 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         mountPage(ForgotPasswordPage.class);
 
         hardMountPage(hardMountPages, "/search/artifact", ArtifactSearchPage.class);
+
+        SamlAddon samlAddon = addons.addonByType(SamlAddon.class);
+        Class<? extends Page> loginRequest = samlAddon.getSamlLoginRequestPageClass();
+        if (loginRequest != null) {
+            hardMountPage(hardMountPages, "/saml/loginRequest", loginRequest);
+        }
+        Class<? extends Page> loginResponse = samlAddon.getSamlLoginResponsePageClass();
+        if (loginResponse != null) {
+            hardMountPage(hardMountPages, "/saml/loginResponse", loginResponse);
+        }
+        Class<? extends Page> logoutRequest = samlAddon.getSamlLogoutRequestPageClass();
+        if (logoutRequest != null) {
+            hardMountPage(hardMountPages, "/saml/logoutRequest", logoutRequest);
+        }
 
         // We need both of these since accessing modules without the trailing "/" mount fails
         hardMountPage(hardMountPages, BuildBrowserConstants.MOUNT_PATH, BuildBrowserRootPage.class);

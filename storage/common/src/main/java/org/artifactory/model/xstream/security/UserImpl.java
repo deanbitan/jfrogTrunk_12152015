@@ -55,6 +55,8 @@ public class UserImpl implements MutableUserInfo {
     private long lastAccessTimeMillis;
     private String lastAccessClientIp;
 
+    private String bintrayAuth;
+
     public UserImpl() {
     }
 
@@ -89,6 +91,7 @@ public class UserImpl implements MutableUserInfo {
         setLastLoginTimeMillis(user.getLastLoginTimeMillis());
         setLastAccessClientIp(user.getLastAccessClientIp());
         setLastAccessTimeMillis(user.getLastAccessTimeMillis());
+        setBintrayAuth(user.getBintrayAuth());
     }
 
     @Override
@@ -344,6 +347,16 @@ public class UserImpl implements MutableUserInfo {
     @Override
     public void setLastAccessClientIp(String lastAccessClientIp) {
         this.lastAccessClientIp = lastAccessClientIp;
+    }
+
+    @Override
+    public void setBintrayAuth(String bintrayAuth) {
+        this.bintrayAuth = bintrayAuth;
+    }
+
+    @Override
+    public String getBintrayAuth() {
+        return bintrayAuth;
     }
 
     @Override

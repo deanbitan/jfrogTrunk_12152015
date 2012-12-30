@@ -121,7 +121,10 @@ public enum ConstantValues {
     replicationLocalIterationSleepThresholdMillis("replication.local.iteration.sleepThresholdMillis", 1000),
     replicationLocalIterationSleepMillis("replication.local.iteration.sleepMillis", 100),
     replicationEventQueueSize("replication.event.queue.size", 50000),
-    requestExplodedArchiveExtensions("request.explodedArchiveExtensions", "zip,tar,tar.gz,tgz");
+    requestExplodedArchiveExtensions("request.explodedArchiveExtensions", "zip,tar,tar.gz,tgz"),
+    bintrayUrl("bintray.url", "https://bintray.com"),
+    bintrayApiUrl("bintray.api.url", "https://api.bintray.com"),
+    useUserNameAutoCompleteOnLogin("useUserNameAutoCompleteOnLogin", "on");
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

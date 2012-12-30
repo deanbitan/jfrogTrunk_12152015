@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.build.tabs.diff;
 
 import com.google.common.collect.Lists;
-import org.artifactory.webapp.wicket.page.build.actionable.BuildDiffModelActionableItem;
+import org.artifactory.webapp.wicket.page.build.actionable.BuildsDiffActionableItem;
 import org.jfrog.build.api.Build;
 
 import java.util.List;
@@ -35,7 +35,7 @@ public class DisabledArtifactsDiffListPanel extends BaseArtifactsDiffListPanel {
     }
 
     @Override
-    protected List<BuildDiffModelActionableItem> getArtifacts(Build selectedBuild) {
+    protected List<BuildsDiffActionableItem> getArtifacts(Build selectedBuild) {
         return Lists.newArrayList();
     }
 }

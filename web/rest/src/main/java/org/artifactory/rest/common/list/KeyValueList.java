@@ -30,16 +30,30 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
+ * This class uses a <a href="http://www.regular-expressions.info/lookaround.html">Negative Lookbehind</a> regexp.
+ * <p>All the regexp are used instead of regular String split since we want to allow
+ * pipe, comma or equal as regular characters inside the key/value (by escaping them with a backslash).<br/>
+ * For example: "a\=a=1\,2" allows for key: a=a and value: 1,2 (one value instead of multiple values as comma usually means).
+ * <p/>
+ * <p><b>NOTE!</b> Since Jackrabbit doesn't allow pipes as the key/value name
+ * we use the pipe regexp pattern only for handling values, in case a key with a pipe is given the user will get 500.
+ *
  * @author Tomer Cohen
  */
 public class KeyValueList extends ArrayList<String> {
     private static final Logger log = LoggerFactory.getLogger(KeyValueList.class);
 
+    private static final Pattern BACKSLASH_PIPE_PATTERN = Pattern.compile("(?<!\\\\)\\|");
+    private static final Pattern BACKSLASH_COMMA_PATTERN = Pattern.compile("(?<!\\\\)\\,");
+    private static final Pattern BACKSLASH_EQUAL_PATTERN = Pattern.compile("(?<!\\\\)=");
+
     public KeyValueList(String s) {
         super();
-        for (String v : StringUtils.split(s, '|')) {
+        String[] splittedValues = BACKSLASH_PIPE_PATTERN.split(s);
+        for (String v : splittedValues) {
             try {
                 if (!StringUtils.isWhitespace(v)) {
                     add(v.trim());
@@ -54,12 +68,14 @@ public class KeyValueList extends ArrayList<String> {
     public Map<String, List<String>> toStringMap() {
         Map<String, List<String>> map = Maps.newHashMap();
         for (String keyVal : this) {
-            String[] split = StringUtils.split(keyVal, "=");
+            String[] split = BACKSLASH_EQUAL_PATTERN.split(keyVal);
             if (split.length == 2) {
-                String valuesList = split[1];
-                String[] valueSplit = StringUtils.split(valuesList, ",");
-                List<String> values = Lists.newArrayList(valueSplit);
-                map.put(split[0], values);
+                String[] valueSplit = BACKSLASH_COMMA_PATTERN.split(split[1]);
+                List<String> values = Lists.newArrayList();
+                for (String s : valueSplit) {
+                    values.add(replaceBackslashes(s));
+                }
+                map.put(replaceBackslashes(split[0]), values);
             }
         }
         return map;
@@ -68,25 +84,28 @@ public class KeyValueList extends ArrayList<String> {
     public Map<Property, List<String>> toPropertyMap() {
         Map<Property, List<String>> map = Maps.newHashMap();
         for (String keyVal : this) {
-            String[] split = StringUtils.split(keyVal, "=");
+            String[] split = BACKSLASH_EQUAL_PATTERN.split(keyVal);
+            String key = replaceBackslashes(split[0]);
             if (split.length == 2) {
                 Property propertyDescriptor = new Property();
-                propertyDescriptor.setName(split[0]);
-                String value = split[1];
-                String replacedValue = StringUtils.replace(value, "\\,", "|");
-                String[] valueSplit = StringUtils.split(replacedValue, ",");
+                propertyDescriptor.setName(key);
+                String[] valueSplit = BACKSLASH_COMMA_PATTERN.split(split[1]);
                 List<String> values = Lists.newArrayList();
                 for (String s : valueSplit) {
-                    values.add(StringUtils.replace(s, "|", ","));
+                    values.add(replaceBackslashes(s));
                 }
                 map.put(propertyDescriptor, values);
             } else if (split.length == 1) {
                 //Empty value
                 Property propertyDescriptor = new Property();
-                propertyDescriptor.setName(split[0]);
+                propertyDescriptor.setName(key);
                 map.put(propertyDescriptor, Lists.<String>newArrayList(""));
             }
         }
         return map;
+    }
+
+    private String replaceBackslashes(String s) {
+        return StringUtils.replaceEach(s, new String[]{"\\,", "\\=", "\\|", "\\"}, new String[]{",", "=", "|", "\\"});
     }
 }

@@ -20,9 +20,12 @@ package org.artifactory.rest.resource.ci;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
+import com.sun.jersey.api.core.ExtendedUriInfo;
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.RestAddon;
+import org.artifactory.api.build.BuildNumberComparator;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
@@ -60,6 +63,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -98,6 +102,9 @@ public class BuildResource {
 
     @Context
     private HttpServletResponse response;
+
+    @Context
+    private ExtendedUriInfo uriInfo;
 
     private static final Logger log = LoggerFactory.getLogger(BuildResource.class);
 
@@ -164,22 +171,58 @@ public class BuildResource {
      */
     @GET
     @Path("/{buildName: .+}/{buildNumber: .+}")
-    @Produces({BuildRestConstants.MT_BUILD_INFO, MediaType.APPLICATION_JSON})
-    public BuildInfo getBuildInfo(
+    @Produces({BuildRestConstants.MT_BUILD_INFO, BuildRestConstants.MT_BUILDS_DIFF, MediaType.APPLICATION_JSON})
+    public Response getBuildInfo(
             @PathParam("buildName") String buildName,
-            @PathParam("buildNumber") String buildNumber) throws IOException {
+            @PathParam("buildNumber") String buildNumber,
+            @QueryParam("diff") String diffNumber) throws IOException {
+
+        if (!authorizationService.canDeployToLocalRepository()) {
+            throw new AuthorizationRestException();
+        }
+
         Build build = buildService.getLatestBuildByNameAndNumber(buildName, buildNumber);
-        if (build != null) {
-            BuildInfo buildInfo = new BuildInfo();
-            buildInfo.slf = RestUtils.getBuildInfoHref(request, build.getName(), build.getNumber());
-            buildInfo.buildInfo = build;
-            return buildInfo;
-        } else {
+        if (build == null) {
             String msg =
                     String.format("No build was found for build name: %s , build number: %s ", buildName, buildNumber);
             response.sendError(HttpStatus.SC_NOT_FOUND, msg);
             return null;
         }
+
+        if (queryParamsContainKey("diff")) {
+            Build secondBuild = buildService.getLatestBuildByNameAndNumber(buildName, diffNumber);
+            if (secondBuild == null) {
+                String msg = String.format("No build was found for build name: %s , build number: %s ", buildName,
+                        diffNumber);
+                response.sendError(HttpStatus.SC_NOT_FOUND, msg);
+                return null;
+            }
+            BuildRun buildRun = buildService.getBuildRun(build.getName(), build.getNumber(), build.getStarted());
+            BuildRun secondBuildRun = buildService.getBuildRun(secondBuild.getName(), secondBuild.getNumber(),
+                    secondBuild.getStarted());
+            BuildNumberComparator comparator = new BuildNumberComparator();
+            if (comparator.compare(buildRun, secondBuildRun) < 0) {
+                response.sendError(HttpStatus.SC_BAD_REQUEST,
+                        "Build number should be greater than the build number to compare against.");
+                return null;
+            }
+            return prepareBuildDiffResponse(build, secondBuild, request);
+        } else {
+            return prepareGetBuildResponse(build);
+        }
+    }
+
+    private Response prepareGetBuildResponse(Build build) throws IOException {
+        BuildInfo buildInfo = new BuildInfo();
+        buildInfo.slf = RestUtils.getBuildInfoHref(request, build.getName(), build.getNumber());
+        buildInfo.buildInfo = build;
+
+        return Response.ok(buildInfo).build();
+    }
+
+    private Response prepareBuildDiffResponse(Build firstBuild, Build secondBuild, HttpServletRequest request) {
+        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
+        return restAddon.getBuildsDiff(firstBuild, secondBuild, request);
     }
 
     /**
@@ -420,5 +463,14 @@ public class BuildResource {
                     pe.getMessage());
         }
         return null;
+    }
+
+    private boolean queryParamsContainKey(String key) {
+        MultivaluedMap<String, String> queryParameters = queryParams();
+        return queryParameters.containsKey(key);
+    }
+
+    private MultivaluedMap<String, String> queryParams() {
+        return uriInfo.getQueryParameters();
     }
 }

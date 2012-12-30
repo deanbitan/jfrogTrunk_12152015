@@ -45,6 +45,8 @@ public interface ArtifactoryRequest extends Request {
      */
     String EXPLODE_ARCHIVE = "X-Explode-Archive";
 
+    String RESULT_DETAIL = "X-Result-Detail";
+
     String PARAM_SKIP_JAR_INDEXING = "artifactory.skipJarIndexing";
 
     String PARAM_FORCE_DOWNLOAD_IF_NEWER = "artifactory.forceDownloadIfNewer";

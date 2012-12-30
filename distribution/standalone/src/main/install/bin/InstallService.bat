@@ -1,58 +1,74 @@
 @echo off
-setlocal
 
-rem Copyright (c) 1999, 2008 Tanuki Software, Inc.
-rem http://www.tanukisoftware.com
-rem All rights reserved.
-rem
-rem This software is the proprietary information of Tanuki Software.
-rem You shall use it only in accordance with the terms of the
-rem license agreement you entered into with Tanuki Software.
-rem http://wrapper.tanukisoftware.org/doc/english/licenseOverview.html
-rem
-rem Java Service Wrapper general NT service install script.
-rem Optimized for use with version 3.3.1 of the Wrapper.
-rem
+set "CURRENT_DIR=%cd%"
+cd ..
+set "ARTIFACTORY_HOME=%cd%"
+cd "%CURRENT_DIR%"
 
-if "%OS%"=="Windows_NT" goto nt
-echo This script only works with NT-based versions of Windows.
-goto :eof
+::--
+set SERVICE_NAME=Artifactory
+set EXECUTABLE=%ARTIFACTORY_HOME%\bin\artifactory-service.exe
 
-:nt
-rem
-rem Find the application home.
-rem
-rem %~dp0 is location of current script under NT
-set _REALPATH=%~dp0
+::-- Make sure prerequisite environment variables are set
+if not "%JAVA_HOME%" == "" goto gotJdkHome
+if not "%JRE_HOME%" == "" goto gotJreHome
+echo Neither the JAVA_HOME nor the JRE_HOME environment variable is defined
+echo Service will try to guess them from the registry.
+goto okJavaHome
+:gotJreHome
+if not exist "%JRE_HOME%\bin\java.exe" goto noJavaHome
+if not exist "%JRE_HOME%\bin\javaw.exe" goto noJavaHome
+goto okJavaHome
+:gotJdkHome
+if not exist "%JAVA_HOME%\jre\bin\java.exe" goto noJavaHome
+if not exist "%JAVA_HOME%\jre\bin\javaw.exe" goto noJavaHome
+if not exist "%JAVA_HOME%\bin\javac.exe" goto noJavaHome
+if not "%JRE_HOME%" == "" goto okJavaHome
+set "JRE_HOME=%JAVA_HOME%\jre"
+goto okJavaHome
+:noJavaHome
+echo The JAVA_HOME environment variable is not defined correctly
+echo This environment variable is needed to run this program
+echo NB: JAVA_HOME should point to a JDK not a JRE
+goto end
+:okJavaHome
 
-rem Decide on the wrapper binary.
-set _WRAPPER_BASE=wrapper
-set _WRAPPER_EXE=%_REALPATH%%_WRAPPER_BASE%-windows-x86-32.exe
-if exist "%_WRAPPER_EXE%" goto conf
-set _WRAPPER_EXE=%_REALPATH%%_WRAPPER_BASE%-windows-x86-64.exe
-if exist "%_WRAPPER_EXE%" goto conf
-set _WRAPPER_EXE=%_REALPATH%%_WRAPPER_BASE%.exe
-if exist "%_WRAPPER_EXE%" goto conf
-echo Unable to locate a Wrapper executable using any of the following names:
-echo %_REALPATH%%_WRAPPER_BASE%-windows-x86-32.exe
-echo %_REALPATH%%_WRAPPER_BASE%-windows-x86-64.exe
-echo %_REALPATH%%_WRAPPER_BASE%.exe
-pause
-goto :eof
+::-- The fully qualified start and stop classes
+set START_CLASS=org.artifactory.standalone.main.Main
+set STOP_CLASS=org.artifactory.standalone.main.Main
 
-rem
-rem Find the wrapper.conf
-rem
-:conf
-set _WRAPPER_CONF="%~f1"
-if not %_WRAPPER_CONF%=="" goto startup
-set _WRAPPER_CONF="%_REALPATH%wrapper.conf"
+::-- The classpath for all jars needed to run your service
+set LIB_DIR=%ARTIFACTORY_HOME%\lib\*
+set CLASSPATH=%ARTIFACTORY_HOME%\artifactory.jar;%LIB_DIR%
 
-rem
-rem Install the Wrapper as an NT service.
-rem
-:startup
-"%_WRAPPER_EXE%" -i %_WRAPPER_CONF%
-if not errorlevel 1 goto :eof
-pause
+::-- Set to auto if you want the service to startup automatically.
+set STARTUP_TYPE=auto
 
+::---- Set other options via environment variables -------
+
+rem Set the server jvm from JAVA_HOME
+set "JVM_PATH=%JRE_HOME%\bin\server\jvm.dll"
+if exist "%JVM_PATH%" goto foundJvm
+rem Set the client jvm from JAVA_HOME
+set "JVM_PATH=%JRE_HOME%\bin\client\jvm.dll"
+if exist "%JVM_PATH%" goto foundJvm
+set JVM_PATH=auto
+
+:foundJvm
+::---- Install the Service -------
+echo Installing service '%SERVICE_NAME%' ...
+echo JAVA_HOME:        "%JAVA_HOME%"
+echo JRE_HOME:         "%JRE_HOME%"
+echo JVM:              "%JVM_PATH%"
+
+::--- To redirect the stdout to a file add '--StdOutput artifactory-stdout' to the command
+"%EXECUTABLE%" //IS//%SERVICE_NAME% --StartClass %START_CLASS% --StopClass %STOP_CLASS% --StopMethod stop --StartMode jvm --StopMode jvm --Install %EXECUTABLE%
+if not errorlevel 1 goto installed
+goto end
+
+:installed
+::--- Clear the environment variables. They are not needed any more.
+"%EXECUTABLE%" //US/%SERVICE_NAME% --DisplayName Artifactory --Description "Artifactory Binary Repository" --Jvm "%JVM_PATH%" --Classpath %CLASSPATH% --LogPrefix artifactory-service --LogPath="%ARTIFACTORY_HOME%\logs" --Startup %STARTUP_TYPE% --StdError artifactory-stderr ++JvmOptions "-XX:PermSize=128m;-XX:MaxPermSize=128m;-XX:NewSize=512m;-XX:MaxNewSize=512m;-XX:+UseConcMarkSweepGC;-Dartifactory.home=%ARTIFACTORY_HOME%;-Djava.io.tmpdir=%ARTIFACTORY_HOME%\work" --JvmMs 1024 --JvmMx 1024
+echo The service '%SERVICE_NAME%' has been installed.
+
+:end

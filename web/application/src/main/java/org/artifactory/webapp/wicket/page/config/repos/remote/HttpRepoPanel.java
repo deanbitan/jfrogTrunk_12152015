@@ -33,6 +33,8 @@ import org.apache.wicket.model.Model;
 import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
+import org.artifactory.api.bintray.BintrayService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -204,11 +206,13 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     return;
                 }
                 // always test with url trailing slash
-                String url = PathUtils.addTrailingSlash(repo.getUrl());
+                String originalUrl = PathUtils.addTrailingSlash(repo.getUrl());
+                String transformedUrl = ContextHelper.get().beanForType(BintrayService.class).getBintrayTestRepoUrl(
+                        originalUrl);
                 NuGetWebAddon nuGetWebAddon = addons.addonByType(NuGetWebAddon.class);
-                HttpMethodBase testMethod = nuGetWebAddon.getRemoteRepoTestMethod(url, repo);
+                HttpMethodBase testMethod = nuGetWebAddon.getRemoteRepoTestMethod(transformedUrl, repo);
                 HttpClient client = new HttpClientConfigurator()
-                        .hostFromUrl(url)
+                        .hostFromUrl(transformedUrl)
                                 //.defaultMaxConnectionsPerHost(5)
                                 //.maxTotalConnections(5)
                         .connectionTimeout(repo.getSocketTimeoutMillis())
@@ -229,16 +233,16 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     }
                 } catch (UnknownHostException e) {
                     error("Unknown host: " + e.getMessage());
-                    log.debug("Test connection to '" + url + "' failed with exception", e);
+                    log.debug("Test connection to '" + originalUrl + "' failed with exception", e);
                 } catch (ConnectException e) {
                     error(e.getMessage());
-                    log.debug("Test connection to '" + url + "' failed with exception", e);
+                    log.debug("Test connection to '" + originalUrl + "' failed with exception", e);
                 } catch (IOException e) {
                     error("Connection failed with exception: " + e.getMessage());
-                    log.debug("Test connection to '" + url + "' failed with exception", e);
+                    log.debug("Test connection to '" + originalUrl + "' failed with exception", e);
                 } catch (Exception e) {
                     error("Connection failed with general exception: " + e.getMessage());
-                    log.debug("Test connection to '" + url + "' failed with exception", e);
+                    log.debug("Test connection to '" + originalUrl + "' failed with exception", e);
                 } finally {
                     testMethod.releaseConnection();
                 }

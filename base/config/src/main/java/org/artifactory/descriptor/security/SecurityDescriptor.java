@@ -24,6 +24,7 @@ import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.descriptor.security.sso.CrowdSettings;
 import org.artifactory.descriptor.security.sso.HttpSsoSettings;
+import org.artifactory.descriptor.security.sso.SamlSettings;
 import org.artifactory.util.AlreadyExistsException;
 
 import javax.annotation.Nonnull;
@@ -37,7 +38,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 @XmlType(name = "SecurityType", propOrder = {"anonAccessEnabled", "hideUnauthorizedResources", "passwordSettings",
-        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings"},
+        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "samlSettings"},
         namespace = Descriptor.NS)
 public class SecurityDescriptor implements Descriptor {
 
@@ -66,6 +67,9 @@ public class SecurityDescriptor implements Descriptor {
 
     @XmlElement(name = "crowdSettings", required = false)
     private CrowdSettings crowdSettings;
+
+    @XmlElement(name = "samlSettings", required = false)
+    private SamlSettings samlSettings;
 
     public boolean isAnonAccessEnabled() {
         return anonAccessEnabled;
@@ -270,5 +274,13 @@ public class SecurityDescriptor implements Descriptor {
 
     public void setCrowdSettings(CrowdSettings crowdSettings) {
         this.crowdSettings = crowdSettings;
+    }
+
+    public SamlSettings getSamlSettings() {
+        return samlSettings;
+    }
+
+    public void setSamlSettings(SamlSettings samlSettings) {
+        this.samlSettings = samlSettings;
     }
 }

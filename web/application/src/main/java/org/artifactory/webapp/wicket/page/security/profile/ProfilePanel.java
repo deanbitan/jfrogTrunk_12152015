@@ -18,12 +18,10 @@
 
 package org.artifactory.webapp.wicket.page.security.profile;
 
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.wicket.Application;
-import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
+import org.apache.wicket.event.Broadcast;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -41,18 +39,14 @@ import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
-import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordStrengthComponentPanel;
-import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
+import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.SetEnableVisitor;
-import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.log.LoggerFactory;
-import org.artifactory.security.AccessLogger;
 import org.artifactory.security.CryptoHelper;
 import org.artifactory.security.InternalUsernamePasswordAuthenticationToken;
 import org.artifactory.security.MutableUserInfo;
@@ -67,17 +61,12 @@ import org.springframework.util.StringUtils;
 import javax.crypto.SecretKey;
 import java.security.KeyPair;
 
-import static org.artifactory.common.wicket.component.label.highlighter.Syntax.xml;
-
 /**
  * @author Yoav Landman
  */
-public class ProfilePanel extends TitledActionPanel {
+public class ProfilePanel extends TitledPanel {
     private static final Logger log = LoggerFactory.getLogger(ProfilePanel.class);
     private static final String HIDDEN_PASSWORD = "************";
-    private static final String UNLOCK_FORM_ID = "unlockForm";
-    private static final String USER_FORM_ID = "userForm";
-    private static final String SETTINGS_SNIPPET_ID = "settingsSnippet";
 
     @SpringBean
     private UserGroupService userGroupService;
@@ -90,50 +79,30 @@ public class ProfilePanel extends TitledActionPanel {
 
     @SpringBean
     private AuthenticationManager authenticationManager;
-
     private Label encryptedPasswordLabel;
-    private Form unlockForm;
-    private Form profileForm;
+    private Form form;
 
-    public ProfilePanel(String id) {
-        super(id, new CompoundPropertyModel(new ProfileModel()));
+    public ProfilePanel(String id, Form form, ProfileModel profile) {
+        super(id);
+        this.form = form;
         setOutputMarkupId(true);
         add(new CssClass("profile-panel"));
-
-
-        // load user email
-        ProfileModel profile = getUserProfile();
-        profile.setEmail(loadUserInfo().getEmail());
-
-        // unlock form
-        unlockForm = new Form(UNLOCK_FORM_ID);
-        add(unlockForm);
+        setDefaultModel(new CompoundPropertyModel<ProfileModel>(profile));
 
         // current password
         final PasswordTextField currentPassword = new PasswordTextField("currentPassword");
-        unlockForm.add(currentPassword);
-        unlockForm.add(new HelpBubble("currentPassword.help", getString("currentPassword.help", null)));
-
-        // submit password
-        final TitledAjaxSubmitLink submitPassword = new UnlockProfileButton("unlock", "Unlock");
-        unlockForm.setDefaultButton(submitPassword);
-        unlockForm.add(submitPassword);
-
-        // user profile form
-        profileForm = new Form(USER_FORM_ID);
-        profileForm.setOutputMarkupId(true);
-        add(profileForm);
+        add(currentPassword);
+        add(new HelpBubble("currentPassword.help", getString("currentPassword.help")));
 
         encryptedPasswordLabel = new Label("encryptedPassword", HIDDEN_PASSWORD);
         encryptedPasswordLabel.setVisible(securityService.isPasswordEncryptionEnabled());
-        profileForm.add(encryptedPasswordLabel);
-
-        profileForm.add(new HelpBubble("encryptedPassword.help", new ResourceModel("encryptedPassword.help")));
+        add(encryptedPasswordLabel);
+        add(new HelpBubble("encryptedPassword.help", new ResourceModel("encryptedPassword.help")));
 
         // Profile update fields are only displayed for users with permissions to do so
-        WebMarkupContainer updateFieldsContainer = new WebMarkupContainer("updateFieldsContainer");
+        final WebMarkupContainer updateFieldsContainer = new WebMarkupContainer("updateFieldsContainer");
         updateFieldsContainer.setVisible(authService.isUpdatableProfile());
-        profileForm.add(updateFieldsContainer);
+        add(updateFieldsContainer);
 
         addPasswordFields(updateFieldsContainer);
 
@@ -143,27 +112,46 @@ public class ProfilePanel extends TitledActionPanel {
         emailTf.add(EmailAddressValidator.getInstance());
         updateFieldsContainer.add(emailTf);
 
-        // Display settings.xml section with the encrypted password
-        WebMarkupContainer settingsSnippet = new WebMarkupContainer(SETTINGS_SNIPPET_ID);
-        settingsSnippet.setVisible(false);
-        add(settingsSnippet);
-
-        //Submit
-        TitledAjaxSubmitLink updateLink = createUpdateProfileButton(profileForm);
-        updateLink.setEnabled(false);
-        updateLink.setVisible(authService.isUpdatableProfile());
-        addDefaultButton(updateLink);
-
-        //Cancel
-        TitledAjaxLink cancelLink = new TitledAjaxLink("cancel", "Cancel") {
+        // submit password
+        add(new TitledAjaxSubmitLink("unlock", "Unlock") {
             @Override
-            public void onClick(AjaxRequestTarget target) {
-                setResponsePage(Application.get().getHomePage());
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+                UserInfo userInfo = loadUserInfo();
+                String enteredCurrentPassword = getUserProfile().getCurrentPassword();
+                if (!authenticate(userInfo, enteredCurrentPassword)) {
+                    error("The specified current password is incorrect.");
+                } else {
+                    unlockProfile(userInfo, target);
+                }
+                target.add(ProfilePanel.this);
+                AjaxUtils.refreshFeedback(target);
             }
-        };
-        cancelLink.setEnabled(false);
-        cancelLink.setVisible(authService.isUpdatableProfile());
-        addButton(cancelLink);
+
+            private boolean authenticate(UserInfo userInfo, String enteredCurrentPassword) {
+                try {
+                    Authentication authentication = authenticationManager.authenticate(
+                            new InternalUsernamePasswordAuthenticationToken(userInfo.getUsername(),
+                                    enteredCurrentPassword));
+                    return (authentication != null) && authentication.isAuthenticated();
+                } catch (AuthenticationException e) {
+                    return false;
+                }
+            }
+
+            private void unlockProfile(UserInfo userInfo, AjaxRequestTarget target) {
+                currentPassword.setEnabled(false);
+                this.setEnabled(false);
+
+                if (authService.isUpdatableProfile()) {
+                    updateFieldsContainer.visitChildren(new SetEnableVisitor(true));
+                }
+
+                MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
+                displayEncryptedPassword(mutableUser);
+
+                send(getPage(), Broadcast.BREADTH, new ProfileEvent(target, mutableUser));
+            }
+        });
     }
 
     private void addPasswordFields(WebMarkupContainer updateFieldsContainer) {
@@ -212,7 +200,7 @@ public class ProfilePanel extends TitledActionPanel {
             retypedPassword = new PasswordTextField("retypedPassword");
             retypedPassword.setRequired(false);
             retypedPassword.setEnabled(false);
-            profileForm.add(new EqualPasswordInputValidator(newPassword, retypedPassword));
+            form.add(new EqualPasswordInputValidator(newPassword, retypedPassword));
         }
 
         passwordFieldsContainer.add(newPassword);
@@ -223,46 +211,6 @@ public class ProfilePanel extends TitledActionPanel {
 
     private ProfileModel getUserProfile() {
         return (ProfileModel) getDefaultModelObject();
-    }
-
-    private TitledAjaxSubmitLink createUpdateProfileButton(final Form form) {
-        return new TitledAjaxSubmitLink("submit", "Update", form) {
-            @Override
-            protected void onSubmit(AjaxRequestTarget target, Form form) {
-                ProfileModel profile = getUserProfile();
-                UserInfo userInfo = loadUserInfo();
-                String currentPasswordHashed = DigestUtils.md5Hex(profile.getCurrentPassword());
-                if (!authService.isDisableInternalPassword() && !currentPasswordHashed.equals(userInfo.getPassword())) {
-                    error("The specified current password is incorrect.");
-                } else if (!StringUtils.hasText(profile.getEmail())) {
-                    error("Field 'Email address' is required.");
-                } else {
-                    MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
-                    mutableUser.setEmail(profile.getEmail());
-                    if (!authService.isDisableInternalPassword()) {
-                        String newPassword = profile.getNewPassword();
-                        if (StringUtils.hasText(newPassword)) {
-                            mutableUser.setPassword(DigestUtils.md5Hex(newPassword));
-                            profile.setCurrentPassword(newPassword);
-
-                            // generate a new KeyPair and update the user profile
-                            regenerateKeyPair(mutableUser);
-
-                            // display the encrypted password
-                            if (securityService.isPasswordEncryptionEnabled()) {
-                                displayEncryptedPassword(mutableUser);
-                            }
-                        }
-                    }
-                    userGroupService.updateUser(mutableUser);
-                    AccessLogger.updated("User " + mutableUser.getUsername() + " has updated his profile successfully");
-                    info("Profile successfully updated.");
-                }
-                form.clearInput();
-                target.add(ProfilePanel.this);
-                AjaxUtils.refreshFeedback(target);
-            }
-        };
     }
 
     private UserInfo loadUserInfo() {
@@ -276,22 +224,16 @@ public class ProfilePanel extends TitledActionPanel {
         return "";
     }
 
-    private void unlockProfile(UserInfo userInfo) {
-        unlockForm.visitChildren(new SetEnableVisitor(false));
-
-        if (authService.isUpdatableProfile()) {
-            profileForm.visitChildren(new SetEnableVisitor(true));
-            getButtonsContainer().visitChildren(new SetEnableVisitor(true));
-        }
-
-        MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
-
+    public void displayEncryptedPassword(MutableUserInfo mutableUser) {
         // generate a new KeyPair and update the user profile
         regenerateKeyPair(mutableUser);
 
         // display the encrypted password
         if (securityService.isPasswordEncryptionEnabled()) {
-            displayEncryptedPassword(mutableUser);
+            String currentPassword = getUserProfile().getCurrentPassword();
+            SecretKey secretKey = CryptoHelper.generatePbeKey(mutableUser.getPrivateKey());
+            String encryptedPassword = CryptoHelper.encryptSymmetric(currentPassword, secretKey);
+            encryptedPasswordLabel.setDefaultModelObject(encryptedPassword);
         }
     }
 
@@ -302,71 +244,6 @@ public class ProfilePanel extends TitledActionPanel {
             mutableUser.setPrivateKey(CryptoHelper.toBase64(keyPair.getPrivate()));
             mutableUser.setPublicKey(CryptoHelper.toBase64(keyPair.getPublic()));
             userGroupService.updateUser(mutableUser);
-        }
-    }
-
-    private void displayEncryptedPassword(UserInfo userInfo) {
-        WebMarkupContainer settingsSnippet = new WebMarkupContainer(SETTINGS_SNIPPET_ID);
-        String currentPassword = getUserProfile().getCurrentPassword();
-        SecretKey secretKey = CryptoHelper.generatePbeKey(userInfo.getPrivateKey());
-        String encryptedPassword = CryptoHelper.encryptSymmetric(currentPassword, secretKey);
-        settingsSnippet.add(createSettingXml(userInfo, encryptedPassword));
-
-        Component nonMavenPasswordLabel = new WebMarkupContainer("nonMavenPassword");
-        settingsSnippet.add(nonMavenPasswordLabel);
-        if (CryptoHelper.isEncryptedPasswordPrefixedWithDefault(encryptedPassword)) {
-            nonMavenPasswordLabel.replaceWith(new Label("nonMavenPassword",
-                    "Non-maven clients should use a non-escaped password: " + encryptedPassword));
-        }
-        encryptedPasswordLabel.setDefaultModelObject(encryptedPassword);
-        replace(settingsSnippet);
-    }
-
-    private Component createSettingXml(UserInfo userInfo, String encryptedPassword) {
-        if (CryptoHelper.isEncryptedPasswordPrefixedWithDefault(encryptedPassword)) {
-            encryptedPassword = CryptoHelper.escapeEncryptedPassword(encryptedPassword);
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append("<server>\n");
-        sb.append("    <id>${server-id}</id>\n");
-        sb.append("    <username>").append(userInfo.getUsername()).append("</username>\n");
-        sb.append("    <password>").append(encryptedPassword).append("</password>\n");
-        sb.append("</server>");
-
-        FieldSetBorder border = new FieldSetBorder("settingsBorder");
-        add(border);
-
-        border.add(WicketUtils.getSyntaxHighlighter("settingsDeclaration", sb.toString(), xml));
-        return border;
-    }
-
-    private class UnlockProfileButton extends TitledAjaxSubmitLink {
-        public UnlockProfileButton(String id, String title) {
-            super(id, title);
-        }
-
-        @Override
-        protected void onSubmit(AjaxRequestTarget target, Form form) {
-            UserInfo userInfo = loadUserInfo();
-            String enteredCurrentPassword = getUserProfile().getCurrentPassword();
-            if (!authenticate(userInfo, enteredCurrentPassword)) {
-                error("The specified current password is incorrect.");
-            } else {
-                unlockProfile(userInfo);
-            }
-            target.add(ProfilePanel.this);
-            AjaxUtils.refreshFeedback(target);
-        }
-
-        private boolean authenticate(UserInfo userInfo, String enteredCurrentPassword) {
-            try {
-                Authentication authentication = authenticationManager.authenticate(
-                        new InternalUsernamePasswordAuthenticationToken(userInfo.getUsername(),
-                                enteredCurrentPassword));
-                return (authentication != null) && authentication.isAuthenticated();
-            } catch (AuthenticationException e) {
-                return false;
-            }
         }
     }
 }

@@ -74,6 +74,42 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
     }
 
     @Override
+    public void beforePropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+        try {
+            for (StorageInterceptor storageInterceptor : this) {
+                storageInterceptor.beforePropertyCreate(fsItem, statusHolder, name, values);
+            }
+        } catch (CancelException e) {
+            statusHolder.setError("Property create rejected: " + e.getMessage(), e.getErrorCode(), e);
+        }
+    }
+
+    @Override
+    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+        for (StorageInterceptor storageInterceptor : this) {
+            storageInterceptor.afterPropertyCreate(fsItem, statusHolder, name, values);
+        }
+    }
+
+    @Override
+    public void beforePropertyDelete(VfsItem fsItem, MutableStatusHolder statusHolder, String name) {
+        try {
+            for (StorageInterceptor storageInterceptor : this) {
+                storageInterceptor.beforePropertyDelete(fsItem, statusHolder, name);
+            }
+        } catch (CancelException e) {
+            statusHolder.setError("Property delete rejected: " + e.getMessage(), e.getErrorCode(), e);
+        }
+    }
+
+    @Override
+    public void afterPropertyDelete(VfsItem fsItem, MutableStatusHolder statusHolder, String name) {
+        for (StorageInterceptor storageInterceptor : this) {
+            storageInterceptor.afterPropertyDelete(fsItem, statusHolder, name);
+        }
+    }
+
+    @Override
     public void beforeMove(VfsItem sourceItem, RepoPath targetRepoPath, MutableStatusHolder statusHolder,
             Properties properties) {
         try {

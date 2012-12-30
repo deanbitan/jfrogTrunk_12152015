@@ -1,33 +1,30 @@
-<wicket:extend xmlns:wicket="http://www.w3.org/1999/XSL/Transform">
-    <form wicket:id="unlockForm" class="unlock-profile-form">
-        <div class="field field-sep">
+<wicket:extend>
+    <div class="unlock-profile-form">
+        <div class="field">
             <label>
                 <wicket:message key="currentPassword"/>
             </label>
             <span wicket:id="currentPassword.help"/>
 
             <div class="value">
-                <input wicket:id="currentPassword" autocomplete="off" type="password" class="text"/>
+                <input wicket:id="currentPassword" type="password" class="text"/>
                 <button wicket:id="unlock" type="submit"/>
             </div>
         </div>
         <hr/>
-    </form>
+    </div>
 
-    <form wicket:id="userForm" class="update-profile-form">
+    <div class="update-profile-form">
+        <div class="field">
+            <label>
+                Encrypted Password
+                <span wicket:id="encryptedPassword.help"></span>
+            </label>
 
-        <wicket:enclosure child="encryptedPassword">
-            <div class="field">
-                <label>
-                    Encrypted Password
-                    <span wicket:id="encryptedPassword.help"></span>
-                </label>
-
-                <div class="value">
-                    <span wicket:id="encryptedPassword" class="textbox textbox-disabled"/>
-                </div>
+            <div class="value">
+                <span wicket:id="encryptedPassword" class="textbox textbox-disabled"/>
             </div>
-        </wicket:enclosure>
+        </div>
 
         <div wicket:id="updateFieldsContainer">
             <div wicket:id="passwordFieldsContainer">
@@ -37,7 +34,7 @@
                     </label>
 
                     <div class="value">
-                        <input wicket:id="newPassword" type="password" autocomplete="off" class="text password"/>
+                        <input wicket:id="newPassword" type="password" class="text password"/>
                     </div>
                 </div>
 
@@ -49,7 +46,7 @@
                     </label>
 
                     <div class="value">
-                        <input wicket:id="retypedPassword" type="password" autocomplete="off" class="text password"/>
+                        <input wicket:id="retypedPassword" type="password" class="text password"/>
                     </div>
                 </div>
             </div>
@@ -60,19 +57,9 @@
                 </label>
 
                 <div class="value">
-                    <input wicket:id="email" type="text" autocomplete="off" class="text"/>
+                    <input wicket:id="email" type="text" class="text"/>
                 </div>
             </div>
-        </div>
-    </form>
-
-    <div wicket:id="settingsSnippet" class="settings-snippet">
-        <div class="maven-pass-info">
-            Use the following in your settings.xml (replace ${server-id} with your server id):
-            <div wicket:id="nonMavenPassword"></div>
-        </div>
-        <div wicket:id="settingsBorder">
-            <div wicket:id="settingsDeclaration"/>
         </div>
     </div>
 </wicket:extend>

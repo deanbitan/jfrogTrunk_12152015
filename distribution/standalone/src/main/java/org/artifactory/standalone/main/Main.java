@@ -45,6 +45,8 @@ public class Main {
         }
     }
 
+    private static Server server;
+
     /**
      * Main function, starts the jetty server. The first parameter can be the jetty.xml configuration file. If not
      * provided ${artifactory.home}/etc/jetty.xml will be used.
@@ -52,7 +54,7 @@ public class Main {
      * @param args Alternative location of jetty configuration file
      */
     public static void main(String[] args) {
-        Server server = null;
+        server = null;
         try {
             URL configUrl;
             if (args != null && args.length > 0) {
@@ -83,6 +85,27 @@ public class Main {
                     System.err.println("Unable to stop the jetty server: " + e1);
                 }
             }
+        }
+    }
+
+    /**
+     * Stop method, stops the jetty server gracefully.
+     * <p><b>NOTE!</b> Do not remove the args, the NT service is looking for this specific method signature.
+     *
+     * @param args Currently not in used, they are there only to provide proper method signature
+     *             for external service which is going to trigger this method
+     */
+    @SuppressWarnings("UnusedParameters")
+    public static void stop(String[] args) {
+        try {
+            server.stop();
+
+            /**
+             * Windows service expects this call, otherwise there will be weird errors in the even viewer
+             */
+            System.exit(0);
+        } catch (Exception e) {
+            System.err.println("Unable to stop the jetty server: " + e);
         }
     }
 

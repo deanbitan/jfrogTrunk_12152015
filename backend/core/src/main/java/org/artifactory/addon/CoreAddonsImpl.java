@@ -85,6 +85,7 @@ import org.slf4j.Logger;
 import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.support.BaseLdapPathContextSource;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 import org.springframework.stereotype.Component;
 
@@ -108,7 +109,7 @@ import java.util.Set;
  */
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
-        FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon {
+        FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -468,5 +469,20 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     public InternalRequestContext getDynamicVersionContext(Repo repo, InternalRequestContext originalRequestContext,
             boolean isRemote) {
         return originalRequestContext;
+    }
+
+    @Override
+    public boolean isCrowdAuthenticationSupported(Class<?> authentication) {
+        return false;
+    }
+
+    @Override
+    public Authentication authenticateCrowd(Authentication authentication) {
+        throw new UnsupportedOperationException("This feature requires the Crowd SSO addon.");
+    }
+
+    @Override
+    public boolean findUser(String userName) {
+        return false;
     }
 }

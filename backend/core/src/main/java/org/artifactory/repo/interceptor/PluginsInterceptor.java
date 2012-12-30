@@ -20,14 +20,7 @@ package org.artifactory.repo.interceptor;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
-import org.artifactory.addon.plugin.storage.AfterCopyAction;
-import org.artifactory.addon.plugin.storage.AfterCreateAction;
-import org.artifactory.addon.plugin.storage.AfterDeleteAction;
-import org.artifactory.addon.plugin.storage.AfterMoveAction;
-import org.artifactory.addon.plugin.storage.BeforeCopyAction;
-import org.artifactory.addon.plugin.storage.BeforeCreateAction;
-import org.artifactory.addon.plugin.storage.BeforeDeleteAction;
-import org.artifactory.addon.plugin.storage.BeforeMoveAction;
+import org.artifactory.addon.plugin.storage.*;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
@@ -93,6 +86,26 @@ public class PluginsInterceptor extends StorageInterceptorAdapter {
             Properties properties) {
         getPluginsAddon().execPluginActions(AfterCopyAction.class, null, sourceItem.getInfo(),
                 nullOrRepoPath(targetItem), properties);
+    }
+
+    @Override
+    public void beforePropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+        getPluginsAddon().execPluginActions(BeforePropertyCreateAction.class, null, fsItem.getInfo(), name, values);
+    }
+
+    @Override
+    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+        getPluginsAddon().execPluginActions(AfterPropertyCreateAction.class, null, fsItem.getInfo(), name, values);
+    }
+
+    @Override
+    public void beforePropertyDelete(VfsItem fsItem, MutableStatusHolder statusHolder, String name) {
+        getPluginsAddon().execPluginActions(BeforePropertyDeleteAction.class, null, fsItem.getInfo(), name);
+    }
+
+    @Override
+    public void afterPropertyDelete(VfsItem fsItem, MutableStatusHolder statusHolder, String name) {
+        getPluginsAddon().execPluginActions(AfterPropertyDeleteAction.class, null, fsItem.getInfo(), name);
     }
 
     private RepoPath nullOrRepoPath(VfsItem targetItem) {

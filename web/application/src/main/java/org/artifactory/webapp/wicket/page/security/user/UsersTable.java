@@ -28,6 +28,7 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.addon.wicket.SamlAddon;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserAwareAuthenticationProvider;
 import org.artifactory.api.security.UserGroupService;
@@ -141,7 +142,8 @@ public class UsersTable extends ModalListPanel<UserModel> {
                 } else if ("system".equals(user.getRealm())) {
                     user.setStatus(UserModel.Status.ACTIVE_USER);
                 } else {
-                    if (provider.userExists(user.getUsername(), user.getRealm())) {
+                    if (SamlAddon.REALM.equals(user.getRealm()) || provider.userExists(user.getUsername(),
+                            user.getRealm())) {
                         user.setStatus(UserModel.Status.ACTIVE_USER);
                     } else {
                         user.setStatus(UserModel.Status.INACTIVE_USER);

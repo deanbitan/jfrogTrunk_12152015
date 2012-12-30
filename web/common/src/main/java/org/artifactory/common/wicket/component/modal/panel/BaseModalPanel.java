@@ -49,7 +49,7 @@ public class BaseModalPanel<E extends Serializable> extends Panel implements Tit
     private int initialWidth = 600;
     private int initialHeight = 0;
 
-    private String title;
+    protected String title;
 
     public BaseModalPanel() {
         super(MODAL_ID);

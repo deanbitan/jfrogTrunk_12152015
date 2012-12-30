@@ -454,7 +454,7 @@ public class ArtifactResource {
         if (itemInfo.isFolder()) {
             return createFolderInfoData(repoKey, (FolderInfo) itemInfo);
         } else {
-            return createFileInfoData((FileInfo) itemInfo);
+            return createFileInfoData((FileInfo) itemInfo, repoKey);
         }
     }
 
@@ -494,14 +494,14 @@ public class ArtifactResource {
         return sb.toString();
     }
 
-    private RestFileInfo createFileInfoData(FileInfo itemInfo) {
+    private RestFileInfo createFileInfoData(FileInfo itemInfo, String repoKey) {
         RestFileInfo fileInfo = new RestFileInfo();
-        setBaseStorageInfo(fileInfo, itemInfo);
+        setBaseStorageInfo(fileInfo, itemInfo, repoKey);
 
         fileInfo.mimeType = NamingUtils.getMimeTypeByPathAsString(path);
         fileInfo.downloadUri = buildDownloadUri();
         fileInfo.remoteUrl = buildDownloadUrl(itemInfo);
-        fileInfo.size = itemInfo.getSize();
+        fileInfo.size = String.valueOf(itemInfo.getSize());
         ChecksumsInfo checksumInfo = itemInfo.getChecksumsInfo();
         ChecksumInfo sha1 = checksumInfo.getChecksumInfo(ChecksumType.sha1);
         ChecksumInfo md5 = checksumInfo.getChecksumInfo(ChecksumType.md5);
@@ -514,7 +514,7 @@ public class ArtifactResource {
 
     private RestFolderInfo createFolderInfoData(String repoKey, FolderInfo itemInfo) {
         RestFolderInfo folderInfo = new RestFolderInfo();
-        setBaseStorageInfo(folderInfo, itemInfo);
+        setBaseStorageInfo(folderInfo, itemInfo, repoKey);
         RepoPath folderRepoPath = InternalRepoPathFactory.create(repoKey, itemInfo.getRepoPath().getPath());
         //if local or cache repo
         if (isLocalRepo(repoKey)) {
@@ -532,8 +532,8 @@ public class ArtifactResource {
         return folderInfo;
     }
 
-    private void setBaseStorageInfo(RestBaseStorageInfo storageInfoRest, ItemInfo itemInfo) {
-        String uri = request.getRequestURL().toString();
+    private void setBaseStorageInfo(RestBaseStorageInfo storageInfoRest, ItemInfo itemInfo, String repoKey) {
+        String uri = RestUtils.buildStorageInfoUri(request, repoKey, itemInfo.getRelPath());
         storageInfoRest.slf = uri;
         storageInfoRest.path = "/" + itemInfo.getRelPath();
         storageInfoRest.created = RestUtils.toIsoDateString(itemInfo.getCreated());

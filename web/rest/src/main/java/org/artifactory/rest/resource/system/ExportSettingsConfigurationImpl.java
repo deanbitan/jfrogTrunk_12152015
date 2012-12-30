@@ -25,14 +25,104 @@ package org.artifactory.rest.resource.system;
  * @author Fred Simon
  */
 public class ExportSettingsConfigurationImpl {
-    public String exportPath;
-    public boolean includeMetadata = true;
-    public boolean createArchive;
-    public boolean bypassFiltering;
-    public boolean verbose;
-    public boolean failOnError = true;
-    public boolean failIfEmpty = true;
-    public boolean m2;
-    public boolean incremental;
-    public boolean excludeContent;
+    private String exportPath;
+    private boolean explicitIncludeMetadata;
+    private boolean includeMetadata = true;
+    private boolean createArchive;
+    private boolean bypassFiltering;
+    private boolean verbose;
+    private boolean failOnError = true;
+    private boolean failIfEmpty = true;
+    private boolean m2;
+    private boolean incremental;
+    private boolean excludeContent;
+
+    public void setIncludeMetadata(boolean includeMetadata) {
+        explicitIncludeMetadata = true;
+        this.includeMetadata = includeMetadata;
+    }
+
+    public boolean isIncludeMetadata() {
+        // The following code supports old behaviors. in previous versions excludeMetadata was allowed only if the
+        // excludeContent was true
+        if (explicitIncludeMetadata) {
+            return includeMetadata;
+        }
+        if (excludeContent) {
+            return false;
+        }
+        return includeMetadata;
+    }
+
+    public String getExportPath() {
+        return exportPath;
+    }
+
+    public void setExportPath(String exportPath) {
+        this.exportPath = exportPath;
+    }
+
+    public boolean isCreateArchive() {
+        return createArchive;
+    }
+
+    public void setCreateArchive(boolean createArchive) {
+        this.createArchive = createArchive;
+    }
+
+    public boolean isBypassFiltering() {
+        return bypassFiltering;
+    }
+
+    public void setBypassFiltering(boolean bypassFiltering) {
+        this.bypassFiltering = bypassFiltering;
+    }
+
+    public boolean isVerbose() {
+        return verbose;
+    }
+
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
+
+    public boolean isFailOnError() {
+        return failOnError;
+    }
+
+    public void setFailOnError(boolean failOnError) {
+        this.failOnError = failOnError;
+    }
+
+    public boolean isFailIfEmpty() {
+        return failIfEmpty;
+    }
+
+    public void setFailIfEmpty(boolean failIfEmpty) {
+        this.failIfEmpty = failIfEmpty;
+    }
+
+    public boolean isM2() {
+        return m2;
+    }
+
+    public void setM2(boolean m2) {
+        this.m2 = m2;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
+    }
+
+    public boolean isExcludeContent() {
+        return excludeContent;
+    }
+
+    public void setExcludeContent(boolean excludeContent) {
+        this.excludeContent = excludeContent;
+    }
 }

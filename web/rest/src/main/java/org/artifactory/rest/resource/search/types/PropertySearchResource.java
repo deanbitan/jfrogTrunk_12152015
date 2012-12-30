@@ -18,6 +18,7 @@
 
 package org.artifactory.rest.resource.search.types;
 
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.InfoRestSearchResult;
 import org.artifactory.api.search.ItemSearchResults;
@@ -25,7 +26,10 @@ import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.rest.common.list.StringList;
+import org.artifactory.rest.util.FileStorageInfoHelper;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 
@@ -50,14 +54,15 @@ public class PropertySearchResource {
 
     private AuthorizationService authorizationService;
     private SearchService searchService;
+    private RepositoryService repositoryService;
     private HttpServletRequest request;
     private HttpServletResponse response;
 
     public PropertySearchResource(AuthorizationService authorizationService, SearchService searchService,
-            HttpServletRequest request,
-            HttpServletResponse response) {
+            RepositoryService repositoryService, HttpServletRequest request, HttpServletResponse response) {
         this.authorizationService = authorizationService;
         this.searchService = searchService;
+        this.repositoryService = repositoryService;
         this.request = request;
         this.response = response;
     }
@@ -83,8 +88,9 @@ public class PropertySearchResource {
         searchControls.setSelectedRepoForSearch(reposToSearch);
         for (Map.Entry<String, String[]> parameterEntry : parametersMap.entrySet()) {
             String parameterName = parameterEntry.getKey();
-            // don't use the repos parameter as a property name parameter
-            if (!SearchRestConstants.PARAM_REPO_TO_SEARCH.equals(parameterName)) {
+            // don't use the repos parameter and the properties parameter as a property name parameter
+            if (!SearchRestConstants.PARAM_REPO_TO_SEARCH.equals(parameterName) &&
+                    !SearchRestConstants.PARAM_PROPERTIES.equals(parameterName)) {
                 String[] values = parameterEntry.getValue();
                 for (String value : values) {
                     // all searches are "open" ones
@@ -114,9 +120,12 @@ public class PropertySearchResource {
         List<PropertySearchResult> results = searchResults.getResults();
         InfoRestSearchResult infoSearchResult = new InfoRestSearchResult();
         for (PropertySearchResult result : results) {
-            String uri = RestUtils.buildStorageInfoUri(request, result);
-            InfoRestSearchResult.SearchEntry entry = new InfoRestSearchResult.SearchEntry(uri);
-            infoSearchResult.results.add(entry);
+            ItemInfo itemInfo = result.getItemInfo();
+            if (!itemInfo.isFolder()) {
+                FileStorageInfoHelper fileStorageInfoHelper = new FileStorageInfoHelper(request, repositoryService,
+                        (FileInfo) itemInfo);
+                infoSearchResult.results.add(fileStorageInfoHelper.createFileInfoData());
+            }
         }
         return infoSearchResult;
     }

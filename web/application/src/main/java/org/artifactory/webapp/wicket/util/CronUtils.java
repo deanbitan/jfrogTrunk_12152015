@@ -23,6 +23,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Minutes;
 import org.quartz.CronExpression;
 
+import javax.annotation.Nullable;
 import java.text.ParseException;
 import java.util.Date;
 
@@ -47,6 +48,23 @@ public abstract class CronUtils {
      */
     public static boolean isValid(String cronExpression) {
         return CronExpression.isValidExpression(cronExpression);
+    }
+
+    /**
+     * Returns a String value representing the validity message given invalid Cron Expression
+     *
+     * @param cronExpression A Cron Expression
+     * @return String - the invalid message returned when expression is not valid, or null if valid
+     */
+    public static
+    @Nullable
+    String getInvalidMessage(String cronExpression) {
+        try {
+            new CronExpression(cronExpression);
+            return null;
+        } catch (ParseException pe) {
+            return pe.getMessage();
+        }
     }
 
     /**
