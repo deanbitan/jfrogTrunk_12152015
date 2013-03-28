@@ -84,4 +84,8 @@ public abstract class InternalRepoPathFactory extends RepoPathFactory {
     public static RepoPath secureRepoPathForRepo(String repoKey) {
         return create(repoKey, PermissionTargetInfo.ANY_PATH);
     }
+
+    public static RepoPath cacheRepoPath(RepoPath remoteRepoPath) {
+        return create(remoteRepoPath.getRepoKey() + RepoPath.REMOTE_CACHE_SUFFIX, remoteRepoPath.getPath());
+    }
 }

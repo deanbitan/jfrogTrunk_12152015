@@ -20,6 +20,7 @@ package org.artifactory.api.rest.artifact;
 
 import javax.xml.bind.annotation.XmlElement;
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * @author Eli Givoni
@@ -35,4 +36,5 @@ public abstract class RestBaseStorageInfo implements Serializable {
     public String lastModified;
     public String modifiedBy;
     public String lastUpdated;
+    public Map<String, String[]> properties;
 }

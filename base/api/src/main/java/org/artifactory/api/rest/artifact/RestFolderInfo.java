@@ -18,7 +18,6 @@
 
 package org.artifactory.api.rest.artifact;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,7 +25,7 @@ import java.util.List;
  */
 public class RestFolderInfo extends RestBaseStorageInfo {
 
-    public List<DirItem> children = new ArrayList<DirItem>();
+    public List<DirItem> children;
 
     public static class DirItem {
         public String uri;

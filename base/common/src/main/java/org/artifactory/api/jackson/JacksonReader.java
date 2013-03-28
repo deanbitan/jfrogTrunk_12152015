@@ -48,6 +48,17 @@ public final class JacksonReader {
     }
 
     /**
+     * Parse bytes to a JSON tree.<BR>
+     * ATTENTION: closing the given stream is the responsibility of the caller.
+     *
+     * @param bytes Bytes to parse
+     * @return JSON node
+     */
+    public static JsonNode bytesAsTree(byte[] bytes) throws IOException {
+        return JacksonFactory.createJsonParser(bytes).readValueAsTree();
+    }
+
+    /**
      * Parses bytes to an object
      *
      * @param bytes              Bytes to parse
